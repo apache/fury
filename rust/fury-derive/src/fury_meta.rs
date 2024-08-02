@@ -25,7 +25,7 @@ pub fn sorted_fields(fields: &Fields) -> Vec<&Field> {
     fields
 }
 
-pub fn derive_fury_meta(ast: &syn::DeriveInput, tag: String) -> TokenStream {
+pub fn derive_serializer(ast: &syn::DeriveInput, tag: &String) -> TokenStream {
     let name = &ast.ident;
     let fields = match &ast.data {
         syn::Data::Struct(s) => sorted_fields(&s.fields),
@@ -33,53 +33,23 @@ pub fn derive_fury_meta(ast: &syn::DeriveInput, tag: String) -> TokenStream {
             panic!("only struct be supported")
         }
     };
-    let props = fields.iter().map(|field| {
+
+    let name_hash: proc_macro2::Ident =
+        syn::Ident::new(&format!("HASH_{}", name).to_uppercase(), name.span());
+
+    let field_infos = fields.iter().map(|field| {
         let ty = &field.ty;
         let name = format!("{}", field.ident.as_ref().expect("should be field name"));
         quote! {
-            (#name, <#ty as fury::__derive::FuryMeta>::ty(), <#ty as fury::__derive::FuryMeta>::tag())
+            fury_core::meta::FieldInfo::new(#name, <#ty as fury_core::serializer::Serializer>::ty())
         }
     });
-    let name_hash_static: proc_macro2::Ident =
-        syn::Ident::new(&format!("HASH_{}", name).to_uppercase(), name.span());
-
-    let gen = quote! {
-
-        lazy_static::lazy_static! {
-            static ref #name_hash_static: u32 = fury::__derive::compute_struct_hash(vec![#(#props),*]);
-        }
-
-        impl fury::__derive::FuryMeta for #name {
-            fn tag() -> &'static str {
-                #tag
-            }
-
-            fn hash() -> u32 {
-                *(#name_hash_static)
-            }
-
-            fn ty() -> fury::__derive::FieldType {
-                fury::__derive::FieldType::FuryTypeTag
-            }
-        }
-    };
-    gen.into()
-}
-
-pub fn derive_serialize(ast: &syn::DeriveInput) -> TokenStream {
-    let name = &ast.ident;
-    let fields = match &ast.data {
-        syn::Data::Struct(s) => sorted_fields(&s.fields),
-        _ => {
-            panic!("only struct be supported")
-        }
-    };
 
     let accessor_exprs = fields.iter().map(|field| {
         let ty = &field.ty;
         let ident = &field.ident;
         quote! {
-            <#ty as fury::__derive::Serialize>::serialize(&self.#ident, serializer);
+            <#ty as fury_core::serializer::Serializer>::serialize(&self.#ident, serializer);
         }
     });
 
@@ -87,64 +57,83 @@ pub fn derive_serialize(ast: &syn::DeriveInput) -> TokenStream {
         let ty = &field.ty;
         // each field have one byte ref tag and two byte type id
         quote! {
-            <#ty as fury::__derive::Serialize>::reserved_space() + fury::__derive::SIZE_OF_REF_AND_TYPE
+            <#ty as fury_core::serializer::Serializer>::reserved_space() + fury_core::types::SIZE_OF_REF_AND_TYPE
         }
     });
 
     let tag_bytelen = format!("{}", name).len();
 
-    let gen = quote! {
-        impl fury::__derive::Serialize for #name {
-            fn write(&self, serializer: &mut fury::__derive::SerializerState) {
-                // write tag string
-                serializer.write_tag(<#name as fury::__derive::FuryMeta>::tag());
-                // write tag hash
-                serializer.writer.u32(<#name as fury::__derive::FuryMeta>::hash());
-                // write fields
-                #(#accessor_exprs)*
-            }
-
-            fn reserved_space() -> usize {
-                // struct have four byte hash
-                #tag_bytelen + 4 + #(#reserved_size_exprs)+*
-            }
-        }
-    };
-    gen.into()
-}
-
-pub fn derive_deserilize(ast: &syn::DeriveInput) -> TokenStream {
-    let name = &ast.ident;
-    let fields = match &ast.data {
-        syn::Data::Struct(s) => sorted_fields(&s.fields),
-        _ => {
-            panic!("only struct be supported")
-        }
-    };
-
     let exprs = fields.iter().map(|field| {
         let ty = &field.ty;
         let ident = &field.ident;
         quote! {
-            #ident: <#ty as fury::__derive::Deserialize>::deserialize(deserializer)?
+            #ident: <#ty as fury_core::serializer::Serializer>::deserialize(state)?
+        }
+    });
+
+    let props = fields.iter().map(|field| {
+        let ty = &field.ty;
+        let name = format!("{}", field.ident.as_ref().expect("should be field name"));
+        quote! {
+            (#name, <#ty as fury_core::serializer::Serializer>::ty())
         }
     });
 
     let gen = quote! {
-        impl<'de> fury::__derive::Deserialize for #name {
-            fn read(deserializer: &mut fury::__derive::DeserializerState) -> Result<Self, fury::__derive::Error> {
+        impl fury_core::types::FuryGeneralList for #name {}
+        impl fury_core::serializer::Serializer for #name {
+            fn tag() -> &'static str {
+                #tag
+            }
+
+            fn hash() -> u32 {
+                lazy_static::lazy_static! {
+                    static ref #name_hash: u32 = fury_core::types::compute_struct_hash(vec![#(#props),*]);
+                }
+                *(#name_hash)
+            }
+
+            fn type_def() -> &'static [u8] {
+                lazy_static::lazy_static! {
+                    static ref type_definition: Vec<u8> = fury_core::meta::TypeMeta::from_fields(
+                        0,
+                        vec![#(#field_infos),*]
+                    ).to_bytes().unwrap();
+                }
+                type_definition.as_slice()
+            }
+
+            fn ty() -> fury_core::types::FieldType {
+                fury_core::types::FieldType::FuryTypeTag
+            }
+
+            fn write(&self, serializer: &mut fury_core::write_state::WriteState) {
+                // write tag string
+                serializer.write_tag(<#name as fury_core::serializer::Serializer>::tag());
+                // write tag hash
+                serializer.writer.u32(<#name as fury_core::serializer::Serializer>::hash());
+                // write fields
+                #(#accessor_exprs)*
+            }
+
+            fn read(state: &mut fury_core::read_state::ReadState) -> Result<Self, fury_core::error::Error> {
                 // read tag string
-                deserializer.read_tag()?;
+                state.read_tag()?;
                 // read tag hash
-                let hash = deserializer.reader.u32();
-                let expected = <#name as fury::__derive::FuryMeta>::hash();
+                let hash = state.reader.u32();
+                let expected = <#name as fury_core::serializer::Serializer>::hash();
                 if(hash != expected) {
-                    Err(fury::__derive::Error::StructHash{ expected, actial: hash })
+                    Err(fury_core::error::Error::StructHash{ expected, actial: hash })
                 } else {
                     Ok(Self {
                         #(#exprs),*
                     })
                 }
+            }
+
+            fn reserved_space() -> usize {
+                // struct have four byte hash
+                #tag_bytelen + 4 + #(#reserved_size_exprs)+*
             }
         }
     };

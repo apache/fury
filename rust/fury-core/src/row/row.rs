@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use crate::{buffer::Writer, Error};
+use crate::{buffer::Writer, error::Error};
 use byteorder::{ByteOrder, LittleEndian};
 use chrono::{DateTime, Days, NaiveDate, NaiveDateTime};
 use std::collections::BTreeMap;
