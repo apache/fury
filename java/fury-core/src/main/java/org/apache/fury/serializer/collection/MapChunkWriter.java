@@ -517,6 +517,8 @@ public class MapChunkWriter {
     prevKeyIsNull = false;
     keyClass = null;
     valueClass = null;
+    keySerializer = null;
+    valueSerializer = null;
   }
 
   private boolean keyHasNull() {
