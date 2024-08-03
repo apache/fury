@@ -297,11 +297,6 @@ public class ThreadPoolFury extends AbstractThreadSafeFury {
   }
 
   @Override
-  public ClassChecker getClassChecker() {
-    return execute(fury -> fury.getClassResolver().getClassChecker());
-  }
-
-  @Override
   public void clearClassLoader(ClassLoader loader) {
     furyPooledObjectFactory.clearClassLoader(loader);
   }
