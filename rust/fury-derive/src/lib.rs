@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use fury_meta::{derive_deserilize, derive_fury_meta, derive_serialize};
+use fury_meta::derive_serializer;
 use fury_row::derive_row;
 use proc_macro::TokenStream;
 use syn::{parse_macro_input, DeriveInput};
@@ -38,12 +38,7 @@ pub fn proc_macro_derive_fury_meta(input: proc_macro::TokenStream) -> TokenStrea
             panic!("tag should be string")
         }
     };
-    let mut token_stream = derive_fury_meta(&input, tag);
-    // append serialize impl
-    token_stream.extend(derive_serialize(&input));
-    // append deserialize impl
-    token_stream.extend(derive_deserilize(&input));
-    token_stream
+    derive_serializer(&input, &tag)
 }
 
 #[proc_macro_derive(FuryRow)]

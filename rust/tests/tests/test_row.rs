@@ -17,7 +17,8 @@
 
 use std::collections::BTreeMap;
 
-use fury::{from_row, to_row, FuryRow};
+use fury_core::row::{from_row, to_row};
+use fury_derive::FuryRow;
 
 #[test]
 fn row() {
