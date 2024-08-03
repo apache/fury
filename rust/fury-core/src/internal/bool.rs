@@ -15,4 +15,27 @@
 // specific language governing permissions and limitations
 // under the License.
 
-pub use fury_core::{error::Error, fury::Fury, row::from_row, row::to_row};
+use crate::error::Error;
+use crate::read_state::ReadState;
+use crate::serializer::Serializer;
+use crate::types::FieldType;
+use crate::write_state::WriteState;
+use std::mem;
+
+impl Serializer for bool {
+    fn reserved_space() -> usize {
+        mem::size_of::<i32>()
+    }
+
+    fn write(&self, serializer: &mut WriteState) {
+        serializer.writer.u8(if *self { 1 } else { 0 });
+    }
+
+    fn read(deserializer: &mut ReadState) -> Result<Self, Error> {
+        Ok(deserializer.reader.u8() == 1)
+    }
+
+    fn ty() -> FieldType {
+        FieldType::BOOL
+    }
+}

@@ -17,7 +17,7 @@
 
 use std::iter;
 
-use fury::{Encoding, MetaStringDecoder, MetaStringEncoder};
+use fury_core::meta::{Encoding, MetaStringDecoder, MetaStringEncoder};
 
 #[test]
 fn test_encode_meta_string_lower_special() {

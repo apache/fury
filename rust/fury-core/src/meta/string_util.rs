@@ -25,14 +25,14 @@ use std::arch::x86_64::*;
 use std::arch::x86_64::*;
 
 #[cfg(target_arch = "x86_64")]
-pub(crate) const MIN_DIM_SIZE_AVX: usize = 32;
+pub const MIN_DIM_SIZE_AVX: usize = 32;
 
 #[cfg(any(
     target_arch = "x86",
     target_arch = "x86_64",
     all(target_arch = "aarch64", target_feature = "neon")
 ))]
-pub(crate) const MIN_DIM_SIZE_SIMD: usize = 16;
+pub const MIN_DIM_SIZE_SIMD: usize = 16;
 
 #[cfg(target_arch = "x86_64")]
 unsafe fn is_latin_avx(s: &str) -> bool {
@@ -108,7 +108,7 @@ fn is_latin_standard(s: &str) -> bool {
     s.bytes().all(|b| b.is_ascii())
 }
 
-pub(crate) fn is_latin(s: &str) -> bool {
+pub fn is_latin(s: &str) -> bool {
     #[cfg(target_arch = "x86_64")]
     {
         if is_x86_feature_detected!("avx")
