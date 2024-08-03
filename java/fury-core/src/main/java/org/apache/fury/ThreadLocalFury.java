@@ -29,7 +29,6 @@ import org.apache.fury.io.FuryInputStream;
 import org.apache.fury.io.FuryReadableChannel;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
-import org.apache.fury.resolver.ClassChecker;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.BufferCallback;
 import org.apache.fury.util.LoaderBinding;
@@ -264,11 +263,6 @@ public class ThreadLocalFury extends AbstractThreadSafeFury {
   @Override
   public ClassLoader getClassLoader() {
     return bindingThreadLocal.get().getClassLoader();
-  }
-
-  @Override
-  public ClassChecker getClassChecker() {
-    return bindingThreadLocal.get().get().getClassResolver().getClassChecker();
   }
 
   @Override

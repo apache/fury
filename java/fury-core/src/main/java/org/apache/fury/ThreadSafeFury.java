@@ -72,9 +72,6 @@ public interface ThreadSafeFury extends BaseFury {
    */
   void setClassChecker(ClassChecker classChecker);
 
-  /** Returns ClassChecker of serializer for current thread. */
-  ClassChecker getClassChecker();
-
   /**
    * Set tSerializerFactory of serializer for current thread only.
    *
