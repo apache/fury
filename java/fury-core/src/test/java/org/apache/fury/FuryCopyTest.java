@@ -139,6 +139,8 @@ public class FuryCopyTest extends FuryTestBase {
     AtomicReference<Throwable> ex = new AtomicReference<>();
     ThreadLocalFury threadLocalFury =
         builder().withCodegen(false).withRefCopy(true).buildThreadLocalFury();
+    threadLocalFury.setClassChecker((classResolver, className1) -> true);
+    threadLocalFury.setSerializerFactory((fury1, cls) -> null);
     threadLocalFury.register(BeanA.class);
     assetEqualsButNotSame(threadLocalFury.copy(beanA));
     executor.execute(
