@@ -17,9 +17,9 @@
 
 use crate::error::Error;
 use crate::resolvers::context::ReadContext;
+use crate::resolvers::context::WriteContext;
 use crate::serializer::Serializer;
 use crate::types::{FieldType, FuryGeneralList, SIZE_OF_REF_AND_TYPE};
-use crate::resolvers::context::WriteContext;
 use std::collections::HashSet;
 use std::mem;
 

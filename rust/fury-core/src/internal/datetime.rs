@@ -17,9 +17,9 @@
 
 use crate::error::Error;
 use crate::resolvers::context::ReadContext;
+use crate::resolvers::context::WriteContext;
 use crate::serializer::Serializer;
 use crate::types::{FieldType, FuryGeneralList};
-use crate::resolvers::context::WriteContext;
 use chrono::{DateTime, Days, NaiveDate, NaiveDateTime};
 use std::mem;
 
@@ -34,9 +34,7 @@ impl Serializer for NaiveDateTime {
     }
 
     fn write(&self, context: &mut WriteContext) {
-        context
-            .writer
-            .u64(self.and_utc().timestamp_millis() as u64);
+        context.writer.u64(self.and_utc().timestamp_millis() as u64);
     }
 
     fn reserved_space() -> usize {

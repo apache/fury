@@ -17,9 +17,9 @@
 
 use crate::error::Error;
 use crate::resolvers::context::ReadContext;
+use crate::resolvers::context::WriteContext;
 use crate::serializer::Serializer;
 use crate::types::{FieldType, FuryGeneralList};
-use crate::resolvers::context::WriteContext;
 
 #[allow(dead_code)]
 fn to_u8_slice<T>(slice: &[T]) -> &[u8] {

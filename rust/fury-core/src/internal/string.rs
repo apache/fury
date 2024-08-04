@@ -17,9 +17,9 @@
 
 use crate::error::Error;
 use crate::resolvers::context::ReadContext;
+use crate::resolvers::context::WriteContext;
 use crate::serializer::Serializer;
 use crate::types::{FieldType, FuryGeneralList};
-use crate::resolvers::context::WriteContext;
 use std::mem;
 
 impl Serializer for String {

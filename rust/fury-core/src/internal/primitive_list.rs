@@ -17,9 +17,9 @@
 
 use crate::error::Error;
 use crate::resolvers::context::ReadContext;
+use crate::resolvers::context::WriteContext;
 use crate::serializer::Serializer;
 use crate::types::FieldType;
-use crate::resolvers::context::WriteContext;
 use std::mem;
 
 pub fn to_u8_slice<T>(slice: &[T]) -> &[u8] {
@@ -37,18 +37,14 @@ macro_rules! impl_primitive_vec {
         impl Serializer for Vec<$ty> {
             fn write(&self, context: &mut WriteContext) {
                 context.writer.var_int32(self.len() as i32);
-                context
-                    .writer
-                    .reserve(self.len() * mem::size_of::<$ty>());
+                context.writer.reserve(self.len() * mem::size_of::<$ty>());
                 context.writer.bytes(to_u8_slice(self));
             }
 
             fn read(context: &mut ReadContext) -> Result<Self, Error> {
                 // length
                 let len = (context.reader.var_int32() as usize) * mem::size_of::<$ty>();
-                Ok(from_u8_slice::<$ty>(
-                    context.reader.bytes(len as usize),
-                ))
+                Ok(from_u8_slice::<$ty>(context.reader.bytes(len as usize)))
             }
 
             fn reserved_space() -> usize {

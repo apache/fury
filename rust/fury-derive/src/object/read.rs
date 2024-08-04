@@ -17,9 +17,9 @@
 
 use proc_macro2::{Ident, TokenStream};
 use quote::quote;
-use syn::{Field};
+use syn::Field;
 
-fn read(name: &Ident, fields: &Vec<&Field>) -> TokenStream {
+fn read(name: &Ident, fields: &[&Field]) -> TokenStream {
     let assign_stmt = fields.iter().map(|field| {
         let ty = &field.ty;
         let ident = &field.ident;
@@ -45,7 +45,7 @@ fn read(name: &Ident, fields: &Vec<&Field>) -> TokenStream {
     }
 }
 
-fn deserialize_compatible(name: &Ident, fields: &Vec<&Field>) -> TokenStream {
+fn deserialize_compatible(name: &Ident, fields: &[&Field]) -> TokenStream {
     let pattern_item = fields.iter().enumerate().map(|(index, field)| {
         let ty = &field.ty;
         let name = &field.ident;
@@ -89,7 +89,7 @@ fn deserialize_compatible(name: &Ident, fields: &Vec<&Field>) -> TokenStream {
     }
 }
 
-pub fn gen(name: &Ident, fields: &Vec<&Field>) -> TokenStream {
+pub fn gen(name: &Ident, fields: &[&Field]) -> TokenStream {
     let read_token_stream = read(name, fields);
     let compatible_token_stream = deserialize_compatible(name, fields);
     quote! {

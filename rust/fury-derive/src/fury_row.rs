@@ -15,9 +15,9 @@
 // specific language governing permissions and limitations
 // under the License.
 
+use crate::util::sorted_fields;
 use proc_macro::TokenStream;
 use quote::quote;
-use crate::util::sorted_fields;
 
 pub fn derive_row(ast: &syn::DeriveInput) -> TokenStream {
     let name = &ast.ident;

@@ -15,11 +15,10 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use proc_macro::TokenStream;
-use quote::quote;
-use fury_core::serializer::Serializer;
 use crate::object::{misc, read, write};
 use crate::util::sorted_fields;
+use proc_macro::TokenStream;
+use quote::quote;
 
 pub fn derive_serializer(ast: &syn::DeriveInput, tag: &String) -> TokenStream {
     let name = &ast.ident;

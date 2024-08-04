@@ -17,9 +17,9 @@
 
 use chrono::{DateTime, NaiveDate, NaiveDateTime};
 use fury_core::fury::Fury;
+use fury_core::types::Mode;
 use fury_derive::Fury;
 use std::collections::HashMap;
-use fury_core::types::Mode;
 
 #[test]
 fn complex_struct() {
@@ -32,19 +32,14 @@ fn complex_struct() {
     #[derive(Fury, Debug, PartialEq, Default)]
     #[tag("example.foo")]
     struct Person {
-
         animal: Vec<Animal>,
-
     }
     let person: Person = Person {
-
         animal: vec![Animal {
             category: "Dog".to_string(),
         }],
-
     };
-    let fury = Fury::default()
-        .mode(Mode::Compatible);
+    let fury = Fury::default().mode(Mode::Compatible);
     let bin: Vec<u8> = fury.serialize(&person);
     let obj: Person = fury.deserialize(&bin).expect("should success");
     assert_eq!(person, obj);

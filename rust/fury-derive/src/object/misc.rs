@@ -15,11 +15,11 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use proc_macro2::{Ident,TokenStream};
+use proc_macro2::{Ident, TokenStream};
 use quote::quote;
-use syn::{Field};
+use syn::Field;
 
-fn hash(name: &Ident, fields: &Vec<&Field>) -> TokenStream {
+fn hash(name: &Ident, fields: &[&Field]) -> TokenStream {
     let name_hash: proc_macro2::Ident =
         syn::Ident::new(&format!("HASH_{}", name).to_uppercase(), name.span());
 
@@ -42,7 +42,7 @@ fn hash(name: &Ident, fields: &Vec<&Field>) -> TokenStream {
     }
 }
 
-fn type_def(fields: &Vec<&Field>) -> TokenStream {
+fn type_def(fields: &[&Field]) -> TokenStream {
     let field_infos = fields.iter().map(|field| {
         let ty = &field.ty;
         let name = format!("{}", field.ident.as_ref().expect("should be field name"));
@@ -63,10 +63,10 @@ fn type_def(fields: &Vec<&Field>) -> TokenStream {
     }
 }
 
-pub fn gen(name: &Ident, fields: &Vec<&Field>, tag: &String) -> TokenStream {
-    let hash_token_stream = hash(name, &fields);
+pub fn gen(name: &Ident, fields: &[&Field], tag: &String) -> TokenStream {
+    let hash_token_stream = hash(name, fields);
 
-    let type_def_token_stream = type_def(&fields);
+    let type_def_token_stream = type_def(fields);
 
     quote! {
             #hash_token_stream

@@ -15,10 +15,10 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use std::any::TypeId;
 use crate::buffer::{Reader, Writer};
 use crate::error::Error;
 use crate::meta::TypeMeta;
+use std::any::TypeId;
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -36,7 +36,8 @@ impl MetaReaderResolver {
         let meta_size = reader.var_int32();
         self.reading_type_defs.reserve(meta_size as usize);
         for _ in 0..meta_size {
-            self.reading_type_defs.push(Rc::new(TypeMeta::from_bytes(reader)));
+            self.reading_type_defs
+                .push(Rc::new(TypeMeta::from_bytes(reader)));
         }
     }
 }

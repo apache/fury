@@ -15,13 +15,11 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use proc_macro2::{Ident,TokenStream};
+use proc_macro2::{Ident, TokenStream};
 use quote::quote;
-use syn::{Field};
+use syn::Field;
 
-
-
-pub fn gen(name: &Ident, fields: &Vec<&Field>) -> TokenStream {
+pub fn gen(name: &Ident, fields: &[&Field]) -> TokenStream {
     let accessor_expr = fields.iter().map(|field| {
         let ty = &field.ty;
         let ident = &field.ident;

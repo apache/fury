@@ -15,13 +15,12 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use std::cmp::PartialEq;
 use crate::buffer::{Reader, Writer};
 use crate::error::Error;
 use crate::resolvers::context::ReadContext;
+use crate::resolvers::context::WriteContext;
 use crate::serializer::Serializer;
 use crate::types::{config_flags, Language, Mode, SIZE_OF_REF_AND_TYPE};
-use crate::resolvers::context::WriteContext;
 
 pub struct Fury {
     mode: Mode,
@@ -35,7 +34,6 @@ impl Default for Fury {
     }
 }
 
-
 impl Fury {
     pub fn mode(mut self, mode: Mode) -> Self {
         self.mode = mode;
@@ -45,7 +43,6 @@ impl Fury {
     pub fn get_mode(&self) -> &Mode {
         &self.mode
     }
-
 
     pub fn write_head<T: Serializer>(&self, writer: &mut Writer) -> usize {
         const HEAD_SIZE: usize = 10;

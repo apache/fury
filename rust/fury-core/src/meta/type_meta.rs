@@ -15,7 +15,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use std::any::Any;
 use super::meta_string::MetaStringEncoder;
 use crate::buffer::{Reader, Writer};
 use crate::error::Error;
@@ -37,14 +36,12 @@ impl FieldInfo {
         }
     }
 
-    fn u8_to_encoding(value: u8) -> Result<Encoding, Error>{
+    fn u8_to_encoding(value: u8) -> Result<Encoding, Error> {
         match value {
-            0x00 =>  Ok(Encoding::Utf8),
-            0x01 =>  Ok(Encoding::AllToLowerSpecial),
-            0x02 =>  Ok(Encoding::LowerUpperDigitSpecial),
-            _ => {
-                Err(Error::UnsupportedTypeMetaFieldNameEncoding { code: value })
-            }
+            0x00 => Ok(Encoding::Utf8),
+            0x01 => Ok(Encoding::AllToLowerSpecial),
+            0x02 => Ok(Encoding::LowerUpperDigitSpecial),
+            _ => Err(Error::UnsupportedTypeMetaFieldNameEncoding { code: value }),
         }
     }
 
@@ -58,10 +55,12 @@ impl FieldInfo {
             size
         };
         let type_id = reader.i16();
-        let field_name = MetaStringDecoder::new().decode(reader.bytes(size as usize), encoding).unwrap();
+        let field_name = MetaStringDecoder::new()
+            .decode(reader.bytes(size as usize), encoding)
+            .unwrap();
         FieldInfo {
             field_name,
-            field_type: FieldType::try_from(type_id).unwrap()
+            field_type: FieldType::try_from(type_id).unwrap(),
         }
     }
 
@@ -94,9 +93,9 @@ pub struct TypeMetaLayer {
 
 impl TypeMetaLayer {
     pub fn new(type_id: u32, field_info: Vec<FieldInfo>) -> TypeMetaLayer {
-        TypeMetaLayer{
+        TypeMetaLayer {
             type_id,
-            field_info
+            field_info,
         }
     }
 
@@ -117,11 +116,10 @@ impl TypeMetaLayer {
     fn from_bytes(reader: &mut Reader) -> TypeMetaLayer {
         let field_num = reader.var_int32();
         let type_id = reader.var_int32() as u32;
-        let field_info = (0..field_num).map(|_| FieldInfo::from_bytes(reader)).collect();
-        TypeMetaLayer::new(
-            type_id,
-            field_info
-        )
+        let field_info = (0..field_num)
+            .map(|_| FieldInfo::from_bytes(reader))
+            .collect();
+        TypeMetaLayer::new(type_id, field_info)
     }
 }
 
@@ -131,21 +129,14 @@ pub struct TypeMeta {
 }
 
 impl TypeMeta {
-    fn compute_hash() -> u32 {
-        0
-    }
-
     pub fn get_field_info(&self) -> &Vec<FieldInfo> {
-        &self.layers.get(0).unwrap().get_field_info()
+        self.layers.first().unwrap().get_field_info()
     }
 
     pub fn from_fields(type_id: u32, field_info: Vec<FieldInfo>) -> TypeMeta {
         TypeMeta {
             hash: 0,
-            layers: vec![TypeMetaLayer::new(
-                type_id,
-                field_info,
-            )],
+            layers: vec![TypeMetaLayer::new(type_id, field_info)],
         }
     }
 
@@ -153,11 +144,10 @@ impl TypeMeta {
         let header = reader.u64();
         let hash = header >> 8; // high 56bits indicate hash
         let layer_count = header & 0b1111; // class count
-        let layers: Vec<TypeMetaLayer> = (0..layer_count).map(|_| TypeMetaLayer::from_bytes(reader)).collect();
-        TypeMeta {
-            hash,
-            layers,
-        }
+        let layers: Vec<TypeMetaLayer> = (0..layer_count)
+            .map(|_| TypeMetaLayer::from_bytes(reader))
+            .collect();
+        TypeMeta { hash, layers }
     }
 
     pub fn to_bytes(&self) -> Result<Vec<u8>, Error> {

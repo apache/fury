@@ -15,12 +15,10 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use num_enum::TryFromPrimitiveError;
 use crate::error::Error;
 use crate::resolvers::context::ReadContext;
-use crate::types::{FieldType, RefFlag};
 use crate::resolvers::context::WriteContext;
-
+use crate::types::{FieldType, RefFlag};
 
 pub fn serialize<T: Serializer>(this: &T, context: &mut WriteContext) {
     // ref flag

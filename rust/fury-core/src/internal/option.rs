@@ -17,9 +17,9 @@
 
 use crate::error::Error;
 use crate::resolvers::context::ReadContext;
+use crate::resolvers::context::WriteContext;
 use crate::serializer::Serializer;
 use crate::types::{FieldType, FuryGeneralList, RefFlag};
-use crate::resolvers::context::WriteContext;
 
 impl<T: Serializer> Serializer for Option<T> {
     fn read(context: &mut ReadContext) -> Result<Self, Error> {

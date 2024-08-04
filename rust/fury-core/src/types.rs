@@ -16,8 +16,8 @@
 // under the License.
 
 use crate::error::Error;
-use std::mem;
 use num_enum::TryFromPrimitive;
+use std::mem;
 
 #[allow(dead_code)]
 pub enum StringFlag {

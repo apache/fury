@@ -1,11 +1,28 @@
-use std::any::TypeId;
-use std::cell::RefCell;
-use std::rc::Rc;
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
 use crate::buffer::{Reader, Writer};
 use crate::error::Error;
 use crate::fury::Fury;
+
 use crate::meta::TypeMeta;
 use crate::resolvers::meta_resolver::{MetaReaderResolver, MetaWriterResolver};
+use std::any::TypeId;
+use std::rc::Rc;
 
 pub struct WriteContext<'se> {
     pub writer: &'se mut Writer,
@@ -29,7 +46,8 @@ impl<'se> WriteContext<'se> {
     }
 
     pub fn write_meta(&mut self, offset: usize) {
-        self.writer.set_bytes(offset, &(self.writer.len() as u32).to_le_bytes());
+        self.writer
+            .set_bytes(offset, &(self.writer.len() as u32).to_le_bytes());
         self.meta_resolver.to_bytes(self.writer).unwrap()
     }
 
@@ -61,7 +79,7 @@ pub struct ReadContext<'de, 'bf: 'de> {
     pub reader: Reader<'bf>,
     pub tags: Vec<&'de str>,
     pub fury: &'de Fury,
-    pub meta_resolver: MetaReaderResolver
+    pub meta_resolver: MetaReaderResolver,
 }
 
 impl<'de, 'bf: 'de> ReadContext<'de, 'bf> {
@@ -70,7 +88,7 @@ impl<'de, 'bf: 'de> ReadContext<'de, 'bf> {
             reader,
             tags: Vec::new(),
             fury,
-            meta_resolver: MetaReaderResolver::default()
+            meta_resolver: MetaReaderResolver::default(),
         }
     }
 
@@ -83,9 +101,8 @@ impl<'de, 'bf: 'de> ReadContext<'de, 'bf> {
     }
 
     pub fn load_meta(&mut self, offset: usize) {
-        self.meta_resolver.load(
-            &mut Reader::new(&self.reader.slice()[offset..])
-        )
+        self.meta_resolver
+            .load(&mut Reader::new(&self.reader.slice()[offset..]))
     }
 
     pub fn read_tag(&mut self) -> Result<&str, Error> {
