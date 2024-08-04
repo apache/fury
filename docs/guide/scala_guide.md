@@ -16,7 +16,7 @@ Scala 2 and 3 are both supported.
 
 ## Install
 ```sbt
-libraryDependencies += "org.apache.fury" % "fury-core" % "0.6.0"
+libraryDependencies += "org.apache.fury" % "fury-core" % "0.7.0"
 ```
 
 ## Fury creation
