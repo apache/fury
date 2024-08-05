@@ -346,7 +346,7 @@ public final class Fury implements BaseFury {
       classResolver.writeClass(buffer, classInfo);
       writeData(buffer, classInfo, obj);
     }
-    MetaContext metaContext = getSerializationContext().getMetaContext();
+    MetaContext metaContext = serializationContext.getMetaContext();
     if (shareMeta && metaContext != null && !metaContext.writingClassDefs.isEmpty()) {
       buffer.putInt32(startOffset, buffer.writerIndex() - startOffset - 4);
       classResolver.writeClassDefs(buffer);
