@@ -29,7 +29,7 @@ pub fn derive_serializer(ast: &syn::DeriveInput, tag: &String) -> TokenStream {
         }
     };
 
-    let misc_token_stream = misc::gen(name, &fields, tag);
+    let misc_token_stream = misc::gen(&fields, tag);
     let write_token_stream = write::gen(name, &fields);
     let read_token_stream = read::gen(name, &fields);
 

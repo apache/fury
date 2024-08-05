@@ -15,14 +15,11 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use proc_macro2::{Ident, TokenStream};
+use proc_macro2::TokenStream;
 use quote::quote;
 use syn::Field;
 
-fn hash(name: &Ident, fields: &[&Field]) -> TokenStream {
-    let name_hash: proc_macro2::Ident =
-        syn::Ident::new(&format!("HASH_{}", name).to_uppercase(), name.span());
-
+fn hash(fields: &[&Field]) -> TokenStream {
     let props = fields.iter().map(|field| {
         let ty = &field.ty;
         let name = format!("{}", field.ident.as_ref().expect("should be field name"));
@@ -33,12 +30,16 @@ fn hash(name: &Ident, fields: &[&Field]) -> TokenStream {
 
     quote! {
         fn hash() -> u32 {
-            lazy_static::lazy_static! {
-                static ref #name_hash: u32 = fury_core::types::compute_struct_hash(vec![#(#props),*]);
+            use std::sync::Once;
+            static mut name_hash: u32 = 0u32;
+            static name_hash_once: Once = Once::new();
+            unsafe {
+                name_hash_once.call_once(|| {
+                        name_hash = fury_core::types::compute_struct_hash(vec![#(#props),*]);
+                });
+                name_hash
             }
-            *(#name_hash)
         }
-
     }
 }
 
@@ -52,19 +53,24 @@ fn type_def(fields: &[&Field]) -> TokenStream {
     });
     quote! {
         fn type_def() -> &'static [u8] {
-            lazy_static::lazy_static! {
-                static ref type_definition: Vec<u8> = fury_core::meta::TypeMeta::from_fields(
-                    0,
-                    vec![#(#field_infos),*]
-                ).to_bytes().unwrap();
+            use std::sync::Once;
+            static mut type_definition: Vec<u8> = Vec::new();
+            static type_definition_once: Once = Once::new();
+            unsafe {
+                type_definition_once.call_once(|| {
+                    type_definition = fury_core::meta::TypeMeta::from_fields(
+                        0,
+                        vec![#(#field_infos),*]
+                    ).to_bytes().unwrap();
+                });
+                type_definition.as_slice()
             }
-            type_definition.as_slice()
         }
     }
 }
 
-pub fn gen(name: &Ident, fields: &[&Field], tag: &String) -> TokenStream {
-    let hash_token_stream = hash(name, fields);
+pub fn gen(fields: &[&Field], tag: &String) -> TokenStream {
+    let hash_token_stream = hash(fields);
 
     let type_def_token_stream = type_def(fields);
 

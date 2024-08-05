@@ -20,6 +20,7 @@ use crate::resolvers::context::ReadContext;
 use crate::resolvers::context::WriteContext;
 use crate::serializer::Serializer;
 use crate::types::{FieldType, FuryGeneralList};
+use crate::util::EPOCH;
 use chrono::{DateTime, Days, NaiveDate, NaiveDateTime};
 use std::mem;
 
@@ -48,13 +49,9 @@ impl Serializer for NaiveDateTime {
 
 impl FuryGeneralList for NaiveDateTime {}
 
-lazy_static::lazy_static!(
-    static ref EPOCH: NaiveDate = NaiveDate::from_ymd_opt(1970, 1, 1).unwrap();
-);
-
 impl Serializer for NaiveDate {
     fn write(&self, context: &mut WriteContext) {
-        let days_since_epoch = self.signed_duration_since(*EPOCH).num_days();
+        let days_since_epoch = self.signed_duration_since(EPOCH).num_days();
         context.writer.u64(days_since_epoch as u64);
     }
 

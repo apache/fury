@@ -25,7 +25,6 @@ rust-version.workspace = true
 proc-macro2 = { default-features = false, version = "1.0" }
 syn = { default-features = false, version = "2.0", features = ["full", "fold"] }
 quote = { default-features = false, version = "1.0" }
-lazy_static = { version = "1.4" }
 byteorder = { version = "1.4" }
 chrono = "0.4"
 thiserror = { default-features = false, version = "1.0" }
