@@ -29,7 +29,7 @@ fn hash(fields: &[&Field]) -> TokenStream {
     });
 
     quote! {
-        fn hash() -> u32 {
+        fn fury_hash() -> u32 {
             use std::sync::Once;
             static mut name_hash: u32 = 0u32;
             static name_hash_once: Once = Once::new();
@@ -52,7 +52,7 @@ fn type_def(fields: &[&Field]) -> TokenStream {
         }
     });
     quote! {
-        fn type_def() -> &'static [u8] {
+        fn fury_type_def() -> &'static [u8] {
             use std::sync::Once;
             static mut type_definition: Vec<u8> = Vec::new();
             static type_definition_once: Once = Once::new();
@@ -69,20 +69,23 @@ fn type_def(fields: &[&Field]) -> TokenStream {
     }
 }
 
-pub fn gen(fields: &[&Field], tag: &String) -> TokenStream {
+pub fn gen_in_struct_impl(fields: &[&Field], tag: &String) -> TokenStream {
     let hash_token_stream = hash(fields);
-
     let type_def_token_stream = type_def(fields);
 
     quote! {
-            #hash_token_stream
+        #hash_token_stream
 
-            #type_def_token_stream
+        #type_def_token_stream
 
-            fn tag() -> &'static str {
-                #tag
-            }
+        fn fury_tag() -> &'static str {
+            #tag
+        }
+    }
+}
 
+pub fn gen() -> TokenStream {
+    quote! {
             fn ty() -> fury_core::types::FieldType {
                 fury_core::types::FieldType::FuryTypeTag
             }

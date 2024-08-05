@@ -29,11 +29,15 @@ pub fn derive_serializer(ast: &syn::DeriveInput, tag: &String) -> TokenStream {
         }
     };
 
-    let misc_token_stream = misc::gen(&fields, tag);
+    let misc_token_stream = misc::gen();
+    let struct_impl_token_stream = misc::gen_in_struct_impl(&fields, tag);
     let write_token_stream = write::gen(name, &fields);
     let read_token_stream = read::gen(name, &fields);
 
     let gen = quote! {
+        impl #name {
+            #struct_impl_token_stream
+        }
         impl fury_core::types::FuryGeneralList for #name {}
         impl fury_core::serializer::Serializer for #name {
             #misc_token_stream

@@ -33,7 +33,7 @@ fn read(name: &Ident, fields: &[&Field]) -> TokenStream {
             context.read_tag()?;
             // read tag hash
             let hash = context.reader.u32();
-            let expected = <#name as fury_core::serializer::Serializer>::hash();
+            let expected = #name::fury_hash();
             if(hash != expected) {
                 Err(fury_core::error::Error::StructHash{ expected, actial: hash })
             } else {
@@ -66,7 +66,7 @@ fn deserialize_compatible(name: &Ident, fields: &[&Field]) -> TokenStream {
             context.read_tag()?;
             // read tag hash
             let hash = context.reader.u32();
-            let expected = <#name as fury_core::serializer::Serializer>::hash();
+            let expected = #name::fury_hash();
             if(hash != expected) {
                 return Err(fury_core::error::Error::StructHash{ expected, actial: hash })
             }

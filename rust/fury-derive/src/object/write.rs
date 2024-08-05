@@ -48,7 +48,7 @@ pub fn gen(name: &Ident, fields: &[&Field]) -> TokenStream {
                     context.writer.i8(fury_core::types::RefFlag::NotNullValue as i8);
                     let meta_index = context.push_meta(
                             std::any::TypeId::of::<Self>(),
-                            Self::type_def()
+                            #name::fury_type_def()
                         ) as i16;
                     context.writer.i16(meta_index);
                     self.write(context);
@@ -59,9 +59,9 @@ pub fn gen(name: &Ident, fields: &[&Field]) -> TokenStream {
 
         fn write(&self, context: &mut fury_core::resolvers::context::WriteContext) {
             // write tag string
-            context.write_tag(<#name as fury_core::serializer::Serializer>::tag());
+            context.write_tag(#name::fury_tag());
             // write tag hash
-            context.writer.u32(<#name as fury_core::serializer::Serializer>::hash());
+            context.writer.u32(#name::fury_hash());
             // write fields
             #(#accessor_expr)*
         }

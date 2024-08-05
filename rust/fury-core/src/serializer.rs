@@ -79,16 +79,4 @@ where
     }
 
     fn ty() -> FieldType;
-
-    fn hash() -> u32 {
-        0
-    }
-
-    fn tag() -> &'static str {
-        ""
-    }
-
-    fn type_def() -> &'static [u8] {
-        &[]
-    }
 }
