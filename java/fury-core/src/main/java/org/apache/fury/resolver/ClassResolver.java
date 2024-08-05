@@ -109,6 +109,7 @@ import org.apache.fury.serializer.ArraySerializers;
 import org.apache.fury.serializer.BufferSerializers;
 import org.apache.fury.serializer.CodegenSerializer.LazyInitBeanSerializer;
 import org.apache.fury.serializer.CompatibleSerializer;
+import org.apache.fury.serializer.EnumNameSerializer;
 import org.apache.fury.serializer.EnumSerializer;
 import org.apache.fury.serializer.ExternalizableSerializer;
 import org.apache.fury.serializer.FuryCopyableSerializer;
@@ -830,10 +831,10 @@ public class ClassResolver {
       if (cls.isArray()) {
         return ArraySerializers.ObjectArraySerializer.class;
       } else if (cls.isEnum()) {
-        return EnumSerializer.class;
+        return !fury.getConfig().getUseEnumNameSerializer() ? EnumSerializer.class : EnumNameSerializer.class;
       } else if (Enum.class.isAssignableFrom(cls) && cls != Enum.class) {
         // handles an enum value that is an inner class. Eg: enum A {b{}};
-        return EnumSerializer.class;
+        return !fury.getConfig().getUseEnumNameSerializer() ? EnumSerializer.class : EnumNameSerializer.class;
       } else if (EnumSet.class.isAssignableFrom(cls)) {
         return CollectionSerializers.EnumSetSerializer.class;
       } else if (Charset.class.isAssignableFrom(cls)) {
