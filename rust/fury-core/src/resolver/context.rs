@@ -20,7 +20,7 @@ use crate::error::Error;
 use crate::fury::Fury;
 
 use crate::meta::TypeMeta;
-use crate::resolvers::meta_resolver::{MetaReaderResolver, MetaWriterResolver};
+use crate::resolver::meta_resolver::{MetaReaderResolver, MetaWriterResolver};
 use std::any::TypeId;
 use std::rc::Rc;
 

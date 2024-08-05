@@ -17,8 +17,8 @@
 
 use crate::buffer::{Reader, Writer};
 use crate::error::Error;
-use crate::resolvers::context::ReadContext;
-use crate::resolvers::context::WriteContext;
+use crate::resolver::context::ReadContext;
+use crate::resolver::context::WriteContext;
 use crate::serializer::Serializer;
 use crate::types::{config_flags, Language, Mode, SIZE_OF_REF_AND_TYPE};
 

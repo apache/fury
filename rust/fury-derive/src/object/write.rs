@@ -39,7 +39,7 @@ pub fn gen(name: &Ident, fields: &[&Field]) -> TokenStream {
     let tag_byte_len = format!("{}", name).len();
 
     quote! {
-        fn serialize(&self, context: &mut fury_core::resolvers::context::WriteContext) {
+        fn serialize(&self, context: &mut fury_core::resolver::context::WriteContext) {
             match context.get_fury().get_mode() {
                 fury_core::types::Mode::SchemaConsistent => {
                     fury_core::serializer::serialize(self, context);
@@ -57,7 +57,7 @@ pub fn gen(name: &Ident, fields: &[&Field]) -> TokenStream {
         }
 
 
-        fn write(&self, context: &mut fury_core::resolvers::context::WriteContext) {
+        fn write(&self, context: &mut fury_core::resolver::context::WriteContext) {
             // write tag string
             context.write_tag(#name::fury_tag());
             // write tag hash

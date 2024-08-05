@@ -16,8 +16,8 @@
 // under the License.
 
 use crate::error::Error;
-use crate::resolvers::context::ReadContext;
-use crate::resolvers::context::WriteContext;
+use crate::resolver::context::ReadContext;
+use crate::resolver::context::WriteContext;
 use crate::serializer::Serializer;
 use crate::types::{FieldType, FuryGeneralList};
 

@@ -28,7 +28,7 @@ fn read(name: &Ident, fields: &[&Field]) -> TokenStream {
         }
     });
     quote! {
-        fn read(context: &mut fury_core::resolvers::context::ReadContext) -> Result<Self, fury_core::error::Error> {
+        fn read(context: &mut fury_core::resolver::context::ReadContext) -> Result<Self, fury_core::error::Error> {
             // read tag string
             context.read_tag()?;
             // read tag hash
@@ -93,7 +93,7 @@ pub fn gen(name: &Ident, fields: &[&Field]) -> TokenStream {
     let read_token_stream = read(name, fields);
     let compatible_token_stream = deserialize_compatible(name, fields);
     quote! {
-        fn deserialize(context: &mut fury_core::resolvers::context::ReadContext) -> Result<Self, fury_core::error::Error> {
+        fn deserialize(context: &mut fury_core::resolver::context::ReadContext) -> Result<Self, fury_core::error::Error> {
             match context.get_fury().get_mode() {
                 fury_core::types::Mode::SchemaConsistent => {
                     fury_core::serializer::deserialize::<Self>(context)

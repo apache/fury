@@ -15,12 +15,31 @@
 // specific language governing permissions and limitations
 // under the License.
 
-mod bool;
-mod datetime;
-mod list;
-mod map;
-mod number;
-mod option;
-mod primitive_list;
-mod set;
-mod string;
+use crate::error::Error;
+use crate::resolver::context::ReadContext;
+use crate::resolver::context::WriteContext;
+use crate::serializer::Serializer;
+use crate::types::{FieldType, FuryGeneralList};
+use std::mem;
+
+impl Serializer for String {
+    fn reserved_space() -> usize {
+        mem::size_of::<i32>()
+    }
+
+    fn write(&self, context: &mut WriteContext) {
+        context.writer.var_int32(self.len() as i32);
+        context.writer.bytes(self.as_bytes());
+    }
+
+    fn read(context: &mut ReadContext) -> Result<Self, Error> {
+        let len = context.reader.var_int32();
+        Ok(context.reader.string(len as usize))
+    }
+
+    fn ty() -> FieldType {
+        FieldType::STRING
+    }
+}
+
+impl FuryGeneralList for String {}

@@ -18,9 +18,8 @@
 pub mod buffer;
 pub mod error;
 pub mod fury;
-pub mod internal;
 pub mod meta;
-pub mod resolvers;
+pub mod resolver;
 pub mod row;
 pub mod serializer;
 pub mod types;

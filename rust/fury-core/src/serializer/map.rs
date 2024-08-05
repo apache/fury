@@ -16,45 +16,51 @@
 // under the License.
 
 use crate::error::Error;
-use crate::resolvers::context::ReadContext;
-use crate::resolvers::context::WriteContext;
+use crate::resolver::context::ReadContext;
+use crate::resolver::context::WriteContext;
 use crate::serializer::Serializer;
 use crate::types::{FieldType, FuryGeneralList, SIZE_OF_REF_AND_TYPE};
+use std::collections::HashMap;
 use std::mem;
 
-impl<T> Serializer for Vec<T>
-where
-    T: Serializer + FuryGeneralList,
-{
+impl<T1: Serializer + Eq + std::hash::Hash, T2: Serializer> Serializer for HashMap<T1, T2> {
     fn write(&self, context: &mut WriteContext) {
+        // length
         context.writer.var_int32(self.len() as i32);
-        context
-            .writer
-            .reserve((<Self as Serializer>::reserved_space() + SIZE_OF_REF_AND_TYPE) * self.len());
-        for item in self.iter() {
-            item.serialize(context);
+
+        let reserved_space = (<T1 as Serializer>::reserved_space() + SIZE_OF_REF_AND_TYPE)
+            * self.len()
+            + (<T2 as Serializer>::reserved_space() + SIZE_OF_REF_AND_TYPE) * self.len();
+        context.writer.reserve(reserved_space);
+
+        // key-value
+        for i in self.iter() {
+            i.0.serialize(context);
+            i.1.serialize(context);
         }
     }
 
     fn read(context: &mut ReadContext) -> Result<Self, Error> {
         // length
         let len = context.reader.var_int32();
-        // value
-        let mut result = Vec::new();
+        let mut result = HashMap::new();
+        // key-value
         for _ in 0..len {
-            result.push(T::deserialize(context)?);
+            result.insert(
+                <T1 as Serializer>::deserialize(context)?,
+                <T2 as Serializer>::deserialize(context)?,
+            );
         }
         Ok(result)
     }
 
     fn reserved_space() -> usize {
-        // size of the vec
-        mem::size_of::<u32>()
+        mem::size_of::<i32>()
     }
 
     fn ty() -> FieldType {
-        FieldType::ARRAY
+        FieldType::MAP
     }
 }
 
-impl<T> FuryGeneralList for Vec<T> where T: Serializer {}
+impl<T1: Serializer + Eq + std::hash::Hash, T2: Serializer> FuryGeneralList for HashMap<T1, T2> {}

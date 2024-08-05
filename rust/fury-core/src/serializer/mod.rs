@@ -16,9 +16,18 @@
 // under the License.
 
 use crate::error::Error;
-use crate::resolvers::context::ReadContext;
-use crate::resolvers::context::WriteContext;
+use crate::resolver::context::{ReadContext, WriteContext};
 use crate::types::{FieldType, RefFlag};
+
+mod bool;
+mod datetime;
+mod list;
+mod map;
+mod number;
+mod option;
+mod primitive_list;
+mod set;
+mod string;
 
 pub fn serialize<T: Serializer>(this: &T, context: &mut WriteContext) {
     // ref flag

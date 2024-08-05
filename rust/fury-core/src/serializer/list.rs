@@ -16,30 +16,45 @@
 // under the License.
 
 use crate::error::Error;
-use crate::resolvers::context::ReadContext;
-use crate::resolvers::context::WriteContext;
+use crate::resolver::context::ReadContext;
+use crate::resolver::context::WriteContext;
 use crate::serializer::Serializer;
-use crate::types::{FieldType, FuryGeneralList};
+use crate::types::{FieldType, FuryGeneralList, SIZE_OF_REF_AND_TYPE};
 use std::mem;
 
-impl Serializer for String {
-    fn reserved_space() -> usize {
-        mem::size_of::<i32>()
-    }
-
+impl<T> Serializer for Vec<T>
+where
+    T: Serializer + FuryGeneralList,
+{
     fn write(&self, context: &mut WriteContext) {
         context.writer.var_int32(self.len() as i32);
-        context.writer.bytes(self.as_bytes());
+        context
+            .writer
+            .reserve((<Self as Serializer>::reserved_space() + SIZE_OF_REF_AND_TYPE) * self.len());
+        for item in self.iter() {
+            item.serialize(context);
+        }
     }
 
     fn read(context: &mut ReadContext) -> Result<Self, Error> {
+        // length
         let len = context.reader.var_int32();
-        Ok(context.reader.string(len as usize))
+        // value
+        let mut result = Vec::new();
+        for _ in 0..len {
+            result.push(T::deserialize(context)?);
+        }
+        Ok(result)
+    }
+
+    fn reserved_space() -> usize {
+        // size of the vec
+        mem::size_of::<u32>()
     }
 
     fn ty() -> FieldType {
-        FieldType::STRING
+        FieldType::ARRAY
     }
 }
 
-impl FuryGeneralList for String {}
+impl<T> FuryGeneralList for Vec<T> where T: Serializer {}
