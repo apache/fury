@@ -1232,7 +1232,7 @@ public final class Fury implements BaseFury {
     } catch (Throwable t) {
       throw ExceptionUtils.handleReadFailed(this, t);
     } finally {
-      if (shareMeta && classDefEndOffset != -1) {
+      if (classDefEndOffset != -1) {
         buffer.readerIndex(classDefEndOffset);
       }
       resetRead();
