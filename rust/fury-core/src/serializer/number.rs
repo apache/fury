@@ -16,16 +16,11 @@
 // under the License.
 
 use crate::error::Error;
+use crate::fury::Fury;
 use crate::resolver::context::ReadContext;
 use crate::resolver::context::WriteContext;
 use crate::serializer::Serializer;
 use crate::types::{FieldType, FuryGeneralList};
-
-#[allow(dead_code)]
-fn to_u8_slice<T>(slice: &[T]) -> &[u8] {
-    let byte_len = std::mem::size_of_val(slice);
-    unsafe { std::slice::from_raw_parts(slice.as_ptr().cast::<u8>(), byte_len) }
-}
 
 macro_rules! impl_num_serializer {
     ($name: ident, $ty:tt, $field_type: expr) => {
@@ -42,8 +37,8 @@ macro_rules! impl_num_serializer {
                 std::mem::size_of::<$ty>()
             }
 
-            fn ty() -> FieldType {
-                $field_type
+            fn ty(_fury: &Fury) -> i16 {
+                ($field_type).into()
             }
         }
     };

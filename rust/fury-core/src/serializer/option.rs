@@ -16,10 +16,11 @@
 // under the License.
 
 use crate::error::Error;
+use crate::fury::Fury;
 use crate::resolver::context::ReadContext;
 use crate::resolver::context::WriteContext;
 use crate::serializer::Serializer;
-use crate::types::{FieldType, FuryGeneralList, RefFlag};
+use crate::types::{FuryGeneralList, RefFlag};
 
 impl<T: Serializer> Serializer for Option<T> {
     fn read(context: &mut ReadContext) -> Result<Self, Error> {
@@ -34,9 +35,9 @@ impl<T: Serializer> Serializer for Option<T> {
             // type_id
             let type_id = context.reader.i16();
 
-            if type_id != T::ty() as i16 {
+            if type_id != T::ty(context.get_fury()) {
                 Err(Error::FieldType {
-                    expected: T::ty(),
+                    expected: T::ty(context.get_fury()),
                     actial: type_id,
                 })
             } else {
@@ -65,7 +66,7 @@ impl<T: Serializer> Serializer for Option<T> {
                 // ref flag
                 context.writer.i8(RefFlag::NotNullValue as i8);
                 // type
-                context.writer.i16(T::ty() as i16);
+                context.writer.i16(T::ty(context.get_fury()));
 
                 v.write(context);
             }
@@ -79,8 +80,8 @@ impl<T: Serializer> Serializer for Option<T> {
         std::mem::size_of::<T>()
     }
 
-    fn ty() -> FieldType {
-        T::ty()
+    fn ty(fury: &Fury) -> i16 {
+        T::ty(fury)
     }
 }
 

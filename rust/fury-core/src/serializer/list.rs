@@ -16,6 +16,7 @@
 // under the License.
 
 use crate::error::Error;
+use crate::fury::Fury;
 use crate::resolver::context::ReadContext;
 use crate::resolver::context::WriteContext;
 use crate::serializer::Serializer;
@@ -52,8 +53,8 @@ where
         mem::size_of::<u32>()
     }
 
-    fn ty() -> FieldType {
-        FieldType::ARRAY
+    fn ty(_fury: &Fury) -> i16 {
+        FieldType::ARRAY.into()
     }
 }
 

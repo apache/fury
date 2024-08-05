@@ -17,19 +17,22 @@
 
 use crate::buffer::{Reader, Writer};
 use crate::error::Error;
+use crate::resolver::class_resolver::{ClassInfo, ClassResolver};
 use crate::resolver::context::ReadContext;
 use crate::resolver::context::WriteContext;
-use crate::serializer::Serializer;
+use crate::serializer::{Serializer, StructSerializer};
 use crate::types::{config_flags, Language, Mode, SIZE_OF_REF_AND_TYPE};
 
 pub struct Fury {
     mode: Mode,
+    class_resolver: ClassResolver,
 }
 
 impl Default for Fury {
     fn default() -> Self {
         Fury {
             mode: Mode::SchemaConsistent,
+            class_resolver: ClassResolver::default(),
         }
     }
 }
@@ -81,5 +84,14 @@ impl Fury {
             context.write_meta(meta_offset);
         }
         writer.dump()
+    }
+
+    pub fn get_class_resolver(&self) -> &ClassResolver {
+        &self.class_resolver
+    }
+
+    pub fn register<T: 'static + StructSerializer>(&mut self, id: u32) {
+        let class_info = ClassInfo::new::<T>(self, id);
+        self.class_resolver.register::<T>(class_info, id);
     }
 }

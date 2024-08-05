@@ -16,6 +16,7 @@
 // under the License.
 
 use crate::error::Error;
+use crate::fury::Fury;
 use crate::resolver::context::ReadContext;
 use crate::resolver::context::WriteContext;
 use crate::serializer::Serializer;
@@ -53,8 +54,8 @@ impl<T: Serializer + Eq + std::hash::Hash> Serializer for HashSet<T> {
         mem::size_of::<i32>()
     }
 
-    fn ty() -> FieldType {
-        FieldType::FurySet
+    fn ty(_fury: &Fury) -> i16 {
+        FieldType::FurySet.into()
     }
 }
 

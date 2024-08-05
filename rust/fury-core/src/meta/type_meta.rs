@@ -19,20 +19,17 @@ use super::meta_string::MetaStringEncoder;
 use crate::buffer::{Reader, Writer};
 use crate::error::Error;
 use crate::meta::{Encoding, MetaStringDecoder};
-use crate::types::FieldType;
 
-//todo backward/forward compatibility
-#[allow(dead_code)]
 pub struct FieldInfo {
     field_name: String,
-    field_type: FieldType,
+    field_id: i16,
 }
 
 impl FieldInfo {
-    pub fn new(field_name: &str, field_type: FieldType) -> FieldInfo {
+    pub fn new(field_name: &str, field_type: i16) -> FieldInfo {
         FieldInfo {
             field_name: field_name.to_string(),
-            field_type,
+            field_id: field_type,
         }
     }
 
@@ -60,7 +57,7 @@ impl FieldInfo {
             .unwrap();
         FieldInfo {
             field_name,
-            field_type: FieldType::try_from(type_id).unwrap(),
+            field_id: type_id,
         }
     }
 
@@ -80,7 +77,7 @@ impl FieldInfo {
             header |= (size << 5) as u8;
             writer.u8(header);
         }
-        writer.i16(self.field_type as i16);
+        writer.i16(self.field_id);
         writer.bytes(encoded);
         Ok(writer.dump())
     }
@@ -97,6 +94,10 @@ impl TypeMetaLayer {
             type_id,
             field_info,
         }
+    }
+
+    pub fn get_type_id(&self) -> u32 {
+        self.type_id
     }
 
     pub fn get_field_info(&self) -> &Vec<FieldInfo> {
@@ -131,6 +132,10 @@ pub struct TypeMeta {
 impl TypeMeta {
     pub fn get_field_info(&self) -> &Vec<FieldInfo> {
         self.layers.first().unwrap().get_field_info()
+    }
+
+    pub fn get_type_id(&self) -> u32 {
+        self.layers.first().unwrap().get_type_id()
     }
 
     pub fn from_fields(type_id: u32, field_info: Vec<FieldInfo>) -> TypeMeta {

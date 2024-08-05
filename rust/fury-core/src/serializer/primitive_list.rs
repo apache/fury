@@ -16,6 +16,7 @@
 // under the License.
 
 use crate::error::Error;
+use crate::fury::Fury;
 use crate::resolver::context::ReadContext;
 use crate::resolver::context::WriteContext;
 use crate::serializer::Serializer;
@@ -25,11 +26,6 @@ use std::mem;
 pub fn to_u8_slice<T>(slice: &[T]) -> &[u8] {
     let byte_len = std::mem::size_of_val(slice);
     unsafe { std::slice::from_raw_parts(slice.as_ptr().cast::<u8>(), byte_len) }
-}
-
-fn from_u8_slice<T: Clone>(slice: &[u8]) -> Vec<T> {
-    let byte_len = slice.len() / mem::size_of::<T>();
-    unsafe { std::slice::from_raw_parts(slice.as_ptr().cast::<T>(), byte_len) }.to_vec()
 }
 
 macro_rules! impl_primitive_vec {
@@ -43,16 +39,29 @@ macro_rules! impl_primitive_vec {
 
             fn read(context: &mut ReadContext) -> Result<Self, Error> {
                 // length
-                let len = (context.reader.var_int32() as usize) * mem::size_of::<$ty>();
-                Ok(from_u8_slice::<$ty>(context.reader.bytes(len as usize)))
+                let len = (context.reader.var_int32() as usize);
+                let is_aligned = context.reader.aligned::<$ty>();
+                if is_aligned {
+                    let slice = context.reader.bytes(len * mem::size_of::<$ty>());
+                    Ok(
+                        unsafe { std::slice::from_raw_parts(slice.as_ptr().cast::<$ty>(), len) }
+                            .to_vec(),
+                    )
+                } else {
+                    let mut result = Vec::with_capacity(len);
+                    for _i in 0..len {
+                        result.push(context.reader.$name());
+                    }
+                    Ok(result)
+                }
             }
 
             fn reserved_space() -> usize {
                 mem::size_of::<i32>()
             }
 
-            fn ty() -> FieldType {
-                $field_type
+            fn ty(_fury: &Fury) -> i16 {
+                ($field_type).into()
             }
         }
     };
@@ -68,8 +77,8 @@ impl Serializer for Vec<bool> {
         mem::size_of::<u8>()
     }
 
-    fn ty() -> FieldType {
-        FieldType::FuryPrimitiveBoolArray
+    fn ty(_fury: &Fury) -> i16 {
+        FieldType::FuryPrimitiveBoolArray.into()
     }
 
     fn read(context: &mut ReadContext) -> Result<Self, Error> {

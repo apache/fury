@@ -16,69 +16,87 @@
 // under the License.
 
 use proc_macro2::{Ident, TokenStream};
-use quote::quote;
+use quote::{format_ident, quote};
 use syn::Field;
 
-fn read(name: &Ident, fields: &[&Field]) -> TokenStream {
+fn create_private_field_name(field: &Field) -> Ident {
+    format_ident!("_{}", field.ident.as_ref().expect(""))
+}
+
+fn bind(fields: &[&Field]) -> Vec<TokenStream> {
+    fields
+        .iter()
+        .map(|field| {
+            let ty = &field.ty;
+            let var_name = create_private_field_name(field);
+            quote! {
+                let mut #var_name: Option<#ty> = None;
+            }
+        })
+        .collect()
+}
+
+fn create(fields: &[&Field]) -> Vec<TokenStream> {
+    fields
+        .iter()
+        .map(|field| {
+            let name = &field.ident;
+            let var_name = create_private_field_name(field);
+            quote! {
+                #name: #var_name.unwrap()
+            }
+        })
+        .collect()
+}
+
+fn read(fields: &[&Field]) -> TokenStream {
     let assign_stmt = fields.iter().map(|field| {
         let ty = &field.ty;
-        let ident = &field.ident;
+        let name = &field.ident;
         quote! {
-            #ident: <#ty as fury_core::serializer::Serializer>::deserialize(context)?
+            #name: <#ty as fury_core::serializer::Serializer>::deserialize(context)?
         }
     });
+
     quote! {
         fn read(context: &mut fury_core::resolver::context::ReadContext) -> Result<Self, fury_core::error::Error> {
-            // read tag string
-            context.read_tag()?;
-            // read tag hash
-            let hash = context.reader.u32();
-            let expected = #name::fury_hash();
-            if(hash != expected) {
-                Err(fury_core::error::Error::StructHash{ expected, actial: hash })
-            } else {
-                Ok(Self {
-                    #(#assign_stmt),*
-                })
-            }
+            Ok(Self {
+                #(#assign_stmt),*
+            })
         }
     }
 }
 
-fn deserialize_compatible(name: &Ident, fields: &[&Field]) -> TokenStream {
+fn deserialize_compatible(fields: &[&Field]) -> TokenStream {
     let pattern_item = fields.iter().enumerate().map(|(index, field)| {
         let ty = &field.ty;
-        let name = &field.ident;
+        let var_name = create_private_field_name(field);
         quote! {
             #index => {
-                result.#name = <#ty as fury_core::serializer::Serializer>::deserialize(context)?
+                #var_name = Some(<#ty as fury_core::serializer::Serializer>::deserialize(context)?);
             }
         }
     });
+    let bind: Vec<TokenStream> = bind(fields);
+    let create: Vec<TokenStream> = create(fields);
     quote! {
         let ref_flag = context.reader.i8();
         if ref_flag == (fury_core::types::RefFlag::NotNullValue as i8) || ref_flag == (fury_core::types::RefFlag::RefValue as i8) {
-            let mut result = Self::default();
             let meta_index = context.reader.i16() as usize;
             let meta = context.get_meta(meta_index).clone();
             let fields = meta.get_field_info();
-            // read tag string
-            context.read_tag()?;
-            // read tag hash
-            let hash = context.reader.u32();
-            let expected = #name::fury_hash();
-            if(hash != expected) {
-                return Err(fury_core::error::Error::StructHash{ expected, actial: hash })
-            }
+            #(#bind)*
             for (idx, _field_info) in fields.iter().enumerate() {
                 match idx {
                     #(#pattern_item),*
                     _ => {
-                        panic!("not implement yet")
+                        panic!("not implement yet");
                     }
                 }
             }
-            Ok(result)
+            Ok(Self {
+                #(#create),*
+            })
         } else if ref_flag == (fury_core::types::RefFlag::Null as i8) {
             Err(fury_core::error::Error::Null)
         } else if ref_flag == (fury_core::types::RefFlag::Ref as i8) {
@@ -89,9 +107,10 @@ fn deserialize_compatible(name: &Ident, fields: &[&Field]) -> TokenStream {
     }
 }
 
-pub fn gen(name: &Ident, fields: &[&Field]) -> TokenStream {
-    let read_token_stream = read(name, fields);
-    let compatible_token_stream = deserialize_compatible(name, fields);
+pub fn gen(fields: &[&Field]) -> TokenStream {
+    let read_token_stream = read(fields);
+    let compatible_token_stream = deserialize_compatible(fields);
+
     quote! {
         fn deserialize(context: &mut fury_core::resolver::context::ReadContext) -> Result<Self, fury_core::error::Error> {
             match context.get_fury().get_mode() {

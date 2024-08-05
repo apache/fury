@@ -19,18 +19,43 @@ use chrono::{DateTime, NaiveDate, NaiveDateTime};
 use fury_core::fury::Fury;
 use fury_core::types::Mode;
 use fury_derive::Fury;
+use std::any::Any;
 use std::collections::HashMap;
+
+#[test]
+fn any() {
+    #[derive(Fury, Debug)]
+    struct Animal {
+        f3: String,
+    }
+
+    #[derive(Fury, Debug)]
+    struct Person {
+        f1: Box<dyn Any>,
+    }
+
+    let person = Person {
+        f1: Box::new(Animal {
+            f3: String::from("hello"),
+        }),
+    };
+
+    let mut fury = Fury::default();
+    fury.register::<Animal>(999);
+    fury.register::<Person>(1000);
+    let bin = fury.serialize(&person);
+    let obj: Person = fury.deserialize(&bin).expect("");
+    assert_eq!(true, obj.f1.is::<Animal>())
+}
 
 #[test]
 fn complex_struct() {
     #[derive(Fury, Debug, PartialEq, Default)]
-    #[tag("example.foo2")]
     struct Animal {
         category: String,
     }
 
     #[derive(Fury, Debug, PartialEq, Default)]
-    #[tag("example.foo")]
     struct Person {
         c1: Vec<u8>,  // binary
         c2: Vec<i16>, // primitive array
@@ -66,7 +91,10 @@ fn complex_struct() {
         c5: 2.0,
         c6: 4.0,
     };
-    let fury = Fury::default().mode(Mode::Compatible);
+    let mut fury = Fury::default().mode(Mode::Compatible);
+    fury.register::<Person>(999);
+    fury.register::<Animal>(899);
+
     let bin: Vec<u8> = fury.serialize(&person);
     let obj: Person = fury.deserialize(&bin).expect("should success");
     assert_eq!(person, obj);
@@ -75,13 +103,11 @@ fn complex_struct() {
 #[test]
 fn encode_to_obin() {
     #[derive(Fury, Debug, PartialEq, Default)]
-    #[tag("example.foo2")]
     struct Animal {
         category: String,
     }
 
     #[derive(Fury, Debug, PartialEq, Default)]
-    #[tag("example.ComplexObject")]
     struct Person {
         f1: String,
         f2: HashMap<String, i8>,
@@ -93,7 +119,9 @@ fn encode_to_obin() {
         f8: f64,
         f10: HashMap<i32, f64>,
     }
-    let fury = Fury::default();
+    let mut fury = Fury::default();
+    fury.register::<Person>(999);
+    fury.register::<Animal>(899);
     let bin: Vec<u8> = fury.serialize(&Person {
         f1: "Hello".to_string(),
         f2: HashMap::from([("hello1".to_string(), 1), ("hello2".to_string(), 2)]),
