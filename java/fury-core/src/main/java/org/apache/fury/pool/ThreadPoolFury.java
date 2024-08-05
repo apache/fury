@@ -279,6 +279,9 @@ public class ThreadPoolFury extends AbstractThreadSafeFury {
 
   @Override
   public void setClassLoader(ClassLoader classLoader, LoaderBinding.StagingType stagingType) {
+    if (classLoader == null) {
+      classLoader = Fury.class.getClassLoader();
+    }
     furyPooledObjectFactory.setClassLoader(classLoader, stagingType);
   }
 

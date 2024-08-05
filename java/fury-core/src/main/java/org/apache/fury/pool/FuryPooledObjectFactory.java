@@ -84,6 +84,9 @@ public class FuryPooledObjectFactory {
   public ClassLoaderFuryPooled getPooledCache() {
     try {
       ClassLoader classLoader = classLoaderLocal.get();
+      if (classLoader == null) {
+        classLoader = Fury.class.getClassLoader();
+      }
       ClassLoaderFuryPooled classLoaderFuryPooled =
           classLoaderFuryPooledCache.getIfPresent(classLoader);
       if (classLoaderFuryPooled == null) {

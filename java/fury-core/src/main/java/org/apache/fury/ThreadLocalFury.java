@@ -257,6 +257,9 @@ public class ThreadLocalFury extends AbstractThreadSafeFury {
 
   @Override
   public void setClassLoader(ClassLoader classLoader, StagingType stagingType) {
+    if (classLoader == null) {
+      classLoader = Fury.class.getClassLoader();
+    }
     bindingThreadLocal.get().setClassLoader(classLoader, stagingType);
   }
 
