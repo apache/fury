@@ -15,16 +15,16 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use fury_meta::derive_serializer;
 use fury_row::derive_row;
 use proc_macro::TokenStream;
 use syn::{parse_macro_input, DeriveInput};
 
-mod fury_meta;
 mod fury_row;
+mod object;
+mod util;
 
 #[proc_macro_derive(Fury, attributes(tag))]
-pub fn proc_macro_derive_fury_meta(input: proc_macro::TokenStream) -> TokenStream {
+pub fn proc_macro_derive_fury_object(input: proc_macro::TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     let tag = input
         .attrs
@@ -38,7 +38,7 @@ pub fn proc_macro_derive_fury_meta(input: proc_macro::TokenStream) -> TokenStrea
             panic!("tag should be string")
         }
     };
-    derive_serializer(&input, &tag)
+    object::derive_serializer(&input, &tag)
 }
 
 #[proc_macro_derive(FuryRow)]

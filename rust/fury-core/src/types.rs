@@ -16,6 +16,7 @@
 // under the License.
 
 use crate::error::Error;
+use num_enum::TryFromPrimitive;
 use std::mem;
 
 #[allow(dead_code)]
@@ -24,6 +25,8 @@ pub enum StringFlag {
     UTF8 = 1,
 }
 
+#[derive(TryFromPrimitive)]
+#[repr(i8)]
 pub enum RefFlag {
     Null = -3,
     // Ref indicates that object is a not-null value.
@@ -35,7 +38,8 @@ pub enum RefFlag {
     RefValue = 0,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, TryFromPrimitive)]
+#[repr(i16)]
 pub enum FieldType {
     BOOL = 1,
     UINT8 = 2,
@@ -140,6 +144,7 @@ pub enum Language {
     Rust = 6,
 }
 
+#[derive(PartialEq)]
 pub enum Mode {
     SchemaConsistent,
     Compatible,

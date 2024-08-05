@@ -27,4 +27,3 @@ fury-core = { path = "../fury-core" }
 fury-derive = { path = "../fury-derive" }
 
 chrono = "0.4"
-lazy_static = { version = "1.4" }

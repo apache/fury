@@ -15,11 +15,9 @@
 // specific language governing permissions and limitations
 // under the License.
 
-mod meta_store;
 mod meta_string;
 mod string_util;
 mod type_meta;
 
-pub use meta_store::{MetaReaderStore, MetaWriterStore};
 pub use meta_string::{Encoding, MetaString, MetaStringDecoder, MetaStringEncoder};
 pub use type_meta::{FieldInfo, TypeMeta};
