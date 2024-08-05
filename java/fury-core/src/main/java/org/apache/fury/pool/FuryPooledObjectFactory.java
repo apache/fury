@@ -21,6 +21,8 @@ package org.apache.fury.pool;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+
+import java.net.URLClassLoader;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -50,7 +52,13 @@ public class FuryPooledObjectFactory {
 
   /** ThreadLocal: ClassLoader. */
   private final ThreadLocal<ClassLoader> classLoaderLocal =
-      ThreadLocal.withInitial(() -> Thread.currentThread().getContextClassLoader());
+      ThreadLocal.withInitial(() -> {
+        ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        if (loader == null) {
+          loader = Fury.class.getClassLoader();
+        }
+        return loader;
+      });
 
   /**
    * Dynamic capacity expansion and contraction The user sets the minimum number of object pools.
@@ -84,9 +92,7 @@ public class FuryPooledObjectFactory {
   public ClassLoaderFuryPooled getPooledCache() {
     try {
       ClassLoader classLoader = classLoaderLocal.get();
-      if (classLoader == null) {
-        classLoader = Fury.class.getClassLoader();
-      }
+      assert classLoader != null;
       ClassLoaderFuryPooled classLoaderFuryPooled =
           classLoaderFuryPooledCache.getIfPresent(classLoader);
       if (classLoaderFuryPooled == null) {
