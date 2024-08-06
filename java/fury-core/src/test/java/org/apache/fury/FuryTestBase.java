@@ -264,6 +264,12 @@ public abstract class FuryTestBase {
     return newObj;
   }
 
+  public static void copyCheck(Fury fury, Object obj) {
+    Object copy = fury.copy(obj);
+    Assert.assertEquals(obj, copy);
+    Assert.assertNotSame(obj, copy);
+  }
+
   public static void roundCheck(Fury fury1, Fury fury2, Object o) {
     roundCheck(fury1, fury2, o, Function.identity());
   }

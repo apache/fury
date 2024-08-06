@@ -149,6 +149,14 @@ public class ChildContainerSerializers {
       readAndSetFields(buffer, collection, slotsSerializers);
       return collection;
     }
+
+    @Override
+    public T copy(T originCollection) {
+      if (slotsSerializers.length == 0) {
+        return super.copy(originCollection);
+      }
+      return (T) slotsSerializers[0].copy(originCollection);
+    }
   }
 
   public static final class ChildArrayListSerializer<T extends ArrayList>
@@ -198,6 +206,14 @@ public class ChildContainerSerializers {
       Map map = super.newMap(buffer);
       readAndSetFields(buffer, map, slotsSerializers);
       return map;
+    }
+
+    @Override
+    public T copy(T originMap) {
+      if (slotsSerializers.length == 0) {
+        return super.copy(originMap);
+      }
+      return (T) slotsSerializers[0].copy(originMap);
     }
   }
 
