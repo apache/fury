@@ -79,6 +79,21 @@ public class CollectionSerializer<T extends Collection> extends AbstractCollecti
     }
   }
 
+  public void copyElements(T originCollection, Object[] elements) {
+    int index = 0;
+    ClassResolver classResolver = fury.getClassResolver();
+    for (Object element : originCollection) {
+      if (element != null) {
+        ClassInfo classInfo =
+            classResolver.getClassInfo(element.getClass(), elementClassInfoHolder);
+        if (!classInfo.getSerializer().isImmutable()) {
+          element = fury.copyObject(element, classInfo.getClassId());
+        }
+      }
+      elements[index++] = element;
+    }
+  }
+
   @Override
   public T read(MemoryBuffer buffer) {
     Collection collection = newCollection(buffer);
