@@ -103,6 +103,13 @@ public class SynchronizedSerializersTest extends FuryTestBase {
     assertEquals(((CollectionFields) (newObj)).toCanEqual(), obj.toCanEqual());
   }
 
+  @Test(dataProvider = "furyCopyConfig")
+  public void testCollectionFieldSerializersCopy(Fury fury) {
+    CollectionFields obj = createCollectionFields();
+    Object newObj = fury.copy(obj);
+    assertEquals(((CollectionFields) (newObj)).toCanEqual(), obj.toCanEqual());
+  }
+
   public static CollectionFields createCollectionFields() {
     CollectionFields obj = new CollectionFields();
     Collection<Integer> collection = Collections.synchronizedCollection(Arrays.asList(1, 2));
