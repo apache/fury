@@ -273,6 +273,12 @@ public class ReplaceResolveSerializer extends Serializer {
   }
 
   @Override
+  public Object copy(Object value) {
+    Serializer serializer = classClassInfoHolderMap.get(value.getClass()).objectSerializer;
+    return fury.copyObject(value, serializer);
+  }
+
+  @Override
   public Object read(MemoryBuffer buffer) {
     byte flag = buffer.readByte();
     RefResolver refResolver = this.refResolver;

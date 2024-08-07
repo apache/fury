@@ -134,6 +134,17 @@ public class GuavaCollectionSerializers {
     }
 
     @Override
+    public T copy(T originCollection) {
+      Object[] elements = new Object[originCollection.size()];
+      ImmutableList list = function.apply(elements);
+      if (needToCopyRef) {
+        fury.reference(originCollection, list);
+      }
+      copyElements(originCollection, elements);
+      return (T) list;
+    }
+
+    @Override
     public short getXtypeId() {
       return (short) -Type.LIST.getId();
     }
@@ -202,6 +213,14 @@ public class GuavaCollectionSerializers {
       SortedCollectionContainer data = (SortedCollectionContainer) collection;
       Object[] elements = data.elements;
       return (T) new ImmutableSortedSet.Builder<>(data.comparator).add(elements).build();
+    }
+
+    @Override
+    public T copy(T originCollection) {
+      Comparator comparator = fury.copyObject(originCollection.comparator());
+      Object[] elements = new Object[originCollection.size()];
+      copyElements(originCollection, elements);
+      return (T) new ImmutableSortedSet.Builder<>(comparator).add(elements).build();
     }
   }
 
