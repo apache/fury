@@ -45,6 +45,13 @@ public class BufferSerializers {
     }
 
     @Override
+    public ByteBuffer copy(ByteBuffer value) {
+      ByteBuffer dst = ByteBuffer.allocate(value.capacity());
+      dst.put(value);
+      return dst;
+    }
+
+    @Override
     public ByteBuffer read(MemoryBuffer buffer) {
       MemoryBuffer newBuffer = fury.readBufferObject(buffer);
       int readerIndex = newBuffer.readerIndex();
