@@ -256,6 +256,6 @@ impl<'bf> Reader<'bf> {
     }
 
     pub fn aligned<T>(&self) -> bool {
-        unsafe { (self.bf.as_ptr().add(self.cursor) as usize) % align_of::<T>() == 0 }
+        unsafe { (self.bf.as_ptr().add(self.cursor) as usize) % std::mem::align_of::<T>() == 0 }
     }
 }
