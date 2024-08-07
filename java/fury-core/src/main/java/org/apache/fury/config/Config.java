@@ -57,6 +57,7 @@ public class Config implements Serializable {
   private final boolean asyncCompilationEnabled;
   private final boolean deserializeNonexistentClass;
   private final boolean scalaOptimizationEnabled;
+  private final boolean chunkSerializeMapEnabled;
   private transient int configHash;
   private final boolean deserializeNonexistentEnumValueAsNull;
 
@@ -91,6 +92,7 @@ public class Config implements Serializable {
     asyncCompilationEnabled = builder.asyncCompilationEnabled;
     scalaOptimizationEnabled = builder.scalaOptimizationEnabled;
     deserializeNonexistentEnumValueAsNull = builder.deserializeNonexistentEnumValueAsNull;
+    chunkSerializeMapEnabled = builder.chunkSerializeMapEnabled;
   }
 
   public Language getLanguage() {
@@ -241,6 +243,10 @@ public class Config implements Serializable {
    */
   public boolean isAsyncCompilationEnabled() {
     return asyncCompilationEnabled;
+  }
+
+  public boolean isChunkSerializeMapEnabled() {
+    return chunkSerializeMapEnabled;
   }
 
   /** Whether enable scala-specific serialization optimization. */
