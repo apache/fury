@@ -45,7 +45,7 @@ fn any() {
     fury.register::<Person>(1000);
     let bin = fury.serialize(&person);
     let obj: Person = fury.deserialize(&bin).expect("");
-    assert_eq!(true, obj.f1.is::<Animal>())
+    assert!(obj.f1.is::<Animal>())
 }
 
 #[test]
