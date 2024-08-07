@@ -238,6 +238,10 @@ impl<'bf> Reader<'bf> {
         self.move_next(len as usize);
     }
 
+    pub fn slice(&self) -> &[u8] {
+        self.bf
+    }
+
     pub fn bytes(&mut self, len: usize) -> &'bf [u8] {
         let result = &self.bf[self.cursor..self.cursor + len];
         self.move_next(len);

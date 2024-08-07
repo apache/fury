@@ -16,23 +16,23 @@
 // under the License.
 
 use crate::error::Error;
-use crate::read_state::ReadState;
+use crate::resolver::context::ReadContext;
+use crate::resolver::context::WriteContext;
 use crate::serializer::Serializer;
 use crate::types::{FieldType, FuryGeneralList, RefFlag};
-use crate::write_state::WriteState;
 
 impl<T: Serializer> Serializer for Option<T> {
-    fn read(deserializer: &mut ReadState) -> Result<Self, Error> {
-        Ok(Some(T::read(deserializer)?))
+    fn read(context: &mut ReadContext) -> Result<Self, Error> {
+        Ok(Some(T::read(context)?))
     }
 
-    fn deserialize(deserializer: &mut ReadState) -> Result<Self, Error> {
+    fn deserialize(context: &mut ReadContext) -> Result<Self, Error> {
         // ref flag
-        let ref_flag = deserializer.reader.i8();
+        let ref_flag = context.reader.i8();
 
         if ref_flag == (RefFlag::NotNullValue as i8) || ref_flag == (RefFlag::RefValue as i8) {
             // type_id
-            let type_id = deserializer.reader.i16();
+            let type_id = context.reader.i16();
 
             if type_id != T::ty() as i16 {
                 Err(Error::FieldType {
@@ -40,7 +40,7 @@ impl<T: Serializer> Serializer for Option<T> {
                     actial: type_id,
                 })
             } else {
-                Ok(Some(T::read(deserializer)?))
+                Ok(Some(T::read(context)?))
             }
         } else if ref_flag == (RefFlag::Null as i8) {
             Ok(None)
@@ -51,26 +51,26 @@ impl<T: Serializer> Serializer for Option<T> {
         }
     }
 
-    fn write(&self, serializer: &mut WriteState) {
+    fn write(&self, context: &mut WriteContext) {
         if let Some(v) = self {
-            T::write(v, serializer)
+            T::write(v, context)
         } else {
             unreachable!("write should be call by serialize")
         }
     }
 
-    fn serialize(&self, serializer: &mut WriteState) {
+    fn serialize(&self, context: &mut WriteContext) {
         match self {
             Some(v) => {
                 // ref flag
-                serializer.writer.i8(RefFlag::NotNullValue as i8);
+                context.writer.i8(RefFlag::NotNullValue as i8);
                 // type
-                serializer.writer.i16(T::ty() as i16);
+                context.writer.i16(T::ty() as i16);
 
-                v.write(serializer);
+                v.write(context);
             }
             None => {
-                serializer.writer.i8(RefFlag::Null as i8);
+                context.writer.i8(RefFlag::Null as i8);
             }
         }
     }

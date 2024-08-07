@@ -15,6 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
+use crate::util::EPOCH;
 use crate::{buffer::Writer, error::Error};
 use byteorder::{ByteOrder, LittleEndian};
 use chrono::{DateTime, Days, NaiveDate, NaiveDateTime};
@@ -84,15 +85,11 @@ impl<'a> Row<'a> for bool {
     }
 }
 
-lazy_static::lazy_static!(
-    static ref EPOCH: NaiveDate = NaiveDate::from_ymd_opt(1970, 1, 1).unwrap();
-);
-
 impl<'a> Row<'a> for NaiveDate {
     type ReadResult = Result<NaiveDate, Error>;
 
     fn write(v: &Self, writer: &mut Writer) {
-        let days_since_epoch = v.signed_duration_since(*EPOCH).num_days();
+        let days_since_epoch = v.signed_duration_since(EPOCH).num_days();
         writer.u32(days_since_epoch as u32);
     }
 

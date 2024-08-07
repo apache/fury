@@ -16,33 +16,33 @@
 // under the License.
 
 use crate::error::Error;
-use crate::read_state::ReadState;
+use crate::resolver::context::ReadContext;
+use crate::resolver::context::WriteContext;
 use crate::serializer::Serializer;
 use crate::types::{FieldType, FuryGeneralList, SIZE_OF_REF_AND_TYPE};
-use crate::write_state::WriteState;
 use std::mem;
 
 impl<T> Serializer for Vec<T>
 where
     T: Serializer + FuryGeneralList,
 {
-    fn write(&self, serializer: &mut WriteState) {
-        serializer.writer.var_int32(self.len() as i32);
-        serializer
+    fn write(&self, context: &mut WriteContext) {
+        context.writer.var_int32(self.len() as i32);
+        context
             .writer
             .reserve((<Self as Serializer>::reserved_space() + SIZE_OF_REF_AND_TYPE) * self.len());
         for item in self.iter() {
-            item.serialize(serializer);
+            item.serialize(context);
         }
     }
 
-    fn read(deserializer: &mut ReadState) -> Result<Self, Error> {
+    fn read(context: &mut ReadContext) -> Result<Self, Error> {
         // length
-        let len = deserializer.reader.var_int32();
+        let len = context.reader.var_int32();
         // value
         let mut result = Vec::new();
         for _ in 0..len {
-            result.push(T::deserialize(deserializer)?);
+            result.push(T::deserialize(context)?);
         }
         Ok(result)
     }

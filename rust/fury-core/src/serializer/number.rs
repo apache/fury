@@ -16,10 +16,10 @@
 // under the License.
 
 use crate::error::Error;
-use crate::read_state::ReadState;
+use crate::resolver::context::ReadContext;
+use crate::resolver::context::WriteContext;
 use crate::serializer::Serializer;
 use crate::types::{FieldType, FuryGeneralList};
-use crate::write_state::WriteState;
 
 #[allow(dead_code)]
 fn to_u8_slice<T>(slice: &[T]) -> &[u8] {
@@ -30,12 +30,12 @@ fn to_u8_slice<T>(slice: &[T]) -> &[u8] {
 macro_rules! impl_num_serializer {
     ($name: ident, $ty:tt, $field_type: expr) => {
         impl Serializer for $ty {
-            fn write(&self, serializer: &mut WriteState) {
-                serializer.writer.$name(*self);
+            fn write(&self, context: &mut WriteContext) {
+                context.writer.$name(*self);
             }
 
-            fn read(deserializer: &mut ReadState) -> Result<Self, Error> {
-                Ok(deserializer.reader.$name())
+            fn read(context: &mut ReadContext) -> Result<Self, Error> {
+                Ok(context.reader.$name())
             }
 
             fn reserved_space() -> usize {

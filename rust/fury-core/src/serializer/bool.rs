@@ -15,12 +15,27 @@
 // specific language governing permissions and limitations
 // under the License.
 
-pub mod buffer;
-pub mod error;
-pub mod fury;
-pub mod meta;
-pub mod resolver;
-pub mod row;
-pub mod serializer;
-pub mod types;
-pub mod util;
+use crate::error::Error;
+use crate::resolver::context::ReadContext;
+use crate::resolver::context::WriteContext;
+use crate::serializer::Serializer;
+use crate::types::FieldType;
+use std::mem;
+
+impl Serializer for bool {
+    fn reserved_space() -> usize {
+        mem::size_of::<i32>()
+    }
+
+    fn write(&self, context: &mut WriteContext) {
+        context.writer.u8(if *self { 1 } else { 0 });
+    }
+
+    fn read(context: &mut ReadContext) -> Result<Self, Error> {
+        Ok(context.reader.u8() == 1)
+    }
+
+    fn ty() -> FieldType {
+        FieldType::BOOL
+    }
+}
