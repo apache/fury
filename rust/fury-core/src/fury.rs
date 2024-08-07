@@ -17,10 +17,10 @@
 
 use crate::buffer::{Reader, Writer};
 use crate::error::Error;
-use crate::read_state::ReadState;
+use crate::resolver::context::ReadContext;
+use crate::resolver::context::WriteContext;
 use crate::serializer::Serializer;
-use crate::types::Mode;
-use crate::write_state::WriteState;
+use crate::types::{config_flags, Language, Mode, SIZE_OF_REF_AND_TYPE};
 
 pub struct Fury {
     mode: Mode,
@@ -29,32 +29,57 @@ pub struct Fury {
 impl Default for Fury {
     fn default() -> Self {
         Fury {
-            mode: Mode::Compatible,
+            mode: Mode::SchemaConsistent,
         }
     }
 }
 
 impl Fury {
-    pub fn mode(&mut self, mode: Mode) {
+    pub fn mode(mut self, mode: Mode) -> Self {
         self.mode = mode;
+        self
     }
 
     pub fn get_mode(&self) -> &Mode {
         &self.mode
     }
 
+    pub fn write_head<T: Serializer>(&self, writer: &mut Writer) -> usize {
+        const HEAD_SIZE: usize = 10;
+        writer.reserve(<T as Serializer>::reserved_space() + SIZE_OF_REF_AND_TYPE + HEAD_SIZE);
+        let mut bitmap = 0;
+        bitmap |= config_flags::IS_LITTLE_ENDIAN_FLAG;
+        bitmap |= config_flags::IS_CROSS_LANGUAGE_FLAG;
+        writer.u8(bitmap);
+        writer.u8(Language::Rust as u8);
+        writer.skip(4); // meta offset
+        writer.len() - 4
+    }
+
+    fn read_head(&self, reader: &mut Reader) -> Result<u32, Error> {
+        let _bitmap = reader.u8();
+        let _language: Language = reader.u8().try_into()?;
+        Ok(reader.u32())
+    }
+
     pub fn deserialize<T: Serializer>(&self, bf: &[u8]) -> Result<T, Error> {
-        let reader = Reader::new(bf);
-        let mut deserializer = ReadState::new(self, reader);
-        deserializer.head()?;
-        <T as Serializer>::deserialize(&mut deserializer)
+        let mut reader = Reader::new(bf);
+        let meta_offset = self.read_head(&mut reader)?;
+        let mut context = ReadContext::new(self, reader);
+        if meta_offset > 0 {
+            context.load_meta(meta_offset as usize);
+        }
+        <T as Serializer>::deserialize(&mut context)
     }
 
     pub fn serialize<T: Serializer>(&self, record: &T) -> Vec<u8> {
         let mut writer = Writer::default();
-        let mut serializer = WriteState::new(self, &mut writer);
-        serializer.head::<T>();
-        <T as Serializer>::serialize(record, &mut serializer);
+        let meta_offset = self.write_head::<T>(&mut writer);
+        let mut context = WriteContext::new(self, &mut writer);
+        <T as Serializer>::serialize(record, &mut context);
+        if Mode::Compatible == self.mode {
+            context.write_meta(meta_offset);
+        }
         writer.dump()
     }
 }

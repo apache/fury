@@ -52,6 +52,9 @@ pub enum Error {
     #[error("Unsupported Language Code; receive: {code:?}")]
     UnsupportedLanguageCode { code: u8 },
 
+    #[error("Unsupported encoding of field name in type meta; receive: {code:?}")]
+    UnsupportedTypeMetaFieldNameEncoding { code: u8 },
+
     #[error("encoded_data cannot be empty")]
     EncodedDataEmpty,
 

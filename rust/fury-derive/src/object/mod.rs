@@ -15,12 +15,9 @@
 // specific language governing permissions and limitations
 // under the License.
 
-pub mod buffer;
-pub mod error;
-pub mod fury;
-pub mod meta;
-pub mod resolver;
-pub mod row;
-pub mod serializer;
-pub mod types;
-pub mod util;
+mod misc;
+mod read;
+mod serializer;
+mod write;
+
+pub use serializer::derive_serializer;

@@ -17,18 +17,19 @@
 
 use chrono::{DateTime, NaiveDate, NaiveDateTime};
 use fury_core::fury::Fury;
+use fury_core::types::Mode;
 use fury_derive::Fury;
 use std::collections::HashMap;
 
 #[test]
 fn complex_struct() {
-    #[derive(Fury, Debug, PartialEq)]
+    #[derive(Fury, Debug, PartialEq, Default)]
     #[tag("example.foo2")]
     struct Animal {
         category: String,
     }
 
-    #[derive(Fury, Debug, PartialEq)]
+    #[derive(Fury, Debug, PartialEq, Default)]
     #[tag("example.foo")]
     struct Person {
         c1: Vec<u8>,  // binary
@@ -65,7 +66,7 @@ fn complex_struct() {
         c5: 2.0,
         c6: 4.0,
     };
-    let fury = Fury::default();
+    let fury = Fury::default().mode(Mode::Compatible);
     let bin: Vec<u8> = fury.serialize(&person);
     let obj: Person = fury.deserialize(&bin).expect("should success");
     assert_eq!(person, obj);
@@ -73,13 +74,13 @@ fn complex_struct() {
 
 #[test]
 fn encode_to_obin() {
-    #[derive(Fury, Debug, PartialEq)]
+    #[derive(Fury, Debug, PartialEq, Default)]
     #[tag("example.foo2")]
     struct Animal {
         category: String,
     }
 
-    #[derive(Fury, Debug, PartialEq)]
+    #[derive(Fury, Debug, PartialEq, Default)]
     #[tag("example.ComplexObject")]
     struct Person {
         f1: String,

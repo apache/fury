@@ -16,35 +16,40 @@
 // under the License.
 
 use crate::error::Error;
-use crate::read_state::ReadState;
+use crate::resolver::context::ReadContext;
+use crate::resolver::context::WriteContext;
 use crate::serializer::Serializer;
 use crate::types::{FieldType, FuryGeneralList, SIZE_OF_REF_AND_TYPE};
-use crate::write_state::WriteState;
-use std::collections::HashSet;
+use std::collections::HashMap;
 use std::mem;
 
-impl<T: Serializer + Eq + std::hash::Hash> Serializer for HashSet<T> {
-    fn write(&self, serializer: &mut WriteState) {
+impl<T1: Serializer + Eq + std::hash::Hash, T2: Serializer> Serializer for HashMap<T1, T2> {
+    fn write(&self, context: &mut WriteContext) {
         // length
-        serializer.writer.i32(self.len() as i32);
+        context.writer.var_int32(self.len() as i32);
 
-        let reserved_space =
-            (<T as Serializer>::reserved_space() + SIZE_OF_REF_AND_TYPE) * self.len();
-        serializer.writer.reserve(reserved_space);
+        let reserved_space = (<T1 as Serializer>::reserved_space() + SIZE_OF_REF_AND_TYPE)
+            * self.len()
+            + (<T2 as Serializer>::reserved_space() + SIZE_OF_REF_AND_TYPE) * self.len();
+        context.writer.reserve(reserved_space);
 
         // key-value
         for i in self.iter() {
-            i.serialize(serializer);
+            i.0.serialize(context);
+            i.1.serialize(context);
         }
     }
 
-    fn read(deserializer: &mut ReadState) -> Result<Self, Error> {
+    fn read(context: &mut ReadContext) -> Result<Self, Error> {
         // length
-        let len = deserializer.reader.var_int32();
-        let mut result = HashSet::new();
+        let len = context.reader.var_int32();
+        let mut result = HashMap::new();
         // key-value
         for _ in 0..len {
-            result.insert(<T as Serializer>::deserialize(deserializer)?);
+            result.insert(
+                <T1 as Serializer>::deserialize(context)?,
+                <T2 as Serializer>::deserialize(context)?,
+            );
         }
         Ok(result)
     }
@@ -54,8 +59,8 @@ impl<T: Serializer + Eq + std::hash::Hash> Serializer for HashSet<T> {
     }
 
     fn ty() -> FieldType {
-        FieldType::FurySet
+        FieldType::MAP
     }
 }
 
-impl<T: Serializer + Eq + std::hash::Hash> FuryGeneralList for HashSet<T> {}
+impl<T1: Serializer + Eq + std::hash::Hash, T2: Serializer> FuryGeneralList for HashMap<T1, T2> {}
