@@ -22,6 +22,7 @@ package org.apache.fury.serializer.collection;
 import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMap.Builder;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.ImmutableSortedSet;
@@ -34,10 +35,13 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.function.Function;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
+import org.apache.fury.resolver.ClassInfo;
+import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.type.Type;
 import org.apache.fury.util.unsafe._JDKAccess;
 
@@ -91,6 +95,13 @@ public class GuavaCollectionSerializers {
     public T xnewInstance(Collection collection) {
       return (T) ImmutableList.copyOf(collection);
     }
+
+    @Override
+    public T copy(T originCollection) {
+      Object[] elements = new Object[originCollection.size()];
+      copyElements(originCollection, elements);
+      return (T) ImmutableList.copyOf(elements);
+    }
   }
 
   private static final String pkg = "com.google.common.collect";
@@ -136,12 +147,8 @@ public class GuavaCollectionSerializers {
     @Override
     public T copy(T originCollection) {
       Object[] elements = new Object[originCollection.size()];
-      ImmutableList list = function.apply(elements);
-      if (needToCopyRef) {
-        fury.reference(originCollection, list);
-      }
       copyElements(originCollection, elements);
-      return (T) list;
+      return (T) function.apply(elements);
     }
 
     @Override
@@ -183,6 +190,13 @@ public class GuavaCollectionSerializers {
     @Override
     protected T xnewInstance(Collection collection) {
       return (T) ImmutableSet.copyOf(collection);
+    }
+
+    @Override
+    public T copy(T originCollection) {
+      Object[] elements = new Object[originCollection.size()];
+      copyElements(originCollection, elements);
+      return (T) ImmutableSet.copyOf(elements);
     }
   }
 
@@ -241,13 +255,10 @@ public class GuavaCollectionSerializers {
     }
 
     @Override
-    public Map newMap(Map map) {
-      return new MapContainer(map.size());
-    }
-
-    @Override
-    public T onMapCopy(Map map) {
-      return onMapRead(map);
+    public T copy(T originMap) {
+      Builder builder = makeBuilder(originMap.size());
+      copyEntry(originMap, builder);
+      return (T) builder.build();
     }
 
     @Override
@@ -371,14 +382,11 @@ public class GuavaCollectionSerializers {
     }
 
     @Override
-    public Map newMap(Map map) {
-      Comparator comparator = fury.copyObject(((ImmutableSortedMap) map).comparator());
-      return new SortedMapContainer<>(comparator, map.size());
-    }
-
-    @Override
-    public T onMapCopy(Map map) {
-      return onMapRead(map);
+    public T copy(T originMap) {
+      Comparator comparator = fury.copyObject(originMap.comparator());
+      ImmutableSortedMap.Builder builder = new ImmutableSortedMap.Builder(comparator);
+      copyEntry(originMap, builder);
+      return (T) builder.build();
     }
 
     @Override

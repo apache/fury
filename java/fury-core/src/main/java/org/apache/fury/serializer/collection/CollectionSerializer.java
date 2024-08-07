@@ -87,7 +87,7 @@ public class CollectionSerializer<T extends Collection> extends AbstractCollecti
         ClassInfo classInfo =
             classResolver.getClassInfo(element.getClass(), elementClassInfoHolder);
         if (!classInfo.getSerializer().isImmutable()) {
-          element = fury.copyObject(element, classInfo.getClassId());
+          element = fury.copyObject(element, classInfo.getSerializer());
         }
       }
       elements[index++] = element;

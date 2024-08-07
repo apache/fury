@@ -21,8 +21,10 @@ package org.apache.fury.serializer.collection;
 
 import static org.apache.fury.type.TypeUtils.MAP_TYPE;
 
+import com.google.common.collect.ImmutableMap.Builder;
 import java.lang.invoke.MethodHandle;
 import java.util.Map;
+import java.util.Map.Entry;
 import org.apache.fury.Fury;
 import org.apache.fury.collection.IdentityMap;
 import org.apache.fury.collection.Tuple2;
@@ -436,6 +438,28 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
         }
       }
       newMap.put(key, value);
+    }
+  }
+
+  protected <K, V> void copyEntry(Map<K, V> originMap, Builder<K, V> builder) {
+    ClassResolver classResolver = fury.getClassResolver();
+    for (Entry<K, V> entry : originMap.entrySet()) {
+      K key = entry.getKey();
+      if (key != null) {
+        ClassInfo classInfo = classResolver.getClassInfo(key.getClass(), keyClassInfoWriteCache);
+        if (!classInfo.getSerializer().isImmutable()) {
+          key = fury.copyObject(key, classInfo.getClassId());
+        }
+      }
+      V value = entry.getValue();
+      if (value != null) {
+        ClassInfo classInfo =
+            classResolver.getClassInfo(value.getClass(), valueClassInfoWriteCache);
+        if (!classInfo.getSerializer().isImmutable()) {
+          value = fury.copyObject(value, classInfo.getClassId());
+        }
+      }
+      builder.put(key, value);
     }
   }
 
