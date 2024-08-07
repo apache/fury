@@ -86,28 +86,6 @@ public class ChildContainerSerializersTest extends FuryTestBase {
     };
   }
 
-  @DataProvider(name = "furyCopyConfig")
-  public static Object[] furyCopyConfig() {
-    return new Object[][] {
-      {
-        builder()
-            .withRefCopy(true)
-            .withLanguage(Language.JAVA)
-            .withJdkClassSerializableCheck(false)
-            .withCodegen(false)
-            .build()
-      },
-      {
-        builder()
-            .withRefCopy(true)
-            .withLanguage(Language.JAVA)
-            .withJdkClassSerializableCheck(false)
-            .withCodegen(true)
-            .build()
-      },
-    };
-  }
-
   @Test(dataProvider = "furyConfig")
   public void testChildCollection(Fury fury) {
     List<Integer> data = ImmutableList.of(1, 2);

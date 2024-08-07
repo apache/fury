@@ -23,6 +23,7 @@ import static org.apache.fury.collection.Collections.ofArrayList;
 import static org.apache.fury.collection.Collections.ofHashMap;
 import static org.apache.fury.collection.Collections.ofHashSet;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertSame;
 
 import com.google.common.collect.ImmutableList;
@@ -55,16 +56,19 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.LongStream;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.apache.fury.Fury;
+import org.apache.fury.FuryCopyTest.A;
 import org.apache.fury.FuryTestBase;
 import org.apache.fury.config.Language;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.serializer.collection.CollectionSerializers.JDKCompatibleCollectionSerializer;
+import org.apache.fury.test.bean.Cyclic;
 import org.apache.fury.type.GenericType;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -85,6 +89,15 @@ public class CollectionSerializersTest extends FuryTestBase {
     serDeCheckSerializer(fury, Arrays.asList("a", "b", "c"), "ArraysAsList");
     serDeCheckSerializer(fury, new HashSet<>(data), "HashSet");
     serDeCheckSerializer(fury, new LinkedHashSet<>(data), "LinkedHashSet");
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testBasicList(Fury fury) {
+    List<Object> data = Arrays.asList(1, true, "test", Cyclic.create(true));
+    copyCheck(fury, new ArrayList<>(data));
+    copyCheck(fury, data);
+    copyCheck(fury, new HashSet<>(data));
+    copyCheck(fury, new LinkedHashSet<>(data));
   }
 
   @Test(dataProvider = "referenceTrackingConfig")
@@ -181,6 +194,53 @@ public class CollectionSerializersTest extends FuryTestBase {
     Assert.assertThrows(RuntimeException.class, () -> fury.deserialize(bytes2));
   }
 
+  @Test(dataProvider = "furyCopyConfig")
+  public void testSortedSet(Fury fury) {
+    AtomicInteger i = new AtomicInteger(1);
+    TreeSet<String> set =
+        new TreeSet<>(new TestComparator(i));
+
+    TreeSet<String> copy = fury.copy(set);
+
+    Comparator<? super String> comparator1 = set.comparator();
+    Comparator<? super String> comparator2 = copy.comparator();
+    Assert.assertEquals(comparator1, comparator2);
+    set.add("str11");
+    copy.add("str11");
+    Assert.assertEquals(copy, set);
+    Assert.assertNotSame(copy, set);
+    i.set(-1);
+    Assert.assertNotEquals(comparator1, comparator2);
+    set.add("str2");
+    copy.add("str2");
+    Assert.assertNotEquals(Arrays.toString(copy.toArray()), Arrays.toString(set.toArray()));
+    copy.add("str");
+    Assert.assertEquals(Arrays.toString(copy.toArray()), "[str, str2, str11]");
+  }
+
+  private class TestComparator implements Comparator<String> {
+    AtomicInteger i;
+
+    public TestComparator(AtomicInteger i) {
+      this.i = i;
+    }
+
+    @Override
+    public int compare(String s1, String s2) {
+      int delta = s1.length() - s2.length();
+      if (delta == i.get()) {
+        return s1.compareTo(s2);
+      } else {
+        return delta;
+      }
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      return ((TestComparator) obj).i.get() == this.i.get();
+    }
+  }
+
   @Test
   public void testEmptyCollection() {
     serDeCheckSerializer(getJavaFury(), Collections.EMPTY_LIST, "EmptyListSerializer");
@@ -188,10 +248,23 @@ public class CollectionSerializersTest extends FuryTestBase {
     serDeCheckSerializer(getJavaFury(), Collections.EMPTY_SET, "EmptySetSerializer");
   }
 
+  @Test(dataProvider = "furyCopyConfig")
+  public void testEmptyCollection(Fury fury) {
+    copyCheckWithoutSame(fury, Collections.EMPTY_LIST);
+    copyCheckWithoutSame(fury, Collections.emptySortedSet());
+    copyCheckWithoutSame(fury, Collections.EMPTY_SET);
+  }
+
   @Test
   public void testSingleCollection() {
     serDeCheckSerializer(getJavaFury(), Collections.singletonList(1), "SingletonList");
     serDeCheckSerializer(getJavaFury(), Collections.singleton(1), "SingletonSet");
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testSingleCollection(Fury fury) {
+    copyCheck(fury, Collections.singletonList(Cyclic.create(true)));
+    copyCheck(fury, Collections.singleton(Cyclic.create(true)));
   }
 
   @Test
@@ -202,16 +275,35 @@ public class CollectionSerializersTest extends FuryTestBase {
         "ConcurrentSkipListSet");
   }
 
+  @Test(dataProvider = "furyCopyConfig")
+  public void tesSkipList(Fury fury) {
+    copyCheck(fury, new ConcurrentSkipListSet<>(Arrays.asList("a", 1, Cyclic.create(true))));
+  }
+
   @Test
   public void tesVectorSerializer() {
     serDeCheckSerializer(
         getJavaFury(), new Vector<>(Arrays.asList("a", "b", "c")), "VectorSerializer");
   }
 
+  @Test(dataProvider = "furyCopyConfig")
+  public void tesVectorSerializer(Fury fury) {
+    copyCheck(fury, new Vector<>(Arrays.asList("a", 1, Cyclic.create(true))));
+  }
+
   @Test
   public void tesArrayDequeSerializer() {
     serDeCheckSerializer(
         getJavaFury(), new ArrayDeque<>(Arrays.asList("a", "b", "c")), "ArrayDeque");
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void tesArrayDequeSerializer(Fury fury) {
+    ImmutableList<Object> list = ImmutableList.of("a", 1, Cyclic.create(true));
+    ArrayDeque<Object> deque = new ArrayDeque<>(list);
+    ArrayDeque<Object> copy = fury.copy(deque);
+    Assert.assertEquals(ImmutableList.copyOf(copy), list);
+    Assert.assertNotSame(deque, copy);
   }
 
   public enum TestEnum {
@@ -242,6 +334,13 @@ public class CollectionSerializersTest extends FuryTestBase {
     // TODO test enum which has enums exceed 128.
   }
 
+  @Test(dataProvider = "furyCopyConfig")
+  public void tesEnumSetSerializer(Fury fury) {
+    copyCheck(fury, EnumSet.allOf(TestEnum.class));
+    copyCheck(fury, EnumSet.of(TestEnum.A));
+    copyCheck(fury, EnumSet.of(TestEnum.A, TestEnum.B));
+  }
+
   @Test
   public void tesBitSetSerializer() {
     serDe(getJavaFury(), BitSet.valueOf(LongStream.range(0, 2).toArray()));
@@ -258,12 +357,25 @@ public class CollectionSerializersTest extends FuryTestBase {
         CollectionSerializers.BitSetSerializer.class);
   }
 
+  @Test(dataProvider = "furyCopyConfig")
+  public void tesBitSetSerializer(Fury fury) {
+    copyCheck(fury, BitSet.valueOf(LongStream.range(0, 2).toArray()));
+    copyCheck(fury, BitSet.valueOf(LongStream.range(0, 128).toArray()));
+  }
+
   @Test
   public void tesPriorityQueueSerializer() {
     serDe(getJavaFury(), new PriorityQueue<>(Arrays.asList("a", "b", "c")));
     Assert.assertEquals(
         getJavaFury().getClassResolver().getSerializerClass(PriorityQueue.class),
         CollectionSerializers.PriorityQueueSerializer.class);
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void tesPriorityQueueSerializer(Fury fury) {
+    ImmutableList<String> list = ImmutableList.of("a", "b", "c");
+    PriorityQueue<String> copy = fury.copy(new PriorityQueue<>(list));
+    Assert.assertEquals(ImmutableList.copyOf(copy), list);
   }
 
   @Test
@@ -274,6 +386,13 @@ public class CollectionSerializersTest extends FuryTestBase {
     Assert.assertEquals(
         getJavaFury().getClassResolver().getSerializerClass(CopyOnWriteArrayList.class),
         CollectionSerializers.CopyOnWriteArrayListSerializer.class);
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testCopyOnWriteArrayList(Fury fury) {
+    final CopyOnWriteArrayList<Object> list =
+        new CopyOnWriteArrayList<>(new Object[] {"a", "b", Cyclic.create(true)});
+    copyCheck(fury, list);
   }
 
   @Test(dataProvider = "enableCodegen")
@@ -294,6 +413,15 @@ public class CollectionSerializersTest extends FuryTestBase {
         CollectionSerializers.SetFromMapSerializer.class);
   }
 
+  @Test(dataProvider = "furyCopyConfig")
+  public void testSetFromMap(Fury fury) {
+    final Set<Object> set = Collections.newSetFromMap(Maps.newConcurrentMap());
+    set.add("a");
+    set.add("b");
+    set.add(Cyclic.create(true));
+    copyCheck(fury, set);
+  }
+
   @Test
   public void testConcurrentMapKeySetViewMap() {
     final ConcurrentHashMap.KeySetView<Object, Boolean> set = ConcurrentHashMap.newKeySet();
@@ -304,6 +432,15 @@ public class CollectionSerializersTest extends FuryTestBase {
     Assert.assertEquals(
         getJavaFury().getClassResolver().getSerializerClass(set.getClass()),
         CollectionSerializers.ConcurrentHashMapKeySetView.class);
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testConcurrentMapKeySetViewMap(Fury fury) {
+    final ConcurrentHashMap.KeySetView<Object, Boolean> set = ConcurrentHashMap.newKeySet();
+    set.add("a");
+    set.add("b");
+    set.add(Cyclic.create(true));
+    copyCheck(fury, set);
   }
 
   @Test
@@ -331,6 +468,29 @@ public class CollectionSerializersTest extends FuryTestBase {
       queue.add(2);
       queue.add(3);
       assertEquals(new ArrayList<>(serDe(fury, queue)), new ArrayList<>(queue));
+    }
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testSerializeJavaBlockingQueue(Fury fury) {
+    {
+      ArrayBlockingQueue<Integer> queue = new ArrayBlockingQueue<>(10);
+      queue.add(1);
+      queue.add(2);
+      queue.add(3);
+      ArrayBlockingQueue<Integer> copy = fury.copy(queue);
+      Assert.assertEquals(Arrays.toString(copy.toArray()), "[1, 2, 3]");
+    }
+    {
+      // If reference tracking is off, deserialization will throw
+      // `java.lang.IllegalMonitorStateException`
+      // when using fury `ObjectStreamSerializer`, maybe some internal state are shared.
+      LinkedBlockingQueue<Integer> queue = new LinkedBlockingQueue<>(10);
+      queue.add(1);
+      queue.add(2);
+      queue.add(3);
+      LinkedBlockingQueue<Integer> copy = fury.copy(queue);
+      Assert.assertEquals(Arrays.toString(copy.toArray()), "[1, 2, 3]");
     }
   }
 
@@ -363,6 +523,15 @@ public class CollectionSerializersTest extends FuryTestBase {
     }
   }
 
+  @Test(dataProvider = "furyCopyConfig")
+  public void testSimpleBeanCollectionFieldsCopy(Fury fury) {
+    SimpleBeanCollectionFields obj = new SimpleBeanCollectionFields();
+    obj.list = new ArrayList<>();
+    obj.list.add("a");
+    obj.list.add("b");
+    Assert.assertEquals(fury.copy(obj).toString(), obj.toString());
+  }
+
   @Data
   @AllArgsConstructor
   public static class NotFinal {
@@ -381,6 +550,14 @@ public class CollectionSerializersTest extends FuryTestBase {
     container.list1 = ofArrayList(new NotFinal(1));
     container.map1 = ofHashMap("k", new NotFinal(2));
     serDeCheck(fury, container);
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testContainerCopy(Fury fury) {
+    Container container = new Container();
+    container.list1 = ofArrayList(new NotFinal(1));
+    container.map1 = ofHashMap("k", new NotFinal(2));
+    copyCheck(fury, container);
   }
 
   @Data
@@ -476,6 +653,12 @@ public class CollectionSerializersTest extends FuryTestBase {
     }
   }
 
+  @Test(dataProvider = "furyCopyConfig")
+  public void testCollectionFieldSerializersCopy(Fury fury) {
+    CollectionFieldsClass obj = createCollectionFieldsObject();
+    Assert.assertEquals(fury.copy(obj).toString(), obj.toString());
+  }
+
   @Data
   @AllArgsConstructor
   public static class NestedCollection1 {
@@ -489,6 +672,13 @@ public class CollectionSerializersTest extends FuryTestBase {
     Assert.assertEquals(serDe(fury, o), o);
   }
 
+  @Test(dataProvider = "furyCopyConfig")
+  public void testNestedCollection1Copy(Fury fury) {
+    ArrayList<Integer> list = ofArrayList(1, 2);
+    NestedCollection1 o = new NestedCollection1(ofArrayList(list));
+    copyCheck(fury, o);
+  }
+
   @Data
   @AllArgsConstructor
   public static class NestedCollection2 {
@@ -500,6 +690,13 @@ public class CollectionSerializersTest extends FuryTestBase {
     ArrayList<Integer> list = ofArrayList(1, 2);
     NestedCollection2 o = new NestedCollection2(ofArrayList(ofArrayList(list)));
     Assert.assertEquals(serDe(fury, o), o);
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testNestedCollection2Copy(Fury fury) {
+    ArrayList<Integer> list = ofArrayList(1, 2);
+    NestedCollection2 o = new NestedCollection2(ofArrayList(ofArrayList(list)));
+    copyCheck(fury, o);
   }
 
   public static class TestClassForDefaultCollectionSerializer extends AbstractCollection<String> {
@@ -547,6 +744,15 @@ public class CollectionSerializersTest extends FuryTestBase {
         CollectionSerializers.DefaultJavaCollectionSerializer.class);
   }
 
+  @Test(dataProvider = "furyCopyConfig")
+  public void testDefaultCollectionSerializer(Fury fury) {
+    TestClassForDefaultCollectionSerializer collection =
+        new TestClassForDefaultCollectionSerializer();
+    collection.add("a");
+    collection.add("b");
+    copyCheck(fury, collection);
+  }
+
   @SuppressWarnings("unchecked")
   @Test
   public void testJavaSerialization() {
@@ -571,6 +777,17 @@ public class CollectionSerializersTest extends FuryTestBase {
     buffer.writerIndex(0);
     buffer.readerIndex(0);
     assertEquals(set, fury.deserialize(fury.serialize(buffer, set)));
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testJavaSerialization(Fury fury) {
+    ImmutableSortedSet<Integer> set = ImmutableSortedSet.of(1, 2, 3);
+    Class<? extends ImmutableSortedSet> setClass = set.getClass();
+    JDKCompatibleCollectionSerializer javaSerializer =
+        new JDKCompatibleCollectionSerializer(fury, setClass);
+    Object copy = javaSerializer.copy(set);
+    assertEquals(set, copy);
+    Assert.assertNotSame(set, copy);
   }
 
   public static class SubListSerializer extends CollectionSerializer {
@@ -618,6 +835,13 @@ public class CollectionSerializersTest extends FuryTestBase {
     serDeCheck(f, data);
   }
 
+  @Test(dataProvider = "furyCopyConfig")
+  public void testCollectionNullElements(Fury fury) {
+    List data = new ArrayList<>();
+    data.add(null);
+    copyCheck(fury, data);
+  }
+
   @Data
   abstract static class Foo {
     private int f1;
@@ -642,6 +866,20 @@ public class CollectionSerializersTest extends FuryTestBase {
       CollectionAbstractTest test = new CollectionAbstractTest();
       test.fooList = new ArrayList<>(ofArrayList(new Foo1(), new Foo1()));
       serDeCheck(fury, test);
+    }
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testAbstractCollectionElementsSerialization(Fury fury) {
+    {
+      CollectionAbstractTest test = new CollectionAbstractTest();
+      test.fooList = new ArrayList<>(ImmutableList.of(new Foo1(), new Foo1()));
+      copyCheck(fury, test);
+    }
+    {
+      CollectionAbstractTest test = new CollectionAbstractTest();
+      test.fooList = new ArrayList<>(ofArrayList(new Foo1(), new Foo1()));
+      copyCheck(fury, test);
     }
   }
 }
