@@ -20,6 +20,7 @@
 package org.apache.fury.serializer;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotSame;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
@@ -99,6 +100,22 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
         fury.getClassResolver().getSerializer(map1.getClass()) instanceof ReplaceResolveSerializer);
   }
 
+  @Test(dataProvider = "furyCopyConfig")
+  public void testCommonReplace(Fury fury) {
+    CustomReplaceClass1 o1 = new CustomReplaceClass1("abc");
+    fury.registerSerializer(CustomReplaceClass1.class, ReplaceResolveSerializer.class);
+    fury.registerSerializer(CustomReplaceClass1.Replaced.class, ReplaceResolveSerializer.class);
+    copyCheck(fury, o1);
+
+    ImmutableList<Integer> list1 = ImmutableList.of(1, 2, 3, 4);
+    fury.registerSerializer(list1.getClass(), new ReplaceResolveSerializer(fury, list1.getClass()));
+    copyCheck(fury, list1);
+
+    ImmutableMap<String, Integer> map1 = ImmutableMap.of("k1", 1, "k2", 2);
+    fury.registerSerializer(map1.getClass(), new ReplaceResolveSerializer(fury, map1.getClass()));
+    copyCheck(fury, map1);
+  }
+
   @Data
   public static class CustomReplaceClass2 implements Serializable {
     public boolean copy;
@@ -156,6 +173,20 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
             instanceof ReplaceResolveSerializer);
   }
 
+  @Test(dataProvider = "furyCopyConfig")
+  public void testCopyReplaceCircularClass(Fury fury) {
+    fury.registerSerializer(CustomReplaceClass2.class, ReplaceResolveSerializer.class);
+    for (Object o :
+        new Object[] {
+            new CustomReplaceClass2(false, 2), new CustomReplaceClass2(true, 2),
+        }) {
+      fury.registerSerializer(o.getClass(), ReplaceResolveSerializer.class);
+      copyCheck(fury, o);
+    }
+    CustomReplaceClass2 o = new CustomReplaceClass2(false, 6);
+    copyCheck(fury, o);
+  }
+
   public static class CustomReplaceClass3 implements Serializable {
     public Object ref;
 
@@ -203,6 +234,27 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
         // reference relationship updated by `CustomReplaceClass4.writeReplace`.
         assertSame(newObj1.ref, newObj1);
         assertSame(((CustomReplaceClass3) newObj1.ref).ref, newObj1);
+      }
+    }
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testWriteReplaceSameClassCircularRef(Fury fury) {
+    fury.registerSerializer(CustomReplaceClass3.class, ReplaceResolveSerializer.class);
+    {
+      CustomReplaceClass3 o1 = new CustomReplaceClass3();
+      o1.ref = o1;
+      CustomReplaceClass3 copy = fury.copy(o1);
+      assertSame(copy, copy.ref);
+    }
+    {
+      CustomReplaceClass3 o1 = new CustomReplaceClass3();
+      CustomReplaceClass3 o2 = new CustomReplaceClass3();
+      o1.ref = o2;
+      o2.ref = o1;
+      {
+        CustomReplaceClass3 newObj1 = fury.copy(o1);
+        assertNotSame(newObj1.ref, o2);
       }
     }
   }
@@ -298,6 +350,19 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
     assertEquals(newObj, new Object[] {o.copy, o.age});
     assertTrue(
         fury.getClassResolver().getSerializer(Subclass1.class) instanceof ReplaceResolveSerializer);
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testWriteReplaceSubClass(Fury fury) {
+    fury.registerSerializer(CustomReplaceClass2.class, ReplaceResolveSerializer.class);
+    fury.registerSerializer(Subclass1.class, ReplaceResolveSerializer.class);
+    for (Object o :
+        new Object[] {
+            new Subclass1(false, 2, 10), new Subclass1(true, 2, 11),
+        }) {
+      fury.registerSerializer(o.getClass(), ReplaceResolveSerializer.class);
+      copyCheck(fury, o);
+    }
   }
 
   public static class Subclass2 extends CustomReplaceClass2 {
@@ -417,6 +482,20 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
         fury1, fury2, new SimpleCollectionTest(ImmutableList.of(1, 2), ImmutableList.of("a", "b")));
   }
 
+  @Test(dataProvider = "furyCopyConfig")
+  public void testImmutable(Fury fury) {
+    fury.registerSerializer(ImmutableList.of(1, 2).getClass(), ReplaceResolveSerializer.class);
+    fury.registerSerializer(SimpleCollectionTest.class, ReplaceResolveSerializer.class);
+    fury.registerSerializer(ImmutableMap.of("1", 2).getClass(), ReplaceResolveSerializer.class);
+    fury.registerSerializer(SimpleMapTest.class, ReplaceResolveSerializer.class);
+    copyCheck(fury, ImmutableList.of(1, 2));
+    copyCheck(fury, ImmutableList.of("a", "b"));
+    copyCheck(fury, new SimpleCollectionTest(ImmutableList.of(1, 2), ImmutableList.of("a", "b")));
+    copyCheck(fury, ImmutableMap.of("1", 2));
+    copyCheck(fury, ImmutableMap.of(1, 2));
+    copyCheck(fury, new SimpleMapTest(ImmutableMap.of("k", 2), ImmutableMap.of(1, 2)));
+  }
+
   @Data
   @AllArgsConstructor
   public static class SimpleMapTest {
@@ -488,6 +567,13 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
     Fury fury = Fury.builder().requireClassRegistration(false).build();
     byte[] bytes = fury.serialize(new InheritanceTestClass((byte) 10));
     InheritanceTestClass o = (InheritanceTestClass) fury.deserialize(bytes);
+    assertEquals(o.f1, 10);
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testInheritance(Fury fury) {
+    fury.registerSerializer(InheritanceTestClass.class, ReplaceResolveSerializer.class);
+    InheritanceTestClass o = fury.copy(new InheritanceTestClass((byte) 10));
     assertEquals(o.f1, 10);
   }
 

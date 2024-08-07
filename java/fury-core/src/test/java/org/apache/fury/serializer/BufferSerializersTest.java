@@ -39,4 +39,16 @@ public class BufferSerializersTest extends FuryTestBase {
     ByteBufferUtil.rewind(buffer2);
     serDeCheck(fury, buffer2);
   }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testByteBuffer(Fury fury) {
+    ByteBuffer buffer1 = ByteBuffer.allocate(32);
+    buffer1.putLong(1000L);
+    ByteBufferUtil.rewind(buffer1);
+    copyCheck(fury, buffer1);
+    ByteBuffer buffer2 = ByteBuffer.allocateDirect(32);
+    buffer2.putDouble(1.0 / 3);
+    ByteBufferUtil.rewind(buffer2);
+    copyCheck(fury, buffer2);
+  }
 }

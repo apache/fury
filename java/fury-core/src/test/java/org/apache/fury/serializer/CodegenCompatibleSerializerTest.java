@@ -76,6 +76,20 @@ public class CodegenCompatibleSerializerTest extends FuryTestBase {
   }
 
   @Test(dataProvider = "config")
+  public void testCopy(boolean referenceTracking, boolean scopedMetaShare, boolean enableCodegen) {
+    Fury fury =
+        furyBuilder()
+            .withRefCopy(referenceTracking)
+            .withCodegen(enableCodegen)
+            .withScopedMetaShare(scopedMetaShare)
+            .withCompatibleMode(CompatibleMode.COMPATIBLE)
+            .build();
+    copyCheck(fury, Foo.create());
+    copyCheck(fury, BeanB.createBeanB(2));
+    copyCheck(fury, BeanA.createBeanA(2));
+  }
+
+  @Test(dataProvider = "config")
   public void testWriteCompatibleBasic(
       boolean referenceTracking, boolean scopedMetaShare, boolean enableCodegen) throws Exception {
     Supplier<FuryBuilder> builder =
@@ -119,6 +133,39 @@ public class CodegenCompatibleSerializerTest extends FuryTestBase {
       }
       {
         Object o3 = fury.deserialize(newFury.serialize(foo));
+        Assert.assertTrue(ReflectionUtils.objectFieldsEquals(o3, foo));
+      }
+    }
+  }
+
+  @Test(dataProvider = "config")
+  public void testWriteCompatibleBasicCopy(
+      boolean referenceTracking, boolean scopedMetaShare, boolean enableCodegen) throws Exception {
+    Supplier<FuryBuilder> builder =
+        () ->
+            Fury.builder()
+                .withLanguage(Language.JAVA)
+                .withRefCopy(referenceTracking)
+                .withCodegen(enableCodegen)
+                .withCompatibleMode(CompatibleMode.COMPATIBLE)
+                .withScopedMetaShare(scopedMetaShare)
+                .requireClassRegistration(false);
+    Fury fury = builder.get().build();
+    Object foo = Foo.create();
+    for (Class<?> fooClass :
+        new Class<?>[] {
+            Foo.createCompatibleClass1(), Foo.createCompatibleClass2(), Foo.createCompatibleClass3(),
+        }) {
+      Object newFoo = fooClass.newInstance();
+      ReflectionUtils.unsafeCopy(foo, newFoo);
+      Fury newFury = builder.get().withClassLoader(fooClass.getClassLoader()).build();
+      {
+        Object copy = fury.copy(newFoo);
+        Assert.assertEquals(copy.getClass().getName(), Foo.class.getName());
+        Assert.assertTrue(ReflectionUtils.objectCommonFieldsEquals(copy, newFoo));
+      }
+      {
+        Object o3 = newFury.copy(foo);
         Assert.assertTrue(ReflectionUtils.objectFieldsEquals(o3, foo));
       }
     }

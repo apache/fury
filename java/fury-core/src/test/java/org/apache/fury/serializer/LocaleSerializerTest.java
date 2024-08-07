@@ -38,4 +38,15 @@ public class LocaleSerializerTest extends FuryTestBase {
     serDeCheckSerializerAndEqual(fury, Locale.TAIWAN, "LocaleSerializer");
     serDeCheckSerializerAndEqual(fury, Locale.getDefault(), "LocaleSerializer");
   }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testWrite(Fury fury) {
+    copyCheckWithoutSame(fury, Locale.US);
+    copyCheckWithoutSame(fury, Locale.CHINESE);
+    copyCheckWithoutSame(fury, Locale.ENGLISH);
+    copyCheckWithoutSame(fury, Locale.TRADITIONAL_CHINESE);
+    copyCheckWithoutSame(fury, Locale.CHINA);
+    copyCheckWithoutSame(fury, Locale.TAIWAN);
+    copyCheckWithoutSame(fury, Locale.getDefault());
+  }
 }

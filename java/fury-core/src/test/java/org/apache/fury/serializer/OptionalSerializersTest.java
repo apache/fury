@@ -26,6 +26,7 @@ import java.util.OptionalLong;
 import org.apache.fury.Fury;
 import org.apache.fury.FuryTestBase;
 import org.apache.fury.config.Language;
+import org.testng.annotations.Factory;
 import org.testng.annotations.Test;
 
 public class OptionalSerializersTest extends FuryTestBase {
@@ -44,5 +45,20 @@ public class OptionalSerializersTest extends FuryTestBase {
     serDeCheckSerializerAndEqual(fury, OptionalDouble.empty(), "Optional");
     serDeCheckSerializerAndEqual(fury, OptionalDouble.of(Double.MIN_VALUE), "Optional");
     serDeCheckSerializerAndEqual(fury, OptionalDouble.of(Double.MAX_VALUE), "Optional");
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  void testOptionals(Fury fury) {
+    copyCheckWithoutSame(fury, Optional.empty());
+    copyCheck(fury, Optional.of("abc"));
+    copyCheckWithoutSame(fury, OptionalInt.empty());
+    copyCheckWithoutSame(fury, OptionalInt.of(Integer.MIN_VALUE));
+    copyCheckWithoutSame(fury, OptionalInt.of(Integer.MAX_VALUE));
+    copyCheckWithoutSame(fury, OptionalLong.empty());
+    copyCheckWithoutSame(fury, OptionalLong.of(Long.MIN_VALUE));
+    copyCheckWithoutSame(fury, OptionalLong.of(Long.MAX_VALUE));
+    copyCheckWithoutSame(fury, OptionalDouble.empty());
+    copyCheckWithoutSame(fury, OptionalDouble.of(Double.MIN_VALUE));
+    copyCheckWithoutSame(fury, OptionalDouble.of(Double.MAX_VALUE));
   }
 }

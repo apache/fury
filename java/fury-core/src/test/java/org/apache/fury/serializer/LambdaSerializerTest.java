@@ -57,6 +57,27 @@ public class LambdaSerializerTest extends FuryTestBase {
         fury.getClassResolver().getSerializerClass(Class.class), Serializers.ClassSerializer.class);
   }
 
+  @Test(dataProvider = "furyCopyConfig")
+  public void testLambdaCopy(Fury fury) {
+    {
+      BiFunction<Fury, Object, byte[]> function =
+          (Serializable & BiFunction<Fury, Object, byte[]>) Fury::serialize;
+      fury.copy(function);
+    }
+    {
+      Function<Integer, Integer> function =
+          (Serializable & Function<Integer, Integer>) (x) -> x + x;
+      Function<Integer, Integer> newFunc =
+          fury.copy(function);
+      assertEquals(newFunc.apply(10), Integer.valueOf(20));
+      List<Function<Integer, Integer>> list = fury.copy(Arrays.asList(function, function));
+      assertSame(list.get(0), list.get(1));
+      assertEquals(list.get(0).apply(20), Integer.valueOf(40));
+    }
+    assertSame(
+        fury.getClassResolver().getSerializerClass(Class.class), Serializers.ClassSerializer.class);
+  }
+
   @Test
   public void testLambdaUnserializableMsg() {
     Fury fury = Fury.builder().requireClassRegistration(false).build();
