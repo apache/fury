@@ -178,7 +178,7 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
     fury.registerSerializer(CustomReplaceClass2.class, ReplaceResolveSerializer.class);
     for (Object o :
         new Object[] {
-            new CustomReplaceClass2(false, 2), new CustomReplaceClass2(true, 2),
+          new CustomReplaceClass2(false, 2), new CustomReplaceClass2(true, 2),
         }) {
       fury.registerSerializer(o.getClass(), ReplaceResolveSerializer.class);
       copyCheck(fury, o);
@@ -358,7 +358,7 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
     fury.registerSerializer(Subclass1.class, ReplaceResolveSerializer.class);
     for (Object o :
         new Object[] {
-            new Subclass1(false, 2, 10), new Subclass1(true, 2, 11),
+          new Subclass1(false, 2, 10), new Subclass1(true, 2, 11),
         }) {
       fury.registerSerializer(o.getClass(), ReplaceResolveSerializer.class);
       copyCheck(fury, o);

@@ -80,10 +80,8 @@ public class TimeSerializersTest extends FuryTestBase {
     copyCheckWithoutSame(fury, LocalDate.now());
     copyCheckWithoutSame(fury, LocalTime.now());
     copyCheckWithoutSame(fury, LocalDateTime.now());
-    copyCheckWithoutSame(
-        fury, DateTimeUtils.truncateInstantToMicros(Instant.now()));
-    copyCheckWithoutSame(
-        fury, Duration.between((Instant.now()), Instant.ofEpochSecond(-1)));
+    copyCheckWithoutSame(fury, DateTimeUtils.truncateInstantToMicros(Instant.now()));
+    copyCheckWithoutSame(fury, Duration.between((Instant.now()), Instant.ofEpochSecond(-1)));
     copyCheckWithoutSame(fury, Period.of(100, 11, 20));
   }
 
@@ -169,16 +167,12 @@ public class TimeSerializersTest extends FuryTestBase {
             ZoneId.of("Europe/Berlin")));
     copyCheckWithoutSame(fury, Year.of(Year.MIN_VALUE));
     copyCheckWithoutSame(fury, Year.of(Year.MAX_VALUE));
-    copyCheckWithoutSame(
-        fury, YearMonth.of(Year.MIN_VALUE, Month.APRIL));
-    copyCheckWithoutSame(
-        fury, YearMonth.of(Year.MAX_VALUE, Month.APRIL));
+    copyCheckWithoutSame(fury, YearMonth.of(Year.MIN_VALUE, Month.APRIL));
+    copyCheckWithoutSame(fury, YearMonth.of(Year.MAX_VALUE, Month.APRIL));
     copyCheckWithoutSame(fury, MonthDay.of(Month.JANUARY, 11));
     copyCheckWithoutSame(fury, MonthDay.of(Month.DECEMBER, 11));
-    copyCheckWithoutSame(
-        fury, OffsetTime.of(1, 1, 1, 1, ZoneOffset.UTC));
-    copyCheckWithoutSame(
-        fury, OffsetTime.of(23, 59, 59, 999999999, ZoneOffset.UTC));
+    copyCheckWithoutSame(fury, OffsetTime.of(1, 1, 1, 1, ZoneOffset.UTC));
+    copyCheckWithoutSame(fury, OffsetTime.of(23, 59, 59, 999999999, ZoneOffset.UTC));
     copyCheckWithoutSame(
         fury,
         OffsetDateTime.of(Year.MIN_VALUE, Month.JANUARY.getValue(), 1, 0, 0, 0, 0, ZoneOffset.UTC));

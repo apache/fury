@@ -23,7 +23,6 @@ import static org.apache.fury.collection.Collections.ofArrayList;
 import static org.apache.fury.collection.Collections.ofHashMap;
 import static org.apache.fury.collection.Collections.ofHashSet;
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertSame;
 
 import com.google.common.collect.ImmutableList;
@@ -61,7 +60,6 @@ import java.util.stream.LongStream;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.apache.fury.Fury;
-import org.apache.fury.FuryCopyTest.A;
 import org.apache.fury.FuryTestBase;
 import org.apache.fury.config.Language;
 import org.apache.fury.memory.MemoryBuffer;
@@ -197,8 +195,7 @@ public class CollectionSerializersTest extends FuryTestBase {
   @Test(dataProvider = "furyCopyConfig")
   public void testSortedSet(Fury fury) {
     AtomicInteger i = new AtomicInteger(1);
-    TreeSet<String> set =
-        new TreeSet<>(new TestComparator(i));
+    TreeSet<String> set = new TreeSet<>(new TestComparator(i));
 
     TreeSet<String> copy = fury.copy(set);
 

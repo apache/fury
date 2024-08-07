@@ -74,7 +74,8 @@ public class MapSerializersTest extends FuryTestBase {
 
   @Test(dataProvider = "furyCopyConfig")
   public void testBasicMap(Fury fury) {
-    Map<String, Object> data = new HashMap<>(ImmutableMap.of("a", 1, "b", 2, "c", Cyclic.create(true)));
+    Map<String, Object> data =
+        new HashMap<>(ImmutableMap.of("a", 1, "b", 2, "c", Cyclic.create(true)));
     copyCheck(fury, data);
     copyCheck(fury, new LinkedHashMap<>(data));
     copyCheck(fury, new LazyMap<>(new ArrayList<>(data.entrySet())));
@@ -82,11 +83,12 @@ public class MapSerializersTest extends FuryTestBase {
     Map<Object, Object> cycMap = new HashMap<>();
     cycMap.put(cycMap, cycMap);
     Map<Object, Object> copy = fury.copy(cycMap);
-    copy.forEach((k, v) -> {
-      Assert.assertSame(k, copy);
-      Assert.assertSame(v, copy);
-      Assert.assertSame(k, v);
-    });
+    copy.forEach(
+        (k, v) -> {
+          Assert.assertSame(k, copy);
+          Assert.assertSame(v, copy);
+          Assert.assertSame(k, v);
+        });
   }
 
   @Test(dataProvider = "referenceTrackingConfig")

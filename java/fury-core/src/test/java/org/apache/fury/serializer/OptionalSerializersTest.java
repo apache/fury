@@ -26,7 +26,6 @@ import java.util.OptionalLong;
 import org.apache.fury.Fury;
 import org.apache.fury.FuryTestBase;
 import org.apache.fury.config.Language;
-import org.testng.annotations.Factory;
 import org.testng.annotations.Test;
 
 public class OptionalSerializersTest extends FuryTestBase {

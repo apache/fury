@@ -123,8 +123,8 @@ public class ArraySerializersTest extends FuryTestBase {
     copyCheck(
         fury,
         new Object[][] {
-            {false, true, (byte) 1, (byte) 1, (float) 1.0, (float) 1.1},
-            {false, true, (byte) 1, (byte) 1, (float) 1.0, (float) 1.1}
+          {false, true, (byte) 1, (byte) 1, (float) 1.0, (float) 1.1},
+          {false, true, (byte) 1, (byte) 1, (float) 1.0, (float) 1.1}
         });
     copyCheck(fury, new Integer[][] {{1, 2}, {1, 2}});
   }

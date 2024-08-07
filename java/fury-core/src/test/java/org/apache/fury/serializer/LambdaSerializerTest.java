@@ -67,8 +67,7 @@ public class LambdaSerializerTest extends FuryTestBase {
     {
       Function<Integer, Integer> function =
           (Serializable & Function<Integer, Integer>) (x) -> x + x;
-      Function<Integer, Integer> newFunc =
-          fury.copy(function);
+      Function<Integer, Integer> newFunc = fury.copy(function);
       assertEquals(newFunc.apply(10), Integer.valueOf(20));
       List<Function<Integer, Integer>> list = fury.copy(Arrays.asList(function, function));
       assertSame(list.get(0), list.get(1));

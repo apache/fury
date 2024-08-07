@@ -35,13 +35,10 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.function.Function;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
-import org.apache.fury.resolver.ClassInfo;
-import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.type.Type;
 import org.apache.fury.util.unsafe._JDKAccess;
 

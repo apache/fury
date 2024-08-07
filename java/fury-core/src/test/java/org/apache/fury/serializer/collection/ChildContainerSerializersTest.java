@@ -35,7 +35,6 @@ import lombok.Data;
 import org.apache.fury.Fury;
 import org.apache.fury.FuryTestBase;
 import org.apache.fury.config.CompatibleMode;
-import org.apache.fury.config.Language;
 import org.apache.fury.test.bean.Cyclic;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;

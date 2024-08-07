@@ -154,7 +154,7 @@ public class CodegenCompatibleSerializerTest extends FuryTestBase {
     Object foo = Foo.create();
     for (Class<?> fooClass :
         new Class<?>[] {
-            Foo.createCompatibleClass1(), Foo.createCompatibleClass2(), Foo.createCompatibleClass3(),
+          Foo.createCompatibleClass1(), Foo.createCompatibleClass2(), Foo.createCompatibleClass3(),
         }) {
       Object newFoo = fooClass.newInstance();
       ReflectionUtils.unsafeCopy(foo, newFoo);
