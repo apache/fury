@@ -274,7 +274,7 @@ public class CollectionSerializersTest extends FuryTestBase {
 
   @Test(dataProvider = "furyCopyConfig")
   public void tesSkipList(Fury fury) {
-    copyCheck(fury, new ConcurrentSkipListSet<>(Arrays.asList("a", 1, Cyclic.create(true))));
+    copyCheck(fury, new ConcurrentSkipListSet<>(Arrays.asList("a", "b", "c")));
   }
 
   @Test
