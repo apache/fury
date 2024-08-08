@@ -15,5 +15,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
+pub mod class_resolver;
 pub mod context;
 pub mod meta_resolver;

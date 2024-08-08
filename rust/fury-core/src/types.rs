@@ -16,7 +16,7 @@
 // under the License.
 
 use crate::error::Error;
-use num_enum::TryFromPrimitive;
+use num_enum::{IntoPrimitive, TryFromPrimitive};
 use std::mem;
 
 #[allow(dead_code)]
@@ -38,7 +38,7 @@ pub enum RefFlag {
     RefValue = 0,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, TryFromPrimitive)]
+#[derive(Clone, Copy, Debug, PartialEq, TryFromPrimitive, IntoPrimitive)]
 #[repr(i16)]
 pub enum FieldType {
     BOOL = 1,
@@ -124,8 +124,6 @@ pub fn compute_struct_hash(props: Vec<(&str, FieldType)>) -> u32 {
     hash
 }
 
-// todo: flag check
-#[allow(dead_code)]
 pub mod config_flags {
     pub const IS_NULL_FLAG: u8 = 1 << 0;
     pub const IS_LITTLE_ENDIAN_FLAG: u8 = 2;

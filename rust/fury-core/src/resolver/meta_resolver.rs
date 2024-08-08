@@ -17,6 +17,7 @@
 
 use crate::buffer::{Reader, Writer};
 use crate::error::Error;
+use crate::fury::Fury;
 use crate::meta::TypeMeta;
 use std::any::TypeId;
 use std::collections::HashMap;
@@ -44,17 +45,21 @@ impl MetaReaderResolver {
 
 #[derive(Default)]
 pub struct MetaWriterResolver<'a> {
-    type_defs: Vec<&'a [u8]>,
+    type_defs: Vec<&'a Vec<u8>>,
     type_id_index_map: HashMap<TypeId, usize>,
 }
 
 #[allow(dead_code)]
 impl<'a> MetaWriterResolver<'a> {
-    pub fn push<'b: 'a>(&mut self, type_id: TypeId, type_meta_bytes: &'b [u8]) -> usize {
+    pub fn push<'b: 'a>(&mut self, type_id: TypeId, fury: &'a Fury) -> usize {
         match self.type_id_index_map.get(&type_id) {
             None => {
                 let index = self.type_defs.len();
-                self.type_defs.push(type_meta_bytes);
+                self.type_defs.push(
+                    fury.get_class_resolver()
+                        .get_class_info(type_id)
+                        .get_type_def(),
+                );
                 self.type_id_index_map.insert(type_id, index);
                 index
             }

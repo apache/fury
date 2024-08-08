@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use super::types::{FieldType, Language};
+use super::types::Language;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -31,8 +31,8 @@ pub enum Error {
     #[error("BadRefFlag")]
     BadRefFlag,
 
-    #[error("Bad FieldType; expected: {expected:?}, actual: {actial:?}")]
-    FieldType { expected: FieldType, actial: i16 },
+    #[error("Bad FieldType; expected: {expected:?}, actual: {actual:?}")]
+    FieldType { expected: i16, actual: i16 },
 
     #[error("Bad timestamp; out-of-range number of milliseconds")]
     NaiveDateTime,
@@ -40,8 +40,8 @@ pub enum Error {
     #[error("Bad date; out-of-range")]
     NaiveDate,
 
-    #[error("Schema is not consistent; expected: {expected:?}, actual: {actial:?}")]
-    StructHash { expected: u32, actial: u32 },
+    #[error("Schema is not consistent; expected: {expected:?}, actual: {actual:?}")]
+    StructHash { expected: u32, actual: u32 },
 
     #[error("Bad Tag Type: {0}")]
     TagType(u8),
@@ -75,4 +75,7 @@ pub enum Error {
 
     #[error("Invalid character value for LOWER_UPPER_DIGIT_SPECIAL decoding: {value:?}")]
     InvalidLowerUpperDigitSpecialValue { value: u8 },
+
+    #[error("Unregistered type when serializing or deserializing object of Any type: {value:?}")]
+    UnregisteredType { value: u32 },
 }
