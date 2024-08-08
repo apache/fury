@@ -22,8 +22,6 @@ package org.apache.fury.serializer.collection;
 import java.util.Collection;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.resolver.ClassInfo;
-import org.apache.fury.resolver.ClassResolver;
 
 /** Base serializer for all java collections. */
 @SuppressWarnings({"unchecked", "rawtypes"})
