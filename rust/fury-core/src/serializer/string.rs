@@ -38,7 +38,7 @@ impl Serializer for String {
         Ok(context.reader.string(len as usize))
     }
 
-    fn ty(_fury: &Fury) -> i16 {
+    fn get_type_id(_fury: &Fury) -> i16 {
         FieldType::STRING.into()
     }
 }

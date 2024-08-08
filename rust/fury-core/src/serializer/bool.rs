@@ -36,7 +36,7 @@ impl Serializer for bool {
         Ok(context.reader.u8() == 1)
     }
 
-    fn ty(_fury: &Fury) -> i16 {
+    fn get_type_id(_fury: &Fury) -> i16 {
         FieldType::BOOL.into()
     }
 }

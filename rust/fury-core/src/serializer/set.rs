@@ -54,7 +54,7 @@ impl<T: Serializer + Eq + std::hash::Hash> Serializer for HashSet<T> {
         mem::size_of::<i32>()
     }
 
-    fn ty(_fury: &Fury) -> i16 {
+    fn get_type_id(_fury: &Fury) -> i16 {
         FieldType::FurySet.into()
     }
 }

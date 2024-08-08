@@ -59,7 +59,7 @@ impl<T1: Serializer + Eq + std::hash::Hash, T2: Serializer> Serializer for HashM
         mem::size_of::<i32>()
     }
 
-    fn ty(_fury: &Fury) -> i16 {
+    fn get_type_id(_fury: &Fury) -> i16 {
         FieldType::MAP.into()
     }
 }

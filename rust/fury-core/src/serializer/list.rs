@@ -53,7 +53,7 @@ where
         mem::size_of::<u32>()
     }
 
-    fn ty(_fury: &Fury) -> i16 {
+    fn get_type_id(_fury: &Fury) -> i16 {
         FieldType::ARRAY.into()
     }
 }

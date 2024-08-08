@@ -35,7 +35,7 @@ impl Serializer for Box<dyn Any> {
         panic!("unreachable")
     }
 
-    fn ty(_fury: &Fury) -> i16 {
+    fn get_type_id(_fury: &Fury) -> i16 {
         FieldType::FuryTypeTag.into()
     }
 

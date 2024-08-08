@@ -43,7 +43,7 @@ impl Serializer for NaiveDateTime {
         mem::size_of::<u64>()
     }
 
-    fn ty(_fury: &Fury) -> i16 {
+    fn get_type_id(_fury: &Fury) -> i16 {
         FieldType::TIMESTAMP.into()
     }
 }
@@ -68,7 +68,7 @@ impl Serializer for NaiveDate {
         }
     }
 
-    fn ty(_fury: &Fury) -> i16 {
+    fn get_type_id(_fury: &Fury) -> i16 {
         FieldType::DATE.into()
     }
 }

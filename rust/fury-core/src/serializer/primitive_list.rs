@@ -60,7 +60,7 @@ macro_rules! impl_primitive_vec {
                 mem::size_of::<i32>()
             }
 
-            fn ty(_fury: &Fury) -> i16 {
+            fn get_type_id(_fury: &Fury) -> i16 {
                 ($field_type).into()
             }
         }
@@ -77,7 +77,7 @@ impl Serializer for Vec<bool> {
         mem::size_of::<u8>()
     }
 
-    fn ty(_fury: &Fury) -> i16 {
+    fn get_type_id(_fury: &Fury) -> i16 {
         FieldType::FuryPrimitiveBoolArray.into()
     }
 
