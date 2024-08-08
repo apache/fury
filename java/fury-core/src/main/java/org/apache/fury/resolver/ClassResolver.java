@@ -20,9 +20,7 @@
 package org.apache.fury.resolver;
 
 import static org.apache.fury.meta.ClassDef.SIZE_TWO_BYTES_FLAG;
-import static org.apache.fury.meta.Encoders.PACKAGE_DECODER;
 import static org.apache.fury.meta.Encoders.PACKAGE_ENCODER;
-import static org.apache.fury.meta.Encoders.TYPE_NAME_DECODER;
 import static org.apache.fury.serializer.CodegenSerializer.loadCodegenSerializer;
 import static org.apache.fury.serializer.CodegenSerializer.loadCompatibleCodegenSerializer;
 import static org.apache.fury.serializer.CodegenSerializer.supportCodegenForJavaSerialization;
@@ -1706,8 +1704,8 @@ public class ClassResolver {
       ClassNameBytes classNameBytes,
       MetaStringBytes packageBytes,
       MetaStringBytes simpleClassNameBytes) {
-    String packageName = packageBytes.decode(PACKAGE_DECODER);
-    String className = simpleClassNameBytes.decode(TYPE_NAME_DECODER);
+    String packageName = packageBytes.decode(Encoders::decodePackage);
+    String className = simpleClassNameBytes.decode(Encoders::decodeTypeName);
     ClassSpec classSpec = Encoders.decodePkgAndClass(packageName, className);
     MetaStringBytes fullClassNameBytes =
         metaStringResolver.getOrCreateMetaStringBytes(
@@ -1750,7 +1748,7 @@ public class ClassResolver {
     Class<?> cls = classNameBytes2Class.get(byteString);
     if (cls == null) {
       Preconditions.checkNotNull(byteString);
-      String className = byteString.decode(Encoders.GENERIC_DECODER);
+      String className = byteString.decode(Encoders::decodeGeneric);
       cls = loadClass(className);
       classNameBytes2Class.put(byteString, cls);
     }

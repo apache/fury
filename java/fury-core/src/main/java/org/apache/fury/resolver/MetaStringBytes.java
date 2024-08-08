@@ -24,6 +24,7 @@ import org.apache.fury.annotation.Internal;
 import org.apache.fury.meta.MetaString;
 import org.apache.fury.meta.MetaStringDecoder;
 import org.apache.fury.util.MurmurHash3;
+import org.apache.fury.util.function.TriFunction;
 
 @Internal
 final class MetaStringBytes {
@@ -68,6 +69,12 @@ final class MetaStringBytes {
     int header = (int) (hashCode & HEADER_MASK);
     MetaString.Encoding encoding = MetaString.Encoding.values()[header];
     return decoder.decode(bytes, encoding);
+  }
+
+  public String decode(TriFunction<Long, byte[], MetaString.Encoding, String> decodeFunc) {
+    int header = (int) (hashCode & HEADER_MASK);
+    MetaString.Encoding encoding = MetaString.Encoding.values()[header];
+    return decodeFunc.apply(hashCode, bytes, encoding);
   }
 
   @Override
