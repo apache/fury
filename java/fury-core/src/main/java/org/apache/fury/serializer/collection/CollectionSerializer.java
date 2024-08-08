@@ -65,35 +65,6 @@ public class CollectionSerializer<T extends Collection> extends AbstractCollecti
     return (T) newCollection;
   }
 
-  public void copyElements(T originCollection, Collection newCollection) {
-    ClassResolver classResolver = fury.getClassResolver();
-    for (Object element : originCollection) {
-      if (element != null) {
-        ClassInfo classInfo =
-            classResolver.getClassInfo(element.getClass(), elementClassInfoHolder);
-        if (!classInfo.getSerializer().isImmutable()) {
-          element = fury.copyObject(element, classInfo.getClassId());
-        }
-      }
-      newCollection.add(element);
-    }
-  }
-
-  public void copyElements(T originCollection, Object[] elements) {
-    int index = 0;
-    ClassResolver classResolver = fury.getClassResolver();
-    for (Object element : originCollection) {
-      if (element != null) {
-        ClassInfo classInfo =
-            classResolver.getClassInfo(element.getClass(), elementClassInfoHolder);
-        if (!classInfo.getSerializer().isImmutable()) {
-          element = fury.copyObject(element, classInfo.getSerializer());
-        }
-      }
-      elements[index++] = element;
-    }
-  }
-
   @Override
   public T read(MemoryBuffer buffer) {
     Collection collection = newCollection(buffer);
