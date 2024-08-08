@@ -44,7 +44,7 @@ import org.apache.fury.util.unsafe._JDKAccess;
  * will skip classname writing if object returned by `writeReplace` is different from current class.
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
-public class ReplaceResolveSerializer extends Serializer {
+public class ReplaceResolveSerializer extends AbstractObjectSerializer {
   private static final Logger LOG = LoggerFactory.getLogger(ReplaceResolveSerializer.class);
 
   /**
@@ -270,12 +270,6 @@ public class ReplaceResolveSerializer extends Serializer {
   private void writeObject(MemoryBuffer buffer, Object value, MethodInfoCache jdkMethodInfoCache) {
     classResolver.writeClass(buffer, writeClassInfo);
     jdkMethodInfoCache.objectSerializer.write(buffer, value);
-  }
-
-  @Override
-  public Object copy(Object value) {
-    Serializer serializer = classClassInfoHolderMap.get(value.getClass()).objectSerializer;
-    return fury.copyObject(value, serializer);
   }
 
   @Override
