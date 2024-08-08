@@ -24,7 +24,7 @@ fn hash(fields: &[&Field]) -> TokenStream {
         let ty = &field.ty;
         let name = format!("{}", field.ident.as_ref().expect("should be field name"));
         quote! {
-            (#name, <#ty as fury_core::serializer::Serializer>::ty())
+            (#name, <#ty as fury_core::serializer::Serializer>::get_type_id())
         }
     });
 
@@ -48,46 +48,31 @@ fn type_def(fields: &[&Field]) -> TokenStream {
         let ty = &field.ty;
         let name = format!("{}", field.ident.as_ref().expect("should be field name"));
         quote! {
-            fury_core::meta::FieldInfo::new(#name, <#ty as fury_core::serializer::Serializer>::ty())
+            fury_core::meta::FieldInfo::new(#name, <#ty as fury_core::serializer::Serializer>::get_type_id(fury))
         }
     });
     quote! {
-        fn fury_type_def() -> &'static [u8] {
-            use std::sync::Once;
-            static mut type_definition: Vec<u8> = Vec::new();
-            static type_definition_once: Once = Once::new();
-            unsafe {
-                type_definition_once.call_once(|| {
-                    type_definition = fury_core::meta::TypeMeta::from_fields(
-                        0,
-                        vec![#(#field_infos),*]
-                    ).to_bytes().unwrap();
-                });
-                type_definition.as_slice()
-            }
+        fn type_def(fury: &fury_core::fury::Fury) -> Vec<u8> {
+            fury_core::meta::TypeMeta::from_fields(
+                0,
+                vec![#(#field_infos),*]
+            ).to_bytes().unwrap()
         }
     }
 }
 
-pub fn gen_in_struct_impl(fields: &[&Field], tag: &String) -> TokenStream {
-    let hash_token_stream = hash(fields);
+pub fn gen_in_struct_impl(fields: &[&Field]) -> TokenStream {
+    let _hash_token_stream = hash(fields);
     let type_def_token_stream = type_def(fields);
 
     quote! {
-        #hash_token_stream
-
         #type_def_token_stream
-
-        fn fury_tag() -> &'static str {
-            #tag
-        }
     }
 }
-
 pub fn gen() -> TokenStream {
     quote! {
-            fn ty() -> fury_core::types::FieldType {
-                fury_core::types::FieldType::FuryTypeTag
+            fn get_type_id(fury: &fury_core::fury::Fury) -> i16 {
+                fury.get_class_resolver().get_class_info(std::any::TypeId::of::<Self>()).get_type_id() as i16
             }
     }
 }

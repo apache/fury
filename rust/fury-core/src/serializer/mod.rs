@@ -16,9 +16,11 @@
 // under the License.
 
 use crate::error::Error;
+use crate::fury::Fury;
 use crate::resolver::context::{ReadContext, WriteContext};
-use crate::types::{FieldType, RefFlag};
+use crate::types::RefFlag;
 
+mod any;
 mod bool;
 mod datetime;
 mod list;
@@ -33,7 +35,7 @@ pub fn serialize<T: Serializer>(this: &T, context: &mut WriteContext) {
     // ref flag
     context.writer.i8(RefFlag::NotNullValue as i8);
     // type
-    context.writer.i16(T::ty() as i16);
+    context.writer.i16(T::get_type_id(context.get_fury()));
     this.write(context);
 }
 
@@ -42,13 +44,12 @@ pub fn deserialize<T: Serializer>(context: &mut ReadContext) -> Result<T, Error>
     let ref_flag = context.reader.i8();
 
     if ref_flag == (RefFlag::NotNullValue as i8) || ref_flag == (RefFlag::RefValue as i8) {
-        // type_id
-        let type_id = context.reader.i16();
-        let ty = T::ty();
-        if type_id != ty as i16 {
+        let actual_type_id = context.reader.i16();
+        let expected_type_id = T::get_type_id(context.get_fury());
+        if actual_type_id != expected_type_id {
             Err(Error::FieldType {
-                expected: ty,
-                actial: type_id,
+                expected: expected_type_id,
+                actual: actual_type_id,
             })
         } else {
             Ok(T::read(context)?)
@@ -64,7 +65,7 @@ pub fn deserialize<T: Serializer>(context: &mut ReadContext) -> Result<T, Error>
 
 pub trait Serializer
 where
-    Self: Default,
+    Self: Sized,
 {
     /// The fixed memory size of the Type.
     /// Avoid the memory check, which would hurt performance.
@@ -87,5 +88,9 @@ where
         deserialize(context)
     }
 
-    fn ty() -> FieldType;
+    fn get_type_id(_fury: &Fury) -> i16;
+}
+
+pub trait StructSerializer: Serializer + 'static {
+    fn type_def(fury: &Fury) -> Vec<u8>;
 }

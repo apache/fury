@@ -41,8 +41,8 @@ impl<'se> WriteContext<'se> {
         }
     }
 
-    pub fn push_meta(&mut self, type_id: TypeId, type_def: &'static [u8]) -> usize {
-        self.meta_resolver.push(type_id, type_def)
+    pub fn push_meta(&mut self, type_id: TypeId) -> usize {
+        self.meta_resolver.push(type_id, self.fury)
     }
 
     pub fn write_meta(&mut self, offset: usize) {

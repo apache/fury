@@ -247,4 +247,15 @@ impl<'bf> Reader<'bf> {
         self.move_next(len);
         result
     }
+
+    pub fn reset_cursor_to_here(&self) -> impl FnOnce(&mut Self) {
+        let raw_cursor = self.cursor;
+        move |this: &mut Self| {
+            this.cursor = raw_cursor;
+        }
+    }
+
+    pub fn aligned<T>(&self) -> bool {
+        unsafe { (self.bf.as_ptr().add(self.cursor) as usize) % std::mem::align_of::<T>() == 0 }
+    }
 }

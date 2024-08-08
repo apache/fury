@@ -20,7 +20,7 @@ use crate::util::sorted_fields;
 use proc_macro::TokenStream;
 use quote::quote;
 
-pub fn derive_serializer(ast: &syn::DeriveInput, tag: &String) -> TokenStream {
+pub fn derive_serializer(ast: &syn::DeriveInput) -> TokenStream {
     let name = &ast.ident;
     let fields = match &ast.data {
         syn::Data::Struct(s) => sorted_fields(&s.fields),
@@ -30,12 +30,12 @@ pub fn derive_serializer(ast: &syn::DeriveInput, tag: &String) -> TokenStream {
     };
 
     let misc_token_stream = misc::gen();
-    let struct_impl_token_stream = misc::gen_in_struct_impl(&fields, tag);
-    let write_token_stream = write::gen(name, &fields);
-    let read_token_stream = read::gen(name, &fields);
+    let struct_impl_token_stream = misc::gen_in_struct_impl(&fields);
+    let write_token_stream = write::gen(&fields);
+    let read_token_stream = read::gen(&fields);
 
     let gen = quote! {
-        impl #name {
+        impl fury_core::serializer::StructSerializer for #name {
             #struct_impl_token_stream
         }
         impl fury_core::types::FuryGeneralList for #name {}

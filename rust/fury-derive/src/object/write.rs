@@ -15,11 +15,11 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use proc_macro2::{Ident, TokenStream};
+use proc_macro2::TokenStream;
 use quote::quote;
 use syn::Field;
 
-pub fn gen(name: &Ident, fields: &[&Field]) -> TokenStream {
+pub fn gen(fields: &[&Field]) -> TokenStream {
     let accessor_expr = fields.iter().map(|field| {
         let ty = &field.ty;
         let ident = &field.ident;
@@ -36,8 +36,6 @@ pub fn gen(name: &Ident, fields: &[&Field]) -> TokenStream {
         }
     });
 
-    let tag_byte_len = format!("{}", name).len();
-
     quote! {
         fn serialize(&self, context: &mut fury_core::resolver::context::WriteContext) {
             match context.get_fury().get_mode() {
@@ -47,8 +45,7 @@ pub fn gen(name: &Ident, fields: &[&Field]) -> TokenStream {
                 fury_core::types::Mode::Compatible => {
                     context.writer.i8(fury_core::types::RefFlag::NotNullValue as i8);
                     let meta_index = context.push_meta(
-                            std::any::TypeId::of::<Self>(),
-                            #name::fury_type_def()
+                            std::any::TypeId::of::<Self>()
                         ) as i16;
                     context.writer.i16(meta_index);
                     self.write(context);
@@ -58,17 +55,12 @@ pub fn gen(name: &Ident, fields: &[&Field]) -> TokenStream {
 
 
         fn write(&self, context: &mut fury_core::resolver::context::WriteContext) {
-            // write tag string
-            context.write_tag(#name::fury_tag());
-            // write tag hash
-            context.writer.u32(#name::fury_hash());
             // write fields
             #(#accessor_expr)*
         }
 
         fn reserved_space() -> usize {
-            // struct have four byte hash
-            #tag_byte_len + 4 + #(#reserved_size_expr)+*
+            #(#reserved_size_expr)+*
         }
     }
 }

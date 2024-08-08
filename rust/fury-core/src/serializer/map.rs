@@ -16,6 +16,7 @@
 // under the License.
 
 use crate::error::Error;
+use crate::fury::Fury;
 use crate::resolver::context::ReadContext;
 use crate::resolver::context::WriteContext;
 use crate::serializer::Serializer;
@@ -58,8 +59,8 @@ impl<T1: Serializer + Eq + std::hash::Hash, T2: Serializer> Serializer for HashM
         mem::size_of::<i32>()
     }
 
-    fn ty() -> FieldType {
-        FieldType::MAP
+    fn get_type_id(_fury: &Fury) -> i16 {
+        FieldType::MAP.into()
     }
 }
 

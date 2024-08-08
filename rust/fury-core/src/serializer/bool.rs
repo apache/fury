@@ -16,6 +16,7 @@
 // under the License.
 
 use crate::error::Error;
+use crate::fury::Fury;
 use crate::resolver::context::ReadContext;
 use crate::resolver::context::WriteContext;
 use crate::serializer::Serializer;
@@ -35,7 +36,7 @@ impl Serializer for bool {
         Ok(context.reader.u8() == 1)
     }
 
-    fn ty() -> FieldType {
-        FieldType::BOOL
+    fn get_type_id(_fury: &Fury) -> i16 {
+        FieldType::BOOL.into()
     }
 }

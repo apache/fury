@@ -16,6 +16,7 @@
 // under the License.
 
 use crate::error::Error;
+use crate::fury::Fury;
 use crate::resolver::context::ReadContext;
 use crate::resolver::context::WriteContext;
 use crate::serializer::Serializer;
@@ -42,8 +43,8 @@ impl Serializer for NaiveDateTime {
         mem::size_of::<u64>()
     }
 
-    fn ty() -> FieldType {
-        FieldType::TIMESTAMP
+    fn get_type_id(_fury: &Fury) -> i16 {
+        FieldType::TIMESTAMP.into()
     }
 }
 
@@ -67,8 +68,8 @@ impl Serializer for NaiveDate {
         }
     }
 
-    fn ty() -> FieldType {
-        FieldType::DATE
+    fn get_type_id(_fury: &Fury) -> i16 {
+        FieldType::DATE.into()
     }
 }
 

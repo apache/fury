@@ -23,22 +23,10 @@ mod fury_row;
 mod object;
 mod util;
 
-#[proc_macro_derive(Fury, attributes(tag))]
+#[proc_macro_derive(Fury)]
 pub fn proc_macro_derive_fury_object(input: proc_macro::TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
-    let tag = input
-        .attrs
-        .iter()
-        .find(|attr| attr.path().is_ident("tag"))
-        .expect("should have tag");
-    let expr: syn::ExprLit = tag.parse_args().expect("should tag contain string value");
-    let tag = match expr.lit {
-        syn::Lit::Str(s) => s.value(),
-        _ => {
-            panic!("tag should be string")
-        }
-    };
-    object::derive_serializer(&input, &tag)
+    object::derive_serializer(&input)
 }
 
 #[proc_macro_derive(FuryRow)]
