@@ -24,3 +24,4 @@ pub mod row;
 pub mod serializer;
 pub mod types;
 pub mod util;
+pub mod raw;

@@ -24,7 +24,7 @@ use crate::types::{FieldType, FuryGeneralList, SIZE_OF_REF_AND_TYPE};
 use std::collections::HashSet;
 use std::mem;
 
-impl<T: Serializer + Eq + std::hash::Hash> Serializer for HashSet<T> {
+impl<T: Serializer + Eq + std::hash::Hash + 'static> Serializer for HashSet<T> {
     fn write(&self, context: &mut WriteContext) {
         // length
         context.writer.i32(self.len() as i32);

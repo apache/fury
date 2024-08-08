@@ -15,12 +15,17 @@
 // specific language governing permissions and limitations
 // under the License.
 
+use std::any::{Any, TypeId};
+use std::collections::HashMap;
+use polymorph::as_any_trait_object;
+
 use crate::error::Error;
 use crate::fury::Fury;
+use crate::resolver::class_resolver::TraitObjectDeserializer;
 use crate::resolver::context::{ReadContext, WriteContext};
 use crate::types::RefFlag;
 
-mod any;
+pub mod polymorph;
 mod bool;
 mod datetime;
 mod list;
@@ -30,6 +35,7 @@ mod option;
 mod primitive_list;
 mod set;
 mod string;
+mod any;
 
 pub fn serialize<T: Serializer>(this: &T, context: &mut WriteContext) {
     // ref flag
@@ -63,9 +69,27 @@ pub fn deserialize<T: Serializer>(context: &mut ReadContext) -> Result<T, Error>
     }
 }
 
+
+pub trait PolymorphicCast {
+    fn as_any(&self) -> &dyn Any;
+
+    fn type_id(&self) -> TypeId;
+}
+
+
+impl<T: Serializer + 'static> PolymorphicCast for T {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn type_id(&self) -> TypeId {
+        TypeId::of::<T>()
+    }
+}
+
 pub trait Serializer
 where
-    Self: Sized,
+    Self: Sized + 'static,
 {
     /// The fixed memory size of the Type.
     /// Avoid the memory check, which would hurt performance.
@@ -89,8 +113,16 @@ where
     }
 
     fn get_type_id(_fury: &Fury) -> i16;
+
+    fn get_trait_object_deserializer() -> HashMap<TypeId, TraitObjectDeserializer> {
+        let mut ret: HashMap<TypeId, TraitObjectDeserializer> = HashMap::new();
+        ret.insert(TypeId::of::<Box<dyn Any>>(), as_any_trait_object::<Self>);
+        ret
+    }
+
+    fn type_def(_fury: &Fury) -> Vec<u8> {
+        vec![]
+    }
+
 }
 
-pub trait StructSerializer: Serializer + 'static {
-    fn type_def(fury: &Fury) -> Vec<u8>;
-}

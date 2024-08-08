@@ -78,4 +78,7 @@ pub enum Error {
 
     #[error("Unregistered type when serializing or deserializing object of Any type: {value:?}")]
     UnregisteredType { value: u32 },
+
+    #[error("Unregistered type when serializing or deserializing object of Any type: ")]
+    ConvertToTraitObjectError {  },
 }

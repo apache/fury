@@ -15,17 +15,19 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use crate::object::{misc, read, write};
+use crate::object::{misc, read, write, polymorphic};
 use crate::util::sorted_fields;
 use proc_macro::TokenStream;
 use quote::quote;
 
-pub fn derive_serializer(ast: &syn::DeriveInput) -> TokenStream {
+
+pub fn derive_serializer(ast: &syn::DeriveInput) -> Option<TokenStream> {
     let name = &ast.ident;
+    let attrs = &ast.attrs;
     let fields = match &ast.data {
         syn::Data::Struct(s) => sorted_fields(&s.fields),
         _ => {
-            panic!("only struct be supported")
+            return None
         }
     };
 
@@ -33,17 +35,17 @@ pub fn derive_serializer(ast: &syn::DeriveInput) -> TokenStream {
     let struct_impl_token_stream = misc::gen_in_struct_impl(&fields);
     let write_token_stream = write::gen(&fields);
     let read_token_stream = read::gen(&fields);
+    let polymorph_token_stream: proc_macro2::TokenStream = polymorphic::gen(name, attrs);
 
     let gen = quote! {
-        impl fury_core::serializer::StructSerializer for #name {
-            #struct_impl_token_stream
-        }
         impl fury_core::types::FuryGeneralList for #name {}
         impl fury_core::serializer::Serializer for #name {
             #misc_token_stream
             #write_token_stream
             #read_token_stream
+            #struct_impl_token_stream
+            #polymorph_token_stream
         }
     };
-    gen.into()
+    Some(gen.into())
 }

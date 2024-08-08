@@ -72,7 +72,7 @@ pub fn gen_in_struct_impl(fields: &[&Field]) -> TokenStream {
 pub fn gen() -> TokenStream {
     quote! {
             fn get_type_id(fury: &fury_core::fury::Fury) -> i16 {
-                fury.get_class_resolver().get_class_info(std::any::TypeId::of::<Self>()).get_type_id() as i16
+                fury.get_class_resolver().get_class_info_by_rust_type(std::any::TypeId::of::<Self>()).get_fury_type_id() as i16
             }
     }
 }
