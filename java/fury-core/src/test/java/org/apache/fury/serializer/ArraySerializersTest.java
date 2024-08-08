@@ -74,6 +74,29 @@ public class ArraySerializersTest extends FuryTestBase {
     serDeCheck(fury1, fury2, new Object[] {"str", 1});
   }
 
+  @Test(dataProvider = "furyCopyConfig")
+  public void testObjectArrayCopy(Fury fury) {
+    copyCheck(fury, new Object[] {false, true});
+    copyCheck(fury, new Object[] {(byte) 1, (byte) 1});
+    copyCheck(fury, new Object[] {(short) 1, (short) 1});
+    copyCheck(fury, new Object[] {(char) 1, (char) 1});
+    copyCheck(fury, new Object[] {1, 1});
+    copyCheck(fury, new Object[] {(float) 1.0, (float) 1.1});
+    copyCheck(fury, new Object[] {1.0, 1.1});
+    copyCheck(fury, new Object[] {1L, 2L});
+    copyCheck(fury, new Boolean[] {false, true});
+    copyCheck(fury, new Byte[] {(byte) 1, (byte) 1});
+    copyCheck(fury, new Short[] {(short) 1, (short) 1});
+    copyCheck(fury, new Character[] {(char) 1, (char) 1});
+    copyCheck(fury, new Integer[] {1, 1});
+    copyCheck(fury, new Float[] {(float) 1.0, (float) 1.1});
+    copyCheck(fury, new Double[] {1.0, 1.1});
+    copyCheck(fury, new Long[] {1L, 2L});
+    copyCheck(fury, new Object[] {false, true, (byte) 1, (byte) 1, (float) 1.0, (float) 1.1});
+    copyCheck(fury, new String[] {"str", "str"});
+    copyCheck(fury, new Object[] {"str", 1});
+  }
+
   @Test(dataProvider = "crossLanguageReferenceTrackingConfig")
   public void testMultiArraySerialization(boolean referenceTracking, Language language) {
     FuryBuilder builder =
@@ -94,6 +117,18 @@ public class ArraySerializersTest extends FuryTestBase {
     serDeCheck(fury1, fury2, new Integer[][] {{1, 2}, {1, 2}});
   }
 
+  @Test(dataProvider = "furyCopyConfig")
+  public void testMultiArraySerialization(Fury fury) {
+    copyCheck(fury, new Object[][] {{false, true}, {false, true}});
+    copyCheck(
+        fury,
+        new Object[][] {
+          {false, true, (byte) 1, (byte) 1, (float) 1.0, (float) 1.1},
+          {false, true, (byte) 1, (byte) 1, (float) 1.0, (float) 1.1}
+        });
+    copyCheck(fury, new Integer[][] {{1, 2}, {1, 2}});
+  }
+
   @Test(dataProvider = "crossLanguageReferenceTrackingConfig")
   public void testPrimitiveArray(boolean referenceTracking, Language language) {
     Supplier<FuryBuilder> builder =
@@ -105,6 +140,18 @@ public class ArraySerializersTest extends FuryTestBase {
     Fury fury1 = builder.get().build();
     Fury fury2 = builder.get().build();
     testPrimitiveArray(fury1, fury2);
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testPrimitiveArray(Fury fury) {
+    copyCheck(fury, new boolean[] {false, true});
+    copyCheck(fury, new byte[] {1, 1});
+    copyCheck(fury, new short[] {1, 1});
+    copyCheck(fury, new int[] {1, 1});
+    copyCheck(fury, new long[] {1, 1});
+    copyCheck(fury, new float[] {1.f, 1.f});
+    copyCheck(fury, new double[] {1.0, 1.0});
+    copyCheck(fury, new char[] {'a', ' '});
   }
 
   public static void testPrimitiveArray(Fury fury1, Fury fury2) {
@@ -157,6 +204,14 @@ public class ArraySerializersTest extends FuryTestBase {
       ArraysData arraysData = new ArraysData(7 * i);
       assertEquals(arraysData, serDeOutOfBand(counter, fury1, fury1, arraysData));
       assertEquals(arraysData, serDeOutOfBand(counter, fury1, fury2, arraysData));
+    }
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testArrayStructZeroCopy(Fury fury) {
+    for (int i = 0; i < 4; i++) {
+      ArraysData arraysData = new ArraysData(7 * i);
+      copyCheck(fury, arraysData);
     }
   }
 
@@ -220,5 +275,29 @@ public class ArraySerializersTest extends FuryTestBase {
         (GenericArrayWrapper<String>) fury.deserialize(bytes);
     deserialized.array[1] = "World";
     Assert.assertEquals(deserialized.array, new String[] {"Hello", "World"});
+  }
+
+  @SuppressWarnings("unchecked")
+  @Test(dataProvider = "furyCopyConfig")
+  public void testArrayPolyMorphic(Fury fury) {
+    Object[] arr = new String[] {"a", "b"};
+    copyCheck(fury, arr);
+
+    A[] arr1 = new B[] {new B(1, "a"), new B(2, "b")};
+    copyCheck(fury, arr1);
+
+    Struct struct1 = new Struct(arr1);
+    copyCheck(fury, struct1);
+    A[] arr2 = new A[] {new A(1), new B(2, "b")};
+    Struct struct2 = new Struct(arr2);
+    copyCheck(fury, struct2);
+
+    final GenericArrayWrapper<String> wrapper = new GenericArrayWrapper<>(String.class, 2);
+    wrapper.array[0] = "Hello";
+    wrapper.array[1] = "World";
+    GenericArrayWrapper<String> copy = fury.copy(wrapper);
+    Assert.assertEquals(copy.array, wrapper.array);
+    Assert.assertNotSame(copy.array, wrapper.array);
+    Assert.assertNotSame(copy, wrapper);
   }
 }

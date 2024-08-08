@@ -48,7 +48,7 @@ import org.apache.fury.resolver.ClassResolver;
  * true, this serializer will be used.
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
-public class JavaSerializer extends Serializer {
+public class JavaSerializer extends AbstractObjectSerializer {
   private static final Logger LOG = LoggerFactory.getLogger(JavaSerializer.class);
   private final MemoryBufferObjectInput objectInput;
   private final MemoryBufferObjectOutput objectOutput;

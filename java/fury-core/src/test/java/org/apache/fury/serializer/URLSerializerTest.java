@@ -35,6 +35,11 @@ public class URLSerializerTest extends FuryTestBase {
         new URL("http://test"));
   }
 
+  @Test(dataProvider = "furyCopyConfig")
+  public void testDefaultCopy(Fury fury) throws MalformedURLException {
+    copyCheck(fury, new URL("http://test"));
+  }
+
   @Test
   public void testURLSerializer() throws MalformedURLException {
     Fury fury = Fury.builder().build();
@@ -42,5 +47,11 @@ public class URLSerializerTest extends FuryTestBase {
     Assert.assertEquals(
         serDeCheckSerializer(fury, new URL("http://test"), "URLSerializer"),
         new URL("http://test"));
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testURLSerializer(Fury fury) throws MalformedURLException {
+    fury.registerSerializer(URL.class, URLSerializer.class);
+    copyCheck(fury, new URL("http://test"));
   }
 }

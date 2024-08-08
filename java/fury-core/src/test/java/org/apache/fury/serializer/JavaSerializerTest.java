@@ -24,6 +24,8 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamConstants;
 import java.io.Serializable;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.ByteBuffer;
 import lombok.Data;
 import org.apache.fury.Fury;
@@ -76,5 +78,12 @@ public class JavaSerializerTest extends FuryTestBase {
     Fury fury = Fury.builder().build();
     bytes = fury.serialize(1.1);
     Assert.assertFalse(JavaSerializer.serializedByJDK(bytes));
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testJdkSerializationCopy(Fury fury) throws MalformedURLException {
+    URL url = new URL("http://localhost:80");
+    fury.registerSerializer(URL.class, JavaSerializer.class);
+    copyCheck(fury, url);
   }
 }

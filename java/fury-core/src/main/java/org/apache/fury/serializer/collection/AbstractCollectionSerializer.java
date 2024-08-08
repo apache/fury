@@ -542,6 +542,35 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
     }
   }
 
+  public void copyElements(Collection originCollection, Collection newCollection) {
+    ClassResolver classResolver = fury.getClassResolver();
+    for (Object element : originCollection) {
+      if (element != null) {
+        ClassInfo classInfo =
+            classResolver.getClassInfo(element.getClass(), elementClassInfoHolder);
+        if (!classInfo.getSerializer().isImmutable()) {
+          element = fury.copyObject(element, classInfo.getClassId());
+        }
+      }
+      newCollection.add(element);
+    }
+  }
+
+  public void copyElements(Collection originCollection, Object[] elements) {
+    int index = 0;
+    ClassResolver classResolver = fury.getClassResolver();
+    for (Object element : originCollection) {
+      if (element != null) {
+        ClassInfo classInfo =
+            classResolver.getClassInfo(element.getClass(), elementClassInfoHolder);
+        if (!classInfo.getSerializer().isImmutable()) {
+          element = fury.copyObject(element, classInfo.getSerializer());
+        }
+      }
+      elements[index++] = element;
+    }
+  }
+
   private RuntimeException buildException(Throwable e) {
     return new IllegalArgumentException(
         "Please provide public no arguments constructor for class " + type, e);

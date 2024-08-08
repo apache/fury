@@ -30,7 +30,8 @@ import org.apache.fury.memory.Platform;
 import org.apache.fury.reflect.ReflectionUtils;
 
 /** Serializer for class implements {@link Externalizable}. */
-public class ExternalizableSerializer<T extends Externalizable> extends Serializer<T> {
+public class ExternalizableSerializer<T extends Externalizable>
+    extends AbstractObjectSerializer<T> {
   private final MethodHandle constructor;
   private final MemoryBufferObjectInput objectInput;
   private final MemoryBufferObjectOutput objectOutput;

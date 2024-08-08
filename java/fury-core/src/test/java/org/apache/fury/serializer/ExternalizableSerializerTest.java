@@ -23,11 +23,12 @@ import static org.testng.Assert.assertEquals;
 
 import java.io.Externalizable;
 import org.apache.fury.Fury;
+import org.apache.fury.FuryTestBase;
 import org.apache.fury.config.Language;
 import org.apache.fury.serializer.test.Factory;
 import org.testng.annotations.Test;
 
-public class ExternalizableSerializerTest {
+public class ExternalizableSerializerTest extends FuryTestBase {
 
   @Test
   public void testInaccessibleExternalizable() {
@@ -40,5 +41,11 @@ public class ExternalizableSerializerTest {
             .requireClassRegistration(false)
             .build();
     assertEquals(e, fury.deserialize(fury.serialize(e)));
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testInaccessibleExternalizable(Fury fury) {
+    Externalizable e = Factory.newInstance(1, 1, "bytes".getBytes());
+    copyCheck(fury, e);
   }
 }

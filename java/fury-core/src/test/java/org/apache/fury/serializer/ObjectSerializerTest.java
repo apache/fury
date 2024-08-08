@@ -20,18 +20,21 @@
 package org.apache.fury.serializer;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotSame;
 
 import lombok.Data;
 import org.apache.fury.Fury;
+import org.apache.fury.FuryTestBase;
 import org.apache.fury.config.Language;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.test.bean.Cyclic;
 import org.apache.fury.util.Preconditions;
+import org.testng.Assert;
 import org.testng.annotations.Test;
 
 @SuppressWarnings("unchecked")
-public class ObjectSerializerTest {
+public class ObjectSerializerTest extends FuryTestBase {
 
   @Test
   public void testLocalClass() {
@@ -53,6 +56,21 @@ public class ObjectSerializerTest {
     serializer.write(buffer, foo);
     Object obj = serializer.read(buffer);
     assertEquals(foo.foo("str"), ((Foo) obj).foo("str"));
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testLocalClass(Fury fury) {
+    String str = "str";
+    class Foo {
+      public String foo(String s) {
+        return str + s;
+      }
+    }
+    ObjectSerializer serializer = new ObjectSerializer(fury, Foo.class);
+    Foo foo = new Foo();
+    Object obj = serializer.copy(foo);
+    assertEquals(foo.foo("str"), ((Foo) obj).foo("str"));
+    Assert.assertNotSame(foo, obj);
   }
 
   @Test
@@ -83,6 +101,27 @@ public class ObjectSerializerTest {
     assertEquals(foo.foo("str"), ((Foo) obj).foo("str"));
   }
 
+  @Test(dataProvider = "furyCopyConfig")
+  public void testAnonymousClass(Fury fury) {
+    String str = "str";
+    class Foo {
+      public String foo(String s) {
+        return str + s;
+      }
+    }
+    Foo foo =
+        new Foo() {
+          @Override
+          public String foo(String s) {
+            return "Anonymous " + s;
+          }
+        };
+    ObjectSerializer serializer = new ObjectSerializer(fury, foo.getClass());
+    Object obj = serializer.copy(foo);
+    assertEquals(foo.foo("str"), ((Foo) obj).foo("str"));
+    assertNotSame(foo, obj);
+  }
+
   @Test
   public void testSerializeCircularReference() {
     Cyclic cyclic = Cyclic.create(true);
@@ -103,6 +142,15 @@ public class ObjectSerializerTest {
     Cyclic cyclic1 = serializer.read(buffer);
     fury.reset();
     assertEquals(cyclic1, cyclic);
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testCopyCircularReference(Fury fury) {
+    Cyclic cyclic = Cyclic.create(true);
+    ObjectSerializer<Cyclic> serializer = new ObjectSerializer<>(fury, Cyclic.class);
+    Cyclic cyclic1 = serializer.copy(cyclic);
+    assertEquals(cyclic1, cyclic);
+    assertNotSame(cyclic1, cyclic);
   }
 
   @Data
@@ -129,5 +177,6 @@ public class ObjectSerializerTest {
     A a = new A();
     serializer.write(buffer, a);
     assertEquals(a, serializer.read(buffer));
+    assertEquals(a, serializer.copy(a));
   }
 }

@@ -58,7 +58,6 @@ import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.resolver.ClassInfo;
-import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.resolver.FieldResolver;
 import org.apache.fury.resolver.FieldResolver.ClassField;
 import org.apache.fury.util.ExceptionUtils;
@@ -78,11 +77,10 @@ import org.apache.fury.util.unsafe._JDKAccess;
  * <p>`ObjectInputStream#setObjectInputFilter` will be ignored by this serializer.
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
-public class ObjectStreamSerializer extends Serializer {
+public class ObjectStreamSerializer extends AbstractObjectSerializer {
   private static final Logger LOG = LoggerFactory.getLogger(ObjectStreamSerializer.class);
 
   private final Constructor constructor;
-  private final ClassResolver classResolver;
   private final SlotsInfo[] slotsInfos;
 
   public ObjectStreamSerializer(Fury fury, Class<?> type) {
@@ -109,7 +107,6 @@ public class ObjectStreamSerializer extends Serializer {
       constructor =
           (Constructor) ReflectionUtils.getObjectFieldValue(ObjectStreamClass.lookup(type), "cons");
     }
-    this.classResolver = fury.getClassResolver();
     this.constructor = constructor;
     List<SlotsInfo> slotsInfoList = new ArrayList<>();
     Class<?> end = type;

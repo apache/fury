@@ -96,6 +96,10 @@ public class ForwardSerializer {
       byte[] bytes = buffer.getRemainingBytes();
       return deserialize(serializer, bytes);
     }
+
+    protected Object copy(T serializer, Object obj) {
+      throw new UnsupportedOperationException();
+    }
   }
 
   public static class DefaultFuryProxy extends SerializerProxy<LoaderBinding> {
@@ -173,6 +177,11 @@ public class ForwardSerializer {
     @Override
     protected Object deserialize(LoaderBinding serializer, MemoryBuffer buffer) {
       return serializer.get().deserialize(buffer);
+    }
+
+    @Override
+    protected Object copy(LoaderBinding serializer, Object obj) {
+      return serializer.get().copy(obj);
     }
   }
 
@@ -263,5 +272,9 @@ public class ForwardSerializer {
 
   public <T> T deserialize(MemoryBuffer buffer) {
     return (T) proxy.deserialize(serializerLocal.get(), buffer);
+  }
+
+  public <T> T copy(T obj) {
+    return (T) proxy.copy(serializerLocal.get(), obj);
   }
 }

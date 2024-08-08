@@ -61,6 +61,16 @@ public class CompatibleSerializerTest extends FuryTestBase {
     serDeCheck(fury, BeanA.createBeanA(2));
   }
 
+  @Test(dataProvider = "furyCopyConfig")
+  public void testCopy(Fury fury) {
+    fury.registerSerializer(Foo.class, new CompatibleSerializer<>(fury, Foo.class));
+    fury.registerSerializer(BeanA.class, new CompatibleSerializer<>(fury, BeanA.class));
+    fury.registerSerializer(BeanB.class, new CompatibleSerializer<>(fury, BeanB.class));
+    copyCheck(fury, Foo.create());
+    copyCheck(fury, BeanB.createBeanB(2));
+    copyCheck(fury, BeanA.createBeanA(2));
+  }
+
   @Test(dataProvider = "referenceTrackingConfig")
   public void testWriteCompatibleBasic(boolean referenceTrackingConfig) throws Exception {
     Fury fury =

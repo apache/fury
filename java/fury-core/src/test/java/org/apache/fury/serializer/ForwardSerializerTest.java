@@ -84,6 +84,11 @@ public class ForwardSerializerTest {
                 Input input = new Input(bytes);
                 return serializer.readClassAndObject(input);
               }
+
+              @Override
+              protected Object copy(Kryo serializer, Object obj) {
+                return serializer.copy(obj);
+              }
             });
       default:
         throw new UnsupportedOperationException("Unsupported serializer type " + serializerType);
@@ -97,6 +102,15 @@ public class ForwardSerializerTest {
     assertEquals(kryo.deserialize(kryo.serialize(beanA)), beanA);
     ForwardSerializer fury = createSerializer("Fury");
     assertEquals(fury.deserialize(fury.serialize(beanA)), beanA);
+  }
+
+  @Test
+  public void testCopy() {
+    BeanA beanA = BeanA.createBeanA(3);
+    ForwardSerializer kryo = createSerializer("Kryo");
+    assertEquals(kryo.copy(beanA), beanA);
+    ForwardSerializer fury = createSerializer("Fury");
+    assertEquals(fury.copy(beanA), beanA);
   }
 
   private volatile boolean hasException;
@@ -115,6 +129,34 @@ public class ForwardSerializerTest {
               for (int j = 0; j < 10; j++) {
                 try {
                   assertEquals(serializer.deserialize(serializer.serialize(beanA)), beanA);
+                } catch (Exception e) {
+                  hasException = true;
+                  e.printStackTrace();
+                  throw e;
+                }
+              }
+            });
+      }
+      executorService.shutdown();
+      assertTrue(executorService.awaitTermination(30, TimeUnit.SECONDS));
+      assertFalse(hasException);
+    }
+  }
+
+  @Test
+  public void testConcurrentCopy() throws InterruptedException {
+    BeanA beanA = BeanA.createBeanA(3);
+    for (String type : new String[] {"Kryo", "Fury"}) {
+      ForwardSerializer serializer = createSerializer(type);
+      serializer.register(BeanA.class);
+      assertEquals(serializer.copy(beanA), beanA);
+      ExecutorService executorService = Executors.newFixedThreadPool(12);
+      for (int i = 0; i < 1000; i++) {
+        executorService.execute(
+            () -> {
+              for (int j = 0; j < 10; j++) {
+                try {
+                  assertEquals(serializer.copy(beanA), beanA);
                 } catch (Exception e) {
                   hasException = true;
                   e.printStackTrace();

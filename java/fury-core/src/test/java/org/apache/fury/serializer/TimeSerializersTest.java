@@ -68,11 +68,34 @@ public class TimeSerializersTest extends FuryTestBase {
     serDeCheckSerializerAndEqual(fury, Period.of(100, 11, 20), "Time");
   }
 
+  @Test(dataProvider = "furyCopyConfig")
+  public void testBasicTime(Fury fury) {
+    copyCheckWithoutSame(fury, new Date());
+    copyCheckWithoutSame(fury, new java.sql.Date(100));
+    copyCheckWithoutSame(fury, new java.sql.Time(200));
+    copyCheckWithoutSame(fury, new Timestamp(300));
+    copyCheckWithoutSame(fury, new java.sql.Date(-100));
+    copyCheckWithoutSame(fury, new java.sql.Time(-200));
+    copyCheckWithoutSame(fury, new Timestamp(-300));
+    copyCheckWithoutSame(fury, LocalDate.now());
+    copyCheckWithoutSame(fury, LocalTime.now());
+    copyCheckWithoutSame(fury, LocalDateTime.now());
+    copyCheckWithoutSame(fury, DateTimeUtils.truncateInstantToMicros(Instant.now()));
+    copyCheckWithoutSame(fury, Duration.between((Instant.now()), Instant.ofEpochSecond(-1)));
+    copyCheckWithoutSame(fury, Period.of(100, 11, 20));
+  }
+
   @Test
   public void testCalendar() {
     Fury fury = Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
     serDeCheckSerializerAndEqual(fury, GregorianCalendar.getInstance(), "Calendar");
     serDeCheckSerializerAndEqual(fury, Calendar.getInstance(), "Calendar");
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testCalendar(Fury fury) {
+    copyCheckWithoutSame(fury, GregorianCalendar.getInstance());
+    copyCheckWithoutSame(fury, Calendar.getInstance());
   }
 
   @Test
@@ -122,6 +145,43 @@ public class TimeSerializersTest extends FuryTestBase {
         "OffsetDateTimeSerializer");
   }
 
+  @Test(dataProvider = "furyCopyConfig")
+  public void testZone(Fury fury) {
+    copyCheckWithoutSame(
+        fury,
+        ZonedDateTime.of(Year.MIN_VALUE, Month.JANUARY.getValue(), 1, 0, 0, 0, 0, ZoneOffset.UTC));
+    copyCheckWithoutSame(
+        fury,
+        ZonedDateTime.of(
+            Year.MIN_VALUE, Month.JANUARY.getValue(), 1, 0, 0, 0, 0, ZoneId.of("Europe/Berlin")));
+    copyCheckWithoutSame(
+        fury,
+        ZonedDateTime.of(
+            Year.MAX_VALUE,
+            Month.DECEMBER.getValue(),
+            31,
+            23,
+            59,
+            59,
+            999999999,
+            ZoneId.of("Europe/Berlin")));
+    copyCheckWithoutSame(fury, Year.of(Year.MIN_VALUE));
+    copyCheckWithoutSame(fury, Year.of(Year.MAX_VALUE));
+    copyCheckWithoutSame(fury, YearMonth.of(Year.MIN_VALUE, Month.APRIL));
+    copyCheckWithoutSame(fury, YearMonth.of(Year.MAX_VALUE, Month.APRIL));
+    copyCheckWithoutSame(fury, MonthDay.of(Month.JANUARY, 11));
+    copyCheckWithoutSame(fury, MonthDay.of(Month.DECEMBER, 11));
+    copyCheckWithoutSame(fury, OffsetTime.of(1, 1, 1, 1, ZoneOffset.UTC));
+    copyCheckWithoutSame(fury, OffsetTime.of(23, 59, 59, 999999999, ZoneOffset.UTC));
+    copyCheckWithoutSame(
+        fury,
+        OffsetDateTime.of(Year.MIN_VALUE, Month.JANUARY.getValue(), 1, 0, 0, 0, 0, ZoneOffset.UTC));
+    copyCheckWithoutSame(
+        fury,
+        OffsetDateTime.of(
+            Year.MAX_VALUE, Month.DECEMBER.getValue(), 31, 23, 59, 59, 999999999, ZoneOffset.UTC));
+  }
+
   @Data
   public static class TimeStruct {
     Date date;
@@ -160,6 +220,21 @@ public class TimeSerializersTest extends FuryTestBase {
       fury.registerSerializer(TimeStruct.class, new ObjectSerializer(fury, TimeStruct.class));
       serDe(fury, struct);
     }
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testTimeStruct(Fury fury) {
+    TimeStruct struct = new TimeStruct();
+    struct.date = new Date();
+    struct.sqlDate = new java.sql.Date(100);
+    struct.time = new java.sql.Time(200);
+    struct.timestamp = new Timestamp(300);
+    struct.localDate = LocalDate.now();
+    struct.localTime = LocalTime.now();
+    struct.localDateTime = LocalDateTime.now();
+    struct.instant = DateTimeUtils.truncateInstantToMicros(Instant.now());
+    struct.duration = Duration.between(Instant.now(), Instant.ofEpochSecond(-1));
+    copyCheck(fury, struct);
   }
 
   @Data
@@ -263,6 +338,56 @@ public class TimeSerializersTest extends FuryTestBase {
         Assert.assertSame(struct2.instant1, struct2.instant2);
         Assert.assertNotSame(struct2.time1, struct2.time2);
         Assert.assertNotSame(struct2.duration1, struct2.duration2);
+      }
+    }
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testTimeStructRef(Fury fury) {
+    {
+      fury.registerSerializer(
+          TimeStructRef.class, CodegenSerializer.loadCodegenSerializer(fury, TimeStructRef.class));
+      TimeStructRef struct = createTimeStructRef(new TimeStructRef());
+      TimeStructRef struct1 = fury.copy(struct);
+      Assert.assertSame(struct1.date1, struct1.date2);
+      Assert.assertSame(struct1.sqlDate1, struct1.sqlDate2);
+      Assert.assertSame(struct1.time1, struct1.time2);
+      Assert.assertSame(struct1.instant1, struct1.instant2);
+      Assert.assertSame(struct1.duration1, struct1.duration2);
+    }
+    {
+      fury.registerSerializer(
+          TimeStruct.class, CodegenSerializer.loadCodegenSerializer(fury, TimeStruct.class));
+      fury.registerSerializer(
+          TimeStructRef1.class,
+          CodegenSerializer.loadCodegenSerializer(fury, TimeStructRef1.class));
+      TimeStructRef1 struct = (TimeStructRef1) createTimeStructRef(new TimeStructRef1());
+      TimeStructRef1 struct1 = fury.copy(struct);
+      Assert.assertSame(struct1.date1, struct1.date2);
+      Assert.assertSame(struct1.sqlDate1, struct1.sqlDate2);
+      Assert.assertSame(struct1.time1, struct1.time2);
+      Assert.assertSame(struct1.instant1, struct1.instant2);
+      Assert.assertSame(struct1.duration1, struct1.duration2);
+    }
+    {
+      fury.registerSerializer(Date.class, new TimeSerializers.DateSerializer(fury, true));
+      fury.registerSerializer(
+          java.sql.Date.class, new TimeSerializers.SqlDateSerializer(fury, true));
+      fury.registerSerializer(Instant.class, new TimeSerializers.InstantSerializer(fury, true));
+      {
+        TimeStructRef struct = createTimeStructRef(new TimeStructRef());
+        TimeStructRef struct2 = fury.copy(struct);
+        // TimeStructRef serializer already generated, enable ref tracking doesn't take effect.
+        Assert.assertSame(struct2.date1, struct2.date2);
+      }
+      {
+        TimeStructRef struct = createTimeStructRef(new TimeStructRef2());
+        TimeStructRef struct2 = fury.copy(struct);
+        Assert.assertSame(struct2.date1, struct2.date2);
+        Assert.assertSame(struct2.sqlDate1, struct2.sqlDate2);
+        Assert.assertSame(struct2.instant1, struct2.instant2);
+        Assert.assertSame(struct2.time1, struct2.time2);
+        Assert.assertSame(struct2.duration1, struct2.duration2);
       }
     }
   }

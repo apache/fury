@@ -20,6 +20,7 @@
 package org.apache.fury.serializer;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotSame;
 
 import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
@@ -56,6 +57,17 @@ public class JdkProxySerializerTest extends FuryTestBase {
                 fury.getClassLoader(), new Class[] {Function.class}, new TestInvocationHandler());
     Function deserializedFunction = (Function) fury.deserialize(fury.serialize(function));
     assertEquals(deserializedFunction.apply(null), 1);
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testJdkProxy(Fury fury) {
+    Function function =
+        (Function)
+            Proxy.newProxyInstance(
+                fury.getClassLoader(), new Class[] {Function.class}, new TestInvocationHandler());
+    Function copy = fury.copy(function);
+    assertNotSame(copy, function);
+    assertEquals(copy.apply(null), 1);
   }
 
   private static class RefTestInvocationHandler implements InvocationHandler, Serializable {
@@ -101,5 +113,21 @@ public class JdkProxySerializerTest extends FuryTestBase {
     RefTestInvocationHandler deserializedHandler =
         (RefTestInvocationHandler) Proxy.getInvocationHandler(deserializedFunction);
     assertEquals(deserializedHandler.getProxy(), deserializedFunction);
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testJdkProxyRef(Fury fury) {
+    RefTestInvocationHandler hdlr = new RefTestInvocationHandler();
+    Function function =
+        (Function)
+            Proxy.newProxyInstance(fury.getClassLoader(), new Class[] {Function.class}, hdlr);
+    hdlr.setProxy(function);
+    assertEquals(hdlr.getProxy(), function);
+
+    Function copy = fury.copy(function);
+    RefTestInvocationHandler copyHandler =
+        (RefTestInvocationHandler) Proxy.getInvocationHandler(copy);
+    assertEquals(copyHandler.getProxy().getClass().getName(), copy.getClass().getName());
+    assertNotSame(copyHandler.getProxy(), copy);
   }
 }

@@ -48,6 +48,12 @@ public class GuavaCollectionSerializersTest extends FuryTestBase {
         GuavaCollectionSerializers.RegularImmutableListSerializer.class);
   }
 
+  @Test(dataProvider = "furyCopyConfig")
+  public void testImmutableListSerializerCopy(Fury fury) {
+    copyCheck(fury, ImmutableList.of(1));
+    copyCheck(fury, ImmutableList.of(1, 2));
+  }
+
   @Test(dataProvider = "trackingRefFury")
   public void testImmutableSetSerializer(Fury fury) {
     serDe(fury, ImmutableSet.of(1));
@@ -55,6 +61,18 @@ public class GuavaCollectionSerializersTest extends FuryTestBase {
         fury.getClassResolver().getSerializerClass(ImmutableSet.of(1).getClass()),
         GuavaCollectionSerializers.ImmutableSetSerializer.class);
     serDe(fury, ImmutableSet.of(1, 2));
+    Assert.assertEquals(
+        fury.getClassResolver().getSerializerClass(ImmutableSet.of(1, 2).getClass()),
+        GuavaCollectionSerializers.ImmutableSetSerializer.class);
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testImmutableSetSerializerCopy(Fury fury) {
+    copyCheck(fury, ImmutableSet.of(1));
+    Assert.assertEquals(
+        fury.getClassResolver().getSerializerClass(ImmutableSet.of(1).getClass()),
+        GuavaCollectionSerializers.ImmutableSetSerializer.class);
+    copyCheck(fury, ImmutableSet.of(1, 2));
     Assert.assertEquals(
         fury.getClassResolver().getSerializerClass(ImmutableSet.of(1, 2).getClass()),
         GuavaCollectionSerializers.ImmutableSetSerializer.class);
@@ -68,9 +86,25 @@ public class GuavaCollectionSerializersTest extends FuryTestBase {
         GuavaCollectionSerializers.ImmutableSortedSetSerializer.class);
   }
 
+  @Test(dataProvider = "furyCopyConfig")
+  public void testImmutableSortedSetSerializerCopy(Fury fury) {
+    copyCheck(fury, ImmutableSortedSet.of(1, 2));
+    Assert.assertEquals(
+        fury.getClassResolver().getSerializerClass(ImmutableSortedSet.of(1, 2).getClass()),
+        GuavaCollectionSerializers.ImmutableSortedSetSerializer.class);
+  }
+
   @Test(dataProvider = "trackingRefFury")
   public void testImmutableMapSerializer(Fury fury) {
     serDe(fury, ImmutableMap.of("k1", 1, "k2", 2));
+    Assert.assertEquals(
+        fury.getClassResolver().getSerializerClass(ImmutableMap.of("k1", 1, "k2", 2).getClass()),
+        GuavaCollectionSerializers.ImmutableMapSerializer.class);
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testImmutableMapSerializerCopy(Fury fury) {
+    copyCheck(fury, ImmutableMap.of("k1", 1, "k2", 2));
     Assert.assertEquals(
         fury.getClassResolver().getSerializerClass(ImmutableMap.of("k1", 1, "k2", 2).getClass()),
         GuavaCollectionSerializers.ImmutableMapSerializer.class);
@@ -88,9 +122,30 @@ public class GuavaCollectionSerializersTest extends FuryTestBase {
         GuavaCollectionSerializers.ImmutableBiMapSerializer.class);
   }
 
+  @Test(dataProvider = "furyCopyConfig")
+  public void testImmutableBiMapSerializerCopy(Fury fury) {
+    copyCheck(fury, ImmutableBiMap.of("k1", 1));
+    Assert.assertEquals(
+        fury.getClassResolver().getSerializerClass(ImmutableBiMap.of("k1", 1).getClass()),
+        GuavaCollectionSerializers.ImmutableBiMapSerializer.class);
+    copyCheck(fury, ImmutableBiMap.of("k1", 1, "k2", 2));
+    Assert.assertEquals(
+        fury.getClassResolver().getSerializerClass(ImmutableBiMap.of("k1", 1, "k2", 2).getClass()),
+        GuavaCollectionSerializers.ImmutableBiMapSerializer.class);
+  }
+
   @Test(dataProvider = "trackingRefFury")
   public void testImmutableSortedMapSerializer(Fury fury) {
     serDe(fury, ImmutableSortedMap.of("k1", 1, "k2", 2));
+    Assert.assertEquals(
+        fury.getClassResolver()
+            .getSerializerClass(ImmutableSortedMap.of("k1", 1, "k2", 2).getClass()),
+        GuavaCollectionSerializers.ImmutableSortedMapSerializer.class);
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testImmutableSortedMapSerializerCopy(Fury fury) {
+    copyCheck(fury, ImmutableSortedMap.of("k1", 1, "k2", 2));
     Assert.assertEquals(
         fury.getClassResolver()
             .getSerializerClass(ImmutableSortedMap.of("k1", 1, "k2", 2).getClass()),
@@ -125,5 +180,11 @@ public class GuavaCollectionSerializersTest extends FuryTestBase {
     byte[] bytes = fury.serialize(pojo);
     Pojo deserializedPojo = (Pojo) fury.deserialize(bytes);
     System.out.println(deserializedPojo);
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  void testNestedRefTrackingCopy(Fury fury) {
+    Pojo pojo = new Pojo(ImmutableList.of(ImmutableList.of(1, 2), ImmutableList.of(2, 2)));
+    copyCheck(fury, pojo);
   }
 }

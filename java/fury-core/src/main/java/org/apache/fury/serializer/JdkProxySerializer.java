@@ -61,6 +61,17 @@ public class JdkProxySerializer extends Serializer {
   }
 
   @Override
+  public Object copy(Object value) {
+    Class<?>[] interfaces = value.getClass().getInterfaces();
+    InvocationHandler invocationHandler = Proxy.getInvocationHandler(value);
+    Preconditions.checkNotNull(interfaces);
+    Preconditions.checkNotNull(invocationHandler);
+    Object proxy = Proxy.newProxyInstance(fury.getClassLoader(), interfaces, STUB_HANDLER);
+    Platform.putObject(proxy, PROXY_HANDLER_FIELD_OFFSET, invocationHandler);
+    return proxy;
+  }
+
+  @Override
   public Object read(MemoryBuffer buffer) {
     final RefResolver resolver = fury.getRefResolver();
     final int refId = resolver.lastPreservedRefId();

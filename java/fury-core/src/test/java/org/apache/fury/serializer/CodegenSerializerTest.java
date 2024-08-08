@@ -20,6 +20,7 @@
 package org.apache.fury.serializer;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotSame;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 
@@ -64,6 +65,15 @@ public class CodegenSerializerTest extends FuryTestBase {
     serDe(fury, b);
   }
 
+  @Test(dataProvider = "furyCopyConfig")
+  public void testSimpleBean(Fury fury) {
+    B b = new B();
+    b.f1 = "str1";
+    b.f2 = 1;
+    b.f3 = "str3";
+    copyCheck(fury, b);
+  }
+
   @Test
   public void testSupport() {
     assertTrue(CodegenSerializer.supportCodegenForJavaSerialization(Cyclic.class));
@@ -91,6 +101,11 @@ public class CodegenSerializerTest extends FuryTestBase {
     Cyclic cyclic1 = beanSerializer.read(buffer);
     fury.reset();
     assertEquals(cyclic1, cyclic);
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testCopyCircularReference(Fury fury) {
+    copyCheck(fury, Cyclic.create(true));
   }
 
   private static final class Circular1 {
@@ -123,6 +138,22 @@ public class CodegenSerializerTest extends FuryTestBase {
     serDe(fury, circular1);
     serDe(fury, circular2);
     serDe(fury, circular2);
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testComplexCircular(Fury fury) {
+    Circular1 circular1 = new Circular1();
+    Circular2 circular2 = new Circular2();
+    circular1.circular1 = circular1;
+    circular1.circular2 = circular2;
+    circular2.circular1 = circular1;
+    circular2.circular2 = circular2;
+    Circular1 copy1 = fury.copy(circular1);
+    Circular2 copy2 = fury.copy(circular2);
+    assertSame(copy1.circular1, copy1);
+    assertNotSame(copy1.circular2, copy2);
+    assertNotSame(copy2.circular1, copy1);
+    assertSame(copy2.circular2, copy2);
   }
 
   @Data
