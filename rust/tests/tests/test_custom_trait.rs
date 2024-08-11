@@ -27,11 +27,11 @@ fn test_custom_trait_object_work() {
 
     #[derive(Fury)]
     struct Person {
-        z: Box<dyn Animal>
+        pet: Box<dyn Animal>
     }
 
     let p = Person {
-        z: Box::new(Dog {
+        pet: Box::new(Dog {
             name: String::from("puppy")
         })
     };
@@ -39,7 +39,7 @@ fn test_custom_trait_object_work() {
     fury.register::<Dog>(500);
     let bin = fury.serialize(&p);
     let obj: Person = fury.deserialize(&bin).unwrap();
-    assert_eq!(obj.z.get_name(), "puppy");
+    assert_eq!(obj.pet.get_name(), "puppy");
 }
 
 
