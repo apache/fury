@@ -901,7 +901,9 @@ public class ArraySerializers {
     public NonexistentArrayClassSerializer(Fury fury, String className, Class<?> cls) {
       super(fury, className, cls);
       if (TypeUtils.getArrayComponent(cls).isEnum()) {
-        componentSerializer = new NonexistentClassSerializers.NonexistentEnumClassSerializer(fury);
+        componentSerializer = fury.getConfig().isSerializeEnumByName() ?
+                new NonexistentClassSerializers.NonexistentEnumByNameClassSerializer(fury) :
+                new NonexistentClassSerializers.NonexistentEnumClassSerializer(fury);
       } else {
         if (fury.getConfig().getCompatibleMode() == CompatibleMode.COMPATIBLE) {
           componentSerializer =

@@ -81,6 +81,7 @@ public final class FuryBuilder {
   boolean suppressClassRegistrationWarnings = true;
   boolean deserializeNonexistentEnumValueAsNull = false;
   MetaCompressor metaCompressor = new DeflaterMetaCompressor();
+  boolean serializeEnumByName = false;
 
   public FuryBuilder() {}
 
@@ -309,6 +310,11 @@ public final class FuryBuilder {
    */
   public FuryBuilder withAsyncCompilation(boolean asyncCompilation) {
     this.asyncCompilationEnabled = asyncCompilation;
+    return this;
+  }
+
+  public FuryBuilder withSerializeEnumByName(boolean serializeEnumByName) {
+    this.serializeEnumByName = serializeEnumByName;
     return this;
   }
 

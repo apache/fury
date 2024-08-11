@@ -54,7 +54,7 @@ public final class MetaStringResolver {
     dynamicReadStringId = 0;
   }
 
-  MetaStringBytes getOrCreateMetaStringBytes(MetaString str) {
+  public MetaStringBytes getOrCreateMetaStringBytes(MetaString str) {
     MetaStringBytes metaStringBytes = metaString2BytesMap.get(str);
     if (metaStringBytes == null) {
       metaStringBytes = new MetaStringBytes(str);
@@ -147,7 +147,7 @@ public final class MetaStringResolver {
     }
   }
 
-  MetaStringBytes readMetaStringBytes(MemoryBuffer buffer) {
+  public MetaStringBytes readMetaStringBytes(MemoryBuffer buffer) {
     int header = buffer.readVarUint32Small7();
     int len = header >>> 1;
     if ((header & 0b1) == 0) {

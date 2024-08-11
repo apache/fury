@@ -122,6 +122,20 @@ public class NonexistentClassSerializersTest extends FuryTestBase {
     assertEquals(o, NonexistentClass.NonexistentEnum.V1);
   }
 
+    @Test(dataProvider = "scopedMetaShare")
+    public void testNonexistentEnumByName(boolean scopedMetaShare) {
+        Fury fury = furyBuilder(scopedMetaShare).withDeserializeNonexistentClass(true).withSerializeEnumByName(true).build();
+        String enumCode = ("enum TestEnum {" + " A, B" + "}");
+        Class<?> cls = JaninoUtils.compileClass(getClass().getClassLoader(), "", "TestEnum", enumCode);
+        Object c = cls.getEnumConstants()[1];
+        assertEquals(c.toString(), "B");
+        byte[] bytes = fury.serialize(c);
+        Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
+        Fury fury2 = furyBuilder(scopedMetaShare).withDeserializeNonexistentClass(true).withSerializeEnumByName(true).build();
+        Object o = fury2.deserialize(bytes);
+        assertEquals(o, NonexistentClass.NonexistentEnum.V15);
+    }
+
   @Test(dataProvider = "scopedMetaShare")
   public void testNonexistentEnumAndArrayField(boolean scopedMetaShare) throws Exception {
     String enumStructCode1 =
@@ -175,6 +189,62 @@ public class NonexistentClassSerializersTest extends FuryTestBase {
     Object o1 = fury2.deserialize(bytes);
     Assert.assertEquals(ReflectionUtils.getObjectFieldValue(o1, "f1"), "str");
   }
+
+    @Test(dataProvider = "scopedMetaShare")
+    public void testNonexistentEnumForNameAndArrayField(boolean scopedMetaShare) throws Exception {
+        String enumStructCode1 =
+                ("public class TestEnumStruct {\n"
+                        + "  public enum TestEnum {\n"
+                        + "    A, B\n"
+                        + "  }\n"
+                        + "  public String f1;\n"
+                        + "  public TestEnum f2;\n"
+                        + "  public TestEnum[] f3;\n"
+                        + "  public TestEnum[][] f4;\n"
+                        + "}");
+        Class<?> cls1 =
+                JaninoUtils.compileClass(
+                        getClass().getClassLoader(), "", "TestEnumStruct", enumStructCode1);
+        Class<?> enumClass = cls1.getDeclaredClasses()[0];
+        Object o = cls1.newInstance();
+        ReflectionUtils.setObjectFieldValue(o, "f1", "str");
+        ReflectionUtils.setObjectFieldValue(o, "f2", enumClass.getEnumConstants()[1]);
+        Object[] enumArray = (Object[]) Array.newInstance(enumClass, 2);
+        enumArray[0] = enumClass.getEnumConstants()[0];
+        enumArray[1] = enumClass.getEnumConstants()[1];
+        ReflectionUtils.setObjectFieldValue(o, "f3", enumArray);
+        Object[] enumArray2 = (Object[]) Array.newInstance(enumClass, 2, 2);
+        enumArray2[0] = enumArray;
+        enumArray2[1] = enumArray;
+        ReflectionUtils.setObjectFieldValue(o, "f4", enumArray2);
+        Fury fury1 =
+                furyBuilder(scopedMetaShare)
+                        .withDeserializeNonexistentClass(true)
+                        .withClassLoader(cls1.getClassLoader())
+                        .withSerializeEnumByName(true)
+                        .build();
+        byte[] bytes = fury1.serialize(o);
+        {
+            Object o1 = fury1.deserialize(bytes);
+            assertEquals(ReflectionUtils.getObjectFieldValue(o1, "f2"), enumClass.getEnumConstants()[1]);
+            assertEquals(ReflectionUtils.getObjectFieldValue(o1, "f3"), enumArray);
+        }
+        ByteArrayClassLoader classLoader =
+                JaninoUtils.compile(
+                        getClass().getClassLoader(),
+                        new CompileUnit(
+                                "",
+                                "TestEnumStruct",
+                                ("public class TestEnumStruct {" + " public String f1;" + "}")));
+        Fury fury2 =
+                furyBuilder(scopedMetaShare)
+                        .withDeserializeNonexistentClass(true)
+                        .withClassLoader(classLoader)
+                        .withSerializeEnumByName(true)
+                        .build();
+        Object o1 = fury2.deserialize(bytes);
+        Assert.assertEquals(ReflectionUtils.getObjectFieldValue(o1, "f1"), "str");
+    }
 
   @DataProvider
   public Object[][] componentFinal() {
