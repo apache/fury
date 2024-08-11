@@ -15,27 +15,28 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{Attribute, Ident};
-
 
 fn parse_attributes(attrs: &[Attribute]) -> Vec<String> {
     let tag = attrs
         .iter()
         .find(|attr| attr.path().is_ident("polymorphic_traits"));
-    
+
     if tag.is_none() {
         return vec![];
     }
-    
-    let expr: syn::ExprLit = tag.unwrap().parse_args().expect("should tag contain string value");
+
+    let expr: syn::ExprLit = tag
+        .unwrap()
+        .parse_args()
+        .expect("should tag contain string value");
     match expr.lit {
         syn::Lit::Str(s) => {
-            let v: Vec<String> = s.value().split(",").map(|x| { x.to_string() }).collect();
+            let v: Vec<String> = s.value().split(",").map(|x| x.to_string()).collect();
             v
-        },
+        }
         _ => {
             panic!("tag should be string")
         }
@@ -57,12 +58,10 @@ pub fn gen(name: &Ident, attrs: &[Attribute]) -> TokenStream {
                     },
                     Err(e) => Err(e),
                 }
-    
             }
             ret.insert(TypeId::of::<Box<dyn #x>>(), #name::<Self>);
         }
     });
-
 
     quote! {
         fn get_trait_object_deserializer() -> std::collections::hash_map::HashMap<TypeId, fn(context: &mut fury_core::resolver::context::ReadContext) -> Result<fury_core::raw::maybe_trait_object::MaybeTraitObject, fury_core::error::Error>> {

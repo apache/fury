@@ -17,11 +17,13 @@
 
 use std::any::Any;
 
-use crate::{error::Error, fury::Fury, resolver::context::{ReadContext, WriteContext}, types::FieldType};
 use super::{polymorph, Serializer};
-
-
-
+use crate::{
+    error::Error,
+    fury::Fury,
+    resolver::context::{ReadContext, WriteContext},
+    types::FieldType,
+};
 
 impl Serializer for Box<dyn Any> {
     fn reserved_space() -> usize {

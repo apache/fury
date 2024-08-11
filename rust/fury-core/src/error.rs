@@ -80,5 +80,5 @@ pub enum Error {
     UnregisteredType { value: u32 },
 
     #[error("Trait object upcast failed")]
-    ConvertToTraitObjectError{  },
+    ConvertToTraitObjectError {},
 }

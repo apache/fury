@@ -15,9 +15,9 @@
 // specific language governing permissions and limitations
 // under the License.
 
+use polymorph::as_any_trait_object;
 use std::any::{Any, TypeId};
 use std::collections::HashMap;
-use polymorph::as_any_trait_object;
 
 use crate::error::Error;
 use crate::fury::Fury;
@@ -25,17 +25,17 @@ use crate::resolver::class_resolver::TraitObjectDeserializer;
 use crate::resolver::context::{ReadContext, WriteContext};
 use crate::types::RefFlag;
 
-pub mod polymorph;
+mod any;
 mod bool;
 mod datetime;
 mod list;
 mod map;
 mod number;
 mod option;
+pub mod polymorph;
 mod primitive_list;
 mod set;
 mod string;
-mod any;
 
 pub fn serialize<T: Serializer>(this: &T, context: &mut WriteContext) {
     // ref flag
@@ -69,13 +69,11 @@ pub fn deserialize<T: Serializer>(context: &mut ReadContext) -> Result<T, Error>
     }
 }
 
-
 pub trait PolymorphicCast {
     fn as_any(&self) -> &dyn Any;
 
     fn type_id(&self) -> TypeId;
 }
-
 
 impl<T: Serializer + 'static> PolymorphicCast for T {
     fn as_any(&self) -> &dyn Any {
@@ -123,6 +121,4 @@ where
     fn type_def(_fury: &Fury) -> Vec<u8> {
         vec![]
     }
-
 }
-

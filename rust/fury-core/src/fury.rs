@@ -55,9 +55,7 @@ impl Default for Fury {
     }
 }
 
-
 impl Fury {
-
     fn register_internal_type<T: Serializer>(&mut self) {
         self.register::<i32>(T::get_type_id(self) as u32);
     }
@@ -114,11 +112,8 @@ impl Fury {
         &self.class_resolver
     }
 
-    pub fn register<T: 'static + Serializer>(&mut self, id: u32)
-    {
-        self.class_resolver.register::<T>( ClassInfo::new::<T>(
-            self,
-            id
-        ), id);
+    pub fn register<T: 'static + Serializer>(&mut self, id: u32) {
+        self.class_resolver
+            .register::<T>(ClassInfo::new::<T>(self, id), id);
     }
 }

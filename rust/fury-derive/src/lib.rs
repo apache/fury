@@ -17,8 +17,8 @@
 
 use fury_row::derive_row;
 use proc_macro::TokenStream;
-use syn::{parse_macro_input, parse_quote, DeriveInput, ItemTrait};
 use quote::quote;
+use syn::{parse_macro_input, parse_quote, DeriveInput, ItemTrait};
 
 mod fury_row;
 mod object;
@@ -32,8 +32,10 @@ pub fn impl_polymorph(_attr: TokenStream, item: proc_macro::TokenStream) -> Toke
     let supertrait: syn::TypeParamBound = parse_quote! {
         fury_core::serializer::PolymorphicCast
     };
-    
-    input.supertraits.insert(input.supertraits.len(), supertrait);
+
+    input
+        .supertraits
+        .insert(input.supertraits.len(), supertrait);
 
     // 对trait添加supertrait的代码
     let output = quote! {

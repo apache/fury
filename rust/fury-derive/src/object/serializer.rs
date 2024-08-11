@@ -15,20 +15,17 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use crate::object::{misc, read, write, polymorphic};
+use crate::object::{misc, polymorphic, read, write};
 use crate::util::sorted_fields;
 use proc_macro::TokenStream;
 use quote::quote;
-
 
 pub fn derive_serializer(ast: &syn::DeriveInput) -> Option<TokenStream> {
     let name = &ast.ident;
     let attrs = &ast.attrs;
     let fields = match &ast.data {
         syn::Data::Struct(s) => sorted_fields(&s.fields),
-        _ => {
-            return None
-        }
+        _ => return None,
     };
 
     let misc_token_stream = misc::gen();

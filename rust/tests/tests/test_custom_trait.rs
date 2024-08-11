@@ -15,10 +15,10 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use std::any::{Any, TypeId};
 use fury_core::error::Error;
 use fury_core::fury::Fury;
 use fury_derive::{impl_polymorph, Fury};
+use std::any::{Any, TypeId};
 
 #[impl_polymorph]
 trait Animal {
@@ -28,7 +28,7 @@ trait Animal {
 #[derive(Fury, Debug)]
 #[polymorphic_traits("Animal")]
 struct Dog {
-    name: String
+    name: String,
 }
 
 impl Animal for Dog {
@@ -37,20 +37,19 @@ impl Animal for Dog {
     }
 }
 
-
 #[test]
 fn test_custom_trait_object_work() {
     let mut fury = Fury::default();
 
     #[derive(Fury)]
     struct Person {
-        pet: Box<dyn Animal>
+        pet: Box<dyn Animal>,
     }
 
     let p = Person {
         pet: Box::new(Dog {
-            name: String::from("puppy")
-        })
+            name: String::from("puppy"),
+        }),
     };
     fury.register::<Person>(501);
     fury.register::<Dog>(500);
@@ -59,21 +58,19 @@ fn test_custom_trait_object_work() {
     assert_eq!(obj.pet.get_name(), "puppy");
 }
 
-
-
 #[test]
 fn test_any_trait_object_work() {
     let mut fury = Fury::default();
 
     #[derive(Fury)]
     struct Person {
-        pet: Box<dyn Any>
+        pet: Box<dyn Any>,
     }
 
     let p = Person {
         pet: Box::new(Dog {
-            name: String::from("puppy")
-        })
+            name: String::from("puppy"),
+        }),
     };
     fury.register::<Person>(501);
     fury.register::<Dog>(500);

@@ -23,17 +23,13 @@ use std::any::{Any, TypeId};
 
 use super::Serializer;
 
-
-pub fn as_any_trait_object<T: Serializer + Any + 'static>(context: &mut ReadContext) -> Result<MaybeTraitObject, Error> {
+pub fn as_any_trait_object<T: Serializer + Any + 'static>(
+    context: &mut ReadContext,
+) -> Result<MaybeTraitObject, Error> {
     match T::deserialize(context) {
-        Ok(v) => {
-            Ok(MaybeTraitObject::new(
-                Box::new(v) as Box<dyn Any>,
-            ))
-        },
+        Ok(v) => Ok(MaybeTraitObject::new(Box::new(v) as Box<dyn Any>)),
         Err(e) => Err(e),
     }
-
 }
 
 pub fn serialize(value: &dyn Any, type_id: TypeId, context: &mut WriteContext) {
@@ -41,8 +37,7 @@ pub fn serialize(value: &dyn Any, type_id: TypeId, context: &mut WriteContext) {
         .get_fury()
         .get_class_resolver()
         .get_class_info_by_rust_type(type_id)
-        .get_serializer()
-        (value, context);
+        .get_serializer()(value, context);
 }
 
 pub fn deserialize<T: 'static>(context: &mut ReadContext) -> Result<T, Error> {
@@ -52,7 +47,10 @@ pub fn deserialize<T: 'static>(context: &mut ReadContext) -> Result<T, Error> {
 
     if ref_flag == (RefFlag::NotNullValue as i8) || ref_flag == (RefFlag::RefValue as i8) {
         let type_id = if context.get_fury().get_mode().eq(&Mode::Compatible) {
-            context.meta_resolver.get(context.reader.i16() as usize).get_type_id()
+            context
+                .meta_resolver
+                .get(context.reader.i16() as usize)
+                .get_type_id()
         } else {
             context.reader.i16() as u32
         };

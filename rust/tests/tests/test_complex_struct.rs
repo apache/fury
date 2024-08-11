@@ -22,7 +22,6 @@ use fury_derive::Fury;
 use std::any::{Any, TypeId};
 use std::collections::HashMap;
 
-
 #[test]
 fn complex_struct() {
     #[derive(Fury, Debug, PartialEq, Default)]

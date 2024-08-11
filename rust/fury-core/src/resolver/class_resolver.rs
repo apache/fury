@@ -18,11 +18,10 @@
 use super::context::{ReadContext, WriteContext};
 use crate::error::Error;
 use crate::fury::Fury;
+use crate::raw::maybe_trait_object::MaybeTraitObject;
 use crate::serializer::Serializer;
 use std::any::TypeId;
 use std::{any::Any, collections::HashMap};
-use crate::raw::maybe_trait_object::MaybeTraitObject;
-
 
 pub type TraitObjectDeserializer = fn(&mut ReadContext) -> Result<MaybeTraitObject, Error>;
 
@@ -31,28 +30,22 @@ pub struct ClassInfo {
     fury_type_id: u32,
     rust_type_id: TypeId,
     trait_object_serializer: fn(&dyn Any, &mut WriteContext),
-    trait_object_deserializer: HashMap<TypeId, TraitObjectDeserializer>
+    trait_object_deserializer: HashMap<TypeId, TraitObjectDeserializer>,
 }
-
 
 fn serialize<T: 'static + Serializer>(this: &dyn Any, context: &mut WriteContext) {
     let this = this.downcast_ref::<T>().unwrap();
     T::serialize(this, context)
 }
 
-
-
 impl ClassInfo {
-    pub fn new<T: Serializer>(
-        fury: &Fury,
-        type_id: u32
-    ) -> ClassInfo {
+    pub fn new<T: Serializer>(fury: &Fury, type_id: u32) -> ClassInfo {
         ClassInfo {
             type_def: T::type_def(fury),
             fury_type_id: type_id,
             rust_type_id: TypeId::of::<T>(),
             trait_object_serializer: serialize::<T>,
-            trait_object_deserializer: T::get_trait_object_deserializer()
+            trait_object_deserializer: T::get_trait_object_deserializer(),
         }
     }
 
@@ -83,7 +76,6 @@ pub struct ClassResolver {
     fury_type_id_map: HashMap<u32, TypeId>,
     class_info_map: HashMap<TypeId, ClassInfo>,
 }
-
 
 impl ClassResolver {
     pub fn get_class_info_by_rust_type(&self, type_id: TypeId) -> &ClassInfo {

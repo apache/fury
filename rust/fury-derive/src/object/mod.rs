@@ -16,8 +16,8 @@
 // under the License.
 
 mod misc;
+mod polymorphic;
 mod read;
 mod serializer;
 mod write;
-mod polymorphic;
 pub use serializer::derive_serializer;
