@@ -34,7 +34,7 @@ fn parse_attributes(attrs: &[Attribute]) -> Vec<String> {
         .expect("should tag contain string value");
     match expr.lit {
         syn::Lit::Str(s) => {
-            let v: Vec<String> = s.value().split(",").map(|x| x.to_string()).collect();
+            let v: Vec<String> = s.value().split(',').map(|x| x.to_string()).collect();
             v
         }
         _ => {
