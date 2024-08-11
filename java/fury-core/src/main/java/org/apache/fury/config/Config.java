@@ -59,7 +59,7 @@ public class Config implements Serializable {
   private final boolean scalaOptimizationEnabled;
   private transient int configHash;
   private final boolean deserializeNonexistentEnumValueAsNull;
-  private final boolean useEnumNameSerializer;
+  private final boolean serializeEnumByName;
 
   public Config(FuryBuilder builder) {
     language = builder.language;
@@ -92,7 +92,7 @@ public class Config implements Serializable {
     asyncCompilationEnabled = builder.asyncCompilationEnabled;
     scalaOptimizationEnabled = builder.scalaOptimizationEnabled;
     deserializeNonexistentEnumValueAsNull = builder.deserializeNonexistentEnumValueAsNull;
-    useEnumNameSerializer = builder.useEnumNameSerializer;
+    serializeEnumByName = builder.serializeEnumByName;
 
   }
 
@@ -251,8 +251,8 @@ public class Config implements Serializable {
     return scalaOptimizationEnabled;
   }
 
-  public boolean getUseEnumNameSerializer() {
-      return useEnumNameSerializer;
+  public boolean isSerializeEnumByName() {
+      return serializeEnumByName;
   }
 
   @Override

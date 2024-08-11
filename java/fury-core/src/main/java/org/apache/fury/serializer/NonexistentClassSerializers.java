@@ -19,9 +19,15 @@
 
 package org.apache.fury.serializer;
 
+import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 import org.apache.fury.Fury;
 import org.apache.fury.collection.IdentityObjectIntMap;
 import org.apache.fury.collection.LongMap;
@@ -30,16 +36,21 @@ import org.apache.fury.collection.Tuple2;
 import org.apache.fury.collection.Tuple3;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.meta.ClassDef;
+import org.apache.fury.meta.MetaString;
 import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassInfoHolder;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.resolver.MetaContext;
+import org.apache.fury.resolver.MetaStringBytes;
+import org.apache.fury.resolver.MetaStringResolver;
 import org.apache.fury.resolver.RefResolver;
 import org.apache.fury.serializer.NonexistentClass.NonexistentEnum;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.DescriptorGrouper;
 import org.apache.fury.type.Generics;
 import org.apache.fury.util.Preconditions;
+
+import static org.apache.fury.meta.Encoders.GENERIC_ENCODER;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 public final class NonexistentClassSerializers {
@@ -241,13 +252,40 @@ public final class NonexistentClassSerializers {
       return enumConstants[ordinal];
     }
   }
+    public static final class NonexistentEnumByNameClassSerializer extends Serializer {
+        private final Map<MetaStringBytes, NonexistentEnum> enumMap;
+        private final MetaStringResolver metaStringResolver;
 
+        public NonexistentEnumByNameClassSerializer(Fury fury) {
+            super(fury, NonexistentEnum.class);
+            metaStringResolver = new MetaStringResolver();
+            NonexistentEnum[] enumConstants = NonexistentEnum.class.getEnumConstants();
+            enumMap = Arrays.stream(enumConstants)
+                    .map(e -> {
+                        MetaStringBytes stringBytes =
+                                this.metaStringResolver.getOrCreateMetaStringBytes(GENERIC_ENCODER.encode(e.name(), MetaString.Encoding.UTF_8));
+                        return new AbstractMap.SimpleEntry<>(stringBytes, e);
+                    })
+                    .collect(Collectors.toMap(AbstractMap.SimpleEntry::getKey, AbstractMap.SimpleEntry::getValue));
+        }
+
+        @Override
+        public Enum read(MemoryBuffer buffer) {
+            MetaStringBytes metaStringBytes = metaStringResolver.readMetaStringBytes(buffer);
+            if (!enumMap.containsKey(metaStringBytes)) {
+                Optional<NonexistentEnum> first = enumMap.values().stream().findFirst();
+                return first.orElse(null);
+            }
+            return enumMap.get(metaStringBytes);
+        }
+    }
   public static Serializer getSerializer(Fury fury, String className, Class<?> cls) {
     if (cls.isArray()) {
       return new ArraySerializers.NonexistentArrayClassSerializer(fury, className, cls);
     } else {
       if (cls.isEnum()) {
-        return new NonexistentEnumClassSerializer(fury);
+        return fury.getConfig().isSerializeEnumByName() ?
+                new NonexistentEnumByNameClassSerializer(fury) : new NonexistentEnumClassSerializer(fury);
       } else {
         if (fury.getConfig().isMetaShareEnabled()) {
           throw new IllegalStateException(

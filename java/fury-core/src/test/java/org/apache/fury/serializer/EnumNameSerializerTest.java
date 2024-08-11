@@ -38,7 +38,7 @@ public class EnumNameSerializerTest extends FuryTestBase {
                 Fury.builder()
                         .withLanguage(language)
                         .withRefTracking(referenceTracking)
-                        .withUseEnumNameSerializer(true)
+                        .withSerializeEnumByName(true)
                         .requireClassRegistration(false);
         Fury fury1 = builder.build();
         Fury fury2 = builder.build();
@@ -59,14 +59,14 @@ public class EnumNameSerializerTest extends FuryTestBase {
                 Fury.builder()
                         .withLanguage(Language.JAVA)
                         .withRefTracking(true)
-                        .withUseEnumNameSerializer(true)
+                        .withSerializeEnumByName(true)
                         .requireClassRegistration(false);
         FuryBuilder builderDeserialize =
                 Fury.builder()
                         .withLanguage(Language.JAVA)
                         .withRefTracking(true)
                         .requireClassRegistration(false)
-                        .withUseEnumNameSerializer(true)
+                        .withSerializeEnumByName(true)
                         .deserializeNonexistentEnumValueAsNull(true)
                         .withClassLoader(cls2.getClassLoader());
         Fury furyDeserialize = builderDeserialize.build();
@@ -93,7 +93,7 @@ public class EnumNameSerializerTest extends FuryTestBase {
                 builder()
                         .withScopedMetaShare(scopedMetaShare)
                         .withCompatibleMode(CompatibleMode.COMPATIBLE)
-                        .withUseEnumNameSerializer(true)
+                        .withSerializeEnumByName(true)
                         .build(),
                 new EnumSerializerTest.EnumSubclassFieldTest(EnumSerializerTest.EnumSubClass.B));
     }

@@ -85,7 +85,7 @@ import org.apache.fury.resolver.ClassInfoHolder;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.resolver.RefResolver;
 import org.apache.fury.serializer.CompatibleSerializer;
-import org.apache.fury.serializer.EnumNameSerializer;
+import org.apache.fury.serializer.EnumByNameSerializer;
 import org.apache.fury.serializer.EnumSerializer;
 import org.apache.fury.serializer.ObjectSerializer;
 import org.apache.fury.serializer.PrimitiveSerializers.LongSerializer;
@@ -279,7 +279,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         Fury.class, MemoryBuffer.class, fury.getRefResolver().getClass(), Platform.class);
     ctx.addImports(ClassInfo.class, ClassInfoHolder.class, ClassResolver.class);
     ctx.addImport(Generated.class);
-    ctx.addImports(LazyInitBeanSerializer.class, EnumSerializer.class, EnumNameSerializer.class);
+    ctx.addImports(LazyInitBeanSerializer.class, EnumSerializer.class, EnumByNameSerializer.class);
     ctx.addImports(Serializer.class, StringSerializer.class);
     ctx.addImports(ObjectSerializer.class, CompatibleSerializer.class);
     ctx.addImports(AbstractCollectionSerializer.class, AbstractMapSerializer.class);
