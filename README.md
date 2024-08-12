@@ -388,6 +388,10 @@ Please read the [BUILD](docs/guide/DEVELOPMENT.md) guide for instructions on how
 
 Please read the [CONTRIBUTING](CONTRIBUTING.md) guide for instructions on how to contribute.
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=apache/fury&type=Date)](https://star-history.com/#apache/fury&Date)
+
 ## License
 
 Licensed under the [Apache License, Version 2.0](LICENSE)
