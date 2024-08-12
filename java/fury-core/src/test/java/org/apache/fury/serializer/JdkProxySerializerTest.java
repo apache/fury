@@ -127,7 +127,6 @@ public class JdkProxySerializerTest extends FuryTestBase {
     Function copy = fury.copy(function);
     RefTestInvocationHandler copyHandler =
         (RefTestInvocationHandler) Proxy.getInvocationHandler(copy);
-    assertEquals(copyHandler.getProxy().getClass().getName(), copy.getClass().getName());
-    assertNotSame(copyHandler.getProxy(), copy);
+    assertEquals(copyHandler.getProxy(), copy);
   }
 }
