@@ -46,8 +46,9 @@ public class BufferSerializers {
 
     @Override
     public ByteBuffer copy(ByteBuffer value) {
-      ByteBuffer dst = ByteBuffer.allocate(value.capacity());
-      dst.put(value);
+      ByteBuffer dst = ByteBuffer.allocate(value.remaining());
+      dst.put(value.duplicate());
+      dst.rewind();
       return dst;
     }
 
