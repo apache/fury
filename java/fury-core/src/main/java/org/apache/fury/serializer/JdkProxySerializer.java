@@ -67,7 +67,10 @@ public class JdkProxySerializer extends Serializer {
     Preconditions.checkNotNull(interfaces);
     Preconditions.checkNotNull(invocationHandler);
     Object proxy = Proxy.newProxyInstance(fury.getClassLoader(), interfaces, STUB_HANDLER);
-    Platform.putObject(proxy, PROXY_HANDLER_FIELD_OFFSET, invocationHandler);
+    if (needToCopyRef) {
+      fury.reference(value, proxy);
+    }
+    Platform.putObject(proxy, PROXY_HANDLER_FIELD_OFFSET, fury.copyObject(invocationHandler));
     return proxy;
   }
 
