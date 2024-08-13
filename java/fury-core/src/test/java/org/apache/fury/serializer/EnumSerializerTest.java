@@ -69,6 +69,14 @@ public class EnumSerializerTest extends FuryTestBase {
     assertEquals(EnumSubClass.B, serDe(fury1, fury2, EnumSubClass.B));
   }
 
+  @Test(dataProvider = "furyCopyConfig")
+  public void testEnumSerializer(Fury fury) {
+    copyCheckWithoutSame(fury, EnumFoo.A);
+    copyCheckWithoutSame(fury, EnumFoo.B);
+    copyCheckWithoutSame(fury, EnumSubClass.A);
+    copyCheckWithoutSame(fury, EnumSubClass.B);
+  }
+
   @Test
   public void testEnumSerializationUnexistentEnumValueAsNull() {
     String enumCode2 = "enum TestEnum2 {" + " A;" + "}";
@@ -105,6 +113,11 @@ public class EnumSerializerTest extends FuryTestBase {
   public void testEnumSubclassField(boolean enableCodegen) {
     serDeCheck(
         builder().withCodegen(enableCodegen).build(), new EnumSubclassFieldTest(EnumSubClass.B));
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testEnumSubclassField(Fury fury) {
+    copyCheck(fury, new EnumSubclassFieldTest(EnumSubClass.B));
   }
 
   @Test(dataProvider = "scopedMetaShare")

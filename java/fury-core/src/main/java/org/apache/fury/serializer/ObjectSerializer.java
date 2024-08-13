@@ -83,7 +83,9 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
     // avoid recursive building serializers.
     // Use `setSerializerIfAbsent` to avoid overwriting existing serializer for class when used
     // as data serializer.
-    classResolver.setSerializerIfAbsent(cls, this);
+    if (resolveParent) {
+      classResolver.setSerializerIfAbsent(cls, this);
+    }
     Collection<Descriptor> descriptors;
     boolean shareMeta = fury.getConfig().isMetaShareEnabled();
     if (shareMeta) {
