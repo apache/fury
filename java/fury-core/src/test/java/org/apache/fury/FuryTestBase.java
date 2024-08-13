@@ -59,7 +59,7 @@ public abstract class FuryTestBase {
     return Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false);
   }
 
-  @DataProvider(name = "furyCopyConfig")
+  @DataProvider
   public static Object[] furyCopyConfig() {
     return new Object[][] {
       {
