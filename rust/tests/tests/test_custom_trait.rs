@@ -51,8 +51,8 @@ fn test_custom_trait_object_work() {
         }),
     };
     fury.register::<Person>(501);
-    let mut t = fury.register::<Dog>(500);
-        t.associate::<dyn Animal>();
+    let mut t = fury.register::<Dog>(500)
+        .associate(<Dog as AnimalShadow>::trait_object_type_id(), <Dog as AnimalShadow>::deserialize_to_trait_object);
     let bin = fury.serialize(&p);
     let obj: Person = fury.deserialize(&bin).unwrap();
     assert_eq!(obj.pet.get_name(), "puppy");

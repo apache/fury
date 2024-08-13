@@ -42,6 +42,10 @@ pub fn impl_polymorph(_attr: TokenStream, item: proc_macro::TokenStream) -> Toke
     let output = quote! {
         #input
 
+        impl<T: #name> SS for T {
+
+        }
+
         trait #shadow where Self: Animal + fury_core::serializer::Serializer {
             fn deserialize_to_trait_object(context: &mut fury_core::resolver::context::ReadContext) -> Result<fury_core::raw::maybe_trait_object::MaybeTraitObject, fury_core::error::Error> {
                 match Self::deserialize(context) {

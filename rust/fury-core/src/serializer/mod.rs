@@ -21,6 +21,7 @@ use std::collections::HashMap;
 
 use crate::error::Error;
 use crate::fury::Fury;
+use crate::raw::maybe_trait_object::MaybeTraitObject;
 use crate::resolver::class_resolver::TraitObjectDeserializer;
 use crate::resolver::context::{ReadContext, WriteContext};
 use crate::types::RefFlag;
@@ -73,6 +74,12 @@ pub trait PolymorphicCast {
     fn as_any(&self) -> &dyn Any;
 
     fn type_id(&self) -> TypeId;
+}
+
+pub trait SS {
+    fn deserialize_to_trait_object<T: Serializer + 'static>(context: &mut ReadContext) -> Result<MaybeTraitObject, Error>;
+
+    fn trait_object_type_id() -> TypeId;
 }
 
 impl<T: Serializer + 'static> PolymorphicCast for T {

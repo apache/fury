@@ -19,7 +19,7 @@ use super::context::{ReadContext, WriteContext};
 use crate::error::Error;
 use crate::fury::Fury;
 use crate::raw::maybe_trait_object::MaybeTraitObject;
-use crate::serializer::Serializer;
+use crate::serializer::{Serializer, SS};
 use std::any::TypeId;
 use std::{any::Any, collections::HashMap};
 
@@ -49,7 +49,7 @@ impl ClassInfo {
         }
     }
 
-    pub fn associate<T: Any>(&mut self, type_id: TypeId, func: TraitObjectDeserializer) {
+    pub fn associate(&mut self, type_id: TypeId, func: TraitObjectDeserializer) {
         self.trait_object_deserializer.insert(type_id, func);
     }
 
@@ -91,10 +91,10 @@ impl ClassResolver {
         self.class_info_map.get(type_id).unwrap()
     }
 
-    pub fn register<T: Serializer>(&mut self, class_info: ClassInfo, id: u32) -> &ClassInfo {
+    pub fn register<T: Serializer>(&mut self, class_info: ClassInfo, id: u32) -> &mut ClassInfo {
         let type_id = TypeId::of::<T>();
         self.fury_type_id_map.insert(id, type_id);
         self.class_info_map.insert(type_id, class_info);
-        self.class_info_map.get(&type_id).unwrap()
+        self.class_info_map.get_mut(&type_id).unwrap()
     }
 }
