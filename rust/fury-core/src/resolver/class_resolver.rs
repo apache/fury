@@ -49,6 +49,10 @@ impl ClassInfo {
         }
     }
 
+    pub fn associate<T: Any>(&mut self, type_id: TypeId, func: TraitObjectDeserializer) {
+        self.trait_object_deserializer.insert(type_id, func);
+    }
+
     pub fn get_rust_type_id(&self) -> TypeId {
         self.rust_type_id
     }
@@ -87,9 +91,10 @@ impl ClassResolver {
         self.class_info_map.get(type_id).unwrap()
     }
 
-    pub fn register<T: Serializer>(&mut self, class_info: ClassInfo, id: u32) {
+    pub fn register<T: Serializer>(&mut self, class_info: ClassInfo, id: u32) -> &ClassInfo {
         let type_id = TypeId::of::<T>();
         self.fury_type_id_map.insert(id, type_id);
         self.class_info_map.insert(type_id, class_info);
+        self.class_info_map.get(&type_id).unwrap()
     }
 }

@@ -26,7 +26,6 @@ trait Animal {
 }
 
 #[derive(Fury, Debug)]
-#[polymorphic_traits("Animal")]
 struct Dog {
     name: String,
 }
@@ -52,7 +51,8 @@ fn test_custom_trait_object_work() {
         }),
     };
     fury.register::<Person>(501);
-    fury.register::<Dog>(500);
+    let mut t = fury.register::<Dog>(500);
+        t.associate::<dyn Animal>();
     let bin = fury.serialize(&p);
     let obj: Person = fury.deserialize(&bin).unwrap();
     assert_eq!(obj.pet.get_name(), "puppy");

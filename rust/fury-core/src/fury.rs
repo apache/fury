@@ -112,8 +112,8 @@ impl Fury {
         &self.class_resolver
     }
 
-    pub fn register<T: 'static + Serializer>(&mut self, id: u32) {
+    pub fn register<T: 'static + Serializer>(&mut self, id: u32) -> &ClassInfo {
         self.class_resolver
-            .register::<T>(ClassInfo::new::<T>(self, id), id);
+            .register::<T>(ClassInfo::new::<T>(self, id), id)
     }
 }

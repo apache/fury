@@ -41,7 +41,6 @@ pub fn derive_serializer(ast: &syn::DeriveInput) -> Option<TokenStream> {
             #write_token_stream
             #read_token_stream
             #struct_impl_token_stream
-            #polymorph_token_stream
         }
     };
     Some(gen.into())

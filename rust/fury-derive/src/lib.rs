@@ -37,9 +37,29 @@ pub fn impl_polymorph(_attr: TokenStream, item: proc_macro::TokenStream) -> Toke
         .supertraits
         .insert(input.supertraits.len(), supertrait);
 
-    // 对trait添加supertrait的代码
+    let shadow: proc_macro2::Ident = syn::Ident::new(&format!("{}Shadow", name), name.span());
+
     let output = quote! {
         #input
+
+        trait #shadow where Self: Animal + fury_core::serializer::Serializer {
+            fn deserialize_to_trait_object(context: &mut fury_core::resolver::context::ReadContext) -> Result<fury_core::raw::maybe_trait_object::MaybeTraitObject, fury_core::error::Error> {
+                match Self::deserialize(context) {
+                    Ok(v) => {
+                        Ok(fury_core::raw::maybe_trait_object::MaybeTraitObject::new(
+                            Box::new(v) as Box<dyn #name>,
+                        ))
+                    },
+                    Err(e) => Err(e),
+                }
+            }
+
+            fn trait_object_type_id() -> TypeId {
+                TypeId::of::<Box<dyn #name>>()
+            }
+        }
+
+        impl<T: Animal + fury_core::serializer::Serializer> #shadow for T {}
 
         impl fury_core::serializer::Serializer for Box<dyn #name> {
             fn reserved_space() -> usize {

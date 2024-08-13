@@ -45,23 +45,20 @@ fn parse_attributes(attrs: &[Attribute]) -> Vec<String> {
 
 pub fn gen(name: &Ident, attrs: &[Attribute]) -> TokenStream {
     let traits = parse_attributes(attrs);
-    let stream = traits.iter().map(|x| {
-        let x: proc_macro2::Ident = syn::Ident::new(&x.to_string(), name.span());
-        let name: proc_macro2::Ident = syn::Ident::new(&format!("deserializer_trait_object_{}", x).to_lowercase(), name.span());
-        quote! {
-            fn #name<T: fury_core::serializer::Serializer + #x + 'static>(context: &mut fury_core::resolver::context::ReadContext) -> Result<fury_core::raw::maybe_trait_object::MaybeTraitObject, fury_core::error::Error> {
-                match T::deserialize(context) {
-                    Ok(v) => {
-                        Ok(fury_core::raw::maybe_trait_object::MaybeTraitObject::new(
-                            Box::new(v) as Box<dyn #x>,
-                        ))
-                    },
-                    Err(e) => Err(e),
-                }
+    let stream = if traits.is_empty() {
+        vec![
+            quote! {
+                ret.insert(Self::trait_object_type_id(), Self::deserialize_to_trait_object);
             }
-            ret.insert(TypeId::of::<Box<dyn #x>>(), #name::<Self>);
-        }
-    });
+        ]
+    } else {
+        traits.iter().map(|x| {
+            let x: proc_macro2::Ident = syn::Ident::new(&x.to_string(), name.span());
+            quote! {
+                ret.insert(<Self as #x>::trait_object_type_id(), <Self as #x>::deserialize_to_trait_object);
+            }
+        }).collect::<Vec<TokenStream>>()
+    };
 
     quote! {
         fn get_trait_object_deserializer() -> std::collections::hash_map::HashMap<TypeId, fn(context: &mut fury_core::resolver::context::ReadContext) -> Result<fury_core::raw::maybe_trait_object::MaybeTraitObject, fury_core::error::Error>> {
