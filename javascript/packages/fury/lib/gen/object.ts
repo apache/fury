@@ -103,7 +103,6 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
     const encodedMetaInformation = computeMetaInformation(this.description);
     const result = this.scope.uniqueName("result");
     const pass = this.builder.reader.int32();
-    //const handler = this.scope.declare("handler","");
 
     return `
       if (${this.builder.reader.int32()} !== ${expectHash}) {
