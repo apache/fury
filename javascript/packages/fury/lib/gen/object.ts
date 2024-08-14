@@ -82,13 +82,10 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
     const options = this.description.options;
     const expectHash = computeStructHash(this.description);
     const metaInformation = Buffer.from(computeMetaInformation(this.description));
-    const decodedInformation = decodeMetaInformation(metaInformation);
-    const propsInformation = Buffer.from(computeMetaInformation(options.props));
 
     return `
       ${this.builder.writer.int32(expectHash)};
       ${this.builder.writer.buffer(`Buffer.from("${metaInformation.toString("base64")}", "base64")`)};
-      ${this.builder.writer.buffer(`Buffer.from("${propsInformation.toString("base64")}", "base64")`)}
       ${Object.entries(options.props).sort().map(([key, inner]) => {
         const InnerGeneratorClass = CodegenRegistry.get(inner.type);
         if (!InnerGeneratorClass) {
@@ -104,8 +101,6 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
     const options = this.description.options;
     const expectHash = computeStructHash(this.description);
     const encodedMetaInformation = computeMetaInformation(this.description);
-    const encodedPropsInformation = computeMetaInformation(options.props);
-    const metaInformation = decodeMetaInformation(encodedMetaInformation);
     const result = this.scope.uniqueName("result");
     const pass = this.builder.reader.int32();
     //const handler = this.scope.declare("handler","");
@@ -121,7 +116,6 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
       };
       ${this.maybeReference(result, refState)}
       ${this.builder.reader.buffer(encodedMetaInformation.byteLength)}
-      ${this.builder.reader.buffer(encodedPropsInformation.byteLength)}
       ${Object.entries(options.props).sort().map(([key, inner]) => {
         const InnerGeneratorClass = CodegenRegistry.get(inner.type);
         if (!InnerGeneratorClass) {
