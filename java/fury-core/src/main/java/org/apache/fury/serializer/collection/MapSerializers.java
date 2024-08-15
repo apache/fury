@@ -37,6 +37,7 @@ import org.apache.fury.config.Language;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
 import org.apache.fury.reflect.ReflectionUtils;
+import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.ReplaceResolveSerializer;
 import org.apache.fury.serializer.Serializer;
@@ -398,8 +399,17 @@ public class MapSerializers {
 
     @Override
     protected <K, V> void copyEntry(Map<K, V> originMap, Map<K, V> newMap) {
+      ClassResolver classResolver = fury.getClassResolver();
       for (Entry<K, V> entry : originMap.entrySet()) {
-        newMap.put(entry.getKey(), fury.copyObject(entry.getValue()));
+        V value = entry.getValue();
+        if (value != null) {
+          ClassInfo classInfo =
+              classResolver.getClassInfo(value.getClass(), valueClassInfoWriteCache);
+          if (!classInfo.getSerializer().isImmutable()) {
+            value = fury.copyObject(value, classInfo.getClassId());
+          }
+        }
+        newMap.put(entry.getKey(), value);
       }
     }
   }

@@ -463,6 +463,30 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     }
   }
 
+  protected <K, V> void copyEntry(Map<K, V> originMap, Object[] elements) {
+    ClassResolver classResolver = fury.getClassResolver();
+    int index = 0;
+    for (Entry<K, V> entry : originMap.entrySet()) {
+      K key = entry.getKey();
+      if (key != null) {
+        ClassInfo classInfo = classResolver.getClassInfo(key.getClass(), keyClassInfoWriteCache);
+        if (!classInfo.getSerializer().isImmutable()) {
+          key = fury.copyObject(key, classInfo.getClassId());
+        }
+      }
+      V value = entry.getValue();
+      if (value != null) {
+        ClassInfo classInfo =
+            classResolver.getClassInfo(value.getClass(), valueClassInfoWriteCache);
+        if (!classInfo.getSerializer().isImmutable()) {
+          value = fury.copyObject(value, classInfo.getClassId());
+        }
+      }
+      elements[index++] = key;
+      elements[index++] = value;
+    }
+  }
+
   @SuppressWarnings("unchecked")
   protected final void readElements(MemoryBuffer buffer, int size, Map map) {
     Serializer keySerializer = this.keySerializer;
