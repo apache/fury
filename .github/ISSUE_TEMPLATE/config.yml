@@ -22,4 +22,4 @@ contact_links:
     about: Please ask and answer questions here.
   - name: Security Bug Bounty
     url: https://github.com/apache/.github/blob/main/.github/SECURITY.md
-    about: Please report security vulnerabilities here.
+    about: To report a new vulnerability you have discovered please follow the ASF vulnerability reporting process.
