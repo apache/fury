@@ -21,5 +21,5 @@ contact_links:
     url: https://github.com/apache/fury/discussions
     about: Please ask and answer questions here.
   - name: Security Bug Bounty
-    url: https://github.com/apache/.github/blob/main/.github/SECURITY.md
+    url: https://apache.org/security/#reporting-a-vulnerability
     about: To report a new vulnerability you have discovered please follow the ASF vulnerability reporting process.
