@@ -26,7 +26,7 @@ body:
     attributes:
       label: Feature Request
       description: >
-        Tip: Have you checked the docs https://hertzbeat.apache.org/docs/, GitHub issues whether someone else has already reported your issue? Maybe the feature already exists?
+        Tip: Have you checked the docs https://fury.apache.org/docs/, GitHub issues whether someone else has already reported your issue? Maybe the feature already exists?
       placeholder: >
         A concise description of what you're experiencing.
     validations:
