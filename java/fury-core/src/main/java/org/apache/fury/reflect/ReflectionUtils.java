@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
@@ -567,12 +568,31 @@ public class ReflectionUtils {
    */
   public static String getLiteralName(Class<?> cls) {
     String canonicalName = cls.getCanonicalName();
-    org.apache.fury.util.Preconditions.checkArgument(
-        canonicalName != null, "Class %s doesn't have canonical name", cls);
+    if (canonicalName == null) {
+      throw new NullPointerException(String.format("Class %s doesn't have canonical name", cls));
+    }
+    String clsName = cls.getName();
     if (canonicalName.endsWith(".")) {
       // qualifier name of scala object type will ends with `.`
-      String name = cls.getName();
-      canonicalName = name.substring(0, name.length() - 1).replace("$", ".") + "$";
+      canonicalName = clsName.substring(0, clsName.length() - 1).replace("$", ".") + "$";
+    } else {
+      if (!canonicalName.endsWith("$") && canonicalName.contains("$")) {
+        // nested scala object type can't be accessed in java by using canonicalName
+        // see more detailed in
+        // https://stackoverflow.com/questions/30809070/accessing-scala-nested-classes-from-java
+        int nestedLevels = 0;
+        boolean hasEnclosedObjectType = false;
+        while (cls.getEnclosingClass() != null) {
+          nestedLevels++;
+          cls = cls.getEnclosingClass();
+          if (!hasEnclosedObjectType) {
+            hasEnclosedObjectType = isScalaSingletonObject(cls);
+          }
+        }
+        if (nestedLevels >= 2 && hasEnclosedObjectType) {
+          canonicalName = clsName;
+        }
+      }
     }
     return canonicalName;
   }
@@ -790,13 +810,20 @@ public class ReflectionUtils {
     return Functions.isLambda(cls) || isJdkProxy(cls);
   }
 
+  private static final WeakHashMap<Class<?>, Boolean> scalaSingletonObjectCache =
+      new WeakHashMap<>();
+
   /** Returns true if a class is a scala `object` singleton. */
   public static boolean isScalaSingletonObject(Class<?> cls) {
-    try {
-      cls.getDeclaredField("MODULE$");
-      return true;
-    } catch (NoSuchFieldException e) {
-      return false;
-    }
+    return scalaSingletonObjectCache.computeIfAbsent(
+        cls,
+        c -> {
+          try {
+            cls.getDeclaredField("MODULE$");
+            return true;
+          } catch (NoSuchFieldException e) {
+            return false;
+          }
+        });
   }
 }
