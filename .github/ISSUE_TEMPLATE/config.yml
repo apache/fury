@@ -15,20 +15,11 @@
 # specific language governing permissions and limitations
 # under the License.
 
-name: Sync Files
-
-on:
-  push:
-    branches:
-      - main
-
-jobs:
-  sync:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # 4.1.7
-      - name: Sync files
-        uses: BetaHuhn/repo-file-sync-action@v1
-        with:
-          GH_PAT: ${{ secrets.GH_PAT }}
-          SKIP_PR: true
+blank_issues_enabled: false
+contact_links:
+  - name: Community Support
+    url: https://github.com/apache/fury/discussions
+    about: Please ask and answer questions here.
+  - name: Security Bug Bounty
+    url: https://github.com/apache/fury/issues
+    about: Please report security vulnerabilities here.
