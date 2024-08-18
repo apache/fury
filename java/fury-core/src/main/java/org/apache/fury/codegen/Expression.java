@@ -1273,7 +1273,7 @@ public interface Expression {
       }
 
       Class<?> rawType = getRawType(type);
-      String type = ctx.type(rawType);
+      String typename = ctx.type(rawType);
       String clzName = unknownClassName;
       if (clzName == null) {
         clzName = rawType.getName();
@@ -1300,7 +1300,7 @@ public interface Expression {
               StringUtils.format(
                   "${type} ${value} = (${type})${instance};",
                   "type",
-                  type,
+                  typename,
                   "value",
                   value,
                   "instance",
@@ -1311,7 +1311,7 @@ public interface Expression {
               StringUtils.format(
                   "${type} ${value} = new ${type}(${args});",
                   "type",
-                  type,
+                  ReflectionUtils.isAbstract(rawType) ? clzName : typename,
                   "value",
                   value,
                   "args",
