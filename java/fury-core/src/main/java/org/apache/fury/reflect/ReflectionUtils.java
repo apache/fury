@@ -567,7 +567,13 @@ public class ReflectionUtils {
    * @throws IllegalArgumentException if the canonical name of the underlying class doesn't exist.
    */
   public static String getLiteralName(Class<?> cls) {
-    String canonicalName = cls.getCanonicalName();
+    String canonicalName;
+    try {
+      // getCanonicalName for scala type `A$B$C` may fail
+      canonicalName = cls.getCanonicalName();
+    } catch (InternalError e) {
+      return cls.getName();
+    }
     if (canonicalName == null) {
       throw new NullPointerException(String.format("Class %s doesn't have canonical name", cls));
     }

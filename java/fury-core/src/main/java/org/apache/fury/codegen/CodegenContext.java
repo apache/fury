@@ -258,10 +258,10 @@ public class CodegenContext {
     } else {
       String type;
       try {
-        type = clz.getCanonicalName() != null ? type(clz) : "Object";
+        // getCanonicalName for scala type `A$B$C` may fail
+        type = clz.getCanonicalName() != null ? type(clz) : "object";
       } catch (InternalError e) {
-        LOG.error("Get canonicalName for type {} failed", clz);
-        throw new RuntimeException(String.format("Get canonicalName for type %s failed", clz), e);
+        type = "object";
       }
       int index = type.lastIndexOf(".");
       String name;
