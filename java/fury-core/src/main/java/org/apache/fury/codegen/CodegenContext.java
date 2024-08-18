@@ -261,7 +261,7 @@ public class CodegenContext {
         type = clz.getCanonicalName() != null ? type(clz) : "Object";
       } catch (InternalError e) {
         LOG.error("Get canonicalName for type {} failed", clz);
-        throw e;
+        throw new RuntimeException(String.format("Get canonicalName for type %s failed", clz), e);
       }
       int index = type.lastIndexOf(".");
       String name;
