@@ -28,6 +28,19 @@ object singleton {}
 
 case class Pair(f1: Any, f2: Any)
 
+object A {
+  object B {
+    case class C(value: String) {
+    }
+  }
+}
+
+class X {
+  class Y {
+    class Z
+  }
+}
+
 class SingleObjectSerializerTest extends AnyWordSpec with Matchers {
   "fury scala object support" should {
     "serialize/deserialize" in {
@@ -38,6 +51,16 @@ class SingleObjectSerializerTest extends AnyWordSpec with Matchers {
         .requireClassRegistration(false).build()
       fury.deserialize(fury.serialize(singleton)) shouldBe singleton
       fury.deserialize(fury.serialize(Pair(singleton, singleton))) shouldEqual Pair(singleton, singleton)
+    }
+    "nested type serialization in object type" in {
+      val fury = Fury.builder()
+        .withLanguage(Language.JAVA)
+        .withRefTracking(true)
+        .withScalaOptimizationEnabled(true)
+        .requireClassRegistration(false).build()
+      val x = A.B.C("hello, world!")
+      val bytes = fury.serialize(x)
+      fury.deserialize(bytes) shouldEqual A.B.C("hello, world!")
     }
   }
 }
