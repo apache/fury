@@ -7,10 +7,9 @@
 [![X](https://img.shields.io/badge/@ApacheFury-follow-blue?logo=x&style=for-the-badge)](https://x.com/ApacheFury)
 [![Maven Version](https://img.shields.io/maven-central/v/org.apache.fury/fury-core?style=for-the-badge)](https://search.maven.org/#search|gav|1|g:"org.apache.fury"%20AND%20a:"fury-core")
 
-
 **Apache Fury (incubating)** is a blazingly-fast multi-language serialization framework powered by **JIT** (just-in-time compilation) and **zero-copy**, providing up to 170x performance and ultimate ease of use.
 
-https://fury.apache.org
+<https://fury.apache.org>
 
 > [!IMPORTANT]
 > Apache Fury (incubating) is an effort undergoing incubation at the Apache
@@ -19,14 +18,15 @@ https://fury.apache.org
 > Please read the [DISCLAIMER](DISCLAIMER) and a full explanation of ["incubating"](https://incubator.apache.org/policy/incubation.html).
 
 ## Features
+
 - **Multiple languages**: Java/Python/C++/Golang/JavaScript/Rust/Scala/TypeScript.
 - **Zero-copy**: Cross-language out-of-band serialization inspired
   by [pickle5](https://peps.python.org/pep-0574/) and off-heap read/write.
 - **High performance**: A highly-extensible JIT framework to generate serializer code at runtime in an async multi-thread way to speed serialization, providing 20-170x speed up by:
-    - reduce memory access by inlining variables in generated code.
-    - reduce virtual method invocation by inline call in generated code.
-    - reduce conditional branching.
-    - reduce hash lookup.
+  - reduce memory access by inlining variables in generated code.
+  - reduce virtual method invocation by inline call in generated code.
+  - reduce conditional branching.
+  - reduce hash lookup.
 - **Multiple binary protocols**: Object graph, row format, and so on.
 
 In addition to cross-language serialization, Fury also features at:
@@ -41,7 +41,9 @@ In addition to cross-language serialization, Fury also features at:
 - Supports automatic object serialization for golang.
 
 ## Protocols
+
 Fury designed and implemented multiple binary protocols for different scenarios:
+
 - **[xlang serialization format](docs/specification/xlang_serialization_spec.md)**:
   - Cross-language serialize any object automatically, no need for IDL definition, schema compilation and object to/from
     protocol conversion.
@@ -54,6 +56,7 @@ Fury designed and implemented multiple binary protocols for different scenarios:
 New protocols can be easily added based on Fury existing buffer, encoding, meta, codegen and other capabilities. All of those share the same codebase, and the optimization for one protocol can be reused by another protocol.
 
 ## Benchmarks
+
 Different serialization frameworks are suitable for different scenarios, and benchmark results here are for reference only.
 
 If you need to benchmark for your specific scenario, make sure all serialization frameworks are appropriately configured for that scenario.
@@ -62,6 +65,7 @@ Dynamic serialization frameworks support polymorphism and references, but they o
 To ensure accurate benchmark statistics, it is advisable to **warm up** the system before collecting data due to Fury's runtime code generation.
 
 ### Java Serialization
+
 In these charts below, titles containing "compatible" represent schema compatible mode: type forward/backward compatibility is enabled; while titles without "compatible" represent schema consistent mode: class schema must be the same between serialization and deserialization.
 
 Where `Struct` is a class with [100 primitive fields](https://github.com/apache/fury/tree/main/docs/benchmarks#Struct), `MediaContent` is a class from [jvm-serializers](https://github.com/eishay/jvm-serializers/blob/master/tpc/src/data/media/MediaContent.java), and `Sample` is a class from [kryo benchmark](https://github.com/EsotericSoftware/kryo/blob/master/benchmarks/src/main/java/com/esotericsoftware/kryo/benchmarks/data/Sample.java).
@@ -83,7 +87,9 @@ Where `Struct` is a class with [100 primitive fields](https://github.com/apache/
 See [benchmarks](https://github.com/apache/fury/tree/main/docs/benchmarks) for more benchmarks about type forward/backward compatibility, off-heap support, zero-copy serialization.
 
 ## Installation
+
 ### Java
+
 Nightly snapshot:
 
 ```xml
@@ -113,6 +119,7 @@ Nightly snapshot:
 ```
 
 Release version:
+
 ```xml
 <dependency>
   <groupId>org.apache.fury</groupId>
@@ -128,31 +135,38 @@ Release version:
 ```
 
 ### Scala
+
 ```sbt
 libraryDependencies += "org.apache.fury" % "fury-core" % "0.7.0"
 ```
 
 ### Python
+
 ```bash
 pip install pyfury
 ```
 
 ### JavaScript
+
 ```bash
 npm install @furyjs/fury
 ```
 
 ### Golang
+
 ```bash
 go get github.com/apache/fury/go/fury
 ```
 
 ## Quickstart
+
 Here we give a quick start about how to use Fury, see [user guide](docs/README.md) for more details about [java](docs/guide/java_serialization_guide.md), [cross language](docs/guide/xlang_serialization_guide.md), and [row format](docs/guide/row_format_guide.md).
 
 ### Fury java object graph serialization
+
 If you don't have cross-language requirements, using this mode will
 result in better performance.
+
 ```java
 import org.apache.fury.*;
 import org.apache.fury.config.*;
@@ -198,7 +212,9 @@ public class Example {
 ```
 
 ### Cross-language object graph serialization
+
 **Java**
+
 ```java
 import org.apache.fury.*;
 import org.apache.fury.config.*;
@@ -261,32 +277,34 @@ import furygo "github.com/apache/fury/go/fury"
 import "fmt"
 
 func main() {
-	type SomeClass struct {
-		F1 *SomeClass
-		F2 map[string]string
-		F3 map[string]string
-	}
-	fury := furygo.NewFury(true)
-	if err := fury.RegisterTagType("example.SomeClass", SomeClass{}); err != nil {
-		panic(err)
-	}
-	value := &SomeClass{F2: map[string]string{"k1": "v1", "k2": "v2"}}
-	value.F3 = value.F2
-	value.F1 = value
-	bytes, err := fury.Marshal(value)
-	if err != nil {
-	}
-	var newValue interface{}
-	// bytes can be data serialized by other languages.
-	if err := fury.Unmarshal(bytes, &newValue); err != nil {
-		panic(err)
-	}
-	fmt.Println(newValue)
+ type SomeClass struct {
+  F1 *SomeClass
+  F2 map[string]string
+  F3 map[string]string
+ }
+ fury := furygo.NewFury(true)
+ if err := fury.RegisterTagType("example.SomeClass", SomeClass{}); err != nil {
+  panic(err)
+ }
+ value := &SomeClass{F2: map[string]string{"k1": "v1", "k2": "v2"}}
+ value.F3 = value.F2
+ value.F1 = value
+ bytes, err := fury.Marshal(value)
+ if err != nil {
+ }
+ var newValue interface{}
+ // bytes can be data serialized by other languages.
+ if err := fury.Unmarshal(bytes, &newValue); err != nil {
+  panic(err)
+ }
+ fmt.Println(newValue)
 }
 ```
 
 ### Row format
+
 #### Java
+
 ```java
 public class Bar {
   String f1;
@@ -331,7 +349,9 @@ RowEncoder<Bar> barEncoder = Encoders.bean(Bar.class);
 Bar newBar = barEncoder.fromRow(barStruct);
 Bar newBar2 = barEncoder.fromRow(binaryArray4.getStruct(20));
 ```
+
 #### Python
+
 ```python
 @dataclass
 class Bar:
@@ -356,11 +376,13 @@ print(foo_row.f2[100000], foo_row.f4[100000].f1, foo_row.f4[200000].f2[5])
 ## Compatibility
 
 ### Schema Compatibility
+
 Fury java object graph serialization supports class schema forward/backward compatibility. The serialization peer and deserialization peer can add/delete fields independently.
 
 We plan to add the schema compatibility support of cross-language serialization after [meta compression](https://github.com/apache/fury/issues/203) is finished.
 
 ### Binary Compatibility
+
 We are still improving our protocols, thus binary compatibility is not guaranteed between Fury major releases for now.
 However, it is guaranteed between minor versions. Please
 `versioning` your data by Fury major version if you will upgrade Fury in the future, see [how to upgrade fury](https://github.com/apache/fury/blob/main/docs/guide/java_object_graph_guide.md#upgrade-fury) for further details.
@@ -368,6 +390,7 @@ However, it is guaranteed between minor versions. Please
 Binary compatibility will be guaranteed when Fury 1.0 is released.
 
 ## Security
+
 Static serialization is relatively secure. But dynamic serialization such as Fury java/python native serialization supports deserializing unregistered types, which provides more dynamics and flexibility, but also introduce security risks.
 
 For example, the deserialization may invoke `init` constructor or `equals`/`hashCode` method, if the method body contains malicious code, the system will be at risk.

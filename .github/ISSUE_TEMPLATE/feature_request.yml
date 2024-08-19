@@ -18,7 +18,7 @@
 name: 🚀 Feature Request
 description: I have a suggestion (and may want to implement it 🙂)!
 title: "[<Fury component: Protocol|Java|Python|C++|JavaScript|etc...>] "
-assignees: ''
+assignees: ""
 labels: ["new feature"]
 
 body:

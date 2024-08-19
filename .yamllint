@@ -1,0 +1,6 @@
+extends: default
+
+rules:
+  document-start: false
+  line-length: false
+  truthy: false
