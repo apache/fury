@@ -40,9 +40,9 @@ cd python
 python setup.py develop
 ```
 
-* Use `cython --cplus -a  pyfury/_serialization.pyx` to produce an annotated HTML file of the source code. Then you can
+- Use `cython --cplus -a  pyfury/_serialization.pyx` to produce an annotated HTML file of the source code. Then you can
   analyze interaction between Python objects and Python's C API.
-* Read more: https://cython.readthedocs.io/en/latest/src/userguide/debugging.html
+- Read more: <https://cython.readthedocs.io/en/latest/src/userguide/debugging.html>
 
 ```bash
 FURY_DEBUG=true python setup.py build_ext --inplace

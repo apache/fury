@@ -1,5 +1,7 @@
 # Java Benchmarks
+
 ## System Environment
+
 - Operation System：4.9.151-015.x86_64
 - CPU：Intel(R) Xeon(R) Platinum 8163 CPU @ 2.50GHz
 - Byte Order：Little Endian
@@ -9,14 +11,19 @@
 - L3 cache： 33792K
 
 ## JMH params
+
 Don't skip **warm up**, otherwise the results aren't accurate.
+
 ```bash
  -f 1 -wi 3 -i 3 -t 1 -w 2s -r 2s -rf cs
 ```
 
-## Benchmark Data:
+## Benchmark Data
+
 ### Struct
+
 Struct is a class with 100 primitive fields:
+
 ```java
 public class Struct {
   public int f1;
@@ -27,8 +34,11 @@ public class Struct {
   public double f99;
 }
 ```
+
 ### Struct2
+
 Struct2 is a class with 100 boxed fields:
+
 ```java
 public class Struct {
   public Integer f1;
@@ -39,16 +49,23 @@ public class Struct {
   public Double f99;
 }
 ```
+
 ### MediaContent
+
 MEDIA_CONTENT is a class from [jvm-serializers](https://github.com/eishay/jvm-serializers/blob/master/tpc/src/data/media/MediaContent.java).
+
 ### Sample
+
 SAMPLE is a class from [kryo benchmark](https://github.com/EsotericSoftware/kryo/blob/master/benchmarks/src/main/java/com/esotericsoftware/kryo/benchmarks/data/Sample.java)
 
 ## Benchmark Plots
+
 ### Serialize to heap buffer
+
 Serialize data java byte array.
 
 #### Java schema consistent serialization
+
 The deserialization peer must have same class definition with the serialization peer.
 No class forward/backward compatibility are supported in this mode.
 
@@ -60,6 +77,7 @@ No class forward/backward compatibility are supported in this mode.
 </p>
 
 #### Java schema compatible serialization
+
 The deserialization peer can have different class definition with the serialization peer.
 Class forward/backward compatibility are supported in this mode.
 
@@ -71,6 +89,7 @@ Class forward/backward compatibility are supported in this mode.
 </p>
 
 #### Java schema consistent deserialization
+
 The deserialization peer must have same class definition with the serialization peer.
 No class forward/backward compatibility are supported in this mode.
 
@@ -82,6 +101,7 @@ No class forward/backward compatibility are supported in this mode.
 </p>
 
 #### Java schema compatible deserialization
+
 The deserialization peer can have different class definition with the serialization peer.
 Class forward/backward compatibility are supported in this mode.
 <p align="center">
@@ -92,9 +112,11 @@ Class forward/backward compatibility are supported in this mode.
 </p>
 
 ### Off-heap serialization
+
 Serialize data off-heap memory.
 
 #### Java schema consistent serialization
+
 The deserialization peer must have same class definition with the serialization peer.
 No class forward/backward compatibility are supported in this mode.
 <p align="center">
@@ -105,6 +127,7 @@ No class forward/backward compatibility are supported in this mode.
 </p>
 
 #### Java schema compatible serialization
+
 The deserialization peer can have different class definition with the serialization peer.
 Class forward/backward compatibility are supported in this mode.
 <p align="center">
@@ -115,6 +138,7 @@ Class forward/backward compatibility are supported in this mode.
 </p>
 
 #### Java schema consistent deserialization
+
 The deserialization peer must have same class definition with the serialization peer.
 No class forward/backward compatibility are supported in this mode.
 <p align="center">
@@ -125,6 +149,7 @@ No class forward/backward compatibility are supported in this mode.
 </p>
 
 #### Java schema compatible deserialization
+
 The deserialization peer can have different class definition with the serialization peer.
 Class forward/backward compatibility are supported in this mode.
 <p align="center">
@@ -135,10 +160,13 @@ Class forward/backward compatibility are supported in this mode.
 </p>
 
 ### Zero-copy serialization
-Note that zero-copy serialization just avoid the copy in serialization, if you send data to other machine, there may be copies. 
+
+Note that zero-copy serialization just avoid the copy in serialization, if you send data to other machine, there may be copies.
 
 But if you serialize data between processes on same node and use shared-memory, if the data are in off-heap before serialization, then other processes can read this buffer without any copies.
+
 #### Java zero-copy serialize to heap buffer
+
 <p align="center">
 <img width="24%" alt="" src="zerocopy/zero_copy_bench_serialize_BUFFER_to_array_tps.png">
 <img width="24%" alt="" src="zerocopy/zero_copy_bench_serialize_BUFFER_to_directBuffer_tps.png">
@@ -147,6 +175,7 @@ But if you serialize data between processes on same node and use shared-memory, 
 </p>
 
 #### Java zero-copy serialize to direct buffer
+
 <p align="center">
 <img width="24%" alt="" src="zerocopy/zero_copy_bench_deserialize_BUFFER_from_array_tps.png">
 <img width="24%" alt="" src="zerocopy/zero_copy_bench_deserialize_BUFFER_from_directBuffer_tps.png">
@@ -155,7 +184,9 @@ But if you serialize data between processes on same node and use shared-memory, 
 </p>
 
 ## Benchmark Data
+
 ### Java Serialization
+
 | Lib | Benchmark | bufferType | objectType | references | Tps |
 | ------- | ------- | ------- | ------- | ------- | ------- |
 | Fst | serialize | array | SAMPLE | False | 915907.574306 |
@@ -464,6 +495,7 @@ But if you serialize data between processes on same node and use shared-memory, 
 | Protostuff | deserialize | directBuffer | STRUCT2 | False | 425523.315814 |
 
 ### Java Zero-copy
+
 | Lib | Benchmark | array_size | bufferType | dataType | Tps |
 | ------- | ------- | ------- | ------- | ------- | ------- |
 | Fst | deserialize | 200 | array | PRIMITIVE_ARRAY | 219333.990504 |

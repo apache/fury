@@ -1,4 +1,5 @@
-Integration tests for fury:
+# Integration tests for fury:
+
 - [jdk_compatibility_tests](jdk_compatibility_tests): test fury compatibility across multiple jdk versions.
 - [latest_jdk_tests](latest_jdk_tests): test latest jdk.
 - [graalvm_tests](graalvm_tests): test graalvm native image support.
