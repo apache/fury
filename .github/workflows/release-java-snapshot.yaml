@@ -32,8 +32,8 @@ jobs:
       - name: Set up Maven Central Repository
         uses: actions/setup-java@v4
         with:
-          java-version: '8'
-          distribution: 'adopt'
+          java-version: "8"
+          distribution: "adopt"
           architecture: x64
           cache: maven
           server-id: apache.snapshots.https

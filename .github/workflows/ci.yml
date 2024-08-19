@@ -21,22 +21,22 @@ on:
   push:
     branches:
       - main
-      - 'releases/**'
-      - 'deploy/**'
-      - 'test*'
+      - "releases/**"
+      - "deploy/**"
+      - "test*"
     tags:
       - v*
   pull_request:
     paths-ignore:
-      - '**/*.md'
-      - 'docs/**'
-      - 'LICENSE'
-      - '.vscode/**'
-      - '.gitignore'
-      - 'licenses/**'
-      - 'DISCLAIMER'
-      - 'NOTICE'
-    types: ['opened', 'reopened', 'synchronize']
+      - "**/*.md"
+      - "docs/**"
+      - "LICENSE"
+      - ".vscode/**"
+      - ".gitignore"
+      - "licenses/**"
+      - "DISCLAIMER"
+      - "NOTICE"
+    types: ["opened", "reopened", "synchronize"]
 
 jobs:
   java:
@@ -53,7 +53,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           java-version: ${{ matrix.java-version }}
-          distribution: 'temurin'
+          distribution: "temurin"
       - name: Install bazel
         run: ./ci/run_ci.sh install_bazel
       - name: Install python
@@ -77,7 +77,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           java-version: ${{ matrix.java-version }}
-          distribution: 'adopt-openj9'
+          distribution: "adopt-openj9"
       - name: Install bazel
         run: ./ci/run_ci.sh install_bazel
       - name: Install python
@@ -93,10 +93,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: graalvm/setup-graalvm@v1
         with:
-          java-version: '21'
-          distribution: 'graalvm'
+          java-version: "21"
+          distribution: "graalvm"
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          native-image-job-reports: 'true'
+          native-image-job-reports: "true"
       - name: Build native image and run
         run: ./ci/run_ci.sh graalvm_test
 
@@ -109,7 +109,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           java-version: 8
-          distribution: 'temurin'
+          distribution: "temurin"
       - name: Install fury java
         run: cd java && mvn -T10 --no-transfer-progress clean install -DskipTests && cd -
       - name: Test
@@ -127,7 +127,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           java-version: 8
-          distribution: 'temurin'
+          distribution: "temurin"
       - name: Run CI
         run: ./ci/run_ci.sh integration_tests
 
@@ -212,7 +212,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go-version: [ '1.13', '1.18' ]
+        go-version: ["1.13", "1.18"]
     steps:
       - uses: actions/checkout@v4
       - name: Setup Go ${{ matrix.go-version }}
@@ -239,7 +239,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           java-version: 21
-          distribution: 'oracle'
+          distribution: "oracle"
       - name: Check License Header
         uses: korandoru/hawkeye@v3
       - name: Set up Python 3.8
