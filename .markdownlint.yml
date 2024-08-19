@@ -1,0 +1,29 @@
+# MD013 Line length
+MD013: true
+
+# MD014 Dollar signs used before commands without showing output
+MD014: false
+
+# MD024 Multiple headings with the same content
+MD024: false
+
+# MD026/no-trailing-punctuation Trailing punctuation in heading
+MD026: false
+
+# MD029/ol-prefix Ordered list item prefix
+MD029: false
+
+# MD033/no-inline-html
+MD033: false
+
+# MD034/no-bare-urls
+MD034: false
+
+# MD040/fenced-code-language
+MD040: false
+
+# MD041/first-line-heading/first-line-h1 First line in file should be a top level heading
+MD041: false
+
+# MD036/emphasis used instead of a header
+MD036: false
