@@ -4,8 +4,8 @@ sidebar_position: 4
 id: scala_guide
 ---
 
-# Scala serialization
 Fury supports all scala object serialization:
+
 - `case` class serialization supported
 - `pojo/bean` class serialization supported
 - `object` singleton serialization supported
@@ -15,12 +15,15 @@ Fury supports all scala object serialization:
 Scala 2 and 3 are both supported.
 
 ## Install
+
 ```sbt
 libraryDependencies += "org.apache.fury" % "fury-core" % "0.7.0"
 ```
 
 ## Fury creation
+
 When using fury for scala serialization, you should create fury at least with following options:
+
 ```scala
 val fury = Fury.builder()
   .withScalaOptimizationEnabled(true)
@@ -28,11 +31,14 @@ val fury = Fury.builder()
   .withRefTracking(true)
   .build()
 ```
+
 Depending on the object types you serialize, you may need to register some scala internal types:
+
 ```scala
 fury.register(Class.forName("scala.collection.generic.DefaultSerializationProxy"))
 fury.register(Class.forName("scala.Enumeration.Val"))
 ```
+
 If you want to avoid such registration, you can disable class registration by `FuryBuilder#requireClassRegistration(false)`.
 Note that this option allow to deserialize objects unknown types, more flexible but may be insecure if the classes contains malicious code.
 
@@ -43,6 +49,7 @@ Note that fury instance should be shared between multiple serialization, the cre
 If you use shared fury instance across multiple threads, you should create `ThreadSafeFury` instead by `FuryBuilder#buildThreadSafeFury()` instead.
 
 ## Serialize case object
+
 ```scala
 case class Person(github: String, age: Int, id: Long)
 val p = Person("https://github.com/chaokunyang", 18, 1)
@@ -51,6 +58,7 @@ println(fury.deserializeJavaObject(fury.serializeJavaObject(p)))
 ```
 
 ## Serialize pojo
+
 ```scala
 class Foo(f1: Int, f2: String) {
   override def toString: String = s"Foo($f1, $f2)"
@@ -59,6 +67,7 @@ println(fury.deserialize(fury.serialize(Foo(1, "chaokunyang"))))
 ```
 
 ## Serialize object singleton
+
 ```scala
 object singleton {
 }
@@ -68,6 +77,7 @@ println(o1 == o2)
 ```
 
 ## Serialize collection
+
 ```scala
 val seq = Seq(1,2)
 val list = List("a", "b")
@@ -78,6 +88,7 @@ println(fury.deserialize(fury.serialize(map)))
 ```
 
 ## Serialize Tuple
+
 ```scala
 val tuple = Tuple2(100, 10000L)
 println(fury.deserialize(fury.serialize(tuple)))
@@ -86,12 +97,16 @@ println(fury.deserialize(fury.serialize(tuple)))
 ```
 
 ## Serialize Enum
+
 ### Scala3 Enum
+
 ```scala
 enum Color { case Red, Green, Blue }
 println(fury.deserialize(fury.serialize(Color.Green)))
 ```
+
 ### Scala2 Enum
+
 ```scala
 object ColorEnum extends Enumeration {
   type ColorEnum = Value
@@ -101,6 +116,7 @@ println(fury.deserialize(fury.serialize(ColorEnum.Green)))
 ```
 
 ## Serialize Option
+
 ```scala
 val opt: Option[Long] = Some(100)
 println(fury.deserialize(fury.serialize(opt)))
@@ -108,7 +124,8 @@ val opt1: Option[Long] = None
 println(fury.deserialize(fury.serialize(opt1)))
 ```
 
-# Performance
+## Performance
+
 Scala `pojo/bean/case/object` are supported by fury jit well, the performance is as good as fury java.
 
 Scala collections and generics doesn't follow java collection framework, and is not fully integrated with Fury JIT in current release version. The performance won't be as good as fury collections serialization for java.

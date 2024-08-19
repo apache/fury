@@ -4,8 +4,6 @@ sidebar_position: 1
 id: fury_java_serialization_spec
 ---
 
-# Fury Java Serialization Specification
-
 ## Spec overview
 
 Fury Java Serialization is an automatic object serialization framework that supports reference and polymorphism. Fury
@@ -77,14 +75,14 @@ If schema consistent mode is enabled globally or enabled for current class, clas
 
 - If class is registered, it will be written as a fury unsigned varint: `class_id << 1`.
 - If class is not registered:
-    - If class is not an array, fury will write one byte `0bxxxxxxx1` first, then write class name.
-        - The first little bit is `1`, which is different from first bit `0` of
+  - If class is not an array, fury will write one byte `0bxxxxxxx1` first, then write class name.
+    - The first little bit is `1`, which is different from first bit `0` of
           encoded class id. Fury can use this information to determine whether to read class by class id for
           deserialization.
-    - If class is not registered and class is an array, fury will write one byte `dimensions << 1 | 1` first, then write
+  - If class is not registered and class is an array, fury will write one byte `dimensions << 1 | 1` first, then write
       component
       class subsequently. This can reduce array class name cost if component class is or will be serialized.
-    - Class will be written as two enumerated fury unsigned by default: `package name` and `class name`. If meta share
+  - Class will be written as two enumerated fury unsigned by default: `package name` and `class name`. If meta share
       mode is
       enabled,
       class will be written as an unsigned varint which points to index in `MetaContext`.
@@ -145,10 +143,10 @@ Meta header is a 64 bits number value encoded in little endian order.
 ```
 
 - num fields: encode `num fields << 1 | register flag(1 when class registered)` as unsigned varint.
-    - If class is registered, then an unsigned varint class id will be written next, package and class name will be
+  - If class is registered, then an unsigned varint class id will be written next, package and class name will be
       omitted.
-    - If current class is schema consistent, then num field will be `0` to flag it.
-    - If current class isn't schema consistent, then num field will be the number of compatible fields. For example,
+  - If current class is schema consistent, then num field will be `0` to flag it.
+  - If current class isn't schema consistent, then num field will be the number of compatible fields. For example,
       users
       can use tag id to mark some field as compatible field in schema consistent context. In such cases, schema
       consistent
@@ -156,34 +154,34 @@ Meta header is a 64 bits number value encoded in little endian order.
       fields info of those fields which aren't annotated by tag id for deserializing schema consistent fields, then use
       fields info in meta for deserializing compatible fields.
 - Package name encoding(omitted when class is registered):
-    - encoding algorithm: `UTF8/ALL_TO_LOWER_SPECIAL/LOWER_UPPER_DIGIT_SPECIAL`
-    - Header: `6 bits size | 2 bits encoding flags`. The `6 bits size: 0~63`  will be used to indicate size `0~62`,
+  - encoding algorithm: `UTF8/ALL_TO_LOWER_SPECIAL/LOWER_UPPER_DIGIT_SPECIAL`
+  - Header: `6 bits size | 2 bits encoding flags`. The `6 bits size: 0~63`  will be used to indicate size `0~62`,
       the value `63` the size need more byte to read, the encoding will encode `size - 62` as a varint next.
 - Class name encoding(omitted when class is registered):
-    - encoding algorithm: `UTF8/LOWER_UPPER_DIGIT_SPECIAL/FIRST_TO_LOWER_SPECIAL/ALL_TO_LOWER_SPECIAL`
-    - header: `6 bits size | 2 bits encoding flags`. The `6 bits size: 0~63`  will be used to indicate size `1~64`,
+  - encoding algorithm: `UTF8/LOWER_UPPER_DIGIT_SPECIAL/FIRST_TO_LOWER_SPECIAL/ALL_TO_LOWER_SPECIAL`
+  - header: `6 bits size | 2 bits encoding flags`. The `6 bits size: 0~63`  will be used to indicate size `1~64`,
       the value `63` the size need more byte to read, the encoding will encode `size - 63` as a varint next.
 - Field info:
-    - header(8
+  - header(8
       bits): `3 bits size + 2 bits field name encoding + polymorphism flag + nullability flag + ref tracking flag`.
       Users can use annotation to provide those info.
-        - 2 bits field name encoding:
-            - encoding: `UTF8/ALL_TO_LOWER_SPECIAL/LOWER_UPPER_DIGIT_SPECIAL/TAG_ID`
-            - If tag id is used, i.e. field name is written by an unsigned varint tag id. 2 bits encoding will be `11`.
-        - size of field name:
-            - The `3 bits size: 0~7`  will be used to indicate length `1~7`, the value `6` the size read more bytes,
+    - 2 bits field name encoding:
+      - encoding: `UTF8/ALL_TO_LOWER_SPECIAL/LOWER_UPPER_DIGIT_SPECIAL/TAG_ID`
+      - If tag id is used, i.e. field name is written by an unsigned varint tag id. 2 bits encoding will be `11`.
+    - size of field name:
+      - The `3 bits size: 0~7`  will be used to indicate length `1~7`, the value `6` the size read more bytes,
               the encoding will encode `size - 7` as a varint next.
-            - If encoding is `TAG_ID`, then num_bytes of field name will be used to store tag id.
-        - ref tracking: when set to 1, ref tracking will be enabled for this field.
-        - nullability: when set to 1, this field can be null.
-        - polymorphism: when set to 1, the actual type of field will be the declared field type even the type if
+      - If encoding is `TAG_ID`, then num_bytes of field name will be used to store tag id.
+    - ref tracking: when set to 1, ref tracking will be enabled for this field.
+    - nullability: when set to 1, this field can be null.
+    - polymorphism: when set to 1, the actual type of field will be the declared field type even the type if
           not `final`.
-    - type id:
-        - For registered type-consistent classes, it will be the registered class id.
-        - Otherwise it will be encoded as `OBJECT_ID` if it isn't `final` and `FINAL_OBJECT_ID` if it's `final`. The
+  - type id:
+    - For registered type-consistent classes, it will be the registered class id.
+    - Otherwise it will be encoded as `OBJECT_ID` if it isn't `final` and `FINAL_OBJECT_ID` if it's `final`. The
           meta for such types is written separately instead of inlining here is to reduce meta space cost if object of
           this type is serialized in current object graph multiple times, and the field value may be null too.
-    - Field name: If type id is set, type id will be used instead. Otherwise meta string encoding length and data will
+  - Field name: If type id is set, type id will be used instead. Otherwise meta string encoding length and data will
       be written instead.
 
 Field order are left as implementation details, which is not exposed to specification, the deserialization need to
@@ -195,12 +193,12 @@ using a more compact encoding.
 Same encoding algorithm as the previous layer except:
 
 - header + package name:
-    - Header:
-        - If package name has been written before: `varint index + sharing flag(set)` will be written
-        - If package name hasn't been written before:
-            - If meta string encoding is `LOWER_SPECIAL` and the length of encoded string `<=` 64, then header will be
+  - Header:
+    - If package name has been written before: `varint index + sharing flag(set)` will be written
+    - If package name hasn't been written before:
+      - If meta string encoding is `LOWER_SPECIAL` and the length of encoded string `<=` 64, then header will be
               `6 bits size + encoding flag(set) + sharing flag(unset)`.
-            - Otherwise, header will
+      - Otherwise, header will
               be `3 bits unset + 3 bits encoding flags + encoding flag(unset) + sharing flag(unset)`
 
 ## Meta String
@@ -307,17 +305,17 @@ If string has been written before, the data will be written as follows:
 
 - size: 1~9 byte
 - Fury PVL(Progressive Variable-length Long) Encoding:
-    - positive long format: first bit in every byte indicates whether to have the next byte. If first bit is set
+  - positive long format: first bit in every byte indicates whether to have the next byte. If first bit is set
       i.e. `b & 0x80 == 0x80`, then the next byte should be read until the first bit is unset.
 
 #### Signed long
 
 - size: 1~9 byte
 - Fury SLI(Small long as int) Encoding:
-    - If long is in [-1073741824, 1073741823], encode as 4 bytes int: `| little-endian: ((int) value) << 1 |`
-    - Otherwise write as 9 bytes: `| 0b1 | little-endian 8 bytes long |`
+  - If long is in [-1073741824, 1073741823], encode as 4 bytes int: `| little-endian: ((int) value) << 1 |`
+  - Otherwise write as 9 bytes: `| 0b1 | little-endian 8 bytes long |`
 - Fury PVL(Progressive Variable-length Long) Encoding:
-    - First convert the number into positive unsigned long by ` (v << 1) ^ (v >> 63)` ZigZag algorithm to reduce cost of
+  - First convert the number into positive unsigned long by `(v << 1) ^ (v >> 63)` ZigZag algorithm to reduce cost of
       small negative numbers, then encoding it as an unsigned long.
 
 #### Float

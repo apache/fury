@@ -4,9 +4,10 @@ sidebar_position: 0
 id: fury_xlang_serialization_spec
 ---
 
-# Cross-language Serialization Specification
+## Cross-language Serialization Specification
 
 > Format Version History:
+>
 > - Version 0.1 - serialization spec formalized
 
 Fury xlang serialization is an automatic object serialization framework that supports reference and polymorphism.
@@ -42,22 +43,22 @@ also introduce more complexities compared to static serialization frameworks. So
 - set: an unordered set of unique elements.
 - map: a map of key-value pairs. Mutable types such as `list/map/set/array/tensor/arrow` are not allowed as key of map.
 - time types:
-    - duration: an absolute length of time, independent of any calendar/timezone, as a count of nanoseconds.
-    - timestamp: a point in time, independent of any calendar/timezone, as a count of nanoseconds. The count is relative
+  - duration: an absolute length of time, independent of any calendar/timezone, as a count of nanoseconds.
+  - timestamp: a point in time, independent of any calendar/timezone, as a count of nanoseconds. The count is relative
       to an epoch at UTC midnight on January 1, 1970.
 - decimal: exact decimal value represented as an integer value in two's complement.
 - binary: an variable-length array of bytes.
 - array type: only allow numeric components. Other arrays will be taken as List. The implementation should support the
   interoperability between array and list.
-    - array: multidimensional array which every sub-array can have different sizes but all have same type.
-    - bool_array: one dimensional int16 array.
-    - int8_array: one dimensional int8 array.
-    - int16_array: one dimensional int16 array.
-    - int32_array: one dimensional int32 array.
-    - int64_array: one dimensional int64 array.
-    - float16_array: one dimensional half_float_16 array.
-    - float32_array: one dimensional float32 array.
-    - float64_array: one dimensional float64 array.
+  - array: multidimensional array which every sub-array can have different sizes but all have same type.
+  - bool_array: one dimensional int16 array.
+  - int8_array: one dimensional int8 array.
+  - int16_array: one dimensional int16 array.
+  - int32_array: one dimensional int32 array.
+  - int64_array: one dimensional int64 array.
+  - float16_array: one dimensional half_float_16 array.
+  - float32_array: one dimensional float32 array.
+  - float64_array: one dimensional float64 array.
 - tensor: a multidimensional dense array of fixed-size values such as a NumPy ndarray.
 - sparse tensor: a multidimensional array whose elements are almost all zeros.
 - arrow record batch: an arrow [record batch](https://arrow.apache.org/docs/cpp/tables.html#record-batches) object.
@@ -197,9 +198,9 @@ differently.
   of `type_id`. Schema evolution related meta will be ignored.
 - If schema evolution mode is enabled globally when creating fury, and current class is configured to use schema
   consistent mode like `struct` vs `table` in flatbuffers:
-    - Type meta will be add to `captured_type_defs`: `captured_type_defs[type def stub] = map size` ahead when
+  - Type meta will be add to `captured_type_defs`: `captured_type_defs[type def stub] = map size` ahead when
       registering type.
-    - Get index of the meta in `captured_type_defs`, write that index as `| unsigned varint: index |`.
+  - Get index of the meta in `captured_type_defs`, write that index as `| unsigned varint: index |`.
 
 ### Schema evolution
 
@@ -207,21 +208,24 @@ If schema evolution mode is enabled globally when creating fury, and enabled for
 using one of the following mode. Which mode to use is configured when creating fury.
 
 - Normal mode(meta share not enabled):
-    - If type meta hasn't been written before, add `type def`
+  - If type meta hasn't been written before, add `type def`
       to `captured_type_defs`: `captured_type_defs[type def] = map size`.
-    - Get index of the meta in `captured_type_defs`, write that index as `| unsigned varint: index |`.
-    - After finished the serialization of the object graph, fury will start to write `captured_type_defs`:
-        - Firstly, set current to `meta start offset` of fury header
-        - Then write `captured_type_defs` one by one:
-          ```python
-          buffer.write_var_uint32(len(writting_type_defs) - len(schema_consistent_type_def_stubs))
-          for type_meta in writting_type_defs:
-              if not type_meta.is_stub():
-                  type_meta.write_type_def(buffer)
-          writing_type_defs = copy(schema_consistent_type_def_stubs)
-          ```
+  - Get index of the meta in `captured_type_defs`, write that index as `| unsigned varint: index |`.
+  - After finished the serialization of the object graph, fury will start to write `captured_type_defs`:
+    - Firstly, set current to `meta start offset` of fury header
+    - Then write `captured_type_defs` one by one:
+
+      ```python
+      buffer.write_var_uint32(len(writting_type_defs) - len(schema_consistent_type_def_stubs))
+      for type_meta in writting_type_defs:
+          if not type_meta.is_stub():
+              type_meta.write_type_def(buffer)
+      writing_type_defs = copy(schema_consistent_type_def_stubs)
+      ```
+
 - Meta share mode: the writing steps are same as the normal mode, but `captured_type_defs` will be shared across
   multiple serializations of different objects. For example, suppose we have a batch to serialize:
+
     ```python
     captured_type_defs = {}
     stream = ...
@@ -234,16 +238,20 @@ using one of the following mode. Which mode to use is configured when creating f
     ```
 
 - Streaming mode(streaming mode doesn't support meta share):
-    - If type meta hasn't been written before, the data will be written as:
+  - If type meta hasn't been written before, the data will be written as:
+
       ```
       | unsigned varint: 0b11111111 | type def |
       ```
-    - If type meta has been written before, the data will be written as:
+
+  - If type meta has been written before, the data will be written as:
+
       ```
       | unsigned varint: written index << 1 |
       ```
+
       `written index` is the id in `captured_type_defs`.
-    - With this mode, `meta start offset` can be omitted.
+  - With this mode, `meta start offset` can be omitted.
 
 > The normal mode and meta share mode will forbid streaming writing since it needs to look back for update the start
 > offset after the whole object graph writing and meta collecting is finished. Only in this way we can ensure
@@ -281,33 +289,33 @@ Meta header is a 64 bits number value encoded in little endian order.
 ```
 
 - num fields: encode `num fields` as unsigned varint.
-    - If the current type is schema consistent, then num_fields will be `0` to flag it.
-    - If the current type isn't schema consistent, then num_fields will be the number of compatible fields. For example,
+  - If the current type is schema consistent, then num_fields will be `0` to flag it.
+  - If the current type isn't schema consistent, then num_fields will be the number of compatible fields. For example,
       users can use tag id to mark some fields as compatible fields in schema consistent context. In such cases, schema
       consistent fields will be serialized first, then compatible fields will be serialized next. At deserialization,
       Fury will use fields info of those fields which aren't annotated by tag id for deserializing schema consistent
       fields, then use fields info in meta for deserializing compatible fields.
 - type id: the registered id for the current type, which will be written as an unsigned varint.
 - field info:
-    - header(8
+  - header(8
       bits): `3 bits size + 2 bits field name encoding + polymorphism flag + nullability flag + ref tracking flag`.
       Users can use annotation to provide those info.
-        - 2 bits field name encoding:
-            - encoding: `UTF8/ALL_TO_LOWER_SPECIAL/LOWER_UPPER_DIGIT_SPECIAL/TAG_ID`
-            - If tag id is used, i.e. field name is written by an unsigned varint tag id. 2 bits encoding will be `11`.
-        - size of field name:
-            - The `3 bits size: 0~7`  will be used to indicate length `1~7`, the value `7` indicates to read more bytes,
+    - 2 bits field name encoding:
+      - encoding: `UTF8/ALL_TO_LOWER_SPECIAL/LOWER_UPPER_DIGIT_SPECIAL/TAG_ID`
+      - If tag id is used, i.e. field name is written by an unsigned varint tag id. 2 bits encoding will be `11`.
+    - size of field name:
+      - The `3 bits size: 0~7`  will be used to indicate length `1~7`, the value `7` indicates to read more bytes,
               the encoding will encode `size - 7` as a varint next.
-            - If encoding is `TAG_ID`, then num_bytes of field name will be used to store tag id.
-        - ref tracking: when set to 1, ref tracking will be enabled for this field.
-        - nullability: when set to 1, this field can be null.
-        - polymorphism: when set to 1, the actual type of field will be the declared field type even the type if
+      - If encoding is `TAG_ID`, then num_bytes of field name will be used to store tag id.
+    - ref tracking: when set to 1, ref tracking will be enabled for this field.
+    - nullability: when set to 1, this field can be null.
+    - polymorphism: when set to 1, the actual type of field will be the declared field type even the type if
           not `final`.
-    - field name: If tag id is set, tag id will be used instead. Otherwise meta string encoding `[length]` and data will
+  - field name: If tag id is set, tag id will be used instead. Otherwise meta string encoding `[length]` and data will
       be written instead.
-    - type id:
-        - For registered type-consistent classes, it will be the registered type id.
-        - Otherwise it will be encoded as `OBJECT_ID` if it isn't `final` and `FINAL_OBJECT_ID` if it's `final`. The
+  - type id:
+    - For registered type-consistent classes, it will be the registered type id.
+    - Otherwise it will be encoded as `OBJECT_ID` if it isn't `final` and `FINAL_OBJECT_ID` if it's `final`. The
           meta for such types is written separately instead of inlining here is to reduce meta space cost if object of
           this type is serialized in current object graph multiple times, and the field value may be null too.
 
@@ -401,10 +409,10 @@ Notes:
 
 - size: 1~9 byte
 - Fury SLI(Small long as int) Encoding:
-    - If long is in `[0, 2147483647]`, encode as 4 bytes int: `| little-endian: ((int) value) << 1 |`
-    - Otherwise write as 9 bytes: `| 0b1 | little-endian 8 bytes long |`
+  - If long is in `[0, 2147483647]`, encode as 4 bytes int: `| little-endian: ((int) value) << 1 |`
+  - Otherwise write as 9 bytes: `| 0b1 | little-endian 8 bytes long |`
 - Fury PVL(Progressive Variable-length Long) Encoding:
-    - positive long format: first bit in every byte indicates whether to have the next byte. If first bit is set
+  - positive long format: first bit in every byte indicates whether to have the next byte. If first bit is set
       i.e. `b & 0x80 == 0x80`, then the next byte should be read until the first bit is unset.
 
 #### signed int64
@@ -416,10 +424,10 @@ Notes:
 
 - size: 1~9 byte
 - Fury SLI(Small long as int) Encoding:
-    - If long is in `[-1073741824, 1073741823]`, encode as 4 bytes int: `| little-endian: ((int) value) << 1 |`
-    - Otherwise write as 9 bytes: `| 0b1 | little-endian 8 bytes long |`
+  - If long is in `[-1073741824, 1073741823]`, encode as 4 bytes int: `| little-endian: ((int) value) << 1 |`
+  - Otherwise write as 9 bytes: `| 0b1 | little-endian 8 bytes long |`
 - Fury PVL(Progressive Variable-length Long) Encoding:
-    - First convert the number into positive unsigned long by `(v << 1) ^ (v >> 63)` ZigZag algorithm to reduce cost of
+  - First convert the number into positive unsigned long by `(v << 1) ^ (v >> 63)` ZigZag algorithm to reduce cost of
       small negative numbers, then encoding it as an unsigned long.
 
 #### float32

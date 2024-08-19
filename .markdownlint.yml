@@ -1,5 +1,5 @@
 # MD013 Line length
-MD013: true
+MD013: false
 
 # MD014 Dollar signs used before commands without showing output
 MD014: false

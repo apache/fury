@@ -10,7 +10,7 @@ Note:
 - `int16_t[n]/vector<T>` indicates `int16_t[n]/vector<int16_t>`
 - The cross-language serialization is not stable, do not use it in your production environment.
 
-# Type Mapping
+## Type Mapping
 
 | Fury Type          | Fury Type ID | Java            | Python               | Javascript      | C++                            | Golang           | Rust             |
 |--------------------|--------------|-----------------|----------------------|-----------------|--------------------------------|------------------|------------------|
@@ -48,7 +48,7 @@ Note:
 | arrow record batch | 32           | /               | /                    | /               | /                              | /                | /                |
 | arrow table        | 33           | /               | /                    | /               | /                              | /                | /                |
 
-# Type info(not implemented currently)
+## Type info(not implemented currently)
 
 Due to differences between type systems of languages, those types can't be mapped one-to-one between languages.
 
@@ -70,6 +70,7 @@ Such information can be provided in other languages too:
 Here is en example:
 
 - Java:
+
     ```java
     class Foo {
       @Int32Type(varint = true)
@@ -77,6 +78,7 @@ Here is en example:
       List<@Int32Type(varint = true) Integer> f2;
     }
     ```
+
 - Python:
 
     ```python
