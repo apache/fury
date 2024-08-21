@@ -51,7 +51,8 @@ public class DeserializationException extends FuryException {
       try {
         return "Deserialize failed, read objects are: " + readObjects;
       } catch (Throwable e) {
-        StringBuilder builder = new StringBuilder("Deserialize failed, type of read objects are: [");
+        StringBuilder builder =
+            new StringBuilder("Deserialize failed, type of read objects are: [");
         for (Object readObject : readObjects) {
           builder.append(readObject == null ? null : readObject.getClass()).append(", ");
         }
