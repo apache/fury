@@ -19,6 +19,7 @@ pub mod buffer;
 pub mod error;
 pub mod fury;
 pub mod meta;
+pub mod raw;
 pub mod resolver;
 pub mod row;
 pub mod serializer;

@@ -18,99 +18,83 @@
 use super::context::{ReadContext, WriteContext};
 use crate::error::Error;
 use crate::fury::Fury;
-use crate::serializer::StructSerializer;
+use crate::raw::maybe_trait_object::MaybeTraitObject;
+use crate::serializer::{Serializer, SS};
 use std::any::TypeId;
 use std::{any::Any, collections::HashMap};
 
-pub struct Harness {
-    serializer: fn(&dyn Any, &mut WriteContext),
-    deserializer: fn(&mut ReadContext) -> Result<Box<dyn Any>, Error>,
-}
-
-impl Harness {
-    pub fn new(
-        serializer: fn(&dyn Any, &mut WriteContext),
-        deserializer: fn(&mut ReadContext) -> Result<Box<dyn Any>, Error>,
-    ) -> Harness {
-        Harness {
-            serializer,
-            deserializer,
-        }
-    }
-
-    pub fn get_serializer(&self) -> fn(&dyn Any, &mut WriteContext) {
-        self.serializer
-    }
-
-    pub fn get_deserializer(&self) -> fn(&mut ReadContext) -> Result<Box<dyn Any>, Error> {
-        self.deserializer
-    }
-}
+pub type TraitObjectDeserializer = fn(&mut ReadContext) -> Result<MaybeTraitObject, Error>;
 
 pub struct ClassInfo {
     type_def: Vec<u8>,
-    type_id: u32,
+    fury_type_id: u32,
+    rust_type_id: TypeId,
+    trait_object_serializer: fn(&dyn Any, &mut WriteContext),
+    trait_object_deserializer: HashMap<TypeId, TraitObjectDeserializer>,
+}
+
+fn serialize<T: 'static + Serializer>(this: &dyn Any, context: &mut WriteContext) {
+    let this = this.downcast_ref::<T>().unwrap();
+    T::serialize(this, context)
 }
 
 impl ClassInfo {
-    pub fn new<T: StructSerializer>(fury: &Fury, type_id: u32) -> ClassInfo {
+    pub fn new<T: Serializer>(fury: &Fury, type_id: u32) -> ClassInfo {
         ClassInfo {
             type_def: T::type_def(fury),
-            type_id,
+            fury_type_id: type_id,
+            rust_type_id: TypeId::of::<T>(),
+            trait_object_serializer: serialize::<T>,
+            trait_object_deserializer: T::get_trait_object_deserializer(),
         }
     }
 
-    pub fn get_type_id(&self) -> u32 {
-        self.type_id
+    pub fn associate(&mut self, type_id: TypeId, func: TraitObjectDeserializer) {
+        self.trait_object_deserializer.insert(type_id, func);
+    }
+
+    pub fn get_rust_type_id(&self) -> TypeId {
+        self.rust_type_id
+    }
+
+    pub fn get_fury_type_id(&self) -> u32 {
+        self.fury_type_id
     }
 
     pub fn get_type_def(&self) -> &Vec<u8> {
         &self.type_def
     }
+
+    pub fn get_serializer(&self) -> fn(&dyn Any, &mut WriteContext) {
+        self.trait_object_serializer
+    }
+
+    pub fn get_trait_object_deserializer<T: 'static>(&self) -> Option<&TraitObjectDeserializer> {
+        let type_id = TypeId::of::<T>();
+        self.trait_object_deserializer.get(&type_id)
+    }
 }
 
 #[derive(Default)]
 pub struct ClassResolver {
-    serialize_map: HashMap<u32, Harness>,
-    type_id_map: HashMap<TypeId, u32>,
+    fury_type_id_map: HashMap<u32, TypeId>,
     class_info_map: HashMap<TypeId, ClassInfo>,
 }
 
 impl ClassResolver {
-    pub fn get_class_info(&self, type_id: TypeId) -> &ClassInfo {
+    pub fn get_class_info_by_rust_type(&self, type_id: TypeId) -> &ClassInfo {
         self.class_info_map.get(&type_id).unwrap()
     }
 
-    pub fn register<T: StructSerializer>(&mut self, class_info: ClassInfo, id: u32) {
-        fn serializer<T2: 'static + StructSerializer>(this: &dyn Any, context: &mut WriteContext) {
-            let this = this.downcast_ref::<T2>();
-            match this {
-                Some(v) => {
-                    T2::serialize(v, context);
-                }
-                None => todo!(),
-            }
-        }
-
-        fn deserializer<T2: 'static + StructSerializer>(
-            context: &mut ReadContext,
-        ) -> Result<Box<dyn Any>, Error> {
-            match T2::deserialize(context) {
-                Ok(v) => Ok(Box::new(v)),
-                Err(e) => Err(e),
-            }
-        }
-        self.type_id_map.insert(TypeId::of::<T>(), id);
-        self.serialize_map
-            .insert(id, Harness::new(serializer::<T>, deserializer::<T>));
-        self.class_info_map.insert(TypeId::of::<T>(), class_info);
+    pub fn get_class_info_by_fury_type(&self, type_id: u32) -> &ClassInfo {
+        let type_id = self.fury_type_id_map.get(&type_id).unwrap();
+        self.class_info_map.get(type_id).unwrap()
     }
 
-    pub fn get_harness_by_type(&self, type_id: TypeId) -> Option<&Harness> {
-        self.get_harness(*self.type_id_map.get(&type_id).unwrap())
-    }
-
-    pub fn get_harness(&self, id: u32) -> Option<&Harness> {
-        self.serialize_map.get(&id)
+    pub fn register<T: Serializer>(&mut self, class_info: ClassInfo, id: u32) -> &mut ClassInfo {
+        let type_id = TypeId::of::<T>();
+        self.fury_type_id_map.insert(id, type_id);
+        self.class_info_map.insert(type_id, class_info);
+        self.class_info_map.get_mut(&type_id).unwrap()
     }
 }

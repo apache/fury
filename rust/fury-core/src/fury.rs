@@ -15,12 +15,14 @@
 // specific language governing permissions and limitations
 // under the License.
 
+use chrono::{NaiveDate, NaiveDateTime};
+
 use crate::buffer::{Reader, Writer};
 use crate::error::Error;
 use crate::resolver::class_resolver::{ClassInfo, ClassResolver};
 use crate::resolver::context::ReadContext;
 use crate::resolver::context::WriteContext;
-use crate::serializer::{Serializer, StructSerializer};
+use crate::serializer::Serializer;
 use crate::types::{config_flags, Language, Mode, SIZE_OF_REF_AND_TYPE};
 
 pub struct Fury {
@@ -30,14 +32,34 @@ pub struct Fury {
 
 impl Default for Fury {
     fn default() -> Self {
-        Fury {
+        let mut fury = Fury {
             mode: Mode::SchemaConsistent,
             class_resolver: ClassResolver::default(),
-        }
+        };
+        fury.register_internal_type::<u8>();
+        fury.register_internal_type::<i8>();
+        fury.register_internal_type::<u16>();
+        fury.register_internal_type::<i16>();
+        fury.register_internal_type::<u32>();
+        fury.register_internal_type::<i32>();
+        fury.register_internal_type::<u64>();
+        fury.register_internal_type::<i64>();
+        fury.register_internal_type::<f32>();
+        fury.register_internal_type::<f64>();
+        fury.register_internal_type::<String>();
+        fury.register_internal_type::<bool>();
+        fury.register_internal_type::<NaiveDate>();
+        fury.register_internal_type::<NaiveDateTime>();
+        // todo generic type
+        fury
     }
 }
 
 impl Fury {
+    fn register_internal_type<T: Serializer>(&mut self) {
+        self.register::<i32>(T::get_type_id(self) as u32);
+    }
+
     pub fn mode(mut self, mode: Mode) -> Self {
         self.mode = mode;
         self
@@ -90,8 +112,8 @@ impl Fury {
         &self.class_resolver
     }
 
-    pub fn register<T: 'static + StructSerializer>(&mut self, id: u32) {
-        let class_info = ClassInfo::new::<T>(self, id);
-        self.class_resolver.register::<T>(class_info, id);
+    pub fn register<T: 'static + Serializer>(&mut self, id: u32) -> &mut ClassInfo {
+        self.class_resolver
+            .register::<T>(ClassInfo::new::<T>(self, id), id)
     }
 }

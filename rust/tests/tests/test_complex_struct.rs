@@ -19,34 +19,8 @@ use chrono::{DateTime, NaiveDate, NaiveDateTime};
 use fury_core::fury::Fury;
 use fury_core::types::Mode;
 use fury_derive::Fury;
-use std::any::Any;
+use std::any::{Any, TypeId};
 use std::collections::HashMap;
-
-#[test]
-fn any() {
-    #[derive(Fury, Debug)]
-    struct Animal {
-        f3: String,
-    }
-
-    #[derive(Fury, Debug)]
-    struct Person {
-        f1: Box<dyn Any>,
-    }
-
-    let person = Person {
-        f1: Box::new(Animal {
-            f3: String::from("hello"),
-        }),
-    };
-
-    let mut fury = Fury::default();
-    fury.register::<Animal>(999);
-    fury.register::<Person>(1000);
-    let bin = fury.serialize(&person);
-    let obj: Person = fury.deserialize(&bin).expect("");
-    assert!(obj.f1.is::<Animal>())
-}
 
 #[test]
 fn complex_struct() {

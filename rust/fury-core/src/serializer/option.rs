@@ -22,7 +22,7 @@ use crate::resolver::context::WriteContext;
 use crate::serializer::Serializer;
 use crate::types::{FuryGeneralList, RefFlag};
 
-impl<T: Serializer> Serializer for Option<T> {
+impl<T: Serializer + 'static> Serializer for Option<T> {
     fn read(context: &mut ReadContext) -> Result<Self, Error> {
         Ok(Some(T::read(context)?))
     }

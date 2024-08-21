@@ -17,16 +17,93 @@
 
 use fury_row::derive_row;
 use proc_macro::TokenStream;
-use syn::{parse_macro_input, DeriveInput};
+use quote::quote;
+use syn::{parse_macro_input, parse_quote, DeriveInput, ItemTrait};
 
 mod fury_row;
 mod object;
 mod util;
 
-#[proc_macro_derive(Fury)]
+#[proc_macro_attribute]
+pub fn impl_polymorph(_attr: TokenStream, item: proc_macro::TokenStream) -> TokenStream {
+    let mut input: ItemTrait = parse_macro_input!(item as ItemTrait);
+    let name = &input.ident;
+
+    let supertrait: syn::TypeParamBound = parse_quote! {
+        fury_core::serializer::PolymorphicCast
+    };
+
+    input
+        .supertraits
+        .insert(input.supertraits.len(), supertrait);
+
+    let shadow: proc_macro2::Ident = syn::Ident::new(&format!("{}Shadow", name), name.span());
+
+    let output = quote! {
+        #input
+
+        impl<T: #name> SS for T {
+
+        }
+
+        trait #shadow where Self: Animal + fury_core::serializer::Serializer {
+            fn deserialize_to_trait_object(context: &mut fury_core::resolver::context::ReadContext) -> Result<fury_core::raw::maybe_trait_object::MaybeTraitObject, fury_core::error::Error> {
+                match Self::deserialize(context) {
+                    Ok(v) => {
+                        Ok(fury_core::raw::maybe_trait_object::MaybeTraitObject::new(
+                            Box::new(v) as Box<dyn #name>,
+                        ))
+                    },
+                    Err(e) => Err(e),
+                }
+            }
+
+            fn trait_object_type_id() -> TypeId {
+                TypeId::of::<Box<dyn #name>>()
+            }
+        }
+
+        impl<T: Animal + fury_core::serializer::Serializer> #shadow for T {}
+
+        impl fury_core::serializer::Serializer for Box<dyn #name> {
+            fn reserved_space() -> usize {
+                0
+            }
+
+            fn write(&self, _context: &mut fury_core::resolver::context::WriteContext) {
+                panic!("unreachable")
+            }
+
+            fn read(_context: &mut fury_core::resolver::context::ReadContext) -> Result<Self, Error> {
+                panic!("unreachable")
+            }
+
+            fn get_type_id(_fury: &Fury) -> i16 {
+                fury_core::types::FieldType::FuryTypeTag.into()
+            }
+
+            fn serialize(&self, context: &mut fury_core::resolver::context::WriteContext) {
+                fury_core::serializer::polymorph::serialize(self.as_ref().as_any(), self.as_ref().type_id(), context);
+            }
+
+            fn deserialize(context: &mut fury_core::resolver::context::ReadContext) -> Result<Self, Error> {
+                fury_core::serializer::polymorph::deserialize::<Self>(context)
+            }
+        }
+
+    };
+
+    output.into()
+}
+
+#[proc_macro_derive(Fury, attributes(polymorphic_traits))]
 pub fn proc_macro_derive_fury_object(input: proc_macro::TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
-    object::derive_serializer(&input)
+    if let Some(processed) = object::derive_serializer(&input) {
+        processed
+    } else {
+        panic!("macro can not process the target")
+    }
 }
 
 #[proc_macro_derive(FuryRow)]

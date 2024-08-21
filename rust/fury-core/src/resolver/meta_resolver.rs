@@ -57,7 +57,7 @@ impl<'a> MetaWriterResolver<'a> {
                 let index = self.type_defs.len();
                 self.type_defs.push(
                     fury.get_class_resolver()
-                        .get_class_info(type_id)
+                        .get_class_info_by_rust_type(type_id)
                         .get_type_def(),
                 );
                 self.type_id_index_map.insert(type_id, index);

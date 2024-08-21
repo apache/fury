@@ -15,9 +15,4 @@
 // specific language governing permissions and limitations
 // under the License.
 
-mod misc;
-mod polymorphic;
-mod read;
-mod serializer;
-mod write;
-pub use serializer::derive_serializer;
+pub mod maybe_trait_object;

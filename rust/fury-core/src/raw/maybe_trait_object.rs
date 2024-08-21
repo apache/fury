@@ -15,38 +15,28 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use std::any::Any;
+use crate::error::Error;
+use mem::transmute;
+use std::any::TypeId;
+use std::mem;
 
-use super::{polymorph, Serializer};
-use crate::{
-    error::Error,
-    fury::Fury,
-    resolver::context::{ReadContext, WriteContext},
-    types::FieldType,
-};
+pub struct MaybeTraitObject {
+    ptr: *const u8,
+    type_id: TypeId,
+}
 
-impl Serializer for Box<dyn Any> {
-    fn reserved_space() -> usize {
-        0
+impl MaybeTraitObject {
+    pub fn new<T: 'static>(value: T) -> MaybeTraitObject {
+        let ptr = unsafe { transmute::<Box<T>, *const u8>(Box::new(value)) };
+        let type_id = TypeId::of::<T>();
+        MaybeTraitObject { ptr, type_id }
     }
 
-    fn write(&self, _context: &mut WriteContext) {
-        panic!("unreachable")
-    }
-
-    fn read(_context: &mut ReadContext) -> Result<Self, Error> {
-        panic!("unreachable")
-    }
-
-    fn get_type_id(_fury: &Fury) -> i16 {
-        FieldType::FuryTypeTag.into()
-    }
-
-    fn serialize(&self, context: &mut WriteContext) {
-        polymorph::serialize(self.as_ref(), self.as_ref().type_id(), context);
-    }
-
-    fn deserialize(context: &mut ReadContext) -> Result<Self, Error> {
-        polymorph::deserialize::<Self>(context)
+    pub fn to_trait_object<T: 'static>(self) -> Result<T, Error> {
+        if self.type_id == TypeId::of::<T>() {
+            Ok(unsafe { *(transmute::<*const u8, Box<T>>(self.ptr)) })
+        } else {
+            Err(Error::ConvertToTraitObjectError {})
+        }
     }
 }

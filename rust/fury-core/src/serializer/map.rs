@@ -24,7 +24,9 @@ use crate::types::{FieldType, FuryGeneralList, SIZE_OF_REF_AND_TYPE};
 use std::collections::HashMap;
 use std::mem;
 
-impl<T1: Serializer + Eq + std::hash::Hash, T2: Serializer> Serializer for HashMap<T1, T2> {
+impl<T1: Serializer + Eq + std::hash::Hash + 'static, T2: Serializer + 'static> Serializer
+    for HashMap<T1, T2>
+{
     fn write(&self, context: &mut WriteContext) {
         // length
         context.writer.var_int32(self.len() as i32);

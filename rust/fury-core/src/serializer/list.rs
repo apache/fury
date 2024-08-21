@@ -23,7 +23,7 @@ use crate::serializer::Serializer;
 use crate::types::{FieldType, FuryGeneralList, SIZE_OF_REF_AND_TYPE};
 use std::mem;
 
-impl<T> Serializer for Vec<T>
+impl<T: 'static> Serializer for Vec<T>
 where
     T: Serializer + FuryGeneralList,
 {
