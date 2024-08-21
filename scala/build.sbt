@@ -45,4 +45,5 @@ resolvers += Resolver.ApacheMavenSnapshotsRepo
 libraryDependencies ++= Seq(
   "org.apache.fury" % "fury-core" % furyVersion,
   "org.scalatest" %% "scalatest" % "3.2.19" % Test,
+  "dev.zio" %% "zio" % "2.1.7" % Test,
 )
