@@ -37,7 +37,7 @@ object SingletonObject {
   case class CaseChunk(c: Chunk[Int])
 }
 
-class SingleObjectSerializerTest extends AnyWordSpec with Matchers {
+class CompatibleSingleObjectSerializerTest extends AnyWordSpec with Matchers {
   def fury: Fury = {
     org.apache.fury.Fury
       .builder()

@@ -41,7 +41,7 @@ class X {
   }
 }
 
-class CompatibleSingleObjectSerializerTest extends AnyWordSpec with Matchers {
+class SingleObjectSerializerTest extends AnyWordSpec with Matchers {
   "fury scala object support" should {
     "serialize/deserialize" in {
       val fury = Fury.builder()
