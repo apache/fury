@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.fury.serializer
+package org.apache.fury.serializer.scala
 
 import org.apache.fury.Fury
 import org.apache.fury.config.Language

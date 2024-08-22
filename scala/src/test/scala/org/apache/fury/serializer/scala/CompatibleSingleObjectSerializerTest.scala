@@ -17,50 +17,60 @@
  * under the License.
  */
 
-package org.apache.fury.serializer
+package org.apache.fury.serializer.scala
 
 import org.apache.fury.Fury
-import org.apache.fury.config.Language
+import org.apache.fury.config.CompatibleMode
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
+import zio.Chunk
 
-object singleton {}
+import scala.collection.immutable.ArraySeq
 
-case class Pair(f1: Any, f2: Any)
+object SingletonObject {
+  case object Query
 
-object A {
-  object B {
-    case class C(value: String) {
-    }
-  }
+  case class ArraySeqQuery(c: ArraySeq[Query.type])
+
+  case class ArrayQuery(c: Array[Query.type])
+
+  case class CaseChunk(c: Chunk[Int])
 }
 
-class X {
-  class Y {
-    class Z
+class CompatibleSingleObjectSerializerTest extends AnyWordSpec with Matchers {
+  def fury: Fury = {
+    org.apache.fury.Fury
+      .builder()
+      .withScalaOptimizationEnabled(true)
+      .requireClassRegistration(false)
+      .withRefTracking(true)
+      .withCompatibleMode(CompatibleMode.COMPATIBLE)
+      .build()
   }
-}
 
-class SingleObjectSerializerTest extends AnyWordSpec with Matchers {
   "fury scala object support" should {
     "serialize/deserialize" in {
-      val fury = Fury.builder()
-        .withLanguage(Language.JAVA)
-        .withRefTracking(true)
-        .withScalaOptimizationEnabled(true)
-        .requireClassRegistration(false).build()
       fury.deserialize(fury.serialize(singleton)) shouldBe singleton
       fury.deserialize(fury.serialize(Pair(singleton, singleton))) shouldEqual Pair(singleton, singleton)
     }
     "nested type serialization in object type" in {
-      val fury = Fury.builder()
-        .withLanguage(Language.JAVA)
-        .withRefTracking(true)
-        .withScalaOptimizationEnabled(true)
-        .requireClassRegistration(false).build()
       val x = A.B.C("hello, world!")
       val bytes = fury.serialize(x)
       fury.deserialize(bytes) shouldEqual A.B.C("hello, world!")
+    }
+    "testArraySeqQuery" in {
+      val o =  SingletonObject.ArraySeqQuery(ArraySeq(SingletonObject.Query))
+        fury.deserialize(
+          fury.serialize(
+           o)) shouldEqual o
+    }
+    "testArrayQuery" in {
+      val o = SingletonObject.ArrayQuery(Array(SingletonObject.Query))
+      fury.deserialize(fury.serialize(o)).getClass shouldEqual o.getClass
+    }
+    "testCaseChunk" in {
+      val o = SingletonObject.CaseChunk(Chunk(1))
+      fury.deserialize(fury.serialize(o)) shouldEqual o
     }
   }
 }

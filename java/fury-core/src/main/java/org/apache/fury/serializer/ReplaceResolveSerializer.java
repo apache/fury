@@ -268,7 +268,7 @@ public class ReplaceResolveSerializer extends AbstractObjectSerializer {
   }
 
   private void writeObject(MemoryBuffer buffer, Object value, MethodInfoCache jdkMethodInfoCache) {
-    classResolver.writeClass(buffer, writeClassInfo);
+    classResolver.writeClassInternal(buffer, writeClassInfo);
     jdkMethodInfoCache.objectSerializer.write(buffer, value);
   }
 
