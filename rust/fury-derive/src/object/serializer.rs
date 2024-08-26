@@ -32,9 +32,9 @@ pub fn derive_serializer(ast: &syn::DeriveInput) -> TokenStream {
             )
         }
         syn::Data::Enum(s) => (
-            derive_enum::gen_type_def(&s),
-            derive_enum::gen_write(&s),
-            derive_enum::gen_read(&s),
+            derive_enum::gen_type_def(s),
+            derive_enum::gen_write(s),
+            derive_enum::gen_read(s),
         ),
         syn::Data::Union(_) => {
             panic!("Union is not supported")
