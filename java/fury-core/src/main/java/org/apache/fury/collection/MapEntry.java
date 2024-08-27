@@ -20,6 +20,7 @@
 package org.apache.fury.collection;
 
 import java.util.Map;
+import java.util.Objects;
 
 /** Map Entry implementation of {@link Map.Entry}. */
 public class MapEntry<K, V> implements Map.Entry<K, V> {
@@ -46,5 +47,22 @@ public class MapEntry<K, V> implements Map.Entry<K, V> {
     V o = this.value;
     this.value = value;
     return o;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    MapEntry<?, ?> mapEntry = (MapEntry<?, ?>) o;
+    return Objects.equals(key, mapEntry.key) && Objects.equals(value, mapEntry.value);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(key, value);
   }
 }

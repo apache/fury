@@ -398,8 +398,16 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     return visitFury(f -> f.getClassResolver().isCollection(TypeUtils.getRawType(typeRef)));
   }
 
+  protected boolean useCollectionSerialization(Class<?> type) {
+    return visitFury(f -> f.getClassResolver().isCollection(TypeUtils.getRawType(type)));
+  }
+
   protected boolean useMapSerialization(TypeRef<?> typeRef) {
     return visitFury(f -> f.getClassResolver().isMap(TypeUtils.getRawType(typeRef)));
+  }
+
+  protected boolean useMapSerialization(Class<?> type) {
+    return visitFury(f -> f.getClassResolver().isMap(TypeUtils.getRawType(type)));
   }
 
   /**
@@ -490,6 +498,13 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
           // type.
           serializerClass = Serializer.class;
         }
+      }
+      if (useCollectionSerialization(cls)
+          && !AbstractCollectionSerializer.class.isAssignableFrom(serializerClass)) {
+        serializerClass = AbstractCollectionSerializer.class;
+      } else if (useMapSerialization(cls)
+          && !AbstractMapSerializer.class.isAssignableFrom(serializerClass)) {
+        serializerClass = AbstractMapSerializer.class;
       }
       TypeRef<? extends Serializer> serializerTypeRef = TypeRef.of(serializerClass);
       Expression fieldTypeExpr = getClassExpr(cls);
