@@ -38,6 +38,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -502,5 +503,106 @@ public class MapSerializersTest extends FuryTestBase {
       map.put("k1", map2);
       copyCheck(fury, map);
     }
+  }
+
+  // must be final class to test nested map value by private MapSerializer
+  private static final class PrivateMap<K, V> implements Map<K, V> {
+    private Set<Entry<K, V>> set = new HashSet<>();
+
+    @Override
+    public int size() {
+      return set.size();
+    }
+
+    @Override
+    public boolean isEmpty() {
+      return set.isEmpty();
+    }
+
+    @Override
+    public boolean containsKey(Object key) {
+      return set.stream().anyMatch(e -> e.getKey().equals(key));
+    }
+
+    @Override
+    public boolean containsValue(Object value) {
+      return set.stream().anyMatch(e -> e.getValue().equals(value));
+    }
+
+    @Override
+    public V get(Object key) {
+      for (Entry<K, V> kvEntry : set) {
+        if (kvEntry.getKey().equals(key)) {
+          return kvEntry.getValue();
+        }
+      }
+      return null;
+    }
+
+    @Override
+    public V put(K key, V value) {
+      set.add(new MapEntry<>(key, value));
+      return null;
+    }
+
+    @Override
+    public V remove(Object key) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void putAll(Map<? extends K, ? extends V> m) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void clear() {
+      set.clear();
+    }
+
+    @Override
+    public Set<K> keySet() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Collection<V> values() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Set<Entry<K, V>> entrySet() {
+      return set;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      PrivateMap<?, ?> that = (PrivateMap<?, ?>) o;
+      return Objects.equals(set, that.set);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(set);
+    }
+  }
+
+  @Data
+  @AllArgsConstructor
+  public static class LazyMapCollectionFieldStruct {
+    List<PrivateMap<String, Integer>> mapList;
+    PrivateMap<String, Integer> map;
+  }
+
+  @Test
+  public void testNestedValueByPrivateMapSerializer() {
+    Fury fury = builder().withRefTracking(false).build();
+    // test private map serializer
+    fury.registerSerializer(PrivateMap.class, new MapSerializer(fury, PrivateMap.class) {});
+    PrivateMap<String, Integer> map = new PrivateMap<>();
+    map.put("k", 1);
+    serDeCheck(fury, new LazyMapCollectionFieldStruct(ofArrayList(map), map));
   }
 }
