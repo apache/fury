@@ -51,8 +51,12 @@ public class MapEntry<K, V> implements Map.Entry<K, V> {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     MapEntry<?, ?> mapEntry = (MapEntry<?, ?>) o;
     return Objects.equals(key, mapEntry.key) && Objects.equals(value, mapEntry.value);
   }
