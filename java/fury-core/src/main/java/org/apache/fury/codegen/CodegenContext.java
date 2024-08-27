@@ -124,7 +124,7 @@ public class CodegenContext {
   private static Map<String, Map<String, Boolean>> nameConflicts = new ConcurrentHashMap<>();
 
   Map<String, Long> newValNameIds = new HashMap<>();
-  Set<String> valNames = new HashSet<>();
+  Set<String> valNames = new HashSet<>(JAVA_RESERVED_WORDS);
 
   /**
    * State used for expression elimination/reuse.
