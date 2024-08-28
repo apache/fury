@@ -49,6 +49,22 @@ fn any() {
 }
 
 #[test]
+fn enum_without_payload() {
+    #[derive(Fury, Debug, PartialEq)]
+    enum Color {
+        Green,
+        Red,
+        Blue,
+    }
+    let mut fury = Fury::default();
+    fury.register::<Color>(999);
+    let color = Color::Red;
+    let bin = fury.serialize(&color);
+    let color2: Color = fury.deserialize(&bin).expect("");
+    assert_eq!(color, color2);
+}
+
+#[test]
 fn complex_struct() {
     #[derive(Fury, Debug, PartialEq, Default)]
     struct Animal {

@@ -69,6 +69,7 @@ pub fn gen_in_struct_impl(fields: &[&Field]) -> TokenStream {
         #type_def_token_stream
     }
 }
+
 pub fn gen() -> TokenStream {
     quote! {
             fn get_type_id(fury: &fury_core::fury::Fury) -> i16 {

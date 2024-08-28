@@ -144,7 +144,10 @@ pub enum Language {
 
 #[derive(PartialEq)]
 pub enum Mode {
+    // Type declaration must be consistent between serialization peer and deserialization peer.
     SchemaConsistent,
+    // Type declaration can be different between serialization peer and deserialization peer.
+    // They can add/delete fields independently.
     Compatible,
 }
 
