@@ -67,8 +67,8 @@ pub trait Serializer
 where
     Self: Sized,
 {
-    /// The fixed memory size of the Type.
-    /// Avoid the memory check, which would hurt performance.
+    /// The possible max memory size of the type.
+    /// Used to reserve the buffer space to avoid reallocation, which may hurt performance.
     fn reserved_space() -> usize;
 
     /// Write the data into the buffer.
