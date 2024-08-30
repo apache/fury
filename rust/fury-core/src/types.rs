@@ -15,125 +15,9 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use std::{
-    collections::{HashMap, HashSet},
-    mem,
-};
-
-use chrono::{NaiveDate, NaiveDateTime};
-
-use crate::Error;
-
-pub trait FuryMeta {
-    fn ty() -> FieldType;
-
-    fn vec_ty() -> FieldType {
-        FieldType::ARRAY
-    }
-
-    fn hash() -> u32 {
-        0
-    }
-
-    fn tag() -> &'static str {
-        ""
-    }
-
-    fn is_vec() -> bool {
-        false
-    }
-}
-
-macro_rules! impl_number_meta {
-    ($expr: expr, $tt: tt) => {
-        impl FuryMeta for $tt {
-            fn ty() -> FieldType {
-                $expr
-            }
-        }
-    };
-}
-
-macro_rules! impl_primitive_array_meta {
-    ($ty: expr, $vec_ty: expr, $tt: tt) => {
-        impl FuryMeta for $tt {
-            fn ty() -> FieldType {
-                $ty
-            }
-
-            fn vec_ty() -> FieldType {
-                $vec_ty
-            }
-        }
-    };
-}
-
-impl<T1, T2> FuryMeta for HashMap<T1, T2> {
-    fn ty() -> FieldType {
-        FieldType::MAP
-    }
-}
-
-impl<T> FuryMeta for HashSet<T> {
-    fn ty() -> FieldType {
-        FieldType::FurySet
-    }
-}
-
-impl FuryMeta for u8 {
-    fn ty() -> FieldType {
-        FieldType::UINT8
-    }
-    fn vec_ty() -> FieldType {
-        FieldType::BINARY
-    }
-}
-
-impl FuryMeta for NaiveDateTime {
-    fn ty() -> FieldType {
-        FieldType::TIMESTAMP
-    }
-}
-
-impl FuryMeta for NaiveDate {
-    fn ty() -> FieldType {
-        FieldType::DATE
-    }
-}
-
-impl_number_meta!(FieldType::UINT16, u16);
-impl_number_meta!(FieldType::UINT32, u32);
-impl_number_meta!(FieldType::UINT64, u64);
-impl_number_meta!(FieldType::INT8, i8);
-
-// special type array
-impl_primitive_array_meta!(FieldType::BOOL, FieldType::FuryPrimitiveBoolArray, bool);
-impl_primitive_array_meta!(FieldType::INT16, FieldType::FuryPrimitiveShortArray, i16);
-impl_primitive_array_meta!(FieldType::INT32, FieldType::FuryPrimitiveIntArray, i32);
-impl_primitive_array_meta!(FieldType::INT64, FieldType::FuryPrimitiveLongArray, i64);
-impl_primitive_array_meta!(FieldType::FLOAT, FieldType::FuryPrimitiveFloatArray, f32);
-impl_primitive_array_meta!(FieldType::DOUBLE, FieldType::FuryPrimitiveDoubleArray, f64);
-impl_primitive_array_meta!(FieldType::STRING, FieldType::FuryStringArray, String);
-
-impl<T: FuryMeta> FuryMeta for Vec<T> {
-    fn ty() -> FieldType {
-        FieldType::ARRAY
-    }
-
-    fn is_vec() -> bool {
-        true
-    }
-}
-
-impl<T: FuryMeta> FuryMeta for Option<T> {
-    fn vec_ty() -> FieldType {
-        T::vec_ty()
-    }
-
-    fn ty() -> FieldType {
-        T::ty()
-    }
-}
+use crate::error::Error;
+use num_enum::{IntoPrimitive, TryFromPrimitive};
+use std::mem;
 
 #[allow(dead_code)]
 pub enum StringFlag {
@@ -141,6 +25,8 @@ pub enum StringFlag {
     UTF8 = 1,
 }
 
+#[derive(TryFromPrimitive)]
+#[repr(i8)]
 pub enum RefFlag {
     Null = -3,
     // Ref indicates that object is a not-null value.
@@ -152,7 +38,8 @@ pub enum RefFlag {
     RefValue = 0,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, TryFromPrimitive, IntoPrimitive)]
+#[repr(i16)]
 pub enum FieldType {
     BOOL = 1,
     UINT8 = 2,
@@ -181,6 +68,8 @@ pub enum FieldType {
     FuryPrimitiveDoubleArray = 263,
     FuryStringArray = 264,
 }
+
+pub trait FuryGeneralList {}
 
 const MAX_UNT32: u64 = (1 << 31) - 1;
 
@@ -219,10 +108,10 @@ pub fn compute_field_hash(hash: u32, id: i16) -> u32 {
     new_hash as u32
 }
 
-pub fn compute_struct_hash(props: Vec<(&str, FieldType, &str)>) -> u32 {
+pub fn compute_struct_hash(props: Vec<(&str, FieldType)>) -> u32 {
     let mut hash = 17;
     props.iter().for_each(|prop| {
-        let (_name, ty, _tag) = prop;
+        let (_name, ty) = prop;
         hash = match ty {
             FieldType::ARRAY | FieldType::MAP => compute_field_hash(hash, *ty as i16),
             _ => hash,
@@ -235,8 +124,6 @@ pub fn compute_struct_hash(props: Vec<(&str, FieldType, &str)>) -> u32 {
     hash
 }
 
-// todo: flag check
-#[allow(dead_code)]
 pub mod config_flags {
     pub const IS_NULL_FLAG: u8 = 1 << 0;
     pub const IS_LITTLE_ENDIAN_FLAG: u8 = 2;
@@ -255,6 +142,15 @@ pub enum Language {
     Rust = 6,
 }
 
+#[derive(PartialEq)]
+pub enum Mode {
+    // Type declaration must be consistent between serialization peer and deserialization peer.
+    SchemaConsistent,
+    // Type declaration can be different between serialization peer and deserialization peer.
+    // They can add/delete fields independently.
+    Compatible,
+}
+
 impl TryFrom<u8> for Language {
     type Error = Error;
 
@@ -267,7 +163,7 @@ impl TryFrom<u8> for Language {
             4 => Ok(Language::Go),
             5 => Ok(Language::Javascript),
             6 => Ok(Language::Rust),
-            _ => Err(Error::UnsupportLanguageCode { code: num }),
+            _ => Err(Error::UnsupportedLanguageCode { code: num }),
         }
     }
 }

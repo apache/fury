@@ -14,6 +14,7 @@ Generally we follows the [Conventional Commits](https://www.conventionalcommits.
 since we will squash and merge the PR and use the PR title as the first line of commit message.
 
 For example, here are good PR titles:
+
 - feat(java): support xxx feature
 - fix(c++): blablabla
 - chore(python): remove useless yyy file
@@ -146,8 +147,8 @@ cd python
 python setup.py develop
 ```
 
-* Use `cython --cplus -a  pyfury/_serialization.pyx` to produce an annotated HTML file of the source code. Then you can analyze interaction between Python objects and Python's C API.
-* Read more: https://cython.readthedocs.io/en/latest/src/userguide/debugging.html
+- Use `cython --cplus -a  pyfury/_serialization.pyx` to produce an annotated HTML file of the source code. Then you can analyze interaction between Python objects and Python's C API.
+- Read more: https://cython.readthedocs.io/en/latest/src/userguide/debugging.html
 
 ```bash
 FURY_DEBUG=true python setup.py build_ext --inplace

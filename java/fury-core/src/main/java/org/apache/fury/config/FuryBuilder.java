@@ -321,6 +321,9 @@ public final class FuryBuilder {
   private void finish() {
     if (classLoader == null) {
       classLoader = Thread.currentThread().getContextClassLoader();
+      if (classLoader == null) {
+        classLoader = Fury.class.getClassLoader();
+      }
     }
     if (language != Language.JAVA) {
       stringRefIgnored = false;

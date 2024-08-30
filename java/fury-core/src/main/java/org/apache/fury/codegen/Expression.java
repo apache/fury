@@ -341,9 +341,9 @@ public interface Expression {
           String v;
           Class<?> valueClass = (Class<?>) value;
           if (valueClass.isArray()) {
-            v = String.format("%s.class", TypeUtils.getArrayType((Class<?>) value));
+            v = String.format("%s.class", TypeUtils.getArrayClass((Class<?>) value));
           } else {
-            v = String.format("%s.class", ReflectionUtils.getLiteralName((Class<?>) (value)));
+            v = String.format("%s.class", ((Class<?>) (value)).getName());
           }
           return new ExprCode(FalseLiteral, new LiteralValue(javaType, v));
         } else {
@@ -1273,10 +1273,10 @@ public interface Expression {
       }
 
       Class<?> rawType = getRawType(type);
-      String type = ctx.type(rawType);
+      String typename = ctx.type(rawType);
       String clzName = unknownClassName;
       if (clzName == null) {
-        clzName = type;
+        clzName = rawType.getName();
       }
       if (needOuterPointer) {
         // "${gen.value}.new ${cls.getSimpleName}($argString)"
@@ -1298,9 +1298,9 @@ public interface Expression {
           codeBuilder.append(code).append('\n');
           String cast =
               StringUtils.format(
-                  "${clzName} ${value} = (${clzName})${instance};",
-                  "clzName",
-                  clzName,
+                  "${type} ${value} = (${type})${instance};",
+                  "type",
+                  typename,
                   "value",
                   value,
                   "instance",
@@ -1309,9 +1309,9 @@ public interface Expression {
         } else {
           String code =
               StringUtils.format(
-                  "${clzName} ${value} = new ${clzName}(${args});",
-                  "clzName",
-                  clzName,
+                  "${type} ${value} = new ${type}(${args});",
+                  "type",
+                  ReflectionUtils.isAbstract(rawType) ? clzName : typename,
                   "value",
                   value,
                   "args",

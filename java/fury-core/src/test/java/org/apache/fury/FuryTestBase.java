@@ -60,6 +60,28 @@ public abstract class FuryTestBase {
   }
 
   @DataProvider
+  public static Object[] furyCopyConfig() {
+    return new Object[][] {
+      {
+        builder()
+            .withRefCopy(true)
+            .withLanguage(Language.JAVA)
+            .withJdkClassSerializableCheck(false)
+            .withCodegen(false)
+            .build()
+      },
+      {
+        builder()
+            .withRefCopy(true)
+            .withLanguage(Language.JAVA)
+            .withJdkClassSerializableCheck(false)
+            .withCodegen(true)
+            .build()
+      },
+    };
+  }
+
+  @DataProvider
   public static Object[][] referenceTrackingConfig() {
     return new Object[][] {{false}, {true}};
   }
@@ -262,6 +284,17 @@ public abstract class FuryTestBase {
     Object newObj = fury2.deserialize(buffer);
     Assert.assertEquals(buffer.writerIndex(), buffer.readerIndex());
     return newObj;
+  }
+
+  public static void copyCheck(Fury fury, Object obj) {
+    Object copy = fury.copy(obj);
+    Assert.assertEquals(obj, copy);
+    Assert.assertNotSame(obj, copy);
+  }
+
+  public static void copyCheckWithoutSame(Fury fury, Object obj) {
+    Object copy = fury.copy(obj);
+    Assert.assertEquals(obj, copy);
   }
 
   public static void roundCheck(Fury fury1, Fury fury2, Object o) {

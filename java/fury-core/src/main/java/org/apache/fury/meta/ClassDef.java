@@ -23,6 +23,7 @@ import static org.apache.fury.meta.ClassDefEncoder.buildFields;
 import static org.apache.fury.type.TypeUtils.COLLECTION_TYPE;
 import static org.apache.fury.type.TypeUtils.MAP_TYPE;
 import static org.apache.fury.type.TypeUtils.collectionOf;
+import static org.apache.fury.type.TypeUtils.getArrayComponent;
 import static org.apache.fury.type.TypeUtils.mapOf;
 
 import java.io.ObjectStreamClass;
@@ -242,7 +243,8 @@ public class ClassDef implements Serializable {
           if (rawType.isEnum()
               || rawType.isAssignableFrom(descriptor.getRawType())
               || NonexistentClass.isNonexistent(rawType)
-              || rawType.isAssignableFrom(FinalObjectTypeStub.class)) {
+              || rawType == FinalObjectTypeStub.class
+              || (rawType.isArray() && getArrayComponent(rawType) == FinalObjectTypeStub.class)) {
             descriptor = descriptor.copyWithTypeName(newDesc.getTypeName());
             descriptors.add(descriptor);
           } else {

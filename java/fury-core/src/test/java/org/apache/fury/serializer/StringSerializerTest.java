@@ -70,6 +70,19 @@ public class StringSerializerTest extends FuryTestBase {
     }
   }
 
+  @Test(dataProvider = "furyCopyConfig")
+  public void testJavaStringCopy(Fury fury) {
+    for (int i = 0; i < 32; i++) {
+      for (int j = 0; j < 32; j++) {
+        String str = StringUtils.random(j);
+        if (j % 2 == 0) {
+          str += "你好"; // utf16
+        }
+        copyCheckWithoutSame(fury, str);
+      }
+    }
+  }
+
   private static String readJavaStringZeroCopy(MemoryBuffer buffer) {
     try {
       Field valueIsBytesField =

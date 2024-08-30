@@ -48,6 +48,7 @@ import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassInfoHolder;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.resolver.MapRefResolver;
+import org.apache.fury.resolver.MetaContext;
 import org.apache.fury.resolver.MetaStringResolver;
 import org.apache.fury.resolver.NoRefResolver;
 import org.apache.fury.resolver.RefResolver;
@@ -155,6 +156,7 @@ public final class Fury implements BaseFury {
     arrayListSerializer = new ArrayListSerializer(this);
     hashMapSerializer = new HashMapSerializer(this);
     originToCopyMap = new IdentityMap<>();
+    classDefEndOffset = -1;
     LOG.info("Created new fury {}", this);
   }
 
@@ -344,7 +346,8 @@ public final class Fury implements BaseFury {
       classResolver.writeClass(buffer, classInfo);
       writeData(buffer, classInfo, obj);
     }
-    if (shareMeta) {
+    MetaContext metaContext = serializationContext.getMetaContext();
+    if (shareMeta && metaContext != null && !metaContext.writingClassDefs.isEmpty()) {
       buffer.putInt32(startOffset, buffer.writerIndex() - startOffset - 4);
       classResolver.writeClassDefs(buffer);
     }
@@ -792,7 +795,7 @@ public final class Fury implements BaseFury {
     } catch (Throwable t) {
       throw ExceptionUtils.handleReadFailed(this, t);
     } finally {
-      if (shareMeta) {
+      if (classDefEndOffset != -1) {
         buffer.readerIndex(classDefEndOffset);
       }
       resetRead();
@@ -1063,9 +1066,12 @@ public final class Fury implements BaseFury {
         if (!refResolver.writeRefOrNull(buffer, obj)) {
           ClassInfo classInfo = classResolver.getOrUpdateClassInfo(obj.getClass());
           writeData(buffer, classInfo, obj);
+          MetaContext metaContext = serializationContext.getMetaContext();
+          if (metaContext != null && !metaContext.writingClassDefs.isEmpty()) {
+            buffer.putInt32(startOffset, buffer.writerIndex() - startOffset - 4);
+            classResolver.writeClassDefs(buffer);
+          }
         }
-        buffer.putInt32(startOffset, buffer.writerIndex() - startOffset - 4);
-        classResolver.writeClassDefs(buffer);
       } else {
         if (!refResolver.writeRefOrNull(buffer, obj)) {
           ClassInfo classInfo = classResolver.getOrUpdateClassInfo(obj.getClass());
@@ -1116,7 +1122,7 @@ public final class Fury implements BaseFury {
     } catch (Throwable t) {
       throw ExceptionUtils.handleReadFailed(this, t);
     } finally {
-      if (shareMeta) {
+      if (classDefEndOffset != -1) {
         buffer.readerIndex(classDefEndOffset);
       }
       resetRead();
@@ -1226,7 +1232,7 @@ public final class Fury implements BaseFury {
     } catch (Throwable t) {
       throw ExceptionUtils.handleReadFailed(this, t);
     } finally {
-      if (shareMeta) {
+      if (classDefEndOffset != -1) {
         buffer.readerIndex(classDefEndOffset);
       }
       resetRead();
@@ -1437,6 +1443,9 @@ public final class Fury implements BaseFury {
 
   private void readClassDefs(MemoryBuffer buffer) {
     int relativeClassDefOffset = buffer.readInt32();
+    if (relativeClassDefOffset == -1) {
+      return;
+    }
     int readerIndex = buffer.readerIndex();
     buffer.readerIndex(readerIndex + relativeClassDefOffset);
     classResolver.readClassDefs(buffer);
@@ -1474,6 +1483,7 @@ public final class Fury implements BaseFury {
     nativeObjects.clear();
     peerOutOfBandEnabled = false;
     depth = 0;
+    classDefEndOffset = -1;
   }
 
   public void resetCopy() {

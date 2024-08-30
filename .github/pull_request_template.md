@@ -14,7 +14,6 @@ Contribution Checklist
 
 <!-- Describe the purpose of this PR. -->
 
-
 ## Related issues
 
 <!--
@@ -25,7 +24,6 @@ Is there any related issue? Please attach here.
 - #xxxx2
 -->
 
-
 ## Does this PR introduce any user-facing change?
 
 <!--
@@ -34,7 +32,6 @@ If any user-facing interface changes, please [open an issue](https://github.com/
 
 - [ ] Does this PR introduce any public API change?
 - [ ] Does this PR introduce any binary protocol compatibility change?
-
 
 ## Benchmark
 

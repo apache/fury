@@ -1470,6 +1470,7 @@ public class ClassResolver {
    */
   public void readClassDefs(MemoryBuffer buffer) {
     MetaContext metaContext = fury.getSerializationContext().getMetaContext();
+    assert metaContext != null : SET_META__CONTEXT_MSG;
     int numClassDefs = buffer.readVarUint32Small14();
     for (int i = 0; i < numClassDefs; i++) {
       long id = buffer.readInt64();
@@ -1559,6 +1560,10 @@ public class ClassResolver {
       classInfo = new ClassInfo(this, cls, null, null, classId == null ? NO_CLASS_ID : classId);
       classInfoMap.put(cls, classInfo);
     }
+    writeClassInternal(buffer, classInfo);
+  }
+
+  public void writeClassInternal(MemoryBuffer buffer, ClassInfo classInfo) {
     short classId = classInfo.classId;
     if (classId == REPLACE_STUB_ID) {
       // clear class id to avoid replaced class written as

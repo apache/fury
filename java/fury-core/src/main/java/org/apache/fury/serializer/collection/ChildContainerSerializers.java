@@ -127,7 +127,7 @@ public class ChildContainerSerializers {
             ArrayList.class, LinkedList.class, ArrayDeque.class, Vector.class, HashSet.class
             // PriorityQueue/TreeSet/ConcurrentSkipListSet need comparator as constructor argument
             );
-
+    protected Serializer<T> objectSerializer;
     protected final Serializer[] slotsSerializers;
 
     public ChildCollectionSerializer(Fury fury, Class<T> cls) {
@@ -148,6 +148,14 @@ public class ChildContainerSerializers {
       Collection collection = super.newCollection(buffer);
       readAndSetFields(buffer, collection, slotsSerializers);
       return collection;
+    }
+
+    @Override
+    public T copy(T originCollection) {
+      if (objectSerializer == null) {
+        objectSerializer = new ObjectSerializer<>(fury, type, false);
+      }
+      return fury.copyObject(originCollection, objectSerializer);
     }
   }
 
@@ -177,6 +185,7 @@ public class ChildContainerSerializers {
             HashMap.class, LinkedHashMap.class, ConcurrentHashMap.class
             // TreeMap/ConcurrentSkipListMap need comparator as constructor argument
             );
+    private Serializer<T> objectSerializer;
     private final Serializer[] slotsSerializers;
 
     public ChildMapSerializer(Fury fury, Class<T> cls) {
@@ -198,6 +207,14 @@ public class ChildContainerSerializers {
       Map map = super.newMap(buffer);
       readAndSetFields(buffer, map, slotsSerializers);
       return map;
+    }
+
+    @Override
+    public T copy(T originMap) {
+      if (objectSerializer == null) {
+        objectSerializer = new ObjectSerializer<>(fury, type, false);
+      }
+      return fury.copyObject(originMap, objectSerializer);
     }
   }
 

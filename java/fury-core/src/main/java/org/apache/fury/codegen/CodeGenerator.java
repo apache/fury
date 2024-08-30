@@ -496,9 +496,15 @@ public class CodeGenerator {
     if (clz.isPrimitive()) {
       return true;
     }
-    if (clz.getCanonicalName() == null) {
+    try {
+      if (clz.getCanonicalName() == null) {
+        return false;
+      }
+    } catch (InternalError e) {
+      // getCanonicalName for scala type `A$B$C` may fail
       return false;
     }
+
     // Scala may produce class name like: xxx.SomePackageObject.package$SomeClass
     HashSet<String> set = Collections.ofHashSet(clz.getCanonicalName().split("\\."));
     return !Collections.hasIntersection(set, CodegenContext.JAVA_RESERVED_WORDS);

@@ -42,6 +42,8 @@ import org.apache.fury.codegen.Expression.BaseInvoke;
 import org.apache.fury.codegen.Expression.Reference;
 import org.apache.fury.collection.Collections;
 import org.apache.fury.collection.Tuple2;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.util.Preconditions;
@@ -55,6 +57,8 @@ import org.apache.fury.util.StringUtils;
  * constructor's args.
  */
 public class CodegenContext {
+  private static final Logger LOG = LoggerFactory.getLogger(CodegenContext.class);
+
   public static Set<String> JAVA_RESERVED_WORDS;
 
   static {
@@ -120,7 +124,7 @@ public class CodegenContext {
   private static Map<String, Map<String, Boolean>> nameConflicts = new ConcurrentHashMap<>();
 
   Map<String, Long> newValNameIds = new HashMap<>();
-  Set<String> valNames = new HashSet<>();
+  Set<String> valNames = new HashSet<>(JAVA_RESERVED_WORDS);
 
   /**
    * State used for expression elimination/reuse.
@@ -252,7 +256,13 @@ public class CodegenContext {
     if (clz.isArray()) {
       return "arr";
     } else {
-      String type = clz.getCanonicalName() != null ? type(clz) : "Object";
+      String type;
+      try {
+        // getCanonicalName for scala type `A$B$C` may fail
+        type = clz.getCanonicalName() != null ? type(clz) : "object";
+      } catch (InternalError e) {
+        type = "object";
+      }
       int index = type.lastIndexOf(".");
       String name;
       if (index >= 0) {

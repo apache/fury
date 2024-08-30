@@ -7,8 +7,8 @@ id: xlang_object_graph_guide
 ## Cross-language object graph serialization
 
 ### Serialize built-in types
-Common types can be serialized automatically: primitive numeric types, string, binary, array, list, map and so on.
 
+Common types can be serialized automatically: primitive numeric types, string, binary, array, list, map and so on.
 
 **Java**
 
@@ -64,32 +64,32 @@ import furygo "github.com/apache/fury/fury/go/fury"
 import "fmt"
 
 func main() {
-	list := []interface{}{true, false, "str", -1.1, 1, make([]int32, 10), make([]float64, 20)}
-	fury := furygo.NewFury()
-	bytes, err := fury.Marshal(list)
-	if err != nil {
-		panic(err)
-	}
-	var newValue interface{}
-	// bytes can be data serialized by other languages.
-	if err := fury.Unmarshal(bytes, &newValue); err != nil {
-		panic(err)
-	}
-	fmt.Println(newValue)
-	dict := map[string]interface{}{
-		"k1": "v1",
-		"k2": list,
-		"k3": -1,
-	}
-	bytes, err = fury.Marshal(dict)
-	if err != nil {
-		panic(err)
-	}
-	// bytes can be data serialized by other languages.
-	if err := fury.Unmarshal(bytes, &newValue); err != nil {
-		panic(err)
-	}
-	fmt.Println(newValue)
+ list := []interface{}{true, false, "str", -1.1, 1, make([]int32, 10), make([]float64, 20)}
+ fury := furygo.NewFury()
+ bytes, err := fury.Marshal(list)
+ if err != nil {
+  panic(err)
+ }
+ var newValue interface{}
+ // bytes can be data serialized by other languages.
+ if err := fury.Unmarshal(bytes, &newValue); err != nil {
+  panic(err)
+ }
+ fmt.Println(newValue)
+ dict := map[string]interface{}{
+  "k1": "v1",
+  "k2": list,
+  "k3": -1,
+ }
+ bytes, err = fury.Marshal(dict)
+ if err != nil {
+  panic(err)
+ }
+ // bytes can be data serialized by other languages.
+ if err := fury.Unmarshal(bytes, &newValue); err != nil {
+  panic(err)
+ }
+ fmt.Println(newValue)
 }
 ```
 
@@ -126,6 +126,7 @@ fn run() {
 ```
 
 ### Serialize custom types
+
 Serializing user-defined types needs registering the custom type using the register API to establish the mapping relationship between the type in different languages.
 
 **Java**
@@ -255,59 +256,59 @@ import furygo "github.com/apache/fury/fury/go/fury"
 import "fmt"
 
 func main() {
-	type SomeClass1 struct {
-		F1  interface{}
-		F2  string
-		F3  []interface{}
-		F4  map[int8]int32
-		F5  int8
-		F6  int16
-		F7  int32
-		F8  int64
-		F9  float32
-		F10 float64
-		F11 []int16
-		F12 fury.Int16Slice
-	}
+ type SomeClass1 struct {
+  F1  interface{}
+  F2  string
+  F3  []interface{}
+  F4  map[int8]int32
+  F5  int8
+  F6  int16
+  F7  int32
+  F8  int64
+  F9  float32
+  F10 float64
+  F11 []int16
+  F12 fury.Int16Slice
+ }
 
-	type SomeClas2 struct {
-		F1 interface{}
-		F2 map[int8]int32
-	}
-	fury := furygo.NewFury()
-	if err := fury.RegisterTagType("example.SomeClass1", SomeClass1{}); err != nil {
-		panic(err)
-	}
-	if err := fury.RegisterTagType("example.SomeClass2", SomeClass2{}); err != nil {
-		panic(err)
-	}
-	obj1 := &SomeClass1{}
-	obj1.F1 = true
-	obj1.F2 = map[int8]int32{-1: 2}
-	obj := &SomeClass1{}
-	obj.F1 = obj1
-	obj.F2 = "abc"
-	obj.F3 = []interface{}{"abc", "abc"}
-	f4 := map[int8]int32{1: 2}
-	obj.F4 = f4
-	obj.F5 = fury.MaxInt8
-	obj.F6 = fury.MaxInt16
-	obj.F7 = fury.MaxInt32
-	obj.F8 = fury.MaxInt64
-	obj.F9 = 1.0 / 2
-	obj.F10 = 1 / 3.0
-	obj.F11 = []int16{1, 2}
-	obj.F12 = []int16{-1, 4}
-	bytes, err := fury.Marshal(obj);
-	if err != nil {
-		panic(err)
-	}
-	var newValue interface{}
-	// bytes can be data serialized by other languages.
-	if err := fury.Unmarshal(bytes, &newValue); err != nil {
-		panic(err)
-	}
-	fmt.Println(newValue)
+ type SomeClas2 struct {
+  F1 interface{}
+  F2 map[int8]int32
+ }
+ fury := furygo.NewFury()
+ if err := fury.RegisterTagType("example.SomeClass1", SomeClass1{}); err != nil {
+  panic(err)
+ }
+ if err := fury.RegisterTagType("example.SomeClass2", SomeClass2{}); err != nil {
+  panic(err)
+ }
+ obj1 := &SomeClass1{}
+ obj1.F1 = true
+ obj1.F2 = map[int8]int32{-1: 2}
+ obj := &SomeClass1{}
+ obj.F1 = obj1
+ obj.F2 = "abc"
+ obj.F3 = []interface{}{"abc", "abc"}
+ f4 := map[int8]int32{1: 2}
+ obj.F4 = f4
+ obj.F5 = fury.MaxInt8
+ obj.F6 = fury.MaxInt16
+ obj.F7 = fury.MaxInt32
+ obj.F8 = fury.MaxInt64
+ obj.F9 = 1.0 / 2
+ obj.F10 = 1 / 3.0
+ obj.F11 = []int16{1, 2}
+ obj.F12 = []int16{-1, 4}
+ bytes, err := fury.Marshal(obj);
+ if err != nil {
+  panic(err)
+ }
+ var newValue interface{}
+ // bytes can be data serialized by other languages.
+ if err := fury.Unmarshal(bytes, &newValue); err != nil {
+  panic(err)
+ }
+ fmt.Println(newValue)
 }
 ```
 
@@ -394,6 +395,7 @@ fn complex_struct() {
 ```
 
 ### Serialize Shared Reference and Circular Reference
+
 Shared reference and circular reference can be serialized automatically, no duplicate data or recursion error.
 
 **Java**
@@ -460,27 +462,27 @@ import furygo "github.com/apache/fury/fury/go/fury"
 import "fmt"
 
 func main() {
-	type SomeClass struct {
-		F1 *SomeClass
-		F2 map[string]string
-		F3 map[string]string
-	}
-	fury := furygo.NewFury(true)
-	if err := fury.RegisterTagType("example.SomeClass", SomeClass{}); err != nil {
-		panic(err)
-	}
-	value := &SomeClass{F2: map[string]string{"k1": "v1", "k2": "v2"}}
-	value.F3 = value.F2
-	value.F1 = value
-	bytes, err := fury.Marshal(value)
-	if err != nil {
-	}
-	var newValue interface{}
-	// bytes can be data serialized by other languages.
-	if err := fury.Unmarshal(bytes, &newValue); err != nil {
-		panic(err)
-	}
-	fmt.Println(newValue)
+ type SomeClass struct {
+  F1 *SomeClass
+  F2 map[string]string
+  F3 map[string]string
+ }
+ fury := furygo.NewFury(true)
+ if err := fury.RegisterTagType("example.SomeClass", SomeClass{}); err != nil {
+  panic(err)
+ }
+ value := &SomeClass{F2: map[string]string{"k1": "v1", "k2": "v2"}}
+ value.F3 = value.F2
+ value.F1 = value
+ bytes, err := fury.Marshal(value)
+ if err != nil {
+ }
+ var newValue interface{}
+ // bytes can be data serialized by other languages.
+ if err := fury.Unmarshal(bytes, &newValue); err != nil {
+  panic(err)
+ }
+ fmt.Println(newValue)
 }
 ```
 
@@ -513,7 +515,6 @@ console.log(result.bar.foo === result.foo);
 
 **JavaScript**
 Reference cannot be implemented because of rust ownership restrictions
-
 
 ### Zero-Copy Serialization
 
@@ -569,23 +570,23 @@ import furygo "github.com/apache/fury/fury/go/fury"
 import "fmt"
 
 func main() {
-	fury := furygo.NewFury()
-	list := []interface{}{"str", make([]byte, 1000)}
-	buf := fury.NewByteBuffer(nil)
-	var bufferObjects []fury.BufferObject
-	fury.Serialize(buf, list, func(o fury.BufferObject) bool {
-		bufferObjects = append(bufferObjects, o)
-		return false
-	})
-	var newList []interface{}
-	var buffers []*fury.ByteBuffer
-	for _, o := range bufferObjects {
-		buffers = append(buffers, o.ToBuffer())
-	}
-	if err := fury.Deserialize(buf, &newList, buffers); err != nil {
-		panic(err)
-	}
-	fmt.Println(newList)
+ fury := furygo.NewFury()
+ list := []interface{}{"str", make([]byte, 1000)}
+ buf := fury.NewByteBuffer(nil)
+ var bufferObjects []fury.BufferObject
+ fury.Serialize(buf, list, func(o fury.BufferObject) bool {
+  bufferObjects = append(bufferObjects, o)
+  return false
+ })
+ var newList []interface{}
+ var buffers []*fury.ByteBuffer
+ for _, o := range bufferObjects {
+  buffers = append(buffers, o.ToBuffer())
+ }
+ if err := fury.Deserialize(buf, &newList, buffers); err != nil {
+  panic(err)
+ }
+ fmt.Println(newList)
 }
 ```
 
