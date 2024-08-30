@@ -71,4 +71,4 @@ try:
 except (AttributeError, ImportError):
     pass
 
-__version__ = "0.6.0.dev"
+__version__ = "0.7.1"
