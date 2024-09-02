@@ -21,6 +21,9 @@ import { Scope } from "./scope";
 import { getMeta } from "../meta";
 import { TypeDescription } from "../description";
 import Fury from "../fury";
+import { TypeMeta } from '../meta/TypeMeta';
+import { BinaryReader } from "../reader";
+
 
 class BinaryReaderBuilder {
   constructor(private holder: string) {
@@ -309,6 +312,7 @@ class ClassResolverBuilder {
 export class CodecBuilder {
   reader: BinaryReaderBuilder;
   writer: BinaryWriterBuilder;
+  typeMeta: TypeMetaWrapper; // Use the TypeMetaWrapper
   referenceResolver: ReferenceResolverBuilder;
   classResolver: ClassResolverBuilder;
 
@@ -321,6 +325,8 @@ export class CodecBuilder {
     this.writer = new BinaryWriterBuilder(bw);
     this.classResolver = new ClassResolverBuilder(cr);
     this.referenceResolver = new ReferenceResolverBuilder(rr);
+    this.typeMeta = new TypeMetaWrapper(fury.binaryReader); // Initialize the TypeMetaWrapper
+
   }
 
   furyName() {
@@ -370,5 +376,17 @@ export class CodecBuilder {
 
   getExternal(key: string) {
     return `external.${key}`;
+  }
+}
+
+class TypeMetaWrapper {
+  private reader: BinaryReader;
+
+  constructor(reader: BinaryReader) {
+    this.reader = reader;
+  }
+
+  from_bytes(): TypeMeta {
+    return TypeMeta.from_bytes(this.reader); 
   }
 }
