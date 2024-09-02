@@ -15,6 +15,9 @@
 // specific language governing permissions and limitations
 // under the License.
 
+use anyhow::anyhow;
+
+use crate::ensure;
 use crate::error::Error;
 use crate::meta::string_util;
 
@@ -166,12 +169,18 @@ impl MetaStringEncoder {
         }
         // equal to "std::i16::MAX"
         const SHORT_MAX_VALUE: usize = 32767;
-        if input.len() >= SHORT_MAX_VALUE {
-            return Err(Error::LengthExceed);
-        }
-        if encoding != Encoding::Utf8 && !self.is_latin(input) {
-            return Err(Error::OnlyAllowASCII);
-        };
+        ensure!(
+            input.len() < SHORT_MAX_VALUE,
+            anyhow!(
+                "Meta string is too long, max:{SHORT_MAX_VALUE}, current:{}",
+                input.len()
+            )
+        );
+        ensure!(
+            encoding == Encoding::Utf8 || self.is_latin(input),
+            anyhow!("Non-ASCII characters in meta string are not allowed")
+        );
+
         if input.is_empty() {
             return MetaString::new(input.to_string(), Encoding::Utf8, vec![]);
         };
@@ -261,7 +270,9 @@ impl MetaStringEncoder {
                 '_' => Ok(27),
                 '$' => Ok(28),
                 '|' => Ok(29),
-                _ => Err(Error::UnsupportedLowerSpecialCharacter { ch: c }),
+                _ => Err(anyhow!(
+                    "Unsupported character for LOWER_UPPER_DIGIT_SPECIAL encoding: {c}"
+                ))?,
             },
             6 => match c {
                 'a'..='z' => Ok(c as u8 - b'a'),
@@ -273,7 +284,9 @@ impl MetaStringEncoder {
                     } else if c == '_' {
                         Ok(63)
                     } else {
-                        Err(Error::UnsupportedLowerUpperDigitSpecialCharacter { ch: c })
+                        Err(anyhow!(
+                            "Invalid character value for LOWER_SPECIAL decoding: {c:?}"
+                        ))?
                     }
                 }
             },
@@ -362,7 +375,9 @@ impl MetaStringDecoder {
             27 => Ok('_'),
             28 => Ok('$'),
             29 => Ok('|'),
-            _ => Err(Error::InvalidLowerSpecialValue { value: char_value }),
+            _ => Err(anyhow!(
+                "Invalid character value for LOWER_SPECIAL decoding: {char_value}"
+            ))?,
         }
     }
 
@@ -373,7 +388,9 @@ impl MetaStringDecoder {
             52..=61 => Ok((b'0' + char_value - 52) as char),
             62 => Ok('.'),
             63 => Ok('_'),
-            _ => Err(Error::InvalidLowerUpperDigitSpecialValue { value: char_value }),
+            _ => Err(anyhow!(
+                "Invalid character value for LOWER_UPPER_DIGIT_SPECIAL decoding: {char_value}"
+            ))?,
         }
     }
 

@@ -61,21 +61,27 @@ pub enum Error {
     #[error("Long meta string than 32767 is not allowed")]
     LengthExceed,
 
-    #[error("Non-ASCII characters in meta string are not allowed")]
-    OnlyAllowASCII,
+    #[error(transparent)]
+    Other(#[from] anyhow::Error),
+}
 
-    #[error("Unsupported character for LOWER_SPECIAL encoding: {ch:?}")]
-    UnsupportedLowerSpecialCharacter { ch: char },
-
-    #[error("Unsupported character for LOWER_UPPER_DIGIT_SPECIAL encoding: {ch:?}")]
-    UnsupportedLowerUpperDigitSpecialCharacter { ch: char },
-
-    #[error("Invalid character value for LOWER_SPECIAL decoding: {value:?}")]
-    InvalidLowerSpecialValue { value: u8 },
-
-    #[error("Invalid character value for LOWER_UPPER_DIGIT_SPECIAL decoding: {value:?}")]
-    InvalidLowerUpperDigitSpecialValue { value: u8 },
-
-    #[error("Unregistered type when serializing or deserializing object of Any type: {value:?}")]
-    UnregisteredType { value: u32 },
+/// Works like anyhow's [ensure](https://docs.rs/anyhow/latest/anyhow/macro.ensure.html)
+/// But return `Return<T, ErrorFromAnyhow>`
+#[macro_export]
+macro_rules! ensure {
+    ($cond:expr, $msg:literal) => {
+        if !$cond {
+            return Err(anyhow::anyhow!($msg).into());
+        }
+    };
+    ($cond:expr, $err:expr) => {
+        if !$cond {
+            return Err($err.into());
+        }
+    };
+    ($cond:expr, $fmt:expr, $($arg:tt)*) => {
+        if !$cond {
+            return Err(anyhow::anyhow!($fmt, $($arg)*).into());
+        }
+    };
 }
