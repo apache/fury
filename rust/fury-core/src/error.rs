@@ -47,3 +47,6 @@ macro_rules! ensure {
         }
     };
 }
+
+// Re-export anyhow::Error since it may appear in the public API.
+pub use anyhow::Error as AnyhowError;
