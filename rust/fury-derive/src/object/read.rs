@@ -98,11 +98,11 @@ fn deserialize_compatible(fields: &[&Field]) -> TokenStream {
                 #(#create),*
             })
         } else if ref_flag == (fury_core::types::RefFlag::Null as i8) {
-            Err(fury_core::error::Error::Null)
+            Err(anyhow::anyhow!("Try to deserialize non-option type to null"))?
         } else if ref_flag == (fury_core::types::RefFlag::Ref as i8) {
             Err(fury_core::error::Error::Ref)
         } else {
-            Err(fury_core::error::Error::BadRefFlag)
+            Err(anyhow::anyhow!("Unknown ref flag, value:{:?}", ref_flag))?
         }
     }
 }

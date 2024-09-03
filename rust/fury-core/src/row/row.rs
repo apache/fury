@@ -17,6 +17,7 @@
 
 use crate::util::EPOCH;
 use crate::{buffer::Writer, error::Error};
+use anyhow::anyhow;
 use byteorder::{ByteOrder, LittleEndian};
 use chrono::{DateTime, Days, NaiveDate, NaiveDateTime};
 use std::collections::BTreeMap;
@@ -95,10 +96,11 @@ impl<'a> Row<'a> for NaiveDate {
 
     fn cast(bytes: &[u8]) -> Self::ReadResult {
         let days = LittleEndian::read_u32(bytes);
-        match EPOCH.checked_add_days(Days::new(days.into())) {
-            Some(value) => Ok(value),
-            None => Err(Error::NaiveDate),
-        }
+        EPOCH
+            .checked_add_days(Days::new(days.into()))
+            .ok_or(Error::from(anyhow!(
+                "Date out of range, {days} days since epoch"
+            )))
     }
 }
 
@@ -111,11 +113,11 @@ impl<'a> Row<'a> for NaiveDateTime {
 
     fn cast(bytes: &[u8]) -> Self::ReadResult {
         let timestamp = LittleEndian::read_u64(bytes);
-        let ret = DateTime::from_timestamp_millis(timestamp as i64).map(|dt| dt.naive_utc());
-        match ret {
-            Some(r) => Ok(r),
-            None => Err(Error::NaiveDateTime),
-        }
+        DateTime::from_timestamp_millis(timestamp as i64)
+            .map(|dt| dt.naive_utc())
+            .ok_or(Error::from(anyhow!(
+                "Date out of range, timestamp:{timestamp}"
+            )))
     }
 }
 

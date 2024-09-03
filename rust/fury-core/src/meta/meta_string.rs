@@ -21,6 +21,9 @@ use crate::ensure;
 use crate::error::Error;
 use crate::meta::string_util;
 
+// equal to "std::i16::MAX"
+const SHORT_MAX_VALUE: usize = 32767;
+
 #[derive(Debug, PartialEq)]
 pub enum Encoding {
     Utf8 = 0x00,
@@ -42,9 +45,8 @@ impl MetaString {
     pub fn new(original: String, encoding: Encoding, bytes: Vec<u8>) -> Result<Self, Error> {
         let mut strip_last_char = false;
         if encoding != Encoding::Utf8 {
-            if bytes.is_empty() {
-                return Err(Error::EncodedDataEmpty);
-            }
+            ensure!(!bytes.is_empty(), anyhow!("Encoded data cannot be empty"));
+
             strip_last_char = (bytes[0] & 0x80) != 0;
         }
         Ok(MetaString {
@@ -91,11 +93,13 @@ impl MetaStringEncoder {
         if input.is_empty() {
             return MetaString::new(input.to_string(), Encoding::Utf8, vec![]);
         }
-        // equal to "std::i16::MAX"
-        const SHORT_MAX_VALUE: usize = 32767;
-        if input.len() >= SHORT_MAX_VALUE {
-            return Err(Error::LengthExceed);
-        }
+        ensure!(
+            input.len() < SHORT_MAX_VALUE,
+            anyhow!(
+                "Meta string is too long, max:{SHORT_MAX_VALUE}, current:{}",
+                input.len()
+            )
+        );
         if !self.is_latin(input) {
             return MetaString::new(input.to_string(), Encoding::Utf8, input.as_bytes().to_vec());
         }
@@ -167,8 +171,6 @@ impl MetaStringEncoder {
         if input.is_empty() {
             return MetaString::new(input.to_string(), Encoding::Utf8, vec![]);
         }
-        // equal to "std::i16::MAX"
-        const SHORT_MAX_VALUE: usize = 32767;
         ensure!(
             input.len() < SHORT_MAX_VALUE,
             anyhow!(

@@ -27,3 +27,4 @@ fury-core = { path = "../fury-core" }
 fury-derive = { path = "../fury-derive" }
 
 chrono = "0.4"
+anyhow = "1.0"
