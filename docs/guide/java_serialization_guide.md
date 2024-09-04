@@ -179,13 +179,13 @@ bit is set, then next byte will be read util first bit of next byte is unset.
 For long compression, fury support two encoding:
 
 - Fury SLI(Small long as int) Encoding (**used by default**):
-    - If long is in [-1073741824, 1073741823], encode as 4 bytes int: `| little-endian: ((int) value) << 1 |`
-    - Otherwise write as 9 bytes: `| 0b1 | little-endian 8bytes long |`
+  - If long is in `[-1073741824, 1073741823]`, encode as 4 bytes int: `| little-endian: ((int) value) << 1 |`
+  - Otherwise write as 9 bytes: `| 0b1 | little-endian 8bytes long |`
 - Fury PVL(Progressive Variable-length Long) Encoding:
-    - First bit in every byte indicate whether has next byte. if first bit is set, then next byte will be read util
-      first bit of next byte is unset.
-    - Negative number will be converted to positive number by `(v << 1) ^ (v >> 63)` to reduce cost of small negative
-      numbers.
+  - First bit in every byte indicate whether has next byte. if first bit is set, then next byte will be read util
+  first bit of next byte is unset.
+  - Negative number will be converted to positive number by `(v << 1) ^ (v >> 63)` to reduce cost of small negative
+    numbers.
 
 If a number are `long` type, it can't be represented by smaller bytes mostly, the compression won't get good enough
 result,
