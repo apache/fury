@@ -16,6 +16,7 @@
 // under the License.
 
 use crate::error::Error;
+use anyhow::anyhow;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use std::mem;
 
@@ -163,7 +164,7 @@ impl TryFrom<u8> for Language {
             4 => Ok(Language::Go),
             5 => Ok(Language::Javascript),
             6 => Ok(Language::Rust),
-            _ => Err(Error::UnsupportedLanguageCode { code: num }),
+            _ => Err(anyhow!("Unsupported language code, value:{num}"))?,
         }
     }
 }

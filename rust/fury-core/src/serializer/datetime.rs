@@ -22,17 +22,18 @@ use crate::resolver::context::WriteContext;
 use crate::serializer::Serializer;
 use crate::types::{FieldType, FuryGeneralList};
 use crate::util::EPOCH;
+use anyhow::anyhow;
 use chrono::{DateTime, Days, NaiveDate, NaiveDateTime};
 use std::mem;
 
 impl Serializer for NaiveDateTime {
     fn read(context: &mut ReadContext) -> Result<Self, Error> {
         let timestamp = context.reader.u64();
-        let ret = DateTime::from_timestamp_millis(timestamp as i64).map(|dt| dt.naive_utc());
-        match ret {
-            Some(r) => Ok(r),
-            None => Err(Error::NaiveDateTime),
-        }
+        DateTime::from_timestamp_millis(timestamp as i64)
+            .map(|dt| dt.naive_utc())
+            .ok_or(Error::from(anyhow!(
+                "Date out of range, timestamp:{timestamp}"
+            )))
     }
 
     fn write(&self, context: &mut WriteContext) {
@@ -62,10 +63,11 @@ impl Serializer for NaiveDate {
 
     fn read(context: &mut ReadContext) -> Result<Self, Error> {
         let days = context.reader.u64();
-        match EPOCH.checked_add_days(Days::new(days)) {
-            Some(value) => Ok(value),
-            None => Err(Error::NaiveDate),
-        }
+        EPOCH
+            .checked_add_days(Days::new(days))
+            .ok_or(Error::from(anyhow!(
+                "Date out of range, {days} days since epoch"
+            )))
     }
 
     fn get_type_id(_fury: &Fury) -> i16 {
