@@ -56,7 +56,7 @@ public class DeserializationException extends FuryException {
         for (Object readObject : readObjects) {
           builder.append(readObject == null ? null : readObject.getClass()).append(", ");
         }
-        builder.deleteCharAt(builder.length() - 1);
+        builder.delete(builder.length() - 2, builder.length());
         builder.append("]");
         return builder.toString();
       }
