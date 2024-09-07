@@ -25,7 +25,7 @@ import { TypeMeta } from '../meta/TypeMeta';
 import { BinaryReader } from "../reader";
 
 
-class BinaryReaderBuilder {
+export class BinaryReaderBuilder {
   constructor(private holder: string) {
 
   }
@@ -313,6 +313,7 @@ export class CodecBuilder {
   reader: BinaryReaderBuilder;
   writer: BinaryWriterBuilder;
   typeMeta: TypeMetaWrapper; // Use the TypeMetaWrapper
+
   referenceResolver: ReferenceResolverBuilder;
   classResolver: ClassResolverBuilder;
 
@@ -325,7 +326,7 @@ export class CodecBuilder {
     this.writer = new BinaryWriterBuilder(bw);
     this.classResolver = new ClassResolverBuilder(cr);
     this.referenceResolver = new ReferenceResolverBuilder(rr);
-    this.typeMeta = new TypeMetaWrapper(fury.binaryReader); // Initialize the TypeMetaWrapper
+    this.typeMeta = new TypeMetaWrapper(); // Initialize the TypeMetaWrapper
 
   }
 
@@ -380,13 +381,7 @@ export class CodecBuilder {
 }
 
 class TypeMetaWrapper {
-  private reader: BinaryReader;
-
-  constructor(reader: BinaryReader) {
-    this.reader = reader;
-  }
-
-  from_bytes(): TypeMeta {
-    return TypeMeta.from_bytes(this.reader); 
+  from_bytes(reader: BinaryReaderBuilder): TypeMeta {
+    return TypeMeta.from_bytes(reader); 
   }
 }
