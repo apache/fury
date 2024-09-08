@@ -800,9 +800,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     }
   }
 
-  /**
-   * Create a new empty map for copy.
-   */
+  /** Create a new empty map for copy. */
   public Map newMap(Map map) {
     numElements = map.size();
     if (constructor == null) {
@@ -812,7 +810,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
       return (Map) constructor.invoke();
     } catch (Throwable e) {
       throw new IllegalArgumentException(
-        "Please provide public no arguments constructor for class " + type, e);
+          "Please provide public no arguments constructor for class " + type, e);
     }
   }
 

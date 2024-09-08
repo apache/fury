@@ -514,9 +514,7 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
     }
   }
 
-  /**
-   * Create a new empty collection for copy.
-   */
+  /** Create a new empty collection for copy. */
   public Collection newCollection(Collection collection) {
     numElements = collection.size();
     if (constructor == null) {
