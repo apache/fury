@@ -41,7 +41,7 @@ import org.apache.fury.util.Preconditions;
 public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
   private MethodHandle constructor;
   private int numElements;
-  private final boolean supportCodegenHook;
+  protected final boolean supportCodegenHook;
   // TODO remove elemSerializer, support generics in CompatibleSerializer.
   private Serializer<?> elemSerializer;
   protected final ClassInfoHolder elementClassInfoHolder;
@@ -514,23 +514,11 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
     }
   }
 
+  /**
+   * Create a new empty collection for copy.
+   */
   public Collection newCollection(Collection collection) {
     numElements = collection.size();
-    return newCollection();
-  }
-
-  /**
-   * Collection must have default constructor to be invoked by fury, otherwise created object can't
-   * be used to adding elements. For example:
-   *
-   * <pre>{@code new ArrayList<Integer> {add(1);}}</pre>
-   *
-   * <p>without default constructor, created list will have elementData as null, adding elements
-   * will raise NPE.
-   *
-   * @return empty collection instance
-   */
-  public Collection newCollection() {
     if (constructor == null) {
       constructor = ReflectionUtils.getCtrHandle(type, true);
     }
