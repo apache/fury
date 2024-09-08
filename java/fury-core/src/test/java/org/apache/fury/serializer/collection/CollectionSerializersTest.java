@@ -392,14 +392,15 @@ public class CollectionSerializersTest extends FuryTestBase {
     copyCheck(fury, list);
   }
 
-  @Test(dataProvider = "enableCodegen")
-  public void testSetFromMap(boolean enableCodegen) {
-    final Fury fury =
-        Fury.builder()
-            .withLanguage(Language.JAVA)
-            .requireClassRegistration(false)
-            .withCodegen(enableCodegen)
-            .build();
+  @Data
+  @AllArgsConstructor
+  public static class CollectionViewTestStruct {
+    Collection<String> collection;
+    Set<String> set;
+  }
+
+  @Test(dataProvider = "javaFury")
+  public void testSetFromMap(Fury fury) {
     final Set<String> set = Collections.newSetFromMap(Maps.newConcurrentMap());
     set.add("a");
     set.add("b");
@@ -408,10 +409,11 @@ public class CollectionSerializersTest extends FuryTestBase {
     Assert.assertEquals(
         getJavaFury().getClassResolver().getSerializerClass(set.getClass()),
         CollectionSerializers.SetFromMapSerializer.class);
+    serDeCheck(fury, new CollectionViewTestStruct(set, set));
   }
 
   @Test(dataProvider = "furyCopyConfig")
-  public void testSetFromMap(Fury fury) {
+  public void testSetFromMapCopy(Fury fury) {
     final Set<Object> set = Collections.newSetFromMap(Maps.newConcurrentMap());
     set.add("a");
     set.add("b");
@@ -419,20 +421,21 @@ public class CollectionSerializersTest extends FuryTestBase {
     copyCheck(fury, set);
   }
 
-  @Test
-  public void testConcurrentMapKeySetViewMap() {
-    final ConcurrentHashMap.KeySetView<Object, Boolean> set = ConcurrentHashMap.newKeySet();
+  @Test(dataProvider = "javaFury")
+  public void testConcurrentMapKeySetViewMap(Fury fury) {
+    final ConcurrentHashMap.KeySetView<String, Boolean> set = ConcurrentHashMap.newKeySet();
     set.add("a");
     set.add("b");
     set.add("c");
-    Assert.assertEquals(set, serDe(getJavaFury(), set));
+    Assert.assertEquals(set, serDe(fury, set));
     Assert.assertEquals(
         getJavaFury().getClassResolver().getSerializerClass(set.getClass()),
         CollectionSerializers.ConcurrentHashMapKeySetView.class);
+    serDeCheck(fury, new CollectionViewTestStruct(set, set));
   }
 
   @Test(dataProvider = "furyCopyConfig")
-  public void testConcurrentMapKeySetViewMap(Fury fury) {
+  public void testConcurrentMapKeySetViewMapCopy(Fury fury) {
     final ConcurrentHashMap.KeySetView<Object, Boolean> set = ConcurrentHashMap.newKeySet();
     set.add("a");
     set.add("b");
