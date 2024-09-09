@@ -410,12 +410,18 @@ public class CollectionSerializersTest extends FuryTestBase {
     Assert.assertEquals(
         fury.getClassResolver().getSerializerClass(set.getClass()),
         CollectionSerializers.SetFromMapSerializer.class);
-    serDeCheck(fury, new CollectionViewTestStruct(set, set));
+    CollectionViewTestStruct struct1 = serDeCheck(fury, new CollectionViewTestStruct(set, set));
+    if (fury.trackingRef()) {
+      assertSame(struct1.collection, struct1.set);
+    }
     set = Collections.newSetFromMap(new HashMap<String, Boolean>() {});
     set.add("a");
     set.add("b");
     serDeCheck(fury, set);
-    serDeCheck(fury, new CollectionViewTestStruct(set, set));
+    CollectionViewTestStruct struct2 = serDeCheck(fury, new CollectionViewTestStruct(set, set));
+    if (fury.trackingRef()) {
+      assertSame(struct2.collection, struct2.set);
+    }
   }
 
   @Test(dataProvider = "furyCopyConfig")
@@ -437,7 +443,10 @@ public class CollectionSerializersTest extends FuryTestBase {
     Assert.assertEquals(
         fury.getClassResolver().getSerializerClass(set.getClass()),
         CollectionSerializers.ConcurrentHashMapKeySetViewSerializer.class);
-    serDeCheck(fury, new CollectionViewTestStruct(set, set));
+    CollectionViewTestStruct o = serDeCheck(fury, new CollectionViewTestStruct(set, set));
+    if (fury.trackingRef()) {
+      assertSame(o.collection, o.set);
+    }
   }
 
   @Test(dataProvider = "furyCopyConfig")
