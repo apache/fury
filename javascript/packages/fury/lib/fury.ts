@@ -35,6 +35,7 @@ export default class {
   classResolver = new ClassResolver();
   referenceResolver: ReferenceResolver;
   anySerializer: AnySerializer;
+  typeMeta = TypeMeta;
 
   constructor(public config: Config = {
     refTracking: false,
