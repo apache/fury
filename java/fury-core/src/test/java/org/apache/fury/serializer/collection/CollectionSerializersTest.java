@@ -73,6 +73,7 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 import org.testng.collections.Maps;
 
+@SuppressWarnings("rawtypes")
 public class CollectionSerializersTest extends FuryTestBase {
 
   @Test(dataProvider = "referenceTrackingConfig")
@@ -446,6 +447,12 @@ public class CollectionSerializersTest extends FuryTestBase {
     CollectionViewTestStruct o = serDeCheck(fury, new CollectionViewTestStruct(set, set));
     if (fury.trackingRef()) {
       assertSame(o.collection, o.set);
+    }
+    ConcurrentHashMap<String, String> map = new ConcurrentHashMap<>();
+    map.put("k1", "v1");
+    if (fury.trackingRef()) {
+      ArrayList<Serializable> list = serDeCheck(fury, ofArrayList(map.keySet("v0"), map));
+      assertSame(((ConcurrentHashMap.KeySetView) (list.get(0))).getMap(), list.get(1));
     }
   }
 
