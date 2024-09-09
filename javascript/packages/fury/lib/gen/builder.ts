@@ -24,6 +24,14 @@ import Fury from "../fury";
 import { TypeMeta } from '../meta/TypeMeta';
 import { BinaryReader } from "../reader";
 
+class TypeMetaBuilder{
+  constructor(private fury: string){
+
+  }
+  from_bytes(reader: string){
+    return `${this.fury}.typeMeta.from_bytes(${reader})`;
+  }
+}
 
 export class BinaryReaderBuilder {
   constructor(private holder: string) {
@@ -312,8 +320,7 @@ class ClassResolverBuilder {
 export class CodecBuilder {
   reader: BinaryReaderBuilder;
   writer: BinaryWriterBuilder;
-  typeMeta: TypeMetaWrapper; // Use the TypeMetaWrapper
-
+  typeMeta: TypeMetaBuilder; // Use the TypeMetaWrapper
   referenceResolver: ReferenceResolverBuilder;
   classResolver: ClassResolverBuilder;
 
@@ -326,7 +333,7 @@ export class CodecBuilder {
     this.writer = new BinaryWriterBuilder(bw);
     this.classResolver = new ClassResolverBuilder(cr);
     this.referenceResolver = new ReferenceResolverBuilder(rr);
-    this.typeMeta = new TypeMetaWrapper(); // Initialize the TypeMetaWrapper
+    this.typeMeta = new TypeMetaBuilder("fury"); // Initialize the TypeMetaWrapper
 
   }
 
@@ -377,11 +384,5 @@ export class CodecBuilder {
 
   getExternal(key: string) {
     return `external.${key}`;
-  }
-}
-
-class TypeMetaWrapper {
-  from_bytes(reader: BinaryReaderBuilder): TypeMeta {
-    return TypeMeta.from_bytes(reader); 
   }
 }
