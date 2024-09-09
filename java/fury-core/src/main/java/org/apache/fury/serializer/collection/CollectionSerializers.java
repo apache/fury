@@ -20,6 +20,7 @@
 package org.apache.fury.serializer.collection;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -59,6 +60,7 @@ import org.apache.fury.serializer.Serializer;
 import org.apache.fury.serializer.Serializers;
 import org.apache.fury.type.Type;
 import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.unsafe._JDKAccess;
 
 /**
  * Serializers for classes implements {@link Collection}. All collection serializers should extend
@@ -461,15 +463,20 @@ public class CollectionSerializers {
   public static final class SetFromMapSerializer extends CollectionSerializer<Set<?>> {
 
     private static final long MAP_FIELD_OFFSET;
-    private static final MethodHandle ctr;
     private static final List EMPTY_COLLECTION_STUB = new ArrayList<>();
+
+    private static final MethodHandle m;
+
+    private static final MethodHandle s;
 
     static {
       try {
         Class<?> type = Class.forName("java.util.Collections$SetFromMap");
         Field mapField = type.getDeclaredField("m");
         MAP_FIELD_OFFSET = Platform.objectFieldOffset(mapField);
-        ctr = ReflectionUtils.getCtrHandle(type, Map.class);
+        MethodHandles.Lookup lookup = _JDKAccess._trustedLookup(type);
+        m = lookup.findSetter(type, "m", Map.class);
+        s = lookup.findSetter(type, "s", Set.class);
       } catch (final Exception e) {
         throw new RuntimeException(e);
       }
@@ -495,7 +502,9 @@ public class CollectionSerializers {
       } else {
         Map map = (Map) mapSerializer.read(buffer);
         try {
-          set = (Set) ctr.invokeWithArguments(map);
+          set = Platform.newInstance(type);
+          m.invoke(set, map);
+          s.invoke(set, map.keySet());
         } catch (Throwable e) {
           throw new RuntimeException(e);
         }
