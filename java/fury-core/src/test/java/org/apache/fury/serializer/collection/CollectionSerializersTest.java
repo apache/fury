@@ -38,6 +38,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -401,14 +402,19 @@ public class CollectionSerializersTest extends FuryTestBase {
 
   @Test(dataProvider = "javaFury")
   public void testSetFromMap(Fury fury) {
-    final Set<String> set = Collections.newSetFromMap(Maps.newConcurrentMap());
+    Set<String> set = Collections.newSetFromMap(Maps.newConcurrentMap());
     set.add("a");
     set.add("b");
     set.add("c");
-    Assert.assertEquals(set, serDe(fury, set));
+    serDeCheck(fury, set);
     Assert.assertEquals(
         getJavaFury().getClassResolver().getSerializerClass(set.getClass()),
         CollectionSerializers.SetFromMapSerializer.class);
+    serDeCheck(fury, new CollectionViewTestStruct(set, set));
+    set = Collections.newSetFromMap(new HashMap<String, Boolean>() {});
+    set.add("a");
+    set.add("b");
+    serDeCheck(fury, set);
     serDeCheck(fury, new CollectionViewTestStruct(set, set));
   }
 
