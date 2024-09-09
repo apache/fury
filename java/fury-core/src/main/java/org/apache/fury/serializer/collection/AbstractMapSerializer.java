@@ -800,23 +800,9 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     }
   }
 
+  /** Create a new empty map for copy. */
   public Map newMap(Map map) {
     numElements = map.size();
-    return newMap();
-  }
-
-  /**
-   * Map must have default constructor to be invoked by fury, otherwise created object can't be used
-   * to adding elements. For example:
-   *
-   * <pre>{@code new ArrayList<Integer> {add(1);}}</pre>
-   *
-   * <p>without default constructor, created list will have elementData as null, adding elements
-   * will raise NPE.
-   *
-   * @return empty map instance
-   */
-  public Map newMap() {
     if (constructor == null) {
       constructor = ReflectionUtils.getCtrHandle(type, true);
     }
