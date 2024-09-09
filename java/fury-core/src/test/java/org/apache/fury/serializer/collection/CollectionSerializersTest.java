@@ -408,7 +408,7 @@ public class CollectionSerializersTest extends FuryTestBase {
     set.add("c");
     serDeCheck(fury, set);
     Assert.assertEquals(
-        getJavaFury().getClassResolver().getSerializerClass(set.getClass()),
+        fury.getClassResolver().getSerializerClass(set.getClass()),
         CollectionSerializers.SetFromMapSerializer.class);
     serDeCheck(fury, new CollectionViewTestStruct(set, set));
     set = Collections.newSetFromMap(new HashMap<String, Boolean>() {});
