@@ -436,7 +436,7 @@ public class CollectionSerializersTest extends FuryTestBase {
     Assert.assertEquals(set, serDe(fury, set));
     Assert.assertEquals(
         fury.getClassResolver().getSerializerClass(set.getClass()),
-        CollectionSerializers.ConcurrentHashMapKeySetView.class);
+        CollectionSerializers.ConcurrentHashMapKeySetViewSerializer.class);
     serDeCheck(fury, new CollectionViewTestStruct(set, set));
   }
 

@@ -533,12 +533,13 @@ public class CollectionSerializers {
     }
   }
 
-  public static final class ConcurrentHashMapKeySetView
+  public static final class ConcurrentHashMapKeySetViewSerializer
       extends CollectionSerializer<ConcurrentHashMap.KeySetView> {
     private final ClassInfoHolder mapClassInfoHolder;
     private final ClassInfoHolder valueClassInfoHolder;
 
-    public ConcurrentHashMapKeySetView(Fury fury, Class<ConcurrentHashMap.KeySetView> type) {
+    public ConcurrentHashMapKeySetViewSerializer(
+        Fury fury, Class<ConcurrentHashMap.KeySetView> type) {
       super(fury, type, false);
       mapClassInfoHolder = fury.getClassResolver().nilClassInfoHolder();
       valueClassInfoHolder = fury.getClassResolver().nilClassInfoHolder();
@@ -838,6 +839,6 @@ public class CollectionSerializers {
     fury.registerSerializer(setFromMapClass, new SetFromMapSerializer(fury, setFromMapClass));
     fury.registerSerializer(
         ConcurrentHashMap.KeySetView.class,
-        new ConcurrentHashMapKeySetView(fury, ConcurrentHashMap.KeySetView.class));
+        new ConcurrentHashMapKeySetViewSerializer(fury, ConcurrentHashMap.KeySetView.class));
   }
 }
