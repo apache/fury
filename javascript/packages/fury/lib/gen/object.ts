@@ -121,7 +121,7 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
         }).join(",\n")}
       };
       ${this.maybeReference(result, refState)}
-      ${this.builder.typeMeta.from_bytes(this.builder.reader)}
+      ${this.builder.typeMeta.from_bytes(this.builder.reader.ownName())}
       ${Object.entries(options.props).sort().map(([key, inner]) => {
         const InnerGeneratorClass = CodegenRegistry.get(inner.type);
         if (!InnerGeneratorClass) {
