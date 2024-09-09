@@ -461,11 +461,15 @@ public class CollectionSerializers {
   public static final class SetFromMapSerializer extends CollectionSerializer<Set<?>> {
 
     private static final long MAP_FIELD_OFFSET;
+    private static final MethodHandle ctr;
+    private static final List EMPTY_COLLECTION_STUB = new ArrayList<>();
 
     static {
       try {
-        Field mapField = Class.forName("java.util.Collections$SetFromMap").getDeclaredField("m");
+        Class<?> type = Class.forName("java.util.Collections$SetFromMap");
+        Field mapField = type.getDeclaredField("m");
         MAP_FIELD_OFFSET = Platform.objectFieldOffset(mapField);
+        ctr = ReflectionUtils.getCtrHandle(type, Map.class);
       } catch (final Exception e) {
         throw new RuntimeException(e);
       }
@@ -483,16 +487,20 @@ public class CollectionSerializers {
       RefResolver refResolver = fury.getRefResolver();
       // It's possible that elements or nested fields has circular ref to set.
       int refId = refResolver.lastPreservedRefId();
-      Map map;
+      Set set;
       if (buffer.readBoolean()) {
         refResolver.preserveRefId();
-        map = mapSerializer.newMap(buffer);
+        set = Collections.newSetFromMap(mapSerializer.newMap(buffer));
         setNumElements(mapSerializer.getAndClearNumElements());
       } else {
-        map = (Map) mapSerializer.read(buffer);
+        Map map = (Map) mapSerializer.read(buffer);
+        try {
+          set = (Set) ctr.invokeWithArguments(map);
+        } catch (Throwable e) {
+          throw new RuntimeException(e);
+        }
         setNumElements(0);
       }
-      Set set = Collections.newSetFromMap(map);
       refResolver.setReadObject(refId, set);
       return set;
     }
@@ -516,11 +524,12 @@ public class CollectionSerializers {
       if (mapSerializer.supportCodegenHook) {
         buffer.writeBoolean(true);
         mapSerializer.onMapWrite(buffer, map);
+        return value;
       } else {
         buffer.writeBoolean(false);
         mapSerializer.write(buffer, map);
+        return EMPTY_COLLECTION_STUB;
       }
-      return value;
     }
   }
 
@@ -556,7 +565,8 @@ public class CollectionSerializers {
 
     @Override
     public Collection newCollection(MemoryBuffer buffer) {
-      throw new UnsupportedOperationException();
+      throw new IllegalStateException(
+          "Should not be invoked since we set supportCodegenHook to false");
     }
   }
 
