@@ -26,7 +26,6 @@ import java.io.Serializable;
 import java.util.List;
 import lombok.Data;
 import org.apache.fury.Fury;
-import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.config.Language;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.test.bean.BeanA;
@@ -83,25 +82,30 @@ public class ClassDefEncoderTest {
     Assert.assertEquals(classDef, classDef1);
   }
 
-
   @Test
   public void testBigClassNameObject() {
     Fury fury = Fury.builder().withMetaShare(true).build();
-    ClassDef classDef = ClassDef.buildClassDef(fury, TestClassLengthTestClassLengthTestClassLengthTestClassLengthTestClassLengthTestClassLengthTestClassLength.
-      InnerClassTestLengthInnerClassTestLengthInnerClassTestLength.class);
+    ClassDef classDef =
+        ClassDef.buildClassDef(
+            fury,
+            TestClassLengthTestClassLengthTestClassLengthTestClassLengthTestClassLengthTestClassLengthTestClassLength
+                .InnerClassTestLengthInnerClassTestLengthInnerClassTestLength.class);
     ClassDef classDef1 =
-      ClassDef.readClassDef(
-        fury.getClassResolver(), MemoryBuffer.fromByteArray(classDef.getEncoded()));
+        ClassDef.readClassDef(
+            fury.getClassResolver(), MemoryBuffer.fromByteArray(classDef.getEncoded()));
     Assert.assertEquals(classDef1, classDef);
   }
 
   @Data
-  public static class TestClassLengthTestClassLengthTestClassLengthTestClassLengthTestClassLengthTestClassLengthTestClassLength implements Serializable {
+  public static
+  class TestClassLengthTestClassLengthTestClassLengthTestClassLengthTestClassLengthTestClassLengthTestClassLength
+      implements Serializable {
     private String name;
     private InnerClassTestLengthInnerClassTestLengthInnerClassTestLength innerClassTestLength;
 
     @Data
-    public static class InnerClassTestLengthInnerClassTestLengthInnerClassTestLength implements Serializable {
+    public static class InnerClassTestLengthInnerClassTestLengthInnerClassTestLength
+        implements Serializable {
       private static final long serialVersionUID = -867612757789099089L;
       private Long itemId;
     }
