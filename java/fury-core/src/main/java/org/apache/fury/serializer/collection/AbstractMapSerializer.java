@@ -224,142 +224,66 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
       // write final key
       boolean trackingKeyRef = keySerializer.needToWriteRef();
       boolean trackingValueRef = fury.trackingRef();
-      if (!valueIsNotSameType && valueWriteSerializer == null && !writeValueClassInfo) {
-        valueWriteSerializer = getSerializer(value, valueClassInfoWriteCache);
-      }
       header =
           updateKVHeader(
               key, trackingKeyRef, value, trackingValueRef, header, false, valueIsNotSameType);
       writeFinalKey(key, buffer, keySerializer, trackingKeyRef);
-      if (!writeValueClassInfo && valueWriteSerializer != null) {
-        writeValue(
-            value,
-            buffer,
-            valueWriteSerializer,
-            classResolver,
-            refResolver,
-            trackingValueRef,
-            valueIsNotSameType,
-            header,
-            true);
-        writeValueClassInfo = true;
-      } else {
-        writeValue(
-            value,
-            buffer,
-            valueWriteSerializer,
-            classResolver,
-            refResolver,
-            trackingValueRef,
-            valueIsNotSameType,
-            header,
-            false);
-      }
+        if (!trackingValueRef) {
+            if (value == null) {
+                buffer.writeByte(Fury.NULL_FLAG);
+            } else {
+                if (!valueIsNotSameType) {
+                    if (valueHasNull(header)) {
+                        buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
+                    }
+                    ClassInfo classInfo = classResolver.getClassInfo(value.getClass(), valueClassInfoWriteCache);
+                    if (!writeValueClassInfo) {
+                        classResolver.writeClass(buffer, classInfo);
+                        writeValueClassInfo = true;
+                    }
+                    if (valueWriteSerializer == null) {
+                        valueWriteSerializer = classInfo.getSerializer();
+                    }
+                    valueWriteSerializer.write(buffer, value);
+                } else {
+                    fury.writeNullable(
+                            buffer,
+                            value,
+                            classResolver.getClassInfo(value.getClass(), valueClassInfoWriteCache));
+                }
+            }
+        } else {
+            if (value == null) {
+                buffer.writeByte(Fury.NULL_FLAG);
+            } else {
+                if (!valueIsNotSameType) {
+                    ClassInfo classInfo = classResolver.getClassInfo(value.getClass(), valueClassInfoWriteCache);
+                    if (!writeValueClassInfo) {
+                        classResolver.writeClass(buffer, classInfo);
+                        writeValueClassInfo = true;
+                    }
+                    if (valueWriteSerializer == null) {
+                        valueWriteSerializer = classInfo.getSerializer();
+                    }
+                    valueWriteSerializer.write(buffer, value);
+                    if (!valueHasNull(header)) {
+                        writeNoNullRef(valueWriteSerializer, value, buffer, refResolver);
+                    } else {
+                        fury.writeRef(buffer, value, valueWriteSerializer);
+                    }
+                } else {
+                    if (!refResolver.writeNullFlag(buffer, value)) {
+                        fury.writeRef(
+                                buffer,
+                                value,
+                                classResolver.getClassInfo(value.getClass(), valueClassInfoWriteCache));
+                    }
+                }
+            }
+        }
       chunkSize++;
     }
     writeHeader(buffer, chunkSize, header, startOffset);
-  }
-
-  private void writeKey(
-      Object key,
-      MemoryBuffer buffer,
-      Serializer keyWriteSerializer,
-      ClassResolver classResolver,
-      RefResolver refResolver,
-      boolean trackingKeyRef,
-      boolean keyIsNotSameType,
-      boolean needWriteClass) {
-    if (!trackingKeyRef) {
-      if (key == null) {
-        buffer.writeByte(Fury.NULL_FLAG);
-      } else {
-        if (!keyIsNotSameType) {
-          writeClass(key, buffer, valueClassInfoWriteCache, needWriteClass);
-          keyWriteSerializer.write(buffer, key);
-        } else {
-          fury.writeNonRef(
-              buffer, key, classResolver.getClassInfo(key.getClass(), keyClassInfoWriteCache));
-        }
-      }
-    } else {
-      // todo 提到外面
-      if (key == null) {
-        buffer.writeByte(Fury.NULL_FLAG);
-      } else {
-        if (!keyIsNotSameType) {
-          // todo key is not null, no need to write no null flag
-          writeClass(key, buffer, valueClassInfoWriteCache, needWriteClass);
-          writeNoNullRef(keyWriteSerializer, key, buffer, refResolver);
-        } else {
-          if (!refResolver.writeNullFlag(buffer, key)) {
-            fury.writeRef(
-                buffer, key, classResolver.getClassInfo(key.getClass(), keyClassInfoWriteCache));
-          }
-        }
-      }
-    }
-  }
-
-  private void writeValue(
-      Object value,
-      MemoryBuffer buffer,
-      Serializer valueWriteSerializer,
-      ClassResolver classResolver,
-      RefResolver refResolver,
-      boolean trackingValueRef,
-      boolean valueIsNotSameType,
-      int header,
-      boolean needWriteClass) {
-    if (!trackingValueRef) {
-      if (value == null) {
-        buffer.writeByte(Fury.NULL_FLAG);
-      } else {
-        if (!valueIsNotSameType) {
-          if (valueHasNull(header)) {
-            buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
-          }
-          writeClass(value, buffer, valueClassInfoWriteCache, needWriteClass);
-          valueWriteSerializer.write(buffer, value);
-        } else {
-          fury.writeNullable(
-              buffer,
-              value,
-              classResolver.getClassInfo(value.getClass(), valueClassInfoWriteCache));
-        }
-      }
-    } else {
-      if (value == null) {
-        buffer.writeByte(Fury.NULL_FLAG);
-      } else {
-        if (!valueIsNotSameType) {
-          writeClass(value, buffer, valueClassInfoWriteCache, needWriteClass);
-          if (!valueHasNull(header)) {
-            writeNoNullRef(valueWriteSerializer, value, buffer, refResolver);
-          } else {
-            fury.writeRef(buffer, value, valueWriteSerializer);
-          }
-        } else {
-          if (!refResolver.writeNullFlag(buffer, value)) {
-            fury.writeRef(
-                buffer,
-                value,
-                classResolver.getClassInfo(value.getClass(), valueClassInfoWriteCache));
-          }
-        }
-      }
-    }
-  }
-
-  private void writeClass(
-      Object o,
-      MemoryBuffer memoryBuffer,
-      ClassInfoHolder classInfoWriteCache,
-      boolean needWriteClass) {
-    ClassResolver classResolver = fury.getClassResolver();
-    ClassInfo classInfo = classResolver.getClassInfo(o.getClass(), classInfoWriteCache);
-    if (needWriteClass) {
-      classResolver.writeClass(memoryBuffer, classInfo);
-    }
   }
 
   private void javaChunkWriteWithValueSerializers(
@@ -418,34 +342,51 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
       }
       boolean trackingKeyRef = fury.trackingRef();
       boolean trackingValueRef = valueSerializer.needToWriteRef();
-      if (!keyIsNotSameType && keyWriteSerializer == null && !writeKeyClassInfo) {
-        keyWriteSerializer = getSerializer(key, keyClassInfoWriteCache);
-      }
       header =
           updateKVHeader(
               key, trackingKeyRef, value, trackingValueRef, header, keyIsNotSameType, false);
-      if (!writeKeyClassInfo && key != null) {
-        writeKey(
-            key,
-            buffer,
-            keyWriteSerializer,
-            classResolver,
-            refResolver,
-            trackingKeyRef,
-            keyIsNotSameType,
-            true);
-        writeKeyClassInfo = true;
-      } else {
-        writeKey(
-            key,
-            buffer,
-            keyWriteSerializer,
-            classResolver,
-            refResolver,
-            trackingKeyRef,
-            keyIsNotSameType,
-            false);
-      }
+        if (!trackingKeyRef) {
+            if (key == null) {
+                buffer.writeByte(Fury.NULL_FLAG);
+            } else {
+                if (!keyIsNotSameType) {
+                    ClassInfo classInfo = classResolver.getClassInfo(key.getClass(), keyClassInfoWriteCache);
+                    if (!writeKeyClassInfo) {
+                        classResolver.writeClass(buffer, classInfo);
+                        writeKeyClassInfo = true;
+                    }
+                    if (keyWriteSerializer == null) {
+                        keyWriteSerializer = classInfo.getSerializer();
+                    }
+                    keyWriteSerializer.write(buffer, key);
+                } else {
+                    fury.writeNonRef(
+                            buffer, key, classResolver.getClassInfo(key.getClass(), keyClassInfoWriteCache));
+                }
+            }
+        } else {
+            // todo 提到外面
+            if (key == null) {
+                buffer.writeByte(Fury.NULL_FLAG);
+            } else {
+                if (!keyIsNotSameType) {
+                    ClassInfo classInfo = classResolver.getClassInfo(key.getClass(), keyClassInfoWriteCache);
+                    if (!writeKeyClassInfo) {
+                        classResolver.writeClass(buffer, classInfo);
+                        writeKeyClassInfo = true;
+                    }
+                    if (keyWriteSerializer == null) {
+                        keyWriteSerializer = classInfo.getSerializer();
+                    }
+                    writeNoNullRef(keyWriteSerializer, key, buffer, refResolver);
+                } else {
+                    if (!refResolver.writeNullFlag(buffer, key)) {
+                        fury.writeRef(
+                                buffer, key, classResolver.getClassInfo(key.getClass(), keyClassInfoWriteCache));
+                    }
+                }
+            }
+        }
       writeFinalValue(value, buffer, valueSerializer, trackingValueRef, header);
       chunkSize++;
     }
@@ -864,9 +805,6 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
         startOffset = writerIndex;
         hasPreservedByte = true;
       }
-      if (!valueIsNotSameType && valueWriteSerializer == null && !writeValueClassInfo) {
-        valueWriteSerializer = getSerializer(value, valueClassInfoWriteCache);
-      }
       generics.pushGenericType(keyGenericType);
       boolean trackingKeyRef = keySerializer.needToWriteRef();
       header =
@@ -875,30 +813,59 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
       writeFinalKey(key, buffer, keySerializer, trackingKeyRef);
       generics.popGenericType();
       generics.pushGenericType(valueGenericType);
-      if (!writeValueClassInfo && value != null) {
-        writeValue(
-            value,
-            buffer,
-            valueWriteSerializer,
-            classResolver,
-            refResolver,
-            trackingValueRef,
-            valueIsNotSameType,
-            header,
-            true);
-        writeValueClassInfo = true;
-      } else {
-        writeValue(
-            value,
-            buffer,
-            valueWriteSerializer,
-            classResolver,
-            refResolver,
-            trackingValueRef,
-            valueIsNotSameType,
-            header,
-            false);
-      }
+        if (!trackingValueRef) {
+            if (value == null) {
+                buffer.writeByte(Fury.NULL_FLAG);
+            } else {
+                if (!valueIsNotSameType) {
+                    if (valueHasNull(header)) {
+                        buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
+                    }
+                    ClassInfo classInfo = classResolver.getClassInfo(value.getClass(), valueClassInfoWriteCache);
+                    if (!writeValueClassInfo) {
+                        classResolver.writeClass(buffer, classInfo);
+                        writeValueClassInfo = true;
+                    }
+                    if (valueWriteSerializer == null) {
+                        valueWriteSerializer = classInfo.getSerializer();
+                    }
+                    valueWriteSerializer.write(buffer, value);
+                } else {
+                    fury.writeNullable(
+                            buffer,
+                            value,
+                            classResolver.getClassInfo(value.getClass(), valueClassInfoWriteCache));
+                }
+            }
+        } else {
+            if (value == null) {
+                buffer.writeByte(Fury.NULL_FLAG);
+            } else {
+                if (!valueIsNotSameType) {
+                    ClassInfo classInfo = classResolver.getClassInfo(value.getClass(), valueClassInfoWriteCache);
+                    if (!writeValueClassInfo) {
+                        classResolver.writeClass(buffer, classInfo);
+                        writeValueClassInfo = true;
+                    }
+                    if (valueWriteSerializer == null) {
+                        valueWriteSerializer = classInfo.getSerializer();
+                    }
+                    valueWriteSerializer.write(buffer, value);
+                    if (!valueHasNull(header)) {
+                        writeNoNullRef(valueWriteSerializer, value, buffer, refResolver);
+                    } else {
+                        fury.writeRef(buffer, value, valueWriteSerializer);
+                    }
+                } else {
+                    if (!refResolver.writeNullFlag(buffer, value)) {
+                        fury.writeRef(
+                                buffer,
+                                value,
+                                classResolver.getClassInfo(value.getClass(), valueClassInfoWriteCache));
+                    }
+                }
+            }
+        }
       generics.popGenericType();
       chunkSize++;
     }
@@ -967,9 +934,6 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
       header =
           updateKVHeader(
               key, trackingKeyRef, value, trackingValueRef, header, false, keyIsNotSameType);
-      if (!keyIsNotSameType && keyWriteSerializer == null && !writeKeyClassInfo) {
-        keyWriteSerializer = getSerializer(key, keyClassInfoWriteCache);
-      }
       if (!hasPreservedByte) {
         int writerIndex = buffer.writerIndex();
         // preserve two byte for header and chunk size
@@ -979,28 +943,48 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
       }
       generics.pushGenericType(keyGenericType);
       // todo hening key == null提到外面？
-      if (!writeKeyClassInfo && key != null) {
-        writeKey(
-            key,
-            buffer,
-            keyWriteSerializer,
-            classResolver,
-            refResolver,
-            trackingKeyRef,
-            keyIsNotSameType,
-            true);
-        writeKeyClassInfo = true;
-      } else {
-        writeKey(
-            key,
-            buffer,
-            keyWriteSerializer,
-            classResolver,
-            refResolver,
-            trackingKeyRef,
-            keyIsNotSameType,
-            false);
-      }
+        if (!trackingKeyRef) {
+            if (key == null) {
+                buffer.writeByte(Fury.NULL_FLAG);
+            } else {
+                if (!keyIsNotSameType) {
+                    ClassInfo classInfo = classResolver.getClassInfo(key.getClass(), keyClassInfoWriteCache);
+                    if (!writeKeyClassInfo) {
+                        classResolver.writeClass(buffer, classInfo);
+                        writeKeyClassInfo = true;
+                    }
+                    if (keyWriteSerializer == null) {
+                        keyWriteSerializer = classInfo.getSerializer();
+                    }
+                    keyWriteSerializer.write(buffer, key);
+                } else {
+                    fury.writeNonRef(
+                            buffer, key, classResolver.getClassInfo(key.getClass(), keyClassInfoWriteCache));
+                }
+            }
+        } else {
+            // todo 提到外面
+            if (key == null) {
+                buffer.writeByte(Fury.NULL_FLAG);
+            } else {
+                if (!keyIsNotSameType) {
+                    ClassInfo classInfo = classResolver.getClassInfo(key.getClass(), keyClassInfoWriteCache);
+                    if (!writeKeyClassInfo) {
+                        classResolver.writeClass(buffer, classInfo);
+                        writeKeyClassInfo = true;
+                    }
+                    if (keyWriteSerializer == null) {
+                        keyWriteSerializer = classInfo.getSerializer();
+                    }
+                    writeNoNullRef(keyWriteSerializer, key, buffer, refResolver);
+                } else {
+                    if (!refResolver.writeNullFlag(buffer, key)) {
+                        fury.writeRef(
+                                buffer, key, classResolver.getClassInfo(key.getClass(), keyClassInfoWriteCache));
+                    }
+                }
+            }
+        }
       generics.popGenericType();
       generics.pushGenericType(valueGenericType);
       writeFinalValue(value, buffer, valueSerializer, trackingValueRef, header);
@@ -1127,13 +1111,6 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
           startOffset = writerIndex;
           hasPreservedByte = true;
         }
-
-        if (!keyIsNotSameType && keyWriteSerializer == null && !writeKeyClassInfo) {
-          keyWriteSerializer = getSerializer(key, keyClassInfoWriteCache);
-        }
-        if (!valueIsNotSameType && valueWriteSerializer == null && !writeValueClassInfo) {
-          valueWriteSerializer = getSerializer(value, valueClassInfoWriteCache);
-        }
         header =
             updateKVHeader(
                 key,
@@ -1143,55 +1120,109 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
                 header,
                 keyIsNotSameType,
                 valueIsNotSameType);
-        boolean trackingRef = fury.trackingRef();
         generics.pushGenericType(keyGenericType);
-        if (!writeKeyClassInfo && key != null) {
-          writeKey(
-              key,
-              buffer,
-              keyWriteSerializer,
-              classResolver,
-              refResolver,
-              trackingRef,
-              keyIsNotSameType,
-              true);
-          writeKeyClassInfo = true;
+        if (!trackingKeyRef) {
+          if (key == null) {
+            buffer.writeByte(Fury.NULL_FLAG);
+          } else {
+            if (!keyIsNotSameType) {
+              ClassInfo classInfo =
+                  classResolver.getClassInfo(key.getClass(), keyClassInfoWriteCache);
+              if (!writeKeyClassInfo) {
+                classResolver.writeClass(buffer, classInfo);
+                writeKeyClassInfo = true;
+              }
+              if (keyWriteSerializer == null) {
+                keyWriteSerializer = classInfo.getSerializer();
+              }
+              keyWriteSerializer.write(buffer, key);
+            } else {
+              fury.writeNonRef(
+                  buffer, key, classResolver.getClassInfo(key.getClass(), keyClassInfoWriteCache));
+            }
+          }
         } else {
-          writeKey(
-              key,
-              buffer,
-              keyWriteSerializer,
-              classResolver,
-              refResolver,
-              trackingRef,
-              keyIsNotSameType,
-              false);
+          // todo 提到外面
+          if (key == null) {
+            buffer.writeByte(Fury.NULL_FLAG);
+          } else {
+            if (!keyIsNotSameType) {
+              // todo key is not null, no need to write no null flag
+              ClassInfo classInfo =
+                  classResolver.getClassInfo(key.getClass(), keyClassInfoWriteCache);
+              if (!writeKeyClassInfo) {
+                classResolver.writeClass(buffer, classInfo);
+                writeKeyClassInfo = true;
+              }
+              if (keyWriteSerializer == null) {
+                keyWriteSerializer = classInfo.getSerializer();
+              }
+              writeNoNullRef(keyWriteSerializer, key, buffer, refResolver);
+            } else {
+              if (!refResolver.writeNullFlag(buffer, key)) {
+                fury.writeRef(
+                    buffer,
+                    key,
+                    classResolver.getClassInfo(key.getClass(), keyClassInfoWriteCache));
+              }
+            }
+          }
         }
         generics.popGenericType();
         generics.pushGenericType(valueGenericType);
-        if (!writeValueClassInfo && value != null) {
-          writeValue(
-              value,
-              buffer,
-              valueWriteSerializer,
-              classResolver,
-              refResolver,
-              trackingRef,
-              valueIsNotSameType,
-              header,
-              true);
-          writeValueClassInfo = true;
+        if (!trackingValueRef) {
+          if (value == null) {
+            buffer.writeByte(Fury.NULL_FLAG);
+          } else {
+            if (!valueIsNotSameType) {
+              if (valueHasNull(header)) {
+                buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
+              }
+              ClassInfo classInfo =
+                  classResolver.getClassInfo(value.getClass(), valueClassInfoWriteCache);
+              if (!writeValueClassInfo) {
+                classResolver.writeClass(buffer, classInfo);
+                writeValueClassInfo = true;
+              }
+              if (valueWriteSerializer == null) {
+                valueWriteSerializer = classInfo.getSerializer();
+              }
+              valueWriteSerializer.write(buffer, value);
+            } else {
+              fury.writeNullable(
+                  buffer,
+                  value,
+                  classResolver.getClassInfo(value.getClass(), valueClassInfoWriteCache));
+            }
+          }
         } else {
-          writeValue(
-              value,
-              buffer,
-              valueWriteSerializer,
-              classResolver,
-              refResolver,
-              trackingRef,
-              valueIsNotSameType,
-              header,
-              false);
+          if (value == null) {
+            buffer.writeByte(Fury.NULL_FLAG);
+          } else {
+            if (!valueIsNotSameType) {
+              ClassInfo classInfo =
+                  classResolver.getClassInfo(value.getClass(), valueClassInfoWriteCache);
+              if (!writeValueClassInfo) {
+                classResolver.writeClass(buffer, classInfo);
+                writeValueClassInfo = true;
+              }
+              if (valueWriteSerializer == null) {
+                valueWriteSerializer = classInfo.getSerializer();
+              }
+              if (!valueHasNull(header)) {
+                writeNoNullRef(valueWriteSerializer, value, buffer, refResolver);
+              } else {
+                fury.writeRef(buffer, value, valueWriteSerializer);
+              }
+            } else {
+              if (!refResolver.writeNullFlag(buffer, value)) {
+                fury.writeRef(
+                    buffer,
+                    value,
+                    classResolver.getClassInfo(value.getClass(), valueClassInfoWriteCache));
+              }
+            }
+          }
         }
         generics.popGenericType();
         chunkSize++;
@@ -1371,61 +1402,116 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
           startOffset = writerIndex;
           hasPreservedByte = true;
         }
-        if (!keyIsNotSameType && keyWriteSerializer == null && !writeKeyClassInfo) {
-          keyWriteSerializer = getSerializer(key, keyClassInfoWriteCache);
-        }
-        if (!valueIsNotSameType && valueWriteSerializer == null && !writeValueClassInfo) {
-          valueWriteSerializer = getSerializer(value, valueClassInfoWriteCache);
-        }
+        //        if (!keyIsNotSameType && keyWriteSerializer == null && !writeKeyClassInfo) {
+        //          keyWriteSerializer = getSerializer(key, keyClassInfoWriteCache);
+        //        }
+        //        if (!valueIsNotSameType && valueWriteSerializer == null && !writeValueClassInfo) {
+        //          valueWriteSerializer = getSerializer(value, valueClassInfoWriteCache);
+        //        }
         boolean trackingRef = fury.trackingRef();
         header =
             updateKVHeader(
                 key, trackingRef, value, trackingRef, header, keyIsNotSameType, valueIsNotSameType);
-        if (!writeKeyClassInfo && key != null) {
-          writeKey(
-              key,
-              buffer,
-              keyWriteSerializer,
-              classResolver,
-              refResolver,
-              trackingRef,
-              keyIsNotSameType,
-              true);
-          writeKeyClassInfo = true;
+        if (!trackingRef) {
+          if (key == null) {
+            buffer.writeByte(Fury.NULL_FLAG);
+          } else {
+            if (!keyIsNotSameType) {
+              ClassInfo classInfo =
+                  classResolver.getClassInfo(key.getClass(), keyClassInfoWriteCache);
+              if (!writeKeyClassInfo) {
+                classResolver.writeClass(buffer, classInfo);
+                writeKeyClassInfo = true;
+              }
+              if (keyWriteSerializer == null) {
+                keyWriteSerializer = classInfo.getSerializer();
+              }
+              keyWriteSerializer.write(buffer, key);
+            } else {
+              fury.writeNonRef(
+                  buffer, key, classResolver.getClassInfo(key.getClass(), keyClassInfoWriteCache));
+            }
+          }
         } else {
-          writeKey(
-              key,
-              buffer,
-              keyWriteSerializer,
-              classResolver,
-              refResolver,
-              trackingRef,
-              keyIsNotSameType,
-              false);
+          // todo 提到外面
+          if (key == null) {
+            buffer.writeByte(Fury.NULL_FLAG);
+          } else {
+            if (!keyIsNotSameType) {
+              // todo key is not null, no need to write no null flag
+              ClassInfo classInfo =
+                  classResolver.getClassInfo(key.getClass(), keyClassInfoWriteCache);
+              if (!writeKeyClassInfo) {
+                classResolver.writeClass(buffer, classInfo);
+                writeKeyClassInfo = true;
+              }
+              if (keyWriteSerializer == null) {
+                keyWriteSerializer = classInfo.getSerializer();
+              }
+              writeNoNullRef(keyWriteSerializer, key, buffer, refResolver);
+            } else {
+              if (!refResolver.writeNullFlag(buffer, key)) {
+                fury.writeRef(
+                    buffer,
+                    key,
+                    classResolver.getClassInfo(key.getClass(), keyClassInfoWriteCache));
+              }
+            }
+          }
         }
-        if (!writeValueClassInfo && value != null) {
-          writeValue(
-              value,
-              buffer,
-              valueWriteSerializer,
-              classResolver,
-              refResolver,
-              trackingRef,
-              valueIsNotSameType,
-              header,
-              true);
-          writeValueClassInfo = true;
+        if (!trackingRef) {
+          if (value == null) {
+            buffer.writeByte(Fury.NULL_FLAG);
+          } else {
+            if (!valueIsNotSameType) {
+              if (valueHasNull(header)) {
+                buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
+              }
+              ClassInfo classInfo =
+                  classResolver.getClassInfo(value.getClass(), valueClassInfoWriteCache);
+              if (!writeValueClassInfo) {
+                classResolver.writeClass(buffer, classInfo);
+                writeValueClassInfo = true;
+              }
+              if (valueWriteSerializer == null) {
+                valueWriteSerializer = classInfo.getSerializer();
+              }
+              valueWriteSerializer.write(buffer, value);
+            } else {
+              fury.writeNullable(
+                  buffer,
+                  value,
+                  classResolver.getClassInfo(value.getClass(), valueClassInfoWriteCache));
+            }
+          }
         } else {
-          writeValue(
-              value,
-              buffer,
-              valueWriteSerializer,
-              classResolver,
-              refResolver,
-              trackingRef,
-              valueIsNotSameType,
-              header,
-              false);
+          if (value == null) {
+            buffer.writeByte(Fury.NULL_FLAG);
+          } else {
+            if (!valueIsNotSameType) {
+              ClassInfo classInfo =
+                  classResolver.getClassInfo(value.getClass(), valueClassInfoWriteCache);
+              if (!writeValueClassInfo) {
+                classResolver.writeClass(buffer, classInfo);
+                writeValueClassInfo = true;
+              }
+              if (valueWriteSerializer == null) {
+                valueWriteSerializer = classInfo.getSerializer();
+              }
+              if (!valueHasNull(header)) {
+                writeNoNullRef(valueWriteSerializer, value, buffer, refResolver);
+              } else {
+                fury.writeRef(buffer, value, valueWriteSerializer);
+              }
+            } else {
+              if (!refResolver.writeNullFlag(buffer, value)) {
+                fury.writeRef(
+                    buffer,
+                    value,
+                    classResolver.getClassInfo(value.getClass(), valueClassInfoWriteCache));
+              }
+            }
+          }
         }
         chunkSize++;
       } else {
