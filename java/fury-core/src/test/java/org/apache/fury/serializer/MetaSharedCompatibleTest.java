@@ -23,17 +23,20 @@ import static org.apache.fury.serializer.ClassUtils.loadClass;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
+
 import org.apache.fury.Fury;
 import org.apache.fury.FuryTestBase;
 import org.apache.fury.builder.MetaSharedCodecBuilder;
 import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.config.FuryBuilder;
 import org.apache.fury.config.Language;
+import org.apache.fury.meta.ClassDefEncoderTest;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.resolver.MetaContext;
 import org.apache.fury.serializer.collection.UnmodifiableSerializersTest;
@@ -60,58 +63,58 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
   @DataProvider
   public static Object[][] config1() {
     return Sets.cartesianProduct(
-            ImmutableSet.of(true, false), // referenceTracking
-            ImmutableSet.of(true, false), // compress number
-            ImmutableSet.of(true, false)) // enable codegen
-        .stream()
-        .map(List::toArray)
-        .toArray(Object[][]::new);
+        ImmutableSet.of(true, false), // referenceTracking
+        ImmutableSet.of(true, false), // compress number
+        ImmutableSet.of(true, false)) // enable codegen
+      .stream()
+      .map(List::toArray)
+      .toArray(Object[][]::new);
   }
 
   @DataProvider
   public static Object[][] config2() {
     return Sets.cartesianProduct(
-            ImmutableSet.of(true, false), // referenceTracking
-            ImmutableSet.of(true, false), // compress number
-            ImmutableSet.of(true, false), // fury1 enable codegen
-            ImmutableSet.of(true, false) // fury2 enable codegen
-            )
-        .stream()
-        .map(List::toArray)
-        .toArray(Object[][]::new);
+        ImmutableSet.of(true, false), // referenceTracking
+        ImmutableSet.of(true, false), // compress number
+        ImmutableSet.of(true, false), // fury1 enable codegen
+        ImmutableSet.of(true, false) // fury2 enable codegen
+      )
+      .stream()
+      .map(List::toArray)
+      .toArray(Object[][]::new);
   }
 
   @DataProvider
   public static Object[][] config3() {
     return Sets.cartesianProduct(
-            ImmutableSet.of(true, false), // referenceTracking
-            ImmutableSet.of(true, false), // compress number
-            ImmutableSet.of(true, false), // fury1 enable codegen
-            ImmutableSet.of(true, false), // fury2 enable codegen
-            ImmutableSet.of(true, false) // fury3 enable codegen
-            )
-        .stream()
-        .map(List::toArray)
-        .toArray(Object[][]::new);
+        ImmutableSet.of(true, false), // referenceTracking
+        ImmutableSet.of(true, false), // compress number
+        ImmutableSet.of(true, false), // fury1 enable codegen
+        ImmutableSet.of(true, false), // fury2 enable codegen
+        ImmutableSet.of(true, false) // fury3 enable codegen
+      )
+      .stream()
+      .map(List::toArray)
+      .toArray(Object[][]::new);
   }
 
   private static FuryBuilder furyBuilder() {
     return Fury.builder()
-        .withLanguage(Language.JAVA)
-        .withMetaShare(true)
-        .withCompatibleMode(CompatibleMode.COMPATIBLE)
-        .requireClassRegistration(false)
-        .withScopedMetaShare(false);
+      .withLanguage(Language.JAVA)
+      .withMetaShare(true)
+      .withCompatibleMode(CompatibleMode.COMPATIBLE)
+      .requireClassRegistration(false)
+      .withScopedMetaShare(false);
   }
 
   @Test(dataProvider = "config1")
   public void testWrite(boolean referenceTracking, boolean compressNumber, boolean enableCodegen) {
     Fury fury =
-        furyBuilder()
-            .withNumberCompressed(compressNumber)
-            .withRefTracking(referenceTracking)
-            .withCodegen(enableCodegen)
-            .build();
+      furyBuilder()
+        .withNumberCompressed(compressNumber)
+        .withRefTracking(referenceTracking)
+        .withCodegen(enableCodegen)
+        .build();
     serDeCheck(fury, Foo.create());
     serDeCheck(fury, BeanB.createBeanB(2));
     serDeCheck(fury, BeanA.createBeanA(2));
@@ -119,32 +122,32 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
 
   @Test(dataProvider = "config2")
   public void testWriteCompatibleBasic(
-      boolean referenceTracking,
-      boolean compressNumber,
-      boolean enableCodegen1,
-      boolean enableCodegen2)
-      throws Exception {
+    boolean referenceTracking,
+    boolean compressNumber,
+    boolean enableCodegen1,
+    boolean enableCodegen2)
+    throws Exception {
     Fury fury =
-        furyBuilder()
-            .withRefTracking(referenceTracking)
-            .withNumberCompressed(compressNumber)
-            .withCodegen(enableCodegen1)
-            .build();
+      furyBuilder()
+        .withRefTracking(referenceTracking)
+        .withNumberCompressed(compressNumber)
+        .withCodegen(enableCodegen1)
+        .build();
     Object foo = Foo.create();
     for (Class<?> fooClass :
-        new Class<?>[] {
-          Foo.createCompatibleClass1(), Foo.createCompatibleClass2(), Foo.createCompatibleClass3(),
-        }) {
+      new Class<?>[]{
+        Foo.createCompatibleClass1(), Foo.createCompatibleClass2(), Foo.createCompatibleClass3(),
+      }) {
       Object newFoo = fooClass.newInstance();
       ReflectionUtils.unsafeCopy(foo, newFoo);
       MetaContext context = new MetaContext();
       Fury newFury =
-          furyBuilder()
-              .withRefTracking(referenceTracking)
-              .withNumberCompressed(compressNumber)
-              .withCodegen(enableCodegen2)
-              .withClassLoader(fooClass.getClassLoader())
-              .build();
+        furyBuilder()
+          .withRefTracking(referenceTracking)
+          .withNumberCompressed(compressNumber)
+          .withCodegen(enableCodegen2)
+          .withClassLoader(fooClass.getClassLoader())
+          .build();
       MetaContext context1 = new MetaContext();
       {
         newFury.getSerializationContext().setMetaContext(context1);
@@ -157,7 +160,7 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
         byte[] fooBytes = fury.serialize(deserialized);
         newFury.getSerializationContext().setMetaContext(context1);
         Assert.assertTrue(
-            ReflectionUtils.objectFieldsEquals(newFury.deserialize(fooBytes), newFoo));
+          ReflectionUtils.objectFieldsEquals(newFury.deserialize(fooBytes), newFoo));
       }
       {
         fury.getSerializationContext().setMetaContext(context);
@@ -169,9 +172,9 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
         newFury.getSerializationContext().setMetaContext(context1);
         Object o2 = fury.deserialize(newFury.serialize(o1));
         List<String> fields =
-            Arrays.stream(fooClass.getDeclaredFields())
-                .map(f -> f.getDeclaringClass().getSimpleName() + f.getName())
-                .collect(Collectors.toList());
+          Arrays.stream(fooClass.getDeclaredFields())
+            .map(f -> f.getDeclaringClass().getSimpleName() + f.getName())
+            .collect(Collectors.toList());
         Assert.assertTrue(ReflectionUtils.objectFieldsEquals(new HashSet<>(fields), o2, foo));
       }
       {
@@ -188,54 +191,54 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
     BeanA beanA = BeanA.createBeanA(2);
     String pkg = BeanA.class.getPackage().getName();
     String code =
-        ""
-            + "package "
-            + pkg
-            + ";\n"
-            + "import java.util.*;\n"
-            + "import java.math.*;\n"
-            + "public class BeanA {\n"
-            + "  private List<Double> doubleList;\n"
-            + "  private Iterable<BeanB> beanBIterable;\n"
-            + "  private List<BeanB> beanBList;\n"
-            + "}";
+      ""
+        + "package "
+        + pkg
+        + ";\n"
+        + "import java.util.*;\n"
+        + "import java.math.*;\n"
+        + "public class BeanA {\n"
+        + "  private List<Double> doubleList;\n"
+        + "  private Iterable<BeanB> beanBIterable;\n"
+        + "  private List<BeanB> beanBList;\n"
+        + "}";
     Class<?> cls1 =
-        loadClass(
-            BeanA.class,
-            code,
-            MetaSharedCompatibleTest.class + "testWriteCompatibleCollectionBasic_1");
+      loadClass(
+        BeanA.class,
+        code,
+        MetaSharedCompatibleTest.class + "testWriteCompatibleCollectionBasic_1");
     Fury fury1 =
-        furyBuilder()
-            .withCodegen(false)
-            .withMetaShare(true)
-            .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .withClassLoader(cls1.getClassLoader())
-            .build();
+      furyBuilder()
+        .withCodegen(false)
+        .withMetaShare(true)
+        .withCompatibleMode(CompatibleMode.COMPATIBLE)
+        .withClassLoader(cls1.getClassLoader())
+        .build();
     code =
-        ""
-            + "package "
-            + pkg
-            + ";\n"
-            + "import java.util.*;\n"
-            + "import java.math.*;\n"
-            + "public class BeanA {\n"
-            + "  private List<Double> doubleList;\n"
-            + "  private Iterable<BeanB> beanBIterable;\n"
-            + "}";
+      ""
+        + "package "
+        + pkg
+        + ";\n"
+        + "import java.util.*;\n"
+        + "import java.math.*;\n"
+        + "public class BeanA {\n"
+        + "  private List<Double> doubleList;\n"
+        + "  private Iterable<BeanB> beanBIterable;\n"
+        + "}";
     Class<?> cls2 =
-        loadClass(
-            BeanA.class,
-            code,
-            MetaSharedCompatibleTest.class + "testWriteCompatibleCollectionBasic_2");
+      loadClass(
+        BeanA.class,
+        code,
+        MetaSharedCompatibleTest.class + "testWriteCompatibleCollectionBasic_2");
     Object o2 = cls2.newInstance();
     ReflectionUtils.unsafeCopy(beanA, o2);
     Fury fury2 =
-        furyBuilder()
-            .withCodegen(false)
-            .withMetaShare(true)
-            .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .withClassLoader(cls2.getClassLoader())
-            .build();
+      furyBuilder()
+        .withCodegen(false)
+        .withMetaShare(true)
+        .withCompatibleMode(CompatibleMode.COMPATIBLE)
+        .withClassLoader(cls2.getClassLoader())
+        .build();
 
     MetaContext context1 = new MetaContext();
     MetaContext context2 = new MetaContext();
@@ -248,63 +251,63 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
 
   @Test(dataProvider = "config3")
   public void testWriteCompatibleCollectionBasic(
-      boolean referenceTracking,
-      boolean compressNumber,
-      boolean enableCodegen1,
-      boolean enableCodegen2,
-      boolean enableCodegen3)
-      throws Exception {
+    boolean referenceTracking,
+    boolean compressNumber,
+    boolean enableCodegen1,
+    boolean enableCodegen2,
+    boolean enableCodegen3)
+    throws Exception {
     BeanA beanA = BeanA.createBeanA(2);
     String pkg = BeanA.class.getPackage().getName();
     String code =
-        ""
-            + "package "
-            + pkg
-            + ";\n"
-            + "import java.util.*;\n"
-            + "import java.math.*;\n"
-            + "public class BeanA {\n"
-            + "  private List<Double> doubleList;\n"
-            + "  private Iterable<BeanB> beanBIterable;\n"
-            + "  private List<BeanB> beanBList;\n"
-            + "}";
+      ""
+        + "package "
+        + pkg
+        + ";\n"
+        + "import java.util.*;\n"
+        + "import java.math.*;\n"
+        + "public class BeanA {\n"
+        + "  private List<Double> doubleList;\n"
+        + "  private Iterable<BeanB> beanBIterable;\n"
+        + "  private List<BeanB> beanBList;\n"
+        + "}";
     Class<?> cls1 =
-        loadClass(
-            BeanA.class,
-            code,
-            MetaSharedCompatibleTest.class + "testWriteCompatibleCollectionBasic_1");
+      loadClass(
+        BeanA.class,
+        code,
+        MetaSharedCompatibleTest.class + "testWriteCompatibleCollectionBasic_1");
     Fury fury1 =
-        furyBuilder()
-            .withRefTracking(referenceTracking)
-            .withNumberCompressed(compressNumber)
-            .withCodegen(enableCodegen2)
-            .withClassLoader(cls1.getClassLoader())
-            .build();
+      furyBuilder()
+        .withRefTracking(referenceTracking)
+        .withNumberCompressed(compressNumber)
+        .withCodegen(enableCodegen2)
+        .withClassLoader(cls1.getClassLoader())
+        .build();
     code =
-        ""
-            + "package "
-            + pkg
-            + ";\n"
-            + "import java.util.*;\n"
-            + "import java.math.*;\n"
-            + "public class BeanA {\n"
-            + "  private List<Double> doubleList;\n"
-            + "  private Iterable<BeanB> beanBIterable;\n"
-            + "}";
+      ""
+        + "package "
+        + pkg
+        + ";\n"
+        + "import java.util.*;\n"
+        + "import java.math.*;\n"
+        + "public class BeanA {\n"
+        + "  private List<Double> doubleList;\n"
+        + "  private Iterable<BeanB> beanBIterable;\n"
+        + "}";
     Class<?> cls2 =
-        loadClass(
-            BeanA.class,
-            code,
-            MetaSharedCompatibleTest.class + "testWriteCompatibleCollectionBasic_2");
+      loadClass(
+        BeanA.class,
+        code,
+        MetaSharedCompatibleTest.class + "testWriteCompatibleCollectionBasic_2");
     Object o2 = cls2.newInstance();
     ReflectionUtils.unsafeCopy(beanA, o2);
     Fury fury2 =
-        furyBuilder()
-            .withRefTracking(referenceTracking)
-            .withNumberCompressed(compressNumber)
-            .withCodegen(enableCodegen3)
-            .withClassLoader(cls2.getClassLoader())
-            .build();
+      furyBuilder()
+        .withRefTracking(referenceTracking)
+        .withNumberCompressed(compressNumber)
+        .withCodegen(enableCodegen3)
+        .withClassLoader(cls2.getClassLoader())
+        .build();
 
     MetaContext context1 = new MetaContext();
     MetaContext context2 = new MetaContext();
@@ -326,11 +329,11 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
     Assert.assertTrue(ReflectionUtils.objectCommonFieldsEquals(obj2, o2));
 
     Fury fury =
-        furyBuilder()
-            .withRefTracking(referenceTracking)
-            .withNumberCompressed(compressNumber)
-            .withCodegen(enableCodegen1)
-            .build();
+      furyBuilder()
+        .withRefTracking(referenceTracking)
+        .withNumberCompressed(compressNumber)
+        .withCodegen(enableCodegen1)
+        .build();
     // fury <-> fury2 is a new channel, which needs a new context.
     MetaContext context = new MetaContext();
     MetaContext ctx2 = new MetaContext();
@@ -341,17 +344,17 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
 
   @Test(dataProvider = "config2")
   public void testWriteCompatibleContainer(
-      boolean referenceTracking,
-      boolean compressNumber,
-      boolean enableCodegen1,
-      boolean enableCodegen2)
-      throws Exception {
+    boolean referenceTracking,
+    boolean compressNumber,
+    boolean enableCodegen1,
+    boolean enableCodegen2)
+    throws Exception {
     Fury fury =
-        furyBuilder()
-            .withRefTracking(referenceTracking)
-            .withNumberCompressed(compressNumber)
-            .withCodegen(enableCodegen1)
-            .build();
+      furyBuilder()
+        .withRefTracking(referenceTracking)
+        .withNumberCompressed(compressNumber)
+        .withCodegen(enableCodegen1)
+        .build();
     MetaContext context = new MetaContext();
     BeanA beanA = BeanA.createBeanA(2);
     serDeMetaShared(fury, beanA);
@@ -359,12 +362,12 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
     Object newBeanA = cls.newInstance();
     ReflectionUtils.unsafeCopy(beanA, newBeanA);
     Fury newFury =
-        furyBuilder()
-            .withRefTracking(referenceTracking)
-            .withNumberCompressed(compressNumber)
-            .withCodegen(enableCodegen2)
-            .withClassLoader(cls.getClassLoader())
-            .build();
+      furyBuilder()
+        .withRefTracking(referenceTracking)
+        .withNumberCompressed(compressNumber)
+        .withCodegen(enableCodegen2)
+        .withClassLoader(cls.getClassLoader())
+        .build();
     MetaContext context1 = new MetaContext();
     newFury.getSerializationContext().setMetaContext(context1);
     byte[] newBeanABytes = newFury.serialize(newBeanA);
@@ -376,7 +379,7 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
     byte[] beanABytes = fury.serialize(deserialized);
     newFury.getSerializationContext().setMetaContext(context1);
     Assert.assertTrue(
-        ReflectionUtils.objectFieldsEquals(newFury.deserialize(beanABytes), newBeanA));
+      ReflectionUtils.objectFieldsEquals(newFury.deserialize(beanABytes), newBeanA));
 
     fury.getSerializationContext().setMetaContext(context);
     byte[] objBytes = fury.serialize(beanA);
@@ -391,36 +394,36 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
 
   @Test(dataProvider = "config2")
   public void testWriteCompatibleCollection(
-      boolean referenceTracking,
-      boolean compressNumber,
-      boolean enableCodegen1,
-      boolean enableCodegen2)
-      throws Exception {
+    boolean referenceTracking,
+    boolean compressNumber,
+    boolean enableCodegen1,
+    boolean enableCodegen2)
+    throws Exception {
     Fury fury =
-        furyBuilder()
-            .withRefTracking(referenceTracking)
-            .withNumberCompressed(compressNumber)
-            .withCodegen(enableCodegen1)
-            .build();
+      furyBuilder()
+        .withRefTracking(referenceTracking)
+        .withNumberCompressed(compressNumber)
+        .withCodegen(enableCodegen1)
+        .build();
     CollectionFields collectionFields = UnmodifiableSerializersTest.createCollectionFields();
     {
       Object o = serDeMetaShared(fury, collectionFields);
       Object o1 = CollectionFields.copyToCanEqual(o, o.getClass().newInstance());
       Object o2 =
-          CollectionFields.copyToCanEqual(
-              collectionFields, collectionFields.getClass().newInstance());
+        CollectionFields.copyToCanEqual(
+          collectionFields, collectionFields.getClass().newInstance());
       Assert.assertEquals(o1, o2);
     }
     Class<?> cls2 = ClassUtils.createCompatibleClass2();
     Object newObj = cls2.newInstance();
     ReflectionUtils.unsafeCopy(collectionFields, newObj);
     Fury fury2 =
-        furyBuilder()
-            .withRefTracking(referenceTracking)
-            .withNumberCompressed(compressNumber)
-            .withCodegen(enableCodegen2)
-            .withClassLoader(cls2.getClassLoader())
-            .build();
+      furyBuilder()
+        .withRefTracking(referenceTracking)
+        .withNumberCompressed(compressNumber)
+        .withCodegen(enableCodegen2)
+        .withClassLoader(cls2.getClassLoader())
+        .build();
     MetaContext context2 = new MetaContext();
     fury2.getSerializationContext().setMetaContext(context2);
     byte[] bytes1 = fury2.serialize(newObj);
@@ -428,9 +431,9 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
     fury.getSerializationContext().setMetaContext(context);
     Object deserialized = fury.deserialize(bytes1);
     Assert.assertTrue(
-        ReflectionUtils.objectCommonFieldsEquals(
-            CollectionFields.copyToCanEqual(deserialized, deserialized.getClass().newInstance()),
-            CollectionFields.copyToCanEqual(newObj, newObj.getClass().newInstance())));
+      ReflectionUtils.objectCommonFieldsEquals(
+        CollectionFields.copyToCanEqual(deserialized, deserialized.getClass().newInstance()),
+        CollectionFields.copyToCanEqual(newObj, newObj.getClass().newInstance())));
     Assert.assertEquals(deserialized.getClass(), CollectionFields.class);
 
     fury.getSerializationContext().setMetaContext(context);
@@ -438,39 +441,39 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
     fury2.getSerializationContext().setMetaContext(context2);
     Object obj2 = fury2.deserialize(bytes2);
     Assert.assertTrue(
-        ReflectionUtils.objectFieldsEquals(
-            CollectionFields.copyToCanEqual(obj2, obj2.getClass().newInstance()),
-            CollectionFields.copyToCanEqual(newObj, newObj.getClass().newInstance())));
+      ReflectionUtils.objectFieldsEquals(
+        CollectionFields.copyToCanEqual(obj2, obj2.getClass().newInstance()),
+        CollectionFields.copyToCanEqual(newObj, newObj.getClass().newInstance())));
 
     fury.getSerializationContext().setMetaContext(context);
     byte[] objBytes = fury.serialize(collectionFields);
     fury2.getSerializationContext().setMetaContext(context2);
     Object obj3 = fury2.deserialize(objBytes);
     Assert.assertTrue(
-        ReflectionUtils.objectCommonFieldsEquals(
-            CollectionFields.copyToCanEqual(obj3, obj3.getClass().newInstance()),
-            CollectionFields.copyToCanEqual(newObj, newObj.getClass().newInstance())));
+      ReflectionUtils.objectCommonFieldsEquals(
+        CollectionFields.copyToCanEqual(obj3, obj3.getClass().newInstance()),
+        CollectionFields.copyToCanEqual(newObj, newObj.getClass().newInstance())));
 
     fury.getSerializationContext().setMetaContext(context);
     fury2.getSerializationContext().setMetaContext(context2);
     Assert.assertEquals(
-        ((CollectionFields) (fury.deserialize(fury2.serialize(collectionFields)))).toCanEqual(),
-        collectionFields.toCanEqual());
+      ((CollectionFields) (fury.deserialize(fury2.serialize(collectionFields)))).toCanEqual(),
+      collectionFields.toCanEqual());
   }
 
   @Test(dataProvider = "config2")
   public void testWriteCompatibleMap(
-      boolean referenceTracking,
-      boolean compressNumber,
-      boolean enableCodegen1,
-      boolean enableCodegen2)
-      throws Exception {
+    boolean referenceTracking,
+    boolean compressNumber,
+    boolean enableCodegen1,
+    boolean enableCodegen2)
+    throws Exception {
     Fury fury =
-        furyBuilder()
-            .withRefTracking(referenceTracking)
-            .withNumberCompressed(compressNumber)
-            .withCodegen(enableCodegen1)
-            .build();
+      furyBuilder()
+        .withRefTracking(referenceTracking)
+        .withNumberCompressed(compressNumber)
+        .withCodegen(enableCodegen1)
+        .build();
     MetaContext context = new MetaContext();
     MapFields mapFields = UnmodifiableSerializersTest.createMapFields();
     {
@@ -483,20 +486,20 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
     Object newObj = cls.newInstance();
     ReflectionUtils.unsafeCopy(mapFields, newObj);
     Fury fury2 =
-        furyBuilder()
-            .withRefTracking(referenceTracking)
-            .withNumberCompressed(compressNumber)
-            .withCodegen(enableCodegen2)
-            .build();
+      furyBuilder()
+        .withRefTracking(referenceTracking)
+        .withNumberCompressed(compressNumber)
+        .withCodegen(enableCodegen2)
+        .build();
     MetaContext context2 = new MetaContext();
     fury2.getSerializationContext().setMetaContext(context2);
     byte[] bytes1 = fury2.serialize(newObj);
     fury.getSerializationContext().setMetaContext(context);
     Object deserialized = fury.deserialize(bytes1);
     Assert.assertTrue(
-        ReflectionUtils.objectCommonFieldsEquals(
-            MapFields.copyToCanEqual(deserialized, deserialized.getClass().newInstance()),
-            MapFields.copyToCanEqual(newObj, newObj.getClass().newInstance())));
+      ReflectionUtils.objectCommonFieldsEquals(
+        MapFields.copyToCanEqual(deserialized, deserialized.getClass().newInstance()),
+        MapFields.copyToCanEqual(newObj, newObj.getClass().newInstance())));
     Assert.assertEquals(deserialized.getClass(), MapFields.class);
 
     fury.getSerializationContext().setMetaContext(context);
@@ -504,24 +507,24 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
     fury2.getSerializationContext().setMetaContext(context2);
     Object obj2 = fury2.deserialize(bytes2);
     Assert.assertTrue(
-        ReflectionUtils.objectCommonFieldsEquals(
-            MapFields.copyToCanEqual(obj2, obj2.getClass().newInstance()),
-            MapFields.copyToCanEqual(newObj, newObj.getClass().newInstance())));
+      ReflectionUtils.objectCommonFieldsEquals(
+        MapFields.copyToCanEqual(obj2, obj2.getClass().newInstance()),
+        MapFields.copyToCanEqual(newObj, newObj.getClass().newInstance())));
 
     fury.getSerializationContext().setMetaContext(context);
     byte[] objBytes = fury.serialize(mapFields);
     fury2.getSerializationContext().setMetaContext(context2);
     Object obj3 = fury2.deserialize(objBytes);
     Assert.assertTrue(
-        ReflectionUtils.objectCommonFieldsEquals(
-            MapFields.copyToCanEqual(obj3, obj3.getClass().newInstance()),
-            MapFields.copyToCanEqual(newObj, newObj.getClass().newInstance())));
+      ReflectionUtils.objectCommonFieldsEquals(
+        MapFields.copyToCanEqual(obj3, obj3.getClass().newInstance()),
+        MapFields.copyToCanEqual(newObj, newObj.getClass().newInstance())));
 
     fury2.getSerializationContext().setMetaContext(context2);
     fury.getSerializationContext().setMetaContext(context);
     Assert.assertEquals(
-        ((MapFields) (fury.deserialize(fury2.serialize(mapFields)))).toCanEqual(),
-        mapFields.toCanEqual());
+      ((MapFields) (fury.deserialize(fury2.serialize(mapFields)))).toCanEqual(),
+      mapFields.toCanEqual());
   }
 
   public static class DuplicateFieldsClass1 {
@@ -531,32 +534,32 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
 
   @Test(dataProvider = "config2")
   public void testDuplicateFields(
-      boolean referenceTracking,
-      boolean compressNumber,
-      boolean enableCodegen1,
-      boolean enableCodegen2)
-      throws Exception {
+    boolean referenceTracking,
+    boolean compressNumber,
+    boolean enableCodegen1,
+    boolean enableCodegen2)
+    throws Exception {
     String pkg = DuplicateFieldsClass1.class.getPackage().getName();
     Class<?> cls1 =
-        loadClass(
-            pkg,
-            "DuplicateFieldsClass2",
-            ""
-                + "package "
-                + pkg
-                + ";\n"
-                + "import java.util.*;\n"
-                + "import java.math.*;\n"
-                + "public class DuplicateFieldsClass2 extends MetaSharedCompatibleTest.DuplicateFieldsClass1 {\n"
-                + "  int intField1;\n"
-                + "}");
+      loadClass(
+        pkg,
+        "DuplicateFieldsClass2",
+        ""
+          + "package "
+          + pkg
+          + ";\n"
+          + "import java.util.*;\n"
+          + "import java.math.*;\n"
+          + "public class DuplicateFieldsClass2 extends MetaSharedCompatibleTest.DuplicateFieldsClass1 {\n"
+          + "  int intField1;\n"
+          + "}");
     Fury fury =
-        furyBuilder()
-            .withRefTracking(referenceTracking)
-            .withNumberCompressed(compressNumber)
-            .withCodegen(enableCodegen1)
-            .withClassLoader(cls1.getClassLoader())
-            .build();
+      furyBuilder()
+        .withRefTracking(referenceTracking)
+        .withNumberCompressed(compressNumber)
+        .withCodegen(enableCodegen1)
+        .withClassLoader(cls1.getClassLoader())
+        .build();
     MetaContext context = new MetaContext();
     Object o1 = cls1.newInstance();
     for (Field field : ReflectionUtils.getFields(cls1, true)) {
@@ -573,26 +576,26 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
     }
 
     Class<?> cls2 =
-        loadClass(
-            pkg,
-            "DuplicateFieldsClass2",
-            ""
-                + "package "
-                + pkg
-                + ";\n"
-                + "import java.util.*;\n"
-                + "import java.math.*;\n"
-                + "public class DuplicateFieldsClass2 extends MetaSharedCompatibleTest.DuplicateFieldsClass1 {\n"
-                + "  int intField1;\n"
-                + "  int intField2;\n"
-                + "}");
+      loadClass(
+        pkg,
+        "DuplicateFieldsClass2",
+        ""
+          + "package "
+          + pkg
+          + ";\n"
+          + "import java.util.*;\n"
+          + "import java.math.*;\n"
+          + "public class DuplicateFieldsClass2 extends MetaSharedCompatibleTest.DuplicateFieldsClass1 {\n"
+          + "  int intField1;\n"
+          + "  int intField2;\n"
+          + "}");
     Fury fury2 =
-        furyBuilder()
-            .withRefTracking(referenceTracking)
-            .withNumberCompressed(compressNumber)
-            .withCodegen(enableCodegen2)
-            .withClassLoader(cls2.getClassLoader())
-            .build();
+      furyBuilder()
+        .withRefTracking(referenceTracking)
+        .withNumberCompressed(compressNumber)
+        .withCodegen(enableCodegen2)
+        .withClassLoader(cls2.getClassLoader())
+        .build();
     MetaContext context2 = new MetaContext();
     Object o2 = cls2.newInstance();
     for (Field field : ReflectionUtils.getFields(cls2, true)) {
@@ -627,27 +630,27 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
 
   @Test(dataProvider = "config1")
   void testEmptySubClass(boolean referenceTracking, boolean compressNumber, boolean enableCodegen)
-      throws Exception {
+    throws Exception {
     String pkg = DuplicateFieldsClass1.class.getPackage().getName();
     Class<?> cls1 =
-        loadClass(
-            pkg,
-            "DuplicateFieldsClass2",
-            ""
-                + "package "
-                + pkg
-                + ";\n"
-                + "import java.util.*;\n"
-                + "import java.math.*;\n"
-                + "public class DuplicateFieldsClass2 extends MetaSharedCompatibleTest.DuplicateFieldsClass1 {\n"
-                + "}");
+      loadClass(
+        pkg,
+        "DuplicateFieldsClass2",
+        ""
+          + "package "
+          + pkg
+          + ";\n"
+          + "import java.util.*;\n"
+          + "import java.math.*;\n"
+          + "public class DuplicateFieldsClass2 extends MetaSharedCompatibleTest.DuplicateFieldsClass1 {\n"
+          + "}");
     Fury fury =
-        furyBuilder()
-            .withRefTracking(referenceTracking)
-            .withNumberCompressed(compressNumber)
-            .withCodegen(enableCodegen)
-            .withClassLoader(cls1.getClassLoader())
-            .build();
+      furyBuilder()
+        .withRefTracking(referenceTracking)
+        .withNumberCompressed(compressNumber)
+        .withCodegen(enableCodegen)
+        .withClassLoader(cls1.getClassLoader())
+        .build();
     Object o1 = cls1.newInstance();
     for (Field field : ReflectionUtils.getFields(cls1, true)) {
       field.setAccessible(true);
@@ -656,5 +659,17 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
     Object o = serDeMetaShared(fury, o1);
     Assert.assertEquals(o.getClass(), o1.getClass());
     Assert.assertTrue(ReflectionUtils.objectFieldsEquals(o, o1));
+  }
+
+  @Test
+  public void testBigClassNameObject() {
+    Fury fury = builder()
+      .withRefTracking(true)
+      .withCompatibleMode(CompatibleMode.COMPATIBLE)
+      .withScopedMetaShare(false)
+      .build();
+    Object o = new ClassDefEncoderTest.TestClassLengthTestClassLengthTestClassLengthTestClassLengthTestClassLengthTestClassLengthTestClassLength.
+      InnerClassTestLengthInnerClassTestLengthInnerClassTestLength();
+    serDeCheck(fury, o);
   }
 }
