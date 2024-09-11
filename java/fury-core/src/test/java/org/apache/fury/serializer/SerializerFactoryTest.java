@@ -93,6 +93,7 @@ public class SerializerFactoryTest {
             return null;
           }
         });
+    Assert.assertEquals(fury.getClassResolver().getSerializerClass(A.class), KryoSerializer.class);
     A a = new A();
     a.f1 = "f1";
 
