@@ -824,6 +824,12 @@ public class ClassResolver {
       // serialized, which will create a class info with serializer null, see `#writeClassInternal`
       return classInfo.serializer.getClass();
     } else {
+      if (getSerializerFactory() != null) {
+        Serializer serializer = getSerializerFactory().createSerializer(fury, cls);
+        if (serializer != null) {
+          return serializer.getClass();
+        }
+      }
       if (NonexistentClass.isNonexistent(cls)) {
         return NonexistentClassSerializers.getSerializer(fury, "Unknown", cls).getClass();
       }
