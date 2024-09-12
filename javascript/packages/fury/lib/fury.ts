@@ -35,7 +35,7 @@ export default class {
   classResolver = new ClassResolver();
   referenceResolver: ReferenceResolver;
   anySerializer: AnySerializer;
-  typeMeta : TypeMeta;
+  typeMeta = TypeMeta;
 
   constructor(public config: Config = {
     refTracking: false,
@@ -48,8 +48,6 @@ export default class {
     this.referenceResolver = new ReferenceResolver(this.binaryReader);
     this.classResolver.init(this);
     this.anySerializer = new AnySerializer(this);
-    this.typeMeta = new TypeMeta(BigInt(0),[]);
-
   }
 
   registerSerializer<T extends TypeDescription>(description: T) {
