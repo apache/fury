@@ -38,6 +38,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -72,6 +73,7 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 import org.testng.collections.Maps;
 
+@SuppressWarnings("rawtypes")
 public class CollectionSerializersTest extends FuryTestBase {
 
   @Test(dataProvider = "referenceTrackingConfig")
@@ -392,26 +394,39 @@ public class CollectionSerializersTest extends FuryTestBase {
     copyCheck(fury, list);
   }
 
-  @Test(dataProvider = "enableCodegen")
-  public void testSetFromMap(boolean enableCodegen) {
-    final Fury fury =
-        Fury.builder()
-            .withLanguage(Language.JAVA)
-            .requireClassRegistration(false)
-            .withCodegen(enableCodegen)
-            .build();
-    final Set<String> set = Collections.newSetFromMap(Maps.newConcurrentMap());
+  @Data
+  @AllArgsConstructor
+  public static class CollectionViewTestStruct {
+    Collection<String> collection;
+    Set<String> set;
+  }
+
+  @Test(dataProvider = "javaFury")
+  public void testSetFromMap(Fury fury) {
+    Set<String> set = Collections.newSetFromMap(Maps.newConcurrentMap());
     set.add("a");
     set.add("b");
     set.add("c");
-    Assert.assertEquals(set, serDe(fury, set));
+    serDeCheck(fury, set);
     Assert.assertEquals(
-        getJavaFury().getClassResolver().getSerializerClass(set.getClass()),
+        fury.getClassResolver().getSerializerClass(set.getClass()),
         CollectionSerializers.SetFromMapSerializer.class);
+    CollectionViewTestStruct struct1 = serDeCheck(fury, new CollectionViewTestStruct(set, set));
+    if (fury.trackingRef()) {
+      assertSame(struct1.collection, struct1.set);
+    }
+    set = Collections.newSetFromMap(new HashMap<String, Boolean>() {});
+    set.add("a");
+    set.add("b");
+    serDeCheck(fury, set);
+    CollectionViewTestStruct struct2 = serDeCheck(fury, new CollectionViewTestStruct(set, set));
+    if (fury.trackingRef()) {
+      assertSame(struct2.collection, struct2.set);
+    }
   }
 
   @Test(dataProvider = "furyCopyConfig")
-  public void testSetFromMap(Fury fury) {
+  public void testSetFromMapCopy(Fury fury) {
     final Set<Object> set = Collections.newSetFromMap(Maps.newConcurrentMap());
     set.add("a");
     set.add("b");
@@ -419,20 +434,30 @@ public class CollectionSerializersTest extends FuryTestBase {
     copyCheck(fury, set);
   }
 
-  @Test
-  public void testConcurrentMapKeySetViewMap() {
-    final ConcurrentHashMap.KeySetView<Object, Boolean> set = ConcurrentHashMap.newKeySet();
+  @Test(dataProvider = "javaFury")
+  public void testConcurrentMapKeySetViewMap(Fury fury) {
+    final ConcurrentHashMap.KeySetView<String, Boolean> set = ConcurrentHashMap.newKeySet();
     set.add("a");
     set.add("b");
     set.add("c");
-    Assert.assertEquals(set, serDe(getJavaFury(), set));
+    Assert.assertEquals(set, serDe(fury, set));
     Assert.assertEquals(
-        getJavaFury().getClassResolver().getSerializerClass(set.getClass()),
-        CollectionSerializers.ConcurrentHashMapKeySetView.class);
+        fury.getClassResolver().getSerializerClass(set.getClass()),
+        CollectionSerializers.ConcurrentHashMapKeySetViewSerializer.class);
+    CollectionViewTestStruct o = serDeCheck(fury, new CollectionViewTestStruct(set, set));
+    if (fury.trackingRef()) {
+      assertSame(o.collection, o.set);
+    }
+    ConcurrentHashMap<String, String> map = new ConcurrentHashMap<>();
+    map.put("k1", "v1");
+    if (fury.trackingRef()) {
+      ArrayList<Serializable> list = serDeCheck(fury, ofArrayList(map.keySet("v0"), map));
+      assertSame(((ConcurrentHashMap.KeySetView) (list.get(0))).getMap(), list.get(1));
+    }
   }
 
   @Test(dataProvider = "furyCopyConfig")
-  public void testConcurrentMapKeySetViewMap(Fury fury) {
+  public void testConcurrentMapKeySetViewMapCopy(Fury fury) {
     final ConcurrentHashMap.KeySetView<Object, Boolean> set = ConcurrentHashMap.newKeySet();
     set.add("a");
     set.add("b");

@@ -22,6 +22,7 @@ package org.apache.fury.serializer.collection;
 import java.util.Collection;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.util.Preconditions;
 
 /** Base serializer for all java collections. */
 @SuppressWarnings({"unchecked", "rawtypes"})
@@ -55,6 +56,7 @@ public class CollectionSerializer<T extends Collection> extends AbstractCollecti
     if (isImmutable()) {
       return originCollection;
     }
+    Preconditions.checkArgument(supportCodegenHook);
     Collection newCollection = newCollection(originCollection);
     if (needToCopyRef) {
       fury.reference(originCollection, newCollection);

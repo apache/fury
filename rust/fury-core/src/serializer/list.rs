@@ -38,14 +38,11 @@ where
     }
 
     fn read(context: &mut ReadContext) -> Result<Self, Error> {
-        // length
+        // vec length
         let len = context.reader.var_int32();
-        // value
-        let mut result = Vec::new();
-        for _ in 0..len {
-            result.push(T::deserialize(context)?);
-        }
-        Ok(result)
+        (0..len)
+            .map(|_| T::deserialize(context))
+            .collect::<Result<Vec<_>, Error>>()
     }
 
     fn reserved_space() -> usize {

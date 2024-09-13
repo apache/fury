@@ -42,12 +42,9 @@ impl<T: Serializer + Eq + std::hash::Hash> Serializer for HashSet<T> {
     fn read(context: &mut ReadContext) -> Result<Self, Error> {
         // length
         let len = context.reader.var_int32();
-        let mut result = HashSet::new();
-        // key-value
-        for _ in 0..len {
-            result.insert(<T as Serializer>::deserialize(context)?);
-        }
-        Ok(result)
+        (0..len)
+            .map(|_| T::deserialize(context))
+            .collect::<Result<HashSet<_>, Error>>()
     }
 
     fn reserved_space() -> usize {

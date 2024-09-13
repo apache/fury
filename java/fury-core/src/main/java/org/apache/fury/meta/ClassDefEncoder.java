@@ -277,8 +277,7 @@ class ClassDefEncoder {
     // a varint next.
     MetaString pkgMetaString = Encoders.encodePackage(pkg);
     byte[] encoded = pkgMetaString.getBytes();
-    int pkgHeader = (encoded.length << 2) | pkgEncodingsList.indexOf(pkgMetaString.getEncoding());
-    writeName(buffer, encoded, pkgHeader, 62);
+    writeName(buffer, encoded, pkgEncodingsList.indexOf(pkgMetaString.getEncoding()));
   }
 
   private static void writeTypeName(MemoryBuffer buffer, String typeName) {
@@ -291,17 +290,19 @@ class ClassDefEncoder {
     // a varint next.
     MetaString metaString = Encoders.encodeTypeName(typeName);
     byte[] encoded = metaString.getBytes();
-    int header = (encoded.length << 2) | typeNameEncodingsList.indexOf(metaString.getEncoding());
-    writeName(buffer, encoded, header, 63);
+    writeName(buffer, encoded, typeNameEncodingsList.indexOf(metaString.getEncoding()));
   }
 
-  private static void writeName(MemoryBuffer buffer, byte[] encoded, int header, int max) {
-    boolean bigSize = encoded.length > max;
+  static final int BIG_NAME_THRESHOLD = 0b111111;
+
+  private static void writeName(MemoryBuffer buffer, byte[] encoded, int encoding) {
+    boolean bigSize = encoded.length >= BIG_NAME_THRESHOLD;
     if (bigSize) {
-      header |= 0b11111100;
-      buffer.writeVarUint32Small7(header);
-      buffer.writeVarUint32Small7(encoded.length - max);
+      int header = (BIG_NAME_THRESHOLD << 2) | encoding;
+      buffer.writeByte(header);
+      buffer.writeVarUint32Small7(encoded.length - BIG_NAME_THRESHOLD);
     } else {
+      int header = (encoded.length << 2) | encoding;
       buffer.writeByte(header);
     }
     buffer.writeBytes(encoded);

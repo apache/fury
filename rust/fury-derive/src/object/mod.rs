@@ -15,6 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
+mod derive_enum;
 mod misc;
 mod read;
 mod serializer;

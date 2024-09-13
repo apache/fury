@@ -15,10 +15,12 @@
 // specific language governing permissions and limitations
 // under the License.
 
+use crate::ensure;
 use crate::error::Error;
 use crate::fury::Fury;
 use crate::resolver::context::{ReadContext, WriteContext};
 use crate::types::RefFlag;
+use anyhow::anyhow;
 
 mod any;
 mod bool;
@@ -46,20 +48,18 @@ pub fn deserialize<T: Serializer>(context: &mut ReadContext) -> Result<T, Error>
     if ref_flag == (RefFlag::NotNullValue as i8) || ref_flag == (RefFlag::RefValue as i8) {
         let actual_type_id = context.reader.i16();
         let expected_type_id = T::get_type_id(context.get_fury());
-        if actual_type_id != expected_type_id {
-            Err(Error::FieldType {
-                expected: expected_type_id,
-                actual: actual_type_id,
-            })
-        } else {
-            Ok(T::read(context)?)
-        }
+        ensure!(
+            actual_type_id == expected_type_id,
+            anyhow!("Invalid field type, expected:{expected_type_id}, actual:{actual_type_id}")
+        );
+
+        T::read(context)
     } else if ref_flag == (RefFlag::Null as i8) {
-        Err(Error::Null)
+        Err(anyhow!("Try to deserialize non-option type to null"))?
     } else if ref_flag == (RefFlag::Ref as i8) {
         Err(Error::Ref)
     } else {
-        Err(Error::BadRefFlag)
+        Err(anyhow!("Unknown ref flag, value:{ref_flag}"))?
     }
 }
 
@@ -67,8 +67,8 @@ pub trait Serializer
 where
     Self: Sized,
 {
-    /// The fixed memory size of the Type.
-    /// Avoid the memory check, which would hurt performance.
+    /// The possible max memory size of the type.
+    /// Used to reserve the buffer space to avoid reallocation, which may hurt performance.
     fn reserved_space() -> usize;
 
     /// Write the data into the buffer.

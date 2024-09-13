@@ -20,6 +20,7 @@ use crate::fury::Fury;
 use crate::resolver::context::{ReadContext, WriteContext};
 use crate::serializer::Serializer;
 use crate::types::{FieldType, Mode, RefFlag};
+use anyhow::anyhow;
 use std::any::Any;
 
 impl Serializer for Box<dyn Any> {
@@ -75,13 +76,13 @@ impl Serializer for Box<dyn Any> {
                     .get_deserializer()(context)
             }
         } else if ref_flag == (RefFlag::Null as i8) {
-            Err(Error::Null)
+            Err(anyhow!("Try to deserialize `any` to null"))?
         } else if ref_flag == (RefFlag::Ref as i8) {
             reset_cursor(&mut context.reader);
             Err(Error::Ref)
         } else {
             reset_cursor(&mut context.reader);
-            Err(Error::BadRefFlag)
+            Err(anyhow!("Unknown ref flag, value:{ref_flag}"))?
         }
     }
 }

@@ -16,6 +16,7 @@
 // under the License.
 
 use crate::error::Error;
+use anyhow::anyhow;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use std::mem;
 
@@ -144,7 +145,10 @@ pub enum Language {
 
 #[derive(PartialEq)]
 pub enum Mode {
+    // Type declaration must be consistent between serialization peer and deserialization peer.
     SchemaConsistent,
+    // Type declaration can be different between serialization peer and deserialization peer.
+    // They can add/delete fields independently.
     Compatible,
 }
 
@@ -160,7 +164,7 @@ impl TryFrom<u8> for Language {
             4 => Ok(Language::Go),
             5 => Ok(Language::Javascript),
             6 => Ok(Language::Rust),
-            _ => Err(Error::UnsupportedLanguageCode { code: num }),
+            _ => Err(anyhow!("Unsupported language code, value:{num}"))?,
         }
     }
 }

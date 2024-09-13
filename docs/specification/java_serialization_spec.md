@@ -155,11 +155,11 @@ Meta header is a 64 bits number value encoded in little endian order.
       fields info in meta for deserializing compatible fields.
 - Package name encoding(omitted when class is registered):
   - encoding algorithm: `UTF8/ALL_TO_LOWER_SPECIAL/LOWER_UPPER_DIGIT_SPECIAL`
-  - Header: `6 bits size | 2 bits encoding flags`. The `6 bits size: 0~63`  will be used to indicate size `0~62`,
-      the value `63` the size need more byte to read, the encoding will encode `size - 62` as a varint next.
+  - Header: `6 bits size | 2 bits encoding flags`. The `6 bits size: 0~63`  will be used to indicate size `0~63`,
+      the value `63` the size need more byte to read, the encoding will encode `size - 63` as a varint next.
 - Class name encoding(omitted when class is registered):
   - encoding algorithm: `UTF8/LOWER_UPPER_DIGIT_SPECIAL/FIRST_TO_LOWER_SPECIAL/ALL_TO_LOWER_SPECIAL`
-  - header: `6 bits size | 2 bits encoding flags`. The `6 bits size: 0~63`  will be used to indicate size `1~64`,
+  - header: `6 bits size | 2 bits encoding flags`. The `6 bits size: 0~63`  will be used to indicate size `0~63`,
       the value `63` the size need more byte to read, the encoding will encode `size - 63` as a varint next.
 - Field info:
   - header(8

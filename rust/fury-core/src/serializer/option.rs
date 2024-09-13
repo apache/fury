@@ -15,12 +15,14 @@
 // specific language governing permissions and limitations
 // under the License.
 
+use crate::ensure;
 use crate::error::Error;
 use crate::fury::Fury;
 use crate::resolver::context::ReadContext;
 use crate::resolver::context::WriteContext;
 use crate::serializer::Serializer;
 use crate::types::{FuryGeneralList, RefFlag};
+use anyhow::anyhow;
 
 impl<T: Serializer> Serializer for Option<T> {
     fn read(context: &mut ReadContext) -> Result<Self, Error> {
@@ -35,20 +37,18 @@ impl<T: Serializer> Serializer for Option<T> {
             // type_id
             let actual_type_id = context.reader.i16();
             let expected_type_id = T::get_type_id(context.get_fury());
-            if actual_type_id != expected_type_id {
-                Err(Error::FieldType {
-                    expected: expected_type_id,
-                    actual: actual_type_id,
-                })
-            } else {
-                Ok(Some(T::read(context)?))
-            }
+            ensure!(
+                actual_type_id == expected_type_id,
+                anyhow!("Invalid field type, expected:{expected_type_id}, actual:{actual_type_id}")
+            );
+
+            Ok(Some(T::read(context)?))
         } else if ref_flag == (RefFlag::Null as i8) {
             Ok(None)
         } else if ref_flag == (RefFlag::Ref as i8) {
             Err(Error::Ref)
         } else {
-            Err(Error::BadRefFlag)
+            Err(anyhow!("Unknown ref flag, value:{ref_flag}"))?
         }
     }
 
