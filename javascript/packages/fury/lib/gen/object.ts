@@ -82,7 +82,7 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
   writeStmt(accessor: string): string {
     const options = this.description.options;
     const expectHash = computeStructHash(this.description);
-    const metaInformation = Buffer.from(computeMetaInformation(this.description));
+    //const metaInformation = Buffer.from(computeMetaInformation(this.description));
     const fields = Object.entries(options.props).map(([key, value]) => {
       return new FieldInfo(key, value.type);
     });
@@ -90,10 +90,16 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
     const binaryLength = binary.length; // Capture the length of the binary data
 
     // Encode binary data as a base64 string
-    const binaryBase64 = Buffer.from(binary).toString("base64");
+    const binaryBase64 = "binaryBase64";
+
+    const metaInformation = Buffer.from(binaryBase64);
+    var buffer2 = new Uint8Array(binary) ;
+    console.log(buffer2);
+
     return `
       ${this.builder.writer.int32(expectHash)};
-      ${this.builder.writer.buffer(binaryBase64)};
+      ${this.builder.writer.buffer(`Buffer.from("${buffer2.toString()}", "base64")`)};
+
       ${Object.entries(options.props).sort().map(([key, inner]) => {
         const InnerGeneratorClass = CodegenRegistry.get(inner.type);
         if (!InnerGeneratorClass) {
@@ -111,6 +117,22 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
     const encodedMetaInformation = computeMetaInformation(this.description);
     const result = this.scope.uniqueName("result");
     const pass = this.builder.reader.int32();
+    const fields = Object.entries(options.props).map(([key, value]) => {
+      return new FieldInfo(key, value.type);
+    });
+    const binary = TypeMeta.from_fields(256, fields).to_bytes();
+    const binaryLength = binary.length; // Capture the length of the binary data
+    const buffer = Buffer.from(binary);
+    const string = buffer.toString('latin1');
+
+    // Get the length of the string
+    const stringLength = string.length;
+    var buffer2 =  new Uint8Array(binary) ;
+//    ${this.builder.typeMeta.from_bytes(this.builder.reader.ownName())}
+//      ${this.builder.reader.buffer(buffer.byteLength)}
+    
+
+
     return `
       if (${this.builder.reader.int32()} !== ${expectHash}) {
           throw new Error("got ${this.builder.reader.int32()} validate hash failed: ${this.safeTag()}. expect ${expectHash}");
@@ -120,6 +142,7 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
           return `${CodecBuilder.safePropName(key)}: null`;
         }).join(",\n")}
       };
+
       ${this.maybeReference(result, refState)}
       ${this.builder.typeMeta.from_bytes(this.builder.reader.ownName())}
       ${Object.entries(options.props).sort().map(([key, inner]) => {
