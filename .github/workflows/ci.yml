@@ -91,7 +91,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java-version: ["11", "17", "21", "22"]
+        java-version: ["17", "21", "22"]
     steps:
       - uses: actions/checkout@v4
       - uses: graalvm/setup-graalvm@v1
