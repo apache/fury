@@ -385,7 +385,7 @@ We plan to add the schema compatibility support of cross-language serialization 
 
 We are still improving our protocols, thus binary compatibility is not guaranteed between Fury major releases for now.
 However, it is guaranteed between minor versions. Please
-`versioning` your data by Fury major version if you will upgrade Fury in the future, see [how to upgrade fury](https://github.com/apache/fury/blob/main/docs/guide/java_object_graph_guide.md#upgrade-fury) for further details.
+`versioning` your data by Fury major version if you will upgrade Fury in the future, see [how to upgrade fury](https://github.com/apache/fury/blob/main/docs/guide/java_serialization_guide.md#upgrade-fury) for further details.
 
 Binary compatibility will be guaranteed when Fury 1.0 is released.
 
