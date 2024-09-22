@@ -266,6 +266,7 @@ public class ClassResolver {
     extRegistry = new ExtRegistry();
     extRegistry.objectGenericType = buildGenericType(OBJECT_TYPE);
     shimDispatcher = new ShimDispatcher(fury);
+    ClassResolver._addGraalvmClassRegistry(fury.getConfig().getConfigHash(), this);
   }
 
   public void initialize() {

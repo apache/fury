@@ -38,6 +38,14 @@ public class CompatibleExample {
 
   public static void main(String[] args) {
     Example.test(fury);
+    // Test new created Fury at runtime
+    fury =
+      Fury.builder()
+        .requireClassRegistration(true)
+        .withCompatibleMode(CompatibleMode.COMPATIBLE)
+        .withScopedMetaShare(false)
+        .build();
+    Example.test(fury);
     System.out.println("CompatibleExample succeed");
   }
 }
