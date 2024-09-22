@@ -43,7 +43,6 @@ import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.util.ClassLoaderUtils;
 import org.apache.fury.util.GraalvmSupport;
 import org.apache.fury.util.StringUtils;
-import org.codehaus.commons.compiler.ICompiler;
 import org.codehaus.commons.compiler.util.reflect.ByteArrayClassLoader;
 import org.codehaus.commons.compiler.util.resource.MapResourceCreator;
 import org.codehaus.commons.compiler.util.resource.MapResourceFinder;
@@ -163,7 +162,7 @@ public class JaninoUtils {
     try (ClassLoaderUtils.SelectedChildFirstURLClassLoader loader =
         new ClassLoaderUtils.SelectedChildFirstURLClassLoader(
             new URL[] {
-              ICompiler.class.getProtectionDomain().getCodeSource().getLocation(),
+              Resource.class.getProtectionDomain().getCodeSource().getLocation(),
               IType.class.getProtectionDomain().getCodeSource().getLocation(),
               JaninoUtils.class.getProtectionDomain().getCodeSource().getLocation()
             },
