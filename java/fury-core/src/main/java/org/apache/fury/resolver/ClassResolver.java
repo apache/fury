@@ -426,17 +426,17 @@ public class ClassResolver {
           classDef = buildClassDef(classInfo);
         }
         deserializationClassInfo = buildMetaSharedClassInfo(Tuple2.of(classDef, null), classDef);
+        if (deserializationClassInfo != null && GraalvmSupport.isGraalBuildtime()) {
+          getGraalvmClassRegistry()
+              .deserializerClassMap
+              .put(classDef.getId(), deserializationClassInfo.serializer.getClass());
+          deserializationClassInfo.serializer = null;
+        }
       }
       if (GraalvmSupport.isGraalBuildtime()) {
         // Instance for generated class should be hold at graalvm runtime only.
         getGraalvmClassRegistry().serializerClassMap.put(cls, classInfo.serializer.getClass());
         classInfo.serializer = null;
-        if (deserializationClassInfo != null) {
-          getGraalvmClassRegistry()
-              .deserializerClassMap
-              .put(cls, deserializationClassInfo.serializer.getClass());
-          deserializationClassInfo.serializer = null;
-        }
       }
     }
   }
@@ -1369,7 +1369,9 @@ public class ClassResolver {
       ObjectArray<ClassDef> readClassDefs = metaContext.readClassDefs;
       ClassDef classDef = readClassDefs.get(id);
       Tuple2<ClassDef, ClassInfo> classDefTuple = extRegistry.classIdToDef.get(classDef.getId());
-      if (classDefTuple == null || classDefTuple.f1 == null) {
+      if (classDefTuple == null
+          || classDefTuple.f1 == null
+          || classDefTuple.f1.serializer == null) {
         classInfo = buildMetaSharedClassInfo(classDefTuple, classDef);
       } else {
         classInfo = classDefTuple.f1;
@@ -1944,7 +1946,7 @@ public class ClassResolver {
   private static class GraalvmClassRegistry {
     private final List<ClassResolver> resolvers;
     private final Map<Class<?>, Class<? extends Serializer>> serializerClassMap;
-    private final Map<Class<?>, Class<? extends Serializer>> deserializerClassMap;
+    private final Map<Long, Class<? extends Serializer>> deserializerClassMap;
 
     private GraalvmClassRegistry() {
       resolvers = Collections.synchronizedList(new ArrayList<>());
@@ -2001,7 +2003,8 @@ public class ClassResolver {
         }
       }
     }
-    Class<? extends Serializer> deserializerClass = registry.deserializerClassMap.get(cls);
+    Class<? extends Serializer> deserializerClass =
+        registry.deserializerClassMap.get(classDef.getId());
     // noinspection Duplicates
     if (deserializerClass != null) {
       return deserializerClass;

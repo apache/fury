@@ -26,16 +26,23 @@ public class CompatibleRecordExample {
   static Fury fury;
 
   static {
-    fury =
-        Fury.builder()
-            .requireClassRegistration(true)
-            .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .build();
+    fury = createFury();
+  }
+
+  private static Fury createFury() {
+    Fury fury =
+      Fury.builder()
+        .requireClassRegistration(true)
+        .withCompatibleMode(CompatibleMode.COMPATIBLE)
+        .build();
     // register and generate serializer code.
     fury.register(RecordExample.Record.class, true);
+    return fury;
   }
 
   public static void main(String[] args) {
+    RecordExample.test(fury);
+    fury = createFury();
     RecordExample.test(fury);
     System.out.println("CompatibleRecordExample succeed");
   }

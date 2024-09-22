@@ -21,19 +21,25 @@ package org.apache.fury.graalvm;
 
 import org.apache.fury.Fury;
 import org.apache.fury.config.CompatibleMode;
+import org.apache.fury.graalvm.record.RecordExample;
 
 public class CompatibleExample {
   static Fury fury;
 
   static {
-    fury =
-        Fury.builder()
-            .requireClassRegistration(true)
-            .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .withScopedMetaShare(false)
-            .build();
+    fury = createFury();
+  }
+
+  private static Fury createFury() {
+    Fury fury =
+      Fury.builder()
+        .requireClassRegistration(true)
+        .withCompatibleMode(CompatibleMode.COMPATIBLE)
+        .withScopedMetaShare(false)
+        .build();
     // register and generate serializer code.
     fury.register(Foo.class, true);
+    return fury;
   }
 
   public static void main(String[] args) {
@@ -45,6 +51,9 @@ public class CompatibleExample {
         .withCompatibleMode(CompatibleMode.COMPATIBLE)
         .withScopedMetaShare(false)
         .build();
+    fury.register(Foo.class, true);
+    Example.test(fury);
+    fury = createFury();
     Example.test(fury);
     System.out.println("CompatibleExample succeed");
   }
