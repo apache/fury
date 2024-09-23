@@ -30,7 +30,11 @@ public class RecordExample {
   static Fury fury;
 
   static {
-    fury = Fury.builder().requireClassRegistration(true).build();
+    fury =
+        Fury.builder()
+            .withName(RecordExample.class.getName())
+            .requireClassRegistration(true)
+            .build();
     // register and generate serializer code.
     fury.register(Record.class, true);
   }

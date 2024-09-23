@@ -39,7 +39,11 @@ public class ProxyExample {
   static Fury fury;
 
   static {
-    fury = Fury.builder().requireClassRegistration(true).build();
+    fury =
+        Fury.builder()
+            .withName(ProxyExample.class.getName())
+            .requireClassRegistration(true)
+            .build();
     // register and generate serializer code.
     fury.register(TestInvocationHandler.class, true);
   }

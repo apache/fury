@@ -31,10 +31,11 @@ public class CompatibleRecordExample {
 
   private static Fury createFury() {
     Fury fury =
-      Fury.builder()
-        .requireClassRegistration(true)
-        .withCompatibleMode(CompatibleMode.COMPATIBLE)
-        .build();
+        Fury.builder()
+            .withName(CompatibleRecordExample.class.getName())
+            .requireClassRegistration(true)
+            .withCompatibleMode(CompatibleMode.COMPATIBLE)
+            .build();
     // register and generate serializer code.
     fury.register(RecordExample.Record.class, true);
     return fury;

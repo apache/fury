@@ -33,6 +33,7 @@ import org.apache.fury.util.Preconditions;
 /** Config for fury, all {@link Fury} related config can be found here. */
 @SuppressWarnings({"rawtypes"})
 public class Config implements Serializable {
+  private final String name;
   private final Language language;
   private final boolean trackingRef;
   private final boolean basicTypesRefIgnored;
@@ -61,6 +62,7 @@ public class Config implements Serializable {
   private final boolean deserializeNonexistentEnumValueAsNull;
 
   public Config(FuryBuilder builder) {
+    name = builder.name;
     language = builder.language;
     trackingRef = builder.trackingRef;
     basicTypesRefIgnored = !trackingRef || builder.basicTypesRefIgnored;
@@ -91,6 +93,11 @@ public class Config implements Serializable {
     asyncCompilationEnabled = builder.asyncCompilationEnabled;
     scalaOptimizationEnabled = builder.scalaOptimizationEnabled;
     deserializeNonexistentEnumValueAsNull = builder.deserializeNonexistentEnumValueAsNull;
+  }
+
+  /** Returns the name for Fury serialization. */
+  public String getName() {
+    return name;
   }
 
   public Language getLanguage() {
@@ -257,7 +264,8 @@ public class Config implements Serializable {
       return false;
     }
     Config config = (Config) o;
-    return trackingRef == config.trackingRef
+    return name == config.name
+        && trackingRef == config.trackingRef
         && basicTypesRefIgnored == config.basicTypesRefIgnored
         && stringRefIgnored == config.stringRefIgnored
         && timeRefIgnored == config.timeRefIgnored
@@ -286,6 +294,7 @@ public class Config implements Serializable {
   @Override
   public int hashCode() {
     return Objects.hash(
+        name,
         language,
         trackingRef,
         basicTypesRefIgnored,
