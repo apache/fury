@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
@@ -102,67 +101,6 @@ public class ClassLoaderUtils {
 
     @Override
     public URL getResource(String name) {
-      URL url = super.getResource(name);
-      if (url != null) {
-        return url;
-      } else {
-        return parent.getResource(name);
-      }
-    }
-
-    @Override
-    public void addURL(URL url) {
-      super.addURL(url);
-    }
-  }
-
-  /**
-   * A mutable class loader that gives preference to its own URLs and selected classes over the
-   * parent class loader when loading classes and resources.
-   */
-  public static class SelectedChildFirstURLClassLoader extends URLClassLoader {
-
-    static {
-      registerAsParallelCapable();
-    }
-
-    private final ParentClassLoader parent;
-    private final Predicate<String> childClassloaderFirst;
-
-    public SelectedChildFirstURLClassLoader(
-        URL[] urls, ClassLoader parent, Predicate<String> childClassloaderFirst) {
-      super(urls, null);
-      this.parent = new ParentClassLoader(parent);
-      this.childClassloaderFirst = childClassloaderFirst;
-    }
-
-    @Override
-    public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-      if (!childClassloaderFirst.test(name)) {
-        return parent.loadClass(name, resolve);
-      }
-      try {
-        return super.loadClass(name, resolve);
-      } catch (ClassNotFoundException cnf) {
-        return parent.loadClass(name, resolve);
-      }
-    }
-
-    @Override
-    public Enumeration<URL> getResources(String name) throws IOException {
-      if (!childClassloaderFirst.test(name)) {
-        return parent.getResources(name);
-      }
-      ArrayList<URL> urls = Collections.list(super.getResources(name));
-      urls.addAll(Collections.list(parent.getResources(name)));
-      return Collections.enumeration(urls);
-    }
-
-    @Override
-    public URL getResource(String name) {
-      if (!childClassloaderFirst.test(name)) {
-        return parent.getResource(name);
-      }
       URL url = super.getResource(name);
       if (url != null) {
         return url;
