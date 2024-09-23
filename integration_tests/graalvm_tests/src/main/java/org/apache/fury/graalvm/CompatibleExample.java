@@ -42,7 +42,9 @@ public class CompatibleExample {
   }
 
   public static void main(String[] args) {
+    System.out.println("CompatibleExample started");
     Example.test(fury);
+    System.out.println("CompatibleExample succeed 1/2");
     // Test new created Fury at runtime
     fury = createFury();
     Example.test(fury);

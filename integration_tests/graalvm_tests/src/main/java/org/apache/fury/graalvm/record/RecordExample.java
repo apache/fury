@@ -54,7 +54,9 @@ public class RecordExample {
   }
 
   public static void main(String[] args) {
+    System.out.println("RecordExample started");
     test(fury);
+    System.out.println("RecordExample succeed 1/2");
     fury = createFury();
     test(fury);
     System.out.println("RecordExample succeed");

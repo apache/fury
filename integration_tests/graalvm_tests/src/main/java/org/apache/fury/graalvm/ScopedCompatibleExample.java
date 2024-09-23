@@ -43,9 +43,11 @@ public class ScopedCompatibleExample {
   }
 
   public static void main(String[] args) {
+    System.out.println("ScopedCompatibleExample started");
     Example.test(fury);
+    System.out.println("ScopedCompatibleExample succeed 1/2");
     fury = createFury();
     Example.test(fury);
-    System.out.println("CompatibleExample succeed");
+    System.out.println("ScopedCompatibleExample succeed");
   }
 }
