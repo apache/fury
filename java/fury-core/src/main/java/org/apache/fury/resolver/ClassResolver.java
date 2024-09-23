@@ -419,7 +419,7 @@ public class ClassResolver {
     register(cls);
     if (createSerializer) {
       ClassInfo classInfo = getClassInfo(cls);
-      ClassInfo deserializationClassInfo = null;
+      ClassInfo deserializationClassInfo;
       if (metaContextShareEnabled && needToWriteClassDef(classInfo.serializer)) {
         ClassDef classDef = classInfo.classDef;
         if (classDef == null) {

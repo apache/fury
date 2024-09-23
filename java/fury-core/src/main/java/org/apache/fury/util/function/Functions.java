@@ -28,9 +28,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 import org.apache.fury.collection.Tuple2;
 import org.apache.fury.reflect.ReflectionUtils;
+import org.apache.fury.util.GraalvmSupport;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.unsafe._JDKAccess;
 
@@ -75,7 +77,8 @@ public class Functions {
     }
   }
 
-  private static final Map<Tuple2<Method, Class>, Object> map = new WeakHashMap();
+  private static final Map<Tuple2<Method, Class<?>>, Object> map =
+      GraalvmSupport.isGraalBuildtime() ? new ConcurrentHashMap<>() : new WeakHashMap<>();
 
   public static Object makeGetterFunction(Method method) {
     return map.computeIfAbsent(
