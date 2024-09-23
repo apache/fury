@@ -66,7 +66,7 @@ public class CodegenSerializerTest extends FuryTestBase {
   }
 
   @Test(dataProvider = "furyCopyConfig")
-  public void testSimpleBean(Fury fury) {
+  public void testSimpleBeanCopy(Fury fury) {
     B b = new B();
     b.f1 = "str1";
     b.f2 = 1;

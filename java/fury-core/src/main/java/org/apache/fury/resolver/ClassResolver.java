@@ -266,6 +266,7 @@ public class ClassResolver {
     extRegistry = new ExtRegistry();
     extRegistry.objectGenericType = buildGenericType(OBJECT_TYPE);
     shimDispatcher = new ShimDispatcher(fury);
+    ClassResolver._addGraalvmClassRegistry(fury.getConfig().getConfigHash(), this);
   }
 
   public void initialize() {
@@ -418,12 +419,24 @@ public class ClassResolver {
     register(cls);
     if (createSerializer) {
       ClassInfo classInfo = getClassInfo(cls);
+      ClassInfo deserializationClassInfo;
       if (metaContextShareEnabled && needToWriteClassDef(classInfo.serializer)) {
         ClassDef classDef = classInfo.classDef;
         if (classDef == null) {
           classDef = buildClassDef(classInfo);
         }
-        buildMetaSharedClassInfo(Tuple2.of(classDef, null), classDef);
+        deserializationClassInfo = buildMetaSharedClassInfo(Tuple2.of(classDef, null), classDef);
+        if (deserializationClassInfo != null && GraalvmSupport.isGraalBuildtime()) {
+          getGraalvmClassRegistry()
+              .deserializerClassMap
+              .put(classDef.getId(), deserializationClassInfo.serializer.getClass());
+          deserializationClassInfo.serializer = null;
+        }
+      }
+      if (GraalvmSupport.isGraalBuildtime()) {
+        // Instance for generated class should be hold at graalvm runtime only.
+        getGraalvmClassRegistry().serializerClassMap.put(cls, classInfo.serializer.getClass());
+        classInfo.serializer = null;
       }
     }
   }
@@ -1356,7 +1369,9 @@ public class ClassResolver {
       ObjectArray<ClassDef> readClassDefs = metaContext.readClassDefs;
       ClassDef classDef = readClassDefs.get(id);
       Tuple2<ClassDef, ClassInfo> classDefTuple = extRegistry.classIdToDef.get(classDef.getId());
-      if (classDefTuple == null || classDefTuple.f1 == null) {
+      if (classDefTuple == null
+          || classDefTuple.f1 == null
+          || classDefTuple.f1.serializer == null) {
         classInfo = buildMetaSharedClassInfo(classDefTuple, classDef);
       } else {
         classInfo = classDefTuple.f1;
@@ -1915,32 +1930,53 @@ public class ClassResolver {
     return fury;
   }
 
-  private static final ConcurrentMap<Integer, List<ClassResolver>> GRAALVM_REGISTRY =
+  private static final ConcurrentMap<Integer, GraalvmClassRegistry> GRAALVM_REGISTRY =
       new ConcurrentHashMap<>();
 
   // CHECKSTYLE.OFF:MethodName
   public static void _addGraalvmClassRegistry(int furyConfigHash, ClassResolver classResolver) {
     // CHECKSTYLE.ON:MethodName
     if (GraalvmSupport.isGraalBuildtime()) {
-      List<ClassResolver> resolvers =
-          GRAALVM_REGISTRY.computeIfAbsent(
-              furyConfigHash, k -> Collections.synchronizedList(new ArrayList<>()));
-      resolvers.add(classResolver);
+      GraalvmClassRegistry registry =
+          GRAALVM_REGISTRY.computeIfAbsent(furyConfigHash, k -> new GraalvmClassRegistry());
+      registry.resolvers.add(classResolver);
     }
   }
 
+  private static class GraalvmClassRegistry {
+    private final List<ClassResolver> resolvers;
+    private final Map<Class<?>, Class<? extends Serializer>> serializerClassMap;
+    private final Map<Long, Class<? extends Serializer>> deserializerClassMap;
+
+    private GraalvmClassRegistry() {
+      resolvers = Collections.synchronizedList(new ArrayList<>());
+      serializerClassMap = new ConcurrentHashMap<>();
+      deserializerClassMap = new ConcurrentHashMap<>();
+    }
+  }
+
+  private GraalvmClassRegistry getGraalvmClassRegistry() {
+    return GRAALVM_REGISTRY.computeIfAbsent(
+        fury.getConfig().getConfigHash(), k -> new GraalvmClassRegistry());
+  }
+
   private Class<? extends Serializer> getSerializerClassFromGraalvmRegistry(Class<?> cls) {
-    List<ClassResolver> classResolvers = GRAALVM_REGISTRY.get(fury.getConfig().getConfigHash());
+    GraalvmClassRegistry registry = getGraalvmClassRegistry();
+    List<ClassResolver> classResolvers = registry.resolvers;
     if (classResolvers == null || classResolvers.isEmpty()) {
       return null;
     }
     for (ClassResolver classResolver : classResolvers) {
       if (classResolver != this) {
         ClassInfo classInfo = classResolver.classInfoMap.get(cls);
-        if (classInfo != null) {
+        if (classInfo != null && classInfo.serializer != null) {
           return classInfo.serializer.getClass();
         }
       }
+    }
+    Class<? extends Serializer> serializerClass = registry.serializerClassMap.get(cls);
+    if (serializerClass != null) {
+      return serializerClass;
     }
     if (GraalvmSupport.isGraalRuntime()) {
       if (Functions.isLambda(cls) || ReflectionUtils.isJdkProxy(cls)) {
@@ -1953,7 +1989,8 @@ public class ClassResolver {
 
   private Class<? extends Serializer> getMetaSharedDeserializerClassFromGraalvmRegistry(
       Class<?> cls, ClassDef classDef) {
-    List<ClassResolver> classResolvers = GRAALVM_REGISTRY.get(fury.getConfig().getConfigHash());
+    GraalvmClassRegistry registry = getGraalvmClassRegistry();
+    List<ClassResolver> classResolvers = registry.resolvers;
     if (classResolvers == null || classResolvers.isEmpty()) {
       return null;
     }
@@ -1961,10 +1998,16 @@ public class ClassResolver {
       if (classResolver != this) {
         Tuple2<ClassDef, ClassInfo> tuple2 =
             classResolver.extRegistry.classIdToDef.get(classDef.getId());
-        if (tuple2 != null && tuple2.f1 != null) {
+        if (tuple2 != null && tuple2.f1 != null && tuple2.f1.serializer != null) {
           return tuple2.f1.serializer.getClass();
         }
       }
+    }
+    Class<? extends Serializer> deserializerClass =
+        registry.deserializerClassMap.get(classDef.getId());
+    // noinspection Duplicates
+    if (deserializerClass != null) {
+      return deserializerClass;
     }
     if (GraalvmSupport.isGraalRuntime()) {
       if (Functions.isLambda(cls) || ReflectionUtils.isJdkProxy(cls)) {

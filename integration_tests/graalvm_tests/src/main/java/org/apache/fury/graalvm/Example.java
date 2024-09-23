@@ -28,7 +28,7 @@ public class Example {
   static Fury fury;
 
   static {
-    fury = Fury.builder().requireClassRegistration(true).build();
+    fury = Fury.builder().withName(Example.class.getName()).requireClassRegistration(true).build();
     // register and generate serializer code.
     fury.register(Foo.class, true);
   }

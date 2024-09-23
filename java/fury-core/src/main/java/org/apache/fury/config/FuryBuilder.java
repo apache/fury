@@ -56,6 +56,7 @@ public final class FuryBuilder {
     ENABLE_CLASS_REGISTRATION_FORCIBLY = "true".equals(flagValue) || "1".equals(flagValue);
   }
 
+  String name;
   boolean checkClassVersion = false;
   Language language = Language.JAVA;
   boolean trackingRef = false;
@@ -315,6 +316,12 @@ public final class FuryBuilder {
   /** Whether enable scala-specific serialization optimization. */
   public FuryBuilder withScalaOptimizationEnabled(boolean enableScalaOptimization) {
     this.scalaOptimizationEnabled = enableScalaOptimization;
+    return this;
+  }
+
+  /** Set name for Fury serialization. */
+  public FuryBuilder withName(String name) {
+    this.name = name;
     return this;
   }
 

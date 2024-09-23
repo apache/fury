@@ -89,11 +89,14 @@ jobs:
   graalvm:
     name: GraalVM CI
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java-version: ["17", "21", "22"]
     steps:
       - uses: actions/checkout@v4
       - uses: graalvm/setup-graalvm@v1
         with:
-          java-version: "21"
+          java-version: ${{ matrix.java-version }}
           distribution: "graalvm"
           github-token: ${{ secrets.GITHUB_TOKEN }}
           native-image-job-reports: "true"

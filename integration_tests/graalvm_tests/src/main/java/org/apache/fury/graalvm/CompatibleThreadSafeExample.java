@@ -33,6 +33,7 @@ public class CompatibleThreadSafeExample {
             classLoader -> {
               Fury f =
                   Fury.builder()
+                      .withName(CompatibleThreadSafeExample.class.getName())
                       .requireClassRegistration(true)
                       .withCompatibleMode(CompatibleMode.COMPATIBLE)
                       .build();

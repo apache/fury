@@ -23,21 +23,31 @@ import org.apache.fury.Fury;
 import org.apache.fury.config.CompatibleMode;
 
 public class ScopedCompatibleExample {
-  static Fury fury;
+  private static Fury fury;
 
   static {
-    fury =
+    fury = createFury();
+  }
+
+  private static Fury createFury() {
+    Fury fury =
         Fury.builder()
+            .withName(ScopedCompatibleExample.class.getName())
             .requireClassRegistration(true)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
             .withScopedMetaShare(true)
             .build();
     // register and generate serializer code.
     fury.register(Foo.class, true);
+    return fury;
   }
 
   public static void main(String[] args) {
+    System.out.println("ScopedCompatibleExample started");
     Example.test(fury);
-    System.out.println("CompatibleExample succeed");
+    System.out.println("ScopedCompatibleExample succeed 1/2");
+    fury = createFury();
+    Example.test(fury);
+    System.out.println("ScopedCompatibleExample succeed");
   }
 }

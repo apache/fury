@@ -29,7 +29,6 @@ import org.apache.fury.io.FuryInputStream;
 import org.apache.fury.io.FuryReadableChannel;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
-import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.BufferCallback;
 import org.apache.fury.util.LoaderBinding;
 import org.apache.fury.util.LoaderBinding.StagingType;
@@ -65,8 +64,6 @@ public class ThreadLocalFury extends AbstractThreadSafeFury {
     // in a process load some classes which is not cheap.
     // 2. Make fury generate code at graalvm build time.
     Fury fury = bindingThreadLocal.get().get();
-    ClassResolver._addGraalvmClassRegistry(
-        fury.getConfig().getConfigHash(), fury.getClassResolver());
   }
 
   @Override
