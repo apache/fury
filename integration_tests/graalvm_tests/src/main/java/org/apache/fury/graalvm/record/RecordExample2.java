@@ -30,7 +30,11 @@ public class RecordExample2 {
   static Fury fury;
 
   static {
-    fury =
+    fury = createFury();
+  }
+
+  private static Fury createFury() {
+    Fury fury =
         Fury.builder()
             .withName(RecordExample2.class.getName())
             .requireClassRegistration(true)
@@ -38,9 +42,10 @@ public class RecordExample2 {
     // register and generate serializer code.
     fury.register(Record.class, true);
     fury.register(Foo.class, true);
+    return fury;
   }
 
-  public static void main(String[] args) {
+  public static void test(Fury fury) {
     Record record = new Record(10, "abc", List.of("str1", "str2"), Map.of("k1", 10L, "k2", 20L));
     byte[] bytes = fury.serialize(record);
     Object o = fury.deserialize(bytes);
@@ -48,6 +53,12 @@ public class RecordExample2 {
     Foo foo = new Foo(10, "abc", List.of("str1", "str2"), Map.of("k1", 10L, "k2", 20L));
     Object o2 = fury.deserialize(fury.serialize(foo));
     Preconditions.checkArgument(foo.equals(o2));
+  }
+
+  public static void main(String[] args) {
+    test(fury);
+    fury = createFury();
+    test(fury);
     System.out.println("RecordExample2 succeed");
   }
 }

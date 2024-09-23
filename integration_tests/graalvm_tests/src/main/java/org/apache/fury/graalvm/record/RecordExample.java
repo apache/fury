@@ -30,13 +30,18 @@ public class RecordExample {
   static Fury fury;
 
   static {
-    fury =
+    fury = createFury();
+  }
+
+  private static Fury createFury() {
+    Fury fury =
         Fury.builder()
             .withName(RecordExample.class.getName())
             .requireClassRegistration(true)
             .build();
     // register and generate serializer code.
     fury.register(Record.class, true);
+    return fury;
   }
 
   static void test(Fury fury) {
@@ -49,6 +54,8 @@ public class RecordExample {
   }
 
   public static void main(String[] args) {
+    test(fury);
+    fury = createFury();
     test(fury);
     System.out.println("RecordExample succeed");
   }
