@@ -1230,7 +1230,7 @@ public final class MemoryBuffer {
     int newSize =
         length < BUFFER_GROW_STEP_THRESHOLD
             ? length << 2
-            : (int) Math.min(length * 1.5d, Integer.MAX_VALUE);
+            : (int) Math.min(length * 1.5d, Integer.MAX_VALUE - 8);
     byte[] data = new byte[newSize];
     copyToUnsafe(0, data, Platform.BYTE_ARRAY_OFFSET, size());
     initHeapBuffer(data, 0, data.length);

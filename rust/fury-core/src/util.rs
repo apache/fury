@@ -27,7 +27,7 @@ pub const EPOCH: NaiveDate = match NaiveDate::from_ymd_opt(1970, 1, 1) {
 
 // Swapping the high 8 bits and the low 8 bits of a 16-bit value
 fn swap_endian(value: u16) -> u16 {
-    (value << 8) | (value >> 8)
+    value.rotate_right(8)
 }
 
 pub fn to_utf8(utf16: &[u16], is_little_endian: bool) -> Result<Vec<u8>, String> {

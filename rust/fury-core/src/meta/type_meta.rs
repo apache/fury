@@ -19,6 +19,7 @@ use super::meta_string::MetaStringEncoder;
 use crate::buffer::{Reader, Writer};
 use crate::error::Error;
 use crate::meta::{Encoding, MetaStringDecoder};
+use anyhow::anyhow;
 
 pub struct FieldInfo {
     field_name: String,
@@ -38,7 +39,9 @@ impl FieldInfo {
             0x00 => Ok(Encoding::Utf8),
             0x01 => Ok(Encoding::AllToLowerSpecial),
             0x02 => Ok(Encoding::LowerUpperDigitSpecial),
-            _ => Err(Error::UnsupportedTypeMetaFieldNameEncoding { code: value }),
+            _ => Err(anyhow!(
+                "Unsupported encoding of field name in type meta, value:{value}"
+            ))?,
         }
     }
 

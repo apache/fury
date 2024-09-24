@@ -26,7 +26,11 @@ public class CompatibleExample {
   static Fury fury;
 
   static {
-    fury =
+    fury = createFury();
+  }
+
+  private static Fury createFury() {
+    Fury fury =
         Fury.builder()
             .requireClassRegistration(true)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
@@ -34,9 +38,15 @@ public class CompatibleExample {
             .build();
     // register and generate serializer code.
     fury.register(Foo.class, true);
+    return fury;
   }
 
   public static void main(String[] args) {
+    System.out.println("CompatibleExample started");
+    Example.test(fury);
+    System.out.println("CompatibleExample succeed 1/2");
+    // Test new created Fury at runtime
+    fury = createFury();
     Example.test(fury);
     System.out.println("CompatibleExample succeed");
   }

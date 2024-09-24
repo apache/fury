@@ -34,6 +34,7 @@ import org.apache.fury.builder.MetaSharedCodecBuilder;
 import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.config.FuryBuilder;
 import org.apache.fury.config.Language;
+import org.apache.fury.meta.ClassDefEncoderTest;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.resolver.MetaContext;
 import org.apache.fury.serializer.collection.UnmodifiableSerializersTest;
@@ -656,5 +657,20 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
     Object o = serDeMetaShared(fury, o1);
     Assert.assertEquals(o.getClass(), o1.getClass());
     Assert.assertTrue(ReflectionUtils.objectFieldsEquals(o, o1));
+  }
+
+  @Test
+  public void testBigClassNameObject() {
+    Fury fury =
+        builder()
+            .withRefTracking(true)
+            .withCompatibleMode(CompatibleMode.COMPATIBLE)
+            .withScopedMetaShare(false)
+            .build();
+    Object o =
+        new ClassDefEncoderTest
+            .TestClassLengthTestClassLengthTestClassLengthTestClassLengthTestClassLengthTestClassLengthTestClassLength
+            .InnerClassTestLengthInnerClassTestLengthInnerClassTestLength();
+    serDeCheck(fury, o);
   }
 }

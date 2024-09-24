@@ -18,6 +18,7 @@
 use crate::buffer::{Reader, Writer};
 use crate::error::Error;
 use crate::fury::Fury;
+use anyhow::anyhow;
 
 use crate::meta::TypeMeta;
 use crate::resolver::meta_resolver::{MetaReaderResolver, MetaWriterResolver};
@@ -119,7 +120,7 @@ impl<'de, 'bf: 'de> ReadContext<'de, 'bf> {
             self.tags.push(tag);
             Ok(tag)
         } else {
-            Err(Error::TagType(tag_type))
+            Err(anyhow!("Unknown tag type, value:{tag_type}"))?
         }
     }
 }
