@@ -712,7 +712,7 @@ public class ClassResolver {
 
   /**
    * Set serializer to avoid circular error when there is a serializer query for fields by {@link
-   * #buildMetaSharedClassInfo} and {@link #getSerializer(Class)} which access current creating
+   * #readClassInfoWithMetaShare} and {@link #getSerializer(Class)} which access current creating
    * serializer. This method is used to avoid overwriting existing serializer for class when
    * creating a data serializer for serialization of parts fields of a class.
    */
@@ -1363,21 +1363,23 @@ public class ClassResolver {
     if ((header & 0b1) == 0) {
       return getOrUpdateClassInfo((short) id);
     }
-    ObjectArray<ClassInfo> readClassInfos = metaContext.readClassInfos;
-    ClassInfo classInfo = readClassInfos.get(id);
+    ClassInfo classInfo = metaContext.readClassInfos.get(id);
     if (classInfo == null) {
-      ObjectArray<ClassDef> readClassDefs = metaContext.readClassDefs;
-      ClassDef classDef = readClassDefs.get(id);
-      Tuple2<ClassDef, ClassInfo> classDefTuple = extRegistry.classIdToDef.get(classDef.getId());
-      if (classDefTuple == null
-          || classDefTuple.f1 == null
-          || classDefTuple.f1.serializer == null) {
-        classInfo = buildMetaSharedClassInfo(classDefTuple, classDef);
-      } else {
-        classInfo = classDefTuple.f1;
-      }
-      readClassInfos.set(id, classInfo);
+      classInfo = readClassInfoWithMetaShare(metaContext, id);
     }
+    return classInfo;
+  }
+
+  private ClassInfo readClassInfoWithMetaShare(MetaContext metaContext, int index) {
+    ClassDef classDef = metaContext.readClassDefs.get(index);
+    Tuple2<ClassDef, ClassInfo> classDefTuple = extRegistry.classIdToDef.get(classDef.getId());
+    ClassInfo classInfo;
+    if (classDefTuple == null || classDefTuple.f1 == null || classDefTuple.f1.serializer == null) {
+      classInfo = buildMetaSharedClassInfo(classDefTuple, classDef);
+    } else {
+      classInfo = classDefTuple.f1;
+    }
+    metaContext.readClassInfos.set(index, classInfo);
     return classInfo;
   }
 
@@ -1492,7 +1494,7 @@ public class ClassResolver {
   public void readClassDefs(MemoryBuffer buffer) {
     MetaContext metaContext = fury.getSerializationContext().getMetaContext();
     assert metaContext != null : SET_META__CONTEXT_MSG;
-    int numClassDefs = buffer.readVarUint32Small14();
+    int numClassDefs = buffer.readVarUint32Small7();
     for (int i = 0; i < numClassDefs; i++) {
       long id = buffer.readInt64();
       Tuple2<ClassDef, ClassInfo> tuple2 = extRegistry.classIdToDef.get(id);
@@ -1506,9 +1508,7 @@ public class ClassResolver {
         tuple2 = readClassDef(buffer, id);
       }
       metaContext.readClassDefs.add(tuple2.f0);
-      // Will be set lazily, so even some classes doesn't exist, remaining classinfo
-      // can be created still.
-      metaContext.readClassInfos.add(null);
+      metaContext.readClassInfos.add(tuple2.f1);
     }
   }
 
