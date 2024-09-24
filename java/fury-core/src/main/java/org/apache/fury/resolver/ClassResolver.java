@@ -409,6 +409,10 @@ public class ClassResolver {
     }
   }
 
+  public void register(String className) {
+    register(loadClass(className, false, 0, false));
+  }
+
   public void register(Class<?>... classes) {
     for (Class<?> cls : classes) {
       register(cls);
@@ -500,11 +504,19 @@ public class ClassResolver {
     extRegistry.classIdGenerator++;
   }
 
+  public void register(String className, int classId) {
+    register(loadClass(className, false, 0, false), classId);
+  }
+
   public void register(Class<?> cls, Short id, boolean createSerializer) {
     register(cls, id);
     if (createSerializer) {
       getSerializer(cls);
     }
+  }
+
+  public void register(String className, Short classId, boolean createSerializer) {
+    register(loadClass(className, false, 0, false), classId, createSerializer);
   }
 
   public boolean isRegistered(Class<?> cls) {
@@ -1800,6 +1812,11 @@ public class ClassResolver {
   }
 
   private Class<?> loadClass(String className, boolean isEnum, int arrayDims) {
+    return loadClass(className, isEnum, arrayDims, fury.getConfig().deserializeNonexistentClass());
+  }
+
+  private Class<?> loadClass(
+      String className, boolean isEnum, int arrayDims, boolean deserializeNonexistentClass) {
     extRegistry.classChecker.checkClass(this, className);
     try {
       return Class.forName(className, false, fury.getClassLoader());
@@ -1811,7 +1828,7 @@ public class ClassResolver {
             String.format(
                 "Class %s not found from classloaders [%s, %s]",
                 className, fury.getClassLoader(), Thread.currentThread().getContextClassLoader());
-        if (fury.getConfig().deserializeNonexistentClass()) {
+        if (deserializeNonexistentClass) {
           LOG.warn(msg);
           return NonexistentClass.getNonexistentClass(
               className, isEnum, arrayDims, metaContextShareEnabled);
