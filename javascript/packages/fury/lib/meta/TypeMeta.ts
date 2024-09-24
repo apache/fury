@@ -19,10 +19,7 @@
 
 import { BinaryWriter } from "../writer";
 import { BinaryReader } from "../reader";
-import { ObjectTypeDescription, Type } from "../description";
 import { MetaString } from "./MetaString";
-import { BinaryReaderBuilder } from "../gen/builder";
-
 
 enum Encoding {
   Utf8,
@@ -45,30 +42,13 @@ export class FieldInfo {
     }
   }
 
-  static uint8ArrayToBinary(array: Uint8Array): string {
-    return Array.from(array)
-      .map(byte => byte.toString(2).padStart(8, "0"))
-      .join("");
-  }
-
-  static from_bytes(reader: BinaryReaderBuilder) {
-    const header = parseInt((reader.uint8()));
-    const encoding = this.u8_to_encoding((header & 0b11000) >> 3);
+  static from_bytes(reader: BinaryReader) {
+    const header = reader.uint8();
     let size = (header & 0b11100000) >> 5;
-    size = (size === 0b111) ? parseInt(reader.varInt32()) + 7 : size;
-    const type_id = parseInt(reader.int16());
-    const base64String = reader.buffer(size);
-
-    // Decode the base64 string
-    const binaryString = atob(base64String);
-
-    // Convert the binary string to an array of numbers
-    const numberArray = Array.from(binaryString, (char) => char.charCodeAt(0));
-
-    // Create a new Uint8Array from the number array
-    const uint8Array = new Uint8Array(numberArray);
-
-    const field_name = MetaString.decode(uint8Array);
+    size = (size === 0b111) ? reader.varInt32() + 7 : size;
+    const type_id = reader.int16();
+    // reader.skip(size);
+    const field_name = MetaString.decode(reader.buffer(size)); // now we commentd this line , the code work well
     return new FieldInfo(field_name, type_id);
   }
 
@@ -76,9 +56,7 @@ export class FieldInfo {
     const writer = new BinaryWriter({});
     const meta_string = MetaString.encode(this.field_name);
     let header = 1 << 2;
-    const encoded = FieldInfo.uint8ArrayToBinary(meta_string);
-    const size = encoded.length;
-    header |= MetaString.inferBitsPerChar(this.field_name) << 3;
+    const size = meta_string.byteLength;
     const big_size = size >= 7;
     if (big_size) {
       header |= 0b11100000;
@@ -117,9 +95,9 @@ class TypeMetaLayer {
     return writer.dump();
   }
 
-  static from_bytes(reader: BinaryReaderBuilder) {
-    const field_num = BigInt(reader.varInt32());
-    const type_id = parseInt(reader.varInt32());
+  static from_bytes(reader: BinaryReader) {
+    const field_num = reader.varInt32();
+    const type_id = reader.varInt32();
     const field_info = [];
     for (let i = 0; i < field_num; i++) {
       field_info.push(FieldInfo.from_bytes(reader));
@@ -144,11 +122,10 @@ export class TypeMeta {
     return new TypeMeta(BigInt(0), [new TypeMetaLayer(type_id, field_info)]);
   }
 
-  static from_bytes(reader: BinaryReaderBuilder) {
-    let header = parseInt(reader.uint64());
-    const hash = !Number.isNaN(header) ? BigInt(header) >> BigInt(8) : BigInt(0);
-    //const hash = BigInt(header) >> BigInt(8);
-    const layer_count = !Number.isNaN(header) ? BigInt(header) & BigInt(0b1111): BigInt(0);
+  static from_bytes(reader: BinaryReader) {
+    const header = reader.uint64();
+    const hash = header >> BigInt(8);
+    const layer_count = header & BigInt(0b1111);
     const layers = [];
     for (let i = 0; i < layer_count; i++) {
       layers.push(TypeMetaLayer.from_bytes(reader));
