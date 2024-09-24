@@ -31,7 +31,10 @@ class CollectionSerializerTest extends AnyWordSpec with Matchers {
       .withLanguage(Language.JAVA)
       .withRefTracking(true)
       .withScalaOptimizationEnabled(setOpt)
-      .requireClassRegistration(false).build()
+      .requireClassRegistration(false)
+      .suppressClassRegistrationWarnings(false)
+      .build()
+    ScalaSerializers.registerSerializers(fury1)
     if (setFactory) {
       fury1.getClassResolver.setSerializerFactory(new ScalaDispatcher())
     }
@@ -43,6 +46,8 @@ class CollectionSerializerTest extends AnyWordSpec with Matchers {
       "serialize/deserialize List" in {
         val list = List(100, 10000L)
         fury1.deserialize(fury1.serialize(list)) shouldEqual list
+        val list2 = List(100, 10000L, 10000L, 10000L)
+        fury1.deserialize(fury1.serialize(list2)) shouldEqual list2
       }
       "serialize/deserialize empty List" in {
         fury1.deserialize(fury1.serialize(List.empty)) shouldEqual List.empty

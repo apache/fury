@@ -35,7 +35,7 @@ class ScalaTest extends AnyWordSpec with Matchers {
         .withLanguage(Language.JAVA)
         .withRefTracking(true)
         .withScalaOptimizationEnabled(true)
-        .requireClassRegistration(false).build()
+        .requireClassRegistration(false).suppressClassRegistrationWarnings(false).build()
 
       val p = SomePackageObject.SomeClass(1)
       fury.deserialize(fury.serialize(p)) shouldEqual p
@@ -61,7 +61,7 @@ object PkgObjectMain extends App {
     .builder()
     .withScalaOptimizationEnabled(true)
     .requireClassRegistration(false)
-    .withRefTracking(true)
+    .withRefTracking(true).suppressClassRegistrationWarnings(false)
     .build()
 
   import PkgObject._
@@ -81,6 +81,7 @@ object PkgObjectMain2 extends App {
     .withScalaOptimizationEnabled(true)
     .requireClassRegistration(false)
     .withRefTracking(true)
+    .suppressClassRegistrationWarnings(false)
     .build()
 
   import PkgObject._
