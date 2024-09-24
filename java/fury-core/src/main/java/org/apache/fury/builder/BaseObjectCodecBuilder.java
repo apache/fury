@@ -170,15 +170,10 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     } else {
       nameBuilder.append("Fury");
     }
-    nameBuilder.append("Codec");
+    nameBuilder.append("Codec").append(codecSuffix());
     Map<String, Integer> subGenerator =
         idGenerator.computeIfAbsent(nameBuilder.toString(), k -> new ConcurrentHashMap<>());
-    String key =
-        codecSuffix()
-            + "_"
-            + fury.getConfig().getConfigHash()
-            + "_"
-            + CodeGenerator.getClassUniqueId(beanClass);
+    String key = fury.getConfig().getConfigHash() + "_" + CodeGenerator.getClassUniqueId(beanClass);
     Integer id = subGenerator.get(key);
     if (id == null) {
       synchronized (subGenerator) {
