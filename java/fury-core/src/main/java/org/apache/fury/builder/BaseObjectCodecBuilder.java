@@ -1278,18 +1278,16 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         readBuilder.add(
             readContainerElements(
                 elementType, true, elemSerializer, null, buffer, collection, size));
-        Set<Expression> cutPoint = ofHashSet(buffer, collection, size);
-        if (maybeDecl) { // For `isDeclType`
-          cutPoint.add(flags);
-        }
-        Expression sameElementClassRead =
-            invokeGenerated(ctx, cutPoint, readBuilder, "sameElementClassRead", false);
         // Same element class read end
-        action =
-            new If(
-                sameElementClass,
-                sameElementClassRead,
-                readContainerElements(elementType, true, null, null, buffer, collection, size));
+        Set<Expression> cutPoint = ofHashSet(buffer, collection, size);
+        Expression differentElemTypeRead =
+            invokeGenerated(
+                ctx,
+                cutPoint,
+                readContainerElements(elementType, true, null, null, buffer, collection, size),
+                "differentTypeElemsRead",
+                false);
+        action = new If(sameElementClass, readBuilder, differentElemTypeRead);
       } else {
         Literal hasNullFlag = Literal.ofInt(CollectionFlags.HAS_NULL);
         Expression hasNull = eq(new BitAnd(flags, hasNullFlag), hasNullFlag, "hasNull");
@@ -1299,18 +1297,16 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         readBuilder.add(
             readContainerElements(
                 elementType, false, elemSerializer, hasNull, buffer, collection, size));
-        Set<Expression> cutPoint = ofHashSet(buffer, collection, size, hasNull);
-        if (maybeDecl) { // For `isDeclType`
-          cutPoint.add(flags);
-        }
         // Same element class read end
-        Expression sameElementClassRead =
-            invokeGenerated(ctx, cutPoint, readBuilder, "sameElementClassRead", false);
-        action =
-            new If(
-                sameElementClass,
-                sameElementClassRead,
-                readContainerElements(elementType, false, null, hasNull, buffer, collection, size));
+        Set<Expression> cutPoint = ofHashSet(buffer, collection, size, hasNull);
+        Expression differentTypeElemsRead =
+            invokeGenerated(
+                ctx,
+                cutPoint,
+                readContainerElements(elementType, false, null, hasNull, buffer, collection, size),
+                "differentTypeElemsRead",
+                false);
+        action = new If(sameElementClass, readBuilder, differentTypeElemsRead);
       }
       builder.add(action);
     }
