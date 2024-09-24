@@ -22,7 +22,9 @@ package org.apache.fury.builder;
 import static org.apache.fury.builder.Generated.GeneratedMetaSharedSerializer.SERIALIZER_FIELD_NAME;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.SortedMap;
+import java.util.concurrent.ConcurrentHashMap;
 import org.apache.fury.Fury;
 import org.apache.fury.builder.Generated.GeneratedMetaSharedSerializer;
 import org.apache.fury.codegen.CodeGenerator;
@@ -86,11 +88,20 @@ public class MetaSharedCodecBuilder extends ObjectCodecBuilder {
         new ObjectCodecOptimizer(beanClass, grouper, !fury.isBasicTypesRefIgnored(), ctx);
   }
 
+  // Must be static to be shared across the whole process life.
+  private static final Map<Long, Integer> idGenerator = new ConcurrentHashMap<>();
+
   @Override
   protected String codecSuffix() {
     // For every class def sent from different peer, if the class def are different, then
     // a new serializer needs being generated.
-    return "MetaShared" + classDef.getId();
+    Integer id = idGenerator.get(classDef.getId());
+    if (id == null) {
+      synchronized (idGenerator) {
+        id = idGenerator.computeIfAbsent(classDef.getId(), k -> idGenerator.size());
+      }
+    }
+    return "MetaShared" + id;
   }
 
   @Override
