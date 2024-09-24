@@ -56,6 +56,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringJoiner;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.apache.fury.Fury;
@@ -157,6 +158,8 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     jitCallbackUpdateFields = new HashMap<>();
   }
 
+  private final Map<String, Map<String, Integer>> idGenerator = new ConcurrentHashMap<>();
+
   public String codecClassName(Class<?> beanClass) {
     String name = ReflectionUtils.getClassNameWithoutPackage(beanClass).replace("$", "_");
     StringBuilder nameBuilder = new StringBuilder(name);
@@ -167,12 +170,22 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     } else {
       nameBuilder.append("Fury");
     }
-    nameBuilder.append(codecSuffix()).append("Codec");
-    nameBuilder.append('_').append(fury.getConfig().getConfigHash());
-    String classUniqueId = CodeGenerator.getClassUniqueId(beanClass);
-    if (StringUtils.isNotBlank(classUniqueId)) {
-      nameBuilder.append('_').append(classUniqueId);
+    nameBuilder.append("Codec");
+    Map<String, Integer> subGenerator =
+        idGenerator.computeIfAbsent(nameBuilder.toString(), k -> new ConcurrentHashMap<>());
+    String key =
+        codecSuffix()
+            + "_"
+            + fury.getConfig().getConfigHash()
+            + "_"
+            + CodeGenerator.getClassUniqueId(beanClass);
+    Integer id = subGenerator.get(key);
+    if (id == null) {
+      synchronized (subGenerator) {
+        id = subGenerator.computeIfAbsent(key, k -> subGenerator.size());
+      }
     }
+    nameBuilder.append('_').append(id);
     return nameBuilder.toString();
   }
 
