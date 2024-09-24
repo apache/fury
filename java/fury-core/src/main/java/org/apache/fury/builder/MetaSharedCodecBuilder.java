@@ -88,7 +88,8 @@ public class MetaSharedCodecBuilder extends ObjectCodecBuilder {
         new ObjectCodecOptimizer(beanClass, grouper, !fury.isBasicTypesRefIgnored(), ctx);
   }
 
-  private final Map<Long, Integer> idGenerator = new ConcurrentHashMap<>();
+  // Must be static to be shared across the whole process life.
+  private static final Map<Long, Integer> idGenerator = new ConcurrentHashMap<>();
 
   @Override
   protected String codecSuffix() {

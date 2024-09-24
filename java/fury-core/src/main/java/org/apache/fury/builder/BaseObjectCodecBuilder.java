@@ -158,7 +158,8 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     jitCallbackUpdateFields = new HashMap<>();
   }
 
-  private final Map<String, Map<String, Integer>> idGenerator = new ConcurrentHashMap<>();
+  // Must be static to be shared across the whole process life.
+  private static final Map<String, Map<String, Integer>> idGenerator = new ConcurrentHashMap<>();
 
   public String codecClassName(Class<?> beanClass) {
     String name = ReflectionUtils.getClassNameWithoutPackage(beanClass).replace("$", "_");

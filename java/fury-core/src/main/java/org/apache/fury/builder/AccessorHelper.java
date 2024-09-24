@@ -27,6 +27,7 @@ import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import org.apache.fury.codegen.CodeGenerator;
 import org.apache.fury.codegen.CodegenContext;
 import org.apache.fury.codegen.CompileUnit;
@@ -53,11 +54,18 @@ public class AccessorHelper {
   private static final String OBJ_NAME = "obj";
   private static final String FIELD_VALUE = "fieldValue";
 
+  // Must be static to be shared across the whole process life.
+  private static final Map<String, Integer> idGenerator = new ConcurrentHashMap<>();
+
   public static String accessorClassName(Class<?> beanClass) {
-    String name =
-        ReflectionUtils.getClassNameWithoutPackage(beanClass)
-            + "FuryAccessor_"
-            + CodeGenerator.getClassUniqueId(beanClass);
+    String key = CodeGenerator.getClassUniqueId(beanClass);
+    Integer id = idGenerator.get(key);
+    if (id == null) {
+      synchronized (idGenerator) {
+        id = idGenerator.computeIfAbsent(key, k -> idGenerator.size());
+      }
+    }
+    String name = ReflectionUtils.getClassNameWithoutPackage(beanClass) + "FuryAccessor_" + id;
     return name.replace("$", "_");
   }
 
