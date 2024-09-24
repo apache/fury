@@ -21,8 +21,6 @@ import { Scope } from "./scope";
 import { getMeta } from "../meta";
 import { TypeDescription } from "../description";
 import Fury from "../fury";
-import { TypeMeta } from "../meta/TypeMeta";
-import { BinaryReader } from "../reader";
 
 class TypeMetaBuilder {
   constructor(private fury: string) {
