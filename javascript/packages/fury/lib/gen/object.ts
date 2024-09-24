@@ -25,7 +25,6 @@ import { fromString } from "../platformBuffer";
 import { CodegenRegistry } from "./router";
 import { BaseSerializerGenerator, RefState } from "./serializer";
 import SerializerResolver from "../classResolver";
-import { MetaString } from "../meta/MetaString";
 import { FieldInfo, TypeMeta } from "../meta/TypeMeta";
 
 function computeFieldHash(hash: number, id: number): number {
@@ -98,11 +97,6 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
     const options = this.description.options;
     const expectHash = computeStructHash(this.description);
     const result = this.scope.uniqueName("result");
-    const fields = Object.entries(options.props).map(([key, value]) => {
-      return new FieldInfo(key, value.type);
-    });
-    const binary = TypeMeta.from_fields(256, fields).to_bytes();
-    const buffer = Buffer.from(binary);
 
     return `
       if (${this.builder.reader.int32()} !== ${expectHash}) {
