@@ -20,14 +20,12 @@
 import ClassResolver from "./classResolver";
 import { BinaryWriter } from "./writer";
 import { BinaryReader } from "./reader";
-import { BinaryReaderBuilder } from "./gen/builder";
 import { ReferenceResolver } from "./referenceResolver";
 import { ConfigFlags, Serializer, Config, Language, MAGIC_NUMBER } from "./type";
 import { OwnershipError } from "./error";
 import { InputType, ResultType, TypeDescription } from "./description";
 import { generateSerializer, AnySerializer } from "./gen";
-import { TypeMeta } from './meta/TypeMeta';
-
+import { TypeMeta } from "./meta/TypeMeta";
 
 export default class {
   binaryReader: BinaryReader;
@@ -133,13 +131,5 @@ export default class {
 
   serializeVolatile<T = any>(data: T, serializer: Serializer = this.anySerializer) {
     return this.serializeInternal(data, serializer).dumpAndOwn();
-  }
-}
-
-class TypeMetaBuilder{
-  constructor(private fury: string){
-  }
-  from_bytes(reader: string){
-    return `${this.fury}.typeMeta.from_bytes(${reader})`;
   }
 }
