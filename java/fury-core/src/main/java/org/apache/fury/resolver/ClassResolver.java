@@ -422,32 +422,6 @@ public class ClassResolver {
     }
   }
 
-  private void createSerializerAhead(Class<?> cls) {
-    ClassInfo classInfo = getClassInfo(cls);
-    ClassInfo deserializationClassInfo;
-    if (metaContextShareEnabled && needToWriteClassDef(classInfo.serializer)) {
-      ClassDef classDef = classInfo.classDef;
-      if (classDef == null) {
-        classDef = buildClassDef(classInfo);
-      }
-      deserializationClassInfo = buildMetaSharedClassInfo(Tuple2.of(classDef, null), classDef);
-      if (deserializationClassInfo != null && GraalvmSupport.isGraalBuildtime()) {
-        getGraalvmClassRegistry()
-            .deserializerClassMap
-            .put(classDef.getId(), deserializationClassInfo.serializer.getClass());
-        Tuple2<ClassDef, ClassInfo> classDefTuple = extRegistry.classIdToDef.get(classDef.getId());
-        // empty serializer for graalvm build time
-        classDefTuple.f1.serializer = null;
-        extRegistry.classIdToDef.put(classDef.getId(), Tuple2.of(classDefTuple.f0, null));
-      }
-    }
-    if (GraalvmSupport.isGraalBuildtime()) {
-      // Instance for generated class should be hold at graalvm runtime only.
-      getGraalvmClassRegistry().serializerClassMap.put(cls, classInfo.serializer.getClass());
-      classInfo.serializer = null;
-    }
-  }
-
   /** register class with given type tag which will be used for cross-language serialization. */
   public void register(Class<?> cls, String typeTag) {
     if (fury.getLanguage() == Language.JAVA) {
@@ -1231,6 +1205,32 @@ public class ClassResolver {
       serializer = new FuryCopyableSerializer<>(fury, cls, serializer);
     }
     return serializer;
+  }
+
+  private void createSerializerAhead(Class<?> cls) {
+    ClassInfo classInfo = getClassInfo(cls);
+    ClassInfo deserializationClassInfo;
+    if (metaContextShareEnabled && needToWriteClassDef(classInfo.serializer)) {
+      ClassDef classDef = classInfo.classDef;
+      if (classDef == null) {
+        classDef = buildClassDef(classInfo);
+      }
+      deserializationClassInfo = buildMetaSharedClassInfo(Tuple2.of(classDef, null), classDef);
+      if (deserializationClassInfo != null && GraalvmSupport.isGraalBuildtime()) {
+        getGraalvmClassRegistry()
+            .deserializerClassMap
+            .put(classDef.getId(), deserializationClassInfo.serializer.getClass());
+        Tuple2<ClassDef, ClassInfo> classDefTuple = extRegistry.classIdToDef.get(classDef.getId());
+        // empty serializer for graalvm build time
+        classDefTuple.f1.serializer = null;
+        extRegistry.classIdToDef.put(classDef.getId(), Tuple2.of(classDefTuple.f0, null));
+      }
+    }
+    if (GraalvmSupport.isGraalBuildtime()) {
+      // Instance for generated class should be hold at graalvm runtime only.
+      getGraalvmClassRegistry().serializerClassMap.put(cls, classInfo.serializer.getClass());
+      classInfo.serializer = null;
+    }
   }
 
   private String generateSecurityMsg(Class<?> cls) {
