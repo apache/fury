@@ -418,26 +418,33 @@ public class ClassResolver {
   public void register(Class<?> cls, boolean createSerializer) {
     register(cls);
     if (createSerializer) {
-      ClassInfo classInfo = getClassInfo(cls);
-      ClassInfo deserializationClassInfo;
-      if (metaContextShareEnabled && needToWriteClassDef(classInfo.serializer)) {
-        ClassDef classDef = classInfo.classDef;
-        if (classDef == null) {
-          classDef = buildClassDef(classInfo);
-        }
-        deserializationClassInfo = buildMetaSharedClassInfo(Tuple2.of(classDef, null), classDef);
-        if (deserializationClassInfo != null && GraalvmSupport.isGraalBuildtime()) {
-          getGraalvmClassRegistry()
-              .deserializerClassMap
-              .put(classDef.getId(), deserializationClassInfo.serializer.getClass());
-          deserializationClassInfo.serializer = null;
-        }
+      createSerializerAhead(cls);
+    }
+  }
+
+  private void createSerializerAhead(Class<?> cls) {
+    ClassInfo classInfo = getClassInfo(cls);
+    ClassInfo deserializationClassInfo;
+    if (metaContextShareEnabled && needToWriteClassDef(classInfo.serializer)) {
+      ClassDef classDef = classInfo.classDef;
+      if (classDef == null) {
+        classDef = buildClassDef(classInfo);
       }
-      if (GraalvmSupport.isGraalBuildtime()) {
-        // Instance for generated class should be hold at graalvm runtime only.
-        getGraalvmClassRegistry().serializerClassMap.put(cls, classInfo.serializer.getClass());
-        classInfo.serializer = null;
+      deserializationClassInfo = buildMetaSharedClassInfo(Tuple2.of(classDef, null), classDef);
+      if (deserializationClassInfo != null && GraalvmSupport.isGraalBuildtime()) {
+        getGraalvmClassRegistry()
+            .deserializerClassMap
+            .put(classDef.getId(), deserializationClassInfo.serializer.getClass());
+        Tuple2<ClassDef, ClassInfo> classDefTuple = extRegistry.classIdToDef.get(classDef.getId());
+        // empty serializer for graalvm build time
+        classDefTuple.f1.serializer = null;
+        extRegistry.classIdToDef.put(classDef.getId(), Tuple2.of(classDefTuple.f0, null));
       }
+    }
+    if (GraalvmSupport.isGraalBuildtime()) {
+      // Instance for generated class should be hold at graalvm runtime only.
+      getGraalvmClassRegistry().serializerClassMap.put(cls, classInfo.serializer.getClass());
+      classInfo.serializer = null;
     }
   }
 
@@ -503,7 +510,7 @@ public class ClassResolver {
   public void register(Class<?> cls, Short id, boolean createSerializer) {
     register(cls, id);
     if (createSerializer) {
-      getSerializer(cls);
+      createSerializerAhead(cls);
     }
   }
 
@@ -1963,7 +1970,7 @@ public class ClassResolver {
   private Class<? extends Serializer> getSerializerClassFromGraalvmRegistry(Class<?> cls) {
     GraalvmClassRegistry registry = getGraalvmClassRegistry();
     List<ClassResolver> classResolvers = registry.resolvers;
-    if (classResolvers == null || classResolvers.isEmpty()) {
+    if (classResolvers.isEmpty()) {
       return null;
     }
     for (ClassResolver classResolver : classResolvers) {
@@ -1975,6 +1982,7 @@ public class ClassResolver {
       }
     }
     Class<? extends Serializer> serializerClass = registry.serializerClassMap.get(cls);
+    // noinspection Duplicates
     if (serializerClass != null) {
       return serializerClass;
     }
@@ -1991,17 +1999,8 @@ public class ClassResolver {
       Class<?> cls, ClassDef classDef) {
     GraalvmClassRegistry registry = getGraalvmClassRegistry();
     List<ClassResolver> classResolvers = registry.resolvers;
-    if (classResolvers == null || classResolvers.isEmpty()) {
+    if (classResolvers.isEmpty()) {
       return null;
-    }
-    for (ClassResolver classResolver : classResolvers) {
-      if (classResolver != this) {
-        Tuple2<ClassDef, ClassInfo> tuple2 =
-            classResolver.extRegistry.classIdToDef.get(classDef.getId());
-        if (tuple2 != null && tuple2.f1 != null && tuple2.f1.serializer != null) {
-          return tuple2.f1.serializer.getClass();
-        }
-      }
     }
     Class<? extends Serializer> deserializerClass =
         registry.deserializerClassMap.get(classDef.getId());
