@@ -45,6 +45,7 @@ class CompatibleSingleObjectSerializerTest extends AnyWordSpec with Matchers {
       .requireClassRegistration(false)
       .withRefTracking(true)
       .withCompatibleMode(CompatibleMode.COMPATIBLE)
+      .suppressClassRegistrationWarnings(false)
       .build()
   }
 
@@ -59,10 +60,10 @@ class CompatibleSingleObjectSerializerTest extends AnyWordSpec with Matchers {
       fury.deserialize(bytes) shouldEqual A.B.C("hello, world!")
     }
     "testArraySeqQuery" in {
-      val o =  SingletonObject.ArraySeqQuery(ArraySeq(SingletonObject.Query))
-        fury.deserialize(
-          fury.serialize(
-           o)) shouldEqual o
+      val o = SingletonObject.ArraySeqQuery(ArraySeq(SingletonObject.Query))
+      fury.deserialize(
+        fury.serialize(
+          o)) shouldEqual o
     }
     "testArrayQuery" in {
       val o = SingletonObject.ArrayQuery(Array(SingletonObject.Query))
