@@ -26,17 +26,22 @@ import org.apache.fury.serializer.SerializerFactory;
 import scala.collection.immutable.NumericRange;
 import scala.collection.immutable.Range;
 
+import static org.apache.fury.serializer.scala.ToFactorySerializers.IterableToFactoryClass;
+import static org.apache.fury.serializer.scala.ToFactorySerializers.MapToFactoryClass;
+
 public class ScalaSerializers {
 
   public static void registerSerializers(Fury fury) {
     ClassResolver resolver = setSerializerFactory(fury);
+
+    resolver.registerSerializer(IterableToFactoryClass, new ToFactorySerializers.IterableToFactorySerializer(fury));
+    resolver.registerSerializer(MapToFactoryClass, new ToFactorySerializers.MapToFactorySerializer(fury));
 
     // Seq
     resolver.register(scala.collection.immutable.Seq.class);
     resolver.register(scala.collection.immutable.Nil$.class);
     resolver.register(scala.collection.immutable.List$.class);
     resolver.register(scala.collection.immutable.$colon$colon.class);
-    resolver.register("scala.collection.IterableFactory$ToFactory");
     // StrictOptimizedSeqFactory -> ... extends -> IterableFactory
     resolver.register(scala.collection.immutable.Vector$.class);
     resolver.register("scala.collection.immutable.VectorImpl");
@@ -84,7 +89,6 @@ public class ScalaSerializers {
     resolver.register(scala.collection.immutable.Map.WithDefault.class);
     resolver.register("scala.collection.immutable.MapBuilderImpl");
     resolver.register("scala.collection.immutable.Map$EmptyMap$");
-    resolver.register("scala.collection.MapFactory$ToFactory");
     resolver.register("scala.collection.immutable.SeqMap$EmptySeqMap$");
     resolver.register(scala.collection.immutable.HashMap.class);
     resolver.register(scala.collection.immutable.HashMap$.class);
@@ -113,26 +117,34 @@ public class ScalaSerializers {
 
     // mutable collection types
     resolver.register(scala.collection.mutable.StringBuilder.class);
+    resolver.register(scala.collection.mutable.ArrayBuffer.class);
+    resolver.register(scala.collection.mutable.ArrayBuffer$.class);
+    resolver.register(scala.collection.mutable.ArraySeq.class);
+    resolver.register(scala.collection.mutable.ArraySeq$.class);
+    resolver.register(scala.collection.mutable.ListBuffer.class);
+    resolver.register(scala.collection.mutable.ListBuffer$.class);
+    resolver.register(scala.collection.mutable.Buffer$.class);
+    resolver.register(scala.collection.mutable.ArrayDeque.class);
+    resolver.register(scala.collection.mutable.ArrayDeque$.class);
+
+    resolver.register(scala.collection.mutable.HashSet.class);
+    resolver.register(scala.collection.mutable.HashSet$.class);
+    resolver.register(scala.collection.mutable.TreeSet.class);
+    resolver.register(scala.collection.mutable.TreeSet$.class);
+
+    resolver.register(scala.collection.mutable.HashMap.class);
+    resolver.register(scala.collection.mutable.HashMap$.class);
+    resolver.register(scala.collection.mutable.TreeMap.class);
+    resolver.register(scala.collection.mutable.TreeMap$.class);
     resolver.register(scala.collection.mutable.LinkedHashMap.class);
     resolver.register(scala.collection.mutable.LinkedHashMap$.class);
     resolver.register(scala.collection.mutable.LinkedHashSet.class);
     resolver.register(scala.collection.mutable.LinkedHashSet$.class);
-    resolver.register(scala.collection.mutable.ListBuffer.class);
-    resolver.register(scala.collection.mutable.ListBuffer$.class);
-    resolver.register(scala.collection.mutable.TreeMap.class);
-    resolver.register(scala.collection.mutable.TreeMap$.class);
-    resolver.register(scala.collection.mutable.TreeSet.class);
-    resolver.register(scala.collection.mutable.TreeSet$.class);
-    resolver.register(scala.collection.mutable.HashMap.class);
-    resolver.register(scala.collection.mutable.HashMap$.class);
-    resolver.register(scala.collection.mutable.HashSet.class);
-    resolver.register(scala.collection.mutable.HashSet$.class);
-    resolver.register(scala.collection.mutable.Buffer.class);
-    resolver.register(scala.collection.mutable.Buffer$.class);
-    resolver.register(scala.collection.mutable.Queue.class);
-    resolver.register(scala.collection.mutable.Queue$.class);
     resolver.register(scala.collection.mutable.LongMap.class);
     resolver.register(scala.collection.mutable.LongMap$.class);
+
+    resolver.register(scala.collection.mutable.Queue.class);
+    resolver.register(scala.collection.mutable.Queue$.class);
     resolver.register(scala.collection.mutable.Stack.class);
     resolver.register(scala.collection.mutable.Stack$.class);
     resolver.register(scala.collection.mutable.BitSet.class);
