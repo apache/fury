@@ -418,26 +418,7 @@ public class ClassResolver {
   public void register(Class<?> cls, boolean createSerializer) {
     register(cls);
     if (createSerializer) {
-      ClassInfo classInfo = getClassInfo(cls);
-      ClassInfo deserializationClassInfo;
-      if (metaContextShareEnabled && needToWriteClassDef(classInfo.serializer)) {
-        ClassDef classDef = classInfo.classDef;
-        if (classDef == null) {
-          classDef = buildClassDef(classInfo);
-        }
-        deserializationClassInfo = buildMetaSharedClassInfo(Tuple2.of(classDef, null), classDef);
-        if (deserializationClassInfo != null && GraalvmSupport.isGraalBuildtime()) {
-          getGraalvmClassRegistry()
-              .deserializerClassMap
-              .put(classDef.getId(), deserializationClassInfo.serializer.getClass());
-          deserializationClassInfo.serializer = null;
-        }
-      }
-      if (GraalvmSupport.isGraalBuildtime()) {
-        // Instance for generated class should be hold at graalvm runtime only.
-        getGraalvmClassRegistry().serializerClassMap.put(cls, classInfo.serializer.getClass());
-        classInfo.serializer = null;
-      }
+      createSerializerAhead(cls);
     }
   }
 
@@ -503,7 +484,7 @@ public class ClassResolver {
   public void register(Class<?> cls, Short id, boolean createSerializer) {
     register(cls, id);
     if (createSerializer) {
-      getSerializer(cls);
+      createSerializerAhead(cls);
     }
   }
 
@@ -712,7 +693,7 @@ public class ClassResolver {
 
   /**
    * Set serializer to avoid circular error when there is a serializer query for fields by {@link
-   * #buildMetaSharedClassInfo} and {@link #getSerializer(Class)} which access current creating
+   * #readClassInfoWithMetaShare} and {@link #getSerializer(Class)} which access current creating
    * serializer. This method is used to avoid overwriting existing serializer for class when
    * creating a data serializer for serialization of parts fields of a class.
    */
@@ -1226,6 +1207,32 @@ public class ClassResolver {
     return serializer;
   }
 
+  private void createSerializerAhead(Class<?> cls) {
+    ClassInfo classInfo = getClassInfo(cls);
+    ClassInfo deserializationClassInfo;
+    if (metaContextShareEnabled && needToWriteClassDef(classInfo.serializer)) {
+      ClassDef classDef = classInfo.classDef;
+      if (classDef == null) {
+        classDef = buildClassDef(classInfo);
+      }
+      deserializationClassInfo = buildMetaSharedClassInfo(Tuple2.of(classDef, null), classDef);
+      if (deserializationClassInfo != null && GraalvmSupport.isGraalBuildtime()) {
+        getGraalvmClassRegistry()
+            .deserializerClassMap
+            .put(classDef.getId(), deserializationClassInfo.serializer.getClass());
+        Tuple2<ClassDef, ClassInfo> classDefTuple = extRegistry.classIdToDef.get(classDef.getId());
+        // empty serializer for graalvm build time
+        classDefTuple.f1.serializer = null;
+        extRegistry.classIdToDef.put(classDef.getId(), Tuple2.of(classDefTuple.f0, null));
+      }
+    }
+    if (GraalvmSupport.isGraalBuildtime()) {
+      // Instance for generated class should be hold at graalvm runtime only.
+      getGraalvmClassRegistry().serializerClassMap.put(cls, classInfo.serializer.getClass());
+      classInfo.serializer = null;
+    }
+  }
+
   private String generateSecurityMsg(Class<?> cls) {
     String tpl =
         "%s is not registered, please check whether it's the type you want to serialize or "
@@ -1363,21 +1370,23 @@ public class ClassResolver {
     if ((header & 0b1) == 0) {
       return getOrUpdateClassInfo((short) id);
     }
-    ObjectArray<ClassInfo> readClassInfos = metaContext.readClassInfos;
-    ClassInfo classInfo = readClassInfos.get(id);
+    ClassInfo classInfo = metaContext.readClassInfos.get(id);
     if (classInfo == null) {
-      ObjectArray<ClassDef> readClassDefs = metaContext.readClassDefs;
-      ClassDef classDef = readClassDefs.get(id);
-      Tuple2<ClassDef, ClassInfo> classDefTuple = extRegistry.classIdToDef.get(classDef.getId());
-      if (classDefTuple == null
-          || classDefTuple.f1 == null
-          || classDefTuple.f1.serializer == null) {
-        classInfo = buildMetaSharedClassInfo(classDefTuple, classDef);
-      } else {
-        classInfo = classDefTuple.f1;
-      }
-      readClassInfos.set(id, classInfo);
+      classInfo = readClassInfoWithMetaShare(metaContext, id);
     }
+    return classInfo;
+  }
+
+  private ClassInfo readClassInfoWithMetaShare(MetaContext metaContext, int index) {
+    ClassDef classDef = metaContext.readClassDefs.get(index);
+    Tuple2<ClassDef, ClassInfo> classDefTuple = extRegistry.classIdToDef.get(classDef.getId());
+    ClassInfo classInfo;
+    if (classDefTuple == null || classDefTuple.f1 == null || classDefTuple.f1.serializer == null) {
+      classInfo = buildMetaSharedClassInfo(classDefTuple, classDef);
+    } else {
+      classInfo = classDefTuple.f1;
+    }
+    metaContext.readClassInfos.set(index, classInfo);
     return classInfo;
   }
 
@@ -1492,7 +1501,7 @@ public class ClassResolver {
   public void readClassDefs(MemoryBuffer buffer) {
     MetaContext metaContext = fury.getSerializationContext().getMetaContext();
     assert metaContext != null : SET_META__CONTEXT_MSG;
-    int numClassDefs = buffer.readVarUint32Small14();
+    int numClassDefs = buffer.readVarUint32Small7();
     for (int i = 0; i < numClassDefs; i++) {
       long id = buffer.readInt64();
       Tuple2<ClassDef, ClassInfo> tuple2 = extRegistry.classIdToDef.get(id);
@@ -1506,9 +1515,7 @@ public class ClassResolver {
         tuple2 = readClassDef(buffer, id);
       }
       metaContext.readClassDefs.add(tuple2.f0);
-      // Will be set lazily, so even some classes doesn't exist, remaining classinfo
-      // can be created still.
-      metaContext.readClassInfos.add(null);
+      metaContext.readClassInfos.add(tuple2.f1);
     }
   }
 
@@ -1963,7 +1970,7 @@ public class ClassResolver {
   private Class<? extends Serializer> getSerializerClassFromGraalvmRegistry(Class<?> cls) {
     GraalvmClassRegistry registry = getGraalvmClassRegistry();
     List<ClassResolver> classResolvers = registry.resolvers;
-    if (classResolvers == null || classResolvers.isEmpty()) {
+    if (classResolvers.isEmpty()) {
       return null;
     }
     for (ClassResolver classResolver : classResolvers) {
@@ -1975,6 +1982,7 @@ public class ClassResolver {
       }
     }
     Class<? extends Serializer> serializerClass = registry.serializerClassMap.get(cls);
+    // noinspection Duplicates
     if (serializerClass != null) {
       return serializerClass;
     }
@@ -1991,17 +1999,8 @@ public class ClassResolver {
       Class<?> cls, ClassDef classDef) {
     GraalvmClassRegistry registry = getGraalvmClassRegistry();
     List<ClassResolver> classResolvers = registry.resolvers;
-    if (classResolvers == null || classResolvers.isEmpty()) {
+    if (classResolvers.isEmpty()) {
       return null;
-    }
-    for (ClassResolver classResolver : classResolvers) {
-      if (classResolver != this) {
-        Tuple2<ClassDef, ClassInfo> tuple2 =
-            classResolver.extRegistry.classIdToDef.get(classDef.getId());
-        if (tuple2 != null && tuple2.f1 != null && tuple2.f1.serializer != null) {
-          return tuple2.f1.serializer.getClass();
-        }
-      }
     }
     Class<? extends Serializer> deserializerClass =
         registry.deserializerClassMap.get(classDef.getId());
