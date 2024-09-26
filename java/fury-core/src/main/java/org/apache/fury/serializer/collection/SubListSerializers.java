@@ -108,7 +108,7 @@ public class SubListSerializers {
 
     @Override
     public List copy(List value) {
-      return super.copy(value);
+      throw new UnsupportedOperationException("parent list didn't copy modCount, but sublist does copy it");
     }
 
     private void checkSerialization(Object value) {
