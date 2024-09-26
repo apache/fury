@@ -27,8 +27,8 @@ class TypeMetaBuilder {
 
   }
 
-  from_bytes(reader: string) {
-    return `${this.fury}.typeMeta.from_bytes(${reader})`;
+  fromBytes(reader: string) {
+    return `${this.fury}.typeMeta.fromBytes(${reader})`;
   }
 }
 
