@@ -114,7 +114,7 @@ public class ClassInfo {
     this.classId = classId;
     if (cls != null) {
       boolean isLambda = Functions.isLambda(cls);
-      boolean isProxy = ReflectionUtils.isJdkProxy(cls);
+      boolean isProxy = classId != ClassResolver.REPLACE_STUB_ID && ReflectionUtils.isJdkProxy(cls);
       this.isDynamicGeneratedClass = isLambda || isProxy;
       if (isLambda) {
         this.classId = ClassResolver.LAMBDA_STUB_ID;
