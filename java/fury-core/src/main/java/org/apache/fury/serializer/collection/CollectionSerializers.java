@@ -714,7 +714,8 @@ public class CollectionSerializers {
    * serializer won't use element generics and doesn't support JIT, performance won't be the best,
    * but the correctness can be ensured.
    */
-  public static class DefaultJavaCollectionSerializer<T> extends AbstractCollectionSerializer<T> {
+  public static final class DefaultJavaCollectionSerializer<T>
+      extends AbstractCollectionSerializer<T> {
     private Serializer<T> dataSerializer;
 
     public DefaultJavaCollectionSerializer(Fury fury, Class<T> cls) {

@@ -28,7 +28,8 @@ import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.reflect.ReflectionUtils;
-import org.apache.fury.serializer.collection.CollectionSerializers.DefaultJavaCollectionSerializer;
+import org.apache.fury.serializer.ObjectSerializer;
+import org.apache.fury.serializer.Serializer;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class SubListSerializers {
@@ -86,22 +87,38 @@ public class SubListSerializers {
     }
   }
 
-  public static final class SubListViewSerializer extends DefaultJavaCollectionSerializer<List> {
+  public static final class SubListViewSerializer extends CollectionSerializer<List> {
+    private final Serializer dataSerializer;
     private boolean serializedBefore;
 
-    public SubListViewSerializer(Fury fury, Class<List> cls) {
+    public SubListViewSerializer(Fury fury, Class cls) {
       super(fury, Stub.class.isAssignableFrom(cls) ? (Class<List>) ArrayListSubListClass : cls);
+      assert fury.getLanguage() == Language.JAVA;
+      fury.getClassResolver().setSerializer(cls, this);
+      dataSerializer = new ObjectSerializer(fury, cls);
+      // No need to set object serializer to this, it will be set in class resolver later.
+      // fury.getClassResolver().setSerializer(cls, this);
+    }
+
+    @Override
+    public Collection onCollectionWrite(MemoryBuffer buffer, List value) {
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public List onCollectionRead(Collection collection) {
+      throw new IllegalStateException();
     }
 
     @Override
     public void write(MemoryBuffer buffer, List value) {
       checkSerialization(value);
-      super.write(buffer, value);
+      dataSerializer.write(buffer, value);
     }
 
     @Override
     public List read(MemoryBuffer buffer) {
-      List value = super.read(buffer);
+      List value = (List) dataSerializer.read(buffer);
       checkSerialization(value);
       return value;
     }
