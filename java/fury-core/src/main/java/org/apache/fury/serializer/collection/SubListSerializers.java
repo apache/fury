@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import org.apache.fury.Fury;
+import org.apache.fury.config.Language;
 import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
@@ -66,6 +67,7 @@ public class SubListSerializers {
       cls = Class.forName("java.util.ImmutableCollections.SubList");
     } catch (ClassNotFoundException e) {
       class ImmutableSubListStub implements Stub {}
+
       cls = ImmutableSubListStub.class;
     }
     ImmutableSubListClass = cls;
@@ -76,7 +78,7 @@ public class SubListSerializers {
         new Class[] {
           SubListClass, RandomAccessSubListClass, ArrayListSubListClass, ImmutableSubListClass
         }) {
-      if (preserveView) {
+      if (preserveView && fury.getConfig().getLanguage() == Language.JAVA) {
         fury.registerSerializer(cls, new SubListViewSerializer(fury, (Class<List>) cls));
       } else {
         fury.registerSerializer(cls, new SubListSerializer(fury, (Class<List>) cls));
