@@ -28,10 +28,10 @@ enum Encoding {
 }
 
 export class FieldInfo {
-  constructor(private field_name: string, private field_id: number) {
+  constructor(private fieldName: string, private fieldId: number) {
   }
 
-  static u8_to_encoding(value: number) {
+  static u8ToEncoding(value: number) {
     switch (value) {
       case 0x00:
         return Encoding.Utf8;
@@ -42,23 +42,23 @@ export class FieldInfo {
     }
   }
 
-  static from_bytes(reader: BinaryReader) {
+  static fromBytes(reader: BinaryReader) {
     const header = reader.uint8();
     let size = (header & 0b11100000) >> 5;
     size = (size === 0b111) ? reader.varInt32() + 7 : size;
-    const type_id = reader.int16();
+    const typeId = reader.int16();
     // reader.skip(size);
-    const field_name = MetaString.decode(reader.buffer(size)); // now we commentd this line , the code work well
-    return new FieldInfo(field_name, type_id);
+    const fieldName = MetaString.decode(reader.buffer(size)); // now we commentd this line , the code work well
+    return new FieldInfo(fieldName, typeId);
   }
 
-  to_bytes() {
+  toBytes() {
     const writer = new BinaryWriter({});
-    const meta_string = MetaString.encode(this.field_name);
+    const metaString = MetaString.encode(this.fieldName);
     let header = 1 << 2;
-    const size = meta_string.byteLength;
-    const big_size = size >= 7;
-    if (big_size) {
+    const size = metaString.byteLength;
+    const bigSize = size >= 7;
+    if (bigSize) {
       header |= 0b11100000;
       writer.uint8(header);
       writer.varInt32(size - 7);
@@ -66,43 +66,43 @@ export class FieldInfo {
       header |= size << 5;
       writer.uint8(header);
     }
-    writer.int16(this.field_id);
-    writer.buffer(meta_string);
+    writer.int16(this.fieldId);
+    writer.buffer(metaString);
     return writer.dump();
   }
 }
 
 // Using classes to emulate struct methods in Rust
 class TypeMetaLayer {
-  constructor(private type_id: number, private field_info: FieldInfo[]) {
+  constructor(private typeId: number, private fieldInfo: FieldInfo[]) {
   }
 
-  get_type_id() {
-    return this.type_id;
+  getTypeId() {
+    return this.typeId;
   }
 
-  get_field_info() {
-    return this.field_info;
+  getFieldInfo() {
+    return this.fieldInfo;
   }
 
-  to_bytes() {
+  toBytes() {
     const writer = new BinaryWriter({});
-    writer.varInt32(this.field_info.length);
-    writer.varInt32(this.type_id);
-    for (const field of this.field_info) {
-      writer.buffer(field.to_bytes());
+    writer.varInt32(this.fieldInfo.length);
+    writer.varInt32(this.typeId);
+    for (const field of this.fieldInfo) {
+      writer.buffer(field.toBytes());
     }
     return writer.dump();
   }
 
-  static from_bytes(reader: BinaryReader) {
-    const field_num = reader.varInt32();
-    const type_id = reader.varInt32();
-    const field_info = [];
-    for (let i = 0; i < field_num; i++) {
-      field_info.push(FieldInfo.from_bytes(reader));
+  static fromBytes(reader: BinaryReader) {
+    const fieldNum = reader.varInt32();
+    const typeId = reader.varInt32();
+    const fieldInfo = [];
+    for (let i = 0; i < fieldNum; i++) {
+      fieldInfo.push(FieldInfo.fromBytes(reader));
     }
-    return new TypeMetaLayer(type_id, field_info);
+    return new TypeMetaLayer(typeId, fieldInfo);
   }
 }
 
@@ -110,34 +110,34 @@ export class TypeMeta {
   constructor(private hash: bigint, private layers: TypeMetaLayer[]) {
   }
 
-  get_field_info() {
-    return this.layers[0].get_field_info();
+  getFieldInfo() {
+    return this.layers[0].getFieldInfo();
   }
 
-  get_type_id() {
-    return this.layers[0].get_type_id();
+  getTypeId() {
+    return this.layers[0].getTypeId();
   }
 
-  static from_fields(type_id: number, field_info: FieldInfo[]) {
-    return new TypeMeta(BigInt(0), [new TypeMetaLayer(type_id, field_info)]);
+  static fromFields(typeId: number, fieldInfo: FieldInfo[]) {
+    return new TypeMeta(BigInt(0), [new TypeMetaLayer(typeId, fieldInfo)]);
   }
 
-  static from_bytes(reader: BinaryReader) {
+  static fromBytes(reader: BinaryReader) {
     const header = reader.uint64();
     const hash = header >> BigInt(8);
-    const layer_count = header & BigInt(0b1111);
+    const layerCount = header & BigInt(0b1111);
     const layers = [];
-    for (let i = 0; i < layer_count; i++) {
-      layers.push(TypeMetaLayer.from_bytes(reader));
+    for (let i = 0; i < layerCount; i++) {
+      layers.push(TypeMetaLayer.fromBytes(reader));
     }
     return new TypeMeta(hash, layers);
   }
 
-  to_bytes() {
+  toBytes() {
     const writer = new BinaryWriter({});
     writer.uint64(BigInt((this.hash << BigInt(8)) | BigInt((this.layers.length & 0b1111))));
     for (const layer of this.layers) {
-      writer.buffer(layer.to_bytes());
+      writer.buffer(layer.toBytes());
     }
     return writer.dump();
   }
