@@ -139,6 +139,7 @@ import org.apache.fury.serializer.collection.GuavaCollectionSerializers;
 import org.apache.fury.serializer.collection.ImmutableCollectionSerializers;
 import org.apache.fury.serializer.collection.MapSerializer;
 import org.apache.fury.serializer.collection.MapSerializers;
+import org.apache.fury.serializer.collection.SubListSerializers;
 import org.apache.fury.serializer.collection.SynchronizedSerializers;
 import org.apache.fury.serializer.collection.UnmodifiableSerializers;
 import org.apache.fury.serializer.scala.SingletonCollectionSerializer;
@@ -337,6 +338,7 @@ public class ClassResolver {
     SynchronizedSerializers.registerSerializers(fury);
     UnmodifiableSerializers.registerSerializers(fury);
     ImmutableCollectionSerializers.registerSerializers(fury);
+    SubListSerializers.registerSerializers(fury, true);
     if (fury.getConfig().registerGuavaTypes()) {
       GuavaCollectionSerializers.registerDefaultSerializers(fury);
     }
