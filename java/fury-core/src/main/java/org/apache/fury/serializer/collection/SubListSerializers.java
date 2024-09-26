@@ -64,7 +64,7 @@ public class SubListSerializers {
     }
     Class<?> cls;
     try {
-      cls = Class.forName("java.util.ImmutableCollections.SubList");
+      cls = Class.forName("java.util.ImmutableCollections$SubList");
     } catch (ClassNotFoundException e) {
       class ImmutableSubListStub implements Stub {}
 
@@ -108,7 +108,8 @@ public class SubListSerializers {
 
     @Override
     public List copy(List value) {
-      throw new UnsupportedOperationException("parent list didn't copy modCount, but sublist does copy it");
+      throw new UnsupportedOperationException(
+          "parent list didn't copy modCount, but sublist does copy it");
     }
 
     private void checkSerialization(Object value) {
