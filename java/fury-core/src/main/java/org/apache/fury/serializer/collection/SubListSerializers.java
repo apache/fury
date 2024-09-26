@@ -19,7 +19,6 @@
 
 package org.apache.fury.serializer.collection;
 
-import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -27,6 +26,7 @@ import org.apache.fury.Fury;
 import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.serializer.Serializers;
 import org.apache.fury.serializer.collection.CollectionSerializers.DefaultJavaCollectionSerializer;
@@ -40,10 +40,25 @@ public class SubListSerializers {
   private static final Class<?> ArrayListSubListClass;
   private static final Class<?> ImmutableSubListClass;
 
+  private interface Stub {}
+
   static {
+    Class<?> sublistClass;
     try {
-      SubListClass = Class.forName("java.util.AbstractList$SubList");
-      RandomAccessSubListClass = Class.forName("java.util.AbstractList$RandomAccessSubList");
+      sublistClass = Class.forName("java.util.SubList");
+    } catch (ClassNotFoundException e) {
+      sublistClass = ReflectionUtils.loadClass("java.util.AbstractList$SubList");
+    }
+    SubListClass = sublistClass;
+    Class<?> randomAccessSubListClass;
+    try {
+      randomAccessSubListClass = Class.forName("java.util.RandomAccessSubList");
+    } catch (ClassNotFoundException e) {
+      randomAccessSubListClass =
+          ReflectionUtils.loadClass("java.util.AbstractList$RandomAccessSubList");
+    }
+    RandomAccessSubListClass = randomAccessSubListClass;
+    try {
       ArrayListSubListClass = Class.forName("java.util.ArrayList$SubList");
     } catch (ClassNotFoundException e) {
       throw new RuntimeException(e);
@@ -52,17 +67,7 @@ public class SubListSerializers {
     try {
       cls = Class.forName("java.util.ImmutableCollections.SubList");
     } catch (ClassNotFoundException e) {
-      class ImmutableSubListStub extends AbstractList {
-        @Override
-        public Object get(int index) {
-          throw new IllegalStateException();
-        }
-
-        @Override
-        public int size() {
-          throw new IllegalStateException();
-        }
-      }
+      class ImmutableSubListStub implements Stub {}
       cls = ImmutableSubListStub.class;
     }
     ImmutableSubListClass = cls;
@@ -85,7 +90,7 @@ public class SubListSerializers {
     private boolean serializedBefore;
 
     public SubListViewSerializer(Fury fury, Class<List> cls) {
-      super(fury, cls);
+      super(fury, Stub.class.isAssignableFrom(cls) ? (Class<List>) ArrayListSubListClass : cls);
     }
 
     @Override
