@@ -27,8 +27,6 @@ import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.reflect.ReflectionUtils;
-import org.apache.fury.serializer.Serializer;
-import org.apache.fury.serializer.Serializers;
 import org.apache.fury.serializer.collection.CollectionSerializers.DefaultJavaCollectionSerializer;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
@@ -133,16 +131,9 @@ public class SubListSerializers {
 
   public static final class SubListSerializer extends CollectionSerializer {
 
-    private Serializer<Collection> dataSerializer;
-
     public SubListSerializer(Fury fury, Class<List> type) {
       super(fury, type, true);
       fury.getClassResolver().setSerializer(type, this);
-      Class<? extends Serializer> serializerClass =
-          fury.getClassResolver()
-              .getObjectSerializerClass(
-                  type, sc -> dataSerializer = Serializers.newSerializer(fury, type, sc));
-      dataSerializer = Serializers.newSerializer(fury, type, serializerClass);
     }
 
     @Override
