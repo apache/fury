@@ -853,7 +853,11 @@ public class ClassResolver {
       } else if (Functions.isLambda(cls)) {
         return LambdaSerializer.class;
       } else if (ReflectionUtils.isJdkProxy(cls)) {
-        return JdkProxySerializer.class;
+        if (JavaSerializer.getWriteReplaceMethod(cls) != null) {
+          return ReplaceResolveSerializer.class;
+        } else {
+          return JdkProxySerializer.class;
+        }
       } else if (Calendar.class.isAssignableFrom(cls)) {
         return TimeSerializers.CalendarSerializer.class;
       } else if (ZoneId.class.isAssignableFrom(cls)) {
