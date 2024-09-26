@@ -74,7 +74,7 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
     const fields = Object.entries(this.description).map(([key, value]) => {
       return new FieldInfo(key, value.type);
     });
-    const typeMetaBinary = new Uint8Array(TypeMeta.from_fields(256, fields).to_bytes());
+    const typeMetaBinary = new Uint8Array(TypeMeta.fromFields(256, fields).toBytes());
     const typeMetaDeclare = this.scope.declare("typeMeta", `new Uint8Array([${typeMetaBinary.toString()}])`);
 
     return `
@@ -109,7 +109,7 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
       };
 
       ${this.maybeReference(result, refState)}
-      ${this.builder.typeMeta.from_bytes(this.builder.reader.ownName())}
+      ${this.builder.typeMeta.fromBytes(this.builder.reader.ownName())}
       ${Object.entries(options.props).sort().map(([key, inner]) => {
         const InnerGeneratorClass = CodegenRegistry.get(inner.type);
         if (!InnerGeneratorClass) {
