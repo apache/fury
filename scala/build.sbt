@@ -17,11 +17,11 @@
  */
 
 val furyVersion = "0.8.0-SNAPSHOT"
-val scala213Version = "2.13.14"
+val scala213Version = "2.13.15"
 ThisBuild / apacheSonatypeProjectProfile := "fury"
 version := furyVersion
 scalaVersion := scala213Version
-crossScalaVersions := Seq(scala213Version, "3.3.3")
+crossScalaVersions := Seq(scala213Version, "3.3.4")
 
 lazy val root = Project(id = "fury-scala", base = file("."))
   .settings(
