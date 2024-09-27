@@ -78,8 +78,8 @@ public class SubListSerializers {
         new Class[] {
           SubListClass, RandomAccessSubListClass, ArrayListSubListClass, ImmutableSubListClass
         }) {
-      if (preserveView && fury.getConfig().getLanguage() == Language.JAVA) {
-        fury.registerSerializer(cls, new SubListViewSerializer(fury, (Class<List>) cls));
+      if (fury.trackingRef() && preserveView && fury.getConfig().getLanguage() == Language.JAVA) {
+        fury.registerSerializer(cls, new SubListViewSerializer(fury, cls));
       } else {
         fury.registerSerializer(cls, new SubListSerializer(fury, (Class<List>) cls));
       }
