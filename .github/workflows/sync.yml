@@ -25,6 +25,7 @@ on:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    if: github.repository == 'apache/fury'
     steps:
       - uses: actions/checkout@v4
       - name: Sync files
