@@ -26,8 +26,8 @@ import { CodegenRegistry } from "./router";
 import { BaseSerializerGenerator, RefState } from "./serializer";
 import SerializerResolver from "../classResolver";
 import { MetaString } from "../meta/MetaString";
+import { FieldInfo, TypeMeta } from '../meta/TypeMeta';
 
-// Ensure MetaString methods are correctly implemented
 const computeMetaInformation = (description: any) => {
   const metaInfo = JSON.stringify(description);
   return MetaString.encode(metaInfo);
@@ -81,10 +81,16 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
     const options = this.description.options;
     const expectHash = computeStructHash(this.description);
     const metaInformation = Buffer.from(computeMetaInformation(this.description));
+    const decodedInformation = decodeMetaInformation(metaInformation);
+    const fields = Object.entries(options.props).map(([key, value]) => {
+      return new FieldInfo(key, value.type);
+    });
+    const binary = TypeMeta.from_fields(256, fields).to_bytes();
 
     return `
       ${this.builder.writer.int32(expectHash)};
       ${this.builder.writer.buffer(`Buffer.from("${metaInformation.toString("base64")}", "base64")`)};
+      ${this.builder.writer.buffer(`Buffer.from("${binary}","base64")`)};
       ${Object.entries(options.props).sort().map(([key, inner]) => {
         const InnerGeneratorClass = CodegenRegistry.get(inner.type);
         if (!InnerGeneratorClass) {
@@ -100,8 +106,12 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
     const options = this.description.options;
     const expectHash = computeStructHash(this.description);
     const encodedMetaInformation = computeMetaInformation(this.description);
+    const encodedPropsInformation = computeMetaInformation(options.props);
+    const metaInformation = decodeMetaInformation(encodedMetaInformation);
     const result = this.scope.uniqueName("result");
     const pass = this.builder.reader.int32();
+    // const handler = this.scope.declare("handler","");
+
     return `
       if (${this.builder.reader.int32()} !== ${expectHash}) {
           throw new Error("got ${this.builder.reader.int32()} validate hash failed: ${this.safeTag()}. expect ${expectHash}");
@@ -125,8 +135,6 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
     `;
   }
 
-  // /8 /7 /20 % 2
-  // is there a ratio from length / deserializer
   private safeTag() {
     return CodecBuilder.replaceBackslashAndQuote(this.description.options.tag);
   }
