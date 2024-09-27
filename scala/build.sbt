@@ -47,3 +47,12 @@ libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "3.2.19" % Test,
   "dev.zio" %% "zio" % "2.1.7" % Test,
 )
+
+// Exclude sonatypeRelease and sonatypeBundleRelease commands because we
+// don't want to release this project to Maven Central without having
+// to complete the release using the repository.apache.org web site.
+commands := commands.value.filterNot { command =>
+  command.nameOption.exists { name =>
+    name.contains("sonatypeRelease") || name.contains("sonatypeBundleRelease")
+  }
+}
