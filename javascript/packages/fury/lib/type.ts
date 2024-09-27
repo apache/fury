@@ -100,7 +100,7 @@ export interface Hps {
   stringCopy: (str: string, dist: Uint8Array, offset: number) => void;
 }
 
-enum Mode {
+export enum Mode {
   SchemaConsistent,
   Compatible,
 }
