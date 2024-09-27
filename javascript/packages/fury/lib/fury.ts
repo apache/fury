@@ -26,6 +26,10 @@ import { OwnershipError } from "./error";
 import { InputType, ResultType, TypeDescription } from "./description";
 import { generateSerializer, AnySerializer } from "./gen";
 import { TypeMeta } from "./meta/TypeMeta";
+enum Mode {
+  SchemaConsistent,
+  Compatible,
+}
 
 export default class {
   binaryReader: BinaryReader;
@@ -40,6 +44,7 @@ export default class {
     useSliceString: false,
     hooks: {
     },
+    mode: Mode.Compatible,
   }) {
     this.binaryReader = new BinaryReader(config);
     this.binaryWriter = new BinaryWriter(config);
