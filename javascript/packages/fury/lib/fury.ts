@@ -21,15 +21,11 @@ import ClassResolver from "./classResolver";
 import { BinaryWriter } from "./writer";
 import { BinaryReader } from "./reader";
 import { ReferenceResolver } from "./referenceResolver";
-import { ConfigFlags, Serializer, Config, Language, MAGIC_NUMBER } from "./type";
+import { ConfigFlags, Serializer, Config, Language, MAGIC_NUMBER, Mode } from "./type";
 import { OwnershipError } from "./error";
 import { InputType, ResultType, TypeDescription } from "./description";
 import { generateSerializer, AnySerializer } from "./gen";
 import { TypeMeta } from "./meta/TypeMeta";
-enum Mode {
-  SchemaConsistent,
-  Compatible,
-}
 
 export default class {
   binaryReader: BinaryReader;
