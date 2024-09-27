@@ -18,4 +18,4 @@
 
 addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "3.9.21")
 addSbtPlugin("com.github.sbt" % "sbt-pgp" % "2.2.1")
-addSbtPlugin("org.mdedetrich" % "sbt-apache-sonatype" % "0.1.11")
+addSbtPlugin("org.mdedetrich" % "sbt-apache-sonatype" % "0.1.12")
