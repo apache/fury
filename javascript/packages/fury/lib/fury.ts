@@ -40,7 +40,7 @@ export default class {
     useSliceString: false,
     hooks: {
     },
-    mode: Mode.Compatible,
+    mode: Mode.SchemaConsistent,
   }) {
     this.binaryReader = new BinaryReader(config);
     this.binaryWriter = new BinaryWriter(config);
