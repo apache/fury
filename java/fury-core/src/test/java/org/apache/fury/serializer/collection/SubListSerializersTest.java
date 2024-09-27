@@ -32,7 +32,7 @@ import org.testng.annotations.Test;
 public class SubListSerializersTest extends FuryTestBase {
   @Test
   public void testSubListViewSerialization() {
-    Fury fury = builder().build();
+    Fury fury = builder().withRefTracking(true).build();
     List<Integer> data = new ArrayList<>();
     Collections.addAll(data, 1, 2, 3, 4, 5, 6, 7);
     int length = fury.serialize(data).length;
@@ -65,8 +65,7 @@ public class SubListSerializersTest extends FuryTestBase {
 
   @Test
   public void testSubListNoViewSerialization() {
-    Fury fury = builder().build();
-    SubListSerializers.registerSerializers(fury, false);
+    Fury fury = builder().withRefTracking(false).build();
     List<Integer> data = new ArrayList<>();
     Collections.addAll(data, 1, 2, 3, 4, 5, 6, 7);
     int length = fury.serialize(data).length;
