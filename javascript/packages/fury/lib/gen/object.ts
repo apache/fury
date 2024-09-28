@@ -83,7 +83,7 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
       ${
         this.builder.fury.config.mode === Mode.Compatible
           ? this.builder.writer.buffer(typeMetaDeclare)
-          : ''
+          : ""
       }
 
       ${Object.entries(options.props).sort().map(([key, inner]) => {
@@ -114,9 +114,9 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
 
       ${this.maybeReference(result, refState)}
       ${
-        this.builder.fury.config.mode === Mode.Compatible 
+        this.builder.fury.config.mode === Mode.Compatible
           ? this.builder.typeMeta.fromBytes(this.builder.reader.ownName())
-          : ''
+          : ""
       }
       ${Object.entries(options.props).sort().map(([key, inner]) => {
         const InnerGeneratorClass = CodegenRegistry.get(inner.type);
