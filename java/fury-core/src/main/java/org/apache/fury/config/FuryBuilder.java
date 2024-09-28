@@ -30,6 +30,7 @@ import org.apache.fury.memory.Platform;
 import org.apache.fury.meta.DeflaterMetaCompressor;
 import org.apache.fury.meta.MetaCompressor;
 import org.apache.fury.pool.ThreadPoolFury;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.JavaSerializer;
 import org.apache.fury.serializer.ObjectStreamSerializer;
@@ -316,6 +317,16 @@ public final class FuryBuilder {
   /** Whether enable scala-specific serialization optimization. */
   public FuryBuilder withScalaOptimizationEnabled(boolean enableScalaOptimization) {
     this.scalaOptimizationEnabled = enableScalaOptimization;
+    if (enableScalaOptimization) {
+      try {
+        Class.forName(
+            ReflectionUtils.getPackage(Fury.class) + ".serializer.scala.ScalaSerializers");
+      } catch (ClassNotFoundException e) {
+        LOG.warn(
+            "`fury-scala` library is not in the classpath, please add it to class path and invoke "
+                + "`org.apache.fury.serializer.scala.ScalaSerializers.registerSerializers` for peek performance");
+      }
+    }
     return this;
   }
 
