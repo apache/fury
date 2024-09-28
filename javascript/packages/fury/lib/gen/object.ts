@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import { InternalSerializerType, MaxInt32 } from "../type";
+import { InternalSerializerType, MaxInt32, Mode } from "../type";
 import { Scope } from "./scope";
 import { CodecBuilder } from "./builder";
 import { ObjectTypeDescription, TypeDescription } from "../description";
@@ -25,17 +25,7 @@ import { fromString } from "../platformBuffer";
 import { CodegenRegistry } from "./router";
 import { BaseSerializerGenerator, RefState } from "./serializer";
 import SerializerResolver from "../classResolver";
-import { MetaString } from "../meta/MetaString";
-
-// Ensure MetaString methods are correctly implemented
-const computeMetaInformation = (description: any) => {
-  const metaInfo = JSON.stringify(description);
-  return MetaString.encode(metaInfo);
-};
-
-const decodeMetaInformation = (encodedMetaInfo: Uint8Array) => {
-  return MetaString.decode(encodedMetaInfo);
-};
+import { FieldInfo, TypeMeta } from "../meta/TypeMeta";
 
 function computeFieldHash(hash: number, id: number): number {
   let newHash = (hash) * 31 + (id);
@@ -80,11 +70,22 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
   writeStmt(accessor: string): string {
     const options = this.description.options;
     const expectHash = computeStructHash(this.description);
-    const metaInformation = Buffer.from(computeMetaInformation(this.description));
+    // const metaInformation = Buffer.from(computeMetaInformation(this.description));
+    const fields = Object.entries(this.description).map(([key, value]) => {
+      return new FieldInfo(key, value.type);
+    });
+    const typeMetaBinary = new Uint8Array(TypeMeta.fromFields(256, fields).toBytes());
+    const typeMetaDeclare = this.scope.declare("typeMeta", `new Uint8Array([${typeMetaBinary.toString()}])`);
 
     return `
       ${this.builder.writer.int32(expectHash)};
-      ${this.builder.writer.buffer(`Buffer.from("${metaInformation.toString("base64")}", "base64")`)};
+      
+      ${
+        this.builder.fury.config.mode === Mode.Compatible
+          ? this.builder.writer.buffer(typeMetaDeclare)
+          : ""
+      }
+
       ${Object.entries(options.props).sort().map(([key, inner]) => {
         const InnerGeneratorClass = CodegenRegistry.get(inner.type);
         if (!InnerGeneratorClass) {
@@ -99,9 +100,8 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
   readStmt(accessor: (expr: string) => string, refState: RefState): string {
     const options = this.description.options;
     const expectHash = computeStructHash(this.description);
-    const encodedMetaInformation = computeMetaInformation(this.description);
     const result = this.scope.uniqueName("result");
-    const pass = this.builder.reader.int32();
+
     return `
       if (${this.builder.reader.int32()} !== ${expectHash}) {
           throw new Error("got ${this.builder.reader.int32()} validate hash failed: ${this.safeTag()}. expect ${expectHash}");
@@ -111,8 +111,13 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
           return `${CodecBuilder.safePropName(key)}: null`;
         }).join(",\n")}
       };
+
       ${this.maybeReference(result, refState)}
-      ${this.builder.reader.buffer(encodedMetaInformation.byteLength)}
+      ${
+        this.builder.fury.config.mode === Mode.Compatible
+          ? this.builder.typeMeta.fromBytes(this.builder.reader.ownName())
+          : ""
+      }
       ${Object.entries(options.props).sort().map(([key, inner]) => {
         const InnerGeneratorClass = CodegenRegistry.get(inner.type);
         if (!InnerGeneratorClass) {
@@ -125,8 +130,6 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
     `;
   }
 
-  // /8 /7 /20 % 2
-  // is there a ratio from length / deserializer
   private safeTag() {
     return CodecBuilder.replaceBackslashAndQuote(this.description.options.tag);
   }

@@ -59,20 +59,16 @@ export class MetaString {
 
   // Decoding function that extracts bits per character from the first byte
   static decode(bytes: Uint8Array): string {
-    const bitsPerChar = bytes[0] & 0x0F;
+    const bitsPerChar = bytes[0];
     const totalBits = (bytes.length * 8); // Adjusted for metadata bits
     const chars: string[] = [];
     let currentBit = 8; // Start after the first 8 metadata bits
 
-    while (currentBit < totalBits) {
+    while (currentBit + bitsPerChar <= totalBits) {
       let value = 0;
       for (let i = 0; i < bitsPerChar; i++) {
         const bytePos = Math.floor(currentBit / 8);
         const bitPos = currentBit % 8;
-
-        if (bytePos >= bytes.length) {
-          throw new RangeError("Offset is outside the bounds of the DataView");
-        }
 
         if (bytes[bytePos] & (1 << (7 - bitPos))) {
           value |= (1 << (bitsPerChar - i - 1));

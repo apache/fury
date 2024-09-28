@@ -22,7 +22,17 @@ import { getMeta } from "../meta";
 import { TypeDescription } from "../description";
 import Fury from "../fury";
 
-class BinaryReaderBuilder {
+class TypeMetaBuilder {
+  constructor(private fury: string) {
+
+  }
+
+  fromBytes(reader: string) {
+    return `${this.fury}.typeMeta.fromBytes(${reader})`;
+  }
+}
+
+export class BinaryReaderBuilder {
   constructor(private holder: string) {
 
   }
@@ -309,6 +319,7 @@ class ClassResolverBuilder {
 export class CodecBuilder {
   reader: BinaryReaderBuilder;
   writer: BinaryWriterBuilder;
+  typeMeta: TypeMetaBuilder; // Use the TypeMetaWrapper
   referenceResolver: ReferenceResolverBuilder;
   classResolver: ClassResolverBuilder;
 
@@ -321,6 +332,7 @@ export class CodecBuilder {
     this.writer = new BinaryWriterBuilder(bw);
     this.classResolver = new ClassResolverBuilder(cr);
     this.referenceResolver = new ReferenceResolverBuilder(rr);
+    this.typeMeta = new TypeMetaBuilder("fury"); // Initialize the TypeMetaWrapper
   }
 
   furyName() {

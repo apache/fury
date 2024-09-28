@@ -21,10 +21,11 @@ import ClassResolver from "./classResolver";
 import { BinaryWriter } from "./writer";
 import { BinaryReader } from "./reader";
 import { ReferenceResolver } from "./referenceResolver";
-import { ConfigFlags, Serializer, Config, Language, MAGIC_NUMBER } from "./type";
+import { ConfigFlags, Serializer, Config, Language, MAGIC_NUMBER, Mode } from "./type";
 import { OwnershipError } from "./error";
 import { InputType, ResultType, TypeDescription } from "./description";
 import { generateSerializer, AnySerializer } from "./gen";
+import { TypeMeta } from "./meta/TypeMeta";
 
 export default class {
   binaryReader: BinaryReader;
@@ -32,12 +33,14 @@ export default class {
   classResolver = new ClassResolver();
   referenceResolver: ReferenceResolver;
   anySerializer: AnySerializer;
+  typeMeta = TypeMeta;
 
   constructor(public config: Config = {
     refTracking: false,
     useSliceString: false,
     hooks: {
     },
+    mode: Mode.SchemaConsistent,
   }) {
     this.binaryReader = new BinaryReader(config);
     this.binaryWriter = new BinaryWriter(config);

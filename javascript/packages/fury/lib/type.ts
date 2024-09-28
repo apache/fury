@@ -100,6 +100,11 @@ export interface Hps {
   stringCopy: (str: string, dist: Uint8Array, offset: number) => void;
 }
 
+export enum Mode {
+  SchemaConsistent,
+  Compatible,
+}
+
 export interface Config {
   hps?: Hps;
   refTracking?: boolean;
@@ -107,6 +112,7 @@ export interface Config {
   hooks?: {
     afterCodeGenerated?: (code: string) => string;
   };
+  mode?: Mode;
 }
 
 export enum Language {
