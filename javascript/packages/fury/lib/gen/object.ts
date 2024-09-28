@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import { InternalSerializerType, MaxInt32 } from "../type";
+import { InternalSerializerType, MaxInt32, Mode } from "../type";
 import { Scope } from "./scope";
 import { CodecBuilder } from "./builder";
 import { ObjectTypeDescription, TypeDescription } from "../description";
