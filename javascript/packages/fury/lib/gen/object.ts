@@ -80,7 +80,11 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
     return `
       ${this.builder.writer.int32(expectHash)};
       
-      ${this.builder.writer.buffer(typeMetaDeclare)};
+      ${
+        this.builder.fury.config.mode === Mode.Compatible
+          ? this.builder.writer.buffer(typeMetaDeclare)
+          : ''
+      }
 
       ${Object.entries(options.props).sort().map(([key, inner]) => {
         const InnerGeneratorClass = CodegenRegistry.get(inner.type);
@@ -109,7 +113,11 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
       };
 
       ${this.maybeReference(result, refState)}
-      ${this.builder.typeMeta.fromBytes(this.builder.reader.ownName())}
+      ${
+        this.builder.fury.config.mode === Mode.Compatible 
+          ? this.builder.typeMeta.fromBytes(this.builder.reader.ownName())
+          : ''
+      }
       ${Object.entries(options.props).sort().map(([key, inner]) => {
         const InnerGeneratorClass = CodegenRegistry.get(inner.type);
         if (!InnerGeneratorClass) {
