@@ -4,11 +4,11 @@ import org.apache.fury.Fury
 import org.apache.fury.memory.MemoryBuffer
 import org.apache.fury.serializer.collection.AbstractCollectionSerializer
 
-abstract class AbstractKotlinCollectionSerializer<A, T: Iterable<A>>(
+abstract class AbstractKotlinCollectionSerializer<E, T: Iterable<E>>(
     fury: Fury,
     cls: Class<T>
 ) : AbstractCollectionSerializer<T>(fury, cls) {
-    abstract override fun onCollectionWrite(buffer: MemoryBuffer, value: T?): Collection<A>?
+    abstract override fun onCollectionWrite(buffer: MemoryBuffer, value: T?): Collection<E>?
 
     override fun read(buffer: MemoryBuffer): T? {
         val collection = newCollection(buffer)
@@ -17,7 +17,7 @@ abstract class AbstractKotlinCollectionSerializer<A, T: Iterable<A>>(
         return onCollectionRead(collection)
     }
 
-    override fun newCollection(buffer: MemoryBuffer?): Collection<A>? {
+    override fun newCollection(buffer: MemoryBuffer?): Collection<E>? {
         TODO("Not yet implemented")
     }
 
@@ -26,19 +26,38 @@ abstract class AbstractKotlinCollectionSerializer<A, T: Iterable<A>>(
     }
 }
 
+typealias CollectionAdaptor<E> = java.util.AbstractCollection<E>
+
 /**
- * A Collection adapter which wraps a kotlin iterable into a [[java.util.Collection]].
+ * An adapter which wraps a kotlin iterable into a [[java.util.Collection]].
  *
  *
  */
-private class CollectionAdaptor<A>(
-    val coll: Iterable<A>
-) : java.util.AbstractCollection<A>() {
+private class IterableAdaptor<E>(
+    coll: Iterable<E>
+) : CollectionAdaptor<E>() {
     private val mutableList = coll.toMutableList()
 
     override val size: Int
-        get() = coll.count()
+        get() = mutableList.count()
 
-    override fun iterator(): MutableIterator<A> =
+    override fun iterator(): MutableIterator<E> =
         mutableList.iterator()
+}
+
+/**
+ * An adapter which wraps a kotlin set into a [[java.util.Collection]].
+ *
+ *
+ */
+private class SetAdaptor<E>(
+    coll: Set<E>
+) : CollectionAdaptor<E>() {
+    private val mutableSet = coll.toMutableSet()
+
+    override val size: Int
+        get() = mutableSet.size
+
+    override fun iterator(): MutableIterator<E> =
+        mutableSet.iterator()
 }
