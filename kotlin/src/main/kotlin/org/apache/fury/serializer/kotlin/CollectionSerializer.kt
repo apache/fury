@@ -5,6 +5,7 @@ import org.apache.fury.memory.MemoryBuffer
 import org.apache.fury.serializer.collection.AbstractCollectionSerializer
 
 abstract class AbstractKotlinCollectionSerializer<E, T: Iterable<E>>(
+    private val factory: CollectionFactory<E, T>,
     fury: Fury,
     cls: Class<T>
 ) : AbstractCollectionSerializer<T>(fury, cls) {
