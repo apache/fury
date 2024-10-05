@@ -5,44 +5,36 @@ interface CollectionBuilder <E, T: Iterable<E>> {
     fun result(): T
 }
 
-class ListBuilder<E> : CollectionBuilder<E, List<E>> {
-    private val builder = mutableListOf<E>()
+abstract class AbstractListBuilder<E, T:List<E>>(
+    protected open val builder: MutableList<E>,
+) : CollectionBuilder<E, T> {
     override fun add(element: E) {
         builder.add(element)
     }
-    override fun result(): List<E> = builder
 }
 
-class MutableListBuilder<E> : CollectionBuilder<E, MutableList<E>> {
-    private val builder = mutableListOf<E>()
+abstract class AbstractSetBuilder<E, T: Set<E>>(
+    protected open val builder: MutableSet<E>
+) : CollectionBuilder<E, T> {
     override fun add(element: E) {
         builder.add(element)
     }
+}
 
+class ListBuilder<E>(
+    builder: MutableList<E> = mutableListOf()
+) : AbstractListBuilder<E, MutableList<E>>(builder) {
     override fun result(): MutableList<E> = builder
 }
 
-class ArrayDequeBuilder<E> : CollectionBuilder<E, ArrayDeque<E>> {
-    private val builder = ArrayDeque<E>()
-    override fun add(element: E) {
-        builder.add(element)
-    }
-
+class ArrayDequeBuilder<E>(
+    override val builder: ArrayDeque<E> = ArrayDeque()
+) : AbstractListBuilder<E, ArrayDeque<E>>(builder) {
     override fun result(): ArrayDeque<E> = builder
 }
 
-class SetBuilder<E> : CollectionBuilder<E, Set<E>> {
-    private val builder = mutableSetOf<E>()
-    override fun add(element: E) {
-        builder.add(element)
-    }
-    override fun result(): Set<E> = builder
-}
-
-class MutableSetBuilder<E> : CollectionBuilder<E, MutableSet<E>> {
-    private val builder = mutableSetOf<E>()
-    override fun add(element: E) {
-        builder.add(element)
-    }
+class SetBuilder<E>(
+    builder: MutableSet<E> = mutableSetOf()
+) : AbstractSetBuilder<E, MutableSet<E>>(builder) {
     override fun result(): MutableSet<E> = builder
 }
