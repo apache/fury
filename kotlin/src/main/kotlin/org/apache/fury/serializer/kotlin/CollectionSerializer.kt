@@ -17,6 +17,11 @@ abstract class AbstractKotlinCollectionSerializer<E, T: Iterable<E>>(
         if (numElements != 0) readElements(fury, buffer, collection, numElements)
         return onCollectionRead(collection)
     }
+
+    override fun onCollectionRead(collection: Collection<*>): T {
+        @Suppress("UNCHECKED_CAST") val builder = collection as CollectionBuilder<E, T>
+        return builder.result()
+    }
 }
 
 typealias CollectionAdapter<E> = java.util.AbstractCollection<E>
@@ -55,7 +60,7 @@ private class SetAdapter<E>(
         mutableSet.iterator()
 }
 
-abstract class AbstractKotlinIterableSerializer<E, T: List<E>>(
+open class KotlinListSerializer<E, T: List<E>>(
     fury: Fury,
     cls: KClass<T>
 ) : AbstractKotlinCollectionSerializer<E, T>(fury, cls) {
@@ -72,7 +77,7 @@ abstract class AbstractKotlinIterableSerializer<E, T: List<E>>(
     }
 }
 
-abstract class AbstractKotlinSetSerializer<E, T: Set<E>>(
+open class KotlinSetSerializer<E, T: Set<E>>(
     fury: Fury,
     cls: KClass<T>
 ) : AbstractKotlinCollectionSerializer<E, T>(fury, cls) {
@@ -86,5 +91,21 @@ abstract class AbstractKotlinSetSerializer<E, T: Set<E>>(
         val numElements = buffer.readVarUint32()
         setNumElements(numElements)
         return SetBuilder<E>()
+    }
+}
+
+class KotlinArrayDequeSerializer<E> (
+    fury: Fury,
+    cls: KClass<ArrayDeque<E>>,
+) : KotlinListSerializer<E, ArrayDeque<E>>(fury, cls) {
+    override fun onCollectionWrite(buffer: MemoryBuffer, value: ArrayDeque<E>): Collection<E> {
+        val adapter = IterableAdapter<E>(value)
+        buffer.writeVarUint32Small7(adapter.size)
+        return adapter
+    }
+    override fun newCollection(buffer: MemoryBuffer): Collection<E> {
+        val numElements = buffer.readVarUint32()
+        setNumElements(numElements)
+        return ArrayDequeBuilder<E>()
     }
 }
