@@ -6,11 +6,10 @@ import org.apache.fury.serializer.collection.AbstractCollectionSerializer
 import kotlin.reflect.KClass
 
 abstract class AbstractKotlinCollectionSerializer<E, T: Iterable<E>>(
-    private val factory: CollectionFactory<E, T>,
+    private val factory: CollectionBuilder<E, T>,
     fury: Fury,
     cls: KClass<T>
 ) : AbstractCollectionSerializer<T>(fury, cls.java) {
-
     abstract override fun onCollectionWrite(buffer: MemoryBuffer, value: T?): Collection<E>?
 
     override fun read(buffer: MemoryBuffer): T? {
@@ -20,9 +19,7 @@ abstract class AbstractKotlinCollectionSerializer<E, T: Iterable<E>>(
         return onCollectionRead(collection)
     }
 
-    override fun newCollection(buffer: MemoryBuffer): Collection<E> {
-        TODO("Not yet implemented")
-    }
+    abstract override fun newCollection(buffer: MemoryBuffer): Collection<E>
 
     override fun onCollectionRead(collection: Collection<*>): T? {
         TODO("Not yet implemented")
