@@ -124,20 +124,28 @@ Release version:
 <dependency>
   <groupId>org.apache.fury</groupId>
   <artifactId>fury-core</artifactId>
-  <version>0.7.1</version>
+  <version>0.8.0</version>
 </dependency>
 <!-- row/arrow format support -->
 <!-- <dependency>
   <groupId>org.apache.fury</groupId>
   <artifactId>fury-format</artifactId>
-  <version>0.7.1</version>
+  <version>0.8.0</version>
 </dependency> -->
 ```
 
 ### Scala
 
+Scala2:
+
 ```sbt
-libraryDependencies += "org.apache.fury" % "fury-core" % "0.7.1"
+libraryDependencies += "org.apache.fury" % "fury-scala_2.13" % "0.8.0"
+```
+
+Scala3:
+
+```sbt
+libraryDependencies += "org.apache.fury" % "fury-scala_3" % "0.8.0"
 ```
 
 ### Python

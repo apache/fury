@@ -223,11 +223,11 @@ def _update_rust_version(lines, v):
 
 def _update_python_version(lines, v: str):
     for index, line in enumerate(lines):
-        if "version = " in line:
+        if "__version__ = " in line:
             v = v.replace("-alpha", "a")
             v = v.replace("-beta", "b")
             v = v.replace("-rc", "rc")
-            lines[index] = f'version = "{v}"\n'
+            lines[index] = f'__version__ = "{v}"\n'
             break
 
 

@@ -16,8 +16,16 @@ Scala 2 and 3 are both supported.
 
 ## Install
 
+To add a dependency on Fury scala for scala 2 with sbt, use the following:
+
 ```sbt
-libraryDependencies += "org.apache.fury" % "fury-core" % "0.7.1"
+libraryDependencies += "org.apache.fury" % "fury-scala_2.13" % "0.8.0"
+```
+
+To add a dependency on Fury scala for scala 3 with sbt, use the following:
+
+```sbt
+libraryDependencies += "org.apache.fury" % "fury-scala_3" % "0.8.0"
 ```
 
 ## Fury creation
@@ -25,11 +33,25 @@ libraryDependencies += "org.apache.fury" % "fury-core" % "0.7.1"
 When using fury for scala serialization, you should create fury at least with following options:
 
 ```scala
+import org.apache.fury.Fury
+import org.apache.fury.serializer.scala.ScalaSerializers
+import org.apache.fury.serializer.collection.CollectionSerializers.DefaultJavaCollectionSerializer
+
 val fury = Fury.builder()
   .withScalaOptimizationEnabled(true)
   .requireClassRegistration(true)
   .withRefTracking(true)
   .build()
+
+// Register optimized fury serializers for scala
+ScalaSerializers.registerSerializers(fury)
+// serialize range as (start, step, end) instead of collection
+// this will be handled in next version automatically.
+fury.registerSerializer(classOf[Range.Inclusive], classOf[DefaultJavaCollectionSerializer])
+fury.registerSerializer(classOf[Range.Exclusive], classOf[DefaultJavaCollectionSerializer])
+fury.registerSerializer(classOf[NumericRange], classOf[DefaultJavaCollectionSerializer])
+fury.registerSerializer(classOf[NumericRange.Inclusive], classOf[DefaultJavaCollectionSerializer])
+fury.registerSerializer(classOf[NumericRange.Exclusive], classOf[DefaultJavaCollectionSerializer])
 ```
 
 Depending on the object types you serialize, you may need to register some scala internal types:
@@ -123,15 +145,3 @@ println(fury.deserialize(fury.serialize(opt)))
 val opt1: Option[Long] = None
 println(fury.deserialize(fury.serialize(opt1)))
 ```
-
-## Performance
-
-Scala `pojo/bean/case/object` are supported by fury jit well, the performance is as good as fury java.
-
-Scala collections and generics doesn't follow java collection framework, and is not fully integrated with Fury JIT in current release version. The performance won't be as good as fury collections serialization for java.
-
-The execution for scala collections will invoke Java serialization API `writeObject/readObject/writeReplace/readResolve/readObjectNoData/Externalizable` with fury `ObjectStream` implementation. Although `org.apache.fury.serializer.ObjectStreamSerializer` is much faster than JDK `ObjectOutputStream/ObjectInputStream`, but it still doesn't know how use scala collection generics.
-
-In future we plan to provide more optimization for scala types, see https://github.com/apache/fury/issues/682, stay tuned!
-
-Scala collections serialization is finished in https://github.com/apache/fury/pull/1073, if you want better performance, please use fury snapshot version.
