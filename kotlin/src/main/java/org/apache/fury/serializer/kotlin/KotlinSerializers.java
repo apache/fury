@@ -5,9 +5,11 @@ import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.serializer.SerializerFactory;
 
+@SuppressWarnings({"rawtypes", "unchecked"})
 public class KotlinSerializers {
     public static void registerSerializers(Fury fury) {
         ClassResolver resolver = setSerializerFactory(fury);
+        resolver.registerSerializer(kotlin.collections.ArrayDeque.class, new KotlinArrayDequeSerializer(fury, kotlin.collections.ArrayDeque.class));
     }
 
     private static ClassResolver setSerializerFactory(Fury fury) {
