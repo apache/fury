@@ -35,6 +35,7 @@ When using fury for scala serialization, you should create fury at least with fo
 ```scala
 import org.apache.fury.Fury
 import org.apache.fury.serializer.scala.ScalaSerializers
+import org.apache.fury.serializer.collection.CollectionSerializers.DefaultJavaCollectionSerializer
 
 val fury = Fury.builder()
   .withScalaOptimizationEnabled(true)
@@ -42,7 +43,15 @@ val fury = Fury.builder()
   .withRefTracking(true)
   .build()
 
+// Register optimized fury serializers for scala
 ScalaSerializers.registerSerializers(fury)
+// serialize range as (start, step, end) instead of collection
+// this will be handled in next version automatically.
+fury.registerSerializer(classOf[Range.Inclusive], classOf[DefaultJavaCollectionSerializer])
+fury.registerSerializer(classOf[Range.Exclusive], classOf[DefaultJavaCollectionSerializer])
+fury.registerSerializer(classOf[NumericRange], classOf[DefaultJavaCollectionSerializer])
+fury.registerSerializer(classOf[NumericRange.Inclusive], classOf[DefaultJavaCollectionSerializer])
+fury.registerSerializer(classOf[NumericRange.Exclusive], classOf[DefaultJavaCollectionSerializer])
 ```
 
 Depending on the object types you serialize, you may need to register some scala internal types:
