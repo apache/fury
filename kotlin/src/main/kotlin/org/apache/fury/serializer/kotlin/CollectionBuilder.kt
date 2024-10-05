@@ -1,40 +1,44 @@
 package org.apache.fury.serializer.kotlin
 
 interface CollectionBuilder <E, T: Iterable<E>> {
-    fun add(element: E)
+    fun add(element: E): Boolean
+    fun addAll(elements:Iterable<E>) : Boolean
     fun result(): T
 }
 
-abstract class AbstractListBuilder<E, T:List<E>>(
-    protected open val builder: MutableList<E>,
-) : CollectionBuilder<E, T> {
-    override fun add(element: E) {
+abstract class AbstractListBuilder<E, T:List<E>>
+    : CollectionBuilder<E, T>, CollectionAdapter<E>() {
+    protected open val builder: MutableList<E> = mutableListOf()
+    override val size: Int
+        get() = builder.size
+    override fun add(element: E) =
         builder.add(element)
-    }
+    override fun addAll(elements: Iterable<E>): Boolean =
+        builder.addAll(elements)
+    override fun iterator(): MutableIterator<E> = builder.iterator()
 }
 
-abstract class AbstractSetBuilder<E, T: Set<E>>(
-    protected open val builder: MutableSet<E>
-) : CollectionBuilder<E, T> {
-    override fun add(element: E) {
+abstract class AbstractSetBuilder<E, T: Set<E>>
+    : CollectionBuilder<E, T>, CollectionAdapter<E>() {
+    protected open val builder: MutableSet<E> = mutableSetOf()
+    override val size: Int
+        get() = builder.size
+    override fun add(element: E) =
         builder.add(element)
-    }
+    override fun addAll(elements: Iterable<E>): Boolean =
+        builder.addAll(elements)
+    override fun iterator(): MutableIterator<E> = builder.iterator()
 }
 
-class ListBuilder<E>(
-    builder: MutableList<E> = mutableListOf()
-) : AbstractListBuilder<E, MutableList<E>>(builder) {
+class ListBuilder<E>: AbstractListBuilder<E, MutableList<E>>() {
     override fun result(): MutableList<E> = builder
 }
 
-class ArrayDequeBuilder<E>(
+class ArrayDequeBuilder<E>: AbstractListBuilder<E, ArrayDeque<E>>() {
     override val builder: ArrayDeque<E> = ArrayDeque()
-) : AbstractListBuilder<E, ArrayDeque<E>>(builder) {
     override fun result(): ArrayDeque<E> = builder
 }
 
-class SetBuilder<E>(
-    builder: MutableSet<E> = mutableSetOf()
-) : AbstractSetBuilder<E, MutableSet<E>>(builder) {
+class SetBuilder<E> : AbstractSetBuilder<E, MutableSet<E>>() {
     override fun result(): MutableSet<E> = builder
 }

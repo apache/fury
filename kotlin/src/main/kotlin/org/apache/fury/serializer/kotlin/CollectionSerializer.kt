@@ -6,36 +6,29 @@ import org.apache.fury.serializer.collection.AbstractCollectionSerializer
 import kotlin.reflect.KClass
 
 abstract class AbstractKotlinCollectionSerializer<E, T: Iterable<E>>(
-    private val factory: CollectionBuilder<E, T>,
     fury: Fury,
     cls: KClass<T>
 ) : AbstractCollectionSerializer<T>(fury, cls.java) {
-    abstract override fun onCollectionWrite(buffer: MemoryBuffer, value: T?): Collection<E>?
+    abstract override fun onCollectionWrite(buffer: MemoryBuffer, value: T): Collection<E>
 
-    override fun read(buffer: MemoryBuffer): T? {
+    override fun read(buffer: MemoryBuffer): T {
         val collection = newCollection(buffer)
         val numElements = getAndClearNumElements()
         if (numElements != 0) readElements(fury, buffer, collection, numElements)
         return onCollectionRead(collection)
     }
-
-    abstract override fun newCollection(buffer: MemoryBuffer): Collection<E>
-
-    override fun onCollectionRead(collection: Collection<*>): T? {
-        TODO("Not yet implemented")
-    }
 }
 
-typealias CollectionAdaptor<E> = java.util.AbstractCollection<E>
+typealias CollectionAdapter<E> = java.util.AbstractCollection<E>
 
 /**
  * An adapter which wraps a kotlin iterable into a [[java.util.Collection]].
  *
  *
  */
-private class IterableAdaptor<E>(
+private class IterableAdapter<E>(
     coll: Iterable<E>
-) : CollectionAdaptor<E>() {
+) : CollectionAdapter<E>() {
     private val mutableList = coll.toMutableList()
 
     override val size: Int
@@ -50,9 +43,9 @@ private class IterableAdaptor<E>(
  *
  *
  */
-private class SetAdaptor<E>(
+private class SetAdapter<E>(
     coll: Set<E>
-) : CollectionAdaptor<E>() {
+) : CollectionAdapter<E>() {
     private val mutableSet = coll.toMutableSet()
 
     override val size: Int
@@ -60,4 +53,38 @@ private class SetAdaptor<E>(
 
     override fun iterator(): MutableIterator<E> =
         mutableSet.iterator()
+}
+
+abstract class AbstractKotlinIterableSerializer<E, T: List<E>>(
+    fury: Fury,
+    cls: KClass<T>
+) : AbstractKotlinCollectionSerializer<E, T>(fury, cls) {
+    override fun onCollectionWrite(buffer: MemoryBuffer, value: T): Collection<E> {
+        val adapter = IterableAdapter<E>(value)
+        buffer.writeVarUint32Small7(adapter.size)
+        return adapter
+    }
+
+    override fun newCollection(buffer: MemoryBuffer): Collection<E> {
+        val numElements = buffer.readVarUint32()
+        setNumElements(numElements)
+        return ListBuilder<E>()
+    }
+}
+
+abstract class AbstractKotlinSetSerializer<E, T: Set<E>>(
+    fury: Fury,
+    cls: KClass<T>
+) : AbstractKotlinCollectionSerializer<E, T>(fury, cls) {
+    override fun onCollectionWrite(buffer: MemoryBuffer, value: T): Collection<E> {
+        val adapter = SetAdapter<E>(value)
+        buffer.writeVarUint32Small7(adapter.size)
+        return adapter
+    }
+
+    override fun newCollection(buffer: MemoryBuffer): Collection<E> {
+        val numElements = buffer.readVarUint32()
+        setNumElements(numElements)
+        return SetBuilder<E>()
+    }
 }
