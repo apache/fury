@@ -7,8 +7,8 @@ import kotlin.reflect.KClass
 
 abstract class AbstractKotlinCollectionSerializer<E, T: Iterable<E>>(
     fury: Fury,
-    cls: KClass<T>
-) : AbstractCollectionSerializer<T>(fury, cls.java) {
+    cls: Class<T>
+) : AbstractCollectionSerializer<T>(fury, cls) {
     abstract override fun onCollectionWrite(buffer: MemoryBuffer, value: T): Collection<E>
 
     override fun read(buffer: MemoryBuffer): T {
@@ -62,7 +62,7 @@ private class SetAdapter<E>(
 
 open class KotlinListSerializer<E, T: List<E>>(
     fury: Fury,
-    cls: KClass<T>
+    cls: Class<T>
 ) : AbstractKotlinCollectionSerializer<E, T>(fury, cls) {
     override fun onCollectionWrite(buffer: MemoryBuffer, value: T): Collection<E> {
         val adapter = IterableAdapter<E>(value)
@@ -79,7 +79,7 @@ open class KotlinListSerializer<E, T: List<E>>(
 
 open class KotlinSetSerializer<E, T: Set<E>>(
     fury: Fury,
-    cls: KClass<T>
+    cls: Class<T>
 ) : AbstractKotlinCollectionSerializer<E, T>(fury, cls) {
     override fun onCollectionWrite(buffer: MemoryBuffer, value: T): Collection<E> {
         val adapter = SetAdapter<E>(value)
@@ -96,7 +96,7 @@ open class KotlinSetSerializer<E, T: Set<E>>(
 
 class KotlinArrayDequeSerializer<E> (
     fury: Fury,
-    cls: KClass<ArrayDeque<E>>,
+    cls: Class<ArrayDeque<E>>,
 ) : KotlinListSerializer<E, ArrayDeque<E>>(fury, cls) {
     override fun onCollectionWrite(buffer: MemoryBuffer, value: ArrayDeque<E>): Collection<E> {
         val adapter = IterableAdapter<E>(value)
@@ -106,6 +106,6 @@ class KotlinArrayDequeSerializer<E> (
     override fun newCollection(buffer: MemoryBuffer): Collection<E> {
         val numElements = buffer.readVarUint32()
         setNumElements(numElements)
-        return ArrayDequeBuilder<E>()
+        return ArrayDequeBuilder<E>(ArrayDeque<E>(numElements))
     }
 }

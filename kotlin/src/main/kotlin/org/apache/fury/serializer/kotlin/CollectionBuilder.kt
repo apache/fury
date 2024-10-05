@@ -34,8 +34,9 @@ class ListBuilder<E>: AbstractListBuilder<E, MutableList<E>>() {
     override fun result(): MutableList<E> = builder
 }
 
-class ArrayDequeBuilder<E>: AbstractListBuilder<E, ArrayDeque<E>>() {
-    override val builder: ArrayDeque<E> = ArrayDeque()
+class ArrayDequeBuilder<E>(
+    override val builder: ArrayDeque<E>
+): AbstractListBuilder<E, ArrayDeque<E>>() {
     override fun result(): ArrayDeque<E> = builder
 }
 
