@@ -137,11 +137,13 @@ Release version:
 ### Scala
 
 Scala2:
+
 ```sbt
 libraryDependencies += "org.apache.fury" % "fury-scala_2.13" % "0.8.0"
 ```
 
 Scala3:
+
 ```sbt
 libraryDependencies += "org.apache.fury" % "fury-scala_3" % "0.8.0"
 ```
