@@ -20,11 +20,11 @@ abstract class AbstractKotlinCollectionSerializer<E, T: Iterable<E>>(
         return onCollectionRead(collection)
     }
 
-    override fun newCollection(buffer: MemoryBuffer?): Collection<E>? {
+    override fun newCollection(buffer: MemoryBuffer): Collection<E> {
         TODO("Not yet implemented")
     }
 
-    override fun onCollectionRead(collection: Collection<*>?): T? {
+    override fun onCollectionRead(collection: Collection<*>): T? {
         TODO("Not yet implemented")
     }
 }
