@@ -1,6 +1,5 @@
 package org.apache.fury.serializer.kotlin;
 
-import kotlin.collections.ArrayDeque;
 import org.apache.fury.Fury;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.Serializer;
@@ -12,7 +11,7 @@ public class KotlinSerializers {
         ClassResolver resolver = setSerializerFactory(fury);
 
         // Non-Java collection implementation in kotlin stdlib.
-        Class arrayDequeClass = ArrayDeque.class;
+        Class arrayDequeClass = KClassToJava.INSTANCE.getArrayDequeClass();
         resolver.registerSerializer(arrayDequeClass, new KotlinArrayDequeSerializer(fury, arrayDequeClass));
         resolver.register(kotlin.collections.ArrayDeque.class);
     }
