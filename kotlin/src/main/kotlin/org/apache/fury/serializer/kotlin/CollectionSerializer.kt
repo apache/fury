@@ -3,7 +3,6 @@ package org.apache.fury.serializer.kotlin
 import org.apache.fury.Fury
 import org.apache.fury.memory.MemoryBuffer
 import org.apache.fury.serializer.collection.AbstractCollectionSerializer
-import kotlin.reflect.KClass
 
 abstract class AbstractKotlinCollectionSerializer<E, T: Iterable<E>>(
     fury: Fury,
@@ -43,23 +42,6 @@ private class IterableAdapter<E>(
         mutableList.iterator()
 }
 
-/**
- * An adapter which wraps a kotlin set into a [[java.util.Collection]].
- *
- *
- */
-private class SetAdapter<E>(
-    coll: Set<E>
-) : CollectionAdapter<E>() {
-    private val mutableSet = coll.toMutableSet()
-
-    override val size: Int
-        get() = mutableSet.size
-
-    override fun iterator(): MutableIterator<E> =
-        mutableSet.iterator()
-}
-
 open class KotlinListSerializer<E, T: List<E>>(
     fury: Fury,
     cls: Class<T>
@@ -74,23 +56,6 @@ open class KotlinListSerializer<E, T: List<E>>(
         val numElements = buffer.readVarUint32()
         setNumElements(numElements)
         return ListBuilder<E>()
-    }
-}
-
-open class KotlinSetSerializer<E, T: Set<E>>(
-    fury: Fury,
-    cls: Class<T>
-) : AbstractKotlinCollectionSerializer<E, T>(fury, cls) {
-    override fun onCollectionWrite(buffer: MemoryBuffer, value: T): Collection<E> {
-        val adapter = SetAdapter<E>(value)
-        buffer.writeVarUint32Small7(adapter.size)
-        return adapter
-    }
-
-    override fun newCollection(buffer: MemoryBuffer): Collection<E> {
-        val numElements = buffer.readVarUint32()
-        setNumElements(numElements)
-        return SetBuilder<E>()
     }
 }
 
