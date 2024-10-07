@@ -31,8 +31,10 @@ public class KotlinSerializers {
         // (Mutable)MapWithDefault
         Class mapWithDefaultClass = KotlinToJavaClass.INSTANCE.getMapWithDefaultClass();
         resolver.register(mapWithDefaultClass);
+        resolver.registerSerializer(mapWithDefaultClass, new MapWithDefaultSerializer(fury, mapWithDefaultClass));
         Class mutableMapWithDefaultClass = KotlinToJavaClass.INSTANCE.getMutableMapWitDefaultClass();
         resolver.register(mutableMapWithDefaultClass);
+        resolver.registerSerializer(mutableMapWithDefaultClass, new MapWithDefaultSerializer(fury, mutableMapWithDefaultClass));
 
         // Non-Java collection implementation in kotlin stdlib.
         Class arrayDequeClass = KotlinToJavaClass.INSTANCE.getArrayDequeClass();
