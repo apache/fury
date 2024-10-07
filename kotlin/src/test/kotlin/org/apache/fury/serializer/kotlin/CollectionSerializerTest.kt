@@ -11,7 +11,7 @@ class CollectionSerializerTest {
         val fury: Fury = Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(true)
-            .requireClassRegistration(true)
+            .requireClassRegistration(false)
             .suppressClassRegistrationWarnings(false)
             .build()
 

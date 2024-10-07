@@ -16,7 +16,7 @@ public class KotlinDispatcher implements SerializerFactory {
 
         if (mapWithDefaultClass.isAssignableFrom(clz) ||
         mutableMapWithDefaultClass.isAssignableFrom(clz)) {
-            System.out.println("delegate me");
+            return new MapWithDefaultSerializer(fury, clz);
         }
 
         return null;
