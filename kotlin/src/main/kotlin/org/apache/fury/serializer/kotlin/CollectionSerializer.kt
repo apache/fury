@@ -4,6 +4,7 @@ import org.apache.fury.Fury
 import org.apache.fury.memory.MemoryBuffer
 import org.apache.fury.serializer.collection.AbstractCollectionSerializer
 
+@Suppress("UNCHECKED_CAST")
 abstract class AbstractKotlinCollectionSerializer<E, T: Iterable<E>>(
     fury: Fury,
     cls: Class<T>
@@ -18,7 +19,7 @@ abstract class AbstractKotlinCollectionSerializer<E, T: Iterable<E>>(
     }
 
     override fun onCollectionRead(collection: Collection<*>): T {
-        @Suppress("UNCHECKED_CAST") val builder = collection as CollectionBuilder<E, T>
+        val builder = collection as CollectionBuilder<E, T>
         return builder.result()
     }
 }
