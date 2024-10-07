@@ -172,12 +172,15 @@ def _get_pyarrow_include(repository_ctx, python_bin="python3"):
         error_details=(
             "Is the Python binary path set up right? " + "(See ./configure or "
             + python_bin + ".) " + "Is distutils installed?"))
-    return result.stdout.splitlines()[0]
+    return result.stdout.splitlines()[0].replace('\\', '/')
 
 def _get_pyarrow_shared_library(repository_ctx, library_name, python_bin="python3"):
     """Gets the pyarrow shared library path."""
+    if not _is_windows(repository_ctx):
+        library_name = "lib" + library_name
+
     code = """import pyarrow, os, glob;print(glob.glob(os.path.join(""" +\
-        """os.path.dirname(pyarrow.__file__), 'lib{}.*'))[0])""".format(library_name)
+        """os.path.dirname(pyarrow.__file__), '{}.*'))[0])""".format(library_name)
     result = _execute(
         repository_ctx, [
             python_bin, "-c", code
@@ -186,7 +189,7 @@ def _get_pyarrow_shared_library(repository_ctx, library_name, python_bin="python
         error_details=(
             "Is the Python binary path set up right? " + "(See ./configure or "
             + python_bin + ".) " + "Is distutils installed?"))
-    return result.stdout.splitlines()[0]
+    return result.stdout.splitlines()[0].replace('\\', '/')
 
 #python numpy include
 def _get_python_numpy_include(repository_ctx, python_bin="python3"):
@@ -199,10 +202,16 @@ def _get_python_numpy_include(repository_ctx, python_bin="python3"):
         error_details=(
             "Is the Python binary path set up right? " + "(See ./configure or "
             + python_bin + ".) " + "Is distutils installed?"))
-    return result.stdout.splitlines()[0]
+    return result.stdout.splitlines()[0].replace('\\', '/')
 
 def _pyarrow_pip_impl(repository_ctx):
-    arrow_header_dir = _get_pyarrow_include(repository_ctx)
+    python_bin = "python3"
+
+    # python 3.x is usually named as `python` by default on windows.
+    if _is_windows(repository_ctx):
+        python_bin = "python"
+
+    arrow_header_dir = _get_pyarrow_include(repository_ctx, python_bin)
     arrow_header_rule = _symlink_genrule_for_dir(
         repository_ctx,
         arrow_header_dir,
@@ -210,18 +219,18 @@ def _pyarrow_pip_impl(repository_ctx):
         "arrow_header_include",
     )
 
-    arrow_library_path = _get_pyarrow_shared_library(repository_ctx, "arrow")
+    arrow_library_path = _get_pyarrow_shared_library(repository_ctx, "arrow", python_bin)
     arrow_library = arrow_library_path.rsplit("/",1 )[-1]
     arrow_library_rule = _symlink_genrule_for_dir(
         repository_ctx, None, "", "libarrow", [arrow_library_path], [arrow_library])
 
-    arrow_python_library_path = _get_pyarrow_shared_library(repository_ctx, "arrow_python")
+    arrow_python_library_path = _get_pyarrow_shared_library(repository_ctx, "arrow_python", python_bin)
     arrow_python_library = arrow_python_library_path.rsplit("/",1 )[-1]
     arrow_python_library_rule = _symlink_genrule_for_dir(
         repository_ctx, None, "", "libarrow_python",
         [arrow_python_library_path], [arrow_python_library])
 
-    python_numpy_include = _get_python_numpy_include(repository_ctx)
+    python_numpy_include = _get_python_numpy_include(repository_ctx, python_bin)
     python_numpy_include_rule = _symlink_genrule_for_dir(
         repository_ctx, python_numpy_include, 'python_numpy_include', 'python_numpy_include')
 
