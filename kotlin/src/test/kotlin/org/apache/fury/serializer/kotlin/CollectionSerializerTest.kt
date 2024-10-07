@@ -48,5 +48,11 @@ class CollectionSerializerTest {
 
         val mutableMap = mapOf(1 to "one",2 to "two",3 to "three")
         assertEquals (map, fury.deserialize(fury.serialize(mutableMap)))
+
+        val mapWithDefault = mapOf(1 to "one",2 to "two",3 to "three").withDefault { it-> "unknown" }
+        assertEquals (mapWithDefault, fury.deserialize(fury.serialize(mapWithDefault)))
+
+        val mutableMapWithDefault = mutableMapOf(1 to "one",2 to "two",3 to "three").withDefault { it-> "unknown" }
+        assertEquals (mutableMapWithDefault, fury.deserialize(fury.serialize(mutableMapWithDefault)))
     }
 }
