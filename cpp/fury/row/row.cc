@@ -238,7 +238,7 @@ int *ArrayData::GetDimensions(ArrayData &array, int num_dims) {
   int depth = 0;
   auto dimensions = new int[num_dims];
   std::vector<int> start_from_lefts(num_dims);
-  std::vector<const ArrayData*> arrs(num_dims); // root to current node
+  std::vector<const ArrayData *> arrs(num_dims); // root to current node
   ArrayData &arr = array;
   while (depth < num_dims) {
     arrs[depth] = &arr;
