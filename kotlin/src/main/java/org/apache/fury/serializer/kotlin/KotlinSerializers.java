@@ -20,22 +20,22 @@ public class KotlinSerializers {
         CollectionSerializers.registerDefaultSerializers(fury);
 
         // EmptyList
-        Class emptyListClass = KClassToJava.INSTANCE.getEmptyListClass();
+        Class emptyListClass = KotlinToJavaClass.INSTANCE.getEmptyListClass();
         resolver.register(emptyListClass);
         resolver.registerSerializer(emptyListClass, new CollectionSerializers.EmptyListSerializer(fury, emptyListClass));
 
         // EmptySet
-        Class emptySetClass = KClassToJava.INSTANCE.getEmptySetClass();
+        Class emptySetClass = KotlinToJavaClass.INSTANCE.getEmptySetClass();
         resolver.register(emptySetClass);
         resolver.registerSerializer(emptySetClass, new CollectionSerializers.EmptySetSerializer(fury, emptySetClass));
 
         // EmptyMap
-        Class emptyMapClass = KClassToJava.INSTANCE.getEmptyMapClass();
+        Class emptyMapClass = KotlinToJavaClass.INSTANCE.getEmptyMapClass();
         resolver.register(emptyMapClass);
         resolver.registerSerializer(emptyMapClass, new MapSerializers.EmptyMapSerializer(fury, emptyMapClass));
 
         // Non-Java collection implementation in kotlin stdlib.
-        Class arrayDequeClass = KClassToJava.INSTANCE.getArrayDequeClass();
+        Class arrayDequeClass = KotlinToJavaClass.INSTANCE.getArrayDequeClass();
         resolver.register(arrayDequeClass);
         resolver.registerSerializer(arrayDequeClass, new KotlinArrayDequeSerializer(fury, arrayDequeClass));
     }
