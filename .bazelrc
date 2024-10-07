@@ -29,6 +29,7 @@ build:linux --force_pic
 build:macos --force_pic
 build:clang-cl --compiler=clang-cl
 build:msvc --compiler=msvc-cl
+build:windows --compiler=clang-cl
 
 # test config
 test --build_tests_only
