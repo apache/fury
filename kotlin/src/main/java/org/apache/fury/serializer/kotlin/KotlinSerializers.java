@@ -2,7 +2,6 @@ package org.apache.fury.serializer.kotlin;
 
 import org.apache.fury.Fury;
 import org.apache.fury.resolver.ClassResolver;
-import org.apache.fury.serializer.ArraySerializers;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.serializer.SerializerFactory;
 import org.apache.fury.serializer.collection.CollectionSerializers;
@@ -13,11 +12,6 @@ import org.apache.fury.serializer.collection.MapSerializers;
 public class KotlinSerializers {
     public static void registerSerializers(Fury fury) {
         ClassResolver resolver = setSerializerFactory(fury);
-
-        // Arrays in kotlin map to java arrays.
-        ArraySerializers.registerDefaultSerializers(fury);
-        // Most kotlin stdlib implementation map to Java collections.
-        CollectionSerializers.registerDefaultSerializers(fury);
 
         // EmptyList
         Class emptyListClass = KotlinToJavaClass.INSTANCE.getEmptyListClass();

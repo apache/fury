@@ -9,7 +9,7 @@ class CollectionSerializerTest {
     @Test
     fun testSerialize() {
         val fury: Fury = Fury.builder()
-            .withLanguage(Language.XLANG)
+            .withLanguage(Language.JAVA)
             .withRefTracking(true)
             .requireClassRegistration(true)
             .suppressClassRegistrationWarnings(false)
