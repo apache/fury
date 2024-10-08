@@ -25,47 +25,134 @@ import org.testng.annotations.Test
 
 class CollectionSerializerTest {
     @Test
-    fun testSerialize() {
+    fun testSerializeArrayDeque() {
         val fury: Fury = Fury.builder()
             .withLanguage(Language.JAVA)
-            .withRefTracking(true)
             .requireClassRegistration(true)
-            .suppressClassRegistrationWarnings(false)
             .build()
-
         KotlinSerializers.registerSerializers(fury)
 
         val arrayDeque = ArrayDeque(listOf(1, 2, 3, 4, 5))
         assertEquals(arrayDeque, fury.deserialize(fury.serialize(arrayDeque)))
+    }
 
+    @Test
+    fun testSerializeArrayList() {
+        val fury: Fury = Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(true)
+            .build()
+
+        KotlinSerializers.registerSerializers(fury)
         val arrayList = arrayListOf(1, 2, 3, 4, 5)
         assertEquals(arrayList, fury.deserialize(fury.serialize(arrayList)))
+    }
+
+    @Test
+    fun testSerializeEmptyList() {
+        val fury: Fury = Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(true)
+            .build()
+        KotlinSerializers.registerSerializers(fury)
 
         val emptyList = listOf<Int>()
         assertEquals(emptyList, fury.deserialize(fury.serialize(emptyList)))
+    }
+
+    @Test
+    fun testSerializeList() {
+        val fury: Fury = Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(true)
+            .build()
+        KotlinSerializers.registerSerializers(fury)
 
         val list = listOf(1, 2, 3, 4, 5)
         assertEquals(list, fury.deserialize(fury.serialize(list)))
+    }
+
+    @Test
+    fun testSerializeMutableList() {
+        val fury: Fury = Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(true)
+            .build()
+        KotlinSerializers.registerSerializers(fury)
 
         val mutableList = mutableListOf(1, 2, 3, 4, 5)
         assertEquals(mutableList, fury.deserialize(fury.serialize(mutableList)))
+    }
+
+    @Test
+    fun testSerializeEmptySet() {
+        val fury: Fury = Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(true)
+            .build()
+        KotlinSerializers.registerSerializers(fury)
 
         val emptySet = setOf<Int>()
         assertEquals(emptySet, fury.deserialize(fury.serialize(emptySet)))
+    }
+
+    @Test
+    fun testSerializeSet() {
+        val fury: Fury = Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(true)
+            .build()
+        KotlinSerializers.registerSerializers(fury)
 
         val set = setOf(1, 2, 3, 4, 5)
         assertEquals(set, fury.deserialize(fury.serialize(set)))
+    }
+
+    @Test
+    fun testSerializeMutableSet() {
+        val fury: Fury = Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(true)
+            .build()
+        KotlinSerializers.registerSerializers(fury)
 
         val mutableSet = mutableSetOf(1, 2, 3, 4, 5)
         assertEquals(mutableSet, fury.deserialize(fury.serialize(mutableSet)))
+    }
+
+    @Test
+    fun testSerializeEmptyMap() {
+        val fury: Fury = Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(true)
+            .build()
+        KotlinSerializers.registerSerializers(fury)
 
         val emptyMap: Map<Int, String> = mapOf()
         assertEquals(emptyMap, fury.deserialize(fury.serialize(emptyMap)))
+    }
+
+    @Test
+    fun testSerializeMap() {
+        val fury: Fury = Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(true)
+            .build()
+        KotlinSerializers.registerSerializers(fury)
 
         val map = mapOf(1 to "one", 2 to "two", 3 to "three")
         assertEquals(map, fury.deserialize(fury.serialize(map)))
+    }
+
+    @Test
+    fun testSerializeMutableMap() {
+        val fury: Fury = Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(true)
+            .build()
+        KotlinSerializers.registerSerializers(fury)
 
         val mutableMap = mapOf(1 to "one", 2 to "two", 3 to "three")
-        assertEquals(map, fury.deserialize(fury.serialize(mutableMap)))
+        assertEquals(mutableMap, fury.deserialize(fury.serialize(mutableMap)))
     }
 }
