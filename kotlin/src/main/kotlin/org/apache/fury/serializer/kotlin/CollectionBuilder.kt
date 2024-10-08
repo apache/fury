@@ -6,7 +6,7 @@ interface CollectionBuilder <E, T: Iterable<E>> {
 }
 
 abstract class AbstractListBuilder<E, T:List<E>>
-    : CollectionBuilder<E, T>, CollectionAdapter<E>() {
+    : CollectionBuilder<E, T>, AdaptedCollection<E>() {
     protected open val builder: MutableList<E> = mutableListOf()
     override val size: Int
         get() = builder.size
