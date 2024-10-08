@@ -121,6 +121,30 @@ class CollectionSerializerTest {
     }
 
     @Test
+    fun testSerializeHashSet() {
+        val fury: Fury = Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(true)
+            .build()
+        KotlinSerializers.registerSerializers(fury)
+
+        val set = hashSetOf(1, 2, 3, 4, 5)
+        assertEquals(set, fury.deserialize(fury.serialize(set)))
+    }
+
+    @Test
+    fun testSerializeLinkedSet() {
+        val fury: Fury = Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(true)
+            .build()
+        KotlinSerializers.registerSerializers(fury)
+
+        val set = linkedSetOf(1, 2, 3, 4, 5)
+        assertEquals(set, fury.deserialize(fury.serialize(set)))
+    }
+
+    @Test
     fun testSerializeEmptyMap() {
         val fury: Fury = Fury.builder()
             .withLanguage(Language.JAVA)
@@ -154,5 +178,29 @@ class CollectionSerializerTest {
 
         val mutableMap = mapOf(1 to "one", 2 to "two", 3 to "three")
         assertEquals(mutableMap, fury.deserialize(fury.serialize(mutableMap)))
+    }
+
+    @Test
+    fun testSerializeHashMap() {
+        val fury: Fury = Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(true)
+            .build()
+        KotlinSerializers.registerSerializers(fury)
+
+        val map = hashMapOf(1 to "one", 2 to "two", 3 to "three")
+        assertEquals(map, fury.deserialize(fury.serialize(map)))
+    }
+
+    @Test
+    fun testSerializeLinkedMap() {
+        val fury: Fury = Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(true)
+            .build()
+        KotlinSerializers.registerSerializers(fury)
+
+        val map = linkedMapOf(1 to "one", 2 to "two", 3 to "three")
+        assertEquals(map, fury.deserialize(fury.serialize(map)))
     }
 }
