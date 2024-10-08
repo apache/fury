@@ -18,11 +18,17 @@
  */
 package org.apache.fury.serializer.kotlin
 
+/**
+ * Collection builder interface adapts an iterable to allow incremental build by the fury protocol.
+ */
 interface CollectionBuilder <E, T: Iterable<E>> {
     fun add(element: E): Boolean
     fun result(): T
 }
 
+/**
+ * Abstract builder for [kotlin.collections.List] interface.
+ */
 abstract class AbstractListBuilder<E, T:List<E>>
     : CollectionBuilder<E, T>, AdaptedCollection<E>() {
     protected open val builder: MutableList<E> = mutableListOf()
@@ -33,6 +39,9 @@ abstract class AbstractListBuilder<E, T:List<E>>
     override fun iterator(): MutableIterator<E> = builder.iterator()
 }
 
+/**
+ * Builder for [kotlin.collections.ArrayDeque].
+ */
 class ArrayDequeBuilder<E>(
     override val builder: ArrayDeque<E>
 ): AbstractListBuilder<E, ArrayDeque<E>>() {
