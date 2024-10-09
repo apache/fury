@@ -39,5 +39,5 @@ test --test_output=all
 build:linux --cxxopt="-std=c++17" --linkopt="-pthread"
 build:macos --cxxopt="-std=c++17" --linkopt="-pthread"
 build:clang-cl --cxxopt="-std=c++17"
-build:windows --cxxopt="/std:c++17" --cxxopt="/Zc:preprocessor"
-build:msvc --cxxopt="/std:c++17" --cxxopt="/Zc:preprocessor"
+build:windows --cxxopt="/std:c++17" --cxxopt="/Zc:preprocessor" --cxxopt="/utf-8"
+build:msvc --cxxopt="/std:c++17" --cxxopt="/Zc:preprocessor" --cxxopt="/utf-8"
