@@ -216,12 +216,12 @@ def _pyarrow_pip_impl(repository_ctx):
         "arrow_header_include",
     )
 
-    arrow_library_path = _get_pyarrow_shared_library(repository_ctx, "arrow.dll" if _is_windows(repository_ctx) else "libarrow.so.*", python_bin)
+    arrow_library_path = _get_pyarrow_shared_library(repository_ctx, "arrow.dll" if _is_windows(repository_ctx) else "libarrow.*", python_bin)
     arrow_library = arrow_library_path.rsplit("/",1 )[-1]
     arrow_library_rule = _symlink_genrule_for_dir(
         repository_ctx, None, "", "libarrow", [arrow_library_path], [arrow_library])
 
-    arrow_python_library_path = _get_pyarrow_shared_library(repository_ctx, "arrow_python.dll" if _is_windows(repository_ctx) else "libarrow_python.so.*", python_bin)
+    arrow_python_library_path = _get_pyarrow_shared_library(repository_ctx, "arrow_python.dll" if _is_windows(repository_ctx) else "libarrow_python.*", python_bin)
     arrow_python_library = arrow_python_library_path.rsplit("/",1 )[-1]
     arrow_python_library_rule = _symlink_genrule_for_dir(
         repository_ctx, None, "", "libarrow_python",
