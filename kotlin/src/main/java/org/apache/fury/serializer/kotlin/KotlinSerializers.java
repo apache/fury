@@ -24,6 +24,9 @@ import org.apache.fury.serializer.collection.CollectionSerializers;
 import org.apache.fury.serializer.collection.MapSerializers;
 
 
+/**
+ * KotlinSerializers provide default serializers for kotlin.
+ */
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class KotlinSerializers {
     public static void registerSerializers(Fury fury) {
