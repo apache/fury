@@ -176,11 +176,8 @@ def _get_pyarrow_include(repository_ctx, python_bin="python3"):
 
 def _get_pyarrow_shared_library(repository_ctx, library_name, python_bin="python3"):
     """Gets the pyarrow shared library path."""
-    if not _is_windows(repository_ctx):
-        library_name = "lib" + library_name
-
     code = """import pyarrow, os, glob;print(glob.glob(os.path.join(""" +\
-        """os.path.dirname(pyarrow.__file__), '{}.*'))[0])""".format(library_name)
+        """os.path.dirname(pyarrow.__file__), '{}'))[0])""".format(library_name)
     result = _execute(
         repository_ctx, [
             python_bin, "-c", code
@@ -219,12 +216,12 @@ def _pyarrow_pip_impl(repository_ctx):
         "arrow_header_include",
     )
 
-    arrow_library_path = _get_pyarrow_shared_library(repository_ctx, "arrow", python_bin)
+    arrow_library_path = _get_pyarrow_shared_library(repository_ctx, "arrow.dll" if _is_windows(repository_ctx) else "libarrow.so.*", python_bin)
     arrow_library = arrow_library_path.rsplit("/",1 )[-1]
     arrow_library_rule = _symlink_genrule_for_dir(
         repository_ctx, None, "", "libarrow", [arrow_library_path], [arrow_library])
 
-    arrow_python_library_path = _get_pyarrow_shared_library(repository_ctx, "arrow_python", python_bin)
+    arrow_python_library_path = _get_pyarrow_shared_library(repository_ctx, "arrow_python.dll" if _is_windows(repository_ctx) else "libarrow_python.so.*", python_bin)
     arrow_python_library = arrow_python_library_path.rsplit("/",1 )[-1]
     arrow_python_library_rule = _symlink_genrule_for_dir(
         repository_ctx, None, "", "libarrow_python",
@@ -234,13 +231,35 @@ def _pyarrow_pip_impl(repository_ctx):
     python_numpy_include_rule = _symlink_genrule_for_dir(
         repository_ctx, python_numpy_include, 'python_numpy_include', 'python_numpy_include')
 
-    build_tpl = repository_ctx.path(Label("//bazel/arrow:BUILD.tpl.bzl"))
-    repository_ctx.template("BUILD", build_tpl, {
-        "%{ARROW_HEADER_GENRULE}": arrow_header_rule,
-        "%{ARROW_LIBRARY_GENRULE}": arrow_library_rule,
-        "%{ARROW_PYTHON_LIBRARY_GENRULE}": arrow_python_library_rule,
-        "%{PYTHON_NUMPY_INCLUDE_GENRULE}": python_numpy_include_rule,
-    })
+    if _is_windows(repository_ctx):
+        arrow_interface_library_path = _get_pyarrow_shared_library(repository_ctx, "arrow.lib", python_bin)
+        arrow_interface_library = arrow_interface_library_path.rsplit("/",1 )[-1]
+        arrow_interface_library_rule = _symlink_genrule_for_dir(
+            repository_ctx, None, "", "libarrow_interface", [arrow_interface_library_path], [arrow_interface_library])
+
+        arrow_python_interface_library_path = _get_pyarrow_shared_library(repository_ctx, "arrow_python.lib", python_bin)
+        arrow_python_interface_library = arrow_python_interface_library_path.rsplit("/",1 )[-1]
+        arrow_python_interface_library_rule = _symlink_genrule_for_dir(
+            repository_ctx, None, "", "libarrow_python_interface",
+            [arrow_python_interface_library_path], [arrow_python_interface_library])
+
+        build_tpl = repository_ctx.path(Label("//bazel/arrow:BUILD.windows.bzl"))
+        repository_ctx.template("BUILD", build_tpl, {
+            "%{ARROW_HEADER_GENRULE}": arrow_header_rule,
+            "%{ARROW_LIBRARY_GENRULE}": arrow_library_rule,
+            "%{ARROW_ITF_LIBRARY_GENRULE}": arrow_interface_library_rule,
+            "%{ARROW_PYTHON_LIBRARY_GENRULE}": arrow_python_library_rule,
+            "%{ARROW_PYTHON_ITF_LIB_GENRULE}": arrow_python_interface_library_rule,
+            "%{PYTHON_NUMPY_INCLUDE_GENRULE}": python_numpy_include_rule,
+        })
+    else:
+        build_tpl = repository_ctx.path(Label("//bazel/arrow:BUILD.tpl.bzl"))
+        repository_ctx.template("BUILD", build_tpl, {
+            "%{ARROW_HEADER_GENRULE}": arrow_header_rule,
+            "%{ARROW_LIBRARY_GENRULE}": arrow_library_rule,
+            "%{ARROW_PYTHON_LIBRARY_GENRULE}": arrow_python_library_rule,
+            "%{PYTHON_NUMPY_INCLUDE_GENRULE}": python_numpy_include_rule,
+        })
 
 pyarrow_configure = repository_rule(
     implementation = _pyarrow_pip_impl,
