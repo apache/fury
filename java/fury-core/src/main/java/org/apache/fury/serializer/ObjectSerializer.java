@@ -784,6 +784,135 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
     }
   }
 
+  static Object readFieldValue(
+      Fury fury,
+      RefResolver refResolver,
+      ClassResolver classResolver,
+      FinalTypeField fieldInfo,
+      boolean isFinal,
+      MemoryBuffer buffer,
+      short classId) {
+    switch (classId) {
+      case ClassResolver.PRIMITIVE_BOOLEAN_CLASS_ID:
+        return buffer.readBoolean();
+      case ClassResolver.PRIMITIVE_BYTE_CLASS_ID:
+        return buffer.readByte();
+      case ClassResolver.PRIMITIVE_CHAR_CLASS_ID:
+        return buffer.readChar();
+      case ClassResolver.PRIMITIVE_SHORT_CLASS_ID:
+        return buffer.readInt16();
+      case ClassResolver.PRIMITIVE_INT_CLASS_ID:
+        if (fury.compressInt()) {
+          return buffer.readVarInt32();
+        } else {
+          return buffer.readInt32();
+        }
+      case ClassResolver.PRIMITIVE_FLOAT_CLASS_ID:
+        return buffer.readFloat32();
+      case ClassResolver.PRIMITIVE_LONG_CLASS_ID:
+        return fury.readInt64(buffer);
+      case ClassResolver.PRIMITIVE_DOUBLE_CLASS_ID:
+        return buffer.readFloat64();
+      case ClassResolver.STRING_CLASS_ID:
+        return fury.readJavaStringRef(buffer);
+      case ClassResolver.BOOLEAN_CLASS_ID:
+        {
+          if (buffer.readByte() == Fury.NULL_FLAG) {
+            return null;
+          } else if (fury.isBasicTypesRefIgnored()) {
+            return readFinalObjectFieldValue(
+                fury, refResolver, classResolver, fieldInfo, isFinal, buffer);
+          } else {
+            return buffer.readBoolean();
+          }
+        }
+      case ClassResolver.BYTE_CLASS_ID:
+        {
+          if (buffer.readByte() == Fury.NULL_FLAG) {
+            return null;
+          } else if (fury.isBasicTypesRefIgnored()) {
+            return readFinalObjectFieldValue(
+                fury, refResolver, classResolver, fieldInfo, isFinal, buffer);
+          } else {
+            return buffer.readByte();
+          }
+        }
+      case ClassResolver.CHAR_CLASS_ID:
+        {
+          if (buffer.readByte() == Fury.NULL_FLAG) {
+            return null;
+          } else if (fury.isBasicTypesRefIgnored()) {
+            return readFinalObjectFieldValue(
+                fury, refResolver, classResolver, fieldInfo, isFinal, buffer);
+          } else {
+            return buffer.readChar();
+          }
+        }
+      case ClassResolver.SHORT_CLASS_ID:
+        {
+          if (buffer.readByte() == Fury.NULL_FLAG) {
+            return null;
+          } else if (fury.isBasicTypesRefIgnored()) {
+            return readFinalObjectFieldValue(
+                fury, refResolver, classResolver, fieldInfo, isFinal, buffer);
+          } else {
+            return buffer.readInt16();
+          }
+        }
+      case ClassResolver.INTEGER_CLASS_ID:
+        {
+          if (buffer.readByte() == Fury.NULL_FLAG) {
+            return null;
+          } else if (fury.isBasicTypesRefIgnored()) {
+            return readFinalObjectFieldValue(
+                fury, refResolver, classResolver, fieldInfo, isFinal, buffer);
+          } else {
+            if (fury.compressInt()) {
+              return buffer.readVarInt32();
+            } else {
+              return buffer.readInt32();
+            }
+          }
+        }
+      case ClassResolver.FLOAT_CLASS_ID:
+        {
+          if (buffer.readByte() == Fury.NULL_FLAG) {
+            return null;
+          } else if (fury.isBasicTypesRefIgnored()) {
+            return readFinalObjectFieldValue(
+                fury, refResolver, classResolver, fieldInfo, isFinal, buffer);
+          } else {
+            return buffer.readFloat32();
+          }
+        }
+      case ClassResolver.LONG_CLASS_ID:
+        {
+          if (buffer.readByte() == Fury.NULL_FLAG) {
+            return null;
+          } else if (fury.isBasicTypesRefIgnored()) {
+            return readFinalObjectFieldValue(
+                fury, refResolver, classResolver, fieldInfo, isFinal, buffer);
+          } else {
+            return fury.readInt64(buffer);
+          }
+        }
+      case ClassResolver.DOUBLE_CLASS_ID:
+        {
+          if (buffer.readByte() == Fury.NULL_FLAG) {
+            return null;
+          } else if (fury.isBasicTypesRefIgnored()) {
+            return readFinalObjectFieldValue(
+                fury, refResolver, classResolver, fieldInfo, isFinal, buffer);
+          } else {
+            return buffer.readFloat64();
+          }
+        }
+      default:
+        return readFinalObjectFieldValue(
+            fury, refResolver, classResolver, fieldInfo, isFinal, buffer);
+    }
+  }
+
   public static int computeVersionHash(Collection<Descriptor> descriptors) {
     // TODO(chaokunyang) use murmurhash
     List<Integer> list = new ArrayList<>();

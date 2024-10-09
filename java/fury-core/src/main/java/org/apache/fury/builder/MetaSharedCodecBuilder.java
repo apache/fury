@@ -21,6 +21,7 @@ package org.apache.fury.builder;
 
 import static org.apache.fury.builder.Generated.GeneratedMetaSharedSerializer.SERIALIZER_FIELD_NAME;
 
+import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.Map;
 import java.util.SortedMap;
@@ -36,6 +37,7 @@ import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.meta.ClassDef;
 import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.serializer.CodegenSerializer;
+import org.apache.fury.serializer.FieldMismatchCallback;
 import org.apache.fury.serializer.MetaSharedSerializer;
 import org.apache.fury.serializer.ObjectSerializer;
 import org.apache.fury.serializer.Serializer;
@@ -190,11 +192,49 @@ public class MetaSharedCodecBuilder extends ObjectCodecBuilder {
   @Override
   protected Expression setFieldValue(Expression bean, Descriptor descriptor, Expression value) {
     if (descriptor.getField() == null) {
-      // Field doesn't exist in current class, skip set this field value.
-      // Note that the field value shouldn't be an inlined value, otherwise field value read may
-      // be ignored.
-      // Add an ignored call here to make expression type to void.
-      return new Expression.StaticInvoke(ExceptionUtils.class, "ignore", value);
+      FieldMismatchCallback.FieldAdjustment adjustment =
+          fury.getFieldMismatchCallback()
+              .onMismatch(beanClass, descriptor.getTypeName(), descriptor.getName());
+
+      if (adjustment == null) {
+        // Field doesn't exist in current class, skip set this field value.
+        // Note that the field value shouldn't be an inlined value, otherwise field value read may
+        // be ignored.
+        // Add an ignored call here to make expression type to void.
+        return new Expression.StaticInvoke(ExceptionUtils.class, "ignore", value);
+      } else {
+
+        Field newTargetField = adjustment.getTargetField();
+
+        // Field doesn't exist in current class, invoke field mismatch callback.
+        Expression fieldMismatchCallback =
+            Expression.Invoke.inlineInvoke(
+                new Expression.Reference(FURY_NAME, TypeRef.of(Fury.class)),
+                "getFieldMismatchCallback",
+                TypeRef.of(FieldMismatchCallback.class),
+                /* needTryCatch */ false);
+
+        Expression onMismatch =
+            Expression.Invoke.inlineInvoke(
+                fieldMismatchCallback,
+                "onMismatch",
+                TypeRef.of(FieldMismatchCallback.FieldAdjustment.class),
+                new Expression.StaticInvoke(
+                    Class.class,
+                    "forName",
+                    TypeRef.of(Class.class),
+                    true,
+                    new Literal(beanClass.getName())),
+                new Literal(descriptor.getTypeName()),
+                new Literal(descriptor.getName()));
+
+        Expression invokeHandler =
+            new Expression.Invoke(onMismatch, "adjustValue", TypeRef.of(Object.class), value);
+
+        Descriptor updatedDescriptor = new Descriptor(newTargetField, null, null, null);
+
+        return super.setFieldValue(bean, updatedDescriptor, invokeHandler);
+      }
     }
     return super.setFieldValue(bean, descriptor, value);
   }
