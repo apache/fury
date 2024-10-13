@@ -100,6 +100,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     }
     classVersionHash =
         new Literal(ObjectSerializer.computeVersionHash(descriptors), PRIMITIVE_INT_TYPE);
+
     DescriptorGrouper grouper =
         DescriptorGrouper.createDescriptorGrouper(
             fury.getClassResolver()::isMonomorphic,
