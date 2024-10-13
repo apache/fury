@@ -119,7 +119,9 @@ jobs:
         run: |
           # Avoid sbt download jackson-databind error
           rm -rf /home/runner/.m2/repository/com/fasterxml/jackson/
-          cd scala && sbt +test && cd -
+          cd scala
+          curl -Ls https://raw.githubusercontent.com/dwijnand/sbt-extras/master/sbt > ~/bin/sbt && chmod 0755 ~/bin/sbt
+          sbt +test
 
   integration_tests:
     name: Integration Tests
