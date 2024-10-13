@@ -38,7 +38,7 @@ if [[ "$(uname)" == "Linux" ]]; then
       python3 -m venv $VENV_PATH
     fi
     # Activate the virtual environment
-    source venv/bin/activate
+    source $VENV_PATH/bin/activate
     echo "Virtual environment activated."
   fi
 fi
