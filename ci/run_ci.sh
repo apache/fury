@@ -41,6 +41,8 @@ if [[ "$(uname)" == "Linux" ]]; then
     source $VENV_PATH/bin/activate
     echo "Virtual environment activated."
   fi
+  which pip
+  which python
 fi
 
 
