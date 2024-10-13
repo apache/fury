@@ -182,7 +182,7 @@ public class JITContextTest extends FuryTestBase {
     }
   }
 
-  // test private class
+  // test private class, class should be final for switch
   @Data
   private static final class PrivateAccessLevel {
     private final int f1;
