@@ -24,6 +24,22 @@ ROOT="$(git rev-parse --show-toplevel)"
 echo "Root path: $ROOT, home path: $HOME"
 cd "$ROOT"
 
+
+if [[ "$(uname)" == "Linux" ]]; then
+    echo "Linux detected. Creating virtual environment..."
+    # Check if python3 is available
+    if command -v python3 &>/dev/null; then
+        # Create a directory for the virtual environment
+        mkdir -p venv
+        # Create the virtual environment
+        python3 -m venv venv
+        # Activate the virtual environment
+        source venv/bin/activate
+        echo "Virtual environment created and activated."
+    fi
+fi
+
+
 install_python() {
   wget -q https://repo.anaconda.com/miniconda/Miniconda3-py38_23.5.2-0-Linux-x86_64.sh -O Miniconda3.sh
   bash Miniconda3.sh -b -p $HOME/miniconda && rm -f miniconda.*
