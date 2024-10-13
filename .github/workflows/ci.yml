@@ -143,6 +143,7 @@ jobs:
         with:
           java-version: 8
           distribution: "temurin"
+      - uses: sbt/setup-sbt@v1
       - name: Run CI
         run: ./ci/run_ci.sh integration_tests
 
