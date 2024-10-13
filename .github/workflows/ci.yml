@@ -123,7 +123,7 @@ jobs:
       - name: Set up JDK8
         uses: actions/setup-java@v4
         with:
-          java-version: 8
+          java-version: 11
           distribution: "temurin"
       - name: Install fury java
         run: cd java && mvn -T10 --no-transfer-progress clean install -DskipTests && cd -
