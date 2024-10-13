@@ -54,6 +54,10 @@ jobs:
         with:
           java-version: ${{ matrix.java-version }}
           distribution: "temurin"
+      - name: Set up Python3.8
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.8
       - name: Install bazel
         run: ./ci/run_ci.sh install_bazel
       - name: Install python
@@ -78,6 +82,10 @@ jobs:
         with:
           java-version: ${{ matrix.java-version }}
           distribution: "adopt-openj9"
+      - name: Set up Python3.8
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.8
       - name: Install bazel
         run: ./ci/run_ci.sh install_bazel
       - name: Install python
@@ -100,6 +108,10 @@ jobs:
           distribution: "graalvm"
           github-token: ${{ secrets.GITHUB_TOKEN }}
           native-image-job-reports: "true"
+      - name: Set up Python3.8
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.8
       - name: Build native image and run
         run: ./ci/run_ci.sh graalvm_test
 
@@ -226,6 +238,10 @@ jobs:
           go-version: ${{ matrix.go-version }}
       - name: Display Go version
         run: go version
+      - name: Set up Python3.8
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.8
       - name: Install bazel
         run: ./ci/run_ci.sh install_bazel
       - name: Install python
