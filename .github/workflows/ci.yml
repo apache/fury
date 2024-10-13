@@ -125,6 +125,7 @@ jobs:
         with:
           java-version: 8
           distribution: "temurin"
+      - uses: sbt/setup-sbt@v1
       - name: Install fury java
         run: cd java && mvn -T10 --no-transfer-progress clean install -DskipTests && cd -
       - name: Test
@@ -143,7 +144,6 @@ jobs:
         with:
           java-version: 8
           distribution: "temurin"
-      - uses: sbt/setup-sbt@v1
       - name: Run CI
         run: ./ci/run_ci.sh integration_tests
 
