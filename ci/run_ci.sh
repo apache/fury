@@ -24,19 +24,23 @@ ROOT="$(git rev-parse --show-toplevel)"
 echo "Root path: $ROOT, home path: $HOME"
 cd "$ROOT"
 
+VENV_PATH=".venv"
+
 
 if [[ "$(uname)" == "Linux" ]]; then
-    echo "Linux detected. Creating virtual environment..."
-    # Check if python3 is available
-    if command -v python3 &>/dev/null; then
-        # Create a directory for the virtual environment
-        mkdir -p venv
-        # Create the virtual environment
-        python3 -m venv venv
-        # Activate the virtual environment
-        source venv/bin/activate
-        echo "Virtual environment created and activated."
+  echo "Linux detected. Creating virtual environment..."
+  # Check if python3 is available
+  if command -v python3 &>/dev/null; then
+    if [ ! -d "$VENV_PATH" ]; then
+      # Create a directory for the virtual environment
+      mkdir -p $VENV_PATH
+      # Create the virtual environment
+      python3 -m venv $VENV_PATH
     fi
+    # Activate the virtual environment
+    source venv/bin/activate
+    echo "Virtual environment activated."
+  fi
 fi
 
 
