@@ -215,10 +215,11 @@ jobs:
     name: Python CI
     # Fix python 3.6 install issue, see
     # https://github.com/rwth-i6/returnn/commit/38ecab17d781c4b74db6a174c8097187380b4ddc
-    runs-on: ubuntu-20.04
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python-version: [3.7, 3.12]
+        os: [ubuntu-20.04, windows-2022]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
