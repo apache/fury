@@ -29,6 +29,7 @@ build:linux --force_pic
 build:macos --force_pic
 build:clang-cl --compiler=clang-cl
 build:msvc --compiler=msvc-cl
+build:windows --compiler=msvc-cl
 
 # test config
 test --build_tests_only
@@ -38,4 +39,5 @@ test --test_output=all
 build:linux --cxxopt="-std=c++17" --linkopt="-pthread"
 build:macos --cxxopt="-std=c++17" --linkopt="-pthread"
 build:clang-cl --cxxopt="-std=c++17"
-build:windows --cxxopt="/std:c++17"
+build:windows --cxxopt="/std:c++17" --cxxopt="/Zc:preprocessor" --cxxopt="/utf-8"
+build:msvc --cxxopt="/std:c++17" --cxxopt="/Zc:preprocessor" --cxxopt="/utf-8"

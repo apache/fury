@@ -237,8 +237,8 @@ int *ArrayData::GetDimensions(ArrayData &array, int num_dims) {
   // use deep-first search to search to numDimensions-1 layer to get dimensions.
   int depth = 0;
   auto dimensions = new int[num_dims];
-  int start_from_lefts[num_dims];
-  ArrayData *arrs[num_dims]; // root to current node
+  std::vector<int> start_from_lefts(num_dims);
+  std::vector<const ArrayData *> arrs(num_dims); // root to current node
   ArrayData &arr = array;
   while (depth < num_dims) {
     arrs[depth] = &arr;

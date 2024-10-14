@@ -20,16 +20,19 @@
 package org.apache.fury.builder;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import java.util.List;
+import lombok.Data;
 import org.apache.fury.Fury;
 import org.apache.fury.FuryTestBase;
 import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.config.Language;
 import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.resolver.MetaContext;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.test.bean.BeanA;
@@ -130,5 +133,62 @@ public class JITContextTest extends FuryTestBase {
     assertEquals(fury.deserialize(bytes1), beanB);
     if (!scopedMetaShare) fury.getSerializationContext().setMetaContext(context);
     assertEquals(fury.deserialize(bytes2), beanA);
+  }
+
+  @Test(timeOut = 60000)
+  public void testAsyncCompilationSwitch() throws InterruptedException {
+    final Fury fury =
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(false)
+            .withRefTracking(true)
+            .withAsyncCompilation(true)
+            .build();
+
+    TestAccessLevel o = new TestAccessLevel(new PkgAccessLevel(1), new PrivateAccessLevel(2));
+    serDeCheck(fury, o);
+    Class<?>[] classes = {PkgAccessLevel.class, PrivateAccessLevel.class};
+    for (Class<?> cls : classes) {
+      while (!(fury.getClassResolver().getSerializer(cls) instanceof Generated)) {
+        Thread.sleep(1000);
+        LOG.warn("Wait async compilation finish for {}", cls);
+      }
+    }
+    Serializer<TestAccessLevel> serializer =
+        fury.getClassResolver().getSerializer(TestAccessLevel.class);
+    assertTrue(ReflectionUtils.getObjectFieldValue(serializer, "serializer") instanceof Generated);
+    assertTrue(ReflectionUtils.getObjectFieldValue(serializer, "serializer1") instanceof Generated);
+    serDeCheck(fury, o);
+  }
+
+  @Data
+  public static final class TestAccessLevel {
+    PkgAccessLevel f1;
+    PrivateAccessLevel f2;
+
+    public TestAccessLevel(PkgAccessLevel f1, PrivateAccessLevel f2) {
+      this.f1 = f1;
+      this.f2 = f2;
+    }
+  }
+
+  // test pkg level class
+  @Data
+  private static final class PkgAccessLevel {
+    private final int f1;
+
+    public PkgAccessLevel(int f1) {
+      this.f1 = f1;
+    }
+  }
+
+  // test private class, class should be final for switch
+  @Data
+  private static final class PrivateAccessLevel {
+    private final int f1;
+
+    public PrivateAccessLevel(int f1) {
+      this.f1 = f1;
+    }
   }
 }

@@ -2,7 +2,7 @@
 
 This provides additional Fury support for Kotlin Serialization on JVM:
 
-Most standard kotlin types are already supported out of the box with the default java implementation.
+Most standard kotlin types are already supported out of the box with the default Fury java implementation.
 
 Fury Kotlin provides additional tests and implementation support for Kotlin types.
 

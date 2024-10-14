@@ -60,6 +60,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.apache.fury.Fury;
+import org.apache.fury.codegen.Code;
 import org.apache.fury.codegen.CodeGenerator;
 import org.apache.fury.codegen.CodegenContext;
 import org.apache.fury.codegen.Expression;
@@ -127,7 +128,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
   private final Map<Class<?>, Reference> serializerMap = new HashMap<>();
   private final Map<String, Object> sharedFieldMap = new HashMap<>();
   protected final Class<?> parentSerializerClass;
-  private final Map<String, String> jitCallbackUpdateFields;
+  private final Map<String, Expression> jitCallbackUpdateFields;
   protected LinkedList<String> walkPath = new LinkedList<>();
 
   public BaseObjectCodecBuilder(TypeRef<?> beanType, Fury fury, Class<?> parentSerializerClass) {
@@ -266,9 +267,13 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     // build encode/decode expr before add constructor to fill up jitCallbackUpdateFields.
     if (!jitCallbackUpdateFields.isEmpty()) {
       StringJoiner stringJoiner = new StringJoiner(", ", "registerJITNotifyCallback(this,", ");\n");
-      for (Map.Entry<String, String> entry : jitCallbackUpdateFields.entrySet()) {
+      for (Map.Entry<String, Expression> entry : jitCallbackUpdateFields.entrySet()) {
+        Code.ExprCode exprCode = entry.getValue().genCode(ctx);
+        if (StringUtils.isNotBlank(exprCode.code())) {
+          stringJoiner.add(exprCode.code());
+        }
         stringJoiner.add("\"" + entry.getKey() + "\"");
-        stringJoiner.add(entry.getValue());
+        stringJoiner.add(exprCode.value().toString());
       }
       // add this code after field serialization initialization to avoid
       // it overrides field updates by this callback.
@@ -526,7 +531,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       // `serializerClass` is already jit generated class.
       boolean hasJITResult = fury.getJITContext().hasJITResult(cls);
       if (hasJITResult) {
-        jitCallbackUpdateFields.put(name, ctx.type(cls) + ".class");
+        jitCallbackUpdateFields.put(name, getClassExpr(cls));
         ctx.addField(
             false, ctx.type(Serializer.class), name, new Cast(newSerializerExpr, SERIALIZER_TYPE));
         serializerRef = new Reference(name, SERIALIZER_TYPE, false);
