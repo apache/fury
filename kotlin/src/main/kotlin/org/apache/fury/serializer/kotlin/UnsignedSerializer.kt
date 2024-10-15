@@ -24,6 +24,12 @@ import org.apache.fury.memory.MemoryBuffer
 import org.apache.fury.serializer.Serializers
 import org.apache.fury.type.Type
 
+/**
+ * UByteSerializer
+ *
+ * UByte is mapped to Type.UINT8
+ *
+ */
 class UByteSerializer(
     fury: Fury,
 ) : Serializers.CrossLanguageCompatibleSerializer<UByte>(
@@ -42,6 +48,13 @@ class UByteSerializer(
     }
 }
 
+
+/**
+ * UShortSerializer
+ *
+ * UShort is mapped to Type.UINT16.
+ *
+ */
 class UShortSerializer(
     fury: Fury,
 ) : Serializers.CrossLanguageCompatibleSerializer<UShort>(
@@ -59,6 +72,12 @@ class UShortSerializer(
     }
 }
 
+/**
+ * UInt Serializer
+ *
+ * UInt is mapped to Type.UINT32.
+ *
+ */
 class UIntSerializer(
     fury: Fury,
 ) : Serializers.CrossLanguageCompatibleSerializer<UInt>(
@@ -77,6 +96,12 @@ class UIntSerializer(
     }
 }
 
+/**
+ * ULong Serializer
+ *
+ * ULong is mapped to Type.UINT64.
+ *
+ */
 class ULongSerializer(
     fury: Fury,
 ) : Serializers.CrossLanguageCompatibleSerializer<ULong>(
