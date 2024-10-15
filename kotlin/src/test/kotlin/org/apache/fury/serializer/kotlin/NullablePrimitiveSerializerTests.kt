@@ -25,7 +25,10 @@ import org.testng.Assert
 import org.testng.annotations.Test
 
 /**
- * Nullable primitive serializer tests
+ * Nullable primitive serializer tests.
+ *
+ * Nullable primitives get translated into Boxed types in java.
+ * See: https://kotlinlang.org/docs/numbers.html#numbers-representation-on-the-jvm
  *
  */
 class NullablePrimitiveSerializerTests {
