@@ -44,7 +44,7 @@ class UByteSerializer(
     }
 
     override fun read(buffer: MemoryBuffer): UByte {
-        return buffer.readVarUint32().toUByte()
+        return buffer.readByte().toUByte()
     }
 }
 
