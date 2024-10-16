@@ -33,6 +33,26 @@ public class KotlinSerializers {
     public static void registerSerializers(Fury fury) {
         ClassResolver resolver = fury.getClassResolver();
 
+        // UByte
+        Class ubyteClass = KotlinToJavaClass.INSTANCE.getUByteClass();
+        resolver.register(ubyteClass);
+        resolver.registerSerializer(ubyteClass, new UByteSerializer(fury));
+
+        // UShort
+        Class ushortClass = KotlinToJavaClass.INSTANCE.getUShortClass();
+        resolver.register(ushortClass);
+        resolver.registerSerializer(ushortClass, new UShortSerializer(fury));
+
+        // UInt
+        Class uintClass = KotlinToJavaClass.INSTANCE.getUIntClass();
+        resolver.register(uintClass);
+        resolver.registerSerializer(uintClass, new UIntSerializer(fury));
+
+        // ULong
+        Class ulongClass = KotlinToJavaClass.INSTANCE.getULongClass();
+        resolver.register(ulongClass);
+        resolver.registerSerializer(ulongClass, new ULongSerializer(fury));
+
         // EmptyList
         Class emptyListClass = KotlinToJavaClass.INSTANCE.getEmptyListClass();
         resolver.register(emptyListClass);

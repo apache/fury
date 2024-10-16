@@ -20,8 +20,15 @@
 package org.apache.fury.serializer.kotlin
 
 object KotlinToJavaClass {
+    // Collections
     val ArrayDequeClass = ArrayDeque::class.java
     val EmptyListClass = emptyList<Any>().javaClass
     val EmptySetClass = emptySet<Any>().javaClass
     val EmptyMapClass = emptyMap<Any, Any>().javaClass
+
+    // Unsigned
+    val UByteClass = UByte::class.java
+    val UShortClass = UShort::class.java
+    val UIntClass = UInt::class.java
+    val ULongClass = ULong::class.java
 }
