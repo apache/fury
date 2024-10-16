@@ -40,7 +40,7 @@ class UByteSerializer(
     true) {
 
     override fun write(buffer: MemoryBuffer, value: UByte) {
-        buffer.writeVarUint32Small7(value.toInt())
+        buffer.writeByte(value.toInt())
     }
 
     override fun read(buffer: MemoryBuffer): UByte {
