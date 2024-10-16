@@ -17,7 +17,7 @@
 
 import importlib
 import inspect
-import pkgutil
+import importlib.util
 import sys
 from typing import Dict, Callable
 
@@ -61,7 +61,7 @@ def lazy_import(
             self._on_loads.append(func)
             return func
 
-    if pkgutil.find_loader(prefix_name) is not None:
+    if importlib.util.find_spec(prefix_name) is not None:
         return LazyModule()
     elif placeholder:
         return ModulePlaceholder(prefix_name)
