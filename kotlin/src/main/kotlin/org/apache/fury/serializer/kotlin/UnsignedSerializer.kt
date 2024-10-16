@@ -65,10 +65,10 @@ class UShortSerializer(
     true
 ) {
     override fun write(buffer: MemoryBuffer, value: UShort) {
-        buffer.writeVarUint32(value.toInt())
+        buffer.writeInt16(value.toShort())
     }
     override fun read(buffer: MemoryBuffer): UShort {
-        return buffer.readVarUint32().toUShort()
+        return buffer.readInt16().toUShort()
     }
 }
 
