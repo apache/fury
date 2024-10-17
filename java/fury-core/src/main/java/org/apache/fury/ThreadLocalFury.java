@@ -21,6 +21,8 @@ package org.apache.fury;
 
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.util.Collections;
+import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -45,11 +47,11 @@ public class ThreadLocalFury extends AbstractThreadSafeFury {
 
   private final ThreadLocal<LoaderBinding> bindingThreadLocal;
   private Consumer<Fury> factoryCallback;
-  private final WeakHashMap<LoaderBinding, Object> allFury;
+  private final Map<LoaderBinding, Object> allFury;
 
   public ThreadLocalFury(Function<ClassLoader, Fury> furyFactory) {
     factoryCallback = f -> {};
-    allFury = new WeakHashMap<>();
+    allFury = Collections.synchronizedMap(new WeakHashMap<>());
     bindingThreadLocal =
         ThreadLocal.withInitial(
             () -> {
