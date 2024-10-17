@@ -25,10 +25,6 @@ import org.testng.Assert.assertEquals
 import org.testng.annotations.Test
 
 class ArraySerializerTest {
-    /**
-     * Test array of
-     *
-     */
     @Test
     fun testSimpleArray() {
         val fury: Fury = Fury.builder()
