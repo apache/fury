@@ -30,7 +30,7 @@ class ArraySerializerTest {
      *
      */
     @Test
-    fun testArrayOf() {
+    fun testSimpleArray() {
         val fury: Fury = Fury.builder()
             .withLanguage(Language.JAVA)
             .requireClassRegistration(true)
@@ -38,6 +38,126 @@ class ArraySerializerTest {
         KotlinSerializers.registerSerializers(fury)
 
         val array = arrayOf("Apple", "Banana", "Orange", "Pineapple")
+        assertEquals(array, fury.deserialize(fury.serialize(array)))
+    }
+
+    @Test
+    fun testMultidimensional() {
+        val fury: Fury = Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(true)
+            .build()
+        KotlinSerializers.registerSerializers(fury)
+
+        val array = Array(2) {Array<Int>(2){0} }
+        assertEquals(array, fury.deserialize(fury.serialize(array)))
+    }
+
+    @Test
+    fun testEmptyArray() {
+        val fury: Fury = Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(true)
+            .build()
+        KotlinSerializers.registerSerializers(fury)
+
+        val array = emptyArray<Any?>()
+        assertEquals(array, fury.deserialize(fury.serialize(array)))
+    }
+
+    @Test
+    fun testBooleanArray() {
+        val fury: Fury = Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(true)
+            .build()
+        KotlinSerializers.registerSerializers(fury)
+
+        val array = booleanArrayOf(true, false)
+        assertEquals(array, fury.deserialize(fury.serialize(array)))
+    }
+
+    @Test
+    fun testByteArray() {
+        val fury: Fury = Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(true)
+            .build()
+        KotlinSerializers.registerSerializers(fury)
+
+        val array = byteArrayOf(0xFF.toByte(), 0xCA.toByte(), 0xFF.toByte())
+        assertEquals(array, fury.deserialize(fury.serialize(array)))
+    }
+
+    @Test
+    fun testCharArray() {
+        val fury: Fury = Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(true)
+            .build()
+        KotlinSerializers.registerSerializers(fury)
+
+        val array = charArrayOf('a', 'b', 'c')
+        assertEquals(array, fury.deserialize(fury.serialize(array)))
+    }
+
+    @Test
+    fun testDoubleArray() {
+        val fury: Fury = Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(true)
+            .build()
+        KotlinSerializers.registerSerializers(fury)
+
+        val array = doubleArrayOf(1.0, 2.0, 3.0)
+        assertEquals(array, fury.deserialize(fury.serialize(array)))
+    }
+
+    @Test
+    fun testFloatArray() {
+        val fury: Fury = Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(true)
+            .build()
+        KotlinSerializers.registerSerializers(fury)
+
+        val array = floatArrayOf(1.0f, 2.0f)
+        assertEquals(array, fury.deserialize(fury.serialize(array)))
+    }
+
+    @Test
+    fun testIntArray() {
+        val fury: Fury = Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(true)
+            .build()
+        KotlinSerializers.registerSerializers(fury)
+
+        val array = intArrayOf(1, 2, 3)
+        assertEquals(array, fury.deserialize(fury.serialize(array)))
+    }
+
+    @Test
+    fun testLongArray() {
+        val fury: Fury = Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(true)
+            .build()
+        KotlinSerializers.registerSerializers(fury)
+
+        val array = longArrayOf(1L, 2L, 3L)
+        assertEquals(array, fury.deserialize(fury.serialize(array)))
+    }
+
+    @Test
+    fun testShortArray() {
+        val fury: Fury = Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(true)
+            .build()
+        KotlinSerializers.registerSerializers(fury)
+
+        val array = shortArrayOf(1, 2, 3)
         assertEquals(array, fury.deserialize(fury.serialize(array)))
     }
 }
