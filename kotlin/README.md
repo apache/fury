@@ -12,6 +12,9 @@ Fury Kotlin is tested and works with the following types:
 - `Byte`, `Boolean`, `Int`, `Short`, `Long`, `Char`, `Float`, `Double` works out of the box with the default fury java implementation.
 - stdlib `collection`: `ArrayDeque`, `ArrayList`, `HashMap`,`HashSet`, `LinkedHashSet`, `LinkedHashMap`.
 - `ArrayList`, `HashMap`,`HashSet`, `LinkedHashSet`, `LinkedHashMap` works out of the box with the default fury java implementation.
+- `String` works out of the box with the default fury java implementation.
+- arrays: `Array`, `BooleanArray`, `ByteArray`, `CharArray`, `DoubleArray`, `FloatArray`, `IntArray`, `LongArray`, `ShortArray`
+- all standard array types work out of the box with the default fury java implementation.
 
 Additional support is added for the following classes in kotlin:
 
