@@ -51,6 +51,19 @@ class ArraySerializerTest {
     }
 
     @Test
+    fun testAnyArray() {
+        val fury: Fury = Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(true)
+            .build()
+        KotlinSerializers.registerSerializers(fury)
+
+
+        val array = arrayOf<Any?>("Apple", 1, null, 3.141, 1.2f)
+        assertEquals(array, fury.deserialize(fury.serialize(array)))
+    }
+
+    @Test
     fun testEmptyArray() {
         val fury: Fury = Fury.builder()
             .withLanguage(Language.JAVA)
