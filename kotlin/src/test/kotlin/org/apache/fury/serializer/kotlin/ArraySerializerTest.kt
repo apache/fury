@@ -24,6 +24,7 @@ import org.apache.fury.config.Language
 import org.testng.Assert.assertEquals
 import org.testng.annotations.Test
 
+@OptIn(ExperimentalUnsignedTypes::class)
 class ArraySerializerTest {
     @Test
     fun testSimpleArray() {
@@ -155,5 +156,52 @@ class ArraySerializerTest {
 
         val array = shortArrayOf(1, 2, 3)
         assertEquals(array, fury.deserialize(fury.serialize(array)))
+    }
+
+    @Test
+    fun testUByteArray() {
+        val fury: Fury = Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(true)
+            .build()
+        KotlinSerializers.registerSerializers(fury)
+
+        val array = ubyteArrayOf(0xFF.toUByte(), 0xEF.toUByte(), 0x00.toUByte())
+        assert(array.contentEquals(fury.deserialize(fury.serialize(array)) as UByteArray))
+    }
+
+    @Test
+    fun testUShortArray() {
+        val fury: Fury = Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(true)
+            .build()
+        KotlinSerializers.registerSerializers(fury)
+
+        val array = ushortArrayOf(1.toUShort(), 2.toUShort())
+        assert(array.contentEquals(fury.deserialize(fury.serialize(array)) as UShortArray))
+    }
+
+    @Test
+    fun testUIntArray() {
+        val fury: Fury = Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(true)
+            .build()
+        KotlinSerializers.registerSerializers(fury)
+
+        val array = uintArrayOf(1.toUInt(), 2.toUInt())
+        assert(array.contentEquals(fury.deserialize(fury.serialize(array)) as UIntArray))
+    }
+    @Test
+    fun testULongArray() {
+        val fury: Fury = Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(true)
+            .build()
+        KotlinSerializers.registerSerializers(fury)
+
+        val array = ulongArrayOf(1.toULong(), 2.toULong(), 3.toULong())
+        assert(array.contentEquals(fury.deserialize(fury.serialize(array)) as ULongArray))
     }
 }
