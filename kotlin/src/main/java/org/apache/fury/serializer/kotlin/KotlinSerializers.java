@@ -19,6 +19,10 @@
 
 package org.apache.fury.serializer.kotlin;
 
+import kotlin.UByteArray;
+import kotlin.UIntArray;
+import kotlin.ULongArray;
+import kotlin.UShortArray;
 import org.apache.fury.Fury;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.collection.CollectionSerializers;
@@ -72,5 +76,15 @@ public class KotlinSerializers {
         Class arrayDequeClass = KotlinToJavaClass.INSTANCE.getArrayDequeClass();
         resolver.register(arrayDequeClass);
         resolver.registerSerializer(arrayDequeClass, new KotlinArrayDequeSerializer(fury, arrayDequeClass));
+
+        // Unsigned array classes: UByteArray, UShortArray, UIntArray, ULongArray.
+        resolver.register(UByteArray.class);
+        resolver.registerSerializer(UByteArray.class, new UByteArraySerializer(fury));
+        resolver.register(UShortArray.class);
+        resolver.registerSerializer(UShortArray.class, new UShortArraySerializer(fury));
+        resolver.register(UIntArray.class);
+        resolver.registerSerializer(UIntArray.class, new UIntArraySerializer(fury));
+        resolver.register(ULongArray.class);
+        resolver.registerSerializer(ULongArray.class, new ULongArraySerializer(fury));
     }
 }

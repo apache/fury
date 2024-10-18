@@ -24,6 +24,7 @@ import org.apache.fury.config.Language
 import org.testng.Assert
 import org.testng.annotations.Test
 
+@ExperimentalUnsignedTypes
 class UnsignedBoundarySerializerTests {
     @Test
     fun testUByteBoundarySerialization() {
@@ -87,5 +88,61 @@ class UnsignedBoundarySerializerTests {
 
         Assert.assertEquals(boundaryMin, fury.deserialize(fury.serialize(boundaryMin)))
         Assert.assertEquals(boundaryMax, fury.deserialize(fury.serialize(boundaryMax)))
+    }
+
+    @Test
+    fun testUByteArrayBoundarySerialization() {
+        val fury: Fury = Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(true)
+            .build()
+
+        KotlinSerializers.registerSerializers(fury)
+
+        val array = ubyteArrayOf(UByte.MIN_VALUE, UByte.MAX_VALUE)
+
+        assert(array.contentEquals(fury.deserialize(fury.serialize(array)) as UByteArray))
+    }
+
+    @Test
+    fun testUShortArrayBoundarySerialization() {
+        val fury: Fury = Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(true)
+            .build()
+
+        KotlinSerializers.registerSerializers(fury)
+
+        val array = ushortArrayOf(UShort.MIN_VALUE, UShort.MAX_VALUE)
+
+        assert(array.contentEquals(fury.deserialize(fury.serialize(array)) as UShortArray))
+    }
+
+    @Test
+    fun testUIntArrayBoundarySerialization() {
+        val fury: Fury = Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(true)
+            .build()
+
+        KotlinSerializers.registerSerializers(fury)
+
+        val array = uintArrayOf(UInt.MIN_VALUE, UInt.MAX_VALUE)
+
+        assert(array.contentEquals(fury.deserialize(fury.serialize(array)) as UIntArray))
+    }
+
+    @Test
+    fun testULongArrayBoundarySerialization() {
+        val fury: Fury = Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(true)
+            .build()
+
+        KotlinSerializers.registerSerializers(fury)
+
+        val array = ulongArrayOf(ULong.MIN_VALUE, ULong.MAX_VALUE)
+
+        assert(array.contentEquals(fury.deserialize(fury.serialize(array)) as ULongArray))
     }
 }
