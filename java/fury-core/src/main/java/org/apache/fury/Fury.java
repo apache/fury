@@ -576,7 +576,8 @@ public final class Fury implements BaseFury {
         buffer.writeFloat64((Double) obj);
         break;
       case ClassResolver.STRING_CLASS_ID:
-        stringSerializer.writeJavaString(buffer, (String) obj);
+        stringSerializer.fastWriteString(buffer, (String) obj);
+        // stringSerializer.writeJavaString(buffer, (String) obj);
         break;
         // TODO(add fastpath for other types)
       default:
@@ -951,7 +952,8 @@ public final class Fury implements BaseFury {
       case ClassResolver.DOUBLE_CLASS_ID:
         return buffer.readFloat64();
       case ClassResolver.STRING_CLASS_ID:
-        return stringSerializer.readJavaString(buffer);
+        return stringSerializer.fastReadJavaString(buffer);
+        //        return stringSerializer.readJavaString(buffer);
         // TODO(add fastpath for other types)
       default:
         depth++;
