@@ -179,7 +179,7 @@ class ArraySerializerTest {
             .build()
         KotlinSerializers.registerSerializers(fury)
 
-        val array = ubyteArrayOf(0xFF.toUByte(), 0xEF.toUByte(), 0x00.toUByte())
+        val array = ubyteArrayOf(0xFFu, 0xEFu, 0x00u)
         assert(array.contentEquals(fury.deserialize(fury.serialize(array)) as UByteArray))
     }
 
@@ -191,7 +191,7 @@ class ArraySerializerTest {
             .build()
         KotlinSerializers.registerSerializers(fury)
 
-        val array = ushortArrayOf(1.toUShort(), 2.toUShort())
+        val array = ushortArrayOf(1u, 2u)
         assert(array.contentEquals(fury.deserialize(fury.serialize(array)) as UShortArray))
     }
 
@@ -203,7 +203,7 @@ class ArraySerializerTest {
             .build()
         KotlinSerializers.registerSerializers(fury)
 
-        val array = uintArrayOf(1.toUInt(), 2.toUInt())
+        val array = uintArrayOf(1u, 2u)
         assert(array.contentEquals(fury.deserialize(fury.serialize(array)) as UIntArray))
     }
     @Test
@@ -214,7 +214,7 @@ class ArraySerializerTest {
             .build()
         KotlinSerializers.registerSerializers(fury)
 
-        val array = ulongArrayOf(1.toULong(), 2.toULong(), 3.toULong())
+        val array = ulongArrayOf(1u, 2u, 3u)
         assert(array.contentEquals(fury.deserialize(fury.serialize(array)) as ULongArray))
     }
 }
