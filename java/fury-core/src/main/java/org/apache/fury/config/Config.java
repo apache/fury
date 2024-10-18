@@ -26,6 +26,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.fury.Fury;
 import org.apache.fury.meta.MetaCompressor;
+import org.apache.fury.serializer.FieldMismatchCallback;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.serializer.TimeSerializers;
 import org.apache.fury.util.Preconditions;
@@ -60,6 +61,7 @@ public class Config implements Serializable {
   private final boolean scalaOptimizationEnabled;
   private transient int configHash;
   private final boolean deserializeNonexistentEnumValueAsNull;
+  private final FieldMismatchCallback fieldMismatchCallback;
 
   public Config(FuryBuilder builder) {
     name = builder.name;
@@ -93,6 +95,7 @@ public class Config implements Serializable {
     asyncCompilationEnabled = builder.asyncCompilationEnabled;
     scalaOptimizationEnabled = builder.scalaOptimizationEnabled;
     deserializeNonexistentEnumValueAsNull = builder.deserializeNonexistentEnumValueAsNull;
+    fieldMismatchCallback = builder.fieldMismatchCallback;
   }
 
   /** Returns the name for Fury serialization. */
@@ -253,6 +256,10 @@ public class Config implements Serializable {
   /** Whether enable scala-specific serialization optimization. */
   public boolean isScalaOptimizationEnabled() {
     return scalaOptimizationEnabled;
+  }
+
+  public FieldMismatchCallback getFieldMismatchCallback() {
+    return fieldMismatchCallback;
   }
 
   @Override

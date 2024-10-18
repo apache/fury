@@ -56,6 +56,7 @@ import org.apache.fury.resolver.SerializationContext;
 import org.apache.fury.serializer.ArraySerializers;
 import org.apache.fury.serializer.BufferCallback;
 import org.apache.fury.serializer.BufferObject;
+import org.apache.fury.serializer.FieldMismatchCallback;
 import org.apache.fury.serializer.OpaqueObjects;
 import org.apache.fury.serializer.PrimitiveSerializers.LongSerializer;
 import org.apache.fury.serializer.Serializer;
@@ -1582,6 +1583,10 @@ public final class Fury implements BaseFury {
 
   public boolean isBasicTypesRefIgnored() {
     return config.isBasicTypesRefIgnored();
+  }
+
+  public FieldMismatchCallback getFieldMismatchCallback() {
+    return config.getFieldMismatchCallback();
   }
 
   public boolean checkClassVersion() {
