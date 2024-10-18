@@ -21,6 +21,7 @@ package org.apache.fury.serializer;
 
 import static org.apache.fury.type.TypeUtils.PRIMITIVE_CHAR_ARRAY_TYPE;
 import static org.apache.fury.type.TypeUtils.STRING_TYPE;
+import static org.apache.fury.util.StringUtils.MULTI_CHARS_NON_LATIN_MASK;
 
 import java.lang.invoke.CallSite;
 import java.lang.invoke.LambdaMetafactory;
@@ -287,6 +288,34 @@ public final class StringSerializer extends ImmutableSerializer<String> {
         int numBytes = MathUtils.doubleExact(value.length());
         buffer.writePrimitiveArrayWithSize(chars, Platform.CHAR_ARRAY_OFFSET, numBytes);
       }
+    }
+  }
+
+  public String fastReadJavaString(MemoryBuffer buffer) {
+    byte coder = buffer.readByte();
+    if (STRING_VALUE_FIELD_IS_BYTES) {
+      if (coder == LATIN1) {
+        return newBytesStringZeroCopy(LATIN1, readBytesLatin1(buffer));
+      } else if (coder == UTF8) {
+        return newBytesStringZeroCopy(UTF16, readBytesUTF8(buffer));
+      } else if (coder == UTF16) {
+        return newBytesStringZeroCopy(UTF16, readBytesUTF16(buffer));
+      } else {
+        throw new RuntimeException("Unknown coder type " + coder);
+      }
+    } else {
+      assert STRING_VALUE_FIELD_IS_CHARS;
+      char[] chars;
+      if (coder == LATIN1) {
+        chars = readCharsLatin1(buffer);
+      } else if (coder == UTF8) {
+        chars = readCharsUTF8(buffer);
+      } else if (coder == UTF16) {
+        chars = readCharsUTF16(buffer);
+      } else {
+        throw new RuntimeException("Unknown coder type " + coder);
+      }
+      return newCharsStringZeroCopy(chars);
     }
   }
 
@@ -609,6 +638,95 @@ public final class StringSerializer extends ImmutableSerializer<String> {
     buffer.writeBytes(bytes);
   }
 
+  public static byte bestCoder(char[] chars) {
+    int numChars = chars.length;
+    int vectorizedLen = numChars >> 2;
+    int vectorizedChars = vectorizedLen << 2;
+    // sample 64 chars
+    int sampleNum = Math.min(64, numChars);
+    int endOffset =
+        Math.min(
+            Platform.CHAR_ARRAY_OFFSET + (vectorizedChars << 1),
+            Platform.CHAR_ARRAY_OFFSET + (sampleNum << 1));
+    int count = 0;
+    for (int offset = Platform.CHAR_ARRAY_OFFSET, charOffset = 0;
+        offset < endOffset;
+        offset += 8, charOffset += 4) {
+      long multiChars = Platform.getLong(chars, offset);
+      if ((multiChars & MULTI_CHARS_NON_LATIN_MASK) == 0) {
+        count += 4;
+      } else {
+        for (int i = 0; i < 4; ++i) {
+          if (chars[charOffset + i] < 0x80) {
+            count++;
+          }
+        }
+      }
+    }
+    // ascii number > 50%, choose UTF-8
+    if (count >= sampleNum * 0.5) {
+      return UTF8;
+    } else {
+      return UTF16;
+    }
+  }
+
+  public static byte bestCoder(byte[] bytes) {
+    int numBytes = bytes.length;
+    int vectorizedLen = numBytes >> 3;
+    int vectorizedBytes = vectorizedLen << 3;
+    // sample 64 chars
+    int sampleNum = Math.min(64 << 1, numBytes);
+    int endOffset =
+        Math.min(
+            Platform.BYTE_ARRAY_OFFSET + vectorizedBytes, Platform.BYTE_ARRAY_OFFSET + sampleNum);
+    int count = 0;
+    for (int offset = Platform.BYTE_ARRAY_OFFSET; offset < endOffset; offset += 8) {
+      long multiChars = Platform.getLong(bytes, offset);
+      if ((multiChars & MULTI_CHARS_NON_LATIN_MASK) == 0) {
+        count += 4;
+      } else {
+        for (int i = Platform.IS_LITTLE_ENDIAN ? 1 : 0; i < 8; ++i) {
+          if (bytes[offset + i] == 0) {
+            count++;
+          }
+        }
+      }
+    }
+    // ascii number > 50%, choose UTF-8
+    if (count >= sampleNum * 0.5) {
+      return UTF8;
+    } else {
+      return UTF16;
+    }
+  }
+
+  public void fastWriteString(MemoryBuffer buffer, String value) {
+    if (STRING_VALUE_FIELD_IS_BYTES) {
+      final byte[] bytes = (byte[]) Platform.getObject(value, STRING_VALUE_FIELD_OFFSET);
+      final byte coder = Platform.getByte(value, Offset.STRING_CODER_FIELD_OFFSET);
+      if (coder == LATIN1) {
+        // LATIN1
+        writeBytesLatin1(buffer, bytes);
+      } else {
+        if (bestCoder(bytes) == UTF8) {
+          writeBytesUTF8(buffer, bytes);
+        } else {
+          writeBytesUTF16(buffer, bytes);
+        }
+      }
+    } else {
+      final char[] chars = (char[]) Platform.getObject(value, STRING_VALUE_FIELD_OFFSET);
+      if (StringUtils.isLatin(chars)) {
+        writeCharsLatin1(buffer, chars);
+      } else if (bestCoder(chars) == UTF8) {
+        writeCharsUTF8(buffer, chars);
+      } else {
+        writeCharsUTF16(buffer, chars);
+      }
+    }
+  }
+
   public String readUTF8String(MemoryBuffer buffer) {
     int numBytes = buffer.readVarUint32Small14();
     buffer.checkReadableBytes(numBytes);
@@ -624,5 +742,535 @@ public final class StringSerializer extends ImmutableSerializer<String> {
       buffer.readBytes(tmpArray, 0, numBytes);
       return new String(tmpArray, 0, numBytes, StandardCharsets.UTF_8);
     }
+  }
+
+  public byte[] readBytesLatin1(MemoryBuffer buffer) {
+    int utf8AsciiBytes = buffer.readInt32();
+    buffer.checkReadableBytes(utf8AsciiBytes);
+    byte[] srcArray = buffer.getHeapMemory();
+    byte[] bytes = new byte[utf8AsciiBytes << 1];
+    if (srcArray != null) {
+      int srcIndex = buffer._unsafeHeapReaderIndex();
+      for (int i = 0, pos = Platform.IS_LITTLE_ENDIAN ? 0 : 1; i < utf8AsciiBytes; ++i, pos += 2) {
+        bytes[pos] = srcArray[srcIndex++];
+      }
+      buffer._increaseReaderIndexUnsafe(utf8AsciiBytes);
+    } else {
+      // TODO: off-heap
+    }
+    return bytes;
+  }
+
+  public char[] readCharsLatin1(MemoryBuffer buffer) {
+    int utf8AsciiBytes = buffer.readInt32();
+    buffer.checkReadableBytes(utf8AsciiBytes);
+    byte[] srcArray = buffer.getHeapMemory();
+    char[] chars = new char[utf8AsciiBytes];
+    if (srcArray != null) {
+      int srcIndex = buffer._unsafeHeapReaderIndex();
+      for (int i = 0; i < utf8AsciiBytes; i++) {
+        chars[i] = (char) (srcArray[srcIndex++] & 0xff);
+      }
+      buffer._increaseReaderIndexUnsafe(utf8AsciiBytes);
+    } else {
+      // TODO: off-heap
+    }
+    return chars;
+  }
+
+  public byte[] readBytesUTF8(MemoryBuffer buffer) {
+    int utf16Bytes = buffer.readInt32();
+    int udf8Bytes = buffer.readInt32();
+    byte[] bytes = new byte[utf16Bytes];
+    buffer.checkReadableBytes(udf8Bytes);
+    byte[] srcArray = buffer.getHeapMemory();
+    if (srcArray != null) {
+      int srcIndex = buffer._unsafeHeapReaderIndex();
+      if (!fastDecodeUTF8(srcArray, srcIndex, udf8Bytes, bytes)) {
+        throw new RuntimeException("Decode failed");
+      }
+      buffer._increaseReaderIndexUnsafe(udf8Bytes);
+    } else {
+      // TODO: off-heap
+    }
+    return bytes;
+  }
+
+  public byte[] readBytesUTF16(MemoryBuffer buffer) {
+    int utf16Bytes = buffer.readInt32();
+    buffer.checkReadableBytes(utf16Bytes);
+    byte[] bytes;
+    byte[] heapMemory = buffer.getHeapMemory();
+    if (heapMemory != null) {
+      final int arrIndex = buffer._unsafeHeapReaderIndex();
+      buffer.increaseReaderIndex(utf16Bytes);
+      bytes = new byte[utf16Bytes];
+      System.arraycopy(heapMemory, arrIndex, bytes, 0, utf16Bytes);
+    } else {
+      bytes = buffer.readBytes(utf16Bytes);
+    }
+    return bytes;
+  }
+
+  public char[] readCharsUTF16(MemoryBuffer buffer) {
+    int utf16Bytes = buffer.readInt32();
+    char[] chars = new char[utf16Bytes >> 1];
+    if (Platform.IS_LITTLE_ENDIAN) {
+      // FIXME JDK11 utf16 string uses little-endian order.
+      buffer.readChars(chars, Platform.CHAR_ARRAY_OFFSET, utf16Bytes);
+    } else {
+      buffer.checkReadableBytes(utf16Bytes);
+      final byte[] targetArray = buffer.getHeapMemory();
+      if (targetArray != null) {
+        int charIndex = 0;
+        for (int i = buffer._unsafeHeapReaderIndex(), end = i + utf16Bytes; i < end; i += 2) {
+          char c =
+              (char)
+                  ((targetArray[i] & 0xff << StringUTF16.HI_BYTE_SHIFT)
+                      | ((targetArray[i + 1] & 0xff) << StringUTF16.LO_BYTE_SHIFT));
+          chars[charIndex++] = c;
+        }
+        buffer._increaseReaderIndexUnsafe(utf16Bytes);
+      } else {
+        final byte[] tmpArray = getByteArray(utf16Bytes);
+        buffer.readBytes(tmpArray, 0, utf16Bytes);
+        int charIndex = 0;
+        for (int i = 0; i < utf16Bytes; i += 2) {
+          char c =
+              (char)
+                  ((tmpArray[i] & 0xff << StringUTF16.HI_BYTE_SHIFT)
+                      | ((tmpArray[i + 1] & 0xff) << StringUTF16.LO_BYTE_SHIFT));
+          chars[charIndex++] = c;
+        }
+      }
+    }
+    return chars;
+  }
+
+  public char[] readCharsUTF8(MemoryBuffer buffer) {
+    int utf16Bytes = buffer.readInt32();
+    int udf8Bytes = buffer.readInt32();
+    char[] chars = new char[utf16Bytes >> 1];
+    buffer.checkReadableBytes(udf8Bytes);
+    byte[] srcArray = buffer.getHeapMemory();
+    if (srcArray != null) {
+      int srcIndex = buffer._unsafeHeapReaderIndex();
+      if (!fastDecodeUTF8(srcArray, srcIndex, udf8Bytes, chars)) {
+        throw new RuntimeException("Decode failed");
+      }
+      buffer._increaseReaderIndexUnsafe(udf8Bytes);
+    } else {
+      // TODO: off-heap
+    }
+    return chars;
+  }
+
+  public void writeBytesLatin1(MemoryBuffer buffer, byte[] bytes) {
+    int writerIndex = buffer.writerIndex();
+    int numBytes = bytes.length >> 1;
+    buffer.ensure(writerIndex + 5 + numBytes);
+    byte[] targetArray = buffer.getHeapMemory();
+    if (targetArray != null) {
+      int arrIndex = buffer._unsafeHeapWriterIndex();
+      buffer.putByte(arrIndex, LATIN1);
+      buffer.putInt32(arrIndex + 1, numBytes);
+      arrIndex += 5;
+      for (int i = Platform.IS_LITTLE_ENDIAN ? 0 : 1; i < numBytes; i += 2) {
+        targetArray[arrIndex++] = bytes[i];
+      }
+      writerIndex += 5;
+    } else {
+      // TODO: off-heap
+    }
+    writerIndex += numBytes;
+    buffer._unsafeWriterIndex(writerIndex);
+  }
+
+  public void writeCharsLatin1(MemoryBuffer buffer, char[] chars) {
+    int writerIndex = buffer.writerIndex();
+    int numBytes = chars.length;
+    buffer.ensure(writerIndex + 5 + numBytes);
+    byte[] targetArray = buffer.getHeapMemory();
+    if (targetArray != null) {
+      int arrIndex = buffer._unsafeHeapWriterIndex();
+      buffer.putByte(arrIndex, LATIN1);
+      buffer.putInt32(arrIndex + 1, numBytes);
+      arrIndex += 5;
+      for (int i = 0; i < numBytes; i++) {
+        targetArray[arrIndex + i] = (byte) chars[i];
+      }
+      writerIndex += 5;
+    } else {
+      // TODO: off-heap
+    }
+    writerIndex += numBytes;
+    buffer._unsafeWriterIndex(writerIndex);
+  }
+
+  public void writeBytesUTF16(MemoryBuffer buffer, byte[] bytes) {
+    int numBytes = bytes.length;
+    int writerIndex = buffer.writerIndex();
+    buffer.ensure(writerIndex + 5 + numBytes);
+    final byte[] targetArray = buffer.getHeapMemory();
+    if (targetArray != null) {
+      int arrIndex = buffer._unsafeHeapWriterIndex();
+      buffer.putByte(arrIndex, UTF16);
+      buffer.putInt32(arrIndex + 1, numBytes);
+      arrIndex += 5;
+      writerIndex += 5 + numBytes;
+      System.arraycopy(bytes, 0, targetArray, arrIndex, numBytes);
+    } else {
+      // TODO: off-heap
+    }
+    buffer._unsafeWriterIndex(writerIndex);
+  }
+
+  public void writeCharsUTF16(MemoryBuffer buffer, char[] chars) {
+    int numBytes = MathUtils.doubleExact(chars.length);
+    int writerIndex = buffer.writerIndex();
+    buffer.ensure(writerIndex + 5 + numBytes);
+    final byte[] targetArray = buffer.getHeapMemory();
+    if (targetArray != null) {
+      int arrIndex = buffer._unsafeHeapWriterIndex();
+      buffer.putByte(arrIndex, UTF16);
+      buffer.putInt32(arrIndex + 1, numBytes);
+      arrIndex += 5;
+      writerIndex += 5 + numBytes;
+      if (Platform.IS_LITTLE_ENDIAN) {
+        // FIXME JDK11 utf16 string uses little-endian order.
+        Platform.UNSAFE.copyMemory(
+            chars,
+            Platform.CHAR_ARRAY_OFFSET,
+            targetArray,
+            Platform.BYTE_ARRAY_OFFSET + arrIndex,
+            numBytes);
+      } else {
+        heapWriteCharsUTF16BE(chars, arrIndex, numBytes, targetArray);
+      }
+    } else {
+      // TODO: off-heap
+    }
+    buffer._unsafeWriterIndex(writerIndex);
+  }
+
+  public void writeCharsUTF8(MemoryBuffer buffer, char[] chars) {
+    int estimateMaxBytes = chars.length * 3;
+    int writerIndex = buffer.writerIndex();
+    buffer.ensure(writerIndex + 9 + estimateMaxBytes);
+    byte[] targetArray = buffer.getHeapMemory();
+    if (targetArray != null) {
+      int arrIndex = buffer._unsafeHeapWriterIndex();
+      int targetIndex = fastEncodeUTF8(chars, targetArray, arrIndex + 9);
+      int written = targetIndex - arrIndex - 9;
+      buffer.putByte(arrIndex, UTF8);
+      buffer.putInt32(arrIndex + 1, chars.length << 1);
+      buffer.putInt32(arrIndex + 5, written);
+      buffer._unsafeWriterIndex(targetIndex);
+    } else {
+      // TODO: off-heap
+    }
+  }
+
+  public void writeBytesUTF8(MemoryBuffer buffer, byte[] bytes) {
+    int estimateMaxBytes = bytes.length / 2 * 3;
+    int writerIndex = buffer.writerIndex();
+    buffer.ensure(writerIndex + 9 + estimateMaxBytes);
+    byte[] targetArray = buffer.getHeapMemory();
+    if (targetArray != null) {
+      int arrIndex = buffer._unsafeHeapWriterIndex();
+      int targetIndex = fastEncodeUTF8(bytes, targetArray, arrIndex + 9);
+      int written = targetIndex - arrIndex - 9;
+      buffer.putByte(arrIndex, UTF8);
+      buffer.putInt32(arrIndex + 1, bytes.length);
+      buffer.putInt32(arrIndex + 5, written);
+      buffer._unsafeWriterIndex(targetIndex);
+    }
+  }
+
+  private static boolean fastDecodeUTF8(byte[] src, int offset, int len, byte[] dst) {
+    final int end = offset + len;
+    int dp = 0;
+
+    while (offset < end) {
+      if (offset + 8 <= end
+          && (Platform.getLong(src, Platform.BYTE_ARRAY_OFFSET + offset) & 0x8080808080808080L)
+              == 0) {
+        // ascii only
+        for (int i = 0, pos = Platform.IS_LITTLE_ENDIAN ? dp : dp + 1; i < 8; ++i, pos += 2) {
+          dst[pos] = src[offset++];
+        }
+        dp += 16;
+      } else {
+        int b0 = src[offset++];
+        if (b0 >= 0) {
+          // 1 byte, 7 bits: 0xxxxxxx
+          dst[dp] = (byte) b0;
+          dst[dp + 1] = 0;
+          dp += 2;
+        } else if ((b0 >> 5) == -2 && (b0 & 0x1e) != 0) {
+          // 2 bytes, 11 bits: 110xxxxx 10xxxxxx
+          if (offset >= end) {
+            return false;
+          }
+          int b1 = src[offset++];
+          if ((b1 & 0xc0) != 0x80) { // isNotContinuation(b2)
+            return false;
+          } else {
+            char c = (char) (((b0 << 6) ^ b1) ^ (((byte) 0xC0 << 6) ^ ((byte) 0x80)));
+            dst[dp] = (byte) c;
+            dst[dp + 1] = (byte) (c >> 8);
+            dp += 2;
+          }
+        } else if ((b0 >> 4) == -2) {
+          // 3 bytes, 16 bits: 1110xxxx 10xxxxxx 10xxxxxx
+          if (offset + 1 >= end) {
+            return false;
+          }
+          int b1 = src[offset];
+          int b2 = src[offset + 1];
+          offset += 2;
+          if ((b0 == (byte) 0xe0 && (b1 & 0xe0) == 0x80) //
+              || (b1 & 0xc0) != 0x80 //
+              || (b2 & 0xc0) != 0x80) { // isMalformed3(b0, b1, b2)
+            return false;
+          } else {
+            char c =
+                (char)
+                    ((b0 << 12)
+                        ^ (b1 << 6)
+                        ^ (b2 ^ (((byte) 0xE0 << 12) ^ ((byte) 0x80 << 6) ^ ((byte) 0x80))));
+            boolean isSurrogate = c >= '\uD800' && c < ('\uDFFF' + 1);
+            if (isSurrogate) {
+              return false;
+            } else {
+              dst[dp] = (byte) c;
+              dst[dp + 1] = (byte) (c >> 8);
+              dp += 2;
+            }
+          }
+        } else if ((b0 >> 3) == -2) {
+          // 4 bytes, 21 bits: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+          if (offset + 2 >= end) {
+            return false;
+          }
+          int b2 = src[offset];
+          int b3 = src[offset + 1];
+          int b4 = src[offset + 2];
+          offset += 3;
+          int uc =
+              ((b0 << 18)
+                  ^ (b2 << 12)
+                  ^ (b3 << 6)
+                  ^ (b4
+                      ^ (((byte) 0xF0 << 18)
+                          ^ ((byte) 0x80 << 12)
+                          ^ ((byte) 0x80 << 6)
+                          ^ ((byte) 0x80))));
+          if (((b2 & 0xc0) != 0x80 || (b3 & 0xc0) != 0x80 || (b4 & 0xc0) != 0x80) // isMalformed4
+              ||
+              // shortest form check
+              !(uc >= 0x010000 && uc < 0X10FFFF + 1) // !Character.isSupplementaryCodePoint(uc)
+          ) {
+            return false;
+          } else {
+            char c = (char) ((uc >>> 10) + ('\uD800' - (0x010000 >>> 10)));
+            dst[dp] = (byte) c;
+            dst[dp + 1] = (byte) (c >> 8);
+            dp += 2;
+
+            c = (char) ((uc & 0x3ff) + '\uDC00');
+            dst[dp] = (byte) c;
+            dst[dp + 1] = (byte) (c >> 8);
+            dp += 2;
+          }
+        } else {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  private static boolean fastDecodeUTF8(byte[] src, int offset, int len, char[] dst) {
+    int end = offset + len;
+    int dp = 0;
+    while (offset < end) {
+      if (offset + 8 <= end
+          && (Platform.getLong(src, Platform.BYTE_ARRAY_OFFSET + offset) & 0x8080808080808080L)
+              == 0) {
+        // ascii only
+        for (int i = 0; i < 8; ++i) {
+          dst[dp++] = (char) src[offset++];
+        }
+      } else {
+        int b1 = src[offset++];
+        if (b1 >= 0) {
+          // 1 byte, 7 bits: 0xxxxxxx
+          dst[dp++] = (char) b1;
+        } else if ((b1 >> 5) == -2 && (b1 & 0x1e) != 0) {
+          // 2 bytes, 11 bits: 110xxxxx 10xxxxxx
+          if (offset >= end) {
+            return false;
+          }
+          int b2 = src[offset++];
+          if ((b2 & 0xc0) != 0x80) { // isNotContinuation(b2)
+            return false;
+          } else {
+            dst[dp++] = (char) (((b1 << 6) ^ b2) ^ (((byte) 0xC0 << 6) ^ ((byte) 0x80)));
+          }
+        } else if ((b1 >> 4) == -2) {
+          // 3 bytes, 16 bits: 1110xxxx 10xxxxxx 10xxxxxx
+          if (offset + 1 >= end) {
+            return false;
+          }
+
+          int b2 = src[offset++];
+          int b3 = src[offset++];
+          if ((b1 == (byte) 0xe0 && (b2 & 0xe0) == 0x80) //
+              || (b2 & 0xc0) != 0x80 //
+              || (b3 & 0xc0) != 0x80) { // isMalformed3(b1, b2, b3)
+            return false;
+          } else {
+            char c =
+                (char)
+                    ((b1 << 12)
+                        ^ (b2 << 6)
+                        ^ (b3 ^ (((byte) 0xE0 << 12) ^ ((byte) 0x80 << 6) ^ ((byte) 0x80))));
+            boolean isSurrogate = c >= '\uD800' && c < ('\uDFFF' + 1);
+            if (isSurrogate) {
+              return false;
+            } else {
+              dst[dp++] = c;
+            }
+          }
+        } else if ((b1 >> 3) == -2) {
+          // 4 bytes, 21 bits: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+          if (offset + 2 >= end) {
+            return false;
+          }
+          int b2 = src[offset++];
+          int b3 = src[offset++];
+          int b4 = src[offset++];
+          int uc =
+              ((b1 << 18)
+                  ^ (b2 << 12)
+                  ^ (b3 << 6)
+                  ^ (b4
+                      ^ (((byte) 0xF0 << 18)
+                          ^ ((byte) 0x80 << 12)
+                          ^ ((byte) 0x80 << 6)
+                          ^ ((byte) 0x80))));
+          if (((b2 & 0xc0) != 0x80 || (b3 & 0xc0) != 0x80 || (b4 & 0xc0) != 0x80) // isMalformed4
+              ||
+              // shortest form check
+              !(uc >= 0x010000 && uc < 0X10FFFF + 1) // !Character.isSupplementaryCodePoint(uc)
+          ) {
+            return false;
+          } else {
+            dst[dp] =
+                (char)
+                    ((uc >>> 10) + ('\uD800' - (0x010000 >>> 10))); // Character.highSurrogate(uc);
+            dst[dp + 1] = (char) ((uc & 0x3ff) + '\uDC00'); // Character.lowSurrogate(uc);
+            dp += 2;
+          }
+        } else {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  private static int fastEncodeUTF8(byte[] src, byte[] dst, int dp) {
+    int numBytes = src.length;
+    for (int offset = 0; offset < numBytes; ) {
+      if (offset + 8 <= numBytes
+          && (Platform.getLong(src, Platform.BYTE_ARRAY_OFFSET + offset)
+                  & MULTI_CHARS_NON_LATIN_MASK)
+              == 0) {
+        // ascii only
+        for (int i = Platform.IS_LITTLE_ENDIAN ? 0 : 1; i < 8; i += 2) {
+          dst[dp++] = src[offset + i];
+        }
+        offset += 8;
+      } else {
+        char c = Platform.getChar(src, Platform.BYTE_ARRAY_OFFSET + offset);
+        offset += 2;
+
+        if (c < 0x80) {
+          dst[dp++] = (byte) c;
+        } else {
+          if (c < 0x800) {
+            // 2 bytes, 11 bits
+            dst[dp++] = (byte) (0xc0 | (c >> 6));
+            dst[dp++] = (byte) (0x80 | (c & 0x3f));
+          } else if (c >= '\uD800' && c <= '\uDFFF') {
+            char d;
+            if (c > '\uDBFF'
+                || numBytes - offset < 1
+                || (d = Platform.getChar(src, Platform.BYTE_ARRAY_OFFSET + offset)) < '\uDC00'
+                || d > '\uDFFF') {
+              throw new RuntimeException("malformed input off : " + offset);
+            }
+
+            int uc = ((c << 10) + d) + (0x010000 - ('\uD800' << 10) - '\uDC00');
+            dst[dp++] = (byte) (0xf0 | ((uc >> 18)));
+            dst[dp++] = (byte) (0x80 | ((uc >> 12) & 0x3f));
+            dst[dp++] = (byte) (0x80 | ((uc >> 6) & 0x3f));
+            dst[dp++] = (byte) (0x80 | (uc & 0x3f));
+            offset += 2;
+          } else {
+            // 3 bytes, 16 bits
+            dst[dp++] = (byte) (0xe0 | ((c >> 12)));
+            dst[dp++] = (byte) (0x80 | ((c >> 6) & 0x3f));
+            dst[dp++] = (byte) (0x80 | (c & 0x3f));
+          }
+        }
+      }
+    }
+    return dp;
+  }
+
+  private static int fastEncodeUTF8(char[] src, byte[] dst, int dp) {
+    int numChars = src.length;
+    for (int charOffset = 0; charOffset < numChars; ) {
+      if (charOffset + 4 <= numChars
+          && (Platform.getLong(src, Platform.CHAR_ARRAY_OFFSET + charOffset * 2L)
+                  & MULTI_CHARS_NON_LATIN_MASK)
+              == 0) {
+        // ascii only
+        for (int i = 0; i < 4; ++i) {
+          dst[dp++] = (byte) src[charOffset++];
+        }
+      } else {
+        char c = src[charOffset++];
+        if (c < 0x80) {
+          dst[dp++] = (byte) c;
+        } else if (c < 0x800) {
+          dst[dp++] = (byte) (0xc0 | (c >> 6));
+          dst[dp++] = (byte) (0x80 | (c & 0x3f));
+        } else if (c >= '\uD800' && c <= '\uDFFF') {
+          char d;
+          if (c > '\uDBFF'
+              || charOffset == src.length
+              || (d = src[charOffset]) < '\uDC00'
+              || d > '\uDFFF') {
+            throw new RuntimeException("malformed input off : " + charOffset);
+          }
+
+          int uc = ((c << 10) + d) + (0x010000 - ('\uD800' << 10) - '\uDC00');
+          dst[dp++] = (byte) (0xf0 | ((uc >> 18)));
+          dst[dp++] = (byte) (0x80 | ((uc >> 12) & 0x3f));
+          dst[dp++] = (byte) (0x80 | ((uc >> 6) & 0x3f));
+          dst[dp++] = (byte) (0x80 | (uc & 0x3f));
+          charOffset++;
+        } else {
+          dst[dp++] = (byte) (0xe0 | ((c >> 12)));
+          dst[dp++] = (byte) (0x80 | ((c >> 6) & 0x3f));
+          dst[dp++] = (byte) (0x80 | (c & 0x3f));
+        }
+      }
+    }
+    return dp;
   }
 }
