@@ -313,7 +313,9 @@ public class StringSerializerTest extends FuryTestBase {
       assertEquals(serializer.read(buffer), "abc你好");
       byte[] bytes = "abc你好".getBytes(StandardCharsets.UTF_8);
       byte UTF8 = 2;
-      buffer.writeVarUint64(((long) bytes.length) << 2 | UTF8);
+      buffer.writeByte(UTF8);
+      buffer.writeInt32("abc你好".length() << 1);
+      buffer.writeInt32(bytes.length);
       buffer.writeBytes(bytes);
       assertEquals(serializer.read(buffer), "abc你好");
       assertEquals(buffer.readerIndex(), buffer.writerIndex());

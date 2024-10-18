@@ -21,6 +21,7 @@ package org.apache.fury.serializer;
 
 import static org.apache.fury.type.TypeUtils.PRIMITIVE_CHAR_ARRAY_TYPE;
 import static org.apache.fury.type.TypeUtils.STRING_TYPE;
+import static org.apache.fury.util.StringUtils.MULTI_CHARS_NON_LATIN_MASK;
 
 import java.lang.invoke.CallSite;
 import java.lang.invoke.LambdaMetafactory;
@@ -43,6 +44,7 @@ import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.type.Type;
 import org.apache.fury.util.MathUtils;
 import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.StringEncodingUtils;
 import org.apache.fury.util.StringUtils;
 import org.apache.fury.util.unsafe._JDKAccess;
 
@@ -149,37 +151,24 @@ public final class StringSerializer extends ImmutableSerializer<String> {
   public Expression writeStringExpr(Expression strSerializer, Expression buffer, Expression str) {
     if (isJava) {
       if (STRING_VALUE_FIELD_IS_BYTES) {
-        return new StaticInvoke(StringSerializer.class, "writeBytesString", buffer, str);
+        if (compressString) {
+          return new Invoke(strSerializer, "writeCompressedBytesString", buffer, str);
+        } else {
+          return new StaticInvoke(StringSerializer.class, "writeBytesString", buffer, str);
+        }
       } else {
         if (!STRING_VALUE_FIELD_IS_CHARS) {
           throw new UnsupportedOperationException();
         }
         if (compressString) {
-          return new Invoke(strSerializer, "writeCharsStringCompressed", buffer, str);
+          return new Invoke(strSerializer, "writeCompressedCharsString", buffer, str);
         } else {
-          return new Invoke(strSerializer, "writeCharsStringUncompressed", buffer, str);
+          return new StaticInvoke(StringSerializer.class, "writeCharsString", buffer, str);
         }
       }
     } else {
       return new Invoke(strSerializer, "writeUTF8String", buffer, str);
     }
-  }
-
-  // Invoked by jit
-  public void writeCharsStringCompressed(MemoryBuffer buffer, String value) {
-    final char[] chars = (char[]) Platform.getObject(value, STRING_VALUE_FIELD_OFFSET);
-    if (StringUtils.isLatin(chars)) {
-      writeCharsLatin(buffer, chars, chars.length);
-    } else {
-      writeCharsUTF16(buffer, chars, chars.length);
-    }
-  }
-
-  // Invoked by jit
-  public void writeCharsStringUncompressed(MemoryBuffer buffer, String value) {
-    int numBytes = MathUtils.doubleExact(value.length());
-    final char[] chars = (char[]) Platform.getObject(value, STRING_VALUE_FIELD_OFFSET);
-    buffer.writePrimitiveArrayWithSize(chars, Platform.CHAR_ARRAY_OFFSET, numBytes);
   }
 
   public String readString(MemoryBuffer buffer) {
@@ -235,72 +224,103 @@ public final class StringSerializer extends ImmutableSerializer<String> {
   }
 
   @CodegenInvoke
-  public String readCompressedCharsString(MemoryBuffer buffer) {
-    long header = buffer.readVarUint36Small();
-    byte coder = (byte) (header & 0b11);
-    int numBytes = (int) (header >>> 2);
+  public String readCharsString(MemoryBuffer buffer) {
+    return newCharsStringZeroCopy(buffer.readCharsAndSize());
+  }
+
+  @CodegenInvoke
+  public String readCompressedBytesString(MemoryBuffer buffer) {
+    byte coder = buffer.readByte();
     if (coder == LATIN1) {
-      return newCharsStringZeroCopy(readLatinChars(buffer, numBytes));
+      return newBytesStringZeroCopy(LATIN1, readBytesLatin1(buffer));
+    } else if (coder == UTF8) {
+      return newBytesStringZeroCopy(UTF16, readBytesUTF8(buffer));
     } else if (coder == UTF16) {
-      return newCharsStringZeroCopy(readUTF16Chars(buffer, numBytes));
+      return newBytesStringZeroCopy(UTF16, readBytesUTF16(buffer));
     } else {
-      return readUtf8(buffer, coder, numBytes);
+      throw new RuntimeException("Unknown coder type " + coder);
     }
   }
 
-  private String readUtf8(MemoryBuffer buffer, byte coder, int numBytes) {
-    Preconditions.checkArgument(coder == UTF8, UTF8);
-    byte[] bytes = buffer.readBytes(numBytes);
-    return new String(bytes, 0, numBytes, StandardCharsets.UTF_8);
-  }
-
-  private byte[] getByteArray(int numElements) {
-    byte[] byteArray = this.byteArray;
-    if (byteArray.length < numElements) {
-      byteArray = new byte[numElements];
-      this.byteArray = byteArray;
+  @CodegenInvoke
+  public String readCompressedCharsString(MemoryBuffer buffer) {
+    byte coder = buffer.readByte();
+    char[] chars;
+    if (coder == LATIN1) {
+      chars = readCharsLatin1(buffer);
+    } else if (coder == UTF8) {
+      chars = readCharsUTF8(buffer);
+    } else if (coder == UTF16) {
+      chars = readCharsUTF16(buffer);
+    } else {
+      throw new RuntimeException("Unknown coder type " + coder);
     }
-    if (byteArray.length > DEFAULT_BUFFER_SIZE) {
-      smoothByteArrayLength =
-          Math.max(((int) (smoothByteArrayLength * 0.9 + numElements * 0.1)), DEFAULT_BUFFER_SIZE);
-      if (smoothByteArrayLength <= DEFAULT_BUFFER_SIZE) {
-        this.byteArray = new byte[DEFAULT_BUFFER_SIZE];
-      }
-    }
-    return byteArray;
+    return newCharsStringZeroCopy(chars);
   }
 
   // Invoked by fury JIT
   public void writeJavaString(MemoryBuffer buffer, String value) {
     if (STRING_VALUE_FIELD_IS_BYTES) {
-      writeBytesString(buffer, value);
+      if (compressString) {
+        writeCompressedBytesString(buffer, value);
+      } else {
+        writeBytesString(buffer, value);
+      }
     } else {
       assert STRING_VALUE_FIELD_IS_CHARS;
-      final char[] chars = (char[]) Platform.getObject(value, STRING_VALUE_FIELD_OFFSET);
       if (compressString) {
-        if (StringUtils.isLatin(chars)) {
-          writeCharsLatin(buffer, chars, chars.length);
-        } else {
-          writeCharsUTF16(buffer, chars, chars.length);
-        }
+        writeCompressedCharsString(buffer, value);
       } else {
-        int numBytes = MathUtils.doubleExact(value.length());
-        buffer.writePrimitiveArrayWithSize(chars, Platform.CHAR_ARRAY_OFFSET, numBytes);
+        writeCharsString(buffer, value);
       }
     }
+  }
+
+  public void writeUTF8String(MemoryBuffer buffer, String value) {
+    byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
+    buffer.writeVarUint32(bytes.length);
+    buffer.writeBytes(bytes);
   }
 
   // Invoked by fury JIT
   public String readJavaString(MemoryBuffer buffer) {
     if (STRING_VALUE_FIELD_IS_BYTES) {
-      return readBytesString(buffer);
+      if (compressString) {
+        return readCompressedBytesString(buffer);
+      } else {
+        return readBytesString(buffer);
+      }
     } else {
       assert STRING_VALUE_FIELD_IS_CHARS;
       if (compressString) {
         return readCompressedCharsString(buffer);
       } else {
-        return newCharsStringZeroCopy(buffer.readCharsAndSize());
+        return readCharsString(buffer);
       }
+    }
+  }
+
+  public void writeCompressedBytesString(MemoryBuffer buffer, String value) {
+    final byte[] bytes = (byte[]) Platform.getObject(value, STRING_VALUE_FIELD_OFFSET);
+    final byte coder = Platform.getByte(value, Offset.STRING_CODER_FIELD_OFFSET);
+    if (coder == LATIN1) {
+      writeBytesLatin1(buffer, bytes);
+    } else if ((bestCoder(bytes) == UTF8)) {
+      writeBytesUTF8(buffer, bytes);
+    } else {
+      writeBytesUTF16(buffer, bytes);
+    }
+  }
+
+  public void writeCompressedCharsString(MemoryBuffer buffer, String value) {
+    final char[] chars = (char[]) Platform.getObject(value, STRING_VALUE_FIELD_OFFSET);
+    final byte coder = bestCoder(chars);
+    if (coder == LATIN1) {
+      writeCharsLatin1(buffer, chars, chars.length);
+    } else if (coder == UTF8) {
+      writeCharsUTF8(buffer, chars);
+    } else {
+      writeCharsUTF16(buffer, chars, chars.length);
     }
   }
 
@@ -332,48 +352,282 @@ public final class StringSerializer extends ImmutableSerializer<String> {
     buffer._unsafeWriterIndex(writerIndex);
   }
 
-  public void writeCharsLatin(MemoryBuffer buffer, char[] chars, final int strLen) {
-    int writerIndex = buffer.writerIndex();
-    // The `ensure` ensure next operations are safe without bound checks,
-    // and inner heap buffer doesn't change.
-    buffer.ensure(writerIndex + 9 + strLen);
-    long header = ((long) strLen << 2) | LATIN1;
+  public static void writeCharsString(MemoryBuffer buffer, String value) {
+    int numBytes = MathUtils.doubleExact(value.length());
+    final char[] chars = (char[]) Platform.getObject(value, STRING_VALUE_FIELD_OFFSET);
+    buffer.writePrimitiveArrayWithSize(chars, Platform.CHAR_ARRAY_OFFSET, numBytes);
+  }
+
+  public String readUTF8String(MemoryBuffer buffer) {
+    int numBytes = buffer.readVarUint32Small14();
+    buffer.checkReadableBytes(numBytes);
     final byte[] targetArray = buffer.getHeapMemory();
     if (targetArray != null) {
-      int arrIndex = buffer._unsafeHeapWriterIndex();
-      int written = LittleEndian.putVarUint36Small(targetArray, arrIndex, header);
-      arrIndex += written;
-      writerIndex += written + strLen;
-      for (int i = 0; i < strLen; i++) {
-        targetArray[arrIndex + i] = (byte) chars[i];
-      }
-      buffer._unsafeWriterIndex(writerIndex);
+      String str =
+          new String(
+              targetArray, buffer._unsafeHeapReaderIndex(), numBytes, StandardCharsets.UTF_8);
+      buffer.increaseReaderIndex(numBytes);
+      return str;
     } else {
-      writerIndex += buffer._unsafePutVarUint36Small(writerIndex, header);
-      final byte[] tmpArray = getByteArray(strLen);
-      // Write to heap memory then copy is 60% faster than unsafe write to direct memory.
-      for (int i = 0; i < strLen; i++) {
-        tmpArray[i] = (byte) chars[i];
-      }
-      buffer.put(writerIndex, tmpArray, 0, strLen);
-      writerIndex += strLen;
-      buffer._unsafeWriterIndex(writerIndex);
+      final byte[] tmpArray = getByteArray(numBytes);
+      buffer.readBytes(tmpArray, 0, numBytes);
+      return new String(tmpArray, 0, numBytes, StandardCharsets.UTF_8);
     }
   }
 
-  public void writeCharsUTF16(MemoryBuffer buffer, char[] chars, int strLen) {
-    int numBytes = MathUtils.doubleExact(strLen);
-    long header = ((long) numBytes << 2) | UTF16;
-    // The `ensure` ensure next operations are safe without bound checks,
-    // and inner heap buffer doesn't change.
+  public byte[] readBytesLatin1(MemoryBuffer buffer) {
+    int utf8AsciiBytes = buffer.readInt32();
+    buffer.checkReadableBytes(utf8AsciiBytes);
+    byte[] srcArray = buffer.getHeapMemory();
+    byte[] bytes = new byte[utf8AsciiBytes << 1];
+    if (srcArray != null) {
+      int srcIndex = buffer._unsafeHeapReaderIndex();
+      if (Platform.IS_LITTLE_ENDIAN) {
+        for (int i = 0; i < utf8AsciiBytes; ++i) {
+          bytes[2 * i] = srcArray[srcIndex + i];
+        }
+      } else {
+        for (int i = 0; i < utf8AsciiBytes; ++i) {
+          bytes[1 + 2 * i] = srcArray[srcIndex + i];
+        }
+      }
+      buffer._increaseReaderIndexUnsafe(utf8AsciiBytes);
+    } else {
+      final byte[] tmpArray = getByteArray(utf8AsciiBytes);
+      buffer.readBytes(tmpArray, 0, utf8AsciiBytes);
+      if (Platform.IS_LITTLE_ENDIAN) {
+        for (int i = 0; i < utf8AsciiBytes; ++i) {
+          bytes[2 * i] = tmpArray[i];
+        }
+      } else {
+        for (int i = 0; i < utf8AsciiBytes; ++i) {
+          bytes[1 + 2 * i] = tmpArray[i];
+        }
+      }
+    }
+    return bytes;
+  }
+
+  public char[] readCharsLatin1(MemoryBuffer buffer) {
+    int utf8AsciiBytes = buffer.readInt32();
+    buffer.checkReadableBytes(utf8AsciiBytes);
+    byte[] srcArray = buffer.getHeapMemory();
+    char[] chars = new char[utf8AsciiBytes];
+    if (srcArray != null) {
+      int srcIndex = buffer._unsafeHeapReaderIndex();
+      for (int i = 0; i < utf8AsciiBytes; i++) {
+        chars[i] = (char) (srcArray[srcIndex++] & 0xff);
+      }
+      buffer._increaseReaderIndexUnsafe(utf8AsciiBytes);
+    } else {
+      byte[] tmpArray = getByteArray(utf8AsciiBytes);
+      buffer.readBytes(tmpArray, 0, utf8AsciiBytes);
+      for (int i = 0; i < utf8AsciiBytes; i++) {
+        chars[i] = (char) (tmpArray[i] & 0xff);
+      }
+    }
+    return chars;
+  }
+
+  public byte[] readBytesUTF8(MemoryBuffer buffer) {
+    int utf16Bytes = buffer.readInt32();
+    int udf8Bytes = buffer.readInt32();
+    byte[] bytes = new byte[utf16Bytes];
+    buffer.checkReadableBytes(udf8Bytes);
+    byte[] srcArray = buffer.getHeapMemory();
+    if (srcArray != null) {
+      int srcIndex = buffer._unsafeHeapReaderIndex();
+      int readLen = StringEncodingUtils.convertUTF8ToUTF16(srcArray, srcIndex, udf8Bytes, bytes);
+      if (readLen != utf16Bytes) {
+        throw new RuntimeException("Decode UTF8 to UTF16 failed");
+      }
+      buffer._increaseReaderIndexUnsafe(udf8Bytes);
+    } else {
+      byte[] tmpArray = getByteArray(udf8Bytes);
+      buffer.readBytes(tmpArray, 0, udf8Bytes);
+      int readLen = StringEncodingUtils.convertUTF8ToUTF16(tmpArray, 0, udf8Bytes, bytes);
+      if (readLen != utf16Bytes) {
+        throw new RuntimeException("Decode UTF8 to UTF16 failed");
+      }
+    }
+    return bytes;
+  }
+
+  public byte[] readBytesUTF16(MemoryBuffer buffer) {
+    int utf16Bytes = buffer.readInt32();
+    buffer.checkReadableBytes(utf16Bytes);
+    byte[] bytes;
+    byte[] heapMemory = buffer.getHeapMemory();
+    if (heapMemory != null) {
+      final int arrIndex = buffer._unsafeHeapReaderIndex();
+      buffer.increaseReaderIndex(utf16Bytes);
+      bytes = new byte[utf16Bytes];
+      System.arraycopy(heapMemory, arrIndex, bytes, 0, utf16Bytes);
+    } else {
+      bytes = buffer.readBytes(utf16Bytes);
+    }
+    return bytes;
+  }
+
+  public char[] readCharsUTF16(MemoryBuffer buffer) {
+    int utf16Bytes = buffer.readInt32();
+    char[] chars = new char[utf16Bytes >> 1];
+    if (Platform.IS_LITTLE_ENDIAN) {
+      // FIXME JDK11 utf16 string uses little-endian order.
+      buffer.readChars(chars, Platform.CHAR_ARRAY_OFFSET, utf16Bytes);
+    } else {
+      buffer.checkReadableBytes(utf16Bytes);
+      final byte[] targetArray = buffer.getHeapMemory();
+      if (targetArray != null) {
+        int charIndex = 0;
+        for (int i = buffer._unsafeHeapReaderIndex(), end = i + utf16Bytes; i < end; i += 2) {
+          char c =
+              (char)
+                  ((targetArray[i] & 0xff << StringUTF16.HI_BYTE_SHIFT)
+                      | ((targetArray[i + 1] & 0xff) << StringUTF16.LO_BYTE_SHIFT));
+          chars[charIndex++] = c;
+        }
+        buffer._increaseReaderIndexUnsafe(utf16Bytes);
+      } else {
+        final byte[] tmpArray = getByteArray(utf16Bytes);
+        buffer.readBytes(tmpArray, 0, utf16Bytes);
+        int charIndex = 0;
+        for (int i = 0; i < utf16Bytes; i += 2) {
+          char c =
+              (char)
+                  ((tmpArray[i] & 0xff << StringUTF16.HI_BYTE_SHIFT)
+                      | ((tmpArray[i + 1] & 0xff) << StringUTF16.LO_BYTE_SHIFT));
+          chars[charIndex++] = c;
+        }
+      }
+    }
+    return chars;
+  }
+
+  public char[] readCharsUTF8(MemoryBuffer buffer) {
+    int utf16Bytes = buffer.readInt32();
+    int udf8Bytes = buffer.readInt32();
+    char[] chars = new char[utf16Bytes >> 1];
+    buffer.checkReadableBytes(udf8Bytes);
+    byte[] srcArray = buffer.getHeapMemory();
+    if (srcArray != null) {
+      int srcIndex = buffer._unsafeHeapReaderIndex();
+      int readLen = StringEncodingUtils.convertUTF8ToUTF16(srcArray, srcIndex, udf8Bytes, chars);
+      if (readLen != utf16Bytes) {
+        throw new RuntimeException("Decode UTF8 to UTF16 failed");
+      }
+      buffer._increaseReaderIndexUnsafe(udf8Bytes);
+    } else {
+      byte[] tmpArray = getByteArray(udf8Bytes);
+      buffer.readBytes(tmpArray, 0, udf8Bytes);
+      int readLen = StringEncodingUtils.convertUTF8ToUTF16(tmpArray, 0, udf8Bytes, chars);
+      if (readLen != utf16Bytes) {
+        throw new RuntimeException("Decode UTF8 to UTF16 failed");
+      }
+    }
+    return chars;
+  }
+
+  public void writeBytesLatin1(MemoryBuffer buffer, byte[] bytes) {
     int writerIndex = buffer.writerIndex();
-    buffer.ensure(writerIndex + 9 + numBytes);
+    int numBytes = bytes.length >> 1;
+    buffer.ensure(writerIndex + 5 + numBytes);
     byte[] targetArray = buffer.getHeapMemory();
     if (targetArray != null) {
       int arrIndex = buffer._unsafeHeapWriterIndex();
-      int written = LittleEndian.putVarUint36Small(targetArray, arrIndex, header);
-      arrIndex += written;
-      writerIndex += written + numBytes;
+      buffer.putByte(arrIndex, LATIN1);
+      buffer.putInt32(arrIndex + 1, numBytes);
+      arrIndex += 5;
+      if (Platform.IS_LITTLE_ENDIAN) {
+        for (int i = 0; i < numBytes; i += 2, arrIndex += 2) {
+          targetArray[arrIndex] = bytes[i];
+          targetArray[arrIndex + 1] = 0;
+        }
+      } else {
+        for (int i = 0; i < numBytes; i += 2, arrIndex += 2) {
+          targetArray[arrIndex] = 0;
+          targetArray[arrIndex + 1] = bytes[i];
+        }
+      }
+      writerIndex += 5;
+    } else {
+      buffer._unsafePutByte(writerIndex, LATIN1);
+      buffer._unsafePutInt32(writerIndex + 1, numBytes);
+      final byte[] tmpArray = getByteArray(numBytes);
+      if (Platform.IS_LITTLE_ENDIAN) {
+        for (int i = 0; i < numBytes; i += 2) {
+          tmpArray[i] = bytes[i];
+          tmpArray[i + 1] = 0;
+        }
+      } else {
+        for (int i = 0; i < numBytes; i += 2) {
+          tmpArray[i] = 0;
+          tmpArray[i + 1] = bytes[i];
+        }
+      }
+      writerIndex += 5;
+      buffer.put(writerIndex, tmpArray, 0, numBytes);
+    }
+    writerIndex += numBytes;
+    buffer._unsafeWriterIndex(writerIndex);
+  }
+
+  public void writeCharsLatin1(MemoryBuffer buffer, char[] chars, int numBytes) {
+    int writerIndex = buffer.writerIndex();
+    buffer.ensure(writerIndex + 5 + numBytes);
+    byte[] targetArray = buffer.getHeapMemory();
+    if (targetArray != null) {
+      int arrIndex = buffer._unsafeHeapWriterIndex();
+      buffer.putByte(arrIndex, LATIN1);
+      buffer.putInt32(arrIndex + 1, numBytes);
+      arrIndex += 5;
+      for (int i = 0; i < numBytes; i++) {
+        targetArray[arrIndex + i] = (byte) chars[i];
+      }
+    } else {
+      buffer._unsafePutByte(writerIndex, LATIN1);
+      buffer._unsafePutInt32(writerIndex + 1, numBytes);
+      final byte[] tmpArray = getByteArray(numBytes);
+      for (int i = 0; i < numBytes; i++) {
+        tmpArray[i] = (byte) chars[i];
+      }
+      buffer.put(writerIndex + 5, tmpArray, 0, numBytes);
+    }
+    writerIndex += 5 + numBytes;
+    buffer._unsafeWriterIndex(writerIndex);
+  }
+
+  public static void writeBytesUTF16(MemoryBuffer buffer, byte[] bytes) {
+    int numBytes = bytes.length;
+    int writerIndex = buffer.writerIndex();
+    buffer.ensure(writerIndex + 5 + numBytes);
+    final byte[] targetArray = buffer.getHeapMemory();
+    if (targetArray != null) {
+      int arrIndex = buffer._unsafeHeapWriterIndex();
+      buffer.putByte(arrIndex, UTF16);
+      buffer.putInt32(arrIndex + 1, numBytes);
+      arrIndex += 5;
+      System.arraycopy(bytes, 0, targetArray, arrIndex, numBytes);
+    } else {
+      buffer._unsafePutByte(writerIndex, UTF16);
+      buffer._unsafePutInt32(writerIndex + 1, numBytes);
+      buffer.put(writerIndex + 5, bytes);
+    }
+    writerIndex += 5 + numBytes;
+    buffer._unsafeWriterIndex(writerIndex);
+  }
+
+  public void writeCharsUTF16(MemoryBuffer buffer, char[] chars, int numChars) {
+    int numBytes = MathUtils.doubleExact(numChars);
+    int writerIndex = buffer.writerIndex();
+    buffer.ensure(writerIndex + 5 + numBytes);
+    final byte[] targetArray = buffer.getHeapMemory();
+    if (targetArray != null) {
+      int arrIndex = buffer._unsafeHeapWriterIndex();
+      buffer.putByte(arrIndex, UTF16);
+      buffer.putInt32(arrIndex + 1, numBytes);
+      arrIndex += 5;
+      writerIndex += 5 + numBytes;
       if (Platform.IS_LITTLE_ENDIAN) {
         // FIXME JDK11 utf16 string uses little-endian order.
         Platform.UNSAFE.copyMemory(
@@ -386,89 +640,58 @@ public final class StringSerializer extends ImmutableSerializer<String> {
         heapWriteCharsUTF16BE(chars, arrIndex, numBytes, targetArray);
       }
     } else {
-      writerIndex = offHeapWriteCharsUTF16(buffer, chars, writerIndex, header, numBytes);
+      buffer._unsafePutByte(writerIndex, UTF16);
+      buffer._unsafePutInt32(writerIndex + 1, numBytes);
+      writerIndex = offHeapWriteCharsUTF16(buffer, chars, writerIndex + 5, numBytes);
     }
     buffer._unsafeWriterIndex(writerIndex);
   }
 
-  private static void heapWriteCharsUTF16BE(
-      char[] chars, int arrIndex, int numBytes, byte[] targetArray) {
-    // Write to heap memory then copy is 250% faster than unsafe write to direct memory.
-    int charIndex = 0;
-    for (int i = arrIndex, end = i + numBytes; i < end; i += 2) {
-      char c = chars[charIndex++];
-      targetArray[i] = (byte) (c >> StringUTF16.HI_BYTE_SHIFT);
-      targetArray[i + 1] = (byte) (c >> StringUTF16.LO_BYTE_SHIFT);
-    }
-  }
-
-  private int offHeapWriteCharsUTF16(
-      MemoryBuffer buffer, char[] chars, int writerIndex, long header, int numBytes) {
-    writerIndex += buffer._unsafePutVarUint36Small(writerIndex, header);
-    byte[] tmpArray = getByteArray(numBytes);
-    int charIndex = 0;
-    for (int i = 0; i < numBytes; i += 2) {
-      char c = chars[charIndex++];
-      tmpArray[i] = (byte) (c >> StringUTF16.HI_BYTE_SHIFT);
-      tmpArray[i + 1] = (byte) (c >> StringUTF16.LO_BYTE_SHIFT);
-    }
-    buffer.put(writerIndex, tmpArray, 0, numBytes);
-    writerIndex += numBytes;
-    return writerIndex;
-  }
-
-  private char[] readLatinChars(MemoryBuffer buffer, int numBytes) {
-    char[] chars = new char[numBytes];
-    buffer.checkReadableBytes(numBytes);
+  public void writeCharsUTF8(MemoryBuffer buffer, char[] chars) {
+    int estimateMaxBytes = chars.length * 3;
+    int writerIndex = buffer.writerIndex();
+    buffer.ensure(writerIndex + 9 + estimateMaxBytes);
     byte[] targetArray = buffer.getHeapMemory();
     if (targetArray != null) {
-      int srcIndex = buffer._unsafeHeapReaderIndex();
-      for (int i = 0; i < numBytes; i++) {
-        chars[i] = (char) (targetArray[srcIndex++] & 0xff);
-      }
-      buffer._increaseReaderIndexUnsafe(numBytes);
+      int arrIndex = buffer._unsafeHeapWriterIndex();
+      int targetIndex = StringEncodingUtils.convertUTF16ToUTF8(chars, targetArray, arrIndex + 9);
+      int written = targetIndex - arrIndex - 9;
+      buffer.putByte(arrIndex, UTF8);
+      buffer.putInt32(arrIndex + 1, chars.length << 1);
+      buffer.putInt32(arrIndex + 5, written);
+      buffer._unsafeWriterIndex(targetIndex);
     } else {
-      byte[] byteArray = getByteArray(numBytes);
-      buffer.readBytes(byteArray, 0, numBytes);
-      for (int i = 0; i < numBytes; i++) {
-        chars[i] = (char) (byteArray[i] & 0xff);
-      }
+      final byte[] tmpArray = getByteArray(estimateMaxBytes);
+      int written = StringEncodingUtils.convertUTF16ToUTF8(chars, tmpArray, 0);
+      buffer._unsafePutByte(writerIndex, UTF8);
+      buffer._unsafePutInt32(writerIndex + 1, chars.length << 1);
+      buffer._unsafePutInt32(writerIndex + 5, written);
+      buffer.put(writerIndex + 9, tmpArray, 0, written);
+      buffer._unsafeWriterIndex(writerIndex + 9 + written);
     }
-    return chars;
   }
 
-  private char[] readUTF16Chars(MemoryBuffer buffer, int numBytes) {
-    char[] chars = new char[numBytes >> 1];
-    if (Platform.IS_LITTLE_ENDIAN) {
-      // FIXME JDK11 utf16 string uses little-endian order.
-      buffer.readChars(chars, Platform.CHAR_ARRAY_OFFSET, numBytes);
+  public void writeBytesUTF8(MemoryBuffer buffer, byte[] bytes) {
+    int estimateMaxBytes = bytes.length / 2 * 3;
+    int writerIndex = buffer.writerIndex();
+    buffer.ensure(writerIndex + 9 + estimateMaxBytes);
+    byte[] targetArray = buffer.getHeapMemory();
+    if (targetArray != null) {
+      int arrIndex = buffer._unsafeHeapWriterIndex();
+      int targetIndex = StringEncodingUtils.convertUTF16ToUTF8(bytes, targetArray, arrIndex + 9);
+      int written = targetIndex - arrIndex - 9;
+      buffer.putByte(arrIndex, UTF8);
+      buffer.putInt32(arrIndex + 1, bytes.length);
+      buffer.putInt32(arrIndex + 5, written);
+      buffer._unsafeWriterIndex(targetIndex);
     } else {
-      buffer.checkReadableBytes(numBytes);
-      final byte[] targetArray = buffer.getHeapMemory();
-      if (targetArray != null) {
-        int charIndex = 0;
-        for (int i = buffer._unsafeHeapReaderIndex(), end = i + numBytes; i < end; i += 2) {
-          char c =
-              (char)
-                  ((targetArray[i] & 0xff << StringUTF16.HI_BYTE_SHIFT)
-                      | ((targetArray[i + 1] & 0xff) << StringUTF16.LO_BYTE_SHIFT));
-          chars[charIndex++] = c;
-        }
-        buffer._increaseReaderIndexUnsafe(numBytes);
-      } else {
-        final byte[] tmpArray = getByteArray(numBytes);
-        buffer.readBytes(tmpArray, 0, numBytes);
-        int charIndex = 0;
-        for (int i = 0; i < numBytes; i += 2) {
-          char c =
-              (char)
-                  ((tmpArray[i] & 0xff << StringUTF16.HI_BYTE_SHIFT)
-                      | ((tmpArray[i + 1] & 0xff) << StringUTF16.LO_BYTE_SHIFT));
-          chars[charIndex++] = c;
-        }
-      }
+      final byte[] tmpArray = getByteArray(estimateMaxBytes);
+      int written = StringEncodingUtils.convertUTF16ToUTF8(bytes, tmpArray, 0);
+      buffer._unsafePutByte(writerIndex, UTF8);
+      buffer._unsafePutInt32(writerIndex + 1, bytes.length);
+      buffer._unsafePutInt32(writerIndex + 5, written);
+      buffer._unsafeWriterIndex(writerIndex + written + 9);
     }
-    return chars;
   }
 
   private static final MethodHandles.Lookup STRING_LOOK_UP =
@@ -603,26 +826,110 @@ public final class StringSerializer extends ImmutableSerializer<String> {
     }
   }
 
-  public void writeUTF8String(MemoryBuffer buffer, String value) {
-    byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
-    buffer.writeVarUint32(bytes.length);
-    buffer.writeBytes(bytes);
+  private static void heapWriteCharsUTF16BE(
+      char[] chars, int arrIndex, int numBytes, byte[] targetArray) {
+    // Write to heap memory then copy is 250% faster than unsafe write to direct memory.
+    int charIndex = 0;
+    for (int i = arrIndex, end = i + numBytes; i < end; i += 2) {
+      char c = chars[charIndex++];
+      targetArray[i] = (byte) (c >> StringUTF16.HI_BYTE_SHIFT);
+      targetArray[i + 1] = (byte) (c >> StringUTF16.LO_BYTE_SHIFT);
+    }
   }
 
-  public String readUTF8String(MemoryBuffer buffer) {
-    int numBytes = buffer.readVarUint32Small14();
-    buffer.checkReadableBytes(numBytes);
-    final byte[] targetArray = buffer.getHeapMemory();
-    if (targetArray != null) {
-      String str =
-          new String(
-              targetArray, buffer._unsafeHeapReaderIndex(), numBytes, StandardCharsets.UTF_8);
-      buffer.increaseReaderIndex(numBytes);
-      return str;
-    } else {
-      final byte[] tmpArray = getByteArray(numBytes);
-      buffer.readBytes(tmpArray, 0, numBytes);
-      return new String(tmpArray, 0, numBytes, StandardCharsets.UTF_8);
+  private int offHeapWriteCharsUTF16(
+      MemoryBuffer buffer, char[] chars, int writerIndex, int numBytes) {
+    byte[] tmpArray = getByteArray(numBytes);
+    int charIndex = 0;
+    for (int i = 0; i < numBytes; i += 2) {
+      char c = chars[charIndex++];
+      tmpArray[i] = (byte) (c >> StringUTF16.HI_BYTE_SHIFT);
+      tmpArray[i + 1] = (byte) (c >> StringUTF16.LO_BYTE_SHIFT);
     }
+    buffer.put(writerIndex, tmpArray, 0, numBytes);
+    writerIndex += numBytes;
+    return writerIndex;
+  }
+
+  private static byte bestCoder(char[] chars) {
+    int numChars = chars.length;
+    int vectorizedLen = numChars >> 2;
+    int vectorizedChars = vectorizedLen << 2;
+    // sample 64 chars
+    int sampleNum = Math.min(64, numChars);
+    int endOffset =
+        Math.min(
+            Platform.CHAR_ARRAY_OFFSET + (vectorizedChars << 1),
+            Platform.CHAR_ARRAY_OFFSET + (sampleNum << 1));
+    int count = 0;
+    for (int offset = Platform.CHAR_ARRAY_OFFSET, charOffset = 0;
+        offset < endOffset;
+        offset += 8, charOffset += 4) {
+      long multiChars = Platform.getLong(chars, offset);
+      if ((multiChars & MULTI_CHARS_NON_LATIN_MASK) == 0) {
+        count += 4;
+      } else {
+        for (int i = 0; i < 4; ++i) {
+          if (chars[charOffset + i] < 0x80) {
+            count++;
+          }
+        }
+      }
+    }
+    // ascii number > 50%, choose UTF-8
+    if (count >= sampleNum * 0.5) {
+      if (count == sampleNum && StringUtils.isLatin(chars)) {
+        return LATIN1;
+      }
+      return UTF8;
+    } else {
+      return UTF16;
+    }
+  }
+
+  private static byte bestCoder(byte[] bytes) {
+    int numBytes = bytes.length;
+    int vectorizedLen = numBytes >> 3;
+    int vectorizedBytes = vectorizedLen << 3;
+    // sample 64 chars
+    int sampleNum = Math.min(64 << 1, numBytes);
+    int endOffset =
+        Math.min(
+            Platform.BYTE_ARRAY_OFFSET + vectorizedBytes, Platform.BYTE_ARRAY_OFFSET + sampleNum);
+    int count = 0;
+    for (int offset = Platform.BYTE_ARRAY_OFFSET; offset < endOffset; offset += 8) {
+      long multiChars = Platform.getLong(bytes, offset);
+      if ((multiChars & MULTI_CHARS_NON_LATIN_MASK) == 0) {
+        count += 4;
+      } else {
+        for (int i = Platform.IS_LITTLE_ENDIAN ? 1 : 0; i < 8; i += 2) {
+          if (bytes[offset + i] == 0) {
+            count++;
+          }
+        }
+      }
+    }
+    // ascii number > 50%, choose UTF-8
+    if (count >= sampleNum * 0.5) {
+      return UTF8;
+    } else {
+      return UTF16;
+    }
+  }
+
+  private byte[] getByteArray(int numElements) {
+    byte[] byteArray = this.byteArray;
+    if (byteArray.length < numElements) {
+      byteArray = new byte[numElements];
+      this.byteArray = byteArray;
+    }
+    if (byteArray.length > DEFAULT_BUFFER_SIZE) {
+      smoothByteArrayLength =
+          Math.max(((int) (smoothByteArrayLength * 0.9 + numElements * 0.1)), DEFAULT_BUFFER_SIZE);
+      if (smoothByteArrayLength <= DEFAULT_BUFFER_SIZE) {
+        this.byteArray = new byte[DEFAULT_BUFFER_SIZE];
+      }
+    }
+    return byteArray;
   }
 }

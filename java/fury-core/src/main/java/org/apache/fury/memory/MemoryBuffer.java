@@ -471,7 +471,7 @@ public final class MemoryBuffer {
   }
 
   // CHECKSTYLE.OFF:MethodName
-  private void _unsafePutInt32(int index, int value) {
+  public void _unsafePutInt32(int index, int value) {
     // CHECKSTYLE.ON:MethodName
     if (!LITTLE_ENDIAN) {
       value = Integer.reverseBytes(value);
@@ -634,6 +634,12 @@ public final class MemoryBuffer {
     final long pos = address + writerIdx;
     UNSAFE.putByte(heapMemory, pos, value);
     writerIndex = newIdx;
+  }
+
+  // CHECKSTYLE.OFF:MethodName
+  public void _unsafePutByte(int index, byte value) {
+    // CHECKSTYLE.ON:MethodName
+    UNSAFE.putByte(heapMemory, address + index, value);
   }
 
   public void writeByte(byte value) {
