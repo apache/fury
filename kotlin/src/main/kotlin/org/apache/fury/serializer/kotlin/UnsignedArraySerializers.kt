@@ -32,6 +32,11 @@ abstract class AbstractDelegatingArraySerializer<T, T_Delegate>(
     private val delegateClass: Class<T_Delegate>
 ) : Serializer<T> (fury, cls) {
 
+    // Lazily initialize the delegatingSerializer here to avoid lookup cost.
+    private val delegatingSerializer by lazy {
+        fury.classResolver.getSerializer(delegateClass)
+    }
+
     abstract fun toDelegateClass(value: T): T_Delegate
 
     abstract fun fromDelegateClass(value: T_Delegate): T
@@ -49,12 +54,10 @@ abstract class AbstractDelegatingArraySerializer<T, T_Delegate>(
     }
 
     override fun write(buffer: MemoryBuffer, value: T) {
-        val delegatingSerializer = fury.classResolver.getSerializer(delegateClass)
         delegatingSerializer.write(buffer, toDelegateClass(value))
     }
 
     override fun read(buffer: MemoryBuffer): T {
-        val delegatingSerializer = fury.classResolver.getSerializer(delegateClass)
         val delegatedValue = delegatingSerializer.read(buffer)
         return fromDelegateClass(delegatedValue)
     }
