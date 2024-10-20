@@ -48,16 +48,16 @@ public class StringEncodingUtils {
           dst[dp] = (byte) (0xc0 | (c >> 6));
           dst[dp + 1] = (byte) (0x80 | (c & 0x3f));
           dp += 2;
-        } else if (c >= '\uD800' && c <= '\uDFFF') {
+        } else if (c >= '\uD800' && c <= Character.MAX_LOW_SURROGATE) {
           char d;
-          if (c > '\uDBFF'
+          if (c > Character.MAX_HIGH_SURROGATE
               || charOffset == src.length
-              || (d = src[charOffset]) < '\uDC00'
-              || d > '\uDFFF') {
+              || (d = src[charOffset]) < Character.MIN_LOW_SURROGATE
+              || d > Character.MAX_LOW_SURROGATE) {
             throw new RuntimeException("malformed input off : " + charOffset);
           }
 
-          int uc = ((c << 10) + d) + (0x010000 - ('\uD800' << 10) - '\uDC00');
+          int uc = ((c << 10) + d) + (0x010000 - ('\uD800' << 10) - Character.MIN_LOW_SURROGATE);
           dst[dp] = (byte) (0xf0 | ((uc >> 18)));
           dst[dp + 1] = (byte) (0x80 | ((uc >> 12) & 0x3f));
           dst[dp + 2] = (byte) (0x80 | ((uc >> 6) & 0x3f));
@@ -75,6 +75,7 @@ public class StringEncodingUtils {
     return dp;
   }
 
+  // CHECKSTYLE.OFF:MethodName
   public static int convertUTF16ToUTF8(byte[] src, byte[] dst, int dp) {
     int numBytes = src.length;
     for (int offset = 0; offset < numBytes; ) {
@@ -108,16 +109,17 @@ public class StringEncodingUtils {
             dst[dp] = (byte) (0xc0 | (c >> 6));
             dst[dp + 1] = (byte) (0x80 | (c & 0x3f));
             dp += 2;
-          } else if (c >= '\uD800' && c <= '\uDFFF') {
+          } else if (c >= '\uD800' && c <= Character.MAX_LOW_SURROGATE) {
             char d;
-            if (c > '\uDBFF'
+            if (c > Character.MAX_HIGH_SURROGATE
                 || numBytes - offset < 1
-                || (d = Platform.getChar(src, Platform.BYTE_ARRAY_OFFSET + offset)) < '\uDC00'
-                || d > '\uDFFF') {
+                || (d = Platform.getChar(src, Platform.BYTE_ARRAY_OFFSET + offset))
+                    < Character.MIN_LOW_SURROGATE
+                || d > Character.MAX_LOW_SURROGATE) {
               throw new RuntimeException("malformed input off : " + offset);
             }
 
-            int uc = ((c << 10) + d) + (0x010000 - ('\uD800' << 10) - '\uDC00');
+            int uc = ((c << 10) + d) + (0x010000 - ('\uD800' << 10) - Character.MIN_LOW_SURROGATE);
             dst[dp] = (byte) (0xf0 | ((uc >> 18)));
             dst[dp + 1] = (byte) (0x80 | ((uc >> 12) & 0x3f));
             dst[dp + 2] = (byte) (0x80 | ((uc >> 6) & 0x3f));
@@ -206,7 +208,7 @@ public class StringEncodingUtils {
                     ((b0 << 12)
                         ^ (b1 << 6)
                         ^ (b2 ^ (((byte) 0xE0 << 12) ^ ((byte) 0x80 << 6) ^ ((byte) 0x80))));
-            boolean isSurrogate = c >= '\uD800' && c < ('\uDFFF' + 1);
+            boolean isSurrogate = c >= '\uD800' && c < (Character.MAX_LOW_SURROGATE + 1);
             if (isSurrogate) {
               return -1;
             } else {
@@ -245,7 +247,7 @@ public class StringEncodingUtils {
             dst[dp + 1] = (byte) (c >> 8);
             dp += 2;
 
-            c = (char) ((uc & 0x3ff) + '\uDC00');
+            c = (char) ((uc & 0x3ff) + Character.MIN_LOW_SURROGATE);
             dst[dp] = (byte) c;
             dst[dp + 1] = (byte) (c >> 8);
             dp += 2;
@@ -311,7 +313,7 @@ public class StringEncodingUtils {
                     ((b1 << 12)
                         ^ (b2 << 6)
                         ^ (b3 ^ (((byte) 0xE0 << 12) ^ ((byte) 0x80 << 6) ^ ((byte) 0x80))));
-            boolean isSurrogate = c >= '\uD800' && c < ('\uDFFF' + 1);
+            boolean isSurrogate = c >= '\uD800' && c < (Character.MAX_LOW_SURROGATE + 1);
             if (isSurrogate) {
               return -1;
             } else {
@@ -346,7 +348,8 @@ public class StringEncodingUtils {
             dst[dp] =
                 (char)
                     ((uc >>> 10) + ('\uD800' - (0x010000 >>> 10))); // Character.highSurrogate(uc);
-            dst[dp + 1] = (char) ((uc & 0x3ff) + '\uDC00'); // Character.lowSurrogate(uc);
+            dst[dp + 1] =
+                (char) ((uc & 0x3ff) + Character.MIN_LOW_SURROGATE); // Character.lowSurrogate(uc);
             dp += 2;
           }
         } else {

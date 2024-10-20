@@ -506,14 +506,15 @@ public final class StringSerializer extends ImmutableSerializer<String> {
 
   public char[] readCharsUTF8(MemoryBuffer buffer) {
     int utf16Bytes = buffer.readInt32();
+    int udf16Chars = utf16Bytes >> 1;
     int udf8Bytes = buffer.readInt32();
-    char[] chars = new char[utf16Bytes >> 1];
+    char[] chars = new char[udf16Chars];
     buffer.checkReadableBytes(udf8Bytes);
     byte[] srcArray = buffer.getHeapMemory();
     if (srcArray != null) {
       int srcIndex = buffer._unsafeHeapReaderIndex();
       int readLen = StringEncodingUtils.convertUTF8ToUTF16(srcArray, srcIndex, udf8Bytes, chars);
-      if (readLen != utf16Bytes) {
+      if (readLen != udf16Chars) {
         throw new RuntimeException("Decode UTF8 to UTF16 failed");
       }
       buffer._increaseReaderIndexUnsafe(udf8Bytes);
@@ -521,7 +522,7 @@ public final class StringSerializer extends ImmutableSerializer<String> {
       byte[] tmpArray = getByteArray(udf8Bytes);
       buffer.readBytes(tmpArray, 0, udf8Bytes);
       int readLen = StringEncodingUtils.convertUTF8ToUTF16(tmpArray, 0, udf8Bytes, chars);
-      if (readLen != utf16Bytes) {
+      if (readLen != udf16Chars) {
         throw new RuntimeException("Decode UTF8 to UTF16 failed");
       }
     }
@@ -878,7 +879,7 @@ public final class StringSerializer extends ImmutableSerializer<String> {
     }
     // ascii number > 50%, choose UTF-8
     if (count >= sampleNum * 0.5) {
-      if (count == sampleNum && StringUtils.isLatin(chars)) {
+      if (StringUtils.isLatin(chars)) {
         return LATIN1;
       }
       return UTF8;
