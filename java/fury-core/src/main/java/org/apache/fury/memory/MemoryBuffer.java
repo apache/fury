@@ -636,12 +636,6 @@ public final class MemoryBuffer {
     writerIndex = newIdx;
   }
 
-  // CHECKSTYLE.OFF:MethodName
-  public void _unsafePutByte(int index, byte value) {
-    // CHECKSTYLE.ON:MethodName
-    UNSAFE.putByte(heapMemory, address + index, value);
-  }
-
   public void writeByte(byte value) {
     final int writerIdx = writerIndex;
     final int newIdx = writerIdx + 1;
