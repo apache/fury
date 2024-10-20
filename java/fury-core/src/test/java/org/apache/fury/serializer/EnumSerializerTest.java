@@ -214,34 +214,6 @@ public class EnumSerializerTest extends FuryTestBase {
     }
   }
 
-  @Test
-  public void testEnumSerializationAsString_NonJava() {
-//    String enumCode1 = "enum TestEnum1 {" + " A, B;" + "}";
-//    String enumCode2 = "enum TestEnum1 {" + " B;" + "}";
-//    Class<?> cls1 =
-//        JaninoUtils.compileClass(getClass().getClassLoader(), "", "TestEnum1", enumCode1);
-//    Class<?> cls2 =
-//        JaninoUtils.compileClass(getClass().getClassLoader(), "", "TestEnum1", enumCode2);
-//
-//    Fury furySerialization =
-//        Fury.builder()
-//            .withLanguage(Language.XLANG)
-//            .withCompatibleMode(CompatibleMode.COMPATIBLE)
-//            .withRefTracking(true)
-//            .requireClassRegistration(false)
-//            .treatEnumAsString(true)
-//            .withDeserializeNonexistentClass(false)
-//            .withClassLoader(cls2.getClassLoader())
-//            .withAsyncCompilation(false)
-//            .build();
-//
-//    assertThrows(
-//        UnsupportedOperationException.class,
-//        () -> {
-//          furySerialization.serialize(cls1.getEnumConstants()[1]);
-//        });
-  }
-
   @Data
   @AllArgsConstructor
   static class EnumSubclassFieldTest {
