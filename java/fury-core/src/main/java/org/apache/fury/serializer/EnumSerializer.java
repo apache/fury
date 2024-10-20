@@ -61,9 +61,9 @@ public class EnumSerializer extends ImmutableSerializer<Enum> {
   @Override
   public void write(MemoryBuffer buffer, Enum value) {
     if (fury.getConfig().treatEnumAsString()) {
-      if (fury.getConfig().getLanguage() != Language.JAVA) {
-        throw new UnsupportedOperationException("treatEnumAsString can only be used in java");
-      }
+//      if (fury.getConfig().getLanguage() != Language.JAVA) {
+//        throw new UnsupportedOperationException("treatEnumAsString can only be used in java");
+//      }
       META_STRING_RESOLVER.writeMetaStringBytesFromString(
           buffer, value.name(), MetaString.Encoding.UTF_8);
     } else {
@@ -74,9 +74,9 @@ public class EnumSerializer extends ImmutableSerializer<Enum> {
   @Override
   public Enum read(MemoryBuffer buffer) {
     if (fury.getConfig().treatEnumAsString()) {
-      if (fury.getConfig().getLanguage() != Language.JAVA) {
-        throw new UnsupportedOperationException("treatEnumAsString can only be used in java");
-      }
+//      if (fury.getConfig().getLanguage() != Language.JAVA) {
+//        throw new UnsupportedOperationException("treatEnumAsString can only be used in java");
+//      }
       String metaStringBytes = META_STRING_RESOLVER.readMetaString(buffer);
       Enum e = enumStringRepresentation.get(metaStringBytes);
       if (e != null) {
