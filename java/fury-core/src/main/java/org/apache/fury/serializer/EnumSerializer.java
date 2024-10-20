@@ -22,8 +22,8 @@ package org.apache.fury.serializer;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-
 import org.apache.fury.Fury;
+import org.apache.fury.config.Language;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.meta.MetaString;
 import org.apache.fury.resolver.MetaStringResolver;
@@ -31,7 +31,7 @@ import org.apache.fury.util.Preconditions;
 
 @SuppressWarnings("rawtypes")
 public class EnumSerializer extends ImmutableSerializer<Enum> {
-  private final static MetaStringResolver META_STRING_RESOLVER = new MetaStringResolver();
+  private static final MetaStringResolver META_STRING_RESOLVER = new MetaStringResolver();
   private final Enum[] enumConstants;
   private final Map<String, Enum> enumStringRepresentation;
 
@@ -42,7 +42,7 @@ public class EnumSerializer extends ImmutableSerializer<Enum> {
 
     if (cls.isEnum()) {
       enumConstants = cls.getEnumConstants();
-      for (Enum e : enumConstants){
+      for (Enum e : enumConstants) {
         enumStringRepresentation.put(e.name(), e);
       }
     } else {
@@ -52,7 +52,7 @@ public class EnumSerializer extends ImmutableSerializer<Enum> {
       Preconditions.checkNotNull(enclosingClass);
       Preconditions.checkArgument(enclosingClass.isEnum());
       enumConstants = enclosingClass.getEnumConstants();
-      for (Enum e : enumConstants){
+      for (Enum e : enumConstants) {
         enumStringRepresentation.put(e.name(), e);
       }
     }
@@ -60,21 +60,30 @@ public class EnumSerializer extends ImmutableSerializer<Enum> {
 
   @Override
   public void write(MemoryBuffer buffer, Enum value) {
-    if (fury.getConfig().treatEnumAsString()){
-      META_STRING_RESOLVER.writeMetaStringBytesFromString(buffer, value.name(), MetaString.Encoding.UTF_8);
-    }else {
+    if (fury.getConfig().treatEnumAsString()) {
+      if (fury.getConfig().getLanguage() != Language.JAVA) {
+        throw new UnsupportedOperationException("treatEnumAsString can only be used in java");
+      }
+      META_STRING_RESOLVER.writeMetaStringBytesFromString(
+          buffer, value.name(), MetaString.Encoding.UTF_8);
+    } else {
       buffer.writeVarUint32Small7(value.ordinal());
     }
   }
 
   @Override
   public Enum read(MemoryBuffer buffer) {
-    if (fury.getConfig().treatEnumAsString()){
+    if (fury.getConfig().treatEnumAsString()) {
+      if (fury.getConfig().getLanguage() != Language.JAVA) {
+        throw new UnsupportedOperationException("treatEnumAsString can only be used in java");
+      }
       String metaStringBytes = META_STRING_RESOLVER.readMetaString(buffer);
       Enum e = enumStringRepresentation.get(metaStringBytes);
-      if (e != null) return e;
+      if (e != null) {
+        return e;
+      }
       return handleNonexistentEnumValue(metaStringBytes);
-    }else {
+    } else {
       int value = buffer.readVarUint32Small7();
       if (value >= enumConstants.length) {
         return handleNonexistentEnumValue(value);

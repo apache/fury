@@ -135,8 +135,7 @@ public final class FuryBuilder {
   }
 
   /** deserialize and serialize enum as string. */
-  public FuryBuilder treatEnumAsString(
-      boolean treatEnumAsString) {
+  public FuryBuilder treatEnumAsString(boolean treatEnumAsString) {
     this.treatEnumAsString = treatEnumAsString;
     return this;
   }
