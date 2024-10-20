@@ -26,6 +26,7 @@ import org.apache.fury.memory.Platform;
 /** String Encoding Utils. */
 public class StringEncodingUtils {
 
+  /** A fast convert algorithm to convert an utf16 char array into an utf8 byte array. */
   public static int convertUTF16ToUTF8(char[] src, byte[] dst, int dp) {
     int numChars = src.length;
     for (int charOffset = 0; charOffset < numChars; ) {
@@ -49,19 +50,7 @@ public class StringEncodingUtils {
           dst[dp + 1] = (byte) (0x80 | (c & 0x3f));
           dp += 2;
         } else if (c >= '\uD800' && c <= Character.MAX_LOW_SURROGATE) {
-          char d;
-          if (c > Character.MAX_HIGH_SURROGATE
-              || charOffset == src.length
-              || (d = src[charOffset]) < Character.MIN_LOW_SURROGATE
-              || d > Character.MAX_LOW_SURROGATE) {
-            throw new RuntimeException("malformed input off : " + charOffset);
-          }
-
-          int uc = ((c << 10) + d) + (0x010000 - ('\uD800' << 10) - Character.MIN_LOW_SURROGATE);
-          dst[dp] = (byte) (0xf0 | ((uc >> 18)));
-          dst[dp + 1] = (byte) (0x80 | ((uc >> 12) & 0x3f));
-          dst[dp + 2] = (byte) (0x80 | ((uc >> 6) & 0x3f));
-          dst[dp + 3] = (byte) (0x80 | (uc & 0x3f));
+          utf8ToChar2(src, charOffset, c, dst, dp);
           dp += 4;
           charOffset++;
         } else {
@@ -75,7 +64,7 @@ public class StringEncodingUtils {
     return dp;
   }
 
-  // CHECKSTYLE.OFF:MethodName
+  /** A fast convert algorithm to convert an utf16 byte array into an utf8 byte array. */
   public static int convertUTF16ToUTF8(byte[] src, byte[] dst, int dp) {
     int numBytes = src.length;
     for (int offset = 0; offset < numBytes; ) {
@@ -110,20 +99,7 @@ public class StringEncodingUtils {
             dst[dp + 1] = (byte) (0x80 | (c & 0x3f));
             dp += 2;
           } else if (c >= '\uD800' && c <= Character.MAX_LOW_SURROGATE) {
-            char d;
-            if (c > Character.MAX_HIGH_SURROGATE
-                || numBytes - offset < 1
-                || (d = Platform.getChar(src, Platform.BYTE_ARRAY_OFFSET + offset))
-                    < Character.MIN_LOW_SURROGATE
-                || d > Character.MAX_LOW_SURROGATE) {
-              throw new RuntimeException("malformed input off : " + offset);
-            }
-
-            int uc = ((c << 10) + d) + (0x010000 - ('\uD800' << 10) - Character.MIN_LOW_SURROGATE);
-            dst[dp] = (byte) (0xf0 | ((uc >> 18)));
-            dst[dp + 1] = (byte) (0x80 | ((uc >> 12) & 0x3f));
-            dst[dp + 2] = (byte) (0x80 | ((uc >> 6) & 0x3f));
-            dst[dp + 3] = (byte) (0x80 | (uc & 0x3f));
+            utf8ToChar2(src, offset, c, numBytes, dst, dp);
             dp += 4;
             offset += 2;
           } else {
@@ -139,6 +115,10 @@ public class StringEncodingUtils {
     return dp;
   }
 
+  /**
+   * A fast convert algorithm to convert an utf8 encoded byte array into an utf16 encoded byte
+   * array.
+   */
   public static int convertUTF8ToUTF16(byte[] src, int offset, int len, byte[] dst) {
     final int end = offset + len;
     int dp = 0;
@@ -260,6 +240,9 @@ public class StringEncodingUtils {
     return dp;
   }
 
+  /**
+   * A fast convert algorithm to convert an utf8 encoded byte array into utf16 encoded char array.
+   */
   public static int convertUTF8ToUTF16(byte[] src, int offset, int len, char[] dst) {
     int end = offset + len;
     int dp = 0;
@@ -358,5 +341,41 @@ public class StringEncodingUtils {
       }
     }
     return dp;
+  }
+
+  /** convert two utf16 char c and src[charOffset] to a four byte utf8 bytes. */
+  private static void utf8ToChar2(char[] src, int charOffset, char c, byte[] dst, int dp) {
+    char d;
+    if (c > Character.MAX_HIGH_SURROGATE
+        || charOffset == src.length
+        || (d = src[charOffset]) < Character.MIN_LOW_SURROGATE
+        || d > Character.MAX_LOW_SURROGATE) {
+      throw new RuntimeException("malformed input off : " + charOffset);
+    }
+
+    int uc = ((c << 10) + d) + (0x010000 - ('\uD800' << 10) - Character.MIN_LOW_SURROGATE);
+    dst[dp] = (byte) (0xf0 | ((uc >> 18)));
+    dst[dp + 1] = (byte) (0x80 | ((uc >> 12) & 0x3f));
+    dst[dp + 2] = (byte) (0x80 | ((uc >> 6) & 0x3f));
+    dst[dp + 3] = (byte) (0x80 | (uc & 0x3f));
+  }
+
+  /** convert two utf16 char c and char(src[offset], src[offset+1]) to a four byte utf8 bytes. */
+  private static void utf8ToChar2(
+      byte[] src, int offset, char c, int numBytes, byte[] dst, int dp) {
+    char d;
+    if (c > Character.MAX_HIGH_SURROGATE
+        || numBytes - offset < 1
+        || (d = Platform.getChar(src, Platform.BYTE_ARRAY_OFFSET + offset))
+            < Character.MIN_LOW_SURROGATE
+        || d > Character.MAX_LOW_SURROGATE) {
+      throw new RuntimeException("malformed input off : " + offset);
+    }
+
+    int uc = ((c << 10) + d) + (0x010000 - ('\uD800' << 10) - Character.MIN_LOW_SURROGATE);
+    dst[dp] = (byte) (0xf0 | ((uc >> 18)));
+    dst[dp + 1] = (byte) (0x80 | ((uc >> 12) & 0x3f));
+    dst[dp + 2] = (byte) (0x80 | ((uc >> 6) & 0x3f));
+    dst[dp + 3] = (byte) (0x80 | (uc & 0x3f));
   }
 }
