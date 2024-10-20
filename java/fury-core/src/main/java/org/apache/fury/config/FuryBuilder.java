@@ -32,6 +32,7 @@ import org.apache.fury.meta.MetaCompressor;
 import org.apache.fury.pool.ThreadPoolFury;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.resolver.ClassResolver;
+import org.apache.fury.serializer.FieldMismatchCallback;
 import org.apache.fury.serializer.JavaSerializer;
 import org.apache.fury.serializer.ObjectStreamSerializer;
 import org.apache.fury.serializer.Serializer;
@@ -83,6 +84,14 @@ public final class FuryBuilder {
   boolean suppressClassRegistrationWarnings = true;
   boolean deserializeNonexistentEnumValueAsNull = false;
   MetaCompressor metaCompressor = new DeflaterMetaCompressor();
+  FieldMismatchCallback fieldMismatchCallback =
+      new FieldMismatchCallback() {
+        @Override
+        public FieldMismatchCallback.FieldAdjustment onMismatch(
+            Class<?> modifiedClass, String deserializedTypeName, String deserializedFieldName) {
+          return null;
+        }
+      };
 
   public FuryBuilder() {}
 
@@ -333,6 +342,11 @@ public final class FuryBuilder {
   /** Set name for Fury serialization. */
   public FuryBuilder withName(String name) {
     this.name = name;
+    return this;
+  }
+
+  public FuryBuilder withFieldMismatchCallback(FieldMismatchCallback callback) {
+    this.fieldMismatchCallback = callback;
     return this;
   }
 
