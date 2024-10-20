@@ -99,6 +99,13 @@ public final class MetaStringResolver {
     }
   }
 
+  public void writeMetaStringBytesFromString(MemoryBuffer buffer, String input, MetaString.Encoding encoding) {
+    writeMetaStringBytes(
+        buffer,
+        getOrCreateMetaStringBytes(Encoders.GENERIC_ENCODER.encode(input, encoding))
+    );
+  }
+
   private MetaStringBytes[] growWrite(int id) {
     MetaStringBytes[] tmp = new MetaStringBytes[id * 2];
     System.arraycopy(dynamicWrittenString, 0, tmp, 0, dynamicWrittenString.length);
