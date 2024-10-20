@@ -536,8 +536,8 @@ public final class StringSerializer extends ImmutableSerializer<String> {
     byte[] targetArray = buffer.getHeapMemory();
     if (targetArray != null) {
       int arrIndex = buffer._unsafeHeapWriterIndex();
-      buffer.putByte(arrIndex, LATIN1);
-      buffer.putInt32(arrIndex + 1, numBytes);
+      buffer.putByte(writerIndex, LATIN1);
+      buffer.putInt32(writerIndex + 1, numBytes);
       arrIndex += 5;
       if (Platform.IS_LITTLE_ENDIAN) {
         for (int i = 0; i < numBytes; i += 2, arrIndex += 2) {
@@ -579,8 +579,8 @@ public final class StringSerializer extends ImmutableSerializer<String> {
     byte[] targetArray = buffer.getHeapMemory();
     if (targetArray != null) {
       int arrIndex = buffer._unsafeHeapWriterIndex();
-      buffer.putByte(arrIndex, LATIN1);
-      buffer.putInt32(arrIndex + 1, numBytes);
+      buffer.putByte(writerIndex, LATIN1);
+      buffer.putInt32(writerIndex + 1, numBytes);
       arrIndex += 5;
       for (int i = 0; i < numBytes; i++) {
         targetArray[arrIndex + i] = (byte) chars[i];
@@ -605,8 +605,8 @@ public final class StringSerializer extends ImmutableSerializer<String> {
     final byte[] targetArray = buffer.getHeapMemory();
     if (targetArray != null) {
       int arrIndex = buffer._unsafeHeapWriterIndex();
-      buffer.putByte(arrIndex, UTF16);
-      buffer.putInt32(arrIndex + 1, numBytes);
+      buffer.putByte(writerIndex, UTF16);
+      buffer.putInt32(writerIndex + 1, numBytes);
       arrIndex += 5;
       System.arraycopy(bytes, 0, targetArray, arrIndex, numBytes);
     } else {
@@ -625,8 +625,8 @@ public final class StringSerializer extends ImmutableSerializer<String> {
     final byte[] targetArray = buffer.getHeapMemory();
     if (targetArray != null) {
       int arrIndex = buffer._unsafeHeapWriterIndex();
-      buffer.putByte(arrIndex, UTF16);
-      buffer.putInt32(arrIndex + 1, numBytes);
+      buffer.putByte(writerIndex, UTF16);
+      buffer.putInt32(writerIndex + 1, numBytes);
       arrIndex += 5;
       writerIndex += 5 + numBytes;
       if (Platform.IS_LITTLE_ENDIAN) {
@@ -657,9 +657,9 @@ public final class StringSerializer extends ImmutableSerializer<String> {
       int arrIndex = buffer._unsafeHeapWriterIndex();
       int targetIndex = StringEncodingUtils.convertUTF16ToUTF8(chars, targetArray, arrIndex + 9);
       int written = targetIndex - arrIndex - 9;
-      buffer.putByte(arrIndex, UTF8);
-      buffer.putInt32(arrIndex + 1, chars.length << 1);
-      buffer.putInt32(arrIndex + 5, written);
+      buffer.putByte(writerIndex, UTF8);
+      buffer.putInt32(writerIndex + 1, chars.length << 1);
+      buffer.putInt32(writerIndex + 5, written);
       buffer._unsafeWriterIndex(targetIndex);
     } else {
       final byte[] tmpArray = getByteArray(estimateMaxBytes);
@@ -681,9 +681,9 @@ public final class StringSerializer extends ImmutableSerializer<String> {
       int arrIndex = buffer._unsafeHeapWriterIndex();
       int targetIndex = StringEncodingUtils.convertUTF16ToUTF8(bytes, targetArray, arrIndex + 9);
       int written = targetIndex - arrIndex - 9;
-      buffer.putByte(arrIndex, UTF8);
-      buffer.putInt32(arrIndex + 1, bytes.length);
-      buffer.putInt32(arrIndex + 5, written);
+      buffer.putByte(writerIndex, UTF8);
+      buffer.putInt32(writerIndex + 1, bytes.length);
+      buffer.putInt32(writerIndex + 5, written);
       buffer._unsafeWriterIndex(targetIndex);
     } else {
       final byte[] tmpArray = getByteArray(estimateMaxBytes);
