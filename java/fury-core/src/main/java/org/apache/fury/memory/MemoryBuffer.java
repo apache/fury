@@ -471,7 +471,7 @@ public final class MemoryBuffer {
   }
 
   // CHECKSTYLE.OFF:MethodName
-  private void _unsafePutInt32(int index, int value) {
+  public void _unsafePutInt32(int index, int value) {
     // CHECKSTYLE.ON:MethodName
     if (!LITTLE_ENDIAN) {
       value = Integer.reverseBytes(value);

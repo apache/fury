@@ -68,7 +68,7 @@ public final class FuryBuilder {
   ClassLoader classLoader;
   boolean compressInt = true;
   public LongEncoding longEncoding = LongEncoding.SLI;
-  boolean compressString = true;
+  boolean compressString = false;
   CompatibleMode compatibleMode = CompatibleMode.SCHEMA_CONSISTENT;
   boolean checkJdkClassSerializable = true;
   Class<? extends Serializer> defaultJDKStreamSerializerType = ObjectStreamSerializer.class;
