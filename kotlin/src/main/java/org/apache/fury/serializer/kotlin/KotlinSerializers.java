@@ -25,6 +25,8 @@ import kotlin.ULongArray;
 import kotlin.UShortArray;
 import org.apache.fury.Fury;
 import org.apache.fury.resolver.ClassResolver;
+import org.apache.fury.serializer.Serializer;
+import org.apache.fury.serializer.SerializerFactory;
 import org.apache.fury.serializer.collection.CollectionSerializers;
 import org.apache.fury.serializer.collection.MapSerializers;
 
@@ -86,5 +88,9 @@ public class KotlinSerializers {
         resolver.registerSerializer(UIntArray.class, new UIntArraySerializer(fury));
         resolver.register(ULongArray.class);
         resolver.registerSerializer(ULongArray.class, new ULongArraySerializer(fury));
+
+        // Built-in classes.
+        resolver.register(kotlin.Pair.class);
+        resolver.register(kotlin.Triple.class);
     }
 }
