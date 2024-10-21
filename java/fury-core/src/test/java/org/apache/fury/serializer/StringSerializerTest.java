@@ -303,7 +303,7 @@ public class StringSerializerTest extends FuryTestBase {
 
   @Test
   public void testReadUtf8String() {
-    Fury fury = getJavaFury();
+    Fury fury = Fury.builder().withStringCompressed(true).requireClassRegistration(false).build();
     for (MemoryBuffer buffer :
         new MemoryBuffer[] {
           MemoryUtils.buffer(32), MemoryUtils.wrap(ByteBuffer.allocateDirect(2048))

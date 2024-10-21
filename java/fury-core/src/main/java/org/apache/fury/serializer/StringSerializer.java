@@ -19,7 +19,6 @@
 
 package org.apache.fury.serializer;
 
-import static org.apache.fury.type.TypeUtils.PRIMITIVE_CHAR_ARRAY_TYPE;
 import static org.apache.fury.type.TypeUtils.STRING_TYPE;
 import static org.apache.fury.util.StringUtils.MULTI_CHARS_NON_LATIN_MASK;
 
@@ -163,7 +162,7 @@ public final class StringSerializer extends ImmutableSerializer<String> {
         if (compressString) {
           return new Invoke(strSerializer, "writeCompressedCharsString", buffer, str);
         } else {
-          return new StaticInvoke(StringSerializer.class, "writeCharsString", buffer, str);
+          return new Invoke(strSerializer, "writeCharsString", buffer, str);
         }
       }
     } else {
@@ -190,9 +189,7 @@ public final class StringSerializer extends ImmutableSerializer<String> {
         if (compressString) {
           return new Invoke(strSerializer, "readCompressedCharsString", STRING_TYPE, buffer);
         } else {
-          Expression chars = new Invoke(buffer, "readCharsAndSize", PRIMITIVE_CHAR_ARRAY_TYPE);
-          return new StaticInvoke(
-              StringSerializer.class, "newCharsStringZeroCopy", STRING_TYPE, chars);
+          return new Invoke(strSerializer, "readCharsString", STRING_TYPE, buffer);
         }
       }
     } else {
@@ -279,6 +276,7 @@ public final class StringSerializer extends ImmutableSerializer<String> {
     }
   }
 
+  @CodegenInvoke
   public void writeUTF8String(MemoryBuffer buffer, String value) {
     byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
     buffer.writeVarUint32(bytes.length);
@@ -303,16 +301,18 @@ public final class StringSerializer extends ImmutableSerializer<String> {
     }
   }
 
+  @CodegenInvoke
   public void writeCompressedBytesString(MemoryBuffer buffer, String value) {
     final byte[] bytes = (byte[]) Platform.getObject(value, STRING_VALUE_FIELD_OFFSET);
     final byte coder = Platform.getByte(value, Offset.STRING_CODER_FIELD_OFFSET);
     if (coder == LATIN1 || bestCoder(bytes) == UTF16) {
-      writeBytesString(buffer, value);
+      writeBytesString(buffer, coder, bytes);
     } else {
       writeBytesUTF8(buffer, bytes);
     }
   }
 
+  @CodegenInvoke
   public void writeCompressedCharsString(MemoryBuffer buffer, String value) {
     final char[] chars = (char[]) Platform.getObject(value, STRING_VALUE_FIELD_OFFSET);
     final byte coder = bestCoder(chars);
@@ -325,11 +325,16 @@ public final class StringSerializer extends ImmutableSerializer<String> {
     }
   }
 
+  @CodegenInvoke
   public static void writeBytesString(MemoryBuffer buffer, String value) {
     byte[] bytes = (byte[]) Platform.getObject(value, STRING_VALUE_FIELD_OFFSET);
+    byte coder = Platform.getByte(value, Offset.STRING_CODER_FIELD_OFFSET);
+    writeBytesString(buffer, coder, bytes);
+  }
+
+  public static void writeBytesString(MemoryBuffer buffer, byte coder, byte[] bytes) {
     int bytesLen = bytes.length;
-    long header =
-        ((long) bytesLen << 2) | Platform.getByte(value, Offset.STRING_CODER_FIELD_OFFSET);
+    long header = ((long) bytesLen << 2) | coder;
     int writerIndex = buffer.writerIndex();
     // The `ensure` ensure next operations are safe without bound checks,
     // and inner heap buffer doesn't change.
@@ -353,6 +358,7 @@ public final class StringSerializer extends ImmutableSerializer<String> {
     buffer._unsafeWriterIndex(writerIndex);
   }
 
+  @CodegenInvoke
   public void writeCharsString(MemoryBuffer buffer, String value) {
     final char[] chars = (char[]) Platform.getObject(value, STRING_VALUE_FIELD_OFFSET);
     if (StringUtils.isLatin(chars)) {
@@ -362,6 +368,7 @@ public final class StringSerializer extends ImmutableSerializer<String> {
     }
   }
 
+  @CodegenInvoke
   public String readUTF8String(MemoryBuffer buffer) {
     int numBytes = buffer.readVarUint32Small14();
     buffer.checkReadableBytes(numBytes);
@@ -792,7 +799,7 @@ public final class StringSerializer extends ImmutableSerializer<String> {
 
     // ascii number > 50%, choose UTF-8
     if (count >= sampleNum * 0.5) {
-      if (count == sampleNum && StringUtils.isLatin(chars)) {
+      if (count == numChars || (count == sampleNum && StringUtils.isLatin(chars, sampleNum))) {
         return LATIN1;
       }
       return UTF8;
