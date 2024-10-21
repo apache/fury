@@ -215,7 +215,18 @@ public final class StringSerializer extends ImmutableSerializer<String> {
 
   @CodegenInvoke
   public String readCharsString(MemoryBuffer buffer) {
-    return newCharsStringZeroCopy(buffer.readCharsAndSize());
+    long header = buffer.readVarUint36Small();
+    byte coder = (byte) (header & 0b11);
+    int numBytes = (int) (header >>> 2);
+    char[] chars;
+    if (coder == LATIN1) {
+      chars = readCharsLatin1(buffer, numBytes);
+    } else if (coder == UTF16) {
+      chars = readCharsUTF16(buffer, numBytes);
+    } else {
+      throw new RuntimeException("Unknown coder type " + coder);
+    }
+    return newCharsStringZeroCopy(chars);
   }
 
   @CodegenInvoke
@@ -342,10 +353,13 @@ public final class StringSerializer extends ImmutableSerializer<String> {
     buffer._unsafeWriterIndex(writerIndex);
   }
 
-  public static void writeCharsString(MemoryBuffer buffer, String value) {
-    int numBytes = MathUtils.doubleExact(value.length());
+  public void writeCharsString(MemoryBuffer buffer, String value) {
     final char[] chars = (char[]) Platform.getObject(value, STRING_VALUE_FIELD_OFFSET);
-    buffer.writePrimitiveArrayWithSize(chars, Platform.CHAR_ARRAY_OFFSET, numBytes);
+    if (StringUtils.isLatin(chars)) {
+      writeCharsLatin1(buffer, chars, chars.length);
+    } else {
+      writeCharsUTF16(buffer, chars, chars.length);
+    }
   }
 
   public String readUTF8String(MemoryBuffer buffer) {
