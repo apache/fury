@@ -271,7 +271,7 @@ public class StringUtils {
   }
 
   public static boolean isLatin(char[] chars, int start) {
-    if (start >= chars.length) {
+    if (start > chars.length) {
       return false;
     }
     int byteOffset = start << 1;
