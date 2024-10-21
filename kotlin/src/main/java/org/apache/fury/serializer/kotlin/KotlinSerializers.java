@@ -19,10 +19,7 @@
 
 package org.apache.fury.serializer.kotlin;
 
-import kotlin.UByteArray;
-import kotlin.UIntArray;
-import kotlin.ULongArray;
-import kotlin.UShortArray;
+import kotlin.*;
 import org.apache.fury.Fury;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.Serializer;
@@ -92,5 +89,7 @@ public class KotlinSerializers {
         // Built-in classes.
         resolver.register(kotlin.Pair.class);
         resolver.register(kotlin.Triple.class);
+        resolver.register(kotlin.Result.class);
+        resolver.register(Result.Failure.class);
     }
 }
