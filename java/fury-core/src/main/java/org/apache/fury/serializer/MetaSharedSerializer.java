@@ -148,8 +148,30 @@ public class MetaSharedSerializer<T> extends AbstractObjectSerializer<T> {
       ObjectSerializer.FinalTypeField fieldInfo = finalFields[i];
       boolean isFinal = this.isFinal[i];
       FieldAccessor fieldAccessor = fieldInfo.fieldAccessor;
-      if (fieldAccessor != null) {
-        short classId = fieldInfo.classId;
+      short classId = fieldInfo.classId;
+
+      if (fieldAccessor == null) {
+        FieldMismatchCallback.FieldAdjustment fieldAdjustment =
+            fury.getFieldMismatchCallback()
+                .onMismatch(
+                    type,
+                    fieldInfo.classInfo.getCls().getName(),
+                    fieldInfo.qualifiedFieldName.substring(
+                        fieldInfo.qualifiedFieldName.lastIndexOf('.') + 1));
+        FieldAccessor fallbackAccessor = null;
+        try {
+          fallbackAccessor = FieldAccessor.createAccessor(fieldAdjustment.getTargetField());
+        } catch (RuntimeException ignored) {
+          fallbackAccessor = null;
+        }
+
+        if (fallbackAccessor != null) {
+          Object fieldValue =
+              ObjectSerializer.readFieldValue(
+                  fury, refResolver, classResolver, fieldInfo, isFinal, buffer, classId);
+          fallbackAccessor.putObject(obj, fieldAdjustment.adjustValue(fieldValue));
+        }
+      } else {
         if (ObjectSerializer.readPrimitiveFieldValueFailed(
                 fury, buffer, obj, fieldAccessor, classId)
             && ObjectSerializer.readBasicObjectFieldValueFailed(
@@ -159,16 +181,6 @@ public class MetaSharedSerializer<T> extends AbstractObjectSerializer<T> {
               ObjectSerializer.readFinalObjectFieldValue(
                   fury, refResolver, classResolver, fieldInfo, isFinal, buffer);
           fieldAccessor.putObject(obj, fieldValue);
-        }
-      } else {
-        if (skipPrimitiveFieldValueFailed(fury, fieldInfo.classId, buffer)) {
-          if (fieldInfo.classInfo == null) {
-            // TODO(chaokunyang) support registered serializer in peer with ref tracking disabled.
-            fury.readRef(buffer, classInfoHolder);
-          } else {
-            ObjectSerializer.readFinalObjectFieldValue(
-                fury, refResolver, classResolver, fieldInfo, isFinal, buffer);
-          }
         }
       }
     }
