@@ -19,7 +19,9 @@
 
 package org.apache.fury.serializer.scala;
 
+import org.apache.fury.AbstractThreadSafeFury;
 import org.apache.fury.Fury;
+import org.apache.fury.ThreadSafeFury;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.serializer.SerializerFactory;
@@ -30,6 +32,11 @@ import static org.apache.fury.serializer.scala.ToFactorySerializers.IterableToFa
 import static org.apache.fury.serializer.scala.ToFactorySerializers.MapToFactoryClass;
 
 public class ScalaSerializers {
+
+  public static void registerSerializers(ThreadSafeFury fury) {
+    AbstractThreadSafeFury threadSafeFury = (AbstractThreadSafeFury) fury;
+    threadSafeFury.registerCallback(ScalaSerializers::registerSerializers);
+  }
 
   public static void registerSerializers(Fury fury) {
     ClassResolver resolver = setSerializerFactory(fury);
