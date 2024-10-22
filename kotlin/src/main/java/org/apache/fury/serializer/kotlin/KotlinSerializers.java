@@ -22,11 +22,8 @@ package org.apache.fury.serializer.kotlin;
 import kotlin.*;
 import org.apache.fury.Fury;
 import org.apache.fury.resolver.ClassResolver;
-import org.apache.fury.serializer.Serializer;
-import org.apache.fury.serializer.SerializerFactory;
 import org.apache.fury.serializer.collection.CollectionSerializers;
 import org.apache.fury.serializer.collection.MapSerializers;
-
 
 /**
  * KotlinSerializers provide default serializers for kotlin.
@@ -86,10 +83,24 @@ public class KotlinSerializers {
         resolver.register(ULongArray.class);
         resolver.registerSerializer(ULongArray.class, new ULongArraySerializer(fury));
 
+        // Ranges and Progressions.
+        resolver.register(kotlin.ranges.CharRange.class);
+        resolver.register(kotlin.ranges.CharProgression.class);
+        resolver.register(kotlin.ranges.IntRange.class);
+        resolver.register(kotlin.ranges.IntProgression.class);
+        resolver.register(kotlin.ranges.LongRange.class);
+        resolver.register(kotlin.ranges.LongProgression.class);
+        resolver.register(kotlin.ranges.UIntRange.class);
+        resolver.register(kotlin.ranges.UIntProgression.class);
+        resolver.register(kotlin.ranges.ULongRange.class);
+        resolver.register(kotlin.ranges.ULongProgression.class);
+
         // Built-in classes.
         resolver.register(kotlin.Pair.class);
         resolver.register(kotlin.Triple.class);
         resolver.register(kotlin.Result.class);
         resolver.register(Result.Failure.class);
+        resolver.register(KotlinToJavaClass.INSTANCE.getRandomDefaultClass());
+        resolver.register(KotlinToJavaClass.INSTANCE.getRandomInternalClass());
     }
 }
