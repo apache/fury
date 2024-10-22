@@ -25,6 +25,14 @@ import org.testng.Assert
 import kotlin.collections.MutableMap.MutableEntry
 import kotlin.random.Random
 import kotlin.test.Test
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.days
+import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.microseconds
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.nanoseconds
+import kotlin.time.Duration.Companion.seconds
 
 class BuiltinClassSerializerTests {
     @Test
@@ -134,5 +142,58 @@ class BuiltinClassSerializerTests {
         val roundtrip2 = fury.deserialize(fury.serialize(value2)) as Random
 
         Assert.assertEquals(roundtrip2, value2)
+    }
+
+    @Test
+    fun testSerializeDuration() {
+        val fury: Fury = Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(true)
+            .withRefTracking(true)
+            .build()
+
+        KotlinSerializers.registerSerializers(fury)
+
+        val value1 = Duration.ZERO
+        Assert.assertEquals(value1, fury.deserialize(fury.serialize(value1)))
+
+        val value2 = Duration.INFINITE
+        Assert.assertEquals(value2, fury.deserialize(fury.serialize(value2)))
+
+        val value3 = -Duration.INFINITE
+        Assert.assertEquals(value3, fury.deserialize(fury.serialize(value3)))
+
+        val value4 = 1.nanoseconds
+        Assert.assertEquals(value4, fury.deserialize(fury.serialize(value4)))
+
+        val value5 = 1.microseconds
+        Assert.assertEquals(value5, fury.deserialize(fury.serialize(value5)))
+
+        val value6 = 1.milliseconds
+        Assert.assertEquals(value6, fury.deserialize(fury.serialize(value6)))
+
+        val value7 = 3.141.milliseconds
+        Assert.assertEquals(value7, fury.deserialize(fury.serialize(value7)))
+
+        val value8 = 1.seconds
+        Assert.assertEquals(value8, fury.deserialize(fury.serialize(value8)))
+
+        val value9 = 3.141.seconds
+        Assert.assertEquals(value9, fury.deserialize(fury.serialize(value9)))
+
+        val value10 = 5.minutes
+        Assert.assertEquals(value10, fury.deserialize(fury.serialize(value10)))
+
+        val value11 = 60.minutes
+        Assert.assertEquals(value11, fury.deserialize(fury.serialize(value11)))
+
+        val value12 = 12.hours
+        Assert.assertEquals(value12, fury.deserialize(fury.serialize(value12)))
+
+        val value13 = 13.days
+        Assert.assertEquals(value13, fury.deserialize(fury.serialize(value13)))
+
+        val value14 = 356.days
+        Assert.assertEquals(value14, fury.deserialize(fury.serialize(value14)))
     }
 }

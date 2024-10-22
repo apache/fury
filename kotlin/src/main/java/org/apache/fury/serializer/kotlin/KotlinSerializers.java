@@ -20,6 +20,10 @@
 package org.apache.fury.serializer.kotlin;
 
 import kotlin.*;
+import kotlin.time.Duration;
+import kotlin.time.DurationUnit;
+import kotlin.time.TestTimeSource;
+import kotlin.time.TimedValue;
 import org.apache.fury.Fury;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.collection.CollectionSerializers;
@@ -100,8 +104,17 @@ public class KotlinSerializers {
         resolver.register(kotlin.Triple.class);
         resolver.register(kotlin.Result.class);
         resolver.register(Result.Failure.class);
+
+        // kotlin.random
         resolver.register(KotlinToJavaClass.INSTANCE.getRandomDefaultClass());
         resolver.register(KotlinToJavaClass.INSTANCE.getRandomInternalClass());
         resolver.register(KotlinToJavaClass.INSTANCE.getRandomSerializedClass());
+
+        // kotlin.time
+        resolver.register(DurationUnit.class);
+        resolver.register(Duration.class);
+        resolver.registerSerializer(Duration.class, new DurationSerializer(fury));
+        resolver.register(TestTimeSource.class);
+        resolver.register(TimedValue.class);
     }
 }
