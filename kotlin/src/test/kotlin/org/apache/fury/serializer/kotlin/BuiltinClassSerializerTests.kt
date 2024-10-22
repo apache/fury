@@ -214,4 +214,19 @@ class BuiltinClassSerializerTests {
         val value = Uuid.fromLongs(1234L, 56789L)
         Assert.assertEquals(value, fury.deserialize(fury.serialize(value)))
     }
+
+    @Test
+    fun testSerializeRegex() {
+        val fury: Fury = Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(true)
+            .withRefTracking(true)
+            .build()
+
+        KotlinSerializers.registerSerializers(fury)
+
+        val value = Regex("12345")
+        Assert.assertEquals(value.pattern, fury.deserialize(fury.serialize(value.pattern)))
+        Assert.assertEquals(value.options, fury.deserialize(fury.serialize(value.options)))
+    }
 }

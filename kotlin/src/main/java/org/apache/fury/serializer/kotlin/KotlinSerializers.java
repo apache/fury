@@ -20,6 +20,10 @@
 package org.apache.fury.serializer.kotlin;
 
 import kotlin.*;
+import kotlin.text.CharCategory;
+import kotlin.text.CharDirectionality;
+import kotlin.text.Regex;
+import kotlin.text.RegexOption;
 import kotlin.time.Duration;
 import kotlin.time.DurationUnit;
 import kotlin.time.TestTimeSource;
@@ -110,6 +114,11 @@ public class KotlinSerializers {
         resolver.register(KotlinToJavaClass.INSTANCE.getRandomDefaultClass());
         resolver.register(KotlinToJavaClass.INSTANCE.getRandomInternalClass());
         resolver.register(KotlinToJavaClass.INSTANCE.getRandomSerializedClass());
+
+        // kotlin.text
+        resolver.register(Regex.class);
+        resolver.register(KotlinToJavaClass.INSTANCE.getRegexSerializedClass());
+        resolver.register(RegexOption.class);
 
         // kotlin.time
         resolver.register(DurationUnit.class);

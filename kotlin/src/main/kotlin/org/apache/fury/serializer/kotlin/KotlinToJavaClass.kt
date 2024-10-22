@@ -38,4 +38,7 @@ object KotlinToJavaClass {
     val RandomInternalClass = Random(1)::class.java
     val RandomDefaultClass = Random.Default::class.java
     val RandomSerializedClass = Class.forName("kotlin.random.Random\$Default\$Serialized")
+
+    // Regex
+    val RegexSerializedClass = Class.forName("kotlin.text.Regex\$Serialized")
 }
