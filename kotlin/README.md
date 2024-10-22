@@ -16,6 +16,11 @@ Fury Kotlin is tested and works with the following types:
 - arrays: `Array`, `BooleanArray`, `ByteArray`, `CharArray`, `DoubleArray`, `FloatArray`, `IntArray`, `LongArray`, `ShortArray`
 - all standard array types work out of the box with the default fury java implementation.
 - unsigned arrays: `UByteArray`, `UShortArray`, `UIntArray`, `ULongArray`
+- builtin classes: `Pair`, `Triple`, `Result`
+- kotlin.random: `Random`
+- kotlin.text: `Regex`
+- kotlin.time: `Duration`
+- kotlin.uuid: `Uuid`
 
 Additional support is added for the following classes in kotlin:
 
@@ -23,6 +28,8 @@ Additional support is added for the following classes in kotlin:
 - Unsigned array types: `UByteArray`, `UShortArray`, `UIntArray`, `ULongArray`
 - Empty collections: `emptyList`, `emptyMap`, `emptySet`
 - Collections: `ArrayDeque`
+- kotlin.time: `Duration`
+- kotlin.uuid: `Uuid`
 
 Additional Notes:
 
