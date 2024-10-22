@@ -102,5 +102,6 @@ public class KotlinSerializers {
         resolver.register(Result.Failure.class);
         resolver.register(KotlinToJavaClass.INSTANCE.getRandomDefaultClass());
         resolver.register(KotlinToJavaClass.INSTANCE.getRandomInternalClass());
+        resolver.register(KotlinToJavaClass.INSTANCE.getRandomSerializedClass());
     }
 }

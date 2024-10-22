@@ -114,4 +114,25 @@ class BuiltinClassSerializerTests {
         val value11 = 4uL downTo  0uL
         Assert.assertEquals(value11, fury.deserialize(fury.serialize(value11)))
     }
+
+    @Test
+    fun testSerializeRandom() {
+        val fury: Fury = Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(true)
+            .withRefTracking(true)
+            .build()
+
+        KotlinSerializers.registerSerializers(fury)
+        val value1 = Random(123)
+        val roundtrip1 = fury.deserialize(fury.serialize(value1)) as Random
+
+        Assert.assertEquals(roundtrip1.nextInt(), value1.nextInt())
+
+        // The default random object will be roundtripped to the platform default random singleton object.
+        val value2 = Random.Default
+        val roundtrip2 = fury.deserialize(fury.serialize(value2)) as Random
+
+        Assert.assertEquals(roundtrip2, value2)
+    }
 }

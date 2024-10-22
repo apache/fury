@@ -19,6 +19,8 @@
 
 package org.apache.fury.serializer.kotlin
 
+import kotlin.random.Random
+
 object KotlinToJavaClass {
     // Collections
     val ArrayDequeClass = ArrayDeque::class.java
@@ -31,4 +33,9 @@ object KotlinToJavaClass {
     val UShortClass = UShort::class.java
     val UIntClass = UInt::class.java
     val ULongClass = ULong::class.java
+
+    // Random
+    val RandomInternalClass = Random(1)::class.java
+    val RandomDefaultClass = Random.Default::class.java
+    val RandomSerializedClass = Class.forName("kotlin.random.Random\$Default\$Serialized")
 }
