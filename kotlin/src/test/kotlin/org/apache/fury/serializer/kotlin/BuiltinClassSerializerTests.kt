@@ -22,6 +22,7 @@ package org.apache.fury.serializer.kotlin
 import org.apache.fury.Fury
 import org.apache.fury.config.Language
 import org.testng.Assert
+import java.util.UUID
 import kotlin.collections.MutableMap.MutableEntry
 import kotlin.random.Random
 import kotlin.test.Test
@@ -33,6 +34,8 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.nanoseconds
 import kotlin.time.Duration.Companion.seconds
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 class BuiltinClassSerializerTests {
     @Test
@@ -195,5 +198,20 @@ class BuiltinClassSerializerTests {
 
         val value14 = 356.days
         Assert.assertEquals(value14, fury.deserialize(fury.serialize(value14)))
+    }
+
+    @OptIn(ExperimentalUuidApi::class)
+    @Test
+    fun testSerializeUuid() {
+        val fury: Fury = Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(true)
+            .withRefTracking(true)
+            .build()
+
+        KotlinSerializers.registerSerializers(fury)
+
+        val value = Uuid.fromLongs(1234L, 56789L)
+        Assert.assertEquals(value, fury.deserialize(fury.serialize(value)))
     }
 }

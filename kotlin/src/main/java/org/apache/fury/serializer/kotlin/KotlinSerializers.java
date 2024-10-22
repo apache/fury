@@ -24,6 +24,7 @@ import kotlin.time.Duration;
 import kotlin.time.DurationUnit;
 import kotlin.time.TestTimeSource;
 import kotlin.time.TimedValue;
+import kotlin.uuid.Uuid;
 import org.apache.fury.Fury;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.collection.CollectionSerializers;
@@ -116,5 +117,9 @@ public class KotlinSerializers {
         resolver.registerSerializer(Duration.class, new DurationSerializer(fury));
         resolver.register(TestTimeSource.class);
         resolver.register(TimedValue.class);
+
+        // kotlin.uuid
+        resolver.register(Uuid.class);
+        resolver.registerSerializer(Uuid.class, new UuidSerializer(fury));
     }
 }
