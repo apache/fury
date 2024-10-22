@@ -60,7 +60,7 @@ public class Config implements Serializable {
   private final boolean scalaOptimizationEnabled;
   private transient int configHash;
   private final boolean deserializeNonexistentEnumValueAsNull;
-  private final boolean treatEnumAsString;
+  private final boolean serializeEnumByName;
 
   public Config(FuryBuilder builder) {
     name = builder.name;
@@ -94,7 +94,7 @@ public class Config implements Serializable {
     asyncCompilationEnabled = builder.asyncCompilationEnabled;
     scalaOptimizationEnabled = builder.scalaOptimizationEnabled;
     deserializeNonexistentEnumValueAsNull = builder.deserializeNonexistentEnumValueAsNull;
-    treatEnumAsString = builder.treatEnumAsString;
+    serializeEnumByName = builder.serializeEnumByName;
   }
 
   /** Returns the name for Fury serialization. */
@@ -135,9 +135,9 @@ public class Config implements Serializable {
     return deserializeNonexistentEnumValueAsNull;
   }
 
-  /** deserialize and serialize enum as string. */
-  public boolean treatEnumAsString() {
-    return treatEnumAsString;
+  /** deserialize and serialize enum by name. */
+  public boolean serializeEnumByName() {
+    return serializeEnumByName;
   }
 
   /**

@@ -82,7 +82,7 @@ public final class FuryBuilder {
   boolean scalaOptimizationEnabled = false;
   boolean suppressClassRegistrationWarnings = true;
   boolean deserializeNonexistentEnumValueAsNull = false;
-  boolean treatEnumAsString = false;
+  boolean serializeEnumByName = false;
   MetaCompressor metaCompressor = new DeflaterMetaCompressor();
 
   public FuryBuilder() {}
@@ -134,9 +134,9 @@ public final class FuryBuilder {
     return this;
   }
 
-  /** deserialize and serialize enum as string. */
-  public FuryBuilder treatEnumAsString(boolean treatEnumAsString) {
-    this.treatEnumAsString = treatEnumAsString;
+  /** deserialize and serialize enum by name. */
+  public FuryBuilder serializeEnumByName(boolean serializeEnumByName) {
+    this.serializeEnumByName = serializeEnumByName;
     return this;
   }
 

@@ -24,26 +24,24 @@ import java.util.HashMap;
 import java.util.Map;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.meta.Encoders;
 import org.apache.fury.meta.MetaString;
+import org.apache.fury.resolver.MetaStringBytes;
 import org.apache.fury.resolver.MetaStringResolver;
 import org.apache.fury.util.Preconditions;
 
 @SuppressWarnings("rawtypes")
 public class EnumSerializer extends ImmutableSerializer<Enum> {
-  private static final MetaStringResolver META_STRING_RESOLVER = new MetaStringResolver();
+  private final MetaStringResolver metaStringResolver;
   private final Enum[] enumConstants;
-  private final Map<String, Enum> enumStringRepresentation;
+  private final Map<MetaStringBytes, Enum> metaStringtoEnumRepresentation;
 
   public EnumSerializer(Fury fury, Class<Enum> cls) {
     super(fury, cls, false);
-
-    enumStringRepresentation = new HashMap<>();
+    metaStringResolver = fury.getMetaStringResolver();
 
     if (cls.isEnum()) {
       enumConstants = cls.getEnumConstants();
-      for (Enum e : enumConstants) {
-        enumStringRepresentation.put(e.name(), e);
-      }
     } else {
       Preconditions.checkArgument(Enum.class.isAssignableFrom(cls) && cls != Enum.class);
       @SuppressWarnings("unchecked")
@@ -51,17 +49,34 @@ public class EnumSerializer extends ImmutableSerializer<Enum> {
       Preconditions.checkNotNull(enclosingClass);
       Preconditions.checkArgument(enclosingClass.isEnum());
       enumConstants = enclosingClass.getEnumConstants();
-      for (Enum e : enumConstants) {
-        enumStringRepresentation.put(e.name(), e);
+    }
+
+    if (fury.getConfig().serializeEnumByName()) {
+      // as we know the size of enum is fixed, initialize the size of map with that value
+      int initialCapacity = (int) Math.ceil(enumConstants.length / 0.99f);
+
+      metaStringtoEnumRepresentation = new HashMap<>(initialCapacity, 0.99f);
+
+      for (Enum enumConstant : enumConstants) {
+        if (enumConstant != null) {
+          MetaString ms =
+              Encoders.GENERIC_ENCODER.encode(enumConstant.name(), MetaString.Encoding.UTF_8);
+          MetaStringBytes msb = metaStringResolver.getOrCreateMetaStringBytes(ms);
+          metaStringtoEnumRepresentation.put(msb, enumConstant);
+        }
       }
+    } else {
+      metaStringtoEnumRepresentation = null;
     }
   }
 
   @Override
   public void write(MemoryBuffer buffer, Enum value) {
-    if (fury.getConfig().treatEnumAsString()) {
-      META_STRING_RESOLVER.writeMetaStringBytesFromString(
-          buffer, value.name(), MetaString.Encoding.UTF_8);
+    if (fury.getConfig().serializeEnumByName()) {
+      MetaString enumMetaString =
+          Encoders.GENERIC_ENCODER.encode(value.name(), MetaString.Encoding.UTF_8);
+      metaStringResolver.writeMetaStringBytes(
+          buffer, metaStringResolver.getOrCreateMetaStringBytes(enumMetaString));
     } else {
       buffer.writeVarUint32Small7(value.ordinal());
     }
@@ -69,13 +84,13 @@ public class EnumSerializer extends ImmutableSerializer<Enum> {
 
   @Override
   public Enum read(MemoryBuffer buffer) {
-    if (fury.getConfig().treatEnumAsString()) {
-      String metaStringBytes = META_STRING_RESOLVER.readMetaString(buffer);
-      Enum e = enumStringRepresentation.get(metaStringBytes);
+    if (fury.getConfig().serializeEnumByName()) {
+      MetaStringBytes metaStringBytes = metaStringResolver.readMetaStringBytes(buffer);
+      Enum e = metaStringtoEnumRepresentation.get(metaStringBytes);
       if (e != null) {
         return e;
       }
-      return handleNonexistentEnumValue(metaStringBytes);
+      return handleNonexistentEnumValue(metaStringBytes.decode(Encoders.GENERIC_DECODER));
     } else {
       int value = buffer.readVarUint32Small7();
       if (value >= enumConstants.length) {

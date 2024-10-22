@@ -26,7 +26,7 @@ import org.apache.fury.meta.MetaStringDecoder;
 import org.apache.fury.util.MurmurHash3;
 
 @Internal
-final class MetaStringBytes {
+public final class MetaStringBytes {
   static final short DEFAULT_DYNAMIC_WRITE_STRING_ID = -1;
   private static final int HEADER_MASK = 0xff;
 

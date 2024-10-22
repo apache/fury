@@ -120,7 +120,7 @@ public class EnumSerializerTest extends FuryTestBase {
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
             .withRefTracking(true)
             .requireClassRegistration(false)
-            .treatEnumAsString(true)
+            .serializeEnumByName(true)
             .withAsyncCompilation(false)
             .build();
     Fury furySerialization =
@@ -129,7 +129,7 @@ public class EnumSerializerTest extends FuryTestBase {
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
             .withRefTracking(true)
             .requireClassRegistration(false)
-            .treatEnumAsString(true)
+            .serializeEnumByName(true)
             .withAsyncCompilation(false)
             .build();
 
@@ -155,7 +155,7 @@ public class EnumSerializerTest extends FuryTestBase {
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
             .withRefTracking(true)
             .requireClassRegistration(false)
-            .treatEnumAsString(true)
+            .serializeEnumByName(true)
             .withAsyncCompilation(false)
             .build();
     Fury furySerialization =
@@ -164,7 +164,7 @@ public class EnumSerializerTest extends FuryTestBase {
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
             .withRefTracking(true)
             .requireClassRegistration(false)
-            .treatEnumAsString(true)
+            .serializeEnumByName(true)
             .withAsyncCompilation(false)
             .build();
 
@@ -190,7 +190,7 @@ public class EnumSerializerTest extends FuryTestBase {
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
             .withRefTracking(true)
             .requireClassRegistration(false)
-            .treatEnumAsString(true)
+            .serializeEnumByName(true)
             .withAsyncCompilation(false)
             .build();
     Fury furySerialization =
@@ -199,7 +199,7 @@ public class EnumSerializerTest extends FuryTestBase {
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
             .withRefTracking(true)
             .requireClassRegistration(false)
-            .treatEnumAsString(true)
+            .serializeEnumByName(true)
             .withAsyncCompilation(false)
             .build();
 
@@ -212,6 +212,40 @@ public class EnumSerializerTest extends FuryTestBase {
       assertTrue(e instanceof DeserializationException);
       assertTrue(e.getCause() instanceof IllegalArgumentException);
     }
+  }
+
+  @Test
+  public void testEnumSerializationAsString_nullValue() {
+    String enumCode1 = "enum TestEnum1 {" + " A;" + "}";
+    String enumCode2 = "enum TestEnum2 {" + " B;" + "}";
+    Class<?> cls1 =
+        JaninoUtils.compileClass(getClass().getClassLoader(), "", "TestEnum1", enumCode1);
+    Class<?> cls2 =
+        JaninoUtils.compileClass(getClass().getClassLoader(), "", "TestEnum2", enumCode2);
+
+    Fury furyDeserialize =
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withCompatibleMode(CompatibleMode.COMPATIBLE)
+            .withRefTracking(true)
+            .requireClassRegistration(false)
+            .serializeEnumByName(true)
+            .withAsyncCompilation(false)
+            .build();
+    Fury furySerialization =
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withCompatibleMode(CompatibleMode.COMPATIBLE)
+            .withRefTracking(true)
+            .requireClassRegistration(false)
+            .serializeEnumByName(true)
+            .withAsyncCompilation(false)
+            .build();
+
+    byte[] bytes = furySerialization.serializeJavaObject(null);
+
+    Object data = furyDeserialize.deserializeJavaObject(bytes, cls2);
+    assertNull(data);
   }
 
   @Data
