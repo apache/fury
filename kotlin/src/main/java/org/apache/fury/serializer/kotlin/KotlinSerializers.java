@@ -43,10 +43,10 @@ import org.apache.fury.serializer.collection.MapSerializers;
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class KotlinSerializers {
 
-  public static void registerSerializers(ThreadSafeFury fury) {
-    AbstractThreadSafeFury threadSafeFury = (AbstractThreadSafeFury) fury;
-    threadSafeFury.registerCallback(KotlinSerializers::registerSerializers);
-  }
+    public static void registerSerializers(ThreadSafeFury fury) {
+        AbstractThreadSafeFury threadSafeFury = (AbstractThreadSafeFury) fury;
+        threadSafeFury.registerCallback(KotlinSerializers::registerSerializers);
+    }
 
     public static void registerSerializers(Fury fury) {
         ClassResolver resolver = fury.getClassResolver();
