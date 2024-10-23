@@ -25,6 +25,7 @@ import org.apache.fury.collection.FuryObjectMap;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.meta.Encoders;
 import org.apache.fury.meta.MetaString;
+import org.apache.fury.meta.MetaStringEncoder;
 import org.apache.fury.resolver.MetaStringBytes;
 import org.apache.fury.resolver.MetaStringResolver;
 import org.apache.fury.util.Preconditions;
@@ -60,8 +61,7 @@ public class EnumSerializer extends ImmutableSerializer<Enum> {
 
       for (Enum enumConstant : enumConstants) {
         if (enumConstant != null) {
-          MetaString ms =
-              Encoders.GENERIC_ENCODER.encode(enumConstant.name(), MetaString.Encoding.UTF_8);
+          MetaString ms = Encoders.GENERIC_ENCODER.encode(enumConstant.name());
           MetaStringBytes msb = metaStringResolver.getOrCreateMetaStringBytes(ms);
           metaStringtoEnumRepresentation.put(msb, enumConstant);
           metaStringBytesArrByEnumOrdinal[enumConstant.ordinal()] = msb;
