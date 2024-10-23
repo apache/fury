@@ -23,7 +23,9 @@ import kotlin.UByteArray;
 import kotlin.UIntArray;
 import kotlin.ULongArray;
 import kotlin.UShortArray;
+import org.apache.fury.AbstractThreadSafeFury;
 import org.apache.fury.Fury;
+import org.apache.fury.ThreadSafeFury;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.collection.CollectionSerializers;
 import org.apache.fury.serializer.collection.MapSerializers;
@@ -34,6 +36,12 @@ import org.apache.fury.serializer.collection.MapSerializers;
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class KotlinSerializers {
+
+  public static void registerSerializers(ThreadSafeFury fury) {
+    AbstractThreadSafeFury threadSafeFury = (AbstractThreadSafeFury) fury;
+    threadSafeFury.registerCallback(KotlinSerializers::registerSerializers);
+  }
+
     public static void registerSerializers(Fury fury) {
         ClassResolver resolver = fury.getClassResolver();
 

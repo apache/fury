@@ -303,7 +303,7 @@ public class StringSerializerTest extends FuryTestBase {
 
   @Test
   public void testReadUtf8String() {
-    Fury fury = getJavaFury();
+    Fury fury = Fury.builder().withStringCompressed(true).requireClassRegistration(false).build();
     for (MemoryBuffer buffer :
         new MemoryBuffer[] {
           MemoryUtils.buffer(32), MemoryUtils.wrap(ByteBuffer.allocateDirect(2048))
@@ -313,7 +313,8 @@ public class StringSerializerTest extends FuryTestBase {
       assertEquals(serializer.read(buffer), "abc你好");
       byte[] bytes = "abc你好".getBytes(StandardCharsets.UTF_8);
       byte UTF8 = 2;
-      buffer.writeVarUint64(((long) bytes.length) << 2 | UTF8);
+      buffer.writeVarUint64(((long) "abc你好".length() << 1) << 2 | UTF8);
+      buffer.writeInt32(bytes.length);
       buffer.writeBytes(bytes);
       assertEquals(serializer.read(buffer), "abc你好");
       assertEquals(buffer.readerIndex(), buffer.writerIndex());
