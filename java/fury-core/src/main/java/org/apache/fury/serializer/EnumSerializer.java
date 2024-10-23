@@ -25,7 +25,6 @@ import org.apache.fury.collection.FuryObjectMap;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.meta.Encoders;
 import org.apache.fury.meta.MetaString;
-import org.apache.fury.meta.MetaStringEncoder;
 import org.apache.fury.resolver.MetaStringBytes;
 import org.apache.fury.resolver.MetaStringResolver;
 import org.apache.fury.util.Preconditions;
