@@ -34,7 +34,7 @@ public class EnumSerializer extends ImmutableSerializer<Enum> {
   private final MetaStringResolver metaStringResolver;
   private final Enum[] enumConstants;
   private final FuryObjectMap<MetaStringBytes, Enum> metaStringtoEnumRepresentation;
-  private final MetaStringBytes[] metaStringBytesArr;
+  private final MetaStringBytes[] metaStringBytesArrByEnumOrdinal;
 
   public EnumSerializer(Fury fury, Class<Enum> cls) {
     super(fury, cls, false);
@@ -50,7 +50,7 @@ public class EnumSerializer extends ImmutableSerializer<Enum> {
       enumConstants = enclosingClass.getEnumConstants();
     }
 
-    metaStringBytesArr = new MetaStringBytes[enumConstants.length];
+    metaStringBytesArrByEnumOrdinal = new MetaStringBytes[enumConstants.length];
 
     if (fury.getConfig().serializeEnumByName()) {
       // as we know the size of enum is fixed, initialize the size of map with that value
@@ -64,7 +64,7 @@ public class EnumSerializer extends ImmutableSerializer<Enum> {
               Encoders.GENERIC_ENCODER.encode(enumConstant.name(), MetaString.Encoding.UTF_8);
           MetaStringBytes msb = metaStringResolver.getOrCreateMetaStringBytes(ms);
           metaStringtoEnumRepresentation.put(msb, enumConstant);
-          metaStringBytesArr[enumConstant.ordinal()] = msb;
+          metaStringBytesArrByEnumOrdinal[enumConstant.ordinal()] = msb;
         }
       }
 
@@ -76,7 +76,7 @@ public class EnumSerializer extends ImmutableSerializer<Enum> {
   @Override
   public void write(MemoryBuffer buffer, Enum value) {
     if (fury.getConfig().serializeEnumByName()) {
-      MetaStringBytes metaStringBytes = metaStringBytesArr[value.ordinal()];
+      MetaStringBytes metaStringBytes = metaStringBytesArrByEnumOrdinal[value.ordinal()];
       metaStringResolver.writeMetaStringBytes(buffer, metaStringBytes);
     } else {
       buffer.writeVarUint32Small7(value.ordinal());
