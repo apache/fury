@@ -154,6 +154,12 @@ public class JITContextTest extends FuryTestBase {
         LOG.warn("Wait async compilation finish for {}", cls);
       }
     }
+    while (fury.getJITContext().hasJITResult(PkgAccessLevel.class)) {
+      Thread.sleep(10); // allow serializer be switched to generated version
+    }
+    while (fury.getJITContext().hasJITResult(PrivateAccessLevel.class)) {
+      Thread.sleep(10); // allow serializer be switched to generated version
+    }
     Serializer<TestAccessLevel> serializer =
         fury.getClassResolver().getSerializer(TestAccessLevel.class);
     assertTrue(ReflectionUtils.getObjectFieldValue(serializer, "serializer") instanceof Generated);

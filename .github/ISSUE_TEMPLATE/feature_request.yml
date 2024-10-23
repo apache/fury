@@ -18,7 +18,6 @@
 name: 🚀 Feature Request
 description: I have a suggestion (and may want to implement it 🙂)!
 title: "[<Fury component: Protocol|Java|Python|C++|JavaScript|etc...>] "
-assignees: ""
 labels: ["new feature"]
 
 body:
@@ -55,4 +54,5 @@ body:
     validations:
       required: false
   - type: markdown
-    value: "Please read the [Contribution Guideline](https://fury.apache.org/docs/community/how_to_join_community) before submitting the PR"
+    attributes:
+      value: "Please read the [Contribution Guideline](https://fury.apache.org/docs/community/how_to_join_community) before submitting the PR"

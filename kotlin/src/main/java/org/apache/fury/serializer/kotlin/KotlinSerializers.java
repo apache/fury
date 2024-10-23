@@ -20,14 +20,19 @@
 package org.apache.fury.serializer.kotlin;
 
 import kotlin.*;
-import kotlin.ranges.CharRange;
 import kotlin.text.*;
 import kotlin.time.Duration;
 import kotlin.time.DurationUnit;
 import kotlin.time.TestTimeSource;
 import kotlin.time.TimedValue;
 import kotlin.uuid.Uuid;
+import kotlin.UByteArray;
+import kotlin.UIntArray;
+import kotlin.ULongArray;
+import kotlin.UShortArray;
+import org.apache.fury.AbstractThreadSafeFury;
 import org.apache.fury.Fury;
+import org.apache.fury.ThreadSafeFury;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.collection.CollectionSerializers;
 import org.apache.fury.serializer.collection.MapSerializers;
@@ -37,6 +42,12 @@ import org.apache.fury.serializer.collection.MapSerializers;
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class KotlinSerializers {
+
+  public static void registerSerializers(ThreadSafeFury fury) {
+    AbstractThreadSafeFury threadSafeFury = (AbstractThreadSafeFury) fury;
+    threadSafeFury.registerCallback(KotlinSerializers::registerSerializers);
+  }
+
     public static void registerSerializers(Fury fury) {
         ClassResolver resolver = fury.getClassResolver();
 
