@@ -34,6 +34,7 @@ import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassInfoHolder;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.resolver.MetaContext;
+import org.apache.fury.resolver.MetaStringResolver;
 import org.apache.fury.resolver.RefResolver;
 import org.apache.fury.serializer.NonexistentClass.NonexistentEnum;
 import org.apache.fury.type.Descriptor;
@@ -226,14 +227,21 @@ public final class NonexistentClassSerializers {
 
   public static final class NonexistentEnumClassSerializer extends Serializer {
     private final NonexistentEnum[] enumConstants;
+    private final MetaStringResolver metaStringResolver;
 
     public NonexistentEnumClassSerializer(Fury fury) {
       super(fury, NonexistentEnum.class);
+      metaStringResolver = fury.getMetaStringResolver();
       enumConstants = NonexistentEnum.class.getEnumConstants();
     }
 
     @Override
     public Object read(MemoryBuffer buffer) {
+      if (fury.getConfig().serializeEnumByName()) {
+        metaStringResolver.readMetaStringBytes(buffer);
+        return NonexistentEnum.UNKNOWN;
+      }
+
       int ordinal = buffer.readVarUint32Small7();
       if (ordinal >= enumConstants.length) {
         ordinal = enumConstants.length - 1;

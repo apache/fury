@@ -123,6 +123,28 @@ public class NonexistentClassSerializersTest extends FuryTestBase {
   }
 
   @Test(dataProvider = "scopedMetaShare")
+  public void testNonexistentEnum_AsString(boolean scopedMetaShare) {
+    Fury fury =
+        furyBuilder(scopedMetaShare)
+            .withDeserializeNonexistentClass(true)
+            .serializeEnumByName(true)
+            .build();
+    String enumCode = ("enum TestEnum {" + " A, B" + "}");
+    Class<?> cls = JaninoUtils.compileClass(getClass().getClassLoader(), "", "TestEnum", enumCode);
+    Object c = cls.getEnumConstants()[1];
+    assertEquals(c.toString(), "B");
+    byte[] bytes = fury.serialize(c);
+    Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
+    Fury fury2 =
+        furyBuilder(scopedMetaShare)
+            .withDeserializeNonexistentClass(true)
+            .serializeEnumByName(true)
+            .build();
+    Object o = fury2.deserialize(bytes);
+    assertEquals(o, NonexistentClass.NonexistentEnum.UNKNOWN);
+  }
+
+  @Test(dataProvider = "scopedMetaShare")
   public void testNonexistentEnumAndArrayField(boolean scopedMetaShare) throws Exception {
     String enumStructCode1 =
         ("public class TestEnumStruct {\n"
