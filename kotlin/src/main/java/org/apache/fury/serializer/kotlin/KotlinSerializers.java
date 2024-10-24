@@ -137,7 +137,6 @@ public class KotlinSerializers {
         resolver.register(DurationUnit.class);
         resolver.register(Duration.class);
         resolver.registerSerializer(Duration.class, new DurationSerializer(fury));
-        resolver.register(TestTimeSource.class);
         resolver.register(TimedValue.class);
 
         // kotlin.uuid
