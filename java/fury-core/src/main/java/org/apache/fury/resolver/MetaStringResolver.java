@@ -110,7 +110,7 @@ public final class MetaStringResolver {
     String str = metaStringBytes2StringMap.get(byteString);
     if (str == null) {
       // TODO support meta string in other languages.
-      str = byteString.decode(Encoders.GENERIC_DECODER);
+      str = byteString.decode(Encoders::decodeGeneric);
       metaStringBytes2StringMap.put(byteString, str);
     }
     return str;
