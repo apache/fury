@@ -74,21 +74,21 @@ cdef class Buffer:
 
     cpdef inline put_double(self, uint32_t offset, double v)
 
-    cpdef inline c_bool get_bool(self, uint32_t offset)
+    cpdef inline object get_bool(self, uint32_t offset)
 
-    cpdef inline int8_t get_int8(self, uint32_t offset)
+    cpdef inline object get_int8(self, uint32_t offset)
 
-    cpdef inline int16_t get_int16(self, uint32_t offset)
+    cpdef inline object get_int16(self, uint32_t offset)
 
-    cpdef inline int32_t get_int24(self, uint32_t offset)
+    cpdef inline object get_int24(self, uint32_t offset)
 
-    cpdef inline int32_t get_int32(self, uint32_t offset)
+    cpdef inline object get_int32(self, uint32_t offset)
 
-    cpdef inline int64_t get_int64(self, uint32_t offset)
+    cpdef inline object get_int64(self, uint32_t offset)
 
-    cpdef inline float get_float(self, uint32_t offset)
+    cpdef inline object get_float(self, uint32_t offset)
 
-    cpdef inline double get_double(self, uint32_t offset)
+    cpdef inline object get_double(self, uint32_t offset)
 
     cpdef inline write_bool(self, c_bool value)
 
@@ -108,21 +108,21 @@ cdef class Buffer:
 
     cpdef inline skip(self, int32_t length)
 
-    cpdef inline c_bool read_bool(self)
+    cpdef inline object read_bool(self)
 
-    cpdef inline int8_t read_int8(self)
+    cpdef inline object read_int8(self)
 
-    cpdef inline int16_t read_int16(self)
+    cpdef inline object read_int16(self)
 
-    cpdef inline int16_t read_int24(self)
+    cpdef inline object read_int24(self)
 
-    cpdef inline int32_t read_int32(self)
+    cpdef inline object read_int32(self)
 
-    cpdef inline int64_t read_int64(self)
+    cpdef inline object read_int64(self)
 
-    cpdef inline float read_float(self)
+    cpdef inline object read_float(self)
 
-    cpdef inline double read_double(self)
+    cpdef inline object read_double(self)
 
     cpdef inline write_flagged_varint32(self, c_bool flag, int32_t v)
 

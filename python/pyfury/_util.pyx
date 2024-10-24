@@ -29,6 +29,18 @@ from pyfury.includes.libutil cimport(
     CBuffer, AllocateBuffer, GetBit, SetBit, ClearBit, SetBitTo
 )
 
+cdef extern from *:
+    """
+    static CYTHON_INLINE PyObject *bool_from(int b) {
+        if (b) {
+            Py_RETURN_TRUE;
+        } else {
+            Py_RETURN_FALSE;
+        }
+    }
+    """
+    object bool_from(int b)
+
 cdef int32_t max_buffer_size = 2 ** 31 - 1
 
 
@@ -112,40 +124,44 @@ cdef class Buffer:
         self.check_bound(offset, <int32_t>8)
         self.c_buffer.get().UnsafePut(offset, v)
 
-    cpdef inline c_bool get_bool(self, uint32_t offset):
+    cpdef inline object get_bool(self, uint32_t offset):
         self.check_bound(offset, <int32_t>1)
-        return self.c_buffer.get().GetBool(offset)
+        return bool_from(self.c_buffer.get().GetBool(offset))
 
-    cpdef inline int8_t get_int8(self, uint32_t offset):
+    cpdef inline object get_int8(self, uint32_t offset):
         self.check_bound(offset, <int32_t>1)
-        return self.c_buffer.get().GetInt8(offset)
+        return PyLong_FromLong(self.c_buffer.get().GetInt8(offset))
 
-    cpdef inline int16_t get_int16(self, uint32_t offset):
+    cpdef inline object get_int16(self, uint32_t offset):
         self.check_bound(offset, <int32_t>2)
-        return self.c_buffer.get().GetInt16(offset)
+        return PyLong_FromLong(self.c_buffer.get().GetInt16(offset))
 
-    cpdef inline int32_t get_int24(self, uint32_t offset):
+    cpdef inline object get_int24(self, uint32_t offset):
         self.check_bound(offset, <int32_t>3)
         cdef uint8_t* arr = self._c_address + offset
-        cdef int32_t result = arr[0]
-        return (result & 0xFF) | (((<int16_t>arr[1]) & 0xFF) << 8) |\
+        cdef int32_t result = (arr[0] & 0xFF) | (((<int16_t>arr[1]) & 0xFF) << 8) |\
                (((<int16_t>arr[2]) & 0xFF) << 16)
+        return PyLong_FromLong(result)
 
-    cpdef inline int32_t get_int32(self, uint32_t offset):
+    cpdef inline object get_int32(self, uint32_t offset):
         self.check_bound(offset, <int32_t>4)
-        return self.c_buffer.get().GetInt32(offset)
+        return PyLong_FromLong(self.c_buffer.get().GetInt32(offset))
 
-    cpdef inline int64_t get_int64(self, uint32_t offset):
+    cpdef inline object get_int64(self, uint32_t offset):
         self.check_bound(offset, <int32_t>8)
-        return self.c_buffer.get().GetInt64(offset)
+        cdef int64_t result = self.c_buffer.get().GetInt64(offset)
+        if sizeof(int16_t) <= sizeof(long):
+            return PyLong_FromLong(result)
+        else:
+            return PyLong_FromLongLong(result)
 
-    cpdef inline float get_float(self, uint32_t offset):
+    cpdef inline object get_float(self, uint32_t offset):
         self.check_bound(offset, <int32_t>4)
-        return self.c_buffer.get().GetFloat(offset)
+        return PyFloat_FromDouble(self.c_buffer.get().GetFloat(offset))
 
-    cpdef inline double get_double(self, uint32_t offset):
+    cpdef inline object get_double(self, uint32_t offset):
         self.check_bound(offset, <int32_t>8)
-        return self.c_buffer.get().GetDouble(offset)
+        return PyFloat_FromDouble(self.c_buffer.get().GetDouble(offset))
 
     cpdef inline check_bound(self, int32_t offset, int32_t length):
         cdef int32_t size_ = self.c_buffer.get().size()
@@ -286,44 +302,44 @@ cdef class Buffer:
         self.check_bound(offset, length)
         self.reader_index = offset + length
 
-    cpdef inline c_bool read_bool(self):
+    cpdef inline object read_bool(self):
         cdef int32_t offset = self.reader_index
         self.check_bound(offset, <int32_t>1)
         self.reader_index += <int32_t>1
-        return (<c_bool *>(self._c_address + offset))[0]
+        return bool_from((<c_bool *>(self._c_address + offset))[0])
 
-    cpdef inline int8_t read_int8(self):
+    cpdef inline object read_int8(self):
         cdef int32_t offset = self.reader_index
         self.check_bound(offset, <int32_t>1)
         self.reader_index += <int32_t>1
-        return (<int8_t *>(self._c_address + offset))[0]
+        return PyLong_FromLong((<int8_t *>(self._c_address + offset))[0])
 
-    cpdef inline int16_t read_int16(self):
+    cpdef inline object read_int16(self):
         value = self.get_int16(self.reader_index)
         self.reader_index += <int32_t>2
         return value
 
-    cpdef inline int16_t read_int24(self):
+    cpdef inline object read_int24(self):
         value = self.get_int24(self.reader_index)
         self.reader_index += <int32_t>3
         return value
 
-    cpdef inline int32_t read_int32(self):
+    cpdef inline object read_int32(self):
         value = self.get_int32(self.reader_index)
         self.reader_index += <int32_t>4
         return value
 
-    cpdef inline int64_t read_int64(self):
+    cpdef inline object read_int64(self):
         value = self.get_int64(self.reader_index)
         self.reader_index += <int32_t>8
         return value
 
-    cpdef inline float read_float(self):
+    cpdef inline object read_float(self):
         value = self.get_float(self.reader_index)
         self.reader_index += <int32_t>4
         return value
 
-    cpdef inline double read_double(self):
+    cpdef inline object read_double(self):
         value = self.get_double(self.reader_index)
         self.reader_index += <int32_t>8
         return value
