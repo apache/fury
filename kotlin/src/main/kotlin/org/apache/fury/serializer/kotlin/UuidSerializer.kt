@@ -19,26 +19,24 @@
 
 package org.apache.fury.serializer.kotlin
 
-import kotlin.random.Random
+import org.apache.fury.Fury
+import org.apache.fury.memory.MemoryBuffer
+import org.apache.fury.serializer.ImmutableSerializer
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
-object KotlinToJavaClass {
-    // Collections
-    val ArrayDequeClass = ArrayDeque::class.java
-    val EmptyListClass = emptyList<Any>().javaClass
-    val EmptySetClass = emptySet<Any>().javaClass
-    val EmptyMapClass = emptyMap<Any, Any>().javaClass
+@OptIn(ExperimentalUuidApi::class)
+class UuidSerializer(
+    fury: Fury
+) : ImmutableSerializer<Uuid>(fury, Uuid::class.java) {
+    override fun write(buffer: MemoryBuffer, value: Uuid) {
+        value.toLongs { msb, lsb ->
+            buffer.writeInt64(msb)
+            buffer.writeInt64(lsb)
+        }
+    }
 
-    // Unsigned
-    val UByteClass = UByte::class.java
-    val UShortClass = UShort::class.java
-    val UIntClass = UInt::class.java
-    val ULongClass = ULong::class.java
-
-    // Random
-    val RandomInternalClass = Random(1)::class.java
-    val RandomDefaultClass = Random.Default::class.java
-    val RandomSerializedClass = Class.forName("kotlin.random.Random\$Default\$Serialized")
-
-    // Regex
-    val RegexSerializedClass = Class.forName("kotlin.text.Regex\$Serialized")
+    override fun read(buffer: MemoryBuffer): Uuid {
+        return Uuid.fromLongs(buffer.readInt64(), buffer.readInt64())
+    }
 }
