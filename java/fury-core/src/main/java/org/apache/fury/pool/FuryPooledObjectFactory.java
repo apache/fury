@@ -22,6 +22,7 @@ package org.apache.fury.pool;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import org.apache.fury.Fury;
@@ -48,10 +49,16 @@ public class FuryPooledObjectFactory {
    */
   final Cache<ClassLoader, ClassLoaderFuryPooled> classLoaderFuryPooledCache;
 
+  private final AtomicReference<ClassLoader> classLoaderRef = new AtomicReference<>();
+
   /** ThreadLocal: ClassLoader. */
   private final ThreadLocal<ClassLoader> classLoaderLocal =
       ThreadLocal.withInitial(
           () -> {
+            ClassLoader cl = classLoaderRef.get();
+            if (cl != null) {
+              return cl;
+            }
             ClassLoader loader = Thread.currentThread().getContextClassLoader();
             if (loader == null) {
               loader = Fury.class.getClassLoader();
@@ -111,6 +118,7 @@ public class FuryPooledObjectFactory {
       // may be used to clear some classloader
       classLoader = Fury.class.getClassLoader();
     }
+    classLoaderRef.set(classLoader);
     classLoaderLocal.set(classLoader);
     getOrAddCache(classLoader);
   }
