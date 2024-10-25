@@ -116,6 +116,7 @@ public class Example {
 | `asyncCompilationEnabled`           | If enabled, serialization uses interpreter mode first and switches to JIT serialization after async serializer JIT for a class is finished.                                                                                                                                                                                                                                                                                                                                                                                       | `false`                                                        |
 | `scalaOptimizationEnabled`          | Enables or disables Scala-specific serialization optimization.                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | `false`                                                        |
 | `copyRef`                           | When disabled, the copy performance will be better. But fury deep copy will ignore circular and shared reference. Same reference of an object graph will be copied into different objects in one `Fury#copy`.                                                                                                                                                                                                                                                                                                                     | `true`                                                         |
+| `serializeEnumByName`               | When Enabled, fury serialize enum by name instead of ordinal.                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | `false`                                                        |
 
 ## Advanced Usage
 
@@ -320,7 +321,7 @@ Or implement `java.io.Externalizable` for a class.
 ```java
 import org.apache.fury.*;
 import org.apache.fury.config.*;
-import org.apache.fury.serializers.BufferObject;
+import org.apache.fury.serializer.BufferObject;
 import org.apache.fury.memory.MemoryBuffer;
 
 import java.util.*;

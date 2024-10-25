@@ -68,7 +68,7 @@ public final class FuryBuilder {
   ClassLoader classLoader;
   boolean compressInt = true;
   public LongEncoding longEncoding = LongEncoding.SLI;
-  boolean compressString = true;
+  boolean compressString = false;
   CompatibleMode compatibleMode = CompatibleMode.SCHEMA_CONSISTENT;
   boolean checkJdkClassSerializable = true;
   Class<? extends Serializer> defaultJDKStreamSerializerType = ObjectStreamSerializer.class;
@@ -82,6 +82,7 @@ public final class FuryBuilder {
   boolean scalaOptimizationEnabled = false;
   boolean suppressClassRegistrationWarnings = true;
   boolean deserializeNonexistentEnumValueAsNull = false;
+  boolean serializeEnumByName = false;
   MetaCompressor metaCompressor = new DeflaterMetaCompressor();
 
   public FuryBuilder() {}
@@ -130,6 +131,12 @@ public final class FuryBuilder {
   public FuryBuilder deserializeNonexistentEnumValueAsNull(
       boolean deserializeNonexistentEnumValueAsNull) {
     this.deserializeNonexistentEnumValueAsNull = deserializeNonexistentEnumValueAsNull;
+    return this;
+  }
+
+  /** deserialize and serialize enum by name. */
+  public FuryBuilder serializeEnumByName(boolean serializeEnumByName) {
+    this.serializeEnumByName = serializeEnumByName;
     return this;
   }
 

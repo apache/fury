@@ -21,10 +21,13 @@ package org.apache.fury;
 
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.util.Collections;
+import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.annotation.concurrent.ThreadSafe;
+import org.apache.fury.annotation.Internal;
 import org.apache.fury.io.FuryInputStream;
 import org.apache.fury.io.FuryReadableChannel;
 import org.apache.fury.memory.MemoryBuffer;
@@ -45,13 +48,13 @@ public class ThreadLocalFury extends AbstractThreadSafeFury {
 
   private final ThreadLocal<LoaderBinding> bindingThreadLocal;
   private Consumer<Fury> factoryCallback;
-  private final WeakHashMap<LoaderBinding, Object> allFury;
+  private final Map<LoaderBinding, Object> allFury;
 
   private ClassLoader classLoader;
 
   public ThreadLocalFury(Function<ClassLoader, Fury> furyFactory) {
     factoryCallback = f -> {};
-    allFury = new WeakHashMap<>();
+    allFury = Collections.synchronizedMap(new WeakHashMap<>());
     bindingThreadLocal =
         ThreadLocal.withInitial(
             () -> {
@@ -72,8 +75,9 @@ public class ThreadLocalFury extends AbstractThreadSafeFury {
     Fury fury = bindingThreadLocal.get().get();
   }
 
+  @Internal
   @Override
-  protected void processCallback(Consumer<Fury> callback) {
+  public void registerCallback(Consumer<Fury> callback) {
     factoryCallback = factoryCallback.andThen(callback);
     for (LoaderBinding binding : allFury.keySet()) {
       binding.visitAllFury(callback);
