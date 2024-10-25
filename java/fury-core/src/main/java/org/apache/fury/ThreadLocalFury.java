@@ -50,6 +50,8 @@ public class ThreadLocalFury extends AbstractThreadSafeFury {
   private Consumer<Fury> factoryCallback;
   private final Map<LoaderBinding, Object> allFury;
 
+  private ClassLoader classLoader;
+
   public ThreadLocalFury(Function<ClassLoader, Fury> furyFactory) {
     factoryCallback = f -> {};
     allFury = Collections.synchronizedMap(new WeakHashMap<>());
@@ -58,7 +60,11 @@ public class ThreadLocalFury extends AbstractThreadSafeFury {
             () -> {
               LoaderBinding binding = new LoaderBinding(furyFactory);
               binding.setBindingCallback(factoryCallback);
-              binding.setClassLoader(Thread.currentThread().getContextClassLoader());
+              ClassLoader cl =
+                  classLoader == null
+                      ? Thread.currentThread().getContextClassLoader()
+                      : classLoader;
+              binding.setClassLoader(cl);
               allFury.put(binding, null);
               return binding;
             });
@@ -258,6 +264,7 @@ public class ThreadLocalFury extends AbstractThreadSafeFury {
 
   @Override
   public void setClassLoader(ClassLoader classLoader, StagingType stagingType) {
+    this.classLoader = classLoader;
     bindingThreadLocal.get().setClassLoader(classLoader, stagingType);
   }
 
