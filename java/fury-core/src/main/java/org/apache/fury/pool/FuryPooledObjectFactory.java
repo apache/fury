@@ -49,15 +49,14 @@ public class FuryPooledObjectFactory {
    */
   final Cache<ClassLoader, ClassLoaderFuryPooled> classLoaderFuryPooledCache;
 
-  private final AtomicReference<ClassLoader> classLoaderRef = new AtomicReference<>();
+  private volatile ClassLoader classLoader = null;
 
   /** ThreadLocal: ClassLoader. */
   private final ThreadLocal<ClassLoader> classLoaderLocal =
       ThreadLocal.withInitial(
           () -> {
-            ClassLoader cl = classLoaderRef.get();
-            if (cl != null) {
-              return cl;
+            if (classLoader != null) {
+              return classLoader;
             }
             ClassLoader loader = Thread.currentThread().getContextClassLoader();
             if (loader == null) {
@@ -118,7 +117,7 @@ public class FuryPooledObjectFactory {
       // may be used to clear some classloader
       classLoader = Fury.class.getClassLoader();
     }
-    classLoaderRef.set(classLoader);
+    this.classLoader = classLoader;
     classLoaderLocal.set(classLoader);
     getOrAddCache(classLoader);
   }
