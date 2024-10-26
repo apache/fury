@@ -21,6 +21,7 @@ package org.apache.fury.serializer.collection;
 
 import static org.apache.fury.collection.Collections.ofHashSet;
 
+import java.lang.reflect.Field;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -40,6 +41,8 @@ import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.resolver.FieldResolver;
+import org.apache.fury.serializer.AbstractObjectSerializer;
+import org.apache.fury.serializer.AbstractObjectSerializer.InternalFieldInfo;
 import org.apache.fury.serializer.CompatibleSerializer;
 import org.apache.fury.serializer.JavaSerializer;
 import org.apache.fury.serializer.ObjectSerializer;
@@ -127,7 +130,7 @@ public class ChildContainerSerializers {
             ArrayList.class, LinkedList.class, ArrayDeque.class, Vector.class, HashSet.class
             // PriorityQueue/TreeSet/ConcurrentSkipListSet need comparator as constructor argument
             );
-    protected Serializer<T> objectSerializer;
+    protected InternalFieldInfo[] fieldInfos;
     protected final Serializer[] slotsSerializers;
 
     public ChildCollectionSerializer(Fury fury, Class<T> cls) {
@@ -151,11 +154,14 @@ public class ChildContainerSerializers {
     }
 
     @Override
-    public T copy(T originCollection) {
-      if (objectSerializer == null) {
-        objectSerializer = new ObjectSerializer<>(fury, type, false);
+    public Collection newCollection(Collection originCollection) {
+      Collection newCollection = super.newCollection(originCollection);
+      if (fieldInfos == null) {
+        List<Field> fields = ReflectionUtils.getFieldsWithoutSuperClasses(type, superClasses);
+        fieldInfos = AbstractObjectSerializer.buildFieldsInfo(fury, fields);
       }
-      return fury.copyObject(originCollection, objectSerializer);
+      AbstractObjectSerializer.copyFields(fury, fieldInfos, originCollection, newCollection);
+      return newCollection;
     }
   }
 
@@ -185,8 +191,8 @@ public class ChildContainerSerializers {
             HashMap.class, LinkedHashMap.class, ConcurrentHashMap.class
             // TreeMap/ConcurrentSkipListMap need comparator as constructor argument
             );
-    private Serializer<T> objectSerializer;
     private final Serializer[] slotsSerializers;
+    private InternalFieldInfo[] fieldInfos;
 
     public ChildMapSerializer(Fury fury, Class<T> cls) {
       super(fury, cls);
@@ -210,11 +216,14 @@ public class ChildContainerSerializers {
     }
 
     @Override
-    public T copy(T originMap) {
-      if (objectSerializer == null) {
-        objectSerializer = new ObjectSerializer<>(fury, type, false);
+    public Map newMap(Map originMap) {
+      Map newMap = super.newMap(originMap);
+      if (fieldInfos == null || fieldInfos.length == 0) {
+        List<Field> fields = ReflectionUtils.getFieldsWithoutSuperClasses(type, superClasses);
+        fieldInfos = AbstractObjectSerializer.buildFieldsInfo(fury, fields);
       }
-      return fury.copyObject(originMap, objectSerializer);
+      AbstractObjectSerializer.copyFields(fury, fieldInfos, originMap, newMap);
+      return newMap;
     }
   }
 

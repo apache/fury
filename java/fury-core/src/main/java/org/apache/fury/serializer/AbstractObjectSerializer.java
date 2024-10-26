@@ -177,6 +177,56 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
     }
   }
 
+  public static void copyFields(
+      Fury fury, InternalFieldInfo[] fieldInfos, Object originObj, Object newObj) {
+    for (InternalFieldInfo fieldInfo : fieldInfos) {
+      FieldAccessor fieldAccessor = fieldInfo.fieldAccessor;
+      long fieldOffset = fieldAccessor.getFieldOffset();
+      // record class won't go to this path;
+      assert fieldOffset != -1;
+      switch (fieldInfo.classId) {
+        case ClassResolver.PRIMITIVE_BYTE_CLASS_ID:
+          Platform.putByte(newObj, fieldOffset, Platform.getByte(originObj, fieldOffset));
+          break;
+        case ClassResolver.PRIMITIVE_CHAR_CLASS_ID:
+          Platform.putChar(newObj, fieldOffset, Platform.getChar(originObj, fieldOffset));
+          break;
+        case ClassResolver.PRIMITIVE_SHORT_CLASS_ID:
+          Platform.putShort(newObj, fieldOffset, Platform.getShort(originObj, fieldOffset));
+          break;
+        case ClassResolver.PRIMITIVE_INT_CLASS_ID:
+          Platform.putInt(newObj, fieldOffset, Platform.getInt(originObj, fieldOffset));
+          break;
+        case ClassResolver.PRIMITIVE_LONG_CLASS_ID:
+          Platform.putLong(newObj, fieldOffset, Platform.getLong(originObj, fieldOffset));
+          break;
+        case ClassResolver.PRIMITIVE_FLOAT_CLASS_ID:
+          Platform.putFloat(newObj, fieldOffset, Platform.getFloat(originObj, fieldOffset));
+          break;
+        case ClassResolver.PRIMITIVE_DOUBLE_CLASS_ID:
+          Platform.putDouble(newObj, fieldOffset, Platform.getDouble(originObj, fieldOffset));
+          break;
+        case ClassResolver.PRIMITIVE_BOOLEAN_CLASS_ID:
+          Platform.putBoolean(newObj, fieldOffset, Platform.getBoolean(originObj, fieldOffset));
+          break;
+        case ClassResolver.BOOLEAN_CLASS_ID:
+        case ClassResolver.BYTE_CLASS_ID:
+        case ClassResolver.CHAR_CLASS_ID:
+        case ClassResolver.SHORT_CLASS_ID:
+        case ClassResolver.INTEGER_CLASS_ID:
+        case ClassResolver.FLOAT_CLASS_ID:
+        case ClassResolver.LONG_CLASS_ID:
+        case ClassResolver.DOUBLE_CLASS_ID:
+        case ClassResolver.STRING_CLASS_ID:
+          Platform.putObject(newObj, fieldOffset, Platform.getObject(originObj, fieldOffset));
+          break;
+        default:
+          Platform.putObject(
+              newObj, fieldOffset, fury.copyObject(Platform.getObject(originObj, fieldOffset)));
+      }
+    }
+  }
+
   private Object copyField(Object targetObject, long fieldOffset, short classId) {
     switch (classId) {
       case ClassResolver.PRIMITIVE_BOOLEAN_CLASS_ID:
@@ -253,6 +303,29 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
               .collect(Collectors.toList());
       copyRecordInfo = new RecordInfo(type, fieldNames);
     }
+    return fieldInfos;
+  }
+
+  public static InternalFieldInfo[] buildFieldsInfo(Fury fury, List<Field> fields) {
+    List<Descriptor> descriptors = new ArrayList<>();
+    for (Field field : fields) {
+      if (!Modifier.isTransient(field.getModifiers()) && !Modifier.isStatic(field.getModifiers())) {
+        descriptors.add(new Descriptor(field, TypeRef.of(field.getGenericType()), null, null));
+      }
+    }
+    DescriptorGrouper descriptorGrouper =
+        createDescriptorGrouper(
+            fury.getClassResolver()::isMonomorphic,
+            descriptors,
+            false,
+            fury.compressInt(),
+            fury.compressLong());
+    Tuple3<Tuple2<FinalTypeField[], boolean[]>, GenericTypeField[], GenericTypeField[]> infos =
+        buildFieldInfos(fury, descriptorGrouper);
+    InternalFieldInfo[] fieldInfos = new InternalFieldInfo[descriptors.size()];
+    System.arraycopy(infos.f0.f0, 0, fieldInfos, 0, infos.f0.f0.length);
+    System.arraycopy(infos.f1, 0, fieldInfos, infos.f0.f0.length, infos.f1.length);
+    System.arraycopy(infos.f2, 0, fieldInfos, fieldInfos.length - infos.f2.length, infos.f2.length);
     return fieldInfos;
   }
 
@@ -336,7 +409,7 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
         fury);
   }
 
-  static class InternalFieldInfo {
+  public static class InternalFieldInfo {
     protected final short classId;
     protected final String qualifiedFieldName;
     protected final FieldAccessor fieldAccessor;
