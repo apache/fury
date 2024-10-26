@@ -58,7 +58,8 @@ from pyfury._serializer import (
     PickleStrongCacheStub,
     PICKLE_STRONG_CACHE_CLASS_ID,
     PICKLE_CACHE_CLASS_ID,
-    PickleCacheStub, SMALL_STRING_THRESHOLD,
+    PickleCacheStub,
+    SMALL_STRING_THRESHOLD,
 )
 from pyfury.type import (
     FuryType,
