@@ -35,3 +35,21 @@ Additional support is added for the following classes in kotlin:
 Additional Notes:
 
 - wrappers classes created from `withDefault` method is currently not supported.
+
+## Building Fury Kotlin
+
+```bash
+mvn clean
+mvn -T10 compile
+```
+## Code Format
+
+```bash
+mvn -T10 spotless:apply
+```
+
+## Testing
+
+```bash
+mvn -T10 test
+```
