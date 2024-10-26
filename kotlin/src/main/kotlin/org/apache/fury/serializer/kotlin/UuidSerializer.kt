@@ -26,7 +26,7 @@ import org.apache.fury.memory.MemoryBuffer
 import org.apache.fury.serializer.ImmutableSerializer
 
 @OptIn(ExperimentalUuidApi::class)
-class UuidSerializer(fury: Fury) : ImmutableSerializer<Uuid>(fury, Uuid::class.java) {
+public class UuidSerializer(fury: Fury) : ImmutableSerializer<Uuid>(fury, Uuid::class.java) {
   override fun write(buffer: MemoryBuffer, value: Uuid) {
     value.toLongs { msb, lsb ->
       buffer.writeInt64(msb)

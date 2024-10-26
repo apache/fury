@@ -29,7 +29,7 @@ import org.apache.fury.type.Type
  *
  * UByte is mapped to Type.UINT8
  */
-class UByteSerializer(
+public class UByteSerializer(
   fury: Fury,
 ) :
   Serializers.CrossLanguageCompatibleSerializer<UByte>(
@@ -54,7 +54,7 @@ class UByteSerializer(
  *
  * UShort is mapped to Type.UINT16.
  */
-class UShortSerializer(
+public class UShortSerializer(
   fury: Fury,
 ) :
   Serializers.CrossLanguageCompatibleSerializer<UShort>(
@@ -78,7 +78,7 @@ class UShortSerializer(
  *
  * UInt is mapped to Type.UINT32.
  */
-class UIntSerializer(
+public class UIntSerializer(
   fury: Fury,
 ) :
   Serializers.CrossLanguageCompatibleSerializer<UInt>(
@@ -103,7 +103,7 @@ class UIntSerializer(
  *
  * ULong is mapped to Type.UINT64.
  */
-class ULongSerializer(
+public class ULongSerializer(
   fury: Fury,
 ) :
   Serializers.CrossLanguageCompatibleSerializer<ULong>(

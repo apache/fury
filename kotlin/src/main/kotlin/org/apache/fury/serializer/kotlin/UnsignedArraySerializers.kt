@@ -26,7 +26,7 @@ import org.apache.fury.memory.MemoryBuffer
 import org.apache.fury.serializer.Serializer
 import org.apache.fury.type.Type
 
-abstract class AbstractDelegatingArraySerializer<T, T_Delegate>(
+public abstract class AbstractDelegatingArraySerializer<T, T_Delegate>(
   fury: Fury,
   cls: Class<T>,
   private val delegateClass: Class<T_Delegate>
@@ -35,9 +35,9 @@ abstract class AbstractDelegatingArraySerializer<T, T_Delegate>(
   // Lazily initialize the delegatingSerializer here to avoid lookup cost.
   private val delegatingSerializer by lazy { fury.classResolver.getSerializer(delegateClass) }
 
-  abstract fun toDelegateClass(value: T): T_Delegate
+  protected abstract fun toDelegateClass(value: T): T_Delegate
 
-  abstract fun fromDelegateClass(value: T_Delegate): T
+  protected abstract fun fromDelegateClass(value: T_Delegate): T
 
   override fun getXtypeId(): Short {
     return (-Type.LIST.id).toShort()
@@ -61,7 +61,7 @@ abstract class AbstractDelegatingArraySerializer<T, T_Delegate>(
   }
 }
 
-class UByteArraySerializer(
+public class UByteArraySerializer(
   fury: Fury,
 ) :
   AbstractDelegatingArraySerializer<UByteArray, ByteArray>(
@@ -69,14 +69,14 @@ class UByteArraySerializer(
     UByteArray::class.java,
     ByteArray::class.java
   ) {
-  override fun toDelegateClass(value: UByteArray) = value.toByteArray()
+  override fun toDelegateClass(value: UByteArray): ByteArray = value.toByteArray()
 
-  override fun fromDelegateClass(value: ByteArray) = value.toUByteArray()
+  override fun fromDelegateClass(value: ByteArray): UByteArray = value.toUByteArray()
 
   override fun copy(value: UByteArray): UByteArray = value.copyOf()
 }
 
-class UShortArraySerializer(
+public class UShortArraySerializer(
   fury: Fury,
 ) :
   AbstractDelegatingArraySerializer<UShortArray, ShortArray>(
@@ -84,14 +84,14 @@ class UShortArraySerializer(
     UShortArray::class.java,
     ShortArray::class.java
   ) {
-  override fun toDelegateClass(value: UShortArray) = value.toShortArray()
+  override fun toDelegateClass(value: UShortArray): ShortArray = value.toShortArray()
 
-  override fun fromDelegateClass(value: ShortArray) = value.toUShortArray()
+  override fun fromDelegateClass(value: ShortArray): UShortArray = value.toUShortArray()
 
-  override fun copy(value: UShortArray) = value.copyOf()
+  override fun copy(value: UShortArray): UShortArray = value.copyOf()
 }
 
-class UIntArraySerializer(
+public class UIntArraySerializer(
   fury: Fury,
 ) :
   AbstractDelegatingArraySerializer<UIntArray, IntArray>(
@@ -99,14 +99,14 @@ class UIntArraySerializer(
     UIntArray::class.java,
     IntArray::class.java
   ) {
-  override fun toDelegateClass(value: UIntArray) = value.toIntArray()
+  override fun toDelegateClass(value: UIntArray): IntArray = value.toIntArray()
 
-  override fun fromDelegateClass(value: IntArray) = value.toUIntArray()
+  override fun fromDelegateClass(value: IntArray): UIntArray = value.toUIntArray()
 
-  override fun copy(value: UIntArray) = value.copyOf()
+  override fun copy(value: UIntArray): UIntArray = value.copyOf()
 }
 
-class ULongArraySerializer(
+public class ULongArraySerializer(
   fury: Fury,
 ) :
   AbstractDelegatingArraySerializer<ULongArray, LongArray>(
@@ -114,9 +114,9 @@ class ULongArraySerializer(
     ULongArray::class.java,
     LongArray::class.java
   ) {
-  override fun toDelegateClass(value: ULongArray) = value.toLongArray()
+  override fun toDelegateClass(value: ULongArray): LongArray = value.toLongArray()
 
-  override fun fromDelegateClass(value: LongArray) = value.toULongArray()
+  override fun fromDelegateClass(value: LongArray): ULongArray = value.toULongArray()
 
-  override fun copy(value: ULongArray) = value.copyOf()
+  override fun copy(value: ULongArray): ULongArray = value.copyOf()
 }

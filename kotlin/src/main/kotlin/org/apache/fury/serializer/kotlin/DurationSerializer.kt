@@ -33,10 +33,10 @@ import org.apache.fury.memory.MemoryBuffer
 import org.apache.fury.serializer.ImmutableSerializer
 import org.apache.fury.serializer.Serializer
 
-class DurationSerializer(fury: Fury, needToWriteRef: Boolean) :
+public class DurationSerializer(fury: Fury, needToWriteRef: Boolean) :
   ImmutableSerializer<Duration>(fury, Duration::class.java, needToWriteRef) {
 
-  constructor(
+  public constructor(
     fury: Fury,
   ) : this(fury, fury.config.isTimeRefIgnored)
 

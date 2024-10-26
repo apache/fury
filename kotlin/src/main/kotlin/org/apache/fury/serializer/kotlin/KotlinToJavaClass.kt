@@ -21,7 +21,7 @@ package org.apache.fury.serializer.kotlin
 
 import kotlin.random.Random
 
-object KotlinToJavaClass {
+internal object KotlinToJavaClass {
   // Collections
   val ArrayDequeClass = ArrayDeque::class.java
   val EmptyListClass = emptyList<Any>().javaClass

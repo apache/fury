@@ -25,7 +25,7 @@ import org.apache.fury.serializer.collection.AbstractCollectionSerializer
 
 /** Serializer for kotlin collections. */
 @Suppress("UNCHECKED_CAST")
-abstract class AbstractKotlinCollectionSerializer<E, T : Iterable<E>>(fury: Fury, cls: Class<T>) :
+public abstract class AbstractKotlinCollectionSerializer<E, T : Iterable<E>>(fury: Fury, cls: Class<T>) :
   AbstractCollectionSerializer<T>(fury, cls) {
   abstract override fun onCollectionWrite(buffer: MemoryBuffer, value: T): Collection<E>
 
@@ -43,7 +43,7 @@ abstract class AbstractKotlinCollectionSerializer<E, T : Iterable<E>>(fury: Fury
 }
 
 /** Serializer for [[kotlin.collections.ArrayDeque]]. */
-class KotlinArrayDequeSerializer<E>(
+public class KotlinArrayDequeSerializer<E>(
   fury: Fury,
   cls: Class<ArrayDeque<E>>,
 ) : AbstractKotlinCollectionSerializer<E, ArrayDeque<E>>(fury, cls) {
@@ -60,7 +60,7 @@ class KotlinArrayDequeSerializer<E>(
   }
 }
 
-typealias AdaptedCollection<E> = java.util.AbstractCollection<E>
+public typealias AdaptedCollection<E> = java.util.AbstractCollection<E>
 
 /** An adapter which wraps a kotlin iterable into a [[java.util.Collection]]. */
 private class IterableAdapter<E>(coll: Iterable<E>) : AdaptedCollection<E>() {
