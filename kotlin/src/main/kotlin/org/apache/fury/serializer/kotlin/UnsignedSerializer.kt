@@ -28,93 +28,96 @@ import org.apache.fury.type.Type
  * UByteSerializer
  *
  * UByte is mapped to Type.UINT8
- *
  */
-class UByteSerializer(
-    fury: Fury,
-) : Serializers.CrossLanguageCompatibleSerializer<UByte>(
+public class UByteSerializer(
+  fury: Fury,
+) :
+  Serializers.CrossLanguageCompatibleSerializer<UByte>(
     fury,
     UByte::class.java,
     Type.UINT8.id,
     fury.isBasicTypesRefIgnored,
-    true) {
+    true
+  ) {
 
-    override fun write(buffer: MemoryBuffer, value: UByte) {
-        buffer.writeByte(value.toInt())
-    }
+  override fun write(buffer: MemoryBuffer, value: UByte) {
+    buffer.writeByte(value.toInt())
+  }
 
-    override fun read(buffer: MemoryBuffer): UByte {
-        return buffer.readByte().toUByte()
-    }
+  override fun read(buffer: MemoryBuffer): UByte {
+    return buffer.readByte().toUByte()
+  }
 }
-
 
 /**
  * UShortSerializer
  *
  * UShort is mapped to Type.UINT16.
- *
  */
-class UShortSerializer(
-    fury: Fury,
-) : Serializers.CrossLanguageCompatibleSerializer<UShort>(
+public class UShortSerializer(
+  fury: Fury,
+) :
+  Serializers.CrossLanguageCompatibleSerializer<UShort>(
     fury,
     UShort::class.java,
     Type.UINT16.id,
     fury.isBasicTypesRefIgnored,
     true
-) {
-    override fun write(buffer: MemoryBuffer, value: UShort) {
-        buffer.writeVarUint32(value.toInt())
-    }
-    override fun read(buffer: MemoryBuffer): UShort {
-        return buffer.readVarUint32().toUShort()
-    }
+  ) {
+  override fun write(buffer: MemoryBuffer, value: UShort) {
+    buffer.writeVarUint32(value.toInt())
+  }
+
+  override fun read(buffer: MemoryBuffer): UShort {
+    return buffer.readVarUint32().toUShort()
+  }
 }
 
 /**
  * UInt Serializer
  *
  * UInt is mapped to Type.UINT32.
- *
  */
-class UIntSerializer(
-    fury: Fury,
-) : Serializers.CrossLanguageCompatibleSerializer<UInt>(
+public class UIntSerializer(
+  fury: Fury,
+) :
+  Serializers.CrossLanguageCompatibleSerializer<UInt>(
     fury,
     UInt::class.java,
     Type.UINT32.id,
     fury.isBasicTypesRefIgnored,
-    true) {
+    true
+  ) {
 
-    override fun write(buffer: MemoryBuffer, value: UInt) {
-        buffer.writeVarUint32(value.toInt())
-    }
+  override fun write(buffer: MemoryBuffer, value: UInt) {
+    buffer.writeVarUint32(value.toInt())
+  }
 
-    override fun read(buffer: MemoryBuffer): UInt {
-        return buffer.readVarUint32().toUInt()
-    }
+  override fun read(buffer: MemoryBuffer): UInt {
+    return buffer.readVarUint32().toUInt()
+  }
 }
 
 /**
  * ULong Serializer
  *
  * ULong is mapped to Type.UINT64.
- *
  */
-class ULongSerializer(
-    fury: Fury,
-) : Serializers.CrossLanguageCompatibleSerializer<ULong>(
+public class ULongSerializer(
+  fury: Fury,
+) :
+  Serializers.CrossLanguageCompatibleSerializer<ULong>(
     fury,
     ULong::class.java,
     Type.UINT64.id,
     fury.isBasicTypesRefIgnored,
     true
-) {
-    override fun write(buffer: MemoryBuffer, value: ULong) {
-        buffer.writeVarUint64(value.toLong())
-    }
-    override fun read(buffer: MemoryBuffer): ULong {
-        return buffer.readVarUint64().toULong()
-    }
+  ) {
+  override fun write(buffer: MemoryBuffer, value: ULong) {
+    buffer.writeVarUint64(value.toLong())
+  }
+
+  override fun read(buffer: MemoryBuffer): ULong {
+    return buffer.readVarUint64().toULong()
+  }
 }
