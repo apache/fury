@@ -233,6 +233,7 @@ cdef int32_t NOT_NULL_PYBOOL_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | \
                                     (PYBOOL_CLASS_ID << 9)
 cdef int32_t NOT_NULL_STRING_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | \
                                     (STRING_CLASS_ID << 9)
+cdef int32_t SMALL_STRING_THRESHOLD = 16
 
 
 cdef class BufferObject:
@@ -659,13 +660,17 @@ cdef class ClassResolver:
     cdef inline _write_enum_string_bytes(
             self, Buffer buffer, MetaStringBytes enum_string_bytes):
         cdef int16_t dynamic_class_id = enum_string_bytes.dynamic_write_string_id
+        cdef int32_t length = enum_string_bytes.length
         if dynamic_class_id == DEFAULT_DYNAMIC_WRITE_STRING_ID:
             dynamic_class_id = self.dynamic_write_string_id
             enum_string_bytes.dynamic_write_string_id = dynamic_class_id
             self.dynamic_write_string_id += 1
             self._c_dynamic_written_enum_string.push_back(<PyObject*>enum_string_bytes)
-            buffer.write_varint32(enum_string_bytes.length << 1)
-            buffer.write_int64(enum_string_bytes.hashcode)
+            buffer.write_varint32(length << 1)
+            if length <= SMALL_STRING_THRESHOLD:
+                buffer.write_int8(Encoding.UTF_8.value)
+            else:
+                buffer.write_int64(enum_string_bytes.hashcode)
             buffer.write_bytes(enum_string_bytes.data)
         else:
             buffer.write_varint32(((dynamic_class_id + 1) << 1) | 1)
@@ -675,16 +680,31 @@ cdef class ClassResolver:
         cdef int32_t length = header >> 1
         if header & 0b1 != 0:
             return <MetaStringBytes>self._c_dynamic_id_to_enum_string_vec[length - 1]
-        cdef int64_t hashcode = buffer.read_int64()
+        cdef int64_t v1 = 0, v2 = 0, hashcode
+        cdef PyObject* enum_str_ptr
         cdef int32_t reader_index = buffer.reader_index
-        buffer.check_bound(reader_index, length)
-        buffer.reader_index = reader_index + length
-        cdef PyObject* enum_str_ptr = self._c_hash_to_enum_string_bytes[hashcode]
-        if enum_str_ptr != NULL:
-            self._c_dynamic_id_to_enum_string_vec.push_back(enum_str_ptr)
-            return <MetaStringBytes>enum_str_ptr
-        cdef bytes str_bytes = buffer.get_bytes(reader_index, length)
-        cdef MetaStringBytes enum_str = MetaStringBytes(str_bytes, hashcode=hashcode)
+        if length <= SMALL_STRING_THRESHOLD:
+            if length <= 8:
+                v1 = buffer.read_bytes_as_int64(length)
+            else:
+                v1 = buffer.read_int64()
+                v2 = buffer.read_bytes_as_int64(length - 8)
+            hashcode = v1 * 31 + v2
+            enum_str_ptr = self._c_hash_to_enum_string_bytes[hashcode]
+            if enum_str_ptr != NULL:
+                self._c_dynamic_id_to_enum_string_vec.push_back(enum_str_ptr)
+                return <MetaStringBytes>enum_str_ptr
+            str_bytes = buffer.get_bytes(reader_index - length, length)
+        else:
+            hashcode = buffer.read_int64()
+            buffer.check_bound(reader_index, length)
+            buffer.reader_index = reader_index + length
+            enum_str_ptr = self._c_hash_to_enum_string_bytes[hashcode]
+            if enum_str_ptr != NULL:
+                self._c_dynamic_id_to_enum_string_vec.push_back(enum_str_ptr)
+                return <MetaStringBytes>enum_str_ptr
+            str_bytes = buffer.get_bytes(reader_index, length)
+            enum_str = MetaStringBytes(str_bytes, hashcode=hashcode)
         self._enum_str_set.add(enum_str)
         enum_str_ptr = <PyObject*>enum_str
         self._c_hash_to_enum_string_bytes[hashcode] = enum_str_ptr
