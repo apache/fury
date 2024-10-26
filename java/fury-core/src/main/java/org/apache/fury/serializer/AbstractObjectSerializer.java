@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import org.apache.fury.Fury;
 import org.apache.fury.collection.Tuple2;
@@ -178,7 +177,8 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
     }
   }
 
-  public static void copyField(Fury fury, InternalFieldInfo[] fieldInfos, Object originObj, Object newObj) {
+  public static void copyField(
+      Fury fury, InternalFieldInfo[] fieldInfos, Object originObj, Object newObj) {
     for (InternalFieldInfo fieldInfo : fieldInfos) {
       FieldAccessor fieldAccessor = fieldInfo.fieldAccessor;
       long fieldOffset = fieldAccessor.getFieldOffset();
@@ -278,7 +278,8 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
       }
     } else {
       for (Field field : ReflectionUtils.getFields(type, true)) {
-        if (!Modifier.isTransient(field.getModifiers()) && !Modifier.isStatic(field.getModifiers())) {
+        if (!Modifier.isTransient(field.getModifiers())
+            && !Modifier.isStatic(field.getModifiers())) {
           descriptors.add(new Descriptor(field, TypeRef.of(field.getGenericType()), null, null));
         }
       }
