@@ -137,6 +137,9 @@
                                 <sourceDir>${project.basedir}/src/main/kotlin</sourceDir>
                                 <sourceDir>${project.basedir}/src/main/java</sourceDir>
                             </sourceDirs>
+                            <args>
+                                <arg>-Xexplicit-api=strict</arg> <!-- Enable explicit api mode -->
+                            </args>
                         </configuration>
                     </execution>
                     <execution>
