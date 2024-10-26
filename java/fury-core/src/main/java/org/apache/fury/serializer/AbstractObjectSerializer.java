@@ -309,7 +309,7 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
   public static InternalFieldInfo[] buildFieldsInfo(Fury fury, List<Field> fields) {
     List<Descriptor> descriptors = new ArrayList<>();
     for (Field field : fields) {
-      if (!Modifier.isStatic(field.getModifiers())) {
+      if (!Modifier.isTransient(field.getModifiers()) && !Modifier.isStatic(field.getModifiers())) {
         descriptors.add(new Descriptor(field, TypeRef.of(field.getGenericType()), null, null));
       }
     }
