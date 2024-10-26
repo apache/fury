@@ -25,27 +25,23 @@ import org.testng.Assert
 import org.testng.annotations.Test
 
 class StringsSerializerTest {
-    @Test
-    fun testSerializeStringValue() {
-        val fury: Fury = Fury.builder()
-            .withLanguage(Language.JAVA)
-            .requireClassRegistration(true)
-            .build()
+  @Test
+  fun testSerializeStringValue() {
+    val fury: Fury =
+      Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(true).build()
 
-        KotlinSerializers.registerSerializers(fury)
-        val value:String = "Hello World!"
-        Assert.assertEquals(value, fury.deserialize(fury.serialize(value)))
-    }
+    KotlinSerializers.registerSerializers(fury)
+    val value: String = "Hello World!"
+    Assert.assertEquals(value, fury.deserialize(fury.serialize(value)))
+  }
 
-    @Test
-    fun testSerializeNullableStringValue() {
-        val fury: Fury = Fury.builder()
-            .withLanguage(Language.JAVA)
-            .requireClassRegistration(true)
-            .build()
+  @Test
+  fun testSerializeNullableStringValue() {
+    val fury: Fury =
+      Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(true).build()
 
-        KotlinSerializers.registerSerializers(fury)
-        val value:String? = null
-        Assert.assertEquals(value, fury.deserialize(fury.serialize(value)))
-    }
+    KotlinSerializers.registerSerializers(fury)
+    val value: String? = null
+    Assert.assertEquals(value, fury.deserialize(fury.serialize(value)))
+  }
 }
