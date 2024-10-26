@@ -32,8 +32,8 @@
       <maven.compiler.source>1.8</maven.compiler.source>
       <maven.compiler.target>1.8</maven.compiler.target>
       <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <kotlin.code.style>official</kotlin.code.style>
-        <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
+      <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
+      <maven-spotless-plugin.version>2.43.0</maven-spotless-plugin.version>
     </properties>
 
     <build>
@@ -166,6 +166,26 @@
                 <configuration>
                     <source>8</source>
                     <target>8</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <version>${maven-spotless-plugin.version}</version>
+                <configuration>
+                    <java>
+                        <googleJavaFormat>
+                            <!-- 1.19.1 support JDK21 -->
+                            <version>1.19.1</version>
+                            <style>GOOGLE</style>
+                        </googleJavaFormat>
+                    </java>
+                    <kotlin>
+                        <ktfmt>
+                            <version>0.46</version>
+                            <style>GOOGLE</style>
+                        </ktfmt>
+                    </kotlin>
                 </configuration>
             </plugin>
         </plugins>
