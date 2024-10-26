@@ -97,7 +97,6 @@ public final class LongLongMap<V> {
   }
 
   public V put(long k1, long k2, V value) {
-    assert k1 != 0;
     int i = locateKey(k1, k2);
     if (i >= 0) { // Existing key was found.
       V[] valueTable = this.valueTable;
@@ -115,7 +114,6 @@ public final class LongLongMap<V> {
   }
 
   public V get(long k1, long k2) {
-    assert k1 != 0;
     LongLongKey[] keyTable = this.keyTable;
     for (int i = place(k1, k2); ; i = i + 1 & mask) {
       LongLongKey other = keyTable[i];
