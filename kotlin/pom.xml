@@ -152,6 +152,8 @@
                             <sourceDirs>
                                 <sourceDir>${project.basedir}/src/test/kotlin</sourceDir>
                             </sourceDirs>
+                            <args>
+                            </args>
                         </configuration>
                     </execution>
                 </executions>
