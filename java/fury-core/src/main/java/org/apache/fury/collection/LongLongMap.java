@@ -39,10 +39,7 @@ public final class LongLongMap<V> {
 
     @Override
     public String toString() {
-      return "LongLongKey{" +
-        "k1=" + k1 +
-        ", k2=" + k2 +
-        '}';
+      return "LongLongKey{" + "k1=" + k1 + ", k2=" + k2 + '}';
     }
   }
 
@@ -53,12 +50,12 @@ public final class LongLongMap<V> {
   private int threshold;
 
   /**
-   * Used by {@link #place(long, long)} to bit shift the upper bits of a {@code long} into a usable range
-   * (&gt;= 0 and &lt;= {@link #mask}). The shift can be negative, which is convenient to match the
-   * number of bits in mask: if mask is a 7-bit number, a shift of -7 shifts the upper 7 bits into
-   * the lowest 7 positions. This class sets the shift &gt; 32 and &lt; 64, which if used with an
-   * int will still move the upper bits of an int to the lower bits due to Java's implicit modulus
-   * on shifts.
+   * Used by {@link #place(long, long)} to bit shift the upper bits of a {@code long} into a usable
+   * range (&gt;= 0 and &lt;= {@link #mask}). The shift can be negative, which is convenient to
+   * match the number of bits in mask: if mask is a 7-bit number, a shift of -7 shifts the upper 7
+   * bits into the lowest 7 positions. This class sets the shift &gt; 32 and &lt; 64, which if used
+   * with an int will still move the upper bits of an int to the lower bits due to Java's implicit
+   * modulus on shifts.
    *
    * <p>{@link #mask} can also be used to mask the low bits of a number, which may be faster for
    * some hashcodes, if {@link #place(long, long)} is overridden.
@@ -67,8 +64,8 @@ public final class LongLongMap<V> {
 
   /**
    * A bitmask used to confine hash codes to the size of the table. Must be all 1 bits in its low
-   * positions, ie a power of two minus 1. If {@link #place(long, long)} is override, this can be used
-   * instead of {@link #shift} to isolate usable bits of a hash.
+   * positions, ie a power of two minus 1. If {@link #place(long, long)} is override, this can be
+   * used instead of {@link #shift} to isolate usable bits of a hash.
    */
   private int mask;
 
@@ -79,8 +76,8 @@ public final class LongLongMap<V> {
    * @param initialCapacity If not a power of two, it is increased to the next nearest power of two.
    */
   public LongLongMap(int initialCapacity, float loadFactor) {
-    Preconditions.checkArgument(0 <= loadFactor && loadFactor <= 1,
-      "loadFactor %s must be > 0 and < 1", loadFactor);
+    Preconditions.checkArgument(
+        0 <= loadFactor && loadFactor <= 1, "loadFactor %s must be > 0 and < 1", loadFactor);
     this.loadFactor = loadFactor;
     int tableSize = FuryObjectMap.tableSize(initialCapacity, loadFactor);
     threshold = (int) (tableSize * loadFactor);
@@ -89,7 +86,6 @@ public final class LongLongMap<V> {
     keyTable = new LongLongKey[tableSize];
     valueTable = (V[]) new Object[tableSize];
   }
-
 
   private int place(long k1, long k2) {
     return (int) ((k1 * 31 + k2) * 0x9E3779B97F4A7C15L >>> shift);

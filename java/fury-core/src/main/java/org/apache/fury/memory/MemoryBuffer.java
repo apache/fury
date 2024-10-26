@@ -2174,16 +2174,16 @@ public final class MemoryBuffer {
     readBytes(dst, 0, dst.length);
   }
 
-  /**
-   * Read {@code len} bytes into a long using little-endian order.
-   */
+  /** Read {@code len} bytes into a long using little-endian order. */
   public long readBytesAsInt64(int len) {
     int readerIdx = readerIndex;
     // use subtract to avoid overflow
     int remaining = size - readerIdx;
     if (remaining >= 8) {
       readerIndex = readerIdx + len;
-      long v = UNSAFE.getLong(heapMemory, address + readerIdx) & (0xffffffffffffffffL >>> ((8 - len) * 8));
+      long v =
+          UNSAFE.getLong(heapMemory, address + readerIdx)
+              & (0xffffffffffffffffL >>> ((8 - len) * 8));
       return LITTLE_ENDIAN ? v : Long.reverseBytes(v);
     }
     return slowReadBytesAsInt64(remaining, len);

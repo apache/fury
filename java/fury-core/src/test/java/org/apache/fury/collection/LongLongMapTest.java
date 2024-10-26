@@ -1,20 +1,20 @@
 package org.apache.fury.collection;
 
+import static org.testng.Assert.*;
+
 import org.testng.Assert;
 import org.testng.annotations.Test;
-
-import static org.testng.Assert.*;
 
 public class LongLongMapTest {
 
   @Test
   public void testPut() {
     LongLongMap<String> map = new LongLongMap<>(10, 0.5f);
-    map.put(1,1, "a");
-    map.put(1,2, "b");
-    map.put(1,3, "c");
-    map.put(2,1, "d");
-    map.put(3,1, "f");
+    map.put(1, 1, "a");
+    map.put(1, 2, "b");
+    map.put(1, 3, "c");
+    map.put(2, 1, "d");
+    map.put(3, 1, "f");
     Assert.assertEquals(map.get(1, 1), "a");
     Assert.assertEquals(map.get(1, 2), "b");
     Assert.assertEquals(map.get(1, 3), "c");

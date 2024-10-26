@@ -19,6 +19,7 @@
 
 package org.apache.fury.resolver;
 
+import java.util.Arrays;
 import org.apache.fury.collection.LongLongMap;
 import org.apache.fury.collection.LongMap;
 import org.apache.fury.collection.ObjectMap;
@@ -27,8 +28,6 @@ import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.meta.Encoders;
 import org.apache.fury.meta.MetaString;
 import org.apache.fury.util.MurmurHash3;
-
-import java.util.Arrays;
 
 /**
  * A resolver for limited string value writing. Currently, we only support classname dynamic
@@ -48,7 +47,7 @@ public final class MetaStringResolver {
   private final LongMap<MetaStringBytes> hash2MetaStringBytesMap =
       new LongMap<>(initialCapacity, furyMapLoadFactor);
   private final LongLongMap<MetaStringBytes> longLongMap =
-    new LongLongMap<>(initialCapacity, furyMapLoadFactor);
+      new LongLongMap<>(initialCapacity, furyMapLoadFactor);
   // Every enum bytes should be singleton at every fury, since we keep state in it.
   private final ObjectMap<MetaString, MetaStringBytes> metaString2BytesMap =
       new ObjectMap<>(initialCapacity, furyMapLoadFactor);
@@ -139,8 +138,10 @@ public final class MetaStringResolver {
   public MetaStringBytes readMetaStringBytesWithFlag(MemoryBuffer buffer, int header) {
     int len = header >>> 2;
     if ((header & 0b10) == 0) {
-      MetaStringBytes byteString = len <= SMALL_STRING_THRESHOLD ?
-        readSmallMetaStringBytes(buffer, len) : readBigMetaStringBytes(buffer, len, buffer.readInt64());
+      MetaStringBytes byteString =
+          len <= SMALL_STRING_THRESHOLD
+              ? readSmallMetaStringBytes(buffer, len)
+              : readBigMetaStringBytes(buffer, len, buffer.readInt64());
       updateDynamicString(byteString);
       return byteString;
     } else {
@@ -152,8 +153,10 @@ public final class MetaStringResolver {
       MemoryBuffer buffer, MetaStringBytes cache, int header) {
     int len = header >>> 2;
     if ((header & 0b10) == 0) {
-      MetaStringBytes byteString = len <= SMALL_STRING_THRESHOLD ?
-        readSmallMetaStringBytes(buffer, cache, len) : readBigMetaStringBytes(buffer, cache, len);
+      MetaStringBytes byteString =
+          len <= SMALL_STRING_THRESHOLD
+              ? readSmallMetaStringBytes(buffer, cache, len)
+              : readBigMetaStringBytes(buffer, cache, len);
       updateDynamicString(byteString);
       return byteString;
     } else {
@@ -165,8 +168,10 @@ public final class MetaStringResolver {
     int header = buffer.readVarUint32Small7();
     int len = header >>> 1;
     if ((header & 0b1) == 0) {
-      MetaStringBytes byteString = len > SMALL_STRING_THRESHOLD ?
-        readBigMetaStringBytes(buffer, len, buffer.readInt64()) : readSmallMetaStringBytes(buffer, len);
+      MetaStringBytes byteString =
+          len > SMALL_STRING_THRESHOLD
+              ? readBigMetaStringBytes(buffer, len, buffer.readInt64())
+              : readSmallMetaStringBytes(buffer, len);
       updateDynamicString(byteString);
       return byteString;
     } else {
@@ -178,8 +183,10 @@ public final class MetaStringResolver {
     int header = buffer.readVarUint32Small7();
     int len = header >>> 1;
     if ((header & 0b1) == 0) {
-      MetaStringBytes byteString = len <= SMALL_STRING_THRESHOLD ?
-        readSmallMetaStringBytes(buffer, cache, len) : readBigMetaStringBytes(buffer, cache, len);
+      MetaStringBytes byteString =
+          len <= SMALL_STRING_THRESHOLD
+              ? readSmallMetaStringBytes(buffer, cache, len)
+              : readBigMetaStringBytes(buffer, cache, len);
       updateDynamicString(byteString);
       return byteString;
     } else {
@@ -187,7 +194,8 @@ public final class MetaStringResolver {
     }
   }
 
-  private MetaStringBytes readBigMetaStringBytes(MemoryBuffer buffer, MetaStringBytes cache, int len) {
+  private MetaStringBytes readBigMetaStringBytes(
+      MemoryBuffer buffer, MetaStringBytes cache, int len) {
     long hashCode = buffer.readInt64();
     if (cache.hashCode == hashCode) {
       // skip byteString data
@@ -227,7 +235,8 @@ public final class MetaStringResolver {
     return byteString;
   }
 
-  private MetaStringBytes readSmallMetaStringBytes(MemoryBuffer buffer, MetaStringBytes cache, int len) {
+  private MetaStringBytes readSmallMetaStringBytes(
+      MemoryBuffer buffer, MetaStringBytes cache, int len) {
     long v1, v2 = 0;
     byte encoding = buffer.readByte();
     if (len <= 8) {
