@@ -2204,7 +2204,7 @@ public final class MemoryBuffer {
     } else {
       long start = address + readerIdx;
       for (int i = 0; i < len; i++) {
-        result |= ((long) UNSAFE.getByte(start, start + i) & 0xff) << (i * 8);
+        result |= ((long) UNSAFE.getByte(null, start + i) & 0xff) << (i * 8);
       }
     }
     return result;
