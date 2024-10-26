@@ -24,7 +24,11 @@ import static org.apache.fury.collection.FuryObjectMap.MASK_NUMBER;
 import org.apache.fury.annotation.Internal;
 import org.apache.fury.util.Preconditions;
 
-// Derived from
+/**
+ * A fast linear hash probe based map whose key is two long values `(long k1, long k2)`. This map
+ * can avoid creating a java object for key to save memory/cpu cost.
+ */
+// The linear probed hash is derived from
 // https://github.com/EsotericSoftware/kryo/blob/135df69526615bb3f6b34846e58ba3fec3b631c3/src/com/esotericsoftware/kryo/util/IntMap.java.
 @SuppressWarnings("unchecked")
 @Internal
@@ -143,7 +147,7 @@ public final class LongLongMap<V> {
             if (keyTable[j] == null) {
               keyTable[j] = new LongLongKey(key.k1, key.k2);
               valueTable[j] = oldValueTable[i];
-              return;
+              break;
             }
           }
         }
