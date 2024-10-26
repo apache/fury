@@ -46,6 +46,7 @@ from libcpp.vector cimport vector
 from cpython cimport PyObject
 from cpython.ref cimport *
 from libcpp cimport bool as c_bool
+from libcpp.utility cimport pair
 from cython.operator cimport dereference as deref
 from pyfury._util cimport Buffer
 from pyfury.includes.libabsl cimport flat_hash_map
@@ -309,6 +310,7 @@ cdef class ClassResolver:
         flat_hash_map[int64_t, PyObject*] _c_hash_to_classinfo
         # hash -> MetaStringBytes
         flat_hash_map[int64_t, PyObject*] _c_hash_to_enum_string_bytes
+        flat_hash_map[pair[int64_t, int64_t], PyObject*] _c_hash_to_small_metastring_bytes
         # classname MetaStringBytes address -> class
         flat_hash_map[uint64_t, PyObject*] _c_str_bytes_to_class
         # classname MetaStringBytes address -> str
@@ -683,34 +685,38 @@ cdef class ClassResolver:
             return <MetaStringBytes>self._c_dynamic_id_to_enum_string_vec[length - 1]
         cdef int64_t v1 = 0, v2 = 0, hashcode
         cdef PyObject* enum_str_ptr
-        cdef int32_t reader_index = buffer.reader_index
+        cdef int32_t reader_index
         if length <= SMALL_STRING_THRESHOLD:
+            # TODO(chaokunyang) support metastring encoding
+            buffer.read_int8()
             if length <= 8:
                 v1 = buffer.read_bytes_as_int64(length)
             else:
                 v1 = buffer.read_int64()
                 v2 = buffer.read_bytes_as_int64(length - 8)
             hashcode = v1 * 31 + v2
-            enum_str_ptr = self._c_hash_to_enum_string_bytes[hashcode]
-            if enum_str_ptr != NULL:
-                self._c_dynamic_id_to_enum_string_vec.push_back(enum_str_ptr)
-                return <MetaStringBytes>enum_str_ptr
-            str_bytes = buffer.get_bytes(reader_index - length, length)
+            enum_str_ptr = self._c_hash_to_small_metastring_bytes[pair[int64_t, int64_t](v1, v2)]
+            if enum_str_ptr == NULL:
+                reader_index = buffer.reader_index
+                str_bytes = buffer.get_bytes(reader_index - length, length)
+                enum_str = MetaStringBytes(str_bytes, hashcode=hashcode)
+                self._enum_str_set.add(enum_str)
+                enum_str_ptr = <PyObject*>enum_str
+                self._c_hash_to_small_metastring_bytes[pair[int64_t, int64_t](v1, v2)] = enum_str_ptr
         else:
             hashcode = buffer.read_int64()
+            reader_index = buffer.reader_index
             buffer.check_bound(reader_index, length)
             buffer.reader_index = reader_index + length
             enum_str_ptr = self._c_hash_to_enum_string_bytes[hashcode]
-            if enum_str_ptr != NULL:
-                self._c_dynamic_id_to_enum_string_vec.push_back(enum_str_ptr)
-                return <MetaStringBytes>enum_str_ptr
-            str_bytes = buffer.get_bytes(reader_index, length)
-            enum_str = MetaStringBytes(str_bytes, hashcode=hashcode)
-        self._enum_str_set.add(enum_str)
-        enum_str_ptr = <PyObject*>enum_str
-        self._c_hash_to_enum_string_bytes[hashcode] = enum_str_ptr
+            if enum_str_ptr == NULL:
+                str_bytes = buffer.get_bytes(reader_index, length)
+                enum_str = MetaStringBytes(str_bytes, hashcode=hashcode)
+                self._enum_str_set.add(enum_str)
+                enum_str_ptr = <PyObject*>enum_str
+                self._c_hash_to_enum_string_bytes[hashcode] = enum_str_ptr
         self._c_dynamic_id_to_enum_string_vec.push_back(enum_str_ptr)
-        return enum_str
+        return <MetaStringBytes>enum_str_ptr
 
     cpdef inline xwrite_class(self, Buffer buffer, cls):
         cdef PyObject* classinfo_ptr = self._c_classes_info[<uintptr_t><PyObject*>cls]
