@@ -267,6 +267,7 @@ The text of each license is also included in licenses/LICENSE-[project].txt.
       java/fury-core/src/main/java/org/apache/fury/collection/IdentityMap.java
       java/fury-core/src/main/java/org/apache/fury/collection/IdentityObjectIntMap.java
       java/fury-core/src/main/java/org/apache/fury/collection/LongMap.java
+      java/fury-core/src/main/java/org/apache/fury/collection/LongLongMap.java
       java/fury-core/src/main/java/org/apache/fury/collection/ObjectIntMap.java
       java/fury-core/src/main/java/org/apache/fury/type/Generics.java
       java/fury-core/src/test/java/org/apache/fury/type/GenericsTest.java

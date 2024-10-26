@@ -40,6 +40,7 @@ excludes = [
     "java/fury-core/src/main/java/org/apache/fury/collection/IdentityMap.java",
     "java/fury-core/src/main/java/org/apache/fury/collection/IdentityObjectIntMap.java",
     "java/fury-core/src/main/java/org/apache/fury/collection/LongMap.java",
+    "java/fury-core/src/main/java/org/apache/fury/collection/LongLongMap.java",
     "java/fury-core/src/main/java/org/apache/fury/collection/ObjectIntMap.java",
     "java/fury-core/src/main/java/org/apache/fury/io/ClassLoaderObjectInputStream.java",
     "java/fury-core/src/main/java/org/apache/fury/memory/MemoryBuffer.java",
