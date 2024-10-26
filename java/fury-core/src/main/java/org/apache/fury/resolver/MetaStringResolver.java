@@ -39,7 +39,7 @@ public final class MetaStringResolver {
   private static final int initialCapacity = 8;
   // use a lower load factor to minimize hash collision
   private static final float furyMapLoadFactor = 0.25f;
-  private static final int SMALL_STRING_THRESHOLD = 15;
+  private static final int SMALL_STRING_THRESHOLD = 16;
 
   // Every deserialization for unregistered string will query it, performance is important.
   private final ObjectMap<MetaStringBytes, String> metaStringBytes2StringMap =
