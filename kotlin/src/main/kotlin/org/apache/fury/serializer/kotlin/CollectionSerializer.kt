@@ -25,8 +25,10 @@ import org.apache.fury.serializer.collection.AbstractCollectionSerializer
 
 /** Serializer for kotlin collections. */
 @Suppress("UNCHECKED_CAST")
-public abstract class AbstractKotlinCollectionSerializer<E, T : Iterable<E>>(fury: Fury, cls: Class<T>) :
-  AbstractCollectionSerializer<T>(fury, cls) {
+public abstract class AbstractKotlinCollectionSerializer<E, T : Iterable<E>>(
+  fury: Fury,
+  cls: Class<T>
+) : AbstractCollectionSerializer<T>(fury, cls) {
   abstract override fun onCollectionWrite(buffer: MemoryBuffer, value: T): Collection<E>
 
   override fun read(buffer: MemoryBuffer): T {
