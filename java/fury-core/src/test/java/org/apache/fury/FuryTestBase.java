@@ -66,6 +66,14 @@ public abstract class FuryTestBase {
         builder()
             .withRefCopy(true)
             .withLanguage(Language.JAVA)
+            .withJdkClassSerializableCheck(true)
+            .withCodegen(false)
+            .build()
+      },
+      {
+        builder()
+            .withRefCopy(true)
+            .withLanguage(Language.JAVA)
             .withJdkClassSerializableCheck(false)
             .withCodegen(false)
             .build()
