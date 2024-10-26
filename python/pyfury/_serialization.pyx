@@ -35,6 +35,7 @@ from pyfury._fury import _PicklerStub, _UnpicklerStub, Pickler, Unpickler
 from pyfury._fury import _ENABLE_CLASS_REGISTRATION_FORCIBLY
 from pyfury.error import ClassNotCompatibleError
 from pyfury.lib import mmh3
+from pyfury.meta.metastring import Encoding
 from pyfury.type import is_primitive_type, FuryType, Int8Type, Int16Type, Int32Type, \
     Int64Type, Float32Type, Float64Type, Int16ArrayType, Int32ArrayType, \
     Int64ArrayType, Float32ArrayType, Float64ArrayType, infer_field, load_class
