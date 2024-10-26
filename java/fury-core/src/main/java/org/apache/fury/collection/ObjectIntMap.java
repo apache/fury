@@ -19,6 +19,8 @@
 
 package org.apache.fury.collection;
 
+import static org.apache.fury.collection.FuryObjectMap.MASK_NUMBER;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
@@ -59,7 +61,7 @@ public class ObjectIntMap<K> {
   }
 
   protected int place(K item) {
-    return (int) (item.hashCode() * 0x9E3779B97F4A7C15L >>> shift);
+    return (int) (item.hashCode() * MASK_NUMBER >>> shift);
   }
 
   int locateKey(K key) {

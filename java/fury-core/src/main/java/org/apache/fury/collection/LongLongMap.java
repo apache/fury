@@ -19,6 +19,8 @@
 
 package org.apache.fury.collection;
 
+import static org.apache.fury.collection.FuryObjectMap.MASK_NUMBER;
+
 import org.apache.fury.annotation.Internal;
 import org.apache.fury.util.Preconditions;
 
@@ -49,24 +51,8 @@ public final class LongLongMap<V> {
   private final float loadFactor;
   private int threshold;
 
-  /**
-   * Used by {@link #place(long, long)} to bit shift the upper bits of a {@code long} into a usable
-   * range (&gt;= 0 and &lt;= {@link #mask}). The shift can be negative, which is convenient to
-   * match the number of bits in mask: if mask is a 7-bit number, a shift of -7 shifts the upper 7
-   * bits into the lowest 7 positions. This class sets the shift &gt; 32 and &lt; 64, which if used
-   * with an int will still move the upper bits of an int to the lower bits due to Java's implicit
-   * modulus on shifts.
-   *
-   * <p>{@link #mask} can also be used to mask the low bits of a number, which may be faster for
-   * some hashcodes, if {@link #place(long, long)} is overridden.
-   */
   private int shift;
 
-  /**
-   * A bitmask used to confine hash codes to the size of the table. Must be all 1 bits in its low
-   * positions, ie a power of two minus 1. If {@link #place(long, long)} is override, this can be
-   * used instead of {@link #shift} to isolate usable bits of a hash.
-   */
   private int mask;
 
   /**
@@ -88,7 +74,7 @@ public final class LongLongMap<V> {
   }
 
   private int place(long k1, long k2) {
-    return (int) ((k1 * 31 + k2) * 0x9E3779B97F4A7C15L >>> shift);
+    return (int) ((k1 * 31 + k2) * MASK_NUMBER >>> shift);
   }
 
   /**
@@ -155,19 +141,14 @@ public final class LongLongMap<V> {
       for (int i = 0; i < oldCapacity; i++) {
         LongLongKey key = oldKeyTable[i];
         if (key != null) {
-          putResize(key.k1, key.k2, oldValueTable[i]);
+          for (int j = place(key.k1, key.k2); ; j = (j + 1) & mask) {
+            if (keyTable[j] == null) {
+              keyTable[j] = new LongLongKey(key.k1, key.k2);
+              valueTable[j] = oldValueTable[i];
+              return;
+            }
+          }
         }
-      }
-    }
-  }
-
-  private void putResize(long k1, long k2, V value) {
-    LongLongKey[] keyTable = this.keyTable;
-    for (int i = place(k1, k2); ; i = (i + 1) & mask) {
-      if (keyTable[i] == null) {
-        keyTable[i] = new LongLongKey(k1, k2);
-        valueTable[i] = value;
-        return;
       }
     }
   }
