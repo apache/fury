@@ -177,7 +177,8 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
     }
   }
 
-  public static void copyFields(Fury fury, InternalFieldInfo[] fieldInfos, Object originObj, Object newObj) {
+  public static void copyFields(
+      Fury fury, InternalFieldInfo[] fieldInfos, Object originObj, Object newObj) {
     for (InternalFieldInfo fieldInfo : fieldInfos) {
       FieldAccessor fieldAccessor = fieldInfo.fieldAccessor;
       long fieldOffset = fieldAccessor.getFieldOffset();
