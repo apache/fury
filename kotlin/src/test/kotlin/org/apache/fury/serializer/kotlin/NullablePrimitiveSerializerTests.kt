@@ -27,148 +27,127 @@ import org.testng.annotations.Test
 /**
  * Nullable primitive serializer tests.
  *
- * Nullable primitives get translated into Boxed types in java.
- * See: https://kotlinlang.org/docs/numbers.html#numbers-representation-on-the-jvm
- *
+ * Nullable primitives get translated into Boxed types in java. See:
+ * https://kotlinlang.org/docs/numbers.html#numbers-representation-on-the-jvm
  */
 class NullablePrimitiveSerializerTests {
-    @Test
-    fun testSerializeBoxedByteValue() {
-        val fury: Fury = Fury.builder()
-            .withLanguage(Language.JAVA)
-            .requireClassRegistration(true)
-            .build()
+  @Test
+  fun testSerializeBoxedByteValue() {
+    val fury: Fury =
+      Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(true).build()
 
-        KotlinSerializers.registerSerializers(fury)
-        val value:Byte? = 42
-        Assert.assertEquals(value, fury.deserialize(fury.serialize(value)))
-    }
-    @Test
-    fun testSerializeBoxedIntValue() {
-        val fury: Fury = Fury.builder()
-            .withLanguage(Language.JAVA)
-            .requireClassRegistration(true)
-            .build()
+    KotlinSerializers.registerSerializers(fury)
+    val value: Byte? = 42
+    Assert.assertEquals(value, fury.deserialize(fury.serialize(value)))
+  }
 
-        KotlinSerializers.registerSerializers(fury)
-        val value:Int? = 42
-        Assert.assertEquals(value, fury.deserialize(fury.serialize(value)))
-    }
-    @Test
-    fun testSerializeBoxedShortValue() {
-        val fury: Fury = Fury.builder()
-            .withLanguage(Language.JAVA)
-            .requireClassRegistration(true)
-            .build()
+  @Test
+  fun testSerializeBoxedIntValue() {
+    val fury: Fury =
+      Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(true).build()
 
-        KotlinSerializers.registerSerializers(fury)
-        val value:Short? = 42
-        Assert.assertEquals(value, fury.deserialize(fury.serialize(value)))
-    }
+    KotlinSerializers.registerSerializers(fury)
+    val value: Int? = 42
+    Assert.assertEquals(value, fury.deserialize(fury.serialize(value)))
+  }
 
-    @Test
-    fun testSerializeBoxedLongValue() {
-        val fury: Fury = Fury.builder()
-            .withLanguage(Language.JAVA)
-            .requireClassRegistration(true)
-            .build()
+  @Test
+  fun testSerializeBoxedShortValue() {
+    val fury: Fury =
+      Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(true).build()
 
-        KotlinSerializers.registerSerializers(fury)
-        val value:Long? = 42L
-        Assert.assertEquals(value, fury.deserialize(fury.serialize(value)))
-    }
+    KotlinSerializers.registerSerializers(fury)
+    val value: Short? = 42
+    Assert.assertEquals(value, fury.deserialize(fury.serialize(value)))
+  }
 
-    @Test
-    fun testSerializeBoxedFloatValue() {
-        val fury: Fury = Fury.builder()
-            .withLanguage(Language.JAVA)
-            .requireClassRegistration(true)
-            .build()
+  @Test
+  fun testSerializeBoxedLongValue() {
+    val fury: Fury =
+      Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(true).build()
 
-        KotlinSerializers.registerSerializers(fury)
-        val value:Float? = .42f
-        Assert.assertEquals(value, fury.deserialize(fury.serialize(value)))
-    }
+    KotlinSerializers.registerSerializers(fury)
+    val value: Long? = 42L
+    Assert.assertEquals(value, fury.deserialize(fury.serialize(value)))
+  }
 
-    @Test
-    fun testSerializeBoxedDoubleValue() {
-        val fury: Fury = Fury.builder()
-            .withLanguage(Language.JAVA)
-            .requireClassRegistration(true)
-            .build()
+  @Test
+  fun testSerializeBoxedFloatValue() {
+    val fury: Fury =
+      Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(true).build()
 
-        KotlinSerializers.registerSerializers(fury)
-        val value: Double? = .42
-        Assert.assertEquals(value, fury.deserialize(fury.serialize(value)))
-    }
+    KotlinSerializers.registerSerializers(fury)
+    val value: Float? = .42f
+    Assert.assertEquals(value, fury.deserialize(fury.serialize(value)))
+  }
 
-    @Test
-    fun testSerializeBoxedBooleanValue() {
-        val fury: Fury = Fury.builder()
-            .withLanguage(Language.JAVA)
-            .requireClassRegistration(true)
-            .build()
+  @Test
+  fun testSerializeBoxedDoubleValue() {
+    val fury: Fury =
+      Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(true).build()
 
-        KotlinSerializers.registerSerializers(fury)
-        val value: Boolean? = true
-        Assert.assertEquals(value, fury.deserialize(fury.serialize(value)))
-    }
-    @Test
-    fun testSerializeBoxedCharValue() {
-        val fury: Fury = Fury.builder()
-            .withLanguage(Language.JAVA)
-            .requireClassRegistration(true)
-            .build()
+    KotlinSerializers.registerSerializers(fury)
+    val value: Double? = .42
+    Assert.assertEquals(value, fury.deserialize(fury.serialize(value)))
+  }
 
-        KotlinSerializers.registerSerializers(fury)
-        val value: Char? = 'a'
-        Assert.assertEquals(value, fury.deserialize(fury.serialize(value)))
-    }
+  @Test
+  fun testSerializeBoxedBooleanValue() {
+    val fury: Fury =
+      Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(true).build()
 
-    @Test
-    fun testSerializeBoxedUByteValue() {
-        val fury: Fury = Fury.builder()
-            .withLanguage(Language.JAVA)
-            .requireClassRegistration(true)
-            .build()
+    KotlinSerializers.registerSerializers(fury)
+    val value: Boolean? = true
+    Assert.assertEquals(value, fury.deserialize(fury.serialize(value)))
+  }
 
-        KotlinSerializers.registerSerializers(fury)
-        val value: UByte? = 42u
-        Assert.assertEquals(value, fury.deserialize(fury.serialize(value)))
-    }
+  @Test
+  fun testSerializeBoxedCharValue() {
+    val fury: Fury =
+      Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(true).build()
 
-    @Test
-    fun testSerializeBoxedUShortValue() {
-        val fury: Fury = Fury.builder()
-            .withLanguage(Language.JAVA)
-            .requireClassRegistration(true)
-            .build()
+    KotlinSerializers.registerSerializers(fury)
+    val value: Char? = 'a'
+    Assert.assertEquals(value, fury.deserialize(fury.serialize(value)))
+  }
 
-        KotlinSerializers.registerSerializers(fury)
-        val value: UShort? = 42u
-        Assert.assertEquals(value, fury.deserialize(fury.serialize(value)))
-    }
+  @Test
+  fun testSerializeBoxedUByteValue() {
+    val fury: Fury =
+      Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(true).build()
 
-    @Test
-    fun testSerializeBoxedUIntValue() {
-        val fury: Fury = Fury.builder()
-            .withLanguage(Language.JAVA)
-            .requireClassRegistration(true)
-            .build()
+    KotlinSerializers.registerSerializers(fury)
+    val value: UByte? = 42u
+    Assert.assertEquals(value, fury.deserialize(fury.serialize(value)))
+  }
 
-        KotlinSerializers.registerSerializers(fury)
-        val value: UInt? = 42u
-        Assert.assertEquals(value, fury.deserialize(fury.serialize(value)))
-    }
-    @Test
-    fun testSerializeBoxedULongValue() {
-        val fury: Fury = Fury.builder()
-            .withLanguage(Language.JAVA)
-            .requireClassRegistration(true)
-            .build()
+  @Test
+  fun testSerializeBoxedUShortValue() {
+    val fury: Fury =
+      Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(true).build()
 
-        KotlinSerializers.registerSerializers(fury)
-        val value: ULong? = 42u
-        Assert.assertEquals(value, fury.deserialize(fury.serialize(value)))
-    }
+    KotlinSerializers.registerSerializers(fury)
+    val value: UShort? = 42u
+    Assert.assertEquals(value, fury.deserialize(fury.serialize(value)))
+  }
+
+  @Test
+  fun testSerializeBoxedUIntValue() {
+    val fury: Fury =
+      Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(true).build()
+
+    KotlinSerializers.registerSerializers(fury)
+    val value: UInt? = 42u
+    Assert.assertEquals(value, fury.deserialize(fury.serialize(value)))
+  }
+
+  @Test
+  fun testSerializeBoxedULongValue() {
+    val fury: Fury =
+      Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(true).build()
+
+    KotlinSerializers.registerSerializers(fury)
+    val value: ULong? = 42u
+    Assert.assertEquals(value, fury.deserialize(fury.serialize(value)))
+  }
 }

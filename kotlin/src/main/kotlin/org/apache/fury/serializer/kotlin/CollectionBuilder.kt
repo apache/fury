@@ -22,29 +22,26 @@ package org.apache.fury.serializer.kotlin
 /**
  * Collection builder interface adapts an iterable to allow incremental build by the fury protocol.
  */
-interface CollectionBuilder <E, T: Iterable<E>> {
-    fun add(element: E): Boolean
-    fun result(): T
+public interface CollectionBuilder<E, T : Iterable<E>> {
+  public fun add(element: E): Boolean
+
+  public fun result(): T
 }
 
-/**
- * Abstract builder for [kotlin.collections.List] interface.
- */
-abstract class AbstractListBuilder<E, T:List<E>>
-    : CollectionBuilder<E, T>, AdaptedCollection<E>() {
-    protected open val builder: MutableList<E> = mutableListOf()
-    override val size: Int
-        get() = builder.size
-    override fun add(element: E) =
-        builder.add(element)
-    override fun iterator(): MutableIterator<E> = builder.iterator()
+/** Abstract builder for [kotlin.collections.List] interface. */
+public abstract class AbstractListBuilder<E, T : List<E>> :
+  CollectionBuilder<E, T>, AdaptedCollection<E>() {
+  protected open val builder: MutableList<E> = mutableListOf()
+  override val size: Int
+    get() = builder.size
+
+  override fun add(element: E): Boolean = builder.add(element)
+
+  override fun iterator(): MutableIterator<E> = builder.iterator()
 }
 
-/**
- * Builder for [kotlin.collections.ArrayDeque].
- */
-class ArrayDequeBuilder<E>(
-    override val builder: ArrayDeque<E>
-): AbstractListBuilder<E, ArrayDeque<E>>() {
-    override fun result(): ArrayDeque<E> = builder
+/** Builder for [kotlin.collections.ArrayDeque]. */
+public class ArrayDequeBuilder<E>(override val builder: ArrayDeque<E>) :
+  AbstractListBuilder<E, ArrayDeque<E>>() {
+  override fun result(): ArrayDeque<E> = builder
 }
