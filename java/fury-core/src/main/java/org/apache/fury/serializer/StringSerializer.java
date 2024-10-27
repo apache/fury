@@ -20,6 +20,7 @@
 package org.apache.fury.serializer;
 
 import static org.apache.fury.type.TypeUtils.STRING_TYPE;
+import static org.apache.fury.util.StringUtils.MULTI_CHARS_NON_ASCII_MASK;
 import static org.apache.fury.util.StringUtils.MULTI_CHARS_NON_LATIN_MASK;
 
 import java.lang.invoke.CallSite;
@@ -387,7 +388,6 @@ public final class StringSerializer extends ImmutableSerializer<String> {
   }
 
   public char[] readCharsLatin1(MemoryBuffer buffer, int numBytes) {
-    //    int utf8AsciiBytes = buffer.readInt32();
     buffer.checkReadableBytes(numBytes);
     byte[] srcArray = buffer.getHeapMemory();
     char[] chars = new char[numBytes];
@@ -775,17 +775,29 @@ public final class StringSerializer extends ImmutableSerializer<String> {
     int vectorizedLen = sampleNum >> 2;
     int vectorizedChars = vectorizedLen << 2;
     int endOffset = Platform.CHAR_ARRAY_OFFSET + (vectorizedChars << 1);
-    int count = 0;
+    int asciiCount = 0;
+    int latin1Count = 0;
     for (int offset = Platform.CHAR_ARRAY_OFFSET, charOffset = 0;
         offset < endOffset;
         offset += 8, charOffset += 4) {
       long multiChars = Platform.getLong(chars, offset);
-      if ((multiChars & MULTI_CHARS_NON_LATIN_MASK) == 0) {
-        count += 4;
+      if ((multiChars & MULTI_CHARS_NON_ASCII_MASK) == 0) {
+        latin1Count += 4;
+        asciiCount += 4;
+      } else if ((multiChars & MULTI_CHARS_NON_LATIN_MASK) == 0) {
+        latin1Count += 4;
+        for (int i = 0; i < 4; ++i) {
+          if (chars[charOffset + i] < 0x80) {
+            asciiCount++;
+          }
+        }
       } else {
         for (int i = 0; i < 4; ++i) {
           if (chars[charOffset + i] < 0x80) {
-            count++;
+            latin1Count++;
+            asciiCount++;
+          } else if (chars[charOffset + i] <= 0xFF) {
+            latin1Count++;
           }
         }
       }
@@ -793,15 +805,18 @@ public final class StringSerializer extends ImmutableSerializer<String> {
 
     for (int i = vectorizedChars; i < sampleNum; i++) {
       if (chars[i] < 0x80) {
-        count++;
+        latin1Count++;
+        asciiCount++;
+      } else if (chars[i] <= 0xFF) {
+        latin1Count++;
       }
     }
 
-    // ascii number > 50%, choose UTF-8
-    if (count >= sampleNum * 0.5) {
-      if (count == numChars || (count == sampleNum && StringUtils.isLatin(chars, sampleNum))) {
-        return LATIN1;
-      }
+    if (latin1Count == numChars
+        || (latin1Count == sampleNum && StringUtils.isLatin(chars, sampleNum))) {
+      return LATIN1;
+    } else if (asciiCount >= sampleNum * 0.5) {
+      // ascii number > 50%, choose UTF-8
       return UTF8;
     } else {
       return UTF16;
@@ -815,30 +830,28 @@ public final class StringSerializer extends ImmutableSerializer<String> {
     int vectorizedLen = sampleNum >> 3;
     int vectorizedBytes = vectorizedLen << 3;
     int endOffset = Platform.BYTE_ARRAY_OFFSET + vectorizedBytes;
-    int count = 0;
+    int asciiCount = 0;
     for (int offset = Platform.BYTE_ARRAY_OFFSET, bytesOffset = 0;
         offset < endOffset;
         offset += 8, bytesOffset += 8) {
       long multiChars = Platform.getLong(bytes, offset);
-      if ((multiChars & MULTI_CHARS_NON_LATIN_MASK) == 0) {
-        count += 4;
+      if ((multiChars & MULTI_CHARS_NON_ASCII_MASK) == 0) {
+        asciiCount += 4;
       } else {
-        for (int i = Platform.IS_LITTLE_ENDIAN ? 1 : 0; i < 8; i += 2) {
-          if (bytes[bytesOffset + i] == 0) {
-            count++;
+        for (int i = 0; i < 8; i += 2) {
+          if (Platform.getChar(bytes, offset + i) < 0x80) {
+            asciiCount++;
           }
         }
       }
     }
-    for (int i = Platform.IS_LITTLE_ENDIAN ? vectorizedBytes + 1 : vectorizedBytes;
-        i < sampleNum;
-        ++i) {
-      if (bytes[i] == 0) {
-        count++;
+    for (int i = vectorizedBytes; vectorizedBytes < sampleNum; vectorizedBytes += 2) {
+      if (Platform.getChar(bytes, Platform.BYTE_ARRAY_OFFSET + i) < 0x80) {
+        asciiCount++;
       }
     }
     // ascii number > 50%, choose UTF-8
-    if (count >= sampleNum * 0.5) {
+    if (asciiCount >= sampleNum * 0.5) {
       return UTF8;
     } else {
       return UTF16;
