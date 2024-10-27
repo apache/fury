@@ -29,6 +29,7 @@ from typing import Dict, Tuple, TypeVar, Union, Iterable
 from pyfury.lib import mmh3
 
 from pyfury.buffer import Buffer
+from pyfury.meta.metastring import Encoding
 from pyfury.resolver import (
     MapRefResolver,
     NoRefResolver,
@@ -58,6 +59,7 @@ from pyfury._serializer import (
     PICKLE_STRONG_CACHE_CLASS_ID,
     PICKLE_CACHE_CLASS_ID,
     PickleCacheStub,
+    SMALL_STRING_THRESHOLD,
 )
 from pyfury.type import (
     FuryType,
@@ -510,7 +512,11 @@ class ClassResolver:
             self._dynamic_write_string_id += 1
             self._dynamic_written_enum_string.append(enum_string_bytes)
             buffer.write_varint32(enum_string_bytes.length << 1)
-            buffer.write_int64(enum_string_bytes.hashcode)
+            if enum_string_bytes.length <= SMALL_STRING_THRESHOLD:
+                # TODO(chaokunyang) support meta string encoding
+                buffer.write_int8(Encoding.UTF_8.value)
+            else:
+                buffer.write_int64(enum_string_bytes.hashcode)
             buffer.write_bytes(enum_string_bytes.data)
         else:
             buffer.write_varint32(((dynamic_write_string_id + 1) << 1) | 1)
@@ -520,15 +526,30 @@ class ClassResolver:
         length = header >> 1
         if header & 0b1 != 0:
             return self._dynamic_id_to_enum_str_list[length - 1]
-        hashcode = buffer.read_int64()
-        reader_index = buffer.reader_index
-        buffer.check_bound(reader_index, length)
-        buffer.reader_index = reader_index + length
-        enum_str = self._hash_to_enum_string.get(hashcode)
-        if enum_str is None:
-            str_bytes = buffer.get_bytes(reader_index, length)
-            enum_str = MetaStringBytes(str_bytes, hashcode=hashcode)
-            self._hash_to_enum_string[hashcode] = enum_str
+        if length <= SMALL_STRING_THRESHOLD:
+            buffer.read_int8()
+            if length <= 8:
+                v1 = buffer.read_bytes_as_int64(length)
+                v2 = 0
+            else:
+                v1 = buffer.read_int64()
+                v2 = buffer.read_bytes_as_int64(length - 8)
+            hashcode = v1 * 31 + v2
+            enum_str = self._hash_to_enum_string.get(hashcode)
+            if enum_str is None:
+                str_bytes = buffer.get_bytes(buffer.reader_index - length, length)
+                enum_str = MetaStringBytes(str_bytes, hashcode=hashcode)
+                self._hash_to_enum_string[hashcode] = enum_str
+        else:
+            hashcode = buffer.read_int64()
+            reader_index = buffer.reader_index
+            buffer.check_bound(reader_index, length)
+            buffer.reader_index = reader_index + length
+            enum_str = self._hash_to_enum_string.get(hashcode)
+            if enum_str is None:
+                str_bytes = buffer.get_bytes(reader_index, length)
+                enum_str = MetaStringBytes(str_bytes, hashcode=hashcode)
+                self._hash_to_enum_string[hashcode] = enum_str
         self._dynamic_id_to_enum_str_list.append(enum_str)
         return enum_str
 

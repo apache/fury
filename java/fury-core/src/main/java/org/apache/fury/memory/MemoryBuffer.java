@@ -2174,6 +2174,42 @@ public final class MemoryBuffer {
     readBytes(dst, 0, dst.length);
   }
 
+  /** Read {@code len} bytes into a long using little-endian order. */
+  public long readBytesAsInt64(int len) {
+    int readerIdx = readerIndex;
+    // use subtract to avoid overflow
+    int remaining = size - readerIdx;
+    if (remaining >= 8) {
+      readerIndex = readerIdx + len;
+      long v =
+          UNSAFE.getLong(heapMemory, address + readerIdx)
+              & (0xffffffffffffffffL >>> ((8 - len) * 8));
+      return LITTLE_ENDIAN ? v : Long.reverseBytes(v);
+    }
+    return slowReadBytesAsInt64(remaining, len);
+  }
+
+  private long slowReadBytesAsInt64(int remaining, int len) {
+    if (remaining < len) {
+      streamReader.fillBuffer(len - remaining);
+    }
+    int readerIdx = readerIndex;
+    readerIndex = readerIdx + len;
+    long result = 0;
+    byte[] heapMemory = this.heapMemory;
+    if (heapMemory != null) {
+      for (int i = 0, start = heapOffset + readerIdx; i < len; i++) {
+        result |= (((long) heapMemory[start + i]) & 0xff) << (i * 8);
+      }
+    } else {
+      long start = address + readerIdx;
+      for (int i = 0; i < len; i++) {
+        result |= ((long) UNSAFE.getByte(null, start + i) & 0xff) << (i * 8);
+      }
+    }
+    return result;
+  }
+
   public int read(ByteBuffer dst) {
     int readerIdx = readerIndex;
     int len = dst.remaining();

@@ -237,6 +237,20 @@ cdef class Buffer:
         self.reader_index += length
         return value
 
+    cpdef inline int64_t read_bytes_as_int64(self, int32_t length):
+        cdef int32_t size_ = self.c_buffer.get().size()
+        cdef int64_t result
+        cdef int32_t i
+        # if offset + length > size_:
+        if size_- (self.reader_index + 8) > 0:
+            result = self.get_int64(self.reader_index)
+            result = result & (0xffffffffffffffffL >> ((8 - length) * 8))
+        else:
+            for i in range(length):
+                result = result | (<int64_t>(self.read_int8()) & 0xff) << (i * 8)
+        self.reader_index += length
+        return result
+
     cpdef inline put_bytes(self, uint32_t offset, bytes value):
         cdef const unsigned char[:] data = value
         cdef int32_t length = data.nbytes

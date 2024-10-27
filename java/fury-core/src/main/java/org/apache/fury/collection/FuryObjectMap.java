@@ -51,6 +51,7 @@ import org.apache.fury.util.Preconditions;
  */
 @SuppressWarnings("unchecked")
 public class FuryObjectMap<K, V> {
+  static final long MASK_NUMBER = 0x9E3779B97F4A7C15L;
   static final Object dummy = new Object();
 
   public int size;
@@ -135,7 +136,7 @@ public class FuryObjectMap<K, V> {
    * {@code return item.hashCode() & mask;}
    */
   protected int place(K item) {
-    return (int) (item.hashCode() * 0x9E3779B97F4A7C15L >>> shift);
+    return (int) (item.hashCode() * MASK_NUMBER >>> shift);
   }
 
   /**

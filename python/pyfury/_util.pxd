@@ -152,6 +152,8 @@ cdef class Buffer:
 
     cpdef inline bytes read_bytes(self, int32_t length)
 
+    cpdef inline int64_t read_bytes_as_int64(self, int32_t length)
+
     cpdef inline put_bytes(self, uint32_t offset, bytes value)
 
     cpdef inline bytes get_bytes(self, uint32_t offset, uint32_t nbytes)
