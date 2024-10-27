@@ -25,7 +25,8 @@ import java.util.Arrays;
  * An auto-growing array which avoid checks in {@code ArrayList} and faster for {@code clear}
  * method.
  */
-public final class ObjectArray {
+@SuppressWarnings("unchecked")
+public final class ObjectArray<T> {
   private static final int COPY_THRESHOLD = 128;
   private static final int NIL_ARRAY_SIZE = 1024;
   private static final Object[] NIL_ARRAY = new Object[NIL_ARRAY_SIZE];
@@ -41,7 +42,7 @@ public final class ObjectArray {
     objects = new Object[initialCapacity];
   }
 
-  public void add(Object element) {
+  public void add(T element) {
     Object[] objects = this.objects;
     int size = this.size++;
     if (objects.length <= size) {
@@ -53,22 +54,22 @@ public final class ObjectArray {
     objects[size] = element;
   }
 
-  public void set(int index, Object element) {
+  public void set(int index, T element) {
     objects[index] = element;
   }
 
-  public Object get(int index) {
-    return objects[index];
+  public T get(int index) {
+    return (T) objects[index];
   }
 
   /** Returns tail item or null if no available item in the array. */
-  public Object popOrNull() {
+  public T popOrNull() {
     int size = this.size;
     if (size == 0) {
       return null;
     }
     this.size = --size;
-    return objects[size];
+    return (T) objects[size];
   }
 
   public void clear() {
@@ -87,6 +88,10 @@ public final class ObjectArray {
 
   public int size() {
     return size;
+  }
+
+  public boolean isEmpty() {
+    return size == 0;
   }
 
   /**

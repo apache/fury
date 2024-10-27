@@ -21,14 +21,17 @@ package org.apache.fury.serializer.collection;
 
 import static org.apache.fury.type.TypeUtils.MAP_TYPE;
 
+import com.google.common.collect.ImmutableMap.Builder;
 import java.lang.invoke.MethodHandle;
 import java.util.Map;
+import java.util.Map.Entry;
 import org.apache.fury.Fury;
 import org.apache.fury.collection.IdentityMap;
 import org.apache.fury.collection.Tuple2;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeRef;
+import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassInfoHolder;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.resolver.RefResolver;
@@ -69,6 +72,17 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
 
   public AbstractMapSerializer(Fury fury, Class<T> cls, boolean supportCodegenHook) {
     super(fury, cls);
+    this.supportCodegenHook = supportCodegenHook;
+    keyClassInfoWriteCache = fury.getClassResolver().nilClassInfoHolder();
+    keyClassInfoReadCache = fury.getClassResolver().nilClassInfoHolder();
+    valueClassInfoWriteCache = fury.getClassResolver().nilClassInfoHolder();
+    valueClassInfoReadCache = fury.getClassResolver().nilClassInfoHolder();
+    partialGenericKVTypeMap = new IdentityMap<>();
+  }
+
+  public AbstractMapSerializer(
+      Fury fury, Class<T> cls, boolean supportCodegenHook, boolean immutable) {
+    super(fury, cls, immutable);
     this.supportCodegenHook = supportCodegenHook;
     keyClassInfoWriteCache = fury.getClassResolver().nilClassInfoHolder();
     keyClassInfoReadCache = fury.getClassResolver().nilClassInfoHolder();
@@ -414,6 +428,74 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     return onMapRead(map);
   }
 
+  protected <K, V> void copyEntry(Map<K, V> originMap, Map<K, V> newMap) {
+    ClassResolver classResolver = fury.getClassResolver();
+    for (Map.Entry<K, V> entry : originMap.entrySet()) {
+      K key = entry.getKey();
+      if (key != null) {
+        ClassInfo classInfo = classResolver.getClassInfo(key.getClass(), keyClassInfoWriteCache);
+        if (!classInfo.getSerializer().isImmutable()) {
+          key = fury.copyObject(key, classInfo.getClassId());
+        }
+      }
+      V value = entry.getValue();
+      if (value != null) {
+        ClassInfo classInfo =
+            classResolver.getClassInfo(value.getClass(), valueClassInfoWriteCache);
+        if (!classInfo.getSerializer().isImmutable()) {
+          value = fury.copyObject(value, classInfo.getClassId());
+        }
+      }
+      newMap.put(key, value);
+    }
+  }
+
+  protected <K, V> void copyEntry(Map<K, V> originMap, Builder<K, V> builder) {
+    ClassResolver classResolver = fury.getClassResolver();
+    for (Entry<K, V> entry : originMap.entrySet()) {
+      K key = entry.getKey();
+      if (key != null) {
+        ClassInfo classInfo = classResolver.getClassInfo(key.getClass(), keyClassInfoWriteCache);
+        if (!classInfo.getSerializer().isImmutable()) {
+          key = fury.copyObject(key, classInfo.getClassId());
+        }
+      }
+      V value = entry.getValue();
+      if (value != null) {
+        ClassInfo classInfo =
+            classResolver.getClassInfo(value.getClass(), valueClassInfoWriteCache);
+        if (!classInfo.getSerializer().isImmutable()) {
+          value = fury.copyObject(value, classInfo.getClassId());
+        }
+      }
+      builder.put(key, value);
+    }
+  }
+
+  protected <K, V> void copyEntry(Map<K, V> originMap, Object[] elements) {
+    ClassResolver classResolver = fury.getClassResolver();
+    int index = 0;
+    for (Entry<K, V> entry : originMap.entrySet()) {
+      K key = entry.getKey();
+      if (key != null) {
+        ClassInfo classInfo = classResolver.getClassInfo(key.getClass(), keyClassInfoWriteCache);
+        if (!classInfo.getSerializer().isImmutable()) {
+          key = fury.copyObject(key, classInfo.getClassId());
+        }
+      }
+      V value = entry.getValue();
+      if (value != null) {
+        ClassInfo classInfo =
+            classResolver.getClassInfo(value.getClass(), valueClassInfoWriteCache);
+        if (!classInfo.getSerializer().isImmutable()) {
+          value = fury.copyObject(value, classInfo.getClassId());
+        }
+      }
+      elements[index++] = key;
+      elements[index++] = value;
+    }
+  }
+
   @SuppressWarnings("unchecked")
   protected final void readElements(MemoryBuffer buffer, int size, Map map) {
     Serializer keySerializer = this.keySerializer;
@@ -736,9 +818,24 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     }
   }
 
+  /** Create a new empty map for copy. */
+  public Map newMap(Map map) {
+    numElements = map.size();
+    if (constructor == null) {
+      constructor = ReflectionUtils.getCtrHandle(type, true);
+    }
+    try {
+      return (Map) constructor.invoke();
+    } catch (Throwable e) {
+      throw new IllegalArgumentException(
+          "Please provide public no arguments constructor for class " + type, e);
+    }
+  }
+
   /**
-   * Get and reset numElements of deserializing collection. Should be called after {@link #newMap}.
-   * Nested read may overwrite this element, reset is necessary to avoid use wrong value by mistake.
+   * Get and reset numElements of deserializing collection. Should be called after {@link
+   * #newMap(MemoryBuffer buffer)}. Nested read may overwrite this element, reset is necessary to
+   * avoid use wrong value by mistake.
    */
   public int getAndClearNumElements() {
     int size = numElements;
@@ -749,6 +846,8 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
   public void setNumElements(int numElements) {
     this.numElements = numElements;
   }
+
+  public abstract T onMapCopy(Map map);
 
   public abstract T onMapRead(Map map);
 

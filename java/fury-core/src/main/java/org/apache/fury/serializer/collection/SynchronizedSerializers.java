@@ -101,6 +101,12 @@ public class SynchronizedSerializers {
       final Object sourceCollection = fury.readRef(buffer);
       return (Collection) factory.apply(sourceCollection);
     }
+
+    @Override
+    public Collection copy(Collection object) {
+      final Object collection = Platform.getObject(object, offset);
+      return (Collection) factory.apply(fury.copyObject(collection));
+    }
   }
 
   public static final class SynchronizedMapSerializer extends MapSerializer<Map> {
@@ -120,6 +126,12 @@ public class SynchronizedSerializers {
       synchronized (object) {
         fury.writeRef(buffer, unwrapped);
       }
+    }
+
+    @Override
+    public Map copy(Map originMap) {
+      final Object unwrappedMap = Platform.getObject(originMap, offset);
+      return (Map) factory.apply(fury.copyObject(unwrappedMap));
     }
 
     @Override

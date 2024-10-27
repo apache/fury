@@ -83,6 +83,12 @@ public class CodegenContextTest {
   }
 
   @Test
+  public void testNewNameKeywordConflict() {
+    Assert.assertNotEquals(new CodegenContext().newName("default"), "default");
+    Assert.assertNotEquals(new CodegenContext().newNames("default", "abc")[0], "default");
+  }
+
+  @Test
   public void testAddStaticField() {
     CodegenContext ctx = new CodegenContext();
     ctx.setClassName("Test");

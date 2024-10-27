@@ -41,7 +41,7 @@ import org.apache.fury.util.Preconditions;
 public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
   private MethodHandle constructor;
   private int numElements;
-  private final boolean supportCodegenHook;
+  protected final boolean supportCodegenHook;
   // TODO remove elemSerializer, support generics in CompatibleSerializer.
   private Serializer<?> elemSerializer;
   protected final ClassInfoHolder elementClassInfoHolder;
@@ -61,6 +61,13 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
 
   public AbstractCollectionSerializer(Fury fury, Class<T> cls, boolean supportCodegenHook) {
     super(fury, cls);
+    this.supportCodegenHook = supportCodegenHook;
+    elementClassInfoHolder = fury.getClassResolver().nilClassInfoHolder();
+  }
+
+  public AbstractCollectionSerializer(
+      Fury fury, Class<T> cls, boolean supportCodegenHook, boolean immutable) {
+    super(fury, cls, immutable);
     this.supportCodegenHook = supportCodegenHook;
     elementClassInfoHolder = fury.getClassResolver().nilClassInfoHolder();
   }
@@ -507,6 +514,49 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
     }
   }
 
+  /** Create a new empty collection for copy. */
+  public Collection newCollection(Collection collection) {
+    numElements = collection.size();
+    if (constructor == null) {
+      constructor = ReflectionUtils.getCtrHandle(type, true);
+    }
+    try {
+      return (Collection) constructor.invoke();
+    } catch (Throwable e) {
+      // reduce code size of critical path.
+      throw buildException(e);
+    }
+  }
+
+  public void copyElements(Collection originCollection, Collection newCollection) {
+    ClassResolver classResolver = fury.getClassResolver();
+    for (Object element : originCollection) {
+      if (element != null) {
+        ClassInfo classInfo =
+            classResolver.getClassInfo(element.getClass(), elementClassInfoHolder);
+        if (!classInfo.getSerializer().isImmutable()) {
+          element = fury.copyObject(element, classInfo.getClassId());
+        }
+      }
+      newCollection.add(element);
+    }
+  }
+
+  public void copyElements(Collection originCollection, Object[] elements) {
+    int index = 0;
+    ClassResolver classResolver = fury.getClassResolver();
+    for (Object element : originCollection) {
+      if (element != null) {
+        ClassInfo classInfo =
+            classResolver.getClassInfo(element.getClass(), elementClassInfoHolder);
+        if (!classInfo.getSerializer().isImmutable()) {
+          element = fury.copyObject(element, classInfo.getSerializer());
+        }
+      }
+      elements[index++] = element;
+    }
+  }
+
   private RuntimeException buildException(Throwable e) {
     return new IllegalArgumentException(
         "Please provide public no arguments constructor for class " + type, e);
@@ -514,8 +564,8 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
 
   /**
    * Get and reset numElements of deserializing collection. Should be called after {@link
-   * #newCollection}. Nested read may overwrite this element, reset is necessary to avoid use wrong
-   * value by mistake.
+   * #newCollection(MemoryBuffer buffer)}. Nested read may overwrite this element, reset is
+   * necessary to avoid use wrong value by mistake.
    */
   public int getAndClearNumElements() {
     int size = numElements;

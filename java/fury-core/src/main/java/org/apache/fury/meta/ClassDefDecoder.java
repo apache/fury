@@ -21,6 +21,7 @@ package org.apache.fury.meta;
 
 import static org.apache.fury.meta.ClassDef.COMPRESSION_FLAG;
 import static org.apache.fury.meta.ClassDef.SIZE_TWO_BYTES_FLAG;
+import static org.apache.fury.meta.ClassDefEncoder.BIG_NAME_THRESHOLD;
 import static org.apache.fury.meta.Encoders.fieldNameEncodings;
 import static org.apache.fury.meta.Encoders.pkgEncodings;
 import static org.apache.fury.meta.Encoders.typeNameEncodings;
@@ -79,7 +80,9 @@ class ClassDefDecoder {
       int numFields = currentClassHeader >>> 1;
       if (isRegistered) {
         int registeredId = classDefBuf.readVarUint32Small7();
-        className = classResolver.getClassInfo((short) registeredId).getCls().getName();
+        Class<?> cls = classResolver.getClassInfo((short) registeredId).getCls();
+        className = cls.getName();
+        classSpec = new ClassSpec(cls);
       } else {
         String pkg = readPkgName(classDefBuf);
         String typeName = readTypeName(classDefBuf);
@@ -126,13 +129,10 @@ class ClassDefDecoder {
     // - Package name encoding(omitted when class is registered):
     //    - encoding algorithm: `UTF8/ALL_TO_LOWER_SPECIAL/LOWER_UPPER_DIGIT_SPECIAL`
     //    - Header: `6 bits size | 2 bits encoding flags`.
-    //      The `6 bits size: 0~63`  will be used to indicate size `0~62`,
-    //      the value `63` the size need more byte to read, the encoding will encode `size - 62` as
+    //      The `6 bits size: 0~63`  will be used to indicate size `0~63`,
+    //      the value `63` the size need more byte to read, the encoding will encode `size - 63` as
     // a varint next.
-    int header = buffer.readByte() & 0xff;
-    int encodingFlags = header & 0b11;
-    Encoding encoding = pkgEncodings[encodingFlags];
-    return readName(Encoders.PACKAGE_DECODER, buffer, header, encoding, 62);
+    return readName(Encoders.PACKAGE_DECODER, buffer, pkgEncodings);
   }
 
   private static String readTypeName(MemoryBuffer buffer) {
@@ -140,20 +140,20 @@ class ClassDefDecoder {
     //     - encoding algorithm:
     // `UTF8/LOWER_UPPER_DIGIT_SPECIAL/FIRST_TO_LOWER_SPECIAL/ALL_TO_LOWER_SPECIAL`
     //     - header: `6 bits size | 2 bits encoding flags`.
-    //       The `6 bits size: 0~63`  will be used to indicate size `1~64`,
+    //      The `6 bits size: 0~63`  will be used to indicate size `0~63`,
     //       the value `63` the size need more byte to read, the encoding will encode `size - 63` as
     // a varint next.
-    int header = buffer.readByte() & 0xff;
-    int encodingFlags = header & 0b11;
-    Encoding encoding = typeNameEncodings[encodingFlags];
-    return readName(Encoders.TYPE_NAME_DECODER, buffer, header, encoding, 63);
+    return readName(Encoders.TYPE_NAME_DECODER, buffer, typeNameEncodings);
   }
 
   private static String readName(
-      MetaStringDecoder decoder, MemoryBuffer buffer, int header, Encoding encoding, int max) {
+      MetaStringDecoder decoder, MemoryBuffer buffer, Encoding[] encodings) {
+    int header = buffer.readByte() & 0xff;
+    int encodingFlags = header & 0b11;
+    Encoding encoding = encodings[encodingFlags];
     int size = header >> 2;
-    if (size == max) {
-      size = buffer.readVarUint32Small7() + max;
+    if (size == BIG_NAME_THRESHOLD) {
+      size = buffer.readVarUint32Small7() + BIG_NAME_THRESHOLD;
     }
     return decoder.decode(buffer.readBytes(size), encoding);
   }

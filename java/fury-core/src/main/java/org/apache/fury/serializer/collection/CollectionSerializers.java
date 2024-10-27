@@ -20,6 +20,7 @@
 package org.apache.fury.serializer.collection;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -35,6 +36,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.SortedSet;
@@ -50,11 +52,14 @@ import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.resolver.ClassInfo;
+import org.apache.fury.resolver.ClassInfoHolder;
 import org.apache.fury.resolver.ClassResolver;
+import org.apache.fury.resolver.RefResolver;
 import org.apache.fury.serializer.ReplaceResolveSerializer;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.serializer.Serializers;
 import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.unsafe._JDKAccess;
 
 /**
  * Serializers for classes implements {@link Collection}. All collection serializers should extend
@@ -93,6 +98,17 @@ public class CollectionSerializers {
 
     public ArraysAsListSerializer(Fury fury, Class<List<?>> cls) {
       super(fury, cls, false);
+    }
+
+    @Override
+    public List<?> copy(List<?> originCollection) {
+      Object[] elements = new Object[originCollection.size()];
+      List<?> newCollection = Arrays.asList(elements);
+      if (needToCopyRef) {
+        fury.reference(originCollection, newCollection);
+      }
+      copyElements(originCollection, elements);
+      return newCollection;
     }
 
     @Override
@@ -200,6 +216,22 @@ public class CollectionSerializers {
       fury.getRefResolver().reference(collection);
       return collection;
     }
+
+    @Override
+    public Collection newCollection(Collection originCollection) {
+      Collection collection;
+      Comparator comparator = fury.copyObject(((SortedSet) originCollection).comparator());
+      if (Objects.equals(type, TreeSet.class)) {
+        collection = new TreeSet(comparator);
+      } else {
+        try {
+          collection = (T) constructor.invoke(comparator);
+        } catch (Throwable e) {
+          throw new RuntimeException(e);
+        }
+      }
+      return collection;
+    }
   }
 
   // ------------------------------ collections serializers ------------------------------ //
@@ -210,7 +242,7 @@ public class CollectionSerializers {
   public static final class EmptyListSerializer extends CollectionSerializer<List<?>> {
 
     public EmptyListSerializer(Fury fury, Class<List<?>> cls) {
-      super(fury, cls, false);
+      super(fury, cls, false, true);
     }
 
     @Override
@@ -258,7 +290,7 @@ public class CollectionSerializers {
   public static final class EmptySetSerializer extends CollectionSerializer<Set<?>> {
 
     public EmptySetSerializer(Fury fury, Class<Set<?>> cls) {
-      super(fury, cls, false);
+      super(fury, cls, false, true);
     }
 
     @Override
@@ -285,7 +317,7 @@ public class CollectionSerializers {
   public static final class EmptySortedSetSerializer extends CollectionSerializer<SortedSet<?>> {
 
     public EmptySortedSetSerializer(Fury fury, Class<SortedSet<?>> cls) {
-      super(fury, cls, false);
+      super(fury, cls, false, true);
     }
 
     @Override
@@ -302,6 +334,11 @@ public class CollectionSerializers {
 
     public CollectionsSingletonListSerializer(Fury fury, Class<List<?>> cls) {
       super(fury, cls, false);
+    }
+
+    @Override
+    public List<?> copy(List<?> originCollection) {
+      return Collections.singletonList(fury.copyObject(originCollection.get(0)));
     }
 
     @Override
@@ -331,6 +368,11 @@ public class CollectionSerializers {
 
     public CollectionsSingletonSetSerializer(Fury fury, Class<Set<?>> cls) {
       super(fury, cls, false);
+    }
+
+    @Override
+    public Set<?> copy(Set<?> originCollection) {
+      return Collections.singleton(fury.copyObject(originCollection.iterator().next()));
     }
 
     @Override
@@ -367,9 +409,12 @@ public class CollectionSerializers {
     public ConcurrentSkipListSet newCollection(MemoryBuffer buffer) {
       int numElements = buffer.readVarUint32Small7();
       setNumElements(numElements);
+      RefResolver refResolver = fury.getRefResolver();
+      int refId = refResolver.lastPreservedRefId();
+      // It's possible that comparator/elements has circular ref to set.
       Comparator comparator = (Comparator) fury.readRef(buffer);
       ConcurrentSkipListSet skipListSet = new ConcurrentSkipListSet(comparator);
-      fury.getRefResolver().reference(skipListSet);
+      refResolver.setReadObject(refId, skipListSet);
       return skipListSet;
     }
   }
@@ -377,11 +422,20 @@ public class CollectionSerializers {
   public static final class SetFromMapSerializer extends CollectionSerializer<Set<?>> {
 
     private static final long MAP_FIELD_OFFSET;
+    private static final List EMPTY_COLLECTION_STUB = new ArrayList<>();
+
+    private static final MethodHandle m;
+
+    private static final MethodHandle s;
 
     static {
       try {
-        Field mapField = Class.forName("java.util.Collections$SetFromMap").getDeclaredField("m");
+        Class<?> type = Class.forName("java.util.Collections$SetFromMap");
+        Field mapField = type.getDeclaredField("m");
         MAP_FIELD_OFFSET = Platform.objectFieldOffset(mapField);
+        MethodHandles.Lookup lookup = _JDKAccess._trustedLookup(type);
+        m = lookup.findSetter(type, "m", Map.class);
+        s = lookup.findSetter(type, "s", Set.class);
       } catch (final Exception e) {
         throw new RuntimeException(e);
       }
@@ -395,40 +449,93 @@ public class CollectionSerializers {
     public Collection newCollection(MemoryBuffer buffer) {
       final ClassInfo mapClassInfo = fury.getClassResolver().readClassInfo(buffer);
       final AbstractMapSerializer mapSerializer =
-          (AbstractMapSerializer) fury.getClassResolver().getSerializer(mapClassInfo.getCls());
-      Map map = mapSerializer.newMap(buffer);
-      final int numElements = mapSerializer.getAndClearNumElements();
-      setNumElements(numElements);
-      final Set set = Collections.newSetFromMap(map);
-      fury.getRefResolver().reference(set);
+          (AbstractMapSerializer) mapClassInfo.getSerializer();
+      RefResolver refResolver = fury.getRefResolver();
+      // It's possible that elements or nested fields has circular ref to set.
+      int refId = refResolver.lastPreservedRefId();
+      Set set;
+      if (buffer.readBoolean()) {
+        refResolver.preserveRefId();
+        set = Collections.newSetFromMap(mapSerializer.newMap(buffer));
+        setNumElements(mapSerializer.getAndClearNumElements());
+      } else {
+        Map map = (Map) mapSerializer.read(buffer);
+        try {
+          set = Platform.newInstance(type);
+          m.invoke(set, map);
+          s.invoke(set, map.keySet());
+        } catch (Throwable e) {
+          throw new RuntimeException(e);
+        }
+        setNumElements(0);
+      }
+      refResolver.setReadObject(refId, set);
       return set;
+    }
+
+    @Override
+    public Collection newCollection(Collection originCollection) {
+      Map<?, Boolean> map =
+          (Map<?, Boolean>) Platform.getObject(originCollection, MAP_FIELD_OFFSET);
+      AbstractMapSerializer mapSerializer =
+          (AbstractMapSerializer) fury.getClassResolver().getSerializer(map.getClass());
+      Map newMap = mapSerializer.newMap(map);
+      return Collections.newSetFromMap(newMap);
     }
 
     @Override
     public Collection onCollectionWrite(MemoryBuffer buffer, Set<?> value) {
       final Map<?, Boolean> map = (Map<?, Boolean>) Platform.getObject(value, MAP_FIELD_OFFSET);
       final ClassInfo classInfo = fury.getClassResolver().getClassInfo(map.getClass());
+      AbstractMapSerializer mapSerializer = (AbstractMapSerializer) classInfo.getSerializer();
       fury.getClassResolver().writeClass(buffer, classInfo);
-      // newMap will read num size first.
-      buffer.writeVarUint32Small7(value.size());
-      return value;
+      if (mapSerializer.supportCodegenHook) {
+        buffer.writeBoolean(true);
+        mapSerializer.onMapWrite(buffer, map);
+        return value;
+      } else {
+        buffer.writeBoolean(false);
+        mapSerializer.write(buffer, map);
+        return EMPTY_COLLECTION_STUB;
+      }
     }
   }
 
-  public static final class ConcurrentHashMapKeySetView
+  public static final class ConcurrentHashMapKeySetViewSerializer
       extends CollectionSerializer<ConcurrentHashMap.KeySetView> {
+    private final ClassInfoHolder mapClassInfoHolder;
+    private final ClassInfoHolder valueClassInfoHolder;
 
-    public ConcurrentHashMapKeySetView(Fury fury, Class<ConcurrentHashMap.KeySetView> type) {
-      super(fury, type);
+    public ConcurrentHashMapKeySetViewSerializer(
+        Fury fury, Class<ConcurrentHashMap.KeySetView> type) {
+      super(fury, type, false);
+      mapClassInfoHolder = fury.getClassResolver().nilClassInfoHolder();
+      valueClassInfoHolder = fury.getClassResolver().nilClassInfoHolder();
     }
 
     @Override
-    public ConcurrentHashMap.KeySetView newCollection(MemoryBuffer buffer) {
-      int numElements = buffer.readVarUint32Small7();
-      setNumElements(numElements);
-      ConcurrentHashMap.KeySetView keySetView = ConcurrentHashMap.newKeySet(numElements);
-      fury.getRefResolver().reference(keySetView);
-      return keySetView;
+    public void write(MemoryBuffer buffer, ConcurrentHashMap.KeySetView value) {
+      fury.writeRef(buffer, value.getMap(), mapClassInfoHolder);
+      fury.writeRef(buffer, value.getMappedValue(), valueClassInfoHolder);
+    }
+
+    @Override
+    public ConcurrentHashMap.KeySetView read(MemoryBuffer buffer) {
+      ConcurrentHashMap map = (ConcurrentHashMap) fury.readRef(buffer, mapClassInfoHolder);
+      Object value = fury.readRef(buffer, valueClassInfoHolder);
+      return map.keySet(value);
+    }
+
+    @Override
+    public ConcurrentHashMap.KeySetView copy(ConcurrentHashMap.KeySetView value) {
+      ConcurrentHashMap newMap = fury.copyObject(value.getMap());
+      return newMap.keySet(fury.copyObject(value.getMappedValue()));
+    }
+
+    @Override
+    public Collection newCollection(MemoryBuffer buffer) {
+      throw new IllegalStateException(
+          "Should not be invoked since we set supportCodegenHook to false");
     }
   }
 
@@ -502,6 +609,11 @@ public class CollectionSerializers {
       }
       return object;
     }
+
+    @Override
+    public EnumSet copy(EnumSet originCollection) {
+      return EnumSet.copyOf(originCollection);
+    }
   }
 
   public static class BitSetSerializer extends Serializer<BitSet> {
@@ -514,6 +626,11 @@ public class CollectionSerializers {
       long[] values = set.toLongArray();
       buffer.writePrimitiveArrayWithSize(
           values, Platform.LONG_ARRAY_OFFSET, Math.multiplyExact(values.length, 8));
+    }
+
+    @Override
+    public BitSet copy(BitSet originCollection) {
+      return BitSet.valueOf(originCollection.toLongArray());
     }
 
     @Override
@@ -532,6 +649,12 @@ public class CollectionSerializers {
       buffer.writeVarUint32Small7(value.size());
       fury.writeRef(buffer, value.comparator());
       return value;
+    }
+
+    @Override
+    public Collection newCollection(Collection collection) {
+      return new PriorityQueue(
+          collection.size(), fury.copyObject(((PriorityQueue) collection).comparator()));
     }
 
     @Override
@@ -585,6 +708,11 @@ public class CollectionSerializers {
     }
 
     @Override
+    public T copy(T originCollection) {
+      return fury.copyObject(originCollection, dataSerializer);
+    }
+
+    @Override
     public T read(MemoryBuffer buffer) {
       return dataSerializer.read(buffer);
     }
@@ -625,6 +753,11 @@ public class CollectionSerializers {
     @Override
     public void write(MemoryBuffer buffer, T value) {
       serializer.write(buffer, value);
+    }
+
+    @Override
+    public T copy(T value) {
+      return fury.copyObject(value, (Serializer<T>) serializer);
     }
   }
 
@@ -676,6 +809,6 @@ public class CollectionSerializers {
     resolver.registerSerializer(setFromMapClass, new SetFromMapSerializer(fury, setFromMapClass));
     resolver.registerSerializer(
         ConcurrentHashMap.KeySetView.class,
-        new ConcurrentHashMapKeySetView(fury, ConcurrentHashMap.KeySetView.class));
+        new ConcurrentHashMapKeySetViewSerializer(fury, ConcurrentHashMap.KeySetView.class));
   }
 }

@@ -26,9 +26,13 @@ import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 import org.apache.fury.collection.Tuple2;
 import org.apache.fury.reflect.ReflectionUtils;
+import org.apache.fury.util.GraalvmSupport;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.unsafe._JDKAccess;
 
@@ -73,27 +77,38 @@ public class Functions {
     }
   }
 
+  private static final Map<Tuple2<Method, Class<?>>, Object> map =
+      GraalvmSupport.isGraalBuildtime() ? new ConcurrentHashMap<>() : new WeakHashMap<>();
+
   public static Object makeGetterFunction(Method method) {
-    MethodHandles.Lookup lookup = _JDKAccess._trustedLookup(method.getDeclaringClass());
-    try {
-      // Why `lookup.findGetter` doesn't work?
-      // MethodHandle handle = lookup.findGetter(field.getDeclaringClass(), field.getName(),
-      // field.getType());
-      MethodHandle handle = lookup.unreflect(method);
-      return _JDKAccess.makeGetterFunction(lookup, handle, method.getReturnType());
-    } catch (IllegalAccessException ex) {
-      throw new RuntimeException(ex);
-    }
+    return map.computeIfAbsent(
+        Tuple2.of(method, Object.class),
+        k -> {
+          MethodHandles.Lookup lookup = _JDKAccess._trustedLookup(method.getDeclaringClass());
+          try {
+            // Why `lookup.findGetter` doesn't work?
+            // MethodHandle handle = lookup.findGetter(field.getDeclaringClass(), field.getName(),
+            // field.getType());
+            MethodHandle handle = lookup.unreflect(method);
+            return _JDKAccess.makeGetterFunction(lookup, handle, method.getReturnType());
+          } catch (IllegalAccessException ex) {
+            throw new RuntimeException(ex);
+          }
+        });
   }
 
   public static Object makeGetterFunction(Method method, Class<?> returnType) {
-    MethodHandles.Lookup lookup = _JDKAccess._trustedLookup(method.getDeclaringClass());
-    try {
-      MethodHandle handle = lookup.unreflect(method);
-      return _JDKAccess.makeGetterFunction(lookup, handle, returnType);
-    } catch (IllegalAccessException ex) {
-      throw new RuntimeException(ex);
-    }
+    return map.computeIfAbsent(
+        Tuple2.of(method, returnType),
+        k -> {
+          MethodHandles.Lookup lookup = _JDKAccess._trustedLookup(method.getDeclaringClass());
+          try {
+            MethodHandle handle = lookup.unreflect(method);
+            return _JDKAccess.makeGetterFunction(lookup, handle, returnType);
+          } catch (IllegalAccessException ex) {
+            throw new RuntimeException(ex);
+          }
+        });
   }
 
   public static Tuple2<Class<?>, String> getterMethodInfo(Class<?> type) {

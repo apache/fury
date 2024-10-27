@@ -27,12 +27,14 @@ import java.util.function.Function;
 import javax.annotation.concurrent.ThreadSafe;
 import org.apache.fury.AbstractThreadSafeFury;
 import org.apache.fury.Fury;
+import org.apache.fury.annotation.Internal;
 import org.apache.fury.io.FuryInputStream;
 import org.apache.fury.io.FuryReadableChannel;
 import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.resolver.ClassChecker;
 import org.apache.fury.serializer.BufferCallback;
 import org.apache.fury.util.LoaderBinding;
 
@@ -60,8 +62,9 @@ public class ThreadPoolFury extends AbstractThreadSafeFury {
             fury -> factoryCallback.accept(fury));
   }
 
+  @Internal
   @Override
-  protected void processCallback(Consumer<Fury> callback) {
+  public void registerCallback(Consumer<Fury> callback) {
     factoryCallback = factoryCallback.andThen(callback);
     for (ClassLoaderFuryPooled furyPooled :
         furyPooledObjectFactory.classLoaderFuryPooledCache.asMap().values()) {
@@ -267,6 +270,11 @@ public class ThreadPoolFury extends AbstractThreadSafeFury {
   }
 
   @Override
+  public <T> T copy(T obj) {
+    return execute(fury -> fury.copy(obj));
+  }
+
+  @Override
   public void setClassLoader(ClassLoader classLoader) {
     setClassLoader(classLoader, LoaderBinding.StagingType.SOFT_STAGING);
   }
@@ -279,6 +287,15 @@ public class ThreadPoolFury extends AbstractThreadSafeFury {
   @Override
   public ClassLoader getClassLoader() {
     return furyPooledObjectFactory.getClassLoader();
+  }
+
+  @Override
+  public void setClassChecker(ClassChecker classChecker) {
+    execute(
+        fury -> {
+          fury.getClassResolver().setClassChecker(classChecker);
+          return null;
+        });
   }
 
   @Override

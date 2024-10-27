@@ -16,12 +16,12 @@
  * limitations under the License.
  */
 
-val furyVersion = "0.6.0-SNAPSHOT"
-val scala213Version = "2.13.14"
+val furyVersion = "0.9.0-SNAPSHOT"
+val scala213Version = "2.13.15"
 ThisBuild / apacheSonatypeProjectProfile := "fury"
 version := furyVersion
 scalaVersion := scala213Version
-crossScalaVersions := Seq(scala213Version, "3.3.3")
+crossScalaVersions := Seq(scala213Version, "3.3.4")
 
 lazy val root = Project(id = "fury-scala", base = file("."))
   .settings(
@@ -45,4 +45,14 @@ resolvers += Resolver.ApacheMavenSnapshotsRepo
 libraryDependencies ++= Seq(
   "org.apache.fury" % "fury-core" % furyVersion,
   "org.scalatest" %% "scalatest" % "3.2.19" % Test,
+  "dev.zio" %% "zio" % "2.1.7" % Test,
 )
+
+// Exclude sonatypeRelease and sonatypeBundleRelease commands because we
+// don't want to release this project to Maven Central without having
+// to complete the release using the repository.apache.org web site.
+commands := commands.value.filterNot { command =>
+  command.nameOption.exists { name =>
+    name.contains("sonatypeRelease") || name.contains("sonatypeBundleRelease")
+  }
+}

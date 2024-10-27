@@ -72,6 +72,13 @@ public class LittleEndian {
     return Platform.IS_LITTLE_ENDIAN ? v : Long.reverseBytes(v);
   }
 
+  public static void putInt64(byte[] o, int index, long value) {
+    if (!Platform.IS_LITTLE_ENDIAN) {
+      value = Long.reverseBytes(value);
+    }
+    Platform.putLong(o, Platform.BYTE_ARRAY_OFFSET + index, value);
+  }
+
   public static void putFloat32(Object o, long pos, float value) {
     int v = Float.floatToRawIntBits(value);
     if (!Platform.IS_LITTLE_ENDIAN) {

@@ -32,7 +32,11 @@ public class CollectionExample {
   static Fury fury;
 
   static {
-    fury = Fury.builder().requireClassRegistration(true).build();
+    fury =
+        Fury.builder()
+            .withName(CollectionExample.class.getName())
+            .requireClassRegistration(true)
+            .build();
   }
 
   static void test(Fury fury) {

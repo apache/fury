@@ -1,6 +1,7 @@
 # Apache Fury™ Scala
 
 Fury supports all scala object serialization:
+
 - `case` class serialization supported
 - `pojo/bean` class serialization supported
 - `object` singleton serialization supported

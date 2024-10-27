@@ -22,6 +22,7 @@ package org.apache.fury.resolver;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
+import java.nio.ByteBuffer;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.meta.MetaString;
@@ -47,5 +48,24 @@ public class MetaStringResolverTest {
       assertEquals(metaString.getBytes(), str.getBytes());
     }
     assertTrue(buffer.writerIndex() < str.getBytes().length + 128 * 4);
+  }
+
+  @Test
+  public void testWriteSmallMetaString() {
+    for (MemoryBuffer buffer :
+        new MemoryBuffer[] {
+          MemoryUtils.buffer(32), MemoryUtils.wrap(ByteBuffer.allocateDirect(32)),
+        }) {
+      for (int i = 0; i < 32; i++) {
+        String str = StringUtils.random(i, 0);
+        MetaStringResolver resolver = new MetaStringResolver();
+        resolver.writeMetaStringBytes(
+            buffer,
+            resolver.getOrCreateMetaStringBytes(new MetaStringEncoder('.', '_').encode(str)));
+        String metaString2 = resolver.readMetaString(buffer);
+        assertEquals(metaString2.hashCode(), str.hashCode());
+        assertEquals(metaString2.getBytes(), str.getBytes());
+      }
+    }
   }
 }

@@ -15,10 +15,9 @@
 // specific language governing permissions and limitations
 // under the License.
 
+use crate::util::sorted_fields;
 use proc_macro::TokenStream;
 use quote::quote;
-
-use crate::fury_meta::sorted_fields;
 
 pub fn derive_row(ast: &syn::DeriveInput) -> TokenStream {
     let name = &ast.ident;
@@ -35,7 +34,7 @@ pub fn derive_row(ast: &syn::DeriveInput) -> TokenStream {
 
         quote! {
             let mut callback_info = struct_writer.write_start(#index);
-            <#ty as fury::__derive::Row<'a>>::write(&v.#ident, struct_writer.get_writer());
+            <#ty as fury_core::row::Row<'a>>::write(&v.#ident, struct_writer.get_writer());
             struct_writer.write_end(callback_info);
         }
     });
@@ -46,9 +45,9 @@ pub fn derive_row(ast: &syn::DeriveInput) -> TokenStream {
         let getter_name: proc_macro2::Ident = syn::Ident::new(&format!("{}", ident), ident.span());
 
         quote! {
-            pub fn #getter_name(&self) -> <#ty as fury::__derive::Row<'a>>::ReadResult {
+            pub fn #getter_name(&self) -> <#ty as fury_core::row::Row<'a>>::ReadResult {
                 let bytes = self.struct_data.get_field_bytes(#index);
-                <#ty as fury::__derive::Row<'a>>::cast(bytes)
+                <#ty as fury_core::row::Row<'a>>::cast(bytes)
             }
         }
     });
@@ -60,24 +59,24 @@ pub fn derive_row(ast: &syn::DeriveInput) -> TokenStream {
 
     let gen = quote! {
         struct #getter<'a> {
-            struct_data: fury::__derive::StructViewer<'a>
+            struct_data: fury_core::row::StructViewer<'a>
         }
 
         impl<'a> #getter<'a> {
             #(#getter_exprs)*
         }
 
-        impl<'a> fury::__derive::Row<'a> for #name {
+        impl<'a> fury_core::row::Row<'a> for #name {
 
             type ReadResult = #getter<'a>;
 
-            fn write(v: &Self, writer: &mut fury::__derive::Writer) {
-                let mut struct_writer = fury::__derive::StructWriter::new(#num_fields, writer);
+            fn write(v: &Self, writer: &mut fury_core::buffer::Writer) {
+                let mut struct_writer = fury_core::row::StructWriter::new(#num_fields, writer);
                 #(#write_exprs);*;
             }
 
             fn cast(bytes: &'a [u8]) -> Self::ReadResult {
-                #getter{ struct_data: fury::__derive::StructViewer::new(bytes, #num_fields) }
+                #getter{ struct_data: fury_core::row::StructViewer::new(bytes, #num_fields) }
             }
         }
     };

@@ -411,8 +411,17 @@ public class TypeUtils {
   /** Create an array type declaration from elemType and dimensions. */
   public static String getArrayType(Class<?> elemType, int[] dimensions) {
     StringBuilder typeBuilder = new StringBuilder(ReflectionUtils.getLiteralName(elemType));
-    for (int i = 0; i < dimensions.length; i++) {
-      typeBuilder.append('[').append(dimensions[i]).append(']');
+    for (int dimension : dimensions) {
+      typeBuilder.append('[').append(dimension).append(']');
+    }
+    return typeBuilder.toString();
+  }
+
+  public static String getArrayClass(Class<?> type) {
+    Tuple2<Class<?>, Integer> info = getArrayComponentInfo(type);
+    StringBuilder typeBuilder = new StringBuilder(info.f0.getName());
+    for (int i = 0; i < info.f1; i++) {
+      typeBuilder.append("[]");
     }
     return typeBuilder.toString();
   }

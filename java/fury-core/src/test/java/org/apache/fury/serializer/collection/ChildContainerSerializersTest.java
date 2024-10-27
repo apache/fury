@@ -35,7 +35,7 @@ import lombok.Data;
 import org.apache.fury.Fury;
 import org.apache.fury.FuryTestBase;
 import org.apache.fury.config.CompatibleMode;
-import org.apache.fury.config.Language;
+import org.apache.fury.test.bean.Cyclic;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -63,19 +63,23 @@ public class ChildContainerSerializersTest extends FuryTestBase {
   public static Object[][] furyConfig() {
     return new Object[][] {
       {
-        Fury.builder()
-            .withLanguage(Language.JAVA)
+        builder()
             .withRefTracking(false)
+            .withScopedMetaShare(false)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .requireClassRegistration(false)
             .build()
       },
       {
-        Fury.builder()
-            .withLanguage(Language.JAVA)
+        builder()
+            .withRefTracking(false)
+            .withScopedMetaShare(true)
+            .withCompatibleMode(CompatibleMode.COMPATIBLE)
+            .build()
+      },
+      {
+        builder()
             .withRefTracking(false)
             .withCompatibleMode(CompatibleMode.SCHEMA_CONSISTENT)
-            .requireClassRegistration(false)
             .build()
       },
     };
@@ -128,6 +132,52 @@ public class ChildContainerSerializersTest extends FuryTestBase {
     }
   }
 
+  @Test(dataProvider = "furyCopyConfig")
+  public void testChildCollectionCopy(Fury fury) {
+    List<Object> data = ImmutableList.of(1, true, "test", Cyclic.create(true));
+    {
+      ChildArrayList<Object> list = new ChildArrayList<>();
+      list.addAll(data);
+      list.state = 3;
+      ChildArrayList<Object> newList = fury.copy(list);
+      Assert.assertEquals(newList, list);
+      Assert.assertEquals(newList.state, 3);
+      Assert.assertEquals(
+          fury.getClassResolver().getSerializer(newList.getClass()).getClass(),
+          ChildContainerSerializers.ChildArrayListSerializer.class);
+      ArrayList<Object> innerList =
+          new ArrayList<Object>() {
+            {
+              add(Cyclic.create(true));
+            }
+          };
+      copyCheck(fury, innerList);
+      Assert.assertEquals(
+          fury.getClassResolver().getSerializer(innerList.getClass()).getClass(),
+          CollectionSerializers.JDKCompatibleCollectionSerializer.class);
+    }
+    {
+      ChildLinkedList<Object> list = new ChildLinkedList<>();
+      list.addAll(data);
+      copyCheck(fury, list);
+    }
+    {
+      ChildArrayDeque<Object> list = new ChildArrayDeque<>();
+      list.addAll(data);
+      Assert.assertEquals(ImmutableList.copyOf(fury.copy(list)), data);
+    }
+    {
+      ChildVector<Object> list = new ChildVector<>();
+      list.addAll(data);
+      copyCheck(fury, list);
+    }
+    {
+      ChildHashSet<Object> list = new ChildHashSet<>();
+      list.addAll(data);
+      copyCheck(fury, list);
+    }
+  }
+
   public static class ChildHashMap<K, V> extends HashMap<K, V> {
     private int state;
   }
@@ -162,6 +212,30 @@ public class ChildContainerSerializersTest extends FuryTestBase {
     }
   }
 
+  @Test(dataProvider = "furyCopyConfig")
+  public void testChildMapCopy(Fury fury) {
+    Map<String, Object> data = ImmutableMap.of("k1", 1, "k2", 2, "k3", Cyclic.create(true));
+    {
+      ChildHashMap<String, Object> map = new ChildHashMap<>();
+      map.putAll(data);
+      map.state = 3;
+      ChildHashMap<String, Object> copy = fury.copy(map);
+      Assert.assertEquals(map, copy);
+      Assert.assertEquals(map.state, copy.state);
+      Assert.assertNotSame(map, copy);
+    }
+    {
+      ChildLinkedHashMap<String, Object> map = new ChildLinkedHashMap<>();
+      map.putAll(data);
+      copyCheck(fury, map);
+    }
+    {
+      ChildConcurrentHashMap<String, Object> map = new ChildConcurrentHashMap<>();
+      map.putAll(data);
+      copyCheck(fury, map);
+    }
+  }
+
   private static class CustomMap extends HashMap<String, String> {}
 
   @Data
@@ -176,12 +250,11 @@ public class ChildContainerSerializersTest extends FuryTestBase {
     UserDO outerDO = new UserDO();
     outerDO.setFeatures(features);
     Fury fury =
-        Fury.builder()
-            .withLanguage(Language.JAVA)
+        builder()
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
             .withDeserializeNonexistentClass(true)
             .withMetaShare(true)
-            .requireClassRegistration(false)
+            .withScopedMetaShare(false)
             .withCodegen(enableCodegen)
             .build();
     serDeMetaShared(fury, outerDO);

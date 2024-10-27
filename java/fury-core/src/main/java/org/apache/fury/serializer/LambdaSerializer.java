@@ -81,6 +81,17 @@ public class LambdaSerializer extends Serializer {
   }
 
   @Override
+  public Object copy(Object value) {
+    try {
+      Object replacement = writeReplaceMethod.invoke(value);
+      Object newReplacement = getDataSerializer().copy(replacement);
+      return READ_RESOLVE_METHOD.invoke(newReplacement);
+    } catch (Exception e) {
+      throw new RuntimeException("Can't copy lambda " + value, e);
+    }
+  }
+
+  @Override
   public Object read(MemoryBuffer buffer) {
     try {
       Object replacement = getDataSerializer().read(buffer);

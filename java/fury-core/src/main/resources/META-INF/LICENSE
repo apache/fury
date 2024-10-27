@@ -243,12 +243,14 @@ The text of each license is also included in licenses/LICENSE-[project].txt.
       java/fury-core/src/main/java/org/apache/fury/collection/IdentityMap.java
       java/fury-core/src/main/java/org/apache/fury/collection/IdentityObjectIntMap.java
       java/fury-core/src/main/java/org/apache/fury/collection/LongMap.java
+      java/fury-core/src/main/java/org/apache/fury/collection/LongLongMap.java
       java/fury-core/src/main/java/org/apache/fury/collection/ObjectIntMap.java
       java/fury-core/src/main/java/org/apache/fury/type/Generics.java
 
 * janino (https://github.com/janino-compiler/janino)
     Files:
       Shaded classes under org/apache/fury/shaded/org/codehaus/janino/*
+      Shaded classes under org/apache/fury/shaded/org/codehaus/commons/*
 
 
 ================================================================

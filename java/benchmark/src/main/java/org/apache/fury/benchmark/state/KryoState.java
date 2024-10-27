@@ -26,6 +26,7 @@ import com.esotericsoftware.kryo.serializers.CompatibleFieldSerializer;
 import com.esotericsoftware.kryo.unsafe.UnsafeByteBufferInput;
 import com.esotericsoftware.kryo.unsafe.UnsafeByteBufferOutput;
 import java.util.ArrayList;
+import java.util.HashMap;
 import org.apache.fury.benchmark.IntsSerializationSuite;
 import org.apache.fury.benchmark.LongStringSerializationSuite;
 import org.apache.fury.benchmark.LongsSerializationSuite;
@@ -85,6 +86,11 @@ public class KryoState {
       kryo.setRegistrationRequired(registerClass);
       kryo.register(int[].class);
       kryo.register(long[].class);
+      kryo.register(Object[].class);
+      kryo.register(Integer[].class);
+      kryo.register(String[].class);
+      kryo.register(ArrayList.class);
+      kryo.register(HashMap.class);
     }
   }
 

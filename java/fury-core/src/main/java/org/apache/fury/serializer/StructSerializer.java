@@ -182,7 +182,7 @@ public class StructSerializer<T> extends Serializer<T> {
       }
       fieldAccessor.set(obj, fieldValue);
       if (hasGenerics) {
-        generics.pushGenericType(fieldGeneric);
+        generics.popGenericType();
       }
     }
     return obj;

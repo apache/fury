@@ -20,7 +20,10 @@
 package org.apache.fury.serializer;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotSame;
+import static org.testng.Assert.assertTrue;
 
+import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -29,6 +32,7 @@ import java.util.function.Function;
 import org.apache.fury.Fury;
 import org.apache.fury.FuryTestBase;
 import org.apache.fury.config.Language;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.testng.annotations.Test;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
@@ -56,6 +60,17 @@ public class JdkProxySerializerTest extends FuryTestBase {
                 fury.getClassLoader(), new Class[] {Function.class}, new TestInvocationHandler());
     Function deserializedFunction = (Function) fury.deserialize(fury.serialize(function));
     assertEquals(deserializedFunction.apply(null), 1);
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testJdkProxy(Fury fury) {
+    Function function =
+        (Function)
+            Proxy.newProxyInstance(
+                fury.getClassLoader(), new Class[] {Function.class}, new TestInvocationHandler());
+    Function copy = fury.copy(function);
+    assertNotSame(copy, function);
+    assertEquals(copy.apply(null), 1);
   }
 
   private static class RefTestInvocationHandler implements InvocationHandler, Serializable {
@@ -101,5 +116,107 @@ public class JdkProxySerializerTest extends FuryTestBase {
     RefTestInvocationHandler deserializedHandler =
         (RefTestInvocationHandler) Proxy.getInvocationHandler(deserializedFunction);
     assertEquals(deserializedHandler.getProxy(), deserializedFunction);
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testJdkProxyRef(Fury fury) {
+    RefTestInvocationHandler hdlr = new RefTestInvocationHandler();
+    Function function =
+        (Function)
+            Proxy.newProxyInstance(fury.getClassLoader(), new Class[] {Function.class}, hdlr);
+    hdlr.setProxy(function);
+    assertEquals(hdlr.getProxy(), function);
+
+    Function copy = fury.copy(function);
+    RefTestInvocationHandler copyHandler =
+        (RefTestInvocationHandler) Proxy.getInvocationHandler(copy);
+    assertEquals(copyHandler.getProxy(), copy);
+  }
+
+  @Test
+  public void testSerializeProxyWriteReplace() {
+    final Fury fury =
+        Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
+
+    final Object o = ProxyFactory.createProxy(TestInterface.class);
+    final byte[] s = fury.serialize(o);
+    assertTrue(ReflectionUtils.isJdkProxy(fury.deserialize(s).getClass()));
+  }
+
+  interface TestInterface {
+    void test();
+  }
+
+  static class ProxyFactory {
+
+    static <T> T createProxy(final Class<T> type) {
+      return new JdkProxyFactory().createProxy(type);
+    }
+
+    public interface IWriteReplace {
+      Object writeReplace() throws ObjectStreamException;
+    }
+
+    static final class JdkProxyFactory {
+
+      @SuppressWarnings("unchecked")
+      <T> T createProxy(final Class<T> type) {
+        final JdkHandler handler = new JdkHandler(type);
+        try {
+          final ClassLoader cl = Thread.currentThread().getContextClassLoader();
+          return (T)
+              Proxy.newProxyInstance(
+                  cl, new Class[] {type, IWriteReplace.class, Serializable.class}, handler);
+        } catch (IllegalArgumentException e) {
+          throw new RuntimeException("Could not create proxy for type [" + type.getName() + "]", e);
+        }
+      }
+
+      static class JdkHandler implements InvocationHandler, IWriteReplace, Serializable {
+
+        private final String typeName;
+
+        private JdkHandler(Class<?> type) {
+          typeName = type.getName();
+        }
+
+        @Override
+        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+          if (isWriteReplaceMethod(method)) {
+            return writeReplace();
+          }
+          return null;
+        }
+
+        public Object writeReplace() throws ObjectStreamException {
+          return new ProxyReplacement(typeName);
+        }
+
+        static boolean isWriteReplaceMethod(final Method method) {
+          return (method.getReturnType() == Object.class)
+              && (method.getParameterTypes().length == 0)
+              && method.getName().equals("writeReplace");
+        }
+      }
+
+      public static final class ProxyReplacement implements Serializable {
+
+        private final String type;
+
+        public ProxyReplacement(final String type) {
+          this.type = type;
+        }
+
+        private Object readResolve() throws ObjectStreamException {
+          try {
+            final Class<?> clazz =
+                Class.forName(type, false, Thread.currentThread().getContextClassLoader());
+            return ProxyFactory.createProxy(clazz);
+          } catch (ClassNotFoundException ex) {
+            throw new RuntimeException(ex);
+          }
+        }
+      }
+    }
   }
 }

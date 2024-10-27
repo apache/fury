@@ -22,7 +22,9 @@ package org.apache.fury.builder;
 import static org.apache.fury.builder.Generated.GeneratedMetaSharedSerializer.SERIALIZER_FIELD_NAME;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.SortedMap;
+import java.util.concurrent.ConcurrentHashMap;
 import org.apache.fury.Fury;
 import org.apache.fury.builder.Generated.GeneratedMetaSharedSerializer;
 import org.apache.fury.codegen.CodeGenerator;
@@ -41,6 +43,7 @@ import org.apache.fury.serializer.Serializers;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.DescriptorGrouper;
 import org.apache.fury.util.ExceptionUtils;
+import org.apache.fury.util.GraalvmSupport;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.StringUtils;
 import org.apache.fury.util.record.RecordComponent;
@@ -85,11 +88,20 @@ public class MetaSharedCodecBuilder extends ObjectCodecBuilder {
         new ObjectCodecOptimizer(beanClass, grouper, !fury.isBasicTypesRefIgnored(), ctx);
   }
 
+  // Must be static to be shared across the whole process life.
+  private static final Map<Long, Integer> idGenerator = new ConcurrentHashMap<>();
+
   @Override
   protected String codecSuffix() {
     // For every class def sent from different peer, if the class def are different, then
     // a new serializer needs being generated.
-    return "MetaShared" + classDef.getId();
+    Integer id = idGenerator.get(classDef.getId());
+    if (id == null) {
+      synchronized (idGenerator) {
+        id = idGenerator.computeIfAbsent(classDef.getId(), k -> idGenerator.size());
+      }
+    }
+    return "MetaShared" + id;
   }
 
   @Override
@@ -136,6 +148,10 @@ public class MetaSharedCodecBuilder extends ObjectCodecBuilder {
   @SuppressWarnings({"unchecked", "rawtypes"})
   public static Serializer setCodegenSerializer(
       Fury fury, Class<?> cls, GeneratedMetaSharedSerializer s) {
+    if (GraalvmSupport.isGraalRuntime()) {
+      return fury.getJITContext()
+          .asyncVisitFury(f -> f.getClassResolver().getSerializer(s.getType()));
+    }
     // This method hold jit lock, so create jit serializer async to avoid block serialization.
     Class serializerClass =
         fury.getJITContext()

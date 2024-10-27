@@ -5,7 +5,9 @@ id: row_format_guide
 ---
 
 ## Row format protocol
+
 ### Java
+
 ```java
 public class Bar {
   String f1;
@@ -50,7 +52,9 @@ RowEncoder<Bar> barEncoder = Encoders.bean(Bar.class);
 Bar newBar = barEncoder.fromRow(barStruct);
 Bar newBar2 = barEncoder.fromRow(binaryArray4.getStruct(20));
 ```
+
 ### Python
+
 ```python
 @dataclass
 class Bar:
@@ -79,10 +83,13 @@ new_foo = pickle.loads(binary)
 print(new_foo.f2[100000], new_foo.f4[100000].f1, new_foo.f4[200000].f2[5])
 print(f"pickle end: {datetime.datetime.now()}")
 ```
+
 ### Apache Arrow Support
+
 Fury Format also supports automatic conversion from/to Arrow Table/RecordBatch.
 
 Java:
+
 ```java
 Schema schema = TypeInference.inferSchema(BeanA.class);
 ArrowWriter arrowWriter = ArrowUtils.createArrowWriter(schema);
@@ -93,14 +100,18 @@ for (int i = 0; i < 10; i++) {
 }
 return arrowWriter.finishAsRecordBatch();
 ```
+
 Python:
+
 ```python
 import pyfury
 encoder = pyfury.encoder(Foo)
 encoder.to_arrow_record_batch([foo] * 10000)
 encoder.to_arrow_table([foo] * 10000)
 ```
+
 C++
+
 ```c++
 std::shared_ptr<ArrowWriter> arrow_writer;
 EXPECT_TRUE(
@@ -115,6 +126,7 @@ EXPECT_TRUE(record_batch->Validate().ok());
 EXPECT_EQ(record_batch->num_columns(), schema->num_fields());
 EXPECT_EQ(record_batch->num_rows(), row_nums);
 ```
+
 ```java
 Schema schema = TypeInference.inferSchema(BeanA.class);
 ArrowWriter arrowWriter = ArrowUtils.createArrowWriter(schema);

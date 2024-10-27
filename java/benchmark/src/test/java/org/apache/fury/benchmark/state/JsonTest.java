@@ -73,7 +73,6 @@ public class JsonTest {
             .withScopedMetaShare(scoped)
             .withCodegen(codegen)
             .registerGuavaTypes(false)
-            .withCompatibleMode(CompatibleMode.COMPATIBLE)
             .build();
     byte[] serialized = fury.serialize(resp);
     DemoResponse o = (DemoResponse) fury.deserialize(serialized);

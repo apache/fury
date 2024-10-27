@@ -36,7 +36,7 @@ public class PrimitiveSerializers {
   public static final class BooleanSerializer
       extends Serializers.CrossLanguageCompatibleSerializer<Boolean> {
     public BooleanSerializer(Fury fury, Class<?> cls) {
-      super(fury, (Class) cls, !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
+      super(fury, (Class) cls, !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()), true);
     }
 
     @Override
@@ -53,7 +53,7 @@ public class PrimitiveSerializers {
   public static final class ByteSerializer
       extends Serializers.CrossLanguageCompatibleSerializer<Byte> {
     public ByteSerializer(Fury fury, Class<?> cls) {
-      super(fury, (Class) cls, !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
+      super(fury, (Class) cls, !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()), true);
     }
 
     @Override
@@ -103,7 +103,7 @@ public class PrimitiveSerializers {
     }
   }
 
-  public static final class CharSerializer extends Serializer<Character> {
+  public static final class CharSerializer extends ImmutableSerializer<Character> {
     public CharSerializer(Fury fury, Class<?> cls) {
       super(fury, (Class) cls, !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
     }
@@ -122,7 +122,7 @@ public class PrimitiveSerializers {
   public static final class ShortSerializer
       extends Serializers.CrossLanguageCompatibleSerializer<Short> {
     public ShortSerializer(Fury fury, Class<?> cls) {
-      super(fury, (Class) cls, !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
+      super(fury, (Class) cls, !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()), true);
     }
 
     @Override
@@ -141,7 +141,7 @@ public class PrimitiveSerializers {
     private final boolean compressNumber;
 
     public IntSerializer(Fury fury, Class<?> cls) {
-      super(fury, (Class) cls, !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
+      super(fury, (Class) cls, !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()), true);
       compressNumber = fury.compressInt();
     }
 
@@ -180,7 +180,7 @@ public class PrimitiveSerializers {
     private final LongEncoding longEncoding;
 
     public LongSerializer(Fury fury, Class<?> cls) {
-      super(fury, (Class) cls, !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
+      super(fury, (Class) cls, !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()), true);
       longEncoding = fury.longEncoding();
     }
 
@@ -260,7 +260,7 @@ public class PrimitiveSerializers {
   public static final class FloatSerializer
       extends Serializers.CrossLanguageCompatibleSerializer<Float> {
     public FloatSerializer(Fury fury, Class<?> cls) {
-      super(fury, (Class) cls, !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
+      super(fury, (Class) cls, !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()), true);
     }
 
     @Override
@@ -277,7 +277,7 @@ public class PrimitiveSerializers {
   public static final class DoubleSerializer
       extends Serializers.CrossLanguageCompatibleSerializer<Double> {
     public DoubleSerializer(Fury fury, Class<?> cls) {
-      super(fury, (Class) cls, !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
+      super(fury, (Class) cls, !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()), true);
     }
 
     @Override

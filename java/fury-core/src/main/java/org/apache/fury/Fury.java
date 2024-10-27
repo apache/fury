@@ -23,11 +23,15 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.annotation.concurrent.NotThreadSafe;
 import org.apache.fury.builder.JITContext;
+import org.apache.fury.collection.IdentityMap;
 import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.config.Config;
 import org.apache.fury.config.FuryBuilder;
@@ -43,6 +47,7 @@ import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassInfoHolder;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.resolver.MapRefResolver;
+import org.apache.fury.resolver.MetaContext;
 import org.apache.fury.resolver.MetaStringResolver;
 import org.apache.fury.resolver.NoRefResolver;
 import org.apache.fury.resolver.RefResolver;
@@ -55,6 +60,8 @@ import org.apache.fury.serializer.PrimitiveSerializers.LongSerializer;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.serializer.SerializerFactory;
 import org.apache.fury.serializer.StringSerializer;
+import org.apache.fury.serializer.collection.CollectionSerializers.ArrayListSerializer;
+import org.apache.fury.serializer.collection.MapSerializers.HashMapSerializer;
 import org.apache.fury.type.Generics;
 import org.apache.fury.type.Types;
 import org.apache.fury.util.ExceptionUtils;
@@ -94,6 +101,7 @@ public final class Fury implements BaseFury {
 
   private final Config config;
   private final boolean refTracking;
+  private final boolean shareMeta;
   private final RefResolver refResolver;
   private final ClassResolver classResolver;
   private final XtypeResolver xtypeResolver;
@@ -103,6 +111,8 @@ public final class Fury implements BaseFury {
   private final JITContext jitContext;
   private MemoryBuffer buffer;
   private final StringSerializer stringSerializer;
+  private final ArrayListSerializer arrayListSerializer;
+  private final HashMapSerializer hashMapSerializer;
   private final Language language;
   private final boolean compressInt;
   private final LongEncoding longEncoding;
@@ -112,6 +122,10 @@ public final class Fury implements BaseFury {
   private Iterator<MemoryBuffer> outOfBandBuffers;
   private boolean peerOutOfBandEnabled;
   private int depth;
+  private int copyDepth;
+  private final boolean copyRefTracking;
+  private final IdentityMap<Object, Object> originToCopyMap;
+  private int classDefEndOffset;
 
   public Fury(FuryBuilder builder, ClassLoader classLoader) {
     // Avoid set classLoader in `FuryBuilder`, which won't be clear when
@@ -119,6 +133,8 @@ public final class Fury implements BaseFury {
     config = new Config(builder);
     this.language = config.getLanguage();
     this.refTracking = config.trackingRef();
+    this.copyRefTracking = config.copyRef();
+    this.shareMeta = config.isMetaShareEnabled();
     compressInt = config.compressInt();
     longEncoding = config.longEncoding();
     if (refTracking) {
@@ -135,6 +151,10 @@ public final class Fury implements BaseFury {
     this.classLoader = classLoader;
     generics = new Generics(this);
     stringSerializer = new StringSerializer(this);
+    arrayListSerializer = new ArrayListSerializer(this);
+    hashMapSerializer = new HashMapSerializer(this);
+    originToCopyMap = new IdentityMap<>();
+    classDefEndOffset = -1;
     LOG.info("Created new fury {}", this);
   }
 
@@ -174,6 +194,7 @@ public final class Fury implements BaseFury {
     }
   }
 
+  /** register class with given type tag which will be used for cross-language serialization. */
   public void register(Class<?> cls, String typeName) {
     Preconditions.checkArgument(language != Language.JAVA);
     register(cls, "", typeName);
@@ -318,6 +339,19 @@ public final class Fury implements BaseFury {
     throw e;
   }
 
+  private StackOverflowError processCopyStackOverflowError(StackOverflowError e) {
+    if (!copyRefTracking) {
+      String msg =
+          "Object may contain circular references, please enable ref tracking "
+              + "by `FuryBuilder#withRefCopy(true)`";
+      StackOverflowError t1 = ExceptionUtils.trySetStackOverflowErrorMessage(e, msg);
+      if (t1 != null) {
+        return t1;
+      }
+    }
+    throw e;
+  }
+
   public MemoryBuffer getBuffer() {
     MemoryBuffer buf = buffer;
     if (buf == null) {
@@ -345,8 +379,9 @@ public final class Fury implements BaseFury {
       classResolver.writeClass(buffer, classInfo);
       writeData(buffer, classInfo, obj);
     }
-    if (shareMeta) {
-      buffer.putInt32(startOffset, buffer.writerIndex());
+    MetaContext metaContext = serializationContext.getMetaContext();
+    if (shareMeta && metaContext != null && !metaContext.writingClassDefs.isEmpty()) {
+      buffer.putInt32(startOffset, buffer.writerIndex() - startOffset - 4);
       classResolver.writeClassDefs(buffer);
     }
   }
@@ -765,8 +800,8 @@ public final class Fury implements BaseFury {
       if (isTargetXLang) {
         obj = xreadRef(buffer);
       } else {
-        if (config.isMetaShareEnabled()) {
-          classResolver.readClassDefs(buffer);
+        if (shareMeta) {
+          readClassDefs(buffer);
         }
         obj = readRef(buffer);
       }
@@ -774,6 +809,9 @@ public final class Fury implements BaseFury {
     } catch (Throwable t) {
       throw ExceptionUtils.handleReadFailed(this, t);
     } finally {
+      if (classDefEndOffset != -1) {
+        buffer.readerIndex(classDefEndOffset);
+      }
       resetRead();
       jitContext.unlock();
     }
@@ -1012,9 +1050,12 @@ public final class Fury implements BaseFury {
         if (!refResolver.writeRefOrNull(buffer, obj)) {
           ClassInfo classInfo = classResolver.getOrUpdateClassInfo(obj.getClass());
           writeData(buffer, classInfo, obj);
+          MetaContext metaContext = serializationContext.getMetaContext();
+          if (metaContext != null && !metaContext.writingClassDefs.isEmpty()) {
+            buffer.putInt32(startOffset, buffer.writerIndex() - startOffset - 4);
+            classResolver.writeClassDefs(buffer);
+          }
         }
-        buffer.putInt32(startOffset, buffer.writerIndex());
-        classResolver.writeClassDefs(buffer);
       } else {
         if (!refResolver.writeRefOrNull(buffer, obj)) {
           ClassInfo classInfo = classResolver.getOrUpdateClassInfo(obj.getClass());
@@ -1051,8 +1092,8 @@ public final class Fury implements BaseFury {
       if (depth != 0) {
         throwDepthDeserializationException();
       }
-      if (config.isMetaShareEnabled()) {
-        classResolver.readClassDefs(buffer);
+      if (shareMeta) {
+        readClassDefs(buffer);
       }
       T obj;
       int nextReadRefId = refResolver.tryPreserveRefId(buffer);
@@ -1065,6 +1106,9 @@ public final class Fury implements BaseFury {
     } catch (Throwable t) {
       throw ExceptionUtils.handleReadFailed(this, t);
     } finally {
+      if (classDefEndOffset != -1) {
+        buffer.readerIndex(classDefEndOffset);
+      }
       resetRead();
       jitContext.unlock();
     }
@@ -1165,13 +1209,16 @@ public final class Fury implements BaseFury {
       if (depth != 0) {
         throwDepthDeserializationException();
       }
-      if (config.isMetaShareEnabled()) {
-        classResolver.readClassDefs(buffer);
+      if (shareMeta) {
+        readClassDefs(buffer);
       }
       return readRef(buffer);
     } catch (Throwable t) {
       throw ExceptionUtils.handleReadFailed(this, t);
     } finally {
+      if (classDefEndOffset != -1) {
+        buffer.readerIndex(classDefEndOffset);
+      }
       resetRead();
       jitContext.unlock();
     }
@@ -1199,6 +1246,155 @@ public final class Fury implements BaseFury {
   public Object deserializeJavaObjectAndClass(FuryReadableChannel channel) {
     MemoryBuffer buf = channel.getBuffer();
     return deserializeJavaObjectAndClass(buf);
+  }
+
+  @Override
+  public <T> T copy(T obj) {
+    try {
+      return copyObject(obj);
+    } catch (StackOverflowError e) {
+      throw processCopyStackOverflowError(e);
+    } finally {
+      if (copyRefTracking) {
+        resetCopy();
+      }
+    }
+  }
+
+  /**
+   * Copy object. This method provides a fast copy of common types.
+   *
+   * @param obj object to copy
+   * @return copied object
+   */
+  public <T> T copyObject(T obj) {
+    if (obj == null) {
+      return null;
+    }
+    Object copy;
+    ClassInfo classInfo = classResolver.getOrUpdateClassInfo(obj.getClass());
+    switch (classInfo.getClassId()) {
+      case ClassResolver.PRIMITIVE_BOOLEAN_CLASS_ID:
+      case ClassResolver.PRIMITIVE_BYTE_CLASS_ID:
+      case ClassResolver.PRIMITIVE_CHAR_CLASS_ID:
+      case ClassResolver.PRIMITIVE_SHORT_CLASS_ID:
+      case ClassResolver.PRIMITIVE_INT_CLASS_ID:
+      case ClassResolver.PRIMITIVE_FLOAT_CLASS_ID:
+      case ClassResolver.PRIMITIVE_LONG_CLASS_ID:
+      case ClassResolver.PRIMITIVE_DOUBLE_CLASS_ID:
+      case ClassResolver.BOOLEAN_CLASS_ID:
+      case ClassResolver.BYTE_CLASS_ID:
+      case ClassResolver.CHAR_CLASS_ID:
+      case ClassResolver.SHORT_CLASS_ID:
+      case ClassResolver.INTEGER_CLASS_ID:
+      case ClassResolver.FLOAT_CLASS_ID:
+      case ClassResolver.LONG_CLASS_ID:
+      case ClassResolver.DOUBLE_CLASS_ID:
+      case ClassResolver.STRING_CLASS_ID:
+        return obj;
+      case ClassResolver.PRIMITIVE_BOOLEAN_ARRAY_CLASS_ID:
+        boolean[] boolArr = (boolean[]) obj;
+        return (T) Arrays.copyOf(boolArr, boolArr.length);
+      case ClassResolver.PRIMITIVE_BYTE_ARRAY_CLASS_ID:
+        byte[] byteArr = (byte[]) obj;
+        return (T) Arrays.copyOf(byteArr, byteArr.length);
+      case ClassResolver.PRIMITIVE_CHAR_ARRAY_CLASS_ID:
+        char[] charArr = (char[]) obj;
+        return (T) Arrays.copyOf(charArr, charArr.length);
+      case ClassResolver.PRIMITIVE_SHORT_ARRAY_CLASS_ID:
+        short[] shortArr = (short[]) obj;
+        return (T) Arrays.copyOf(shortArr, shortArr.length);
+      case ClassResolver.PRIMITIVE_INT_ARRAY_CLASS_ID:
+        int[] intArr = (int[]) obj;
+        return (T) Arrays.copyOf(intArr, intArr.length);
+      case ClassResolver.PRIMITIVE_FLOAT_ARRAY_CLASS_ID:
+        float[] floatArr = (float[]) obj;
+        return (T) Arrays.copyOf(floatArr, floatArr.length);
+      case ClassResolver.PRIMITIVE_LONG_ARRAY_CLASS_ID:
+        long[] longArr = (long[]) obj;
+        return (T) Arrays.copyOf(longArr, longArr.length);
+      case ClassResolver.PRIMITIVE_DOUBLE_ARRAY_CLASS_ID:
+        double[] doubleArr = (double[]) obj;
+        return (T) Arrays.copyOf(doubleArr, doubleArr.length);
+      case ClassResolver.STRING_ARRAY_CLASS_ID:
+        String[] stringArr = (String[]) obj;
+        return (T) Arrays.copyOf(stringArr, stringArr.length);
+      case ClassResolver.ARRAYLIST_CLASS_ID:
+        copy = arrayListSerializer.copy((ArrayList) obj);
+        break;
+      case ClassResolver.HASHMAP_CLASS_ID:
+        copy = hashMapSerializer.copy((HashMap) obj);
+        break;
+        // todo: add fastpath for other types.
+      default:
+        copy = copyObject(obj, classInfo.getSerializer());
+    }
+    return (T) copy;
+  }
+
+  public <T> T copyObject(T obj, int classId) {
+    if (obj == null) {
+      return null;
+    }
+    // Fast path to avoid cost of query class map.
+    switch (classId) {
+      case ClassResolver.PRIMITIVE_BOOLEAN_CLASS_ID:
+      case ClassResolver.PRIMITIVE_BYTE_CLASS_ID:
+      case ClassResolver.PRIMITIVE_CHAR_CLASS_ID:
+      case ClassResolver.PRIMITIVE_SHORT_CLASS_ID:
+      case ClassResolver.PRIMITIVE_INT_CLASS_ID:
+      case ClassResolver.PRIMITIVE_FLOAT_CLASS_ID:
+      case ClassResolver.PRIMITIVE_LONG_CLASS_ID:
+      case ClassResolver.PRIMITIVE_DOUBLE_CLASS_ID:
+      case ClassResolver.BOOLEAN_CLASS_ID:
+      case ClassResolver.BYTE_CLASS_ID:
+      case ClassResolver.CHAR_CLASS_ID:
+      case ClassResolver.SHORT_CLASS_ID:
+      case ClassResolver.INTEGER_CLASS_ID:
+      case ClassResolver.FLOAT_CLASS_ID:
+      case ClassResolver.LONG_CLASS_ID:
+      case ClassResolver.DOUBLE_CLASS_ID:
+      case ClassResolver.STRING_CLASS_ID:
+        return obj;
+      default:
+        return copyObject(obj, classResolver.getOrUpdateClassInfo(obj.getClass()).getSerializer());
+    }
+  }
+
+  public <T> T copyObject(T obj, Serializer<T> serializer) {
+    copyDepth++;
+    T copyObject;
+    if (serializer.needToCopyRef()) {
+      copyObject = getCopyObject(obj);
+      if (copyObject == null) {
+        copyObject = serializer.copy(obj);
+        originToCopyMap.put(obj, copyObject);
+      }
+    } else {
+      copyObject = serializer.copy(obj);
+    }
+    copyDepth--;
+    return copyObject;
+  }
+
+  /**
+   * Track ref for copy.
+   *
+   * <p>Call this method immediately after composited object such as object
+   * array/map/collection/bean is created so that circular reference can be copy correctly.
+   *
+   * @param o1 object before copying
+   * @param o2 the copied object
+   */
+  public <T> void reference(T o1, T o2) {
+    if (o1 != null) {
+      originToCopyMap.put(o1, o2);
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  public <T> T getCopyObject(T originObj) {
+    return (T) originToCopyMap.get(originObj);
   }
 
   private void serializeToStream(OutputStream outputStream, Consumer<MemoryBuffer> function) {
@@ -1229,6 +1425,18 @@ public final class Fury implements BaseFury {
     }
   }
 
+  private void readClassDefs(MemoryBuffer buffer) {
+    int relativeClassDefOffset = buffer.readInt32();
+    if (relativeClassDefOffset == -1) {
+      return;
+    }
+    int readerIndex = buffer.readerIndex();
+    buffer.readerIndex(readerIndex + relativeClassDefOffset);
+    classResolver.readClassDefs(buffer);
+    classDefEndOffset = buffer.readerIndex();
+    buffer.readerIndex(readerIndex);
+  }
+
   public void reset() {
     refResolver.reset();
     classResolver.reset();
@@ -1237,6 +1445,7 @@ public final class Fury implements BaseFury {
     peerOutOfBandEnabled = false;
     bufferCallback = null;
     depth = 0;
+    resetCopy();
   }
 
   public void resetWrite() {
@@ -1255,6 +1464,12 @@ public final class Fury implements BaseFury {
     serializationContext.resetRead();
     peerOutOfBandEnabled = false;
     depth = 0;
+    classDefEndOffset = -1;
+  }
+
+  public void resetCopy() {
+    originToCopyMap.clear();
+    copyDepth = 0;
   }
 
   private void throwDepthSerializationException() {
@@ -1317,6 +1532,10 @@ public final class Fury implements BaseFury {
     this.depth += diff;
   }
 
+  public void incCopyDepth(int diff) {
+    this.copyDepth += diff;
+  }
+
   // Invoked by jit
   public StringSerializer getStringSerializer() {
     return stringSerializer;
@@ -1332,6 +1551,10 @@ public final class Fury implements BaseFury {
 
   public boolean trackingRef() {
     return refTracking;
+  }
+
+  public boolean copyTrackingRef() {
+    return copyRefTracking;
   }
 
   public boolean isStringRefIgnored() {

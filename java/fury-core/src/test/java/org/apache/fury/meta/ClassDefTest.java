@@ -20,6 +20,7 @@
 package org.apache.fury.meta;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 
 import com.google.common.collect.ImmutableList;
 import java.lang.reflect.Field;
@@ -166,5 +167,13 @@ public class ClassDefTest extends FuryTestBase {
     ClassDef classDef1 = ClassDef.readClassDef(fury.getClassResolver(), buffer);
     assertEquals(classDef1.getClassName(), classDef.getClassName());
     assertEquals(classDef1, classDef);
+  }
+
+  @Test
+  public void testInterface() {
+    Fury fury = Fury.builder().withMetaShare(true).build();
+    ClassDef classDef = ClassDef.buildClassDef(fury, Map.class);
+    assertTrue(classDef.getFieldsInfo().isEmpty());
+    assertTrue(classDef.isObjectType());
   }
 }

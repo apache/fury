@@ -23,6 +23,7 @@ import static org.apache.fury.meta.Encoders.GENERIC_ENCODER;
 
 import org.apache.fury.collection.Tuple2;
 import org.apache.fury.config.Language;
+import org.apache.fury.meta.ClassDef;
 import org.apache.fury.meta.Encoders;
 import org.apache.fury.meta.MetaString.Encoding;
 import org.apache.fury.reflect.ReflectionUtils;
@@ -35,7 +36,6 @@ import org.apache.fury.util.function.Functions;
  * serialization.
  */
 public class ClassInfo {
-
   final Class<?> cls;
   final MetaStringBytes fullClassNameBytes;
   final MetaStringBytes packageNameBytes;
@@ -46,6 +46,8 @@ public class ClassInfo {
   // use primitive to avoid boxing
   // class id must be less than Integer.MAX_VALUE/2 since we use bit 0 as class id flag.
   short classId;
+  ClassDef classDef;
+  boolean needToWriteClassDef;
 
   ClassInfo(
       Class<?> cls,
@@ -77,6 +79,7 @@ public class ClassInfo {
       short xtypeId) {
     this.cls = cls;
     this.serializer = serializer;
+    needToWriteClassDef = serializer != null && classResolver.needToWriteClassDef(serializer);
     MetaStringResolver metaStringResolver = classResolver.getMetaStringResolver();
     if (cls != null && classResolver.getFury().getLanguage() != Language.JAVA) {
       this.fullClassNameBytes =
@@ -89,9 +92,7 @@ public class ClassInfo {
     // means only classes are serialized, not the instance. If we
     // serialize such class only, we need to write classname bytes.
     if (cls != null
-        && ((classId == ClassResolver.NO_CLASS_ID
-                && !classResolver.getFury().getConfig().isMetaShareEnabled())
-            || classId == ClassResolver.REPLACE_STUB_ID)) {
+        && (classId == ClassResolver.NO_CLASS_ID || classId == ClassResolver.REPLACE_STUB_ID)) {
       // REPLACE_STUB_ID for write replace class in `ClassSerializer`.
       Tuple2<String, String> tuple2 = Encoders.encodePkgAndClass(cls);
       this.packageNameBytes =
@@ -106,7 +107,7 @@ public class ClassInfo {
     this.classId = classId;
     if (cls != null) {
       boolean isLambda = Functions.isLambda(cls);
-      boolean isProxy = ReflectionUtils.isJdkProxy(cls);
+      boolean isProxy = classId != ClassResolver.REPLACE_STUB_ID && ReflectionUtils.isJdkProxy(cls);
       this.isDynamicGeneratedClass = isLambda || isProxy;
       if (isLambda) {
         this.classId = ClassResolver.LAMBDA_STUB_ID;
@@ -142,6 +143,11 @@ public class ClassInfo {
   @SuppressWarnings("unchecked")
   public <T> Serializer<T> getSerializer() {
     return (Serializer<T>) serializer;
+  }
+
+  void setSerializer(ClassResolver resolver, Serializer<?> serializer) {
+    this.serializer = serializer;
+    needToWriteClassDef = serializer != null && resolver.needToWriteClassDef(serializer);
   }
 
   @Override

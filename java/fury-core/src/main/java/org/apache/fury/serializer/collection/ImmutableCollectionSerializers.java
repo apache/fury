@@ -120,6 +120,23 @@ public class ImmutableCollectionSerializers {
     }
 
     @Override
+    public Collection copy(Collection originCollection) {
+      if (Platform.JAVA_VERSION <= 8) {
+        throw new UnsupportedOperationException(
+            String.format(
+                "Only support jdk9+ java.util.ImmutableCollections deep copy. %s",
+                originCollection.getClass()));
+      }
+      Object[] elements = new Object[originCollection.size()];
+      copyElements(originCollection, elements);
+      try {
+        return (List) listFactory.invoke(elements);
+      } catch (Throwable e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    @Override
     public Collection onCollectionRead(Collection collection) {
       if (Platform.JAVA_VERSION > 8) {
         CollectionContainer container = (CollectionContainer) collection;
@@ -152,6 +169,23 @@ public class ImmutableCollectionSerializers {
     }
 
     @Override
+    public Collection copy(Collection originCollection) {
+      if (Platform.JAVA_VERSION <= 8) {
+        throw new UnsupportedOperationException(
+            String.format(
+                "Only support jdk9+ java.util.ImmutableCollections deep copy. %s",
+                originCollection.getClass()));
+      }
+      Object[] elements = new Object[originCollection.size()];
+      copyElements(originCollection, elements);
+      try {
+        return (Set) setFactory.invoke(elements);
+      } catch (Throwable e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    @Override
     public Collection onCollectionRead(Collection collection) {
       if (Platform.JAVA_VERSION > 8) {
         CollectionContainer container = (CollectionContainer) collection;
@@ -180,6 +214,28 @@ public class ImmutableCollectionSerializers {
         return new JDKImmutableMapContainer(numElements);
       } else {
         return new HashMap(numElements);
+      }
+    }
+
+    @Override
+    public Map copy(Map originMap) {
+      if (Platform.JAVA_VERSION <= 8) {
+        throw new UnsupportedOperationException(
+            String.format(
+                "Only support jdk9+ java.util.ImmutableCollections deep copy. %s",
+                originMap.getClass()));
+      }
+      int size = originMap.size();
+      Object[] elements = new Object[size * 2];
+      copyEntry(originMap, elements);
+      try {
+        if (size == 1) {
+          return (Map) map1Factory.invoke(elements[0], elements[1]);
+        } else {
+          return (Map) mapNFactory.invoke(elements);
+        }
+      } catch (Throwable e) {
+        throw new RuntimeException(e);
       }
     }
 

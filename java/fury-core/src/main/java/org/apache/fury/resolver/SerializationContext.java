@@ -64,6 +64,7 @@ public final class SerializationContext {
    * FuryBuilder#withMetaShare(boolean)}
    */
   public void setMetaContext(MetaContext metaContext) {
+    assert !scopedMetaShareEnabled;
     this.metaContext = metaContext;
   }
 
@@ -73,7 +74,7 @@ public final class SerializationContext {
     }
     if (scopedMetaShareEnabled) {
       metaContext.classMap.clear();
-      metaContext.writingClassDefs.clear();
+      metaContext.writingClassDefs.size = 0;
     } else {
       metaContext = null;
     }
@@ -84,8 +85,8 @@ public final class SerializationContext {
       objects.clear();
     }
     if (scopedMetaShareEnabled) {
-      metaContext.readClassInfos.clear();
-      metaContext.readClassDefs.clear();
+      metaContext.readClassInfos.size = 0;
+      metaContext.readClassDefs.size = 0;
     } else {
       metaContext = null;
     }
@@ -97,9 +98,9 @@ public final class SerializationContext {
     }
     if (scopedMetaShareEnabled) {
       metaContext.classMap.clear();
-      metaContext.writingClassDefs.clear();
-      metaContext.readClassInfos.clear();
-      metaContext.readClassDefs.clear();
+      metaContext.writingClassDefs.size = 0;
+      metaContext.readClassInfos.size = 0;
+      metaContext.readClassDefs.size = 0;
     } else {
       metaContext = null;
     }

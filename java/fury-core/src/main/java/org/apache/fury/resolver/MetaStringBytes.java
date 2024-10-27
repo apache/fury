@@ -21,17 +21,22 @@ package org.apache.fury.resolver;
 
 import java.util.Arrays;
 import org.apache.fury.annotation.Internal;
+import org.apache.fury.memory.LittleEndian;
+import org.apache.fury.memory.Platform;
 import org.apache.fury.meta.MetaString;
 import org.apache.fury.meta.MetaStringDecoder;
 import org.apache.fury.util.MurmurHash3;
 
 @Internal
-final class MetaStringBytes {
+public final class MetaStringBytes {
   static final short DEFAULT_DYNAMIC_WRITE_STRING_ID = -1;
   private static final int HEADER_MASK = 0xff;
 
   final byte[] bytes;
   final long hashCode;
+  final MetaString.Encoding encoding;
+  final long first8Bytes;
+  final long second8Bytes;
   short dynamicWriteStringId = DEFAULT_DYNAMIC_WRITE_STRING_ID;
 
   /**
@@ -41,14 +46,23 @@ final class MetaStringBytes {
    * @param hashCode String hash code. This should be unique and has no hash collision, and be
    *     deterministic, so we can use cache to reduce hash loop up for read.
    */
-  public MetaStringBytes(byte[] bytes, long hashCode) {
+  MetaStringBytes(final byte[] bytes, long hashCode) {
     assert hashCode != 0;
     this.bytes = bytes;
     this.hashCode = hashCode;
+    int header = (int) (hashCode & HEADER_MASK);
+    this.encoding = MetaString.Encoding.fromInt(header);
+    byte[] data = bytes;
+    if (bytes.length < 16) {
+      data = new byte[16];
+      System.arraycopy(bytes, 0, data, 0, bytes.length);
+    }
+    first8Bytes = LittleEndian.getInt64(data, Platform.BYTE_ARRAY_OFFSET);
+    second8Bytes = LittleEndian.getInt64(data, Platform.BYTE_ARRAY_OFFSET + 8);
   }
 
-  public MetaStringBytes(MetaString metaString) {
-    this.bytes = metaString.getBytes();
+  static MetaStringBytes of(MetaString metaString) {
+    byte[] bytes = metaString.getBytes();
     // Set seed to ensure hash is deterministic.
     long hashCode = MurmurHash3.murmurhash3_x64_128(bytes, 0, bytes.length, 47)[0];
     if (hashCode == 0) {
@@ -56,8 +70,10 @@ final class MetaStringBytes {
       hashCode += 256; // last byte is reserved for header.
     }
     hashCode &= 0xffffffffffffff00L;
-    int header = metaString.getEncoding().getValue() & HEADER_MASK;
-    this.hashCode = hashCode | header;
+    MetaString.Encoding encoding = metaString.getEncoding();
+    int header = encoding.getValue() & HEADER_MASK;
+    hashCode = hashCode | header;
+    return new MetaStringBytes(bytes, hashCode);
   }
 
   public String decode(char specialChar1, char specialChar2) {
@@ -65,8 +81,6 @@ final class MetaStringBytes {
   }
 
   public String decode(MetaStringDecoder decoder) {
-    int header = (int) (hashCode & HEADER_MASK);
-    MetaString.Encoding encoding = MetaString.Encoding.values()[header];
     return decoder.decode(bytes, encoding);
   }
 
