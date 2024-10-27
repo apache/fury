@@ -28,7 +28,7 @@ import org.testng.annotations.Test;
 public class StringEncodingUtilsTest extends FuryTestBase {
   @Test
   public void testUTF8ToUTF16() {
-    String input = "你好, Fury";
+    String input = "jbmbmner8 jhk hj \n \t üäßß@µ你好";
     byte[] utf8 = input.getBytes(StandardCharsets.UTF_8);
     char[] utf16Chars = new char[utf8.length * 2];
     int readLen = StringEncodingUtils.convertUTF8ToUTF16(utf8, 0, utf8.length, utf16Chars);
@@ -43,7 +43,7 @@ public class StringEncodingUtilsTest extends FuryTestBase {
 
   @Test
   public void testUTF16ToUTF8() {
-    String input = "你好, Fury";
+    String input = "jbmbmner8 jhk hj \n \t üäßß@µ你好";
     char[] utf16 = new char[input.length()];
     byte[] utf8 = new byte[input.length() * 3];
     input.getChars(0, input.length(), utf16, 0);
