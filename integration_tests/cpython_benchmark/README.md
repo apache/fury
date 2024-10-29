@@ -7,11 +7,13 @@ Microbenchmark for Fury serialization in cpython
 Step 1: Install Fury into Python
 
 Step 2: Install the dependencies required for the benchmark script
+
 ```bash
 pip install -r requirements.txt
 ```
 
 Step 3: Execute the benchmark script
+
 ```bash
 python fury_benchmark.py
 ```
