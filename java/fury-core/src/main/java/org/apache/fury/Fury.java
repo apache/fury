@@ -761,8 +761,9 @@ public final class Fury implements BaseFury {
       if ((bitmap & isNilFlag) == isNilFlag) {
         return null;
       }
-      boolean isLittleEndian = (bitmap & isLittleEndianFlag) == isLittleEndianFlag;
-      Preconditions.checkArgument(Fury.isLittleEndian, isLittleEndian);
+      Preconditions.checkArgument(
+          Fury.isLittleEndian,
+          "Non-Little-Endian format detected. Only Little-Endian is supported.");
       boolean isTargetXLang = (bitmap & isCrossLanguageFlag) == isCrossLanguageFlag;
       if (isTargetXLang) {
         peerLanguage = Language.values()[buffer.readByte()];
