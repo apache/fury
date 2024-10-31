@@ -535,9 +535,7 @@ def test_py_serialize_dataclass():
         f1=1, f2=-2.0, f3="abc", f4=True, f5="xyz", f6=[1, 2], f7={"k1": "v1"}
     )
     assert ser_de(fury, obj1) == obj1
-    obj2 = PyDataClass1(
-        f1=None, f2=-2.0, f3="abc", f4=None, f5="xyz", f6=None, f7=None
-    )
+    obj2 = PyDataClass1(f1=None, f2=-2.0, f3="abc", f4=None, f5="xyz", f6=None, f7=None)
     assert ser_de(fury, obj2) == obj2
 
 
