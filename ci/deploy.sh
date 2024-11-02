@@ -47,9 +47,8 @@ VERSIONS=("3.7"
           "3.11"
           "3.12")
 
-source $(conda info --base)/etc/profile.d/conda.sh
-
 create_py_envs() {
+  source $(conda info --base)/etc/profile.d/conda.sh
   for version in "${VERSIONS[@]}"; do
     conda create -y --name "py$version" python="$version"
   done
@@ -94,6 +93,7 @@ deploy_jars() {
 }
 
 deploy_python() {
+  source $(conda info --base)/etc/profile.d/conda.sh
   if command -v pyenv; then
     pyenv local system
   fi
