@@ -226,6 +226,10 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+      # https://github.com/actions/runner-images/blob/main/images/windows/Windows2022-Readme.md
+      - name: Add conda bin to path
+        run: echo "C:\Miniconda\bin" >> "$GITHUB_PATH"
+        if: matrix.os == 'windows-2022'
       - name: Install bazel
         run: ./ci/run_ci.sh install_bazel
       - name: Run Python CI
