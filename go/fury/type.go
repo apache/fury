@@ -19,6 +19,7 @@ package fury
 
 import (
 	"fmt"
+	"github.com/apache/fury/go/fury/meta"
 	"hash/fnv"
 	"reflect"
 	"regexp"
@@ -136,6 +137,7 @@ const (
 	NotSupportCrossLanguage = 0
 	useStringValue          = 0
 	useStringId             = 1
+	SMALL_STRING_THRESHOLD  = 16
 )
 
 var (
@@ -551,14 +553,19 @@ func (r *typeResolver) writeMetaString(buffer *ByteBuffer, str string) error {
 		dynamicStringId := r.dynamicStringId
 		r.dynamicStringId += 1
 		r.dynamicStringToId[str] = dynamicStringId
-		buffer.WriteVarInt32(int32(len(str) << 1))
-		// TODO this hash should be unique, since we don't compare data equality for performance
-		h := fnv.New64a()
-		if _, err := h.Write([]byte(str)); err != nil {
-			return err
+		length := len(str)
+		buffer.WriteVarInt32(int32(length << 1))
+		if length <= SMALL_STRING_THRESHOLD {
+			buffer.WriteByte_(uint8(meta.UTF_8))
+		} else {
+			// TODO this hash should be unique, since we don't compare data equality for performance
+			h := fnv.New64a()
+			if _, err := h.Write([]byte(str)); err != nil {
+				return err
+			}
+			hash := int64(h.Sum64() & 0xffffffffffffff00)
+			buffer.WriteInt64(hash)
 		}
-		hash := int64(h.Sum64() & 0xffffffffffffff00)
-		buffer.WriteInt64(hash)
 		if len(str) > MaxInt16 {
 			return fmt.Errorf("too long string: %s", str)
 		}
@@ -573,8 +580,12 @@ func (r *typeResolver) readMetaString(buffer *ByteBuffer) (string, error) {
 	header := buffer.ReadVarInt32()
 	var length = int(header >> 1)
 	if header&0b1 == 0 {
-		// TODO support use computed hash
-		buffer.ReadInt64()
+		if length <= SMALL_STRING_THRESHOLD {
+			buffer.ReadByte_()
+		} else {
+			// TODO support use computed hash
+			buffer.ReadInt64()
+		}
 		str := string(buffer.ReadBinary(length))
 		dynamicStringId := r.dynamicStringId
 		r.dynamicStringId += 1

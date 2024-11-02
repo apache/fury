@@ -29,6 +29,7 @@ import org.apache.fury.codegen.JaninoUtils;
 import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.config.FuryBuilder;
 import org.apache.fury.config.Language;
+import org.apache.fury.exception.DeserializationException;
 import org.testng.annotations.Test;
 
 public class EnumSerializerTest extends FuryTestBase {
@@ -101,6 +102,150 @@ public class EnumSerializerTest extends FuryTestBase {
     Fury furySerialization = builderSerialization.build();
     byte[] bytes = furySerialization.serialize(cls1.getEnumConstants()[1]);
     Object data = furyDeserialize.deserialize(bytes);
+    assertNull(data);
+  }
+
+  @Test
+  public void testEnumSerializationAsString() {
+    String enumCode1 = "enum TestEnum1 {" + " A, B;" + "}";
+    String enumCode2 = "enum TestEnum1 {" + " B;" + "}";
+    Class<?> cls1 =
+        JaninoUtils.compileClass(getClass().getClassLoader(), "", "TestEnum1", enumCode1);
+    Class<?> cls2 =
+        JaninoUtils.compileClass(getClass().getClassLoader(), "", "TestEnum1", enumCode2);
+
+    Fury furyDeserialize =
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withCompatibleMode(CompatibleMode.COMPATIBLE)
+            .withRefTracking(true)
+            .requireClassRegistration(false)
+            .serializeEnumByName(true)
+            .withAsyncCompilation(false)
+            .build();
+    Fury furySerialization =
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withCompatibleMode(CompatibleMode.COMPATIBLE)
+            .withRefTracking(true)
+            .requireClassRegistration(false)
+            .serializeEnumByName(true)
+            .withAsyncCompilation(false)
+            .build();
+
+    // serialize enum "B"
+    byte[] bytes = furySerialization.serializeJavaObject(cls1.getEnumConstants()[1]);
+
+    Object data = furyDeserialize.deserializeJavaObject(bytes, cls2);
+    assertEquals(cls2.getEnumConstants()[0], data);
+  }
+
+  @Test
+  public void testEnumSerializationAsString_differentClass() {
+    String enumCode1 = "enum TestEnum1 {" + " A, B;" + "}";
+    String enumCode2 = "enum TestEnum2 {" + " B;" + "}";
+    Class<?> cls1 =
+        JaninoUtils.compileClass(getClass().getClassLoader(), "", "TestEnum1", enumCode1);
+    Class<?> cls2 =
+        JaninoUtils.compileClass(getClass().getClassLoader(), "", "TestEnum2", enumCode2);
+
+    Fury furyDeserialize =
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withCompatibleMode(CompatibleMode.COMPATIBLE)
+            .withRefTracking(true)
+            .requireClassRegistration(false)
+            .serializeEnumByName(true)
+            .withAsyncCompilation(false)
+            .build();
+    Fury furySerialization =
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withCompatibleMode(CompatibleMode.COMPATIBLE)
+            .withRefTracking(true)
+            .requireClassRegistration(false)
+            .serializeEnumByName(true)
+            .withAsyncCompilation(false)
+            .build();
+
+    // serialize enum "B"
+    byte[] bytes = furySerialization.serializeJavaObject(cls1.getEnumConstants()[1]);
+
+    Object data = furyDeserialize.deserializeJavaObject(bytes, cls2);
+    assertEquals(cls2.getEnumConstants()[0], data);
+  }
+
+  @Test
+  public void testEnumSerializationAsString_invalidEnum() {
+    String enumCode1 = "enum TestEnum1 {" + " A;" + "}";
+    String enumCode2 = "enum TestEnum2 {" + " B;" + "}";
+    Class<?> cls1 =
+        JaninoUtils.compileClass(getClass().getClassLoader(), "", "TestEnum1", enumCode1);
+    Class<?> cls2 =
+        JaninoUtils.compileClass(getClass().getClassLoader(), "", "TestEnum2", enumCode2);
+
+    Fury furyDeserialize =
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withCompatibleMode(CompatibleMode.COMPATIBLE)
+            .withRefTracking(true)
+            .requireClassRegistration(false)
+            .serializeEnumByName(true)
+            .withAsyncCompilation(false)
+            .build();
+    Fury furySerialization =
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withCompatibleMode(CompatibleMode.COMPATIBLE)
+            .withRefTracking(true)
+            .requireClassRegistration(false)
+            .serializeEnumByName(true)
+            .withAsyncCompilation(false)
+            .build();
+
+    byte[] bytes = furySerialization.serializeJavaObject(cls1.getEnumConstants()[0]);
+
+    try {
+      furyDeserialize.deserializeJavaObject(bytes, cls2);
+      fail("expected to throw exception");
+    } catch (Exception e) {
+      assertTrue(e instanceof DeserializationException);
+      assertTrue(e.getCause() instanceof IllegalArgumentException);
+    }
+  }
+
+  @Test
+  public void testEnumSerializationAsString_nullValue() {
+    String enumCode1 = "enum TestEnum1 {" + " A;" + "}";
+    String enumCode2 = "enum TestEnum2 {" + " B;" + "}";
+    Class<?> cls1 =
+        JaninoUtils.compileClass(getClass().getClassLoader(), "", "TestEnum1", enumCode1);
+    Class<?> cls2 =
+        JaninoUtils.compileClass(getClass().getClassLoader(), "", "TestEnum2", enumCode2);
+
+    Fury furyDeserialize =
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withCompatibleMode(CompatibleMode.COMPATIBLE)
+            .withRefTracking(true)
+            .requireClassRegistration(false)
+            .serializeEnumByName(true)
+            .withAsyncCompilation(false)
+            .build();
+    Fury furySerialization =
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withCompatibleMode(CompatibleMode.COMPATIBLE)
+            .withRefTracking(true)
+            .requireClassRegistration(false)
+            .serializeEnumByName(true)
+            .withAsyncCompilation(false)
+            .build();
+
+    byte[] bytes = furySerialization.serializeJavaObject(null);
+
+    Object data = furyDeserialize.deserializeJavaObject(bytes, cls2);
+    assertNull(data);
   }
 
   @Data

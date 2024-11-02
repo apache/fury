@@ -1619,6 +1619,8 @@ public class ClassResolver {
     if (classInfo.classId != NO_CLASS_ID) {
       buffer.writeVarUint32(classInfo.classId << 1);
     } else {
+      // let the lowermost bit of next byte be set, so the deserialization can know
+      // whether need to read class by name in advance
       metaStringResolver.writeMetaStringBytesWithFlag(buffer, classInfo.packageNameBytes);
       metaStringResolver.writeMetaStringBytes(buffer, classInfo.classNameBytes);
     }
@@ -1634,6 +1636,8 @@ public class ClassResolver {
     int header = buffer.readVarUint32Small14();
     final ClassInfo classInfo;
     if ((header & 0b1) != 0) {
+      // let the lowermost bit of next byte be set, so the deserialization can know
+      // whether need to read class by name in advance
       MetaStringBytes packageBytes = metaStringResolver.readMetaStringBytesWithFlag(buffer, header);
       MetaStringBytes simpleClassNameBytes = metaStringResolver.readMetaStringBytes(buffer);
       classInfo = loadBytesToClassInfo(packageBytes, simpleClassNameBytes);

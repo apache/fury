@@ -523,7 +523,7 @@ Reference cannot be implemented because of rust ownership restrictions
 ```java
 import org.apache.fury.*;
 import org.apache.fury.config.*;
-import org.apache.fury.serializers.BufferObject;
+import org.apache.fury.serializer.BufferObject;
 import org.apache.fury.memory.MemoryBuffer;
 
 import java.util.*;

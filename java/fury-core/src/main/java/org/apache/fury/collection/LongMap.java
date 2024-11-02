@@ -19,6 +19,8 @@
 
 package org.apache.fury.collection;
 
+import static org.apache.fury.collection.FuryObjectMap.MASK_NUMBER;
+
 import java.util.Arrays;
 
 // Derived from
@@ -141,7 +143,7 @@ public class LongMap<V> {
    * {@code return item.hashCode() & mask;}
    */
   protected int place(long item) {
-    return (int) (item * 0x9E3779B97F4A7C15L >>> shift);
+    return (int) (item * MASK_NUMBER >>> shift);
   }
 
   /**

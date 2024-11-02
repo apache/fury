@@ -96,6 +96,7 @@ public class BlockedStreamUtils {
       Fury fury, ReadableByteChannel channel, Function<MemoryBuffer, Object> action) {
     try {
       MemoryBuffer buf = fury.getBuffer();
+      buf.readerIndex(0);
       ByteBuffer byteBuffer = ByteBuffer.allocate(4);
       byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
       readByteBuffer(channel, byteBuffer, 4);

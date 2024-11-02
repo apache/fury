@@ -19,7 +19,9 @@
 
 package org.apache.fury.serializer.scala;
 
+import org.apache.fury.AbstractThreadSafeFury;
 import org.apache.fury.Fury;
+import org.apache.fury.ThreadSafeFury;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.serializer.SerializerFactory;
@@ -30,6 +32,11 @@ import static org.apache.fury.serializer.scala.ToFactorySerializers.IterableToFa
 import static org.apache.fury.serializer.scala.ToFactorySerializers.MapToFactoryClass;
 
 public class ScalaSerializers {
+
+  public static void registerSerializers(ThreadSafeFury fury) {
+    AbstractThreadSafeFury threadSafeFury = (AbstractThreadSafeFury) fury;
+    threadSafeFury.registerCallback(ScalaSerializers::registerSerializers);
+  }
 
   public static void registerSerializers(Fury fury) {
     ClassResolver resolver = setSerializerFactory(fury);
@@ -105,11 +112,15 @@ public class ScalaSerializers {
     resolver.register(scala.collection.immutable.LongMap$.class);
 
     // Range
-    resolver.register(Range.Inclusive.class);
-    resolver.register(Range.Exclusive.class);
-    resolver.register(NumericRange.class);
-    resolver.register(NumericRange.Inclusive.class);
-    resolver.register(NumericRange.Exclusive.class);
+    resolver.register("scala.math.Numeric$IntIsIntegral$");
+    resolver.register("scala.math.Numeric$LongIsIntegral$");
+    resolver.registerSerializer(Range.Inclusive.class, new RangeSerializer(fury, Range.Inclusive.class));
+    resolver.registerSerializer(Range.Exclusive.class, new RangeSerializer(fury, Range.Exclusive.class));
+    resolver.registerSerializer(NumericRange.class, new NumericRangeSerializer<>(fury, NumericRange.class));
+    resolver.registerSerializer(NumericRange.Exclusive.class,
+      new NumericRangeSerializer<>(fury, NumericRange.Exclusive.class));
+    resolver.registerSerializer(NumericRange.Inclusive.class,
+      new NumericRangeSerializer<>(fury, NumericRange.Inclusive.class));
 
     resolver.register(scala.collection.generic.SerializeEnd$.class);
     resolver.register(scala.collection.generic.DefaultSerializationProxy.class);

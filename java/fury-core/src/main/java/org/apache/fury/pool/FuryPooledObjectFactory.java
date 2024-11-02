@@ -48,10 +48,15 @@ public class FuryPooledObjectFactory {
    */
   final Cache<ClassLoader, ClassLoaderFuryPooled> classLoaderFuryPooledCache;
 
+  private volatile ClassLoader classLoader = null;
+
   /** ThreadLocal: ClassLoader. */
   private final ThreadLocal<ClassLoader> classLoaderLocal =
       ThreadLocal.withInitial(
           () -> {
+            if (classLoader != null) {
+              return classLoader;
+            }
             ClassLoader loader = Thread.currentThread().getContextClassLoader();
             if (loader == null) {
               loader = Fury.class.getClassLoader();
@@ -111,6 +116,7 @@ public class FuryPooledObjectFactory {
       // may be used to clear some classloader
       classLoader = Fury.class.getClassLoader();
     }
+    this.classLoader = classLoader;
     classLoaderLocal.set(classLoader);
     getOrAddCache(classLoader);
   }

@@ -380,6 +380,19 @@ public class ReflectionUtils {
     return fields;
   }
 
+  public static List<Field> getFieldsWithoutSuperClasses(Class<?> cls, Set<Class<?>> superClasses) {
+    Preconditions.checkNotNull(cls);
+    List<Field> fields = new ArrayList<>();
+    Class<?> clazz = cls;
+    do {
+      if (!superClasses.contains(clazz)) {
+        Collections.addAll(fields, clazz.getDeclaredFields());
+      }
+      clazz = clazz.getSuperclass();
+    } while (clazz != null);
+    return fields;
+  }
+
   /** Get fields values from provided object. */
   public static List<Object> getFieldValues(Collection<Field> fields, Object o) {
     List<Object> results = new ArrayList<>(fields.size());

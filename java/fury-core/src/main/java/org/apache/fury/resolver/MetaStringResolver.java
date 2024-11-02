@@ -19,11 +19,15 @@
 
 package org.apache.fury.resolver;
 
+import java.util.Arrays;
+import org.apache.fury.collection.LongLongMap;
 import org.apache.fury.collection.LongMap;
 import org.apache.fury.collection.ObjectMap;
+import org.apache.fury.memory.LittleEndian;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.meta.Encoders;
 import org.apache.fury.meta.MetaString;
+import org.apache.fury.util.MurmurHash3;
 
 /**
  * A resolver for limited string value writing. Currently, we only support classname dynamic
@@ -35,12 +39,15 @@ public final class MetaStringResolver {
   private static final int initialCapacity = 8;
   // use a lower load factor to minimize hash collision
   private static final float furyMapLoadFactor = 0.25f;
+  private static final int SMALL_STRING_THRESHOLD = 16;
 
   // Every deserialization for unregistered string will query it, performance is important.
   private final ObjectMap<MetaStringBytes, String> metaStringBytes2StringMap =
       new ObjectMap<>(initialCapacity, furyMapLoadFactor);
   private final LongMap<MetaStringBytes> hash2MetaStringBytesMap =
       new LongMap<>(initialCapacity, furyMapLoadFactor);
+  private final LongLongMap<MetaStringBytes> longLongMap =
+      new LongLongMap<>(initialCapacity, furyMapLoadFactor);
   // Every enum bytes should be singleton at every fury, since we keep state in it.
   private final ObjectMap<MetaString, MetaStringBytes> metaString2BytesMap =
       new ObjectMap<>(initialCapacity, furyMapLoadFactor);
@@ -54,10 +61,10 @@ public final class MetaStringResolver {
     dynamicReadStringId = 0;
   }
 
-  MetaStringBytes getOrCreateMetaStringBytes(MetaString str) {
+  public MetaStringBytes getOrCreateMetaStringBytes(MetaString str) {
     MetaStringBytes metaStringBytes = metaString2BytesMap.get(str);
     if (metaStringBytes == null) {
-      metaStringBytes = new MetaStringBytes(str);
+      metaStringBytes = MetaStringBytes.of(str);
       metaString2BytesMap.put(str, metaStringBytes);
     }
     return metaStringBytes;
@@ -66,6 +73,7 @@ public final class MetaStringResolver {
   public void writeMetaStringBytesWithFlag(MemoryBuffer buffer, MetaStringBytes byteString) {
     short id = byteString.dynamicWriteStringId;
     if (id == MetaStringBytes.DEFAULT_DYNAMIC_WRITE_STRING_ID) {
+      // noinspection Duplicates
       id = dynamicWriteStringId++;
       byteString.dynamicWriteStringId = id;
       MetaStringBytes[] dynamicWrittenMetaString = this.dynamicWrittenString;
@@ -73,8 +81,13 @@ public final class MetaStringResolver {
         dynamicWrittenMetaString = growWrite(id);
       }
       dynamicWrittenMetaString[id] = byteString;
-      buffer.writeVarUint32Small7(byteString.bytes.length << 2 | 0b1);
-      buffer.writeInt64(byteString.hashCode);
+      int length = byteString.bytes.length;
+      buffer.writeVarUint32Small7(length << 2 | 0b1);
+      if (length > SMALL_STRING_THRESHOLD) {
+        buffer.writeInt64(byteString.hashCode);
+      } else {
+        buffer.writeByte(byteString.encoding.getValue());
+      }
       buffer.writeBytes(byteString.bytes);
     } else {
       buffer.writeVarUint32Small7(((id + 1) << 2) | 0b11);
@@ -84,6 +97,7 @@ public final class MetaStringResolver {
   public void writeMetaStringBytes(MemoryBuffer buffer, MetaStringBytes byteString) {
     short id = byteString.dynamicWriteStringId;
     if (id == MetaStringBytes.DEFAULT_DYNAMIC_WRITE_STRING_ID) {
+      // noinspection Duplicates
       id = dynamicWriteStringId++;
       byteString.dynamicWriteStringId = id;
       MetaStringBytes[] dynamicWrittenMetaString = this.dynamicWrittenString;
@@ -91,8 +105,13 @@ public final class MetaStringResolver {
         dynamicWrittenMetaString = growWrite(id);
       }
       dynamicWrittenMetaString[id] = byteString;
-      buffer.writeVarUint32Small7(byteString.bytes.length << 1);
-      buffer.writeInt64(byteString.hashCode);
+      int length = byteString.bytes.length;
+      buffer.writeVarUint32Small7(length << 1);
+      if (length > SMALL_STRING_THRESHOLD) {
+        buffer.writeInt64(byteString.hashCode);
+      } else {
+        buffer.writeByte(byteString.encoding.getValue());
+      }
       buffer.writeBytes(byteString.bytes);
     } else {
       buffer.writeVarUint32Small7(((id + 1) << 1) | 1);
@@ -119,8 +138,10 @@ public final class MetaStringResolver {
   public MetaStringBytes readMetaStringBytesWithFlag(MemoryBuffer buffer, int header) {
     int len = header >>> 2;
     if ((header & 0b10) == 0) {
-      long hashCode = buffer.readInt64();
-      MetaStringBytes byteString = trySkipMetaStringBytes(buffer, len, hashCode);
+      MetaStringBytes byteString =
+          len <= SMALL_STRING_THRESHOLD
+              ? readSmallMetaStringBytes(buffer, len)
+              : readBigMetaStringBytes(buffer, len, buffer.readInt64());
       updateDynamicString(byteString);
       return byteString;
     } else {
@@ -132,14 +153,10 @@ public final class MetaStringResolver {
       MemoryBuffer buffer, MetaStringBytes cache, int header) {
     int len = header >>> 2;
     if ((header & 0b10) == 0) {
-      long hashCode = buffer.readInt64();
-      if (cache.hashCode == hashCode) {
-        // skip byteString data
-        buffer.increaseReaderIndex(len);
-        updateDynamicString(cache);
-        return cache;
-      }
-      MetaStringBytes byteString = trySkipMetaStringBytes(buffer, len, hashCode);
+      MetaStringBytes byteString =
+          len <= SMALL_STRING_THRESHOLD
+              ? readSmallMetaStringBytes(buffer, cache, len)
+              : readBigMetaStringBytes(buffer, cache, len);
       updateDynamicString(byteString);
       return byteString;
     } else {
@@ -147,12 +164,14 @@ public final class MetaStringResolver {
     }
   }
 
-  MetaStringBytes readMetaStringBytes(MemoryBuffer buffer) {
+  public MetaStringBytes readMetaStringBytes(MemoryBuffer buffer) {
     int header = buffer.readVarUint32Small7();
     int len = header >>> 1;
     if ((header & 0b1) == 0) {
-      long hashCode = buffer.readInt64();
-      MetaStringBytes byteString = trySkipMetaStringBytes(buffer, len, hashCode);
+      MetaStringBytes byteString =
+          len > SMALL_STRING_THRESHOLD
+              ? readBigMetaStringBytes(buffer, len, buffer.readInt64())
+              : readSmallMetaStringBytes(buffer, len);
       updateDynamicString(byteString);
       return byteString;
     } else {
@@ -164,24 +183,31 @@ public final class MetaStringResolver {
     int header = buffer.readVarUint32Small7();
     int len = header >>> 1;
     if ((header & 0b1) == 0) {
-      long hashCode = buffer.readInt64();
-      if (cache.hashCode == hashCode) {
-        // skip byteString data
-        buffer.increaseReaderIndex(len);
-        updateDynamicString(cache);
-        return cache;
-      } else {
-        MetaStringBytes byteString = trySkipMetaStringBytes(buffer, len, hashCode);
-        updateDynamicString(byteString);
-        return byteString;
-      }
+      MetaStringBytes byteString =
+          len <= SMALL_STRING_THRESHOLD
+              ? readSmallMetaStringBytes(buffer, cache, len)
+              : readBigMetaStringBytes(buffer, cache, len);
+      updateDynamicString(byteString);
+      return byteString;
     } else {
       return dynamicReadStringIds[len - 1];
     }
   }
 
+  private MetaStringBytes readBigMetaStringBytes(
+      MemoryBuffer buffer, MetaStringBytes cache, int len) {
+    long hashCode = buffer.readInt64();
+    if (cache.hashCode == hashCode) {
+      // skip byteString data
+      buffer.increaseReaderIndex(len);
+      return cache;
+    } else {
+      return readBigMetaStringBytes(buffer, len, hashCode);
+    }
+  }
+
   /** Read enum string by try to reuse previous read {@link MetaStringBytes} object. */
-  private MetaStringBytes trySkipMetaStringBytes(MemoryBuffer buffer, int len, long hashCode) {
+  private MetaStringBytes readBigMetaStringBytes(MemoryBuffer buffer, int len, long hashCode) {
     MetaStringBytes byteString = hash2MetaStringBytesMap.get(hashCode);
     if (byteString == null) {
       byteString = new MetaStringBytes(buffer.readBytes(len), hashCode);
@@ -191,6 +217,53 @@ public final class MetaStringResolver {
       buffer.increaseReaderIndex(len);
     }
     return byteString;
+  }
+
+  private MetaStringBytes readSmallMetaStringBytes(MemoryBuffer buffer, int len) {
+    long v1, v2 = 0;
+    byte encoding = buffer.readByte();
+    if (len <= 8) {
+      v1 = buffer.readBytesAsInt64(len);
+    } else {
+      v1 = buffer.readInt64();
+      v2 = buffer.readBytesAsInt64(len - 8);
+    }
+    MetaStringBytes byteString = longLongMap.get(v1, v2);
+    if (byteString == null) {
+      byteString = createSmallMetaStringBytes(len, encoding, v1, v2);
+    }
+    return byteString;
+  }
+
+  private MetaStringBytes readSmallMetaStringBytes(
+      MemoryBuffer buffer, MetaStringBytes cache, int len) {
+    long v1, v2 = 0;
+    byte encoding = buffer.readByte();
+    if (len <= 8) {
+      v1 = buffer.readBytesAsInt64(len);
+    } else {
+      v1 = buffer.readInt64();
+      v2 = buffer.readBytesAsInt64(len - 8);
+    }
+    if (cache.first8Bytes == v1 && cache.second8Bytes == v2) {
+      return cache;
+    }
+    MetaStringBytes byteString = longLongMap.get(v1, v2);
+    if (byteString == null) {
+      byteString = createSmallMetaStringBytes(len, encoding, v1, v2);
+    }
+    return byteString;
+  }
+
+  private MetaStringBytes createSmallMetaStringBytes(int len, byte encoding, long v1, long v2) {
+    byte[] data = new byte[16];
+    LittleEndian.putInt64(data, 0, v1);
+    LittleEndian.putInt64(data, 8, v2);
+    long hashCode = MurmurHash3.murmurhash3_x64_128(data, 0, len, 47)[0];
+    hashCode = ((hashCode) & 0xffffffffffffff00L) | encoding;
+    MetaStringBytes metaStringBytes = new MetaStringBytes(Arrays.copyOf(data, len), hashCode);
+    longLongMap.put(v1, v2, metaStringBytes);
+    return metaStringBytes;
   }
 
   private void updateDynamicString(MetaStringBytes byteString) {
