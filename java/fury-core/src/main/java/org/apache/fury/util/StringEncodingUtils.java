@@ -19,7 +19,7 @@
 
 package org.apache.fury.util;
 
-import static org.apache.fury.util.StringUtils.MULTI_CHARS_NON_LATIN_MASK;
+import static org.apache.fury.util.StringUtils.MULTI_CHARS_NON_ASCII_MASK;
 
 import org.apache.fury.memory.Platform;
 
@@ -29,11 +29,9 @@ public class StringEncodingUtils {
   /** A fast convert algorithm to convert an utf16 char array into an utf8 byte array. */
   public static int convertUTF16ToUTF8(char[] src, byte[] dst, int dp) {
     int numChars = src.length;
-    for (int charOffset = 0; charOffset < numChars; ) {
+    for (int charOffset = 0, arrayOffset = Platform.CHAR_ARRAY_OFFSET; charOffset < numChars; ) {
       if (charOffset + 4 <= numChars
-          && (Platform.getLong(src, Platform.CHAR_ARRAY_OFFSET + charOffset * 2L)
-                  & MULTI_CHARS_NON_LATIN_MASK)
-              == 0) {
+          && (Platform.getLong(src, arrayOffset) & MULTI_CHARS_NON_ASCII_MASK) == 0) {
         // ascii only
         dst[dp] = (byte) src[charOffset];
         dst[dp + 1] = (byte) src[charOffset + 1];
@@ -41,8 +39,10 @@ public class StringEncodingUtils {
         dst[dp + 3] = (byte) src[charOffset + 3];
         dp += 4;
         charOffset += 4;
+        arrayOffset += 8;
       } else {
         char c = src[charOffset++];
+        arrayOffset += 2;
         if (c < 0x80) {
           dst[dp++] = (byte) c;
         } else if (c < 0x800) {
@@ -53,6 +53,7 @@ public class StringEncodingUtils {
           utf8ToChar2(src, charOffset, c, dst, dp);
           dp += 4;
           charOffset++;
+          arrayOffset += 2;
         } else {
           dst[dp] = (byte) (0xe0 | ((c >> 12)));
           dst[dp + 1] = (byte) (0x80 | ((c >> 6) & 0x3f));
@@ -70,7 +71,7 @@ public class StringEncodingUtils {
     for (int offset = 0; offset < numBytes; ) {
       if (offset + 8 <= numBytes
           && (Platform.getLong(src, Platform.BYTE_ARRAY_OFFSET + offset)
-                  & MULTI_CHARS_NON_LATIN_MASK)
+                  & MULTI_CHARS_NON_ASCII_MASK)
               == 0) {
         // ascii only
         if (Platform.IS_LITTLE_ENDIAN) {

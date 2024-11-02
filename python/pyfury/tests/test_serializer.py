@@ -455,7 +455,7 @@ def test_slice():
     ) == [1, slice(1, None, "10"), False, [], slice(1, 100, "10")]
 
 
-class TestEnum(Enum):
+class EnumClass(Enum):
     E1 = 1
     E2 = 2
     E3 = "E3"
@@ -464,48 +464,48 @@ class TestEnum(Enum):
 
 def test_enum():
     fury = Fury(language=Language.PYTHON, ref_tracking=True)
-    assert ser_de(fury, TestEnum.E1) == TestEnum.E1
-    assert ser_de(fury, TestEnum.E2) == TestEnum.E2
-    assert ser_de(fury, TestEnum.E3) == TestEnum.E3
-    assert ser_de(fury, TestEnum.E4) == TestEnum.E4
-    assert isinstance(fury.class_resolver.get_serializer(TestEnum), EnumSerializer)
+    assert ser_de(fury, EnumClass.E1) == EnumClass.E1
+    assert ser_de(fury, EnumClass.E2) == EnumClass.E2
+    assert ser_de(fury, EnumClass.E3) == EnumClass.E3
+    assert ser_de(fury, EnumClass.E4) == EnumClass.E4
+    assert isinstance(fury.class_resolver.get_serializer(EnumClass), EnumSerializer)
     assert isinstance(
-        fury.class_resolver.get_serializer(obj=TestEnum.E1), EnumSerializer
+        fury.class_resolver.get_serializer(obj=EnumClass.E1), EnumSerializer
     )
     assert isinstance(
-        fury.class_resolver.get_serializer(obj=TestEnum.E4), EnumSerializer
+        fury.class_resolver.get_serializer(obj=EnumClass.E4), EnumSerializer
     )
 
 
 def test_duplicate_serialize():
     fury = Fury(language=Language.PYTHON, ref_tracking=True)
-    assert ser_de(fury, TestEnum.E1) == TestEnum.E1
-    assert ser_de(fury, TestEnum.E2) == TestEnum.E2
-    assert ser_de(fury, TestEnum.E4) == TestEnum.E4
-    assert ser_de(fury, TestEnum.E2) == TestEnum.E2
-    assert ser_de(fury, TestEnum.E1) == TestEnum.E1
-    assert ser_de(fury, TestEnum.E4) == TestEnum.E4
+    assert ser_de(fury, EnumClass.E1) == EnumClass.E1
+    assert ser_de(fury, EnumClass.E2) == EnumClass.E2
+    assert ser_de(fury, EnumClass.E4) == EnumClass.E4
+    assert ser_de(fury, EnumClass.E2) == EnumClass.E2
+    assert ser_de(fury, EnumClass.E1) == EnumClass.E1
+    assert ser_de(fury, EnumClass.E4) == EnumClass.E4
 
 
 @dataclass(unsafe_hash=True)
-class TestCacheClass1:
+class CacheClass1:
     f1: int
 
 
 def test_cache_serializer():
     fury = Fury(language=Language.PYTHON, ref_tracking=True)
-    fury.register_serializer(TestCacheClass1, pyfury.PickleStrongCacheSerializer(fury))
-    assert ser_de(fury, TestCacheClass1(1)) == TestCacheClass1(1)
-    fury.register_serializer(TestCacheClass1, pyfury.PickleCacheSerializer(fury))
-    assert ser_de(fury, TestCacheClass1(1)) == TestCacheClass1(1)
+    fury.register_serializer(CacheClass1, pyfury.PickleStrongCacheSerializer(fury))
+    assert ser_de(fury, CacheClass1(1)) == CacheClass1(1)
+    fury.register_serializer(CacheClass1, pyfury.PickleCacheSerializer(fury))
+    assert ser_de(fury, CacheClass1(1)) == CacheClass1(1)
 
     classinfo = pyfury.PickleStrongCacheSerializer.new_classinfo(fury)
     buffer = Buffer.allocate(32)
-    fury.serialize_ref(buffer, TestCacheClass1(1), classinfo)
-    assert fury.deserialize_ref(buffer) == TestCacheClass1(1)
+    fury.serialize_ref(buffer, CacheClass1(1), classinfo)
+    assert fury.deserialize_ref(buffer) == CacheClass1(1)
     classinfo = pyfury.PickleCacheSerializer.new_classinfo(fury)
-    fury.serialize_ref(buffer, TestCacheClass1(1), classinfo)
-    assert fury.deserialize_ref(buffer) == TestCacheClass1(1)
+    fury.serialize_ref(buffer, CacheClass1(1), classinfo)
+    assert fury.deserialize_ref(buffer) == CacheClass1(1)
 
 
 def test_pandas_range_index():
@@ -519,7 +519,7 @@ def test_pandas_range_index():
 
 
 @dataclass(unsafe_hash=True)
-class TestPyDataClass1:
+class PyDataClass1:
     f1: int
     f2: float
     f3: str
@@ -531,13 +531,11 @@ class TestPyDataClass1:
 
 def test_py_serialize_dataclass():
     fury = Fury(language=Language.PYTHON, ref_tracking=True)
-    obj1 = TestPyDataClass1(
+    obj1 = PyDataClass1(
         f1=1, f2=-2.0, f3="abc", f4=True, f5="xyz", f6=[1, 2], f7={"k1": "v1"}
     )
     assert ser_de(fury, obj1) == obj1
-    obj2 = TestPyDataClass1(
-        f1=None, f2=-2.0, f3="abc", f4=None, f5="xyz", f6=None, f7=None
-    )
+    obj2 = PyDataClass1(f1=None, f2=-2.0, f3="abc", f4=None, f5="xyz", f6=None, f7=None)
     assert ser_de(fury, obj2) == obj2
 
 
