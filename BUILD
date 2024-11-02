@@ -103,7 +103,8 @@ genrule(
         set -x
         WORK_DIR=$$(pwd)
         u_name=`uname -s`
-        if [ "$${u_name: 0: 4}" == "MING" ]
+        os_name=$${u_name: 0: 4}
+        if [ "$${u_name: 0: 4}" == "MING" ] || [ "$${u_name: 0: 4}" == "MSYS" ]
         then
             cp -f $(location python/pyfury/_util.so) "$$WORK_DIR/python/pyfury/_util.pyd"
             cp -f $(location python/pyfury/lib/mmh3/mmh3.so) "$$WORK_DIR/python/pyfury/lib/mmh3/mmh3.pyd"
