@@ -136,6 +136,16 @@ install_pyarrow() {
   pip install pyarrow==$pyarrow_version
 }
 
+deploy_scala() {
+  echo "Start to build jars"
+  sbt +publishSigned
+  echo "Start to prepare upload"
+  sbt sonatypePrepare
+  echo "Start to upload jars"
+  sbt sonatypeBundleUpload
+  echo "Deploy scala jars succeed!"
+}
+
 case "$1" in
 java) # Deploy jars to maven repository.
   deploy_jars
