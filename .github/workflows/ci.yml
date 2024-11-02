@@ -229,6 +229,7 @@ jobs:
       - name: Install bazel
         run: ./ci/run_ci.sh install_bazel
       - name: Run Python CI
+        shell: bash
         run: ./ci/run_ci.sh python
 
   go:
