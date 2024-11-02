@@ -52,7 +52,7 @@ std::string GetCallTrace() {
 
 std::unordered_map<FuryLogLevel, std::string> log_level_to_str = {
     {FuryLogLevel::DEBUG, "DEBUG"},     {FuryLogLevel::INFO, "INFO"},
-    {FuryLogLevel::WARNING, "WARNING"}, {FuryLogLevel::ERROR, "ERROR"},
+    {FuryLogLevel::WARNING, "WARNING"}, {FuryLogLevel::ERR, "ERROR"},
     {FuryLogLevel::FATAL, "FATAL"},
 };
 
@@ -77,7 +77,7 @@ FuryLogLevel FuryLog::GetLogLevel() {
     } else if (data == "warning") {
       severity_threshold = FuryLogLevel::WARNING;
     } else if (data == "error") {
-      severity_threshold = FuryLogLevel::ERROR;
+      severity_threshold = FuryLogLevel::ERR;
     } else if (data == "fatal") {
       severity_threshold = FuryLogLevel::FATAL;
     } else {
