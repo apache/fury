@@ -28,6 +28,7 @@ import org.apache.fury.reflect.TypeRef;
 /** Scala types utils using reflection without dependency on scala library. */
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class ScalaTypes {
+
   private static final Class<?> SCALA_MAP_TYPE;
   private static final Class<?> SCALA_SEQ_TYPE;
   private static final Class<?> SCALA_SET_TYPE;

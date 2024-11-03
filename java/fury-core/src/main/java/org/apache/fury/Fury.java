@@ -197,7 +197,13 @@ public final class Fury implements BaseFury {
   /** register class with given type tag which will be used for cross-language serialization. */
   public void register(Class<?> cls, String typeName) {
     Preconditions.checkArgument(language != Language.JAVA);
-    register(cls, "", typeName);
+    int idx = typeName.lastIndexOf('.');
+    String namespace = "";
+    if (idx > 0) {
+      namespace = typeName.substring(0, idx);
+      typeName = typeName.substring(idx);
+    }
+    register(cls, namespace, typeName);
   }
 
   public void register(Class<?> cls, String namespace, String typeName) {

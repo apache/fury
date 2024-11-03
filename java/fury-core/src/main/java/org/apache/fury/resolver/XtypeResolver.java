@@ -76,7 +76,7 @@ public class XtypeResolver {
     if (serializer == null) {
       if (type.isEnum()) {
         classResolver.registerSerializer(
-            type, new EnumSerializer<>(classResolver.getFury(), type.asSubclass(Enum.class)));
+            type, new EnumSerializer(classResolver.getFury(), (Class<Enum>) type));
       } else {
         classResolver.registerSerializer(
             type, new StructSerializer<>(classResolver.getFury(), type));
