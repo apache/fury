@@ -28,41 +28,64 @@ import org.apache.fury.reflect.TypeRef;
 /** Scala types utils using reflection without dependency on scala library. */
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class ScalaTypes {
-  private static final Class<?> SCALA_MAP_TYPE;
-  private static final Class<?> SCALA_SEQ_TYPE;
-  private static final Class<?> SCALA_ITERABLE_TYPE;
-  private static final Class<?> SCALA_ITERATOR_TYPE;
-  private static final java.lang.reflect.Type SCALA_ITERATOR_RETURN_TYPE;
-  private static final java.lang.reflect.Type SCALA_NEXT_RETURN_TYPE;
-
-  static {
-    try {
-      SCALA_ITERABLE_TYPE = ReflectionUtils.loadClass("scala.collection.Iterable");
-      SCALA_ITERATOR_TYPE = ReflectionUtils.loadClass("scala.collection.Iterator");
-      SCALA_MAP_TYPE = ReflectionUtils.loadClass("scala.collection.Map");
-      SCALA_SEQ_TYPE = ReflectionUtils.loadClass("scala.collection.Seq");
-      SCALA_ITERATOR_RETURN_TYPE = SCALA_ITERABLE_TYPE.getMethod("iterator").getGenericReturnType();
-      SCALA_NEXT_RETURN_TYPE = SCALA_ITERATOR_TYPE.getMethod("next").getGenericReturnType();
-    } catch (NoSuchMethodException e) {
-      throw new RuntimeException(e);
-    }
-  }
+  private static volatile Class<?> SCALA_MAP_TYPE;
+  private static volatile Class<?> SCALA_SEQ_TYPE;
+  private static volatile Class<?> SCALA_ITERABLE_TYPE;
+  private static volatile java.lang.reflect.Type SCALA_ITERATOR_RETURN_TYPE;
+  private static volatile java.lang.reflect.Type SCALA_NEXT_RETURN_TYPE;
 
   public static Class<?> getScalaMapType() {
+    if (SCALA_MAP_TYPE == null) {
+      // load scala classes dynamically to make graalvm native build work
+      // see https://github.com/quarkiverse/quarkus-fury/issues/7
+      SCALA_MAP_TYPE = ReflectionUtils.loadClass("scala.collection.Map");
+    }
     return SCALA_MAP_TYPE;
   }
 
   public static Class<?> getScalaSeqType() {
+    if (SCALA_SEQ_TYPE == null) {
+      SCALA_SEQ_TYPE = ReflectionUtils.loadClass("scala.collection.Seq");
+    }
     return SCALA_SEQ_TYPE;
   }
 
   public static Class<?> getScalaIterableType() {
+    if (SCALA_ITERABLE_TYPE == null) {
+      SCALA_ITERABLE_TYPE = ReflectionUtils.loadClass("scala.collection.Iterable");
+    }
     return SCALA_ITERABLE_TYPE;
   }
 
   public static TypeRef<?> getElementType(TypeRef typeRef) {
     TypeRef<?> supertype = typeRef.getSupertype(getScalaIterableType());
-    return supertype.resolveType(SCALA_ITERATOR_RETURN_TYPE).resolveType(SCALA_NEXT_RETURN_TYPE);
+    return supertype
+        .resolveType(getScalaIteratorReturnType())
+        .resolveType(getScalaNextReturnType());
+  }
+
+  private static Type getScalaIteratorReturnType() {
+    if (SCALA_ITERATOR_RETURN_TYPE == null) {
+      try {
+        SCALA_ITERATOR_RETURN_TYPE =
+            getScalaIterableType().getMethod("iterator").getGenericReturnType();
+      } catch (NoSuchMethodException e) {
+        throw new RuntimeException(e);
+      }
+    }
+    return SCALA_ITERATOR_RETURN_TYPE;
+  }
+
+  private static Type getScalaNextReturnType() {
+    if (SCALA_NEXT_RETURN_TYPE == null) {
+      Class<?> scalaIteratorType = ReflectionUtils.loadClass("scala.collection.Iterator");
+      try {
+        SCALA_NEXT_RETURN_TYPE = scalaIteratorType.getMethod("next").getGenericReturnType();
+      } catch (NoSuchMethodException e) {
+        throw new RuntimeException(e);
+      }
+    }
+    return SCALA_NEXT_RETURN_TYPE;
   }
 
   /** Returns key/value type of scala map. */
