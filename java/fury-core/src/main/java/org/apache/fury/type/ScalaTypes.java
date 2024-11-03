@@ -78,9 +78,9 @@ public class ScalaTypes {
 
   private static Type getScalaNextReturnType() {
     if (SCALA_NEXT_RETURN_TYPE == null) {
-      Class<?> SCALA_ITERATOR_TYPE = ReflectionUtils.loadClass("scala.collection.Iterator");
+      Class<?> scalaIteratorType = ReflectionUtils.loadClass("scala.collection.Iterator");
       try {
-        SCALA_NEXT_RETURN_TYPE = SCALA_ITERATOR_TYPE.getMethod("next").getGenericReturnType();
+        SCALA_NEXT_RETURN_TYPE = scalaIteratorType.getMethod("next").getGenericReturnType();
       } catch (NoSuchMethodException e) {
         throw new RuntimeException(e);
       }
