@@ -15,7 +15,9 @@
 # specific language governing permissions and limitations
 # under the License.
 
+import argparse
 import datetime
+import os
 import random
 import sys
 from pyfury import Fury, Language
@@ -103,18 +105,40 @@ random_source = random.Random(5)
 DICT_GROUP = [mutate_dict(DICT, random_source) for _ in range(3)]
 
 
-def fury_python_object(obj):
-    fury = Fury(language=Language.PYTHON, ref_tracking=True)
+def fury_object(language, ref_tracking, obj):
+    fury = Fury(language=language, ref_tracking=ref_tracking)
     binary = fury.serialize(obj)
     fury.deserialize(binary)
 
 
+def benchmark_args():
+    parser = argparse.ArgumentParser(description="Fury Benchmark")
+    parser.add_argument("--xlang", action="store_true", default=False)
+    parser.add_argument("--no-ref", action="store_true", default=False)
+    parser.add_argument("--disable-cython", action="store_true", default=False)
+
+    if "--help" in sys.argv:
+        parser.print_help()
+        return None
+    args, unknown_args = parser.parse_known_args()
+    sys.argv = sys.argv[:1] + unknown_args
+    return args
+
+
 def micro_benchmark():
+    args = benchmark_args()
     runner = pyperf.Runner()
-    runner.bench_func("fury_dict", fury_python_object, DICT)
-    runner.bench_func("fury_dict_group", fury_python_object, DICT_GROUP)
-    runner.bench_func("fury_tuple", fury_python_object, TUPLE)
-    runner.bench_func("fury_list", fury_python_object, LIST)
+    if args.disable_cython:
+        os.environ["ENABLE_FURY_CYTHON_SERIALIZATION"] = "0"
+        sys.argv += ["--inherit-environ", "ENABLE_FURY_CYTHON_SERIALIZATION"]
+    runner.parse_args()
+    language = Language.XLANG if args.xlang else Language.PYTHON
+    runner.bench_func("fury_dict", fury_object, language, not args.no_ref, DICT)
+    runner.bench_func(
+        "fury_dict_group", fury_object, language, not args.no_ref, DICT_GROUP
+    )
+    runner.bench_func("fury_tuple", fury_object, language, not args.no_ref, TUPLE)
+    runner.bench_func("fury_list", fury_object, language, not args.no_ref, LIST)
 
 
 if __name__ == "__main__":
