@@ -139,6 +139,19 @@ public class ReplaceResolveSerializer extends AbstractObjectSerializer {
         }
       }
     }
+
+    Object readResolve(Object o) {
+      if (readResolveFunc != null) {
+        return readResolveFunc.apply(o);
+      } else {
+        try {
+          return readResolveMethod.invoke(o);
+        } catch (Exception e) {
+          Platform.throwException(e);
+          throw new IllegalStateException(e);
+        }
+      }
+    }
   }
 
   private static final ClassValue<ReplaceResolveInfo> REPLACE_RESOLVE_INFO_CACHE =
@@ -308,26 +321,41 @@ public class ReplaceResolveSerializer extends AbstractObjectSerializer {
 
   private Object readObject(MemoryBuffer buffer) {
     Class cls = classResolver.readClassInternal(buffer);
+    MethodInfoCache jdkMethodInfoCache = getMethodInfoCache(cls);
+    Object o = jdkMethodInfoCache.objectSerializer.read(buffer);
+    ReplaceResolveInfo replaceResolveInfo = jdkMethodInfoCache.info;
+    if (replaceResolveInfo.readResolveMethod == null) {
+      return o;
+    }
+    return replaceResolveInfo.readResolve(o);
+  }
+
+  @Override
+  public Object copy(Object originObj) {
+    ReplaceResolveInfo replaceResolveInfo = jdkMethodInfoWriteCache.info;
+    if (replaceResolveInfo.writeReplaceMethod == null) {
+      return jdkMethodInfoWriteCache.objectSerializer.copy(originObj);
+    }
+    Object newObj = originObj;
+    newObj = replaceResolveInfo.writeReplace(newObj);
+    if (needToCopyRef) {
+      fury.reference(originObj, newObj);
+    }
+    MethodInfoCache jdkMethodInfoCache = getMethodInfoCache(newObj.getClass());
+    newObj = jdkMethodInfoCache.objectSerializer.copy(newObj);
+    replaceResolveInfo = jdkMethodInfoCache.info;
+    if (replaceResolveInfo.readResolveMethod != null) {
+      newObj = replaceResolveInfo.readResolve(newObj);
+    }
+    return newObj;
+  }
+
+  private MethodInfoCache getMethodInfoCache(Class<?> cls) {
     MethodInfoCache jdkMethodInfoCache = classClassInfoHolderMap.get(cls);
     if (jdkMethodInfoCache == null) {
       jdkMethodInfoCache = newJDKMethodInfoCache(cls, fury);
       classClassInfoHolderMap.put(cls, jdkMethodInfoCache);
     }
-    Object o = jdkMethodInfoCache.objectSerializer.read(buffer);
-    ReplaceResolveInfo replaceResolveInfo = jdkMethodInfoCache.info;
-    Method readResolveMethod = replaceResolveInfo.readResolveMethod;
-    if (readResolveMethod != null) {
-      if (replaceResolveInfo.readResolveFunc != null) {
-        return replaceResolveInfo.readResolveFunc.apply(o);
-      }
-      try {
-        return readResolveMethod.invoke(o);
-      } catch (Exception e) {
-        Platform.throwException(e);
-        throw new IllegalStateException("unreachable");
-      }
-    } else {
-      return o;
-    }
+    return jdkMethodInfoCache;
   }
 }
