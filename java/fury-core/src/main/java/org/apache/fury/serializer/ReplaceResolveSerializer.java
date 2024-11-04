@@ -44,7 +44,7 @@ import org.apache.fury.util.unsafe._JDKAccess;
  * will skip classname writing if object returned by `writeReplace` is different from current class.
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
-public class ReplaceResolveSerializer extends Serializer {
+public class ReplaceResolveSerializer extends AbstractObjectSerializer {
   private static final Logger LOG = LoggerFactory.getLogger(ReplaceResolveSerializer.class);
 
   /**
