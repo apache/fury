@@ -106,7 +106,7 @@ class MetaStringBytes:
         self.data = data
         self.length = len(data)
         if hashcode is None:
-            hashcode = mmh3.hash_buffer(data, 47)[0] & 0xFFFFFFFFFFFFFF00
+            hashcode = (mmh3.hash_buffer(data, 47)[0] >> 8) << 8
         self.hashcode = hashcode
         self.dynamic_write_string_id = DEFAULT_DYNAMIC_WRITE_STRING_ID
 
