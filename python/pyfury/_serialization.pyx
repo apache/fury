@@ -45,6 +45,8 @@ from libc.stdint cimport *
 from libcpp.vector cimport vector
 from cpython cimport PyObject
 from cpython.ref cimport *
+from cpython.list cimport PyList_New, PyList_SET_ITEM
+from cpython.tuple cimport PyTuple_New, PyTuple_SET_ITEM
 from libcpp cimport bool as c_bool
 from libcpp.utility cimport pair
 from cython.operator cimport dereference as deref
@@ -1688,53 +1690,55 @@ cdef class ListSerializer(CollectionSerializer):
     cpdef read(self, Buffer buffer):
         cdef MapRefResolver ref_resolver = self.fury.ref_resolver
         cdef ClassResolver class_resolver = self.fury.class_resolver
-        cdef list list_ = []
+        cdef int32_t len_ = buffer.read_varint32()
+        cdef list list_ = PyList_New(len_)
         ref_resolver.reference(list_)
-        populate_list(buffer, list_, ref_resolver, class_resolver)
+        for i in range(len_):
+            elem = get_next_elenment(buffer, ref_resolver, class_resolver)
+            Py_INCREF(elem)
+            PyList_SET_ITEM(list_, i, elem)
         return list_
 
     cpdef xread(self, Buffer buffer):
         cdef int32_t len_ = buffer.read_varint32()
-        cdef list collection_ = []
+        cdef list collection_ = PyList_New(len_)
         self.fury.ref_resolver.reference(collection_)
         for i in range(len_):
-            collection_.append(self.fury.xdeserialize_ref(
+            elem = self.fury.xdeserialize_ref(
                 buffer, serializer=self.elem_serializer
-            ))
+            )
+            Py_INCREF(elem)
+            PyList_SET_ITEM(collection_, i, elem)
         return collection_
 
 
-cdef populate_list(
+cdef inline get_next_elenment(
         Buffer buffer,
-        list list_,
         MapRefResolver ref_resolver,
         ClassResolver class_resolver):
     cdef int32_t ref_id
     cdef ClassInfo classinfo
-    cdef int32_t len_ = buffer.read_varint32()
-    for i in range(len_):
-        ref_id = ref_resolver.try_preserve_ref_id(buffer)
-        if ref_id < NOT_NULL_VALUE_FLAG:
-            list_.append(ref_resolver.get_read_object())
-            continue
-        # indicates that the object is first read.
-        classinfo = class_resolver.read_classinfo(buffer)
-        cls = classinfo.cls
-        # Note that all read operations in fast paths of list/tuple/set/dict/sub_dict
-        # ust match corresponding writing operations. Otherwise, ref tracking will
-        # error.
-        if cls is str:
-            list_.append(buffer.read_string())
-        elif cls is int:
-            list_.append(buffer.read_varint64())
-        elif cls is bool:
-            list_.append(buffer.read_bool())
-        elif cls is float:
-            list_.append(buffer.read_double())
-        else:
-            o = classinfo.serializer.read(buffer)
-            ref_resolver.set_read_object(ref_id, o)
-            list_.append(o)
+    ref_id = ref_resolver.try_preserve_ref_id(buffer)
+    if ref_id < NOT_NULL_VALUE_FLAG:
+        return ref_resolver.get_read_object()
+    # indicates that the object is first read.
+    classinfo = class_resolver.read_classinfo(buffer)
+    cls = classinfo.cls
+    # Note that all read operations in fast paths of list/tuple/set/dict/sub_dict
+    # ust match corresponding writing operations. Otherwise, ref tracking will
+    # error.
+    if cls is str:
+        return buffer.read_string()
+    elif cls is int:
+        return buffer.read_varint64()
+    elif cls is bool:
+        return buffer.read_bool()
+    elif cls is float:
+        return buffer.read_double()
+    else:
+        o = classinfo.serializer.read(buffer)
+        ref_resolver.set_read_object(ref_id, o)
+        return o
 
 
 @cython.final
@@ -1742,18 +1746,24 @@ cdef class TupleSerializer(CollectionSerializer):
     cpdef inline read(self, Buffer buffer):
         cdef MapRefResolver ref_resolver = self.fury.ref_resolver
         cdef ClassResolver class_resolver = self.fury.class_resolver
-        cdef list list_ = []
-        populate_list(buffer, list_, ref_resolver, class_resolver)
-        return tuple(list_)
+        cdef int32_t len_ = buffer.read_varint32()
+        cdef tuple tuple_ = PyTuple_New(len_)
+        for i in range(len_):
+            elem = get_next_elenment(buffer, ref_resolver, class_resolver)
+            Py_INCREF(elem)
+            PyTuple_SET_ITEM(tuple_, i, elem)
+        return tuple_
 
     cpdef inline xread(self, Buffer buffer):
         cdef int32_t len_ = buffer.read_varint32()
-        cdef list collection_ = []
+        cdef tuple tuple_ = PyTuple_New(len_)
         for i in range(len_):
-            collection_.append(self.fury.xdeserialize_ref(
+            elem = self.fury.xdeserialize_ref(
                 buffer, serializer=self.elem_serializer
-            ))
-        return tuple(collection_)
+            )
+            Py_INCREF(elem)
+            PyTuple_SET_ITEM(tuple_, i, elem)
+        return tuple_
 
 
 @cython.final
