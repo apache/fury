@@ -303,8 +303,10 @@ public final class FuryBuilder {
    *
    * @see Config#deserializeNonexistentClassNotWriteFullClassInfo()
    */
-  public FuryBuilder withDeserializeNonexistentClassNotWriteFullClassInfo(boolean deserializeNonexistentClassNotWriteFullClassInfo) {
-    this.deserializeNonexistentClassNotWriteFullClassInfo = deserializeNonexistentClassNotWriteFullClassInfo;
+  public FuryBuilder withDeserializeNonexistentClassNotWriteFullClassInfo(
+      boolean deserializeNonexistentClassNotWriteFullClassInfo) {
+    this.deserializeNonexistentClassNotWriteFullClassInfo =
+        deserializeNonexistentClassNotWriteFullClassInfo;
     return this;
   }
 

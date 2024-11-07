@@ -228,15 +228,15 @@ public final class NonexistentClassSerializers {
   }
 
   public static String getFileName(String qualifiedFieldName, Config config) {
-      if (config.deserializeNonexistentClassNotWriteFullClassInfo()) {
-          int index = qualifiedFieldName.lastIndexOf(".");
-          if (index < 0) {
-              return qualifiedFieldName;
-          }
-          return qualifiedFieldName.substring(index + 1);
-      } else {
-          return qualifiedFieldName;
+    if (config.deserializeNonexistentClassNotWriteFullClassInfo()) {
+      int index = qualifiedFieldName.lastIndexOf(".");
+      if (index < 0) {
+        return qualifiedFieldName;
       }
+      return qualifiedFieldName.substring(index + 1);
+    } else {
+      return qualifiedFieldName;
+    }
   }
 
   public static final class NonexistentEnumClassSerializer extends Serializer {
