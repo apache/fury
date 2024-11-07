@@ -90,9 +90,11 @@ TUPLE = (
     ],
     60,
 )
+LARGE_TUPLE = tuple(range(2**20 + 1))
 
 
 LIST = [[list(range(10)), list(range(10))] for _ in range(10)]
+LARGE_LIST = [i for i in range(2**20 + 1)]
 
 
 def mutate_dict(orig_dict, random_source):
@@ -169,7 +171,7 @@ def benchmark_args():
 def micro_benchmark():
     args = benchmark_args()
     runner = pyperf.Runner()
-    if args.disable_cython:
+    if args and args.disable_cython:
         os.environ["ENABLE_FURY_CYTHON_SERIALIZATION"] = "0"
         sys.argv += ["--inherit-environ", "ENABLE_FURY_CYTHON_SERIALIZATION"]
     runner.parse_args()
@@ -179,7 +181,13 @@ def micro_benchmark():
         "fury_dict_group", fury_object, language, not args.no_ref, DICT_GROUP
     )
     runner.bench_func("fury_tuple", fury_object, language, not args.no_ref, TUPLE)
+    runner.bench_func(
+        "fury_large_tuple", fury_object, language, not args.no_ref, LARGE_TUPLE
+    )
     runner.bench_func("fury_list", fury_object, language, not args.no_ref, LIST)
+    runner.bench_func(
+        "fury_large_list", fury_object, language, not args.no_ref, LARGE_LIST
+    )
     runner.bench_func(
         "fury_complex", fury_object, language, not args.no_ref, COMPLEX_OBJECT
     )
