@@ -77,11 +77,6 @@ public final class FuryBuilder {
   Boolean scopedMetaShareEnabled;
   boolean codeGenEnabled = true;
   Boolean deserializeNonexistentClass;
-    /**
-     * Whether deserialize nonexistent class not write full class info
-     * default write full class info
-     * if enable then not write full class info
-      */
   boolean deserializeNonexistentClassNotWriteFullClassInfo = false;
   boolean asyncCompilationEnabled = false;
   boolean registerGuavaTypes = true;
