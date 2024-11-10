@@ -29,6 +29,7 @@ libraryDependencies += "org.apache.fury" % "fury-scala_3" % "0.9.0"
 ```
 
 ## Quict Start
+
 ```scala
 case class Person(name: String, id: Long, github: String)
 case class Point(x : Int, y : Int, z : Int)

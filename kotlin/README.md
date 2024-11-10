@@ -37,6 +37,7 @@ Additional Notes:
 - wrappers classes created from `withDefault` method is currently not supported.
 
 ## Quick Start
+
 ```kotlin
 import org.apache.fury.Fury
 import org.apache.fury.ThreadSafeFury

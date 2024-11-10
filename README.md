@@ -150,6 +150,7 @@ libraryDependencies += "org.apache.fury" % "fury-scala_3" % "0.9.0"
 ```
 
 ### Kotlin
+
 ```xml
 <dependency>
   <groupId>org.apache.fury</groupId>
