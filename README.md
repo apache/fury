@@ -19,7 +19,7 @@
 
 ## Features
 
-- **Multiple languages**: Java/Python/C++/Golang/JavaScript/Rust/Scala/TypeScript.
+- **Multiple languages**: Java/Python/C++/Golang/JavaScript/Rust/Scala/Kotlin/TypeScript.
 - **Zero-copy**: Cross-language out-of-band serialization inspired
   by [pickle5](https://peps.python.org/pep-0574/) and off-heap read/write.
 - **High performance**: A highly-extensible JIT framework to generate serializer code at runtime in an async multi-thread way to speed serialization, providing 20-170x speed up by:
@@ -38,6 +38,7 @@ In addition to cross-language serialization, Fury also features at:
 - Supports [AOT compilation serialization](docs/guide/graalvm_guide.md) for **GraalVM native image**, and no reflection/serialization json config are needed.
 - Supports shared and circular reference object serialization for golang.
 - Supports [scala serialization](docs/guide/scala_guide.md)
+- Supports [Kotlin serialization](kotlin/README.md)
 - Supports automatic object serialization for golang.
 
 ## Protocols
@@ -108,13 +109,13 @@ Nightly snapshot:
 <dependency>
   <groupId>org.apache.fury</groupId>
   <artifactId>fury-core</artifactId>
-  <version>0.9.0-SNAPSHOT</version>
+  <version>0.10.0-SNAPSHOT</version>
 </dependency>
 <!-- row/arrow format support -->
 <!-- <dependency>
   <groupId>org.apache.fury</groupId>
   <artifactId>fury-format</artifactId>
-  <version>0.9.0-SNAPSHOT</version>
+  <version>0.10.0-SNAPSHOT</version>
 </dependency> -->
 ```
 
@@ -124,13 +125,13 @@ Release version:
 <dependency>
   <groupId>org.apache.fury</groupId>
   <artifactId>fury-core</artifactId>
-  <version>0.8.0</version>
+  <version>0.9.0</version>
 </dependency>
 <!-- row/arrow format support -->
 <!-- <dependency>
   <groupId>org.apache.fury</groupId>
   <artifactId>fury-format</artifactId>
-  <version>0.8.0</version>
+  <version>0.9.0</version>
 </dependency> -->
 ```
 
@@ -139,13 +140,23 @@ Release version:
 Scala2:
 
 ```sbt
-libraryDependencies += "org.apache.fury" % "fury-scala_2.13" % "0.8.0"
+libraryDependencies += "org.apache.fury" % "fury-scala_2.13" % "0.9.0"
 ```
 
 Scala3:
 
 ```sbt
-libraryDependencies += "org.apache.fury" % "fury-scala_3" % "0.8.0"
+libraryDependencies += "org.apache.fury" % "fury-scala_3" % "0.9.0"
+```
+
+### Kotlin
+
+```xml
+<dependency>
+  <groupId>org.apache.fury</groupId>
+  <artifactId>fury-kotlin</artifactId>
+  <version>0.9.0</version>
+</dependency>
 ```
 
 ### Python
