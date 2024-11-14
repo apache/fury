@@ -69,6 +69,14 @@ logger = logging.getLogger(__name__)
 ENABLE_FURY_CYTHON_SERIALIZATION = os.environ.get(
     "ENABLE_FURY_CYTHON_SERIALIZATION", "True").lower() in ("true", "1")
 
+cdef extern from *:
+    """
+    #define int2obj(obj_addr) ((PyObject *)(obj_addr))
+    #define obj2int(obj_ref) (Py_INCREF(obj_ref), ((int64_t)(obj_ref)))
+    """
+    object int2obj(int64_t obj_addr)
+    int64_t obj2int(object obj_ref)
+
 
 cdef int8_t NULL_FLAG = -3
 # This flag indicates that object is a not-null value.
@@ -1656,7 +1664,7 @@ cdef class CollectionSerializer(Serializer):
     cpdef int16_t get_xtype_id(self):
         return -FuryType.LIST.value
 
-    cpdef int8_t write_header(self, Buffer buffer, value):
+    cdef pair[int8_t, int64_t] write_header(self, Buffer buffer, value):
         cdef int8_t collect_flag = COLLECTION_DEFAULT_FLAG
         elem_type = type(next(iter(value)))
         for s in value:
@@ -1666,17 +1674,19 @@ cdef class CollectionSerializer(Serializer):
         if self.fury.ref_tracking:
             collect_flag |= COLLECTION_TRACKING_REF
         buffer.write_varint64((len(value) << 4) | collect_flag)
-        return collect_flag
+        return pair[int8_t, int64_t](collect_flag, obj2int(elem_type))
 
     cpdef write(self, Buffer buffer, value):
         if len(value) == 0:
             buffer.write_varint64(0)
             return
-        cdef int8_t collect_flag = self.write_header(buffer, value)
+        cdef pair[int8_t, int64_t] header_pair = self.write_header(buffer, value)
+        cdef int8_t collect_flag = header_pair.first
+        cdef int64_t elem_type_ptr = header_pair.second
+        cdef elem_type = <type>int2obj(elem_type_ptr)
         cdef MapRefResolver ref_resolver = self.ref_resolver
         cdef ClassResolver class_resolver = self.class_resolver
         if (collect_flag & COLLECTION_NOT_SAME_TYPE) == 0:
-            elem_type = type(next(iter(value)))
             if elem_type is str:
                 self._write_string(buffer, value)
             elif elem_type is int:
@@ -1687,9 +1697,9 @@ cdef class CollectionSerializer(Serializer):
                 self._write_float(buffer, value)
             else:
                 if (collect_flag & COLLECTION_TRACKING_REF) == 0:
-                    self._write_same_type_no_ref(buffer, value)
+                    self._write_same_type_no_ref(buffer, value, elem_type)
                 else:
-                    self._write_same_type_ref(buffer, value)
+                    self._write_same_type_ref(buffer, value, elem_type)
         else:
             for s in value:
                 cls = type(s)
@@ -1751,13 +1761,12 @@ cdef class CollectionSerializer(Serializer):
             assert buffer.read_int16() == NOT_NULL_PYFLOAT_FLAG
             self._add_element(collection_, i, buffer.read_double())
 
-    cpdef _write_same_type_no_ref(self, Buffer buffer, value):
+    cpdef _write_same_type_no_ref(self, Buffer buffer, value, elem_type):
         cdef MapRefResolver ref_resolver = self.ref_resolver
         cdef ClassResolver class_resolver = self.class_resolver
-        elem_type = type(next(iter(value)))
         classinfo = class_resolver.get_or_create_classinfo(elem_type)
+        class_resolver.write_classinfo(buffer, classinfo)
         for s in value:
-            class_resolver.write_classinfo(buffer, classinfo)
             classinfo.serializer.write(buffer, s)
 
     cpdef _read_same_type_no_ref(self, Buffer buffer, int64_t len_, object collection_):
@@ -1768,25 +1777,24 @@ cdef class CollectionSerializer(Serializer):
             obj = classinfo.serializer.read(buffer)
             self._add_element(collection_, i, obj)
 
-    cpdef _write_same_type_ref(self, Buffer buffer, value):
+    cpdef _write_same_type_ref(self, Buffer buffer, value, elem_type):
         cdef MapRefResolver ref_resolver = self.ref_resolver
         cdef ClassResolver class_resolver = self.class_resolver
-        elem_type = type(next(iter(value)))
         classinfo = class_resolver.get_or_create_classinfo(elem_type)
+        class_resolver.write_classinfo(buffer, classinfo)
         for s in value:
             if not ref_resolver.write_ref_or_null(buffer, s):
-                class_resolver.write_classinfo(buffer, classinfo)
                 classinfo.serializer.write(buffer, s)
 
     cpdef _read_same_type_ref(self, Buffer buffer, int64_t len_, object collection_):
         cdef MapRefResolver ref_resolver = self.ref_resolver
         cdef ClassResolver class_resolver = self.class_resolver
+        classinfo = class_resolver.read_classinfo(buffer)
         for i in range(len_):
             ref_id = ref_resolver.try_preserve_ref_id(buffer)
             if ref_id < NOT_NULL_VALUE_FLAG:
                 obj = ref_resolver.get_read_object()
             else:
-                classinfo = class_resolver.read_classinfo(buffer)
                 obj = classinfo.serializer.read(buffer)
                 ref_resolver.set_read_object(ref_id, obj)
             self._add_element(collection_, i, obj)
