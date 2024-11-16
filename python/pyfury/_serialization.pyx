@@ -1722,43 +1722,43 @@ cdef class CollectionSerializer(Serializer):
                         classinfo.serializer.write(buffer, s)
 
     cdef inline _write_string(self, Buffer buffer, value):
+        buffer.write_int16(NOT_NULL_STRING_FLAG)
         for s in value:
-            buffer.write_int16(NOT_NULL_STRING_FLAG)
             buffer.write_string(s)
 
     cdef inline _read_string(self, Buffer buffer, int64_t len_, object collection_):
+        assert buffer.read_int16() == NOT_NULL_STRING_FLAG
         for i in range(len_):
-            assert buffer.read_int16() == NOT_NULL_STRING_FLAG
             self._add_element(collection_, i, buffer.read_string())
 
     cdef inline _write_int(self, Buffer buffer, value):
+        buffer.write_int16(NOT_NULL_PYINT_FLAG)
         for s in value:
-            buffer.write_int16(NOT_NULL_PYINT_FLAG)
             buffer.write_varint64(s)
 
     cdef inline _read_int(self, Buffer buffer, int64_t len_, object collection_):
+        assert buffer.read_int16() == NOT_NULL_PYINT_FLAG
         for i in range(len_):
-            assert buffer.read_int16() == NOT_NULL_PYINT_FLAG
             self._add_element(collection_, i, buffer.read_varint64())
 
     cdef inline _write_bool(self, Buffer buffer, value):
+        buffer.write_int16(NOT_NULL_PYBOOL_FLAG)
         for s in value:
-            buffer.write_int16(NOT_NULL_PYBOOL_FLAG)
             buffer.write_bool(s)
 
     cdef inline _read_bool(self, Buffer buffer, int64_t len_, object collection_):
+        assert buffer.read_int16() == NOT_NULL_PYBOOL_FLAG
         for i in range(len_):
-            assert buffer.read_int16() == NOT_NULL_PYBOOL_FLAG
             self._add_element(collection_, i, buffer.read_bool())
 
     cdef inline _write_float(self, Buffer buffer, value):
+        buffer.write_int16(NOT_NULL_PYFLOAT_FLAG)
         for s in value:
-            buffer.write_int16(NOT_NULL_PYFLOAT_FLAG)
             buffer.write_double(s)
 
     cdef inline _read_float(self, Buffer buffer, int64_t len_, object collection_):
+        assert buffer.read_int16() == NOT_NULL_PYFLOAT_FLAG
         for i in range(len_):
-            assert buffer.read_int16() == NOT_NULL_PYFLOAT_FLAG
             self._add_element(collection_, i, buffer.read_double())
 
     cpdef _write_same_type_no_ref(self, Buffer buffer, value, elem_type):
