@@ -149,7 +149,15 @@ abstract class UnsafeTrait implements Getters, Setters {
     return decimal;
   }
 
-  BinaryRow getStruct(int ordinal, Field field, int extDataSlot) {
+    /**
+     * Gets the field at a specific ordinal as a struct.
+     *
+     * @param ordinal     the ordinal position of this field.
+     * @param field       the Arrow field corresponding to this struct.
+     * @param extDataSlot the ext data slot used to cache the schema for the struct.
+     * @return the binary row representation of the struct.
+     */
+    BinaryRow getStruct(int ordinal, Field field, int extDataSlot) {
     if (isNullAt(ordinal)) {
       return null;
     }
