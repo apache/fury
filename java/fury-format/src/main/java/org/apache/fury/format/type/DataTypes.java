@@ -314,7 +314,7 @@ public class DataTypes {
   }
 
   public static Field field(String name, FieldType fieldType, List<Field> children) {
-    return new ExtField(name, fieldType, children);
+    return new Field(name, fieldType, children);
   }
 
   public static Field notNullField(String name, ArrowType type, Field... children) {
@@ -396,19 +396,11 @@ public class DataTypes {
   }
 
   public static Field keyFieldForMap(Field mapField) {
-    Field field = mapField.getChildren().get(0).getChildren().get(0);
-    if (field.getClass() != ExtField.class) {
-      return new ExtField(field.getName(), field.getFieldType(), field.getChildren());
-    }
-    return field;
+    return mapField.getChildren().get(0).getChildren().get(0);
   }
 
   public static Field itemFieldForMap(Field mapField) {
-    Field field = mapField.getChildren().get(0).getChildren().get(1);
-    if (field.getClass() != ExtField.class) {
-      return new ExtField(field.getName(), field.getFieldType(), field.getChildren());
-    }
-    return field;
+    return mapField.getChildren().get(0).getChildren().get(1);
   }
 
   public static Field keyArrayFieldForMap(Field mapField) {
@@ -425,24 +417,7 @@ public class DataTypes {
   }
 
   public static Schema createSchema(Field field) {
-    if (field.getClass() != ExtField.class) {
-      throw new IllegalArgumentException(
-          String.format("Field %s got wrong type %s", field, field.getClass()));
-    }
-    ExtField extField = (ExtField) field;
-    Object extData = extField.extData;
-    if (extData == null) {
-      extField.extData = extData = new Schema(field.getChildren(), field.getMetadata());
-    }
-    return (Schema) extData;
-  }
-
-  static class ExtField extends Field {
-    Object extData;
-
-    public ExtField(String name, FieldType fieldType, List<Field> children) {
-      super(name, fieldType, children);
-    }
+    return new Schema(field.getChildren(), field.getMetadata());
   }
 
   public static Field structField(boolean nullable, Field... fields) {
