@@ -28,6 +28,7 @@ import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.resolver.FieldResolver;
 import org.apache.fury.serializer.Serializer;
+import org.apache.fury.util.ClassLoaderUtils;
 import org.apache.fury.util.Preconditions;
 
 /** Codec util to create and load jit serializer class. */
@@ -100,7 +101,7 @@ public class CodecUtils {
       if (codeGenerator == null) {
         codeGenerator =
             CodeGenerator.getSharedCodeGenerator(
-                beanClassClassLoader, fury.getClass().getClassLoader());
+                ClassLoaderUtils.FuryJarClassLoader.getInstance(), beanClassClassLoader);
         // Hold strong reference of {@link CodeGenerator}, so the referent of `DelayedRef`
         // won't be null.
         classResolver.setCodeGenerator(loaders, codeGenerator);
