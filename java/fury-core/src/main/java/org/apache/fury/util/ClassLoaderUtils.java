@@ -185,7 +185,7 @@ public class ClassLoaderUtils {
 
     @Override
     public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-      if (name.startsWith(Fury.class.getPackage().getName())) {
+      if (name.startsWith(Fury.class.getPackage().getName()) && !name.contains("test")) {
         return LOADER.loadClass(name, resolve);
       }
       return null;
