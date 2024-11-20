@@ -123,6 +123,7 @@ public class ClassLoaderFuryPooled {
   }
 
   void setFactoryCallback(Consumer<Fury> factoryCallback) {
-    this.factoryCallback = factoryCallback;
+    this.factoryCallback = this.factoryCallback.andThen(factoryCallback);
+    allFury.keySet().forEach(factoryCallback);
   }
 }

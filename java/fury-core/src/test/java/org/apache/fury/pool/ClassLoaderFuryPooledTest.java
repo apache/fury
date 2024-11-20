@@ -84,6 +84,23 @@ public class ClassLoaderFuryPooledTest {
   }
 
   @Test
+  public void testFuryAfterSetFactoryCallback() {
+    int minPoolSize = 4;
+    ClassLoaderFuryPooled pooled = getPooled(minPoolSize, 6);
+
+    try {
+      pooled.setFactoryCallback(
+          fury -> {
+            throw new RuntimeException();
+          });
+      pooled.getFury();
+      Assert.fail();
+    } catch (RuntimeException e) {
+      // Success
+    }
+  }
+
+  @Test
   public void testGetFuryAwait() throws InterruptedException {
     int minPoolSize = 3;
     ClassLoaderFuryPooled pooled = getPooled(minPoolSize, 3);
