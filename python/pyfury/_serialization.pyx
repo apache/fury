@@ -76,6 +76,7 @@ cdef extern from *:
     """
     object int2obj(int64_t obj_addr)
     int64_t obj2int(object obj_ref)
+    dict _PyDict_NewPresized(Py_ssize_t minused)
 
 
 cdef int8_t NULL_FLAG = -3
@@ -2081,9 +2082,9 @@ cdef class MapSerializer(Serializer):
     cpdef inline read(self, Buffer buffer):
         cdef MapRefResolver ref_resolver = self.ref_resolver
         cdef ClassResolver class_resolver = self.class_resolver
-        cdef dict map_ = {}
-        ref_resolver.reference(map_)
         cdef int32_t len_ = buffer.read_varint32()
+        cdef dict map_ = _PyDict_NewPresized(len_)
+        ref_resolver.reference(map_)
         cdef int32_t ref_id
         cdef ClassInfo key_classinfo
         cdef ClassInfo value_classinfo
@@ -2131,7 +2132,7 @@ cdef class MapSerializer(Serializer):
 
     cpdef inline xread(self, Buffer buffer):
         cdef int32_t len_ = buffer.read_varint32()
-        cdef dict map_ = {}
+        cdef dict map_ = _PyDict_NewPresized(len_)
         self.fury.ref_resolver.reference(map_)
         for i in range(len_):
             k = self.fury.xdeserialize_ref(
