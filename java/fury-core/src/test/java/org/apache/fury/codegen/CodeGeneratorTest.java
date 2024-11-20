@@ -38,6 +38,7 @@ import org.apache.fury.collection.MultiKeyWeakMap;
 import org.apache.fury.test.bean.Foo;
 import org.apache.fury.util.ClassLoaderUtils;
 import org.apache.fury.util.ClassLoaderUtils.ByteArrayClassLoader;
+import org.apache.fury.util.ClassLoaderUtils.FuryJarClassLoader;
 import org.apache.fury.util.DelayedRef;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -70,6 +71,13 @@ public class CodeGeneratorTest {
     assertNotNull(
         sharedCodeGenerator2
             .get(new Object[] {getClass().getClassLoader(), Fury.class.getClassLoader()})
+            .get());
+    CodeGenerator.getSharedCodeGenerator(
+        FuryJarClassLoader.getInstance(), getClass().getClassLoader());
+    System.gc();
+    assertNotNull(
+        sharedCodeGenerator2
+            .get(new Object[] {FuryJarClassLoader.getInstance(), getClass().getClassLoader()})
             .get());
   }
 
