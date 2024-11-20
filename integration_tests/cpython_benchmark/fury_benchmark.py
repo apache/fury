@@ -64,6 +64,7 @@ DICT = {
     "view_count": 7,
     "zip": "",
 }
+LARGE_DICT = {str(i) : i for i in range(2**10 + 1)}
 
 TUPLE = (
     [
@@ -177,6 +178,7 @@ def micro_benchmark():
     runner.parse_args()
     language = pyfury.Language.XLANG if args.xlang else pyfury.Language.PYTHON
     runner.bench_func("fury_dict", fury_object, language, not args.no_ref, DICT)
+    runner.bench_func("fury_large_dict", fury_object, language, not args.no_ref, LARGE_DICT)
     runner.bench_func(
         "fury_dict_group", fury_object, language, not args.no_ref, DICT_GROUP
     )
