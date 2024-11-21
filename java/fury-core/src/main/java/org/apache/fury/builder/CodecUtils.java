@@ -84,9 +84,26 @@ public class CodecUtils {
       beanClassClassLoader = fury.getClass().getClassLoader();
     }
     ClassResolver classResolver = fury.getClassResolver();
+    codeGenerator = getCodeGenerator(fury, beanClassClassLoader, classResolver);
+    ClassLoader classLoader =
+        codeGenerator.compile(
+            Collections.singletonList(compileUnit), compileState -> compileState.lock.lock());
+    String className = codecBuilder.codecQualifiedClassName(beanClass);
+    try {
+      return (Class<? extends Serializer<T>>) classLoader.loadClass(className);
+    } catch (ClassNotFoundException e) {
+      throw new IllegalStateException("Impossible because we just compiled class", e);
+    }
+  }
+
+  private static CodeGenerator getCodeGenerator(
+      Fury fury, ClassLoader beanClassClassLoader, ClassResolver classResolver) {
+    CodeGenerator codeGenerator;
     try {
       // generated code imported fury classes.
-      beanClassClassLoader.loadClass(Fury.class.getName());
+      if (beanClassClassLoader.loadClass(Fury.class.getName()) != Fury.class) {
+        throw new ClassNotFoundException();
+      }
       codeGenerator = classResolver.getCodeGenerator(beanClassClassLoader);
       if (codeGenerator == null) {
         codeGenerator = CodeGenerator.getSharedCodeGenerator(beanClassClassLoader);
@@ -107,14 +124,6 @@ public class CodecUtils {
         classResolver.setCodeGenerator(loaders, codeGenerator);
       }
     }
-    ClassLoader classLoader =
-        codeGenerator.compile(
-            Collections.singletonList(compileUnit), compileState -> compileState.lock.lock());
-    String className = codecBuilder.codecQualifiedClassName(beanClass);
-    try {
-      return (Class<? extends Serializer<T>>) classLoader.loadClass(className);
-    } catch (ClassNotFoundException e) {
-      throw new IllegalStateException("Impossible because we just compiled class", e);
-    }
+    return codeGenerator;
   }
 }
