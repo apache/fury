@@ -15,10 +15,15 @@
 # specific language governing permissions and limitations
 # under the License.
 
+import argparse
+import array
+from dataclasses import dataclass
 import datetime
+import os
 import random
 import sys
-from pyfury import Fury, Language
+from typing import Any, Dict, List
+import pyfury
 import pyperf
 
 
@@ -59,6 +64,7 @@ DICT = {
     "view_count": 7,
     "zip": "",
 }
+LARGE_DICT = {str(i): i for i in range(2**10 + 1)}
 
 TUPLE = (
     [
@@ -85,9 +91,11 @@ TUPLE = (
     ],
     60,
 )
+LARGE_TUPLE = tuple(range(2**20 + 1))
 
 
 LIST = [[list(range(10)), list(range(10))] for _ in range(10)]
+LARGE_LIST = [i for i in range(2**20 + 1)]
 
 
 def mutate_dict(orig_dict, random_source):
@@ -103,18 +111,90 @@ random_source = random.Random(5)
 DICT_GROUP = [mutate_dict(DICT, random_source) for _ in range(3)]
 
 
-def fury_python_object(obj):
-    fury = Fury(language=Language.PYTHON, ref_tracking=True)
+@dataclass
+class ComplexObject1:
+    f1: Any = None
+    f2: str = None
+    f3: List[str] = None
+    f4: Dict[pyfury.Int8Type, pyfury.Int32Type] = None
+    f5: pyfury.Int8Type = None
+    f6: pyfury.Int16Type = None
+    f7: pyfury.Int32Type = None
+    f8: pyfury.Int64Type = None
+    f9: pyfury.Float32Type = None
+    f10: pyfury.Float64Type = None
+    f11: pyfury.Int16ArrayType = None
+    f12: List[pyfury.Int16Type] = None
+
+
+@dataclass
+class ComplexObject2:
+    f1: Any
+    f2: Dict[pyfury.Int8Type, pyfury.Int32Type]
+
+
+COMPLEX_OBJECT = ComplexObject1(
+    f1=ComplexObject2(f1=True, f2={-1: 2}),
+    f2="abc",
+    f3=["abc", "abc"],
+    f4={1: 2},
+    f5=2**7 - 1,
+    f6=2**15 - 1,
+    f7=2**31 - 1,
+    f8=2**63 - 1,
+    f9=1.0 / 2,
+    f10=1 / 3.0,
+    f11=array.array("h", [1, 2]),
+    f12=[-1, 4],
+)
+
+
+def fury_object(language, ref_tracking, obj):
+    fury = pyfury.Fury(language=language, ref_tracking=ref_tracking)
     binary = fury.serialize(obj)
     fury.deserialize(binary)
 
 
+def benchmark_args():
+    parser = argparse.ArgumentParser(description="Fury Benchmark")
+    parser.add_argument("--xlang", action="store_true", default=False)
+    parser.add_argument("--no-ref", action="store_true", default=False)
+    parser.add_argument("--disable-cython", action="store_true", default=False)
+
+    if "--help" in sys.argv:
+        parser.print_help()
+        return None
+    args, unknown_args = parser.parse_known_args()
+    sys.argv = sys.argv[:1] + unknown_args
+    return args
+
+
 def micro_benchmark():
+    args = benchmark_args()
     runner = pyperf.Runner()
-    runner.bench_func("fury_dict", fury_python_object, DICT)
-    runner.bench_func("fury_dict_group", fury_python_object, DICT_GROUP)
-    runner.bench_func("fury_tuple", fury_python_object, TUPLE)
-    runner.bench_func("fury_list", fury_python_object, LIST)
+    if args and args.disable_cython:
+        os.environ["ENABLE_FURY_CYTHON_SERIALIZATION"] = "0"
+        sys.argv += ["--inherit-environ", "ENABLE_FURY_CYTHON_SERIALIZATION"]
+    runner.parse_args()
+    language = pyfury.Language.XLANG if args.xlang else pyfury.Language.PYTHON
+    runner.bench_func("fury_dict", fury_object, language, not args.no_ref, DICT)
+    runner.bench_func(
+        "fury_large_dict", fury_object, language, not args.no_ref, LARGE_DICT
+    )
+    runner.bench_func(
+        "fury_dict_group", fury_object, language, not args.no_ref, DICT_GROUP
+    )
+    runner.bench_func("fury_tuple", fury_object, language, not args.no_ref, TUPLE)
+    runner.bench_func(
+        "fury_large_tuple", fury_object, language, not args.no_ref, LARGE_TUPLE
+    )
+    runner.bench_func("fury_list", fury_object, language, not args.no_ref, LIST)
+    runner.bench_func(
+        "fury_large_list", fury_object, language, not args.no_ref, LARGE_LIST
+    )
+    runner.bench_func(
+        "fury_complex", fury_object, language, not args.no_ref, COMPLEX_OBJECT
+    )
 
 
 if __name__ == "__main__":

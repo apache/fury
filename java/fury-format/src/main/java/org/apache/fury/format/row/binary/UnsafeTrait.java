@@ -26,6 +26,7 @@ import java.nio.charset.StandardCharsets;
 import org.apache.arrow.memory.ArrowBuf;
 import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.arrow.vector.types.pojo.Field;
+import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.arrow.vector.util.DecimalUtility;
 import org.apache.fury.format.row.Getters;
 import org.apache.fury.format.row.Setters;
@@ -35,6 +36,7 @@ import org.apache.fury.memory.MemoryBuffer;
 
 /** Internal to binary row format to reuse code, don't use it in anywhere else. */
 abstract class UnsafeTrait implements Getters, Setters {
+  private Object[] extData;
 
   abstract MemoryBuffer getBuffer();
 
@@ -54,6 +56,10 @@ abstract class UnsafeTrait implements Getters, Setters {
   abstract void assertIndexIsValid(int index);
 
   abstract int getOffset(int ordinal);
+
+  void initializeExtData(int numSlots) {
+    extData = new Object[numSlots];
+  }
 
   // ###########################################################
   // ####################### getters #######################
@@ -143,14 +149,25 @@ abstract class UnsafeTrait implements Getters, Setters {
     return decimal;
   }
 
-  BinaryRow getStruct(int ordinal, Field field) {
+  /**
+   * Gets the field at a specific ordinal as a struct.
+   *
+   * @param ordinal the ordinal position of this field.
+   * @param field the Arrow field corresponding to this struct.
+   * @param extDataSlot the ext data slot used to cache the schema for the struct.
+   * @return the binary row representation of the struct.
+   */
+  BinaryRow getStruct(int ordinal, Field field, int extDataSlot) {
     if (isNullAt(ordinal)) {
       return null;
     }
     final long offsetAndSize = getInt64(ordinal);
     final int relativeOffset = (int) (offsetAndSize >> 32);
     final int size = (int) offsetAndSize;
-    BinaryRow row = new BinaryRow(DataTypes.createSchema(field));
+    if (extData[extDataSlot] == null) {
+      extData[extDataSlot] = DataTypes.createSchema(field);
+    }
+    BinaryRow row = new BinaryRow((Schema) extData[extDataSlot]);
     row.pointTo(getBuffer(), getBaseOffset() + relativeOffset, size);
     return row;
   }
