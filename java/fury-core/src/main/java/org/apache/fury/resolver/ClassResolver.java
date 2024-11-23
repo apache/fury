@@ -151,7 +151,6 @@ import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.GenericType;
 import org.apache.fury.type.ScalaTypes;
 import org.apache.fury.type.TypeUtils;
-import org.apache.fury.type.Types;
 import org.apache.fury.util.GraalvmSupport;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.function.Functions;
@@ -212,7 +211,7 @@ public class ClassResolver {
   private static final String SET_META__CONTEXT_MSG =
       "Meta context must be set before serialization, "
           + "please set meta context by SerializationContext.setMetaContext";
-  private static final ClassInfo NIL_CLASS_INFO =
+  static final ClassInfo NIL_CLASS_INFO =
       new ClassInfo(null, null, null, null, false, null, NO_CLASS_ID, NOT_SUPPORT_XLANG);
 
   private final Fury fury;
@@ -1839,30 +1838,6 @@ public class ClassResolver {
   public void resetRead() {}
 
   public void resetWrite() {}
-
-  private static class ClassNameBytes {
-    private final long packageHash;
-    private final long classNameHash;
-
-    private ClassNameBytes(long packageHash, long classNameHash) {
-      this.packageHash = packageHash;
-      this.classNameHash = classNameHash;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      // ClassNameBytes is used internally, skip
-      ClassNameBytes that = (ClassNameBytes) o;
-      return packageHash == that.packageHash && classNameHash == that.classNameHash;
-    }
-
-    @Override
-    public int hashCode() {
-      int result = 31 + (int) (packageHash ^ (packageHash >>> 32));
-      result = result * 31 + (int) (classNameHash ^ (classNameHash >>> 32));
-      return result;
-    }
-  }
 
   public GenericType buildGenericType(TypeRef<?> typeRef) {
     return GenericType.build(
