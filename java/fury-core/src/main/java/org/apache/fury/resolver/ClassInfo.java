@@ -132,14 +132,6 @@ public class ClassInfo {
     return xtypeId;
   }
 
-  public MetaStringBytes getPackageNameBytes() {
-    return packageNameBytes;
-  }
-
-  public MetaStringBytes getClassNameBytes() {
-    return classNameBytes;
-  }
-
   @SuppressWarnings("unchecked")
   public <T> Serializer<T> getSerializer() {
     return (Serializer<T>) serializer;

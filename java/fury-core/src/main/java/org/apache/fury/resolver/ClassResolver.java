@@ -1159,6 +1159,10 @@ public class ClassResolver {
     }
   }
 
+  void setClassInfo(Class<?> cls, ClassInfo classInfo) {
+    classInfoMap.put(cls, classInfo);
+  }
+
   @Internal
   public ClassInfo getOrUpdateClassInfo(Class<?> cls) {
     ClassInfo classInfo = classInfoCache;

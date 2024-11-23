@@ -17,7 +17,9 @@ public class Types {
   public static final int ENUM = 13;
   public static final int NS_ENUM = 14;
   public static final int STRUCT = 15;
+  public static final int COMPATIBLE_STRUCT = 15;
   public static final int NS_STRUCT = 16;
+  public static final int NS_COMPATIBLE_STRUCT = 46;
   public static final int EXT = 17;
   public static final int NS_EXT = 18;
   public static final int LIST = 19;

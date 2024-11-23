@@ -183,7 +183,7 @@ public class Serializers {
     }
 
     public CrossLanguageCompatibleSerializer(
-      Fury fury, Class<T> cls, boolean needToWriteRef, boolean immutable) {
+        Fury fury, Class<T> cls, boolean needToWriteRef, boolean immutable) {
       super(fury, cls, needToWriteRef, immutable);
     }
 
