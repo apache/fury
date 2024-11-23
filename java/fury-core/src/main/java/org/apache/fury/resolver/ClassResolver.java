@@ -631,15 +631,6 @@ public class ClassResolver {
         && fury.getLanguage() == Language.JAVA) {
       register(type);
     }
-    if (fury.getConfig().getLanguage() != Language.JAVA) {
-      if (isSet(type)) {
-        getClassInfo(type).xtypeId = Types.SET;
-      } else if (isCollection(type)) {
-        getClassInfo(type).xtypeId = Types.LIST;
-      } else if (isMap(type)) {
-        getClassInfo(type).xtypeId = Types.MAP;
-      }
-    }
     addSerializer(type, serializer);
   }
 
@@ -734,7 +725,6 @@ public class ClassResolver {
   /** Ass serializer for specified class. */
   private void addSerializer(Class<?> type, Serializer<?> serializer) {
     Preconditions.checkNotNull(serializer);
-    short typeId = serializer.getXtypeId();
     // 1. Try to get ClassInfo from `registeredId2ClassInfo` and
     // `classInfoMap` or create a new `ClassInfo`.
     ClassInfo classInfo;
@@ -753,7 +743,7 @@ public class ClassResolver {
     }
 
     if (classInfo == null || classId != classInfo.classId) {
-      classInfo = new ClassInfo(this, type, null, classId, typeId);
+      classInfo = new ClassInfo(this, type, null, classId, (short) 0);
       classInfoMap.put(type, classInfo);
       if (registered) {
         registeredId2ClassInfo[classId] = classInfo;

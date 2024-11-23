@@ -201,7 +201,7 @@ public final class Fury implements BaseFury {
     String namespace = "";
     if (idx > 0) {
       namespace = typeName.substring(0, idx);
-      typeName = typeName.substring(idx);
+      typeName = typeName.substring(idx + 1);
     }
     register(cls, namespace, typeName);
   }
