@@ -40,6 +40,7 @@ import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.GenericType;
 import org.apache.fury.type.Generics;
+import org.apache.fury.type.TypeUtils;
 import org.apache.fury.type.Types;
 import org.apache.fury.util.ExceptionUtils;
 import org.apache.fury.util.Preconditions;
@@ -220,7 +221,11 @@ public class StructSerializer<T> extends Serializer<T> {
       try {
         ClassInfo classInfo = fury.getClassResolver().getClassInfo(fieldGeneric.getCls());
         int xtypeId = classInfo.getXtypeId();
-        id = Math.abs(xtypeId);
+        if (Types.isStructType((byte) xtypeId)) {
+          id = TypeUtils.computeStringHash(classInfo.decodeNamespace() + classInfo.decodeTypeName());
+        } else {
+          id = Math.abs(xtypeId);
+        }
       } catch (Exception e) {
         return hash;
       }

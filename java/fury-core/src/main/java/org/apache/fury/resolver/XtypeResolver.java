@@ -127,8 +127,8 @@ public class XtypeResolver {
         throw new IllegalArgumentException(
             String.format("Type %s has been registered with id %s", type, classInfo.xtypeId));
       }
-      String prevNamespace = decodeNamespace(classInfo.packageNameBytes);
-      String prevTypeName = decodeTypeName(classInfo.classNameBytes);
+      String prevNamespace = classInfo.decodeNamespace();
+      String prevTypeName = classInfo.decodeTypeName();
       if (!type.getSimpleName().equals(prevTypeName)) {
         throw new IllegalArgumentException(
             String.format(
@@ -167,8 +167,8 @@ public class XtypeResolver {
     if (classInfo != null) {
       serializer = classInfo.serializer;
       if (classInfo.classNameBytes != null) {
-        String prevNamespace = decodeNamespace(classInfo.packageNameBytes);
-        String prevTypeName = decodeTypeName(classInfo.classNameBytes);
+        String prevNamespace = classInfo.decodeNamespace();
+        String prevTypeName = classInfo.decodeTypeName();
         if (!namespace.equals(prevNamespace) || typeName.equals(prevTypeName)) {
           throw new IllegalArgumentException(
               String.format(
@@ -234,14 +234,6 @@ public class XtypeResolver {
         type, fullClassNameBytes, nsBytes, classNameBytes, false, serializer, NO_CLASS_ID, xtypeId);
   }
 
-  private String decodeNamespace(MetaStringBytes packageNameBytes) {
-    return packageNameBytes.decode(PACKAGE_DECODER);
-  }
-
-  private String decodeTypeName(MetaStringBytes classNameBytes) {
-    return classNameBytes.decode(TYPE_NAME_DECODER);
-  }
-
   public <T> void registerSerializer(Class<T> type, Class<? extends Serializer> serializerClass) {
     ClassInfo classInfo = checkClassRegistration(type);
     classInfo.serializer = Serializers.newSerializer(fury, type, serializerClass);
@@ -257,7 +249,7 @@ public class XtypeResolver {
     Preconditions.checkArgument(
         classInfo != null
             && (classInfo.xtypeId != 0
-                || !type.getSimpleName().equals(decodeTypeName(classInfo.classNameBytes))),
+                || !type.getSimpleName().equals(classInfo.decodeTypeName())),
         "Type %s should be registered with id or namespace+typename before register serializer",
         type);
     return classInfo;

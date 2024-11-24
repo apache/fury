@@ -46,4 +46,15 @@ public class Types {
   public static final int FLOAT64_ARRAY = 43;
   public static final int ARROW_RECORD_BATCH = 44;
   public static final int ARROW_TABLE = 45;
+
+  public static boolean isStructType(int value) {
+    return value == STRUCT ||
+      value == POLYMORPHIC_STRUCT ||
+      value == COMPATIBLE_STRUCT ||
+      value == POLYMORPHIC_COMPATIBLE_STRUCT ||
+      value == NS_STRUCT ||
+      value == NS_POLYMORPHIC_STRUCT ||
+      value == NS_COMPATIBLE_STRUCT ||
+      value == NS_POLYMORPHIC_COMPATIBLE_STRUCT;
+  }
 }

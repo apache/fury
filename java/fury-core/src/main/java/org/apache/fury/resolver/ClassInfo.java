@@ -20,6 +20,8 @@
 package org.apache.fury.resolver;
 
 import static org.apache.fury.meta.Encoders.GENERIC_ENCODER;
+import static org.apache.fury.meta.Encoders.PACKAGE_DECODER;
+import static org.apache.fury.meta.Encoders.TYPE_NAME_DECODER;
 
 import org.apache.fury.collection.Tuple2;
 import org.apache.fury.config.Language;
@@ -140,6 +142,15 @@ public class ClassInfo {
   void setSerializer(ClassResolver resolver, Serializer<?> serializer) {
     this.serializer = serializer;
     needToWriteClassDef = serializer != null && resolver.needToWriteClassDef(serializer);
+  }
+
+
+  public String decodeNamespace() {
+    return packageNameBytes.decode(PACKAGE_DECODER);
+  }
+
+  public String decodeTypeName() {
+    return classNameBytes.decode(TYPE_NAME_DECODER);
   }
 
   @Override
