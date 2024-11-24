@@ -32,6 +32,7 @@ import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
@@ -325,6 +326,7 @@ public class XtypeResolver {
     registerDefaultTypes(Types.LIST, ArrayList.class, Object[].class);
     registerDefaultTypes(Types.SET, HashSet.class, LinkedHashSet.class);
     registerDefaultTypes(Types.MAP, HashMap.class, LinkedHashMap.class);
+    registerDefaultTypes(Types.DATE, LocalDate.class);
   }
 
   private void registerDefaultTypes(int xtypeId, Class<?> defaultType, Class<?>... otherTypes) {

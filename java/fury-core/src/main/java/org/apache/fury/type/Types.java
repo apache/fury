@@ -42,4 +42,5 @@ public class Types {
   public static final int SPARSE_TENSOR = 36;
   public static final int ARROW_RECORD_BATCH = 37;
   public static final int ARROW_TABLE = 38;
+  public static final int DATE = 39;
 }
