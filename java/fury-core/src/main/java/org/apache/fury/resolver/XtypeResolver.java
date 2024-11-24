@@ -326,7 +326,7 @@ public class XtypeResolver {
     registerDefaultTypes(Types.LIST, ArrayList.class, Object[].class);
     registerDefaultTypes(Types.SET, HashSet.class, LinkedHashSet.class);
     registerDefaultTypes(Types.MAP, HashMap.class, LinkedHashMap.class);
-    registerDefaultTypes(Types.DATE, LocalDate.class);
+    registerDefaultTypes(Types.LOCAL_DATE, LocalDate.class);
   }
 
   private void registerDefaultTypes(int xtypeId, Class<?> defaultType, Class<?>... otherTypes) {
