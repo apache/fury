@@ -19,24 +19,28 @@
 
 package org.apache.fury.io;
 
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutput;
 import java.io.OutputStream;
 import org.apache.fury.Fury;
+import org.apache.fury.config.LongEncoding;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.serializer.PrimitiveSerializers.LongSerializer;
 import org.apache.fury.serializer.StringSerializer;
 import org.apache.fury.util.Preconditions;
 
 /** ObjectOutput based on {@link Fury} and {@link MemoryBuffer}. */
 public class MemoryBufferObjectOutput extends OutputStream implements ObjectOutput {
   private final Fury fury;
-  private final DataOutputStream utf8out = new DataOutputStream(this);
+  private final boolean compressInt;
+  private final LongEncoding longEncoding;
   private final StringSerializer stringSerializer;
   private MemoryBuffer buffer;
 
   public MemoryBufferObjectOutput(Fury fury, MemoryBuffer buffer) {
     this.fury = fury;
+    this.compressInt = fury.compressInt();
+    this.longEncoding = fury.longEncoding();
     this.buffer = buffer;
     this.stringSerializer = new StringSerializer(fury);
   }
@@ -91,12 +95,16 @@ public class MemoryBufferObjectOutput extends OutputStream implements ObjectOutp
 
   @Override
   public void writeInt(int v) throws IOException {
-    buffer.writeInt32(v);
+    if (compressInt) {
+      buffer.writeVarInt32(v);
+    } else {
+      buffer.writeInt32(v);
+    }
   }
 
   @Override
   public void writeLong(long v) throws IOException {
-    buffer.writeInt64(v);
+    LongSerializer.writeInt64(buffer, v, longEncoding);
   }
 
   @Override
