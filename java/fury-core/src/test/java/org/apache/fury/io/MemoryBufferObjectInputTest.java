@@ -24,19 +24,24 @@ import static org.testng.Assert.assertTrue;
 
 import java.io.IOException;
 import org.apache.fury.Fury;
+import org.apache.fury.FuryTestBase;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.testng.annotations.Test;
 
-public class MemoryBufferObjectInputTest {
+public class MemoryBufferObjectInputTest extends FuryTestBase {
 
-  @Test
-  public void testFuryObjectInput() throws IOException {
-    Fury fury = Fury.builder().build();
+  @Test(dataProvider = "compressNumber")
+  public void testFuryObjectInput(boolean compressNumber) throws IOException {
+    Fury fury = Fury.builder().withNumberCompressed(compressNumber).build();
     MemoryBuffer buffer = MemoryUtils.buffer(32);
     buffer.writeByte(1);
-    buffer.writeInt32(2);
-    buffer.writeInt64(3);
+    if (compressNumber) {
+      buffer.writeVarInt32(2);
+    } else {
+      buffer.writeInt32(2);
+    }
+    fury.writeInt64(buffer, 3);
     buffer.writeBoolean(true);
     buffer.writeFloat32(4.1f);
     buffer.writeFloat64(4.2);
