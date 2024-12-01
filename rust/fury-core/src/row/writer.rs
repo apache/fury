@@ -35,7 +35,7 @@ impl<'a> FieldWriterHelper<'a> {
         writer: &'a mut Writer,
         base_offset: usize,
         get_field_offset: Box<dyn Fn(usize) -> usize>,
-    ) -> FieldWriterHelper {
+    ) -> FieldWriterHelper<'a> {
         FieldWriterHelper {
             writer,
             base_offset,
@@ -67,7 +67,7 @@ pub struct StructWriter<'a> {
     field_writer_helper: FieldWriterHelper<'a>,
 }
 
-impl<'a> StructWriter<'a> {
+impl StructWriter<'_> {
     fn get_fixed_size(bit_map_width_in_bytes: usize, num_fields: usize) -> usize {
         bit_map_width_in_bytes + num_fields * 8
     }
@@ -105,7 +105,7 @@ pub struct ArrayWriter<'a> {
     field_writer_helper: FieldWriterHelper<'a>,
 }
 
-impl<'a> ArrayWriter<'a> {
+impl ArrayWriter<'_> {
     fn get_fixed_size(bit_map_width_in_bytes: usize, num_fields: usize) -> usize {
         8 + bit_map_width_in_bytes + num_fields * 8
     }
@@ -148,7 +148,7 @@ pub struct MapWriter<'a> {
     writer: &'a mut Writer,
 }
 
-impl<'a> MapWriter<'a> {
+impl MapWriter<'_> {
     fn get_fixed_size(&self) -> usize {
         // key_byte_size
         8
