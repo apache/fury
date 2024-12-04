@@ -118,29 +118,6 @@ class Serializer(ABC):
         self.type_: type = type_
         self.need_to_write_ref = not is_primitive_type(type_)
 
-    def get_xtype_id(self):
-        """
-        Returns
-        -------
-            Returns NOT_SUPPORT_CROSS_LANGUAGE if the serializer doesn't
-            support cross-language serialization.
-            Return a number in range (0, 32767) if the serializer support
-            cross-language serialization and native serialization data is the
-            same with cross-language serialization.
-            Return a negative short in range [-32768, 0) if the serializer
-            support cross-language serialization and native serialization data
-            is not the same with cross-language serialization.
-        """
-        return NOT_SUPPORT_CROSS_LANGUAGE
-
-    def get_xtype_tag(self):
-        """
-        Returns
-        -------
-            a type tag used for setup type mapping between languages.
-        """
-        raise RuntimeError("Tag is only for struct.")
-
     def write(self, buffer, value):
         raise NotImplementedError
 
@@ -197,9 +174,6 @@ class BooleanSerializer(CrossLanguageCompatibleSerializer):
 
 
 class ByteSerializer(CrossLanguageCompatibleSerializer):
-    def get_xtype_id(self):
-        return FuryType.INT8.value
-
     def write(self, buffer, value):
         buffer.write_int8(value)
 
@@ -208,9 +182,6 @@ class ByteSerializer(CrossLanguageCompatibleSerializer):
 
 
 class Int16Serializer(CrossLanguageCompatibleSerializer):
-    def get_xtype_id(self):
-        return FuryType.INT16.value
-
     def write(self, buffer, value):
         buffer.write_int16(value)
 
@@ -219,9 +190,6 @@ class Int16Serializer(CrossLanguageCompatibleSerializer):
 
 
 class Int32Serializer(CrossLanguageCompatibleSerializer):
-    def get_xtype_id(self):
-        return FuryType.INT32.value
-
     def write(self, buffer, value):
         buffer.write_int32(value)
 
@@ -230,9 +198,6 @@ class Int32Serializer(CrossLanguageCompatibleSerializer):
 
 
 class Int64Serializer(Serializer):
-    def get_xtype_id(self):
-        return FuryType.INT64.value
-
     def xwrite(self, buffer, value):
         buffer.write_int64(value)
 
@@ -247,9 +212,6 @@ class Int64Serializer(Serializer):
 
 
 class FloatSerializer(CrossLanguageCompatibleSerializer):
-    def get_xtype_id(self):
-        return FuryType.FLOAT.value
-
     def write(self, buffer, value):
         buffer.write_float(value)
 
@@ -258,9 +220,6 @@ class FloatSerializer(CrossLanguageCompatibleSerializer):
 
 
 class DoubleSerializer(CrossLanguageCompatibleSerializer):
-    def get_xtype_id(self):
-        return FuryType.DOUBLE.value
-
     def write(self, buffer, value):
         buffer.write_double(value)
 
@@ -269,9 +228,6 @@ class DoubleSerializer(CrossLanguageCompatibleSerializer):
 
 
 class StringSerializer(CrossLanguageCompatibleSerializer):
-    def get_xtype_id(self):
-        return FuryType.STRING.value
-
     def write(self, buffer, value: str):
         buffer.write_string(value)
 
@@ -283,9 +239,6 @@ _base_date = datetime.date(1970, 1, 1)
 
 
 class DateSerializer(CrossLanguageCompatibleSerializer):
-    def get_xtype_id(self):
-        return FuryType.DATE32.value
-
     def write(self, buffer, value: datetime.date):
         if not isinstance(value, datetime.date):
             raise TypeError(
@@ -302,9 +255,6 @@ class DateSerializer(CrossLanguageCompatibleSerializer):
 
 
 class TimestampSerializer(CrossLanguageCompatibleSerializer):
-    def get_xtype_id(self):
-        return FuryType.TIMESTAMP.value
-
     def write(self, buffer, value: datetime.datetime):
         if not isinstance(value, datetime.datetime):
             raise TypeError(
@@ -321,9 +271,6 @@ class TimestampSerializer(CrossLanguageCompatibleSerializer):
 
 
 class BytesSerializer(CrossLanguageCompatibleSerializer):
-    def get_xtype_id(self):
-        return FuryType.BINARY.value
-
     def write(self, buffer, value: bytes):
         assert isinstance(value, bytes)
         self.fury.write_buffer_object(buffer, BytesBufferObject(value))
@@ -331,117 +278,6 @@ class BytesSerializer(CrossLanguageCompatibleSerializer):
     def read(self, buffer):
         fury_buf = self.fury.read_buffer_object(buffer)
         return fury_buf.to_pybytes()
-
-
-# Use numpy array or python array module.
-typecode_dict = {
-    # use bytes serializer for byte array.
-    "h": (2, FuryType.FURY_PRIMITIVE_SHORT_ARRAY.value),
-    "i": (4, FuryType.FURY_PRIMITIVE_INT_ARRAY.value),
-    "l": (8, FuryType.FURY_PRIMITIVE_LONG_ARRAY.value),
-    "f": (4, FuryType.FURY_PRIMITIVE_FLOAT_ARRAY.value),
-    "d": (8, FuryType.FURY_PRIMITIVE_DOUBLE_ARRAY.value),
-}
-if np:
-    typecode_dict = {
-        k: (itemsize, -type_id) for k, (itemsize, type_id) in typecode_dict.items()
-    }
-
-
-class PyArraySerializer(CrossLanguageCompatibleSerializer):
-    typecode_dict = typecode_dict
-    typecodearray_type = {
-        "h": Int16ArrayType,
-        "i": Int32ArrayType,
-        "l": Int64ArrayType,
-        "f": Float32ArrayType,
-        "d": Float64ArrayType,
-    }
-
-    def __init__(self, fury, type_, typecode):
-        super().__init__(fury, type_)
-        self.typecode = typecode
-        self.itemsize, self.type_id = PyArraySerializer.typecode_dict[self.typecode]
-
-    def get_xtype_id(self):
-        return self.type_id
-
-    def xwrite(self, buffer, value):
-        assert value.itemsize == self.itemsize
-        view = memoryview(value)
-        assert view.format == self.typecode
-        assert view.itemsize == self.itemsize
-        assert view.c_contiguous  # TODO handle contiguous
-        nbytes = len(value) * self.itemsize
-        buffer.write_varint32(nbytes)
-        buffer.write_buffer(value)
-
-    def xread(self, buffer):
-        data = buffer.read_bytes_and_size()
-        arr = array.array(self.typecode, [])
-        arr.frombytes(data)
-        return arr
-
-    def write(self, buffer, value: array.array):
-        nbytes = len(value) * value.itemsize
-        buffer.write_string(value.typecode)
-        buffer.write_varint32(nbytes)
-        buffer.write_buffer(value)
-
-    def read(self, buffer):
-        typecode = buffer.read_string()
-        data = buffer.read_bytes_and_size()
-        arr = array.array(typecode, [])
-        arr.frombytes(data)
-        return arr
-
-
-if np:
-    _np_dtypes_dict = {
-        # use bytes serializer for byte array.
-        np.dtype(np.bool_): (1, "?", FuryType.FURY_PRIMITIVE_BOOL_ARRAY.value),
-        np.dtype(np.int16): (2, "h", FuryType.FURY_PRIMITIVE_SHORT_ARRAY.value),
-        np.dtype(np.int32): (4, "i", FuryType.FURY_PRIMITIVE_INT_ARRAY.value),
-        np.dtype(np.int64): (8, "l", FuryType.FURY_PRIMITIVE_LONG_ARRAY.value),
-        np.dtype(np.float32): (4, "f", FuryType.FURY_PRIMITIVE_FLOAT_ARRAY.value),
-        np.dtype(np.float64): (8, "d", FuryType.FURY_PRIMITIVE_DOUBLE_ARRAY.value),
-    }
-else:
-    _np_dtypes_dict = {}
-
-
-class Numpy1DArraySerializer(CrossLanguageCompatibleSerializer):
-    dtypes_dict = _np_dtypes_dict
-
-    def __init__(self, fury, type_, dtype):
-        super().__init__(fury, type_)
-        self.dtype = dtype
-        self.itemsize, self.typecode, self.type_id = _np_dtypes_dict[self.dtype]
-
-    def get_xtype_id(self):
-        return self.type_id
-
-    def xwrite(self, buffer, value):
-        assert value.itemsize == self.itemsize
-        view = memoryview(value)
-        assert view.format == self.typecode
-        assert view.itemsize == self.itemsize
-        nbytes = len(value) * self.itemsize
-        buffer.write_varint32(nbytes)
-        if self.dtype == np.dtype("bool") or not view.c_contiguous:
-            buffer.write_bytes(value.tobytes())
-        else:
-            buffer.write_buffer(value)
-
-    def xread(self, buffer):
-        data = buffer.read_bytes_and_size()
-        return np.frombuffer(data, dtype=self.dtype)
-
-    def write(self, buffer, value):
-        self.fury.handle_unsupported_write(buffer, value)
-
-    def read(self, buffer):
-        return self.fury.handle_unsupported_read(buffer)
 
 
 class CollectionSerializer(Serializer):

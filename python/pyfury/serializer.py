@@ -396,3 +396,178 @@ class DataClassSerializer(Serializer):
 
     def xread(self, buffer):
         raise NotImplementedError
+
+
+# Use numpy array or python array module.
+typecode_dict = {
+    # use bytes serializer for byte array.
+    "h": (2, Int16ArrayType, FuryType.INT16_ARRAY.value),
+    "i": (4, Int32ArrayType, FuryType.INT32_ARRAY.value),
+    "l": (8, Int64ArrayType, FuryType.INT64_ARRAY.value),
+    "f": (4, Float32ArrayType, FuryType.FLOAT32_ARRAY.value),
+    "d": (8, Float64ArrayType, FuryType.FLOAT64_ARRAY.value),
+}
+
+typeid_code = {
+    FuryType.INT16_ARRAY.value: "h",
+    FuryType.INT32_ARRAY.value: "i",
+    FuryType.INT64_ARRAY.value: "l",
+    FuryType.FLOAT32_ARRAY.value: "f",
+    FuryType.FLOAT64_ARRAY.value: "d",
+}
+
+class PyArraySerializer(CrossLanguageCompatibleSerializer):
+    typecodearray_type = {
+        "h": Int16ArrayType,
+        "i": Int32ArrayType,
+        "l": Int64ArrayType,
+        "f": Float32ArrayType,
+        "d": Float64ArrayType,
+    }
+
+    def __init__(self, fury, type_, typecode: str):
+        super().__init__(fury, type_)
+        self.typecode = typecode
+        self.itemsize, ftype, self.type_id = typecode_dict[self.typecode]
+
+    def xwrite(self, buffer, value):
+        assert value.itemsize == self.itemsize
+        view = memoryview(value)
+        assert view.format == self.typecode
+        assert view.itemsize == self.itemsize
+        assert view.c_contiguous  # TODO handle contiguous
+        nbytes = len(value) * self.itemsize
+        buffer.write_varint32(nbytes)
+        buffer.write_buffer(value)
+
+    def xread(self, buffer):
+        data = buffer.read_bytes_and_size()
+        arr = array.array(self.typecode, [])
+        arr.frombytes(data)
+        return arr
+
+    def write(self, buffer, value: array.array):
+        nbytes = len(value) * value.itemsize
+        buffer.write_string(value.typecode)
+        buffer.write_varint32(nbytes)
+        buffer.write_buffer(value)
+
+    def read(self, buffer):
+        typecode = buffer.read_string()
+        data = buffer.read_bytes_and_size()
+        arr = array.array(typecode, [])
+        arr.frombytes(data)
+        return arr
+
+
+class DynamicPyArraySerializer:
+
+    def xwrite(self, buffer, value):
+        itemsize, ftype, type_id = typecode_dict[value.format]
+        view = memoryview(value)
+        nbytes = len(value) * itemsize
+        buffer.write_varint32(type_id)
+        buffer.write_varint32(nbytes)
+        if value.dtype == np.dtype("bool") or not view.c_contiguous:
+            buffer.write_bytes(value.tobytes())
+        else:
+            buffer.write_buffer(value)
+
+    def xread(self, buffer):
+        type_id = buffer.read_varint32()
+        typecode = typeid_code[type_id]
+        data = buffer.read_bytes_and_size()
+        arr = array.array(typecode, [])
+        arr.frombytes(data)
+        return arr
+
+    def write(self, buffer, value):
+        self.fury.handle_unsupported_write(buffer, value)
+
+    def read(self, buffer):
+        return self.fury.handle_unsupported_read(buffer)
+
+
+if np:
+    _np_dtypes_dict = {
+        # use bytes serializer for byte array.
+        np.dtype(np.bool_): (1, "?", BoolArrayType, FuryType.BOOL_ARRAY.value),
+        np.dtype(np.int16): (2, "h", Int16ArrayType, FuryType.INT16_ARRAY.value),
+        np.dtype(np.int32): (4, "i", Int32ArrayType, FuryType.INT32_ARRAY.value),
+        np.dtype(np.int64): (8, "l", Int64ArrayType, FuryType.INT64_ARRAY.value),
+        np.dtype(np.float32): (4, "f", Float32ArrayType, FuryType.FLOAT32_ARRAY.value),
+        np.dtype(np.float64): (8, "d", Float64ArrayType, FuryType.FLOAT64_ARRAY.value),
+    }
+else:
+    _np_dtypes_dict = {}
+
+
+class Numpy1DArraySerializer:
+    dtypes_dict = _np_dtypes_dict
+
+    def __init__(self, fury, type_, dtype):
+        super().__init__(fury, type_)
+        self.dtype = dtype
+        self.itemsize, self.typecode, self.type_id = _np_dtypes_dict[self.dtype]
+
+    def xwrite(self, buffer, value):
+        assert value.itemsize == self.itemsize
+        view = memoryview(value)
+        try:
+            assert view.format == self.typecode
+        except AssertionError as e:
+            raise e
+        assert view.itemsize == self.itemsize
+        nbytes = len(value) * self.itemsize
+        buffer.write_varint32(nbytes)
+        if self.dtype == np.dtype("bool") or not view.c_contiguous:
+            buffer.write_bytes(value.tobytes())
+        else:
+            buffer.write_buffer(value)
+
+    def xread(self, buffer):
+        data = buffer.read_bytes_and_size()
+        return np.frombuffer(data, dtype=self.dtype)
+
+    def write(self, buffer, value):
+        self.fury.handle_unsupported_write(buffer, value)
+
+    def read(self, buffer):
+        return self.fury.handle_unsupported_read(buffer)
+
+
+class NDArraySerializer:
+
+    def xwrite(self, buffer, value):
+        itemsize, typecode, type_id = _np_dtypes_dict[value.dtype]
+        view = memoryview(value)
+        nbytes = len(value) * itemsize
+        buffer.write_varint32(type_id)
+        buffer.write_varint32(nbytes)
+        if value.dtype == np.dtype("bool") or not view.c_contiguous:
+            buffer.write_bytes(value.tobytes())
+        else:
+            buffer.write_buffer(value)
+
+    def xread(self, buffer):
+        raise NotImplementedError("Multi-demensional array not supported currently")
+
+    def write(self, buffer, value):
+        self.fury.handle_unsupported_write(buffer, value)
+
+    def read(self, buffer):
+        return self.fury.handle_unsupported_read(buffer)
+
+
+class PickleSerializer(Serializer):
+    def xwrite(self, buffer, value):
+        raise NotImplementedError
+
+    def xread(self, buffer):
+        raise NotImplementedError
+
+    def write(self, buffer, value):
+        self.fury.handle_unsupported_write(buffer, value)
+
+    def read(self, buffer):
+        return self.fury.handle_unsupported_read(buffer)

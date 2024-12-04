@@ -35,11 +35,12 @@ from pyfury._fury import _PicklerStub, _UnpicklerStub, Pickler, Unpickler
 from pyfury._fury import _ENABLE_CLASS_REGISTRATION_FORCIBLY
 from pyfury.error import ClassNotCompatibleError
 from pyfury.lib import mmh3
-from pyfury.meta.metastring import Encoding
+from pyfury.meta.metastring import Encoding, MetaStringEncoder, MetaStringDecoder
 from pyfury.type import is_primitive_type, FuryType, Int8Type, Int16Type, Int32Type, \
     Int64Type, Float32Type, Float64Type, Int16ArrayType, Int32ArrayType, \
     Int64ArrayType, Float32ArrayType, Float64ArrayType, infer_field, load_class
 from pyfury.util import is_little_endian
+from pyfury.includes.libserialization cimport TypeId, IsNamespacedType
 
 from libc.stdint cimport *
 from libcpp.vector cimport vector
@@ -309,7 +310,7 @@ cdef class ClassResolver:
         dict _type_id_to_serializer  # Dict[int, Serializer]
         dict _type_id_and_cls_to_serializer  # Dict[Tuple[int, type], Serializer]
         dict _type_tag_to_class_x_lang_map
-        int16_t _class_id_counter
+        int16_t _type_id_counter
         set _used_classes_id
 
         public list _registered_id2_class_info
@@ -319,6 +320,7 @@ cdef class ClassResolver:
         flat_hash_map[uint64_t, PyObject*] _c_classes_info
         # hash -> ClassInfo
         flat_hash_map[int64_t, PyObject*] _c_hash_to_classinfo
+        flat_hash_map[pair[int64_t, int64_t], PyObject*] _c_2hash_to_classinfo
         # hash -> MetaStringBytes
         flat_hash_map[int64_t, PyObject*] _c_hash_to_enum_string_bytes
         flat_hash_map[pair[int64_t, int64_t], PyObject*] _c_hash_to_small_metastring_bytes
@@ -346,139 +348,50 @@ cdef class ClassResolver:
         self._type_id_to_serializer = dict()
         self._type_id_and_cls_to_serializer = dict()
         self._type_tag_to_class_x_lang_map = dict()
-        self._class_id_counter = PICKLE_CACHE_CLASS_ID + 1
+        self._type_id_counter = PICKLE_CACHE_CLASS_ID + 1
         self._used_classes_id = set()
         self._registered_id2_class_info = list()
-
         self.dynamic_write_string_id = 0
-        self._serializer = None
-
         self._classes_info = dict()
         self._class_set = set()
         self._classname_set = set()
         self._enum_str_set = set()
+        self._generic_encoder = MetaStringEncoder('.', '_')
+        self._generic_decoder = MetaStringDecoder('.', '_')
+        self._typename_decoder = MetaStringDecoder('$', '_')
+        self._typename_decoder = MetaStringDecoder('$', '_')
 
+# if classinfo.dynamic_type:
+    #             if cls is int and 2**63 - 1 >= obj >= -(2**63):
+    #                 type_id = FuryType.INT64.value
+    #             elif cls is float:
+    #                 type_id = FuryType.DOUBLE.value
+    #             elif cls is array.array:
+    #                 info = PyArraySerializer.typecode_dict.get(obj.typecode)
+    #                 if info is not None:
+    #                     type_id = info[1]
+    #             elif np and cls is np.ndarray and obj.ndim == 1:
+    #                 info = Numpy1DArraySerializer.dtypes_dict.get(obj.dtype)
+    #                 if info:
+    #                     type_id = info[2]
+    #                 //????
+    #                 self._add_serializer(cls, serializer=self.get_or_create_serializer(cls))
+    #                 serializer_ = self._classes_info.get(cls).serializer
+    #         return serializer_
     def initialize(self):
-        self.register_class(int, class_id=PYINT_CLASS_ID)
-        self.register_class(float, class_id=PYFLOAT_CLASS_ID)
-        self.register_class(bool, class_id=PYBOOL_CLASS_ID)
-        self.register_class(str, class_id=STRING_CLASS_ID)
-        self.register_class(_PickleStub, class_id=PICKLE_CLASS_ID)
-        self.register_class(PickleStrongCacheStub, class_id=PICKLE_STRONG_CACHE_CLASS_ID)
-        self.register_class(PickleCacheStub, class_id=PICKLE_CACHE_CLASS_ID)
-        self._add_default_serializers()
-
-    def register_serializer(self, cls: Union[type, TypeVar], serializer):
-        assert isinstance(cls, (type, TypeVar)), cls
-        type_id = serializer.get_xtype_id()
-        if type_id != NOT_SUPPORT_CROSS_LANGUAGE:
-            self._add_x_lang_serializer(cls, serializer=serializer)
+        if self.fury.language == Language.PYTHON:
+            self._initialize_py()
         else:
-            self.register_class(cls)
-            self._classes_info[cls].serializer = serializer
+            self._initialize_xlang()
 
-    def register_class(self, cls: Union[type, TypeVar], *, class_id: int = None, type_tag: str = None):
-        """Register class with given type id or tag, if tag is not None, it will be used for
-         cross-language serialization."""
-        if type_tag is not None:
-            assert class_id is None, (f"Type tag {type_tag} has been set already, "
-                                      f"set class id at the same time is not allowed.")
-            self.register_serializer(
-                cls, ComplexObjectSerializer(self.fury, cls, type_tag)
-            )
-            return
-        classinfo = self._classes_info.get(cls)
-        if classinfo is None:
-            if isinstance(cls, TypeVar):
-                class_name_bytes = (cls.__module__ + "#" + cls.__name__).encode("utf-8")
-            else:
-                class_name_bytes = (cls.__module__ + "#" + cls.__qualname__) \
-                    .encode("utf-8")
-            class_id = class_id if class_id is not None else self._next_class_id()
-            assert class_id not in self._used_classes_id, (
-                self._used_classes_id,
-                self._classes_info,
-            )
-            classinfo = ClassInfo(
-                cls=cls, class_name_bytes=class_name_bytes, class_id=class_id
-            )
-            self._classes_info[cls] = classinfo
-            self._c_classes_info[<uintptr_t><PyObject*>cls] = <PyObject*>classinfo
-            if len(self._registered_id2_class_info) <= class_id:
-                self._registered_id2_class_info.extend(
-                    [None] * (class_id - len(self._registered_id2_class_info) + 1)
-                )
-            self._registered_id2_class_info[class_id] = classinfo
-            self._c_registered_id2_class_info.resize(class_id + 1)
-            self._c_registered_id2_class_info[class_id] = <PyObject*>classinfo
-        else:
-            if classinfo.class_id == NO_CLASS_ID:
-                class_id = class_id if class_id is not None else self._next_class_id()
-                assert class_id not in self._used_classes_id, (
-                    self._used_classes_id,
-                    self._classes_info,
-                )
-                classinfo.class_id = class_id
-                if len(self._registered_id2_class_info) <= class_id:
-                    self._registered_id2_class_info.extend(
-                        [None] * (class_id - len(self._registered_id2_class_info) + 1)
-                    )
-                self._registered_id2_class_info[class_id] = classinfo
-                self._c_registered_id2_class_info.resize(class_id + 1)
-                self._c_registered_id2_class_info[class_id] = <PyObject*>classinfo
-            else:
-                if class_id is not None and classinfo.class_id != class_id:
-                    raise ValueError(
-                        f"Inconsistent class id {class_id} vs {classinfo.class_id} "
-                        f"for class {cls}"
-                    )
-
-    def _next_class_id(self):
-        class_id = self._class_id_counter = self._class_id_counter + 1
-        while class_id in self._used_classes_id:
-            class_id = self._class_id_counter = self._class_id_counter + 1
-        return class_id
-
-    def _add_serializer(
-            self,
-            cls: Union[type, TypeVar],
-            serializer=None,
-            serializer_cls=None):
-        if serializer_cls:
-            serializer = serializer_cls(self.fury, cls)
-        self.register_serializer(cls, serializer)
-
-    def _add_x_lang_serializer(self,
-                               cls: Union[type, TypeVar],
-                               serializer=None,
-                               serializer_cls=None):
-        if serializer_cls:
-            serializer = serializer_cls(self.fury, cls)
-        type_id = serializer.get_xtype_id()
-
-        assert type_id != NOT_SUPPORT_CROSS_LANGUAGE
-        self._type_id_and_cls_to_serializer[(type_id, cls)] = serializer
-        self.register_class(cls)
-        classinfo = self._classes_info[cls]
-        classinfo.serializer = serializer
-        if type_id == FuryType.FURY_TYPE_TAG.value:
-            type_tag = serializer.get_xtype_tag()
-            assert type(type_tag) is str
-            assert type_tag not in self._type_tag_to_class_x_lang_map
-            classinfo.type_tag_bytes = MetaStringBytes(type_tag.encode("utf-8"))
-            self._type_tag_to_class_x_lang_map[type_tag] = cls
-        else:
-            self._type_id_to_serializer[type_id] = serializer
-            if type_id > NOT_SUPPORT_CROSS_LANGUAGE:
-                self._type_id_to_class[type_id] = cls
-
-    def _add_default_serializers(self):
-        self._add_x_lang_serializer(int, serializer_cls=ByteSerializer)
-        self._add_x_lang_serializer(int, serializer_cls=Int16Serializer)
-        self._add_x_lang_serializer(int, serializer_cls=Int32Serializer)
-        self._add_x_lang_serializer(int, serializer_cls=Int64Serializer)
-        self._add_x_lang_serializer(float, serializer_cls=FloatSerializer)
-        self._add_x_lang_serializer(float, serializer_cls=DoubleSerializer)
+    def _initialize_py(self):
+        self.register_type(int, type_id=PYINT_CLASS_ID)
+        self.register_type(float, type_id=PYFLOAT_CLASS_ID)
+        self.register_type(bool, type_id=PYBOOL_CLASS_ID)
+        self.register_type(str, type_id=STRING_CLASS_ID)
+        self.register_type(_PickleStub, type_id=PICKLE_CLASS_ID)
+        self.register_type(PickleStrongCacheStub, type_id=PICKLE_STRONG_CACHE_CLASS_ID)
+        self.register_type(PickleCacheStub, type_id=PICKLE_CACHE_CLASS_ID)
         self._add_serializer(type(None), serializer_cls=NoneSerializer)
         self._add_serializer(bool, serializer_cls=BooleanSerializer)
         self._add_serializer(Int8Type, serializer_cls=ByteSerializer)
@@ -524,54 +437,199 @@ cdef class ClassResolver:
                 array.array,
                 serializer=PyArraySerializer(self.fury, array.array, typecode),
             )
-            self._add_serializer(
-                PyArraySerializer.typecodearray_type[typecode],
+        self._add_serializer(array.array, DynamicPyArraySerializer)
+        if np:
+            self._add_serializer(np.ndarray, NDArraySerializer)
+
+    def _initialize_xlang(self):
+        self.register_type(bool, type_id=FuryType.BOOL, serializer=BooleanSerializer(self.fury, bool))
+        self.register_type(Int8Type, type_id=FuryType.INT8, serializer=ByteSerializer(self.fury, int))
+        self.register_type(Int16Type, type_id=FuryType.INT16, serializer=Int16Serializer(self.fury, int))
+        self.register_type(Int32Type, type_id=FuryType.INT32, serializer=Int32Serializer(self.fury, int))
+        self.register_type(Int64Type, type_id=FuryType.INT64, serializer=Int64Serializer(self.fury, int))
+        self.register_type(int, type_id=0, serializer=DynamicIntSerializer(self.fury, int))
+        self.register_type(Float32Type, type_id=FuryType.FLOAT32, serializer=FloatSerializer(self.fury, float))
+        self.register_type(Float64Type, type_id=FuryType.FLOAT64, serializer=FloatSerializer(self.fury, float))
+        self.register_type(float, type_id=0, serializer=DynamicFloatSerializer(self.fury, float))
+        self.register_type(str, type_id=FuryType.STRING, serializer=StringSerializer(self.fury, str))
+        # TODO(chaokunyang) DURATION DECIMAL
+        self.register_type(datetime.datetime, type_id=FuryType.TIMESTAMP, serializer=TimestampSerializer(self.fury, datetime.datetime))
+        self.register_type(datetime.date, type_id=FuryType.LOCAL_DATE, serializer=DateSerializer(self.fury, datetime.date))
+        self.register_type(bytes, type_id=FuryType.BINARY, serializer=BytesSerializer(self.fury, bytes))
+        for itemsize, ftype, typeid in PyArraySerializer.typecode_dict.values():
+            self.register_type(
+                ftype, type_id=typeid,
                 serializer=PyArraySerializer(self.fury, array.array, typecode),
             )
+        self._add_serializer(array.array, serializer=DynamicPyArraySerializer)
         if np:
-            for dtype in Numpy1DArraySerializer.dtypes_dict.keys():
+            for itemsize, format, ftype, typeid in Numpy1DArraySerializer.dtypes_dict.values():
                 self._add_serializer(
                     np.ndarray,
-                    serializer=Numpy1DArraySerializer(self.fury, array.array, dtype),
+                    serializer=Numpy1DArraySerializer(self.fury, np.ndarray, dtype),
                 )
+        self._add_serializer(np.ndarray, serializer=NDArraySerializer)
+        self.register_type(list, type_id=FuryType.LIST, serializer=ListSerializer)
+        self.register_type(set, type_id=FuryType.SET, serializer=SetSerializer)
+        self.register_type(dict, type_id=FuryType.MAP, serializer=MapSerializer)
 
-    cpdef inline Serializer get_serializer(self, cls=None, type_id=None, obj=None):
+    def register_type(self, cls: Union[type, TypeVar], *, type_id: int = None,
+                       namespace: str = None, typename: str = None, serializer=None):
+        """Register class with given type id or typename. If typename is not None, it will be used for
+         cross-language serialization."""
+        n_params = len(set(typename, type_id))
+        if n_params == 0:
+            type_id = self._next_type_id()
+        if ln_params == 2:
+            raise TypeError(f"type name {typename} and id {type_id} should not be set at the same time")
+        type_id_registered = type_id is not None and
+        if type_id is not None:
+            if type_id in self._type_id_to_class:
+                raise TypeError(f"{cls} registered already")
+        elif cls in self._classes_info:
+            raise TypeError(f"{cls} registered already")
+
+    def register_serializer(self, cls: Union[type, TypeVar], serializer):
+        assert isinstance(cls, (type, TypeVar)), cls
+        if cls not in self._classes_info:
+            raise TypeUnregisteredError(f"{cls} not registered")
+        classinfo = self._classes_info[cls]
+        type_id = prev_type_id = classinfo.type_id
+        self._type_id_to_class.pop(prev_type_id)
+        if type(classinfo.serializer) is not type(serializer):
+            if classinfo.typename_bytes is not None:
+                type_id = classinfo.type_id & 0xffffff00 | FuryType.NS_EXT.value
+            else:
+                type_id = classinfo.type_id & 0xffffff00 | FuryType.EXT.value
+        self._type_id_to_class[type_id] = classinfo
+
+    def _register_xtype(self, cls: Union[type, TypeVar], *, type_id: int = None,
+                        namespace: str = None, typename: str = None, serializer=None, internal=False):
+        if serializer is None:
+            if issubclass(cls, enum.Enum):
+                serializer = EnumSerializer(self.fury, cls)
+                type_id = FuryType.NS_ENUM if type_id is None else (type_id << 8 + FuryType.ENUM)
+            else:
+                serializer = ComplexObjectSerializer(self.fury, cls)
+                type_id = FuryType.NS_STRUCT if type_id is None else (type_id << 8 + FuryType.STRUCT)
+        elif not internal:
+            type_id = FuryType.NS_EXT if type_id is None else (type_id << 8 + FuryType.EXT)
+        if typename is None:
+            classinfo = ClassInfo(cls, type_id, serializer, None, None)
+        else:
+            classinfo = ClassInfo(cls, type_id, serializer, None, None)
+        classinfo = self._classes_info[cls]
+        classinfo.serializer = serializer
+        if type_id == FuryType.FURY_TYPE_TAG.value:
+            type_tag = serializer.get_xtype_tag()
+            assert type(type_tag) is str
+            assert type_tag not in self._type_tag_to_class_x_lang_map
+            classinfo.type_tag_bytes = MetaStringBytes(type_tag.encode("utf-8"))
+            self._type_tag_to_class_x_lang_map[type_tag] = cls
+        else:
+            self._type_id_to_serializer[type_id] = serializer
+            if type_id > NOT_SUPPORT_CROSS_LANGUAGE:
+                self._type_id_to_class[type_id] = cls
+
+
+    def _register_type(self, cls: Union[type, TypeVar], *, type_id: int = None,
+                       namespace: str = None, typename: str = None):
+        if typename is not None:
+            assert type_id is None, (f"Type tag {typename} has been set already, "
+                                      f"set class id at the same time is not allowed.")
+            self.register_serializer(
+                cls, ComplexObjectSerializer(self.fury, cls, type_tag)
+            )
+            return
+        classinfo = self._classes_info.get(cls)
+        if classinfo is None:
+            if isinstance(cls, TypeVar):
+                class_name_bytes = (cls.__module__ + "#" + cls.__name__).encode("utf-8")
+            else:
+                class_name_bytes = (cls.__module__ + "#" + cls.__qualname__) \
+                    .encode("utf-8")
+            type_id = type_id if type_id is not None else self._next_type_id()
+            assert type_id not in self._used_classes_id, (
+                self._used_classes_id,
+                self._classes_info,
+            )
+            classinfo = ClassInfo(
+                cls=cls, class_name_bytes=class_name_bytes, type_id=type_id
+            )
+            self._classes_info[cls] = classinfo
+            self._c_classes_info[<uintptr_t><PyObject*>cls] = <PyObject*>classinfo
+            if len(self._registered_id2_class_info) <= type_id:
+                self._registered_id2_class_info.extend(
+                    [None] * (type_id - len(self._registered_id2_class_info) + 1)
+                )
+            self._registered_id2_class_info[type_id] = classinfo
+            self._c_registered_id2_class_info.resize(type_id + 1)
+            self._c_registered_id2_class_info[type_id] = <PyObject*>classinfo
+        else:
+            if classinfo.type_id == NO_CLASS_ID:
+                type_id = type_id if type_id is not None else self._next_type_id()
+                assert type_id not in self._used_classes_id, (
+                    self._used_classes_id,
+                    self._classes_info,
+                )
+                classinfo.type_id = type_id
+                if len(self._registered_id2_class_info) <= type_id:
+                    self._registered_id2_class_info.extend(
+                        [None] * (type_id - len(self._registered_id2_class_info) + 1)
+                    )
+                self._registered_id2_class_info[type_id] = classinfo
+                self._c_registered_id2_class_info.resize(type_id + 1)
+                self._c_registered_id2_class_info[type_id] = <PyObject*>classinfo
+            else:
+                if type_id is not None and classinfo.type_id != type_id:
+                    raise ValueError(
+                        f"Inconsistent class id {type_id} vs {classinfo.type_id} "
+                        f"for class {cls}"
+                    )
+
+    def _next_type_id(self):
+        type_id = self._type_id_counter = self._type_id_counter + 1
+        while type_id in self._used_classes_id:
+            type_id = self._type_id_counter = self._type_id_counter + 1
+        return type_id
+
+    def _add_serializer(
+            self,
+            cls: Union[type, TypeVar],
+            serializer=None,
+            serializer_cls=None):
+        if serializer_cls:
+            serializer = serializer_cls(self.fury, cls)
+        self.register_serializer(cls, serializer)
+
+    cpdef inline Serializer get_serializer(self, cls=None, obj=None):
         """
         Returns
         -------
             Returns or create serializer for the provided class
         """
-        assert cls is not None or type_id is not None or obj is not None
+        return get_classinfo(cls=cls, obj=obj).serializer
 
-        cdef Serializer serializer_
-        if obj is not None:
+    cpdef inline ClassInfo get_classinfo(self, cls=None, obj=None):
+        if cls is None:
             cls = type(obj)
-            if cls is int and 2**63 - 1 >= obj >= -(2**63):
-                type_id = FuryType.INT64.value
-            elif cls is float:
-                type_id = FuryType.DOUBLE.value
-            elif cls is array.array:
-                info = PyArraySerializer.typecode_dict.get(obj.typecode)
-                if info is not None:
-                    type_id = info[1]
-            elif np and cls is np.ndarray and obj.ndim == 1:
-                info = Numpy1DArraySerializer.dtypes_dict.get(obj.dtype)
-                if info:
-                    type_id = info[2]
-        if type_id is not None:
-            if cls is not None:
-                serializer_ = self._type_id_and_cls_to_serializer[(type_id, cls)]
-            else:
-                serializer_ = self._type_id_to_serializer[type_id]
-        else:
-            class_info = self._classes_info.get(cls)
-            if class_info is not None:
-                serializer_ = class_info.serializer
-            else:
-                self._add_serializer(cls, serializer=self.get_or_create_serializer(cls))
-                serializer_ = self._classes_info.get(cls).serializer
-        self._serializer = serializer_
-        return serializer_
+        cdef PyObject* py_type_ptr = <PyObject*>cls
+        cdef PyObject* typeinfo_ptr = self._py_type_ptr_to_typeinfo[py_type_ptr]
+        if typeinfo_ptr is NULL:
+            typeinfo_ptr = <PyObject*>self._init_classinfo(cls)
+        # If dynamic_type is true, the serializer will be a dynamic typed serializer
+        # and it will write type info when writing the data.
+        # In such cases, the `write_classinfo` should not write typeinfo.
+        # In general, if we have 4 type for one class, we will have 5 serializers.
+        # For example, we have int8/16/32/64/128 for python `int` type, then we have 6 serializers
+        # for python `int`: `Int8/1632/64/128Serializer` for `int8/16/32/64/128` each, and another
+        # `IntSerializer` for `int` which will dispatch to different `int8/16/32/64/128` type
+        # according the actual value.
+        # We do not get the acutal type here, because it will introduce extra computing.
+        # For example, we have want to get actual `Int8/16/32/64Serializer`, we must check and
+        # extract the actutal here which will introduce cost, and we will do same thing again
+        # when serializing the actual data.
+        return <ClassInfo> typeinfo_ptr
 
     cpdef inline Serializer get_or_create_serializer(self, cls):
         return self.get_or_create_classinfo(cls).serializer
@@ -589,13 +647,13 @@ cdef class ClassResolver:
         else:
             serializer = self._create_serializer(cls)
             if type(serializer) is PickleSerializer:
-                class_id = PICKLE_CLASS_ID
+                type_id = PICKLE_CLASS_ID
             else:
-                class_id = NO_CLASS_ID
+                type_id = NO_CLASS_ID
             class_name_bytes = (cls.__module__ + "#" + cls.__qualname__).encode("utf-8")
             class_info = ClassInfo(
                 cls=cls, class_name_bytes=class_name_bytes,
-                serializer=serializer, class_id=class_id
+                serializer=serializer, type_id=type_id
             )
             self._classes_info[cls] = class_info
             self._c_classes_info[<uintptr_t><PyObject*>cls] = <PyObject*>class_info
@@ -611,13 +669,13 @@ cdef class ClassResolver:
                     and class_info.serializer
                     and class_info.serializer.support_subclass()
             ):
-                if classinfo_ is None or classinfo_.class_id == NO_CLASS_ID:
+                if classinfo_ is None or classinfo_.type_id == NO_CLASS_ID:
                     logger.info("Class %s not registered", cls)
                 serializer = type(class_info.serializer)(self.fury, cls)
                 break
         else:
             if dataclasses.is_dataclass(cls):
-                if classinfo_ is None or classinfo_.class_id == NO_CLASS_ID:
+                if classinfo_ is None or classinfo_.type_id == NO_CLASS_ID:
                     logger.info("Class %s not registered", cls)
                 from pyfury import DataClassSerializer
 
@@ -627,24 +685,51 @@ cdef class ClassResolver:
         return serializer
 
     cpdef inline write_classinfo(self, Buffer buffer, ClassInfo classinfo):
-        cdef int32_t class_id = classinfo.class_id
-        if class_id != NO_CLASS_ID:
-            buffer.write_varint32((class_id << 1))
+        cdef int32_t type_id = classinfo.type_id
+        if type_id != NO_CLASS_ID:
+            buffer.write_varint32((type_id << 1))
             return
         buffer.write_varint32(1)
         self._write_enum_string_bytes(buffer, classinfo.class_name_bytes)
 
+    cpdef inline ClassInfo read_typeinfo(self, Buffer buffer):
+        cdef int32_t type_id = buffer.read_varuint32()
+        assert type_id != 0
+        cdef MetaStringBytes namespace_bytes, typename_bytes
+        if IsNamespacedType(type_id):
+            namespace_bytes = self.class_resolver._read_enum_string_bytes(buffer)
+            typename_bytes = self.class_resolver._read_enum_string_bytes(buffer)
+            return self._load_bytes_to_classinfo(type_id, namespace_bytes, typename_bytes)
+        return self.xtype_id_to_class_map.get(xtypeId)
+
+    cdef inline ClassInfo _load_bytes_to_classinfo(
+            self, int32_t type_id, MetaStringBytes namespace_bytes, MetaStringBytes typename_bytes):
+        cdef PyObject* classinfo_ptr = self._c_2hash_to_classinfo[
+            pair[int64_t, int64_t](namespace_bytes.hashcode, typename_bytes.hashcode)]
+        if classinfo_ptr != NULL:
+            return <ClassInfo>classinfo_ptr
+        namespace = namespace_bytes.decode(PACKAGE_DECODER)
+        typename = typename_bytes.decode(TYPE_NAME_DECODER)
+        qualified_name = ".".join((namespace, typename))
+        classinfo = self._qualified_name_to_class_info.get(qualified_name)
+        if classinfo is None:
+            raise TypeUnregisteredError(f"{qualified_name} not registered")
+        classinfo_ptr = <PyObject*>classinfo
+        self._c_2hash_to_classinfo[pair[int64_t, int64_t](
+            namespace_bytes.hashcode, typename_bytes.hashcode)] = classinfo_ptr
+        return classinfo
+
     cpdef inline ClassInfo read_classinfo(self, Buffer buffer):
         cdef int32_t h1 = buffer.read_varint32()
-        cdef int32_t class_id = h1 >> 1
+        cdef int32_t type_id = h1 >> 1
         cdef ClassInfo classinfo
         cdef PyObject* classinfo_ptr
         # registered class id are greater than `NO_CLASS_ID`.
         if h1 & 0b1 == 0:
-            assert class_id >= 0, class_id
-            classinfo_ptr = self._c_registered_id2_class_info[class_id]
+            assert type_id >= 0, type_id
+            classinfo_ptr = self._c_registered_id2_class_info[type_id]
             if classinfo_ptr == NULL:
-                raise ValueError(f"Unexpected class_id {class_id} "
+                raise ValueError(f"Unexpected type_id {type_id} "
                                  f"{self._registered_id2_class_info}")
             classinfo = <ClassInfo>classinfo_ptr
             if classinfo.serializer is None:
@@ -673,11 +758,11 @@ cdef class ClassResolver:
 
     cdef inline _write_enum_string_bytes(
             self, Buffer buffer, MetaStringBytes enum_string_bytes):
-        cdef int16_t dynamic_class_id = enum_string_bytes.dynamic_write_string_id
+        cdef int16_t dynamic_type_id = enum_string_bytes.dynamic_write_string_id
         cdef int32_t length = enum_string_bytes.length
-        if dynamic_class_id == DEFAULT_DYNAMIC_WRITE_STRING_ID:
-            dynamic_class_id = self.dynamic_write_string_id
-            enum_string_bytes.dynamic_write_string_id = dynamic_class_id
+        if dynamic_type_id == DEFAULT_DYNAMIC_WRITE_STRING_ID:
+            dynamic_type_id = self.dynamic_write_string_id
+            enum_string_bytes.dynamic_write_string_id = dynamic_type_id
             self.dynamic_write_string_id += 1
             self._c_dynamic_written_enum_string.push_back(<PyObject*>enum_string_bytes)
             buffer.write_varint32(length << 1)
@@ -687,7 +772,7 @@ cdef class ClassResolver:
                 buffer.write_int64(enum_string_bytes.hashcode)
             buffer.write_bytes(enum_string_bytes.data)
         else:
-            buffer.write_varint32(((dynamic_class_id + 1) << 1) | 1)
+            buffer.write_varint32(((dynamic_type_id + 1) << 1) | 1)
 
     cdef inline MetaStringBytes _read_enum_string_bytes(self, Buffer buffer):
         cdef int32_t header = buffer.read_varint32()
@@ -728,45 +813,6 @@ cdef class ClassResolver:
                 self._c_hash_to_enum_string_bytes[hashcode] = enum_str_ptr
         self._c_dynamic_id_to_enum_string_vec.push_back(enum_str_ptr)
         return <MetaStringBytes>enum_str_ptr
-
-    cpdef inline xwrite_class(self, Buffer buffer, cls):
-        cdef PyObject* classinfo_ptr = self._c_classes_info[<uintptr_t><PyObject*>cls]
-        assert classinfo_ptr != NULL
-        cdef MetaStringBytes class_name_bytes = (<object>classinfo_ptr).class_name_bytes
-        self._write_enum_string_bytes(buffer, class_name_bytes)
-
-    cpdef inline xwrite_type_tag(self, Buffer buffer, cls):
-        cdef PyObject* classinfo_ptr = self._c_classes_info[<uintptr_t><PyObject*>cls]
-        assert classinfo_ptr != NULL
-        cdef MetaStringBytes type_tag_bytes = (<object>classinfo_ptr).type_tag_bytes
-        self._write_enum_string_bytes(buffer, type_tag_bytes)
-
-    cpdef inline read_class_by_type_tag(self, Buffer buffer):
-        tag = self.xread_classname(buffer)
-        return self._type_tag_to_class_x_lang_map[tag]
-
-    cpdef inline xread_class(self, Buffer buffer):
-        cdef MetaStringBytes str_bytes = self._read_enum_string_bytes(buffer)
-        cdef uint64_t object_id = <uintptr_t><PyObject*>str_bytes
-        cdef PyObject* cls_ptr = self._c_str_bytes_to_class[object_id]
-        if cls_ptr != NULL:
-            return <object>cls_ptr
-        cdef str full_class_name = str_bytes.data.decode(encoding="utf-8")
-        cls = load_class(full_class_name)
-        self._c_str_bytes_to_class[object_id] = <PyObject*>cls
-        self._class_set.add(cls)
-        return cls
-
-    cpdef inline str xread_classname(self, Buffer buffer):
-        cdef MetaStringBytes str_bytes = self._read_enum_string_bytes(buffer)
-        cdef uint64_t object_id = <uintptr_t><PyObject*>str_bytes
-        cdef PyObject* classname_ptr = self._c_enum_str_to_str[object_id]
-        if classname_ptr != NULL:
-            return <object>classname_ptr
-        cdef str full_class_name = str_bytes.data.decode(encoding="utf-8")
-        self._c_enum_str_to_str[object_id] = <PyObject*>full_class_name
-        self._classname_set.add(full_class_name)
-        return full_class_name
 
     cpdef inline get_class_by_type_id(self, int32_t type_id):
         return self._type_id_to_class[type_id]
@@ -817,30 +863,28 @@ cdef class MetaStringBytes:
 @cython.final
 cdef class ClassInfo:
     cdef public object cls
-    cdef public int16_t class_id
+    cdef public int16_t type_id
     cdef public Serializer serializer
-    cdef public MetaStringBytes class_name_bytes
-    cdef public MetaStringBytes type_tag_bytes
+    cdef public MetaStringBytes namespace_bytes
+    cdef public MetaStringBytes typename_bytes
+    cdef c_bool dynamic_type
 
     def __init__(
             self,
             cls: Union[type, TypeVar] = None,
-            class_id: int = NO_CLASS_ID,
+            type_id: int = NO_CLASS_ID,
             serializer: Serializer = None,
-            class_name_bytes: bytes = None,
-            type_tag_bytes: bytes = None,
+            namespace_bytes: bytes = None,
+            typename_bytes: bytes = None,
     ):
         self.cls = cls
-        self.class_id = class_id
+        self.type_id = type_id
         self.serializer = serializer
-        self.class_name_bytes = MetaStringBytes(class_name_bytes)
-        if type_tag_bytes is None:
-            self.type_tag_bytes = None
-        else:
-            self.type_tag_bytes = MetaStringBytes(type_tag_bytes)
+        self.namespace_bytes = MetaStringBytes(namespace_bytes)
+        self.type_tag_bytes = MetaStringBytes(typename_bytes)
 
     def __repr__(self):
-        return f"ClassInfo(cls={self.cls}, class_id={self.class_id}, " \
+        return f"ClassInfo(cls={self.cls}, type_id={self.type_id}, " \
                f"serializer={self.serializer})"
 
 
@@ -910,9 +954,9 @@ cdef class Fury:
     def register_serializer(self, cls: Union[type, TypeVar], Serializer serializer):
         self.class_resolver.register_serializer(cls, serializer)
 
-    def register_class(self, cls: Union[type, TypeVar], *,
-                       class_id: int = None, type_tag: str = None):
-        self.class_resolver.register_class(cls, class_id=class_id, type_tag=type_tag)
+    def register_type(self, cls: Union[type, TypeVar], *,
+                       type_id: int = None, type_tag: str = None):
+        self.class_resolver.register_type(cls, type_id=type_id, type_tag=type_tag)
 
     def serialize(
             self, obj,
@@ -970,21 +1014,7 @@ cdef class Fury:
         if self.language == Language.PYTHON:
             self.serialize_ref(buffer, obj)
         else:
-            start_offset = buffer.writer_index
-            # preserve 4-byte for nativeObjects start offsets.
-            buffer.write_int32(<int32_t>-1)
-            # preserve 4-byte for nativeObjects size
-            buffer.write_int32(<int32_t>-1)
             self.xserialize_ref(buffer, obj)
-            buffer.put_int32(start_offset, buffer.writer_index)
-            buffer.put_int32(start_offset + 4, len(self._native_objects))
-            self.ref_resolver.reset_write()
-            # fury write opaque object classname which cause later write of classname
-            # only write an id.
-            self.class_resolver.reset_write()
-            for native_object in self._native_objects:
-                self.serialize_ref(buffer, native_object)
-        self.reset_write()
         if buffer is not self.buffer:
             return buffer
         else:
@@ -1056,27 +1086,8 @@ cdef class Fury:
 
     cpdef inline xserialize_nonref(
             self, Buffer buffer, obj, Serializer serializer=None):
-        cls = type(obj)
-        serializer = serializer or self.class_resolver.get_serializer(obj=obj)
-        cdef int16_t type_id = serializer.get_xtype_id()
-        buffer.write_int16(type_id)
-        if type_id != NOT_SUPPORT_CROSS_LANGUAGE:
-            if type_id == FuryType.FURY_TYPE_TAG.value:
-                self.class_resolver.xwrite_type_tag(buffer, cls)
-            if type_id < NOT_SUPPORT_CROSS_LANGUAGE:
-                self.class_resolver.xwrite_class(buffer, cls)
-            serializer.xwrite(buffer, obj)
-        else:
-            # Write classname so it can be used for debugging which object doesn't
-            # support cross-language.
-            # TODO add a config to disable this to reduce space cost.
-            self.class_resolver.xwrite_class(buffer, cls)
-            # serializer may increase reference id multi times internally, thus peer
-            # cross-language later fields/objects deserialization will use wrong
-            # reference id since we skip opaque objects deserialization.
-            # So we stash native objects and serialize all those object at the last.
-            buffer.write_varint32(len(self._native_objects))
-            self._native_objects.append(obj)
+        serializer = serializer or self.class_resolver.write_typeinfo(obj)
+        serializer.xwrite(buffer, obj)
 
     def deserialize(
             self,
@@ -1182,20 +1193,18 @@ cdef class Fury:
             return buffer.read_double()
         return classinfo.serializer.read(buffer)
 
-    cpdef inline xdeserialize_ref(
-            self, Buffer buffer, Serializer serializer=None):
+    cpdef inline xdeserialize_ref(self, Buffer buffer, Serializer serializer=None):
         cdef MapRefResolver ref_resolver
-        cdef int32_t red_id
+        cdef int32_t ref_id
         if serializer is None or serializer.need_to_write_ref:
             ref_resolver = self.ref_resolver
-            red_id = ref_resolver.try_preserve_ref_id(buffer)
-
+            ref_id = ref_resolver.try_preserve_ref_id(buffer)
             # indicates that the object is first read.
-            if red_id >= NOT_NULL_VALUE_FLAG:
+            if ref_id >= NOT_NULL_VALUE_FLAG:
                 o = self.xdeserialize_nonref(
                     buffer, serializer=serializer
                 )
-                ref_resolver.set_read_object(red_id, o)
+                ref_resolver.set_read_object(ref_id, o)
                 return o
             else:
                 return ref_resolver.get_read_object()
@@ -1208,37 +1217,9 @@ cdef class Fury:
 
     cpdef inline xdeserialize_nonref(
             self, Buffer buffer, Serializer serializer=None):
-        cdef int16_t type_id = buffer.read_int16()
-        cls = None
-        if type_id != NOT_SUPPORT_CROSS_LANGUAGE:
-            if type_id == FuryType.FURY_TYPE_TAG.value:
-                cls = self.class_resolver.read_class_by_type_tag(buffer)
-            if type_id < NOT_SUPPORT_CROSS_LANGUAGE:
-                if self._peer_language is not Language.PYTHON:
-                    self.class_resolver.xread_classname(buffer)
-                    cls = self.class_resolver.get_class_by_type_id(-type_id)
-                    serializer = serializer or self.class_resolver.get_serializer(
-                        type_id=-type_id
-                    )
-                else:
-                    cls = self.class_resolver.xread_class(buffer)
-                    serializer = serializer or self.class_resolver.get_serializer(
-                        cls=cls, type_id=type_id
-                    )
-            else:
-                if type_id != FuryType.FURY_TYPE_TAG.value:
-                    cls = self.class_resolver.get_class_by_type_id(type_id)
-                serializer = serializer or self.class_resolver.get_serializer(
-                    cls=cls, type_id=type_id
-                )
-            assert cls is not None
-            return serializer.xread(buffer)
-        cdef str class_name = self.class_resolver.xread_classname(buffer)
-        cdef int32_t ordinal = buffer.read_varint32()
-        if self._peer_language != Language.PYTHON:
-            return OpaqueObject(self._peer_language, class_name, ordinal)
-        else:
-            return self._native_objects[ordinal]
+        if serializer is None:
+            serializer = self.class_resolver.read_typeinfo(buffer).serializer
+        return serializer.xread(buffer)
 
     cpdef inline write_buffer_object(self, Buffer buffer, BufferObject buffer_object):
         if self._buffer_callback is not None and self._buffer_callback(buffer_object):
@@ -1409,28 +1390,6 @@ cdef class Serializer:
         self.type_ = type_
         self.need_to_write_ref = not is_primitive_type(type_)
 
-    cpdef int16_t get_xtype_id(self):
-        """
-        Returns
-        -------
-            Returns NOT_SUPPORT_CROSS_LANGUAGE if the serializer doesn't
-            support cross-language serialization.
-            Return a number in range (0, 32767) if the serializer support
-            cross-language serialization and native serialization data is the
-            same with cross-language serialization.
-            Return a negative short in range [-32768, 0) if the serializer
-            support cross-language serialization and native serialization data
-            is not the same with cross-language serialization.
-        """
-        return NOT_SUPPORT_CROSS_LANGUAGE
-
-    cpdef str get_xtype_tag(self):
-        """
-        Returns
-        -------
-            a type tag used for setup type mapping between languages.
-        """
-
     cpdef write(self, Buffer buffer, value):
         raise NotImplementedError
 
@@ -1467,9 +1426,6 @@ cdef class CrossLanguageCompatibleSerializer(Serializer):
 
 @cython.final
 cdef class BooleanSerializer(CrossLanguageCompatibleSerializer):
-    cpdef inline int16_t get_xtype_id(self):
-        return FuryType.BOOL.value
-
     cpdef inline write(self, Buffer buffer, value):
         buffer.write_bool(value)
 
@@ -1495,9 +1451,6 @@ cdef class NoneSerializer(Serializer):
 
 @cython.final
 cdef class ByteSerializer(CrossLanguageCompatibleSerializer):
-    cpdef inline int16_t get_xtype_id(self):
-        return FuryType.INT8.value
-
     cpdef inline write(self, Buffer buffer, value):
         buffer.write_int8(value)
 
@@ -1507,9 +1460,6 @@ cdef class ByteSerializer(CrossLanguageCompatibleSerializer):
 
 @cython.final
 cdef class Int16Serializer(CrossLanguageCompatibleSerializer):
-    cpdef inline int16_t get_xtype_id(self):
-        return FuryType.INT16.value
-
     cpdef inline write(self, Buffer buffer, value):
         buffer.write_int16(value)
 
@@ -1519,9 +1469,6 @@ cdef class Int16Serializer(CrossLanguageCompatibleSerializer):
 
 @cython.final
 cdef class Int32Serializer(CrossLanguageCompatibleSerializer):
-    cpdef inline int16_t get_xtype_id(self):
-        return FuryType.INT32.value
-
     cpdef inline write(self, Buffer buffer, value):
         buffer.write_int32(value)
 
@@ -1531,9 +1478,6 @@ cdef class Int32Serializer(CrossLanguageCompatibleSerializer):
 
 @cython.final
 cdef class Int64Serializer(CrossLanguageCompatibleSerializer):
-    cpdef inline int16_t get_xtype_id(self):
-        return FuryType.INT64.value
-
     cpdef inline xwrite(self, Buffer buffer, value):
         buffer.write_int64(value)
 
@@ -1549,9 +1493,6 @@ cdef class Int64Serializer(CrossLanguageCompatibleSerializer):
 
 @cython.final
 cdef class FloatSerializer(CrossLanguageCompatibleSerializer):
-    cpdef inline int16_t get_xtype_id(self):
-        return FuryType.FLOAT.value
-
     cpdef inline write(self, Buffer buffer, value):
         buffer.write_float(value)
 
@@ -1561,9 +1502,6 @@ cdef class FloatSerializer(CrossLanguageCompatibleSerializer):
 
 @cython.final
 cdef class DoubleSerializer(CrossLanguageCompatibleSerializer):
-    cpdef inline int16_t get_xtype_id(self):
-        return FuryType.DOUBLE.value
-
     cpdef inline write(self, Buffer buffer, value):
         buffer.write_double(value)
 
@@ -1573,9 +1511,6 @@ cdef class DoubleSerializer(CrossLanguageCompatibleSerializer):
 
 @cython.final
 cdef class StringSerializer(CrossLanguageCompatibleSerializer):
-    cpdef inline int16_t get_xtype_id(self):
-        return FuryType.STRING.value
-
     cpdef inline write(self, Buffer buffer, value):
         buffer.write_string(value)
 
@@ -1588,9 +1523,6 @@ cdef _base_date = datetime.date(1970, 1, 1)
 
 @cython.final
 cdef class DateSerializer(CrossLanguageCompatibleSerializer):
-    cpdef inline int16_t get_xtype_id(self):
-        return FuryType.DATE32.value
-
     cpdef inline write(self, Buffer buffer, value):
         if type(value) is not datetime.date:
             raise TypeError(
@@ -1608,9 +1540,6 @@ cdef class DateSerializer(CrossLanguageCompatibleSerializer):
 
 @cython.final
 cdef class TimestampSerializer(CrossLanguageCompatibleSerializer):
-    cpdef inline int16_t get_xtype_id(self):
-        return FuryType.TIMESTAMP.value
-
     cpdef inline write(self, Buffer buffer, value):
         if type(value) is not datetime.datetime:
             raise TypeError(
@@ -1628,9 +1557,6 @@ cdef class TimestampSerializer(CrossLanguageCompatibleSerializer):
 
 @cython.final
 cdef class BytesSerializer(CrossLanguageCompatibleSerializer):
-    cpdef inline int16_t get_xtype_id(self):
-        return FuryType.BINARY.value
-
     cpdef inline write(self, Buffer buffer, value):
         self.fury.write_buffer_object(buffer, BytesBufferObject(value))
 
@@ -1661,9 +1587,6 @@ cdef class CollectionSerializer(Serializer):
         self.class_resolver = fury.class_resolver
         self.ref_resolver = fury.ref_resolver
         self.elem_serializer = elem_serializer
-
-    cpdef int16_t get_xtype_id(self):
-        return -FuryType.LIST.value
 
     cdef pair[int8_t, int64_t] write_header(self, Buffer buffer, value):
         cdef int8_t collect_flag = COLLECTION_DEFAULT_FLAG
@@ -1819,9 +1742,6 @@ cdef class CollectionSerializer(Serializer):
 
 
 cdef class ListSerializer(CollectionSerializer):
-    cpdef int16_t get_xtype_id(self):
-        return FuryType.LIST.value
-
     cpdef read(self, Buffer buffer):
         cdef MapRefResolver ref_resolver = self.fury.ref_resolver
         cdef ClassResolver class_resolver = self.fury.class_resolver
@@ -1954,15 +1874,9 @@ cdef class StringArraySerializer(ListSerializer):
     def __init__(self, fury, type_):
         super().__init__(fury, type_, StringSerializer(fury, str))
 
-    cpdef inline int16_t get_xtype_id(self):
-        return FuryType.FURY_STRING_ARRAY.value
-
 
 @cython.final
 cdef class SetSerializer(CollectionSerializer):
-    cpdef inline int16_t get_xtype_id(self):
-        return FuryType.FURY_SET.value
-
     cpdef inline read(self, Buffer buffer):
         cdef MapRefResolver ref_resolver = self.fury.ref_resolver
         cdef ClassResolver class_resolver = self.fury.class_resolver
@@ -2040,9 +1954,6 @@ cdef class MapSerializer(Serializer):
         self.ref_resolver = fury.ref_resolver
         self.key_serializer = key_serializer
         self.value_serializer = value_serializer
-
-    cpdef inline int16_t get_xtype_id(self):
-        return FuryType.MAP.value
 
     cpdef inline write(self, Buffer buffer, o):
         cdef dict value = o
@@ -2234,218 +2145,6 @@ cdef class SubMapSerializer(Serializer):
         return map_
 
 
-# Use numpy array or python array module.
-typecode_dict = {
-    # use bytes serializer for byte array.
-    "h": (2, FuryType.FURY_PRIMITIVE_SHORT_ARRAY.value),
-    "i": (4, FuryType.FURY_PRIMITIVE_INT_ARRAY.value),
-    "l": (8, FuryType.FURY_PRIMITIVE_LONG_ARRAY.value),
-    "f": (4, FuryType.FURY_PRIMITIVE_FLOAT_ARRAY.value),
-    "d": (8, FuryType.FURY_PRIMITIVE_DOUBLE_ARRAY.value),
-}
-if np:
-    typecode_dict = {
-        k: (itemsize, -type_id) for k, (itemsize, type_id) in typecode_dict.items()
-    }
-
-
-@cython.final
-cdef class PyArraySerializer(CrossLanguageCompatibleSerializer):
-    typecode_dict = typecode_dict
-    typecodearray_type = {
-        "h": Int16ArrayType,
-        "i": Int32ArrayType,
-        "l": Int64ArrayType,
-        "f": Float32ArrayType,
-        "d": Float64ArrayType,
-    }
-    cdef str typecode
-    cdef int8_t itemsize
-    cdef int16_t type_id
-
-    def __init__(self, fury, type_, str typecode):
-        super().__init__(fury, type_)
-        self.typecode = typecode
-        self.itemsize, self.type_id = PyArraySerializer.typecode_dict[self.typecode]
-
-    cpdef int16_t get_xtype_id(self):
-        return self.type_id
-
-    cpdef inline xwrite(self, Buffer buffer, value):
-        assert value.itemsize == self.itemsize
-        view = memoryview(value)
-        assert view.format == self.typecode
-        assert view.itemsize == self.itemsize
-        assert view.c_contiguous  # TODO handle contiguous
-        cdef int32_t nbytes = len(value) * self.itemsize
-        buffer.write_varint32(nbytes)
-        buffer.write_buffer(value)
-
-    cpdef inline xread(self, Buffer buffer):
-        data = buffer.read_bytes_and_size()
-        arr = array.array(self.typecode, [])
-        arr.frombytes(data)
-        return arr
-
-    cpdef inline write(self, Buffer buffer, value: array.array):
-        cdef int32_t nbytes = len(value) * value.itemsize
-        buffer.write_string(value.typecode)
-        buffer.write_varint32(nbytes)
-        buffer.write_buffer(value)
-
-    cpdef inline read(self, Buffer buffer):
-        typecode = buffer.read_string()
-        data = buffer.read_bytes_and_size()
-        arr = array.array(typecode, [])
-        arr.frombytes(data)
-        return arr
-
-
-if np:
-    _np_dtypes_dict = {
-        # use bytes serializer for byte array.
-        np.dtype(np.bool_): (1, "?", FuryType.FURY_PRIMITIVE_BOOL_ARRAY.value),
-        np.dtype(np.int16): (2, "h", FuryType.FURY_PRIMITIVE_SHORT_ARRAY.value),
-        np.dtype(np.int32): (4, "i", FuryType.FURY_PRIMITIVE_INT_ARRAY.value),
-        np.dtype(np.int64): (8, "l", FuryType.FURY_PRIMITIVE_LONG_ARRAY.value),
-        np.dtype(np.float32): (4, "f", FuryType.FURY_PRIMITIVE_FLOAT_ARRAY.value),
-        np.dtype(np.float64): (8, "d", FuryType.FURY_PRIMITIVE_DOUBLE_ARRAY.value),
-    }
-else:
-    _np_dtypes_dict = {}
-
-
-@cython.final
-cdef class Numpy1DArraySerializer(CrossLanguageCompatibleSerializer):
-    dtypes_dict = _np_dtypes_dict
-    cdef object dtype
-    cdef str typecode
-    cdef int8_t itemsize
-    cdef int16_t type_id
-
-    def __init__(self, fury, type_, dtype):
-        super().__init__(fury, type_)
-        self.dtype = dtype
-        self.itemsize, self.typecode, self.type_id = _np_dtypes_dict[self.dtype]
-
-    cpdef int16_t get_xtype_id(self):
-        return self.type_id
-
-    cpdef inline xwrite(self, Buffer buffer, value):
-        assert value.itemsize == self.itemsize
-        view = memoryview(value)
-        try:
-            assert view.format == self.typecode
-        except AssertionError as e:
-            raise e
-        assert view.itemsize == self.itemsize
-        cdef int32_t nbytes = len(value) * self.itemsize
-        buffer.write_varint32(nbytes)
-        if self.dtype == np.dtype("bool") or not view.c_contiguous:
-            buffer.write_bytes(value.tobytes())
-        else:
-            buffer.write_buffer(value)
-
-    cpdef inline xread(self, Buffer buffer):
-        data = buffer.read_bytes_and_size()
-        return np.frombuffer(data, dtype=self.dtype)
-
-    cpdef inline write(self, Buffer buffer, value):
-        self.fury.handle_unsupported_write(buffer, value)
-
-    cpdef inline read(self, Buffer buffer):
-        return self.fury.handle_unsupported_read(buffer)
-
-
-cdef _get_hash(Fury fury, list field_names, dict type_hints):
-    from pyfury._struct import StructHashVisitor
-
-    visitor = StructHashVisitor(fury)
-    for index, key in enumerate(field_names):
-        infer_field(key, type_hints[key], visitor, types_path=[])
-    hash_ = visitor.get_hash()
-    assert hash_ != 0
-    return hash_
-
-
-cdef class ComplexObjectSerializer(Serializer):
-    cdef str _type_tag
-    cdef object _type_hints
-    cdef list _field_names
-    cdef list _serializers
-    cdef int32_t _hash
-
-    def __init__(self, fury, clz: type, type_tag: str):
-        super().__init__(fury, clz)
-        self._type_tag = type_tag
-        self._type_hints = get_type_hints(clz)
-        self._field_names = sorted(self._type_hints.keys())
-        self._serializers = [None] * len(self._field_names)
-        from pyfury._struct import ComplexTypeVisitor
-
-        visitor = ComplexTypeVisitor(fury)
-        for index, key in enumerate(self._field_names):
-            serializer = infer_field(key, self._type_hints[key], visitor, types_path=[])
-            self._serializers[index] = serializer
-        if self.fury.language == Language.PYTHON:
-            logger.warning(
-                "Type of class %s shouldn't be serialized using cross-language "
-                "serializer",
-                clz,
-            )
-        self._hash = 0
-
-    cpdef int16_t get_xtype_id(self):
-        return FuryType.FURY_TYPE_TAG.value
-
-    cpdef str get_xtype_tag(self):
-        return self._type_tag
-
-    cpdef write(self, Buffer buffer, value):
-        return self.xwrite(buffer, value)
-
-    cpdef read(self, Buffer buffer):
-        return self.xread(buffer)
-
-    cpdef xwrite(self, Buffer buffer, value):
-        if self._hash == 0:
-            self._hash = _get_hash(self.fury, self._field_names, self._type_hints)
-        buffer.write_int32(self._hash)
-        cdef Serializer serializer
-        cdef int32_t index
-        for index, field_name in enumerate(self._field_names):
-            field_value = getattr(value, field_name)
-            serializer = self._serializers[index]
-            self.fury.xserialize_ref(
-                buffer, field_value, serializer=serializer
-            )
-
-    cpdef xread(self, Buffer buffer):
-        cdef int32_t hash_ = buffer.read_int32()
-        if self._hash == 0:
-            self._hash = _get_hash(self.fury, self._field_names, self._type_hints)
-        if hash_ != self._hash:
-            raise ClassNotCompatibleError(
-                f"Hash {hash_} is not consistent with {self._hash} "
-                f"for class {self.type_}",
-            )
-        obj = self.type_.__new__(self.type_)
-        self.fury.ref_resolver.reference(obj)
-        cdef Serializer serializer
-        cdef int32_t index
-        for index, field_name in enumerate(self._field_names):
-            serializer = self._serializers[index]
-            field_value = self.fury.xdeserialize_ref(
-                buffer, serializer=serializer
-            )
-            setattr(
-                obj,
-                field_name,
-                field_value,
-            )
-        return obj
-
-
 @cython.final
 cdef class EnumSerializer(Serializer):
     @classmethod
@@ -2522,18 +2221,3 @@ cdef class SliceSerializer(Serializer):
 
     cpdef xread(self, Buffer buffer):
         raise NotImplementedError
-
-
-@cython.final
-cdef class PickleSerializer(Serializer):
-    cpdef inline xwrite(self, Buffer buffer, value):
-        raise NotImplementedError
-
-    cpdef inline xread(self, Buffer buffer):
-        raise NotImplementedError
-
-    cpdef inline write(self, Buffer buffer, value):
-        self.fury.handle_unsupported_write(buffer, value)
-
-    cpdef inline read(self, Buffer buffer):
-        return self.fury.handle_unsupported_read(buffer)

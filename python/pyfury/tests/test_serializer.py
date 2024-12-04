@@ -333,9 +333,6 @@ class BarSerializer(pyfury.Serializer):
     def get_xtype_id(self):
         return pyfury.FuryType.FURY_TYPE_TAG.value
 
-    def get_xtype_tag(self):
-        return "test.Bar"
-
 
 class RegisterClass:
     def __init__(self, f1=None):
@@ -372,7 +369,7 @@ class A:
             pass
 
 
-def test_register_class():
+def test_register_type():
     fury = Fury(language=Language.PYTHON, ref_tracking=True)
 
     class Serializer(pyfury.Serializer):

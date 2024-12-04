@@ -123,12 +123,6 @@ class ComplexObjectSerializer(Serializer):
             )
         self._hash = 0
 
-    def get_xtype_id(self):
-        return FuryType.FURY_TYPE_TAG.value
-
-    def get_xtype_tag(self):
-        return self._type_tag
-
     def write(self, buffer, value):
         return self.xwrite(buffer, value)
 
@@ -176,16 +170,16 @@ class StructHashVisitor(TypeVisitor):
 
     def visit_list(self, field_name, elem_type, types_path=None):
         # TODO add list element type to hash.
-        id_ = abs(ListSerializer(self.fury, list).get_xtype_id())
-        self._hash = self._compute_field_hash(self._hash, id_)
+        xtype_id = self.fury.class_resolver.get_classinfo(list).class_id
+        self._hash = self._compute_field_hash(self._hash, abs(xtype_id))
 
     def visit_dict(self, field_name, key_type, value_type, types_path=None):
         # TODO add map key/value type to hash.
-        id_ = abs(MapSerializer(self.fury, dict).get_xtype_id())
-        self._hash = self._compute_field_hash(self._hash, id_)
+        xtype_id = self.fury.class_resolver.get_classinfo(dict).class_id
+        self._hash = self._compute_field_hash(self._hash, abs(xtype_id))
 
     def visit_customized(self, field_name, type_, types_path=None):
-        serializer = self.fury.class_resolver.get_serializer(type_)
+        xtype_id = self.fury.class_resolver.get_classinfo(type_).class_id
         if serializer.get_xtype_id() != NOT_SUPPORT_CROSS_LANGUAGE:
             tag = serializer.get_xtype_tag()
         else:

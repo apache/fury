@@ -51,8 +51,8 @@ class ComplexObject:
 
 def test_struct():
     fury = Fury(language=Language.XLANG, ref_tracking=True)
-    fury.register_class(SimpleObject, type_tag="example.SimpleObject")
-    fury.register_class(ComplexObject, type_tag="example.ComplexObject")
+    fury.register_type(SimpleObject, type_tag="example.SimpleObject")
+    fury.register_type(ComplexObject, type_tag="example.ComplexObject")
     o = SimpleObject(f1={1: 1.0 / 3})
     # assert ser_de(fury, o) == o
 
