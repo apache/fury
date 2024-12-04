@@ -123,104 +123,51 @@ class FuryType(enum.Enum):
     Fury added type for cross-language serialization.
     See `org.apache.fury.types.Type`
     """
-
-    NA = 0
-    # BOOL Boolean as 1 bit LSB bit-packed ordering
     BOOL = 1
-    # UINT8 Unsigned 8-bit little-endian integer
-    UINT8 = 2
-    # INT8 Signed 8-bit little-endian integer
-    INT8 = 3
-    # UINT16 Unsigned 16-bit little-endian integer
-    UINT16 = 4
-    # INT16 Signed 16-bit little-endian integer
-    INT16 = 5
-    # UINT32 Unsigned 32-bit little-endian integer
-    UINT32 = 6
-    # INT32 Signed 32-bit little-endian integer
-    INT32 = 7
-    # UINT64 Unsigned 64-bit little-endian integer
-    UINT64 = 8
-    # INT64 Signed 64-bit little-endian integer
-    INT64 = 9
-    # HALF_FLOAT 2-byte floating point value
-    HALF_FLOAT = 10
-    # FLOAT 4-byte floating point value
-    FLOAT = 11
-    # DOUBLE 8-byte floating point value
-    DOUBLE = 12
-    # STRING UTF8 variable-length string as List<Char>
-    STRING = 13
-    # BINARY Variable-length bytes (no guarantee of UTF8-ness)
-    BINARY = 14
-    # FIXED_SIZE_BINARY Fixed-size binary. Each value occupies the same number of bytes
-    FIXED_SIZE_BINARY = 15
-    # DATE32 int32_t days since the UNIX epoch
-    DATE32 = 16
-    # DATE64 int64_t milliseconds since the UNIX epoch
-    DATE64 = 17
-    # TIMESTAMP Exact timestamp encoded with int64 since UNIX epoch
-    # Default unit millisecond
-    TIMESTAMP = 18
-    # TIME32 Time as signed 32-bit integer representing either seconds or
-    # milliseconds since midnight
-    TIME32 = 19
-    # TIME64 Time as signed 64-bit integer representing either microseconds or
-    # nanoseconds since midnight
-    TIME64 = 20
-    # INTERVAL_MONTHS YEAR_MONTH interval in SQL style
-    INTERVAL_MONTHS = 21
-    # INTERVAL_DAY_TIME DAY_TIME interval in SQL style
-    INTERVAL_DAY_TIME = 22
-    # DECIMAL128 Precision- and scale-based decimal type with 128 bits.
-    DECIMAL128 = 23
-    # DECIMAL256 Precision- and scale-based decimal type with 256 bits.
-    DECIMAL256 = 24
-    # LIST A list of some logical data type
-    LIST = 25
-    # STRUCT Struct of logical types
-    STRUCT = 26
-    # SPARSE_UNION Sparse unions of logical types
-    SPARSE_UNION = 27
-    # DENSE_UNION Dense unions of logical types
-    DENSE_UNION = 28
-    # DICTIONARY Dictionary-encoded type also called "categorical" or "factor"
-    # in other programming languages. Holds the dictionary value
-    # type but not the dictionary itself which is part of the
-    # ArrayData struct
-    DICTIONARY = 29
-    # MAP Map a repeated struct logical type
-    MAP = 30
-    # EXTENSION Custom data type implemented by user
-    EXTENSION = 31
-    # FIXED_SIZE_LIST Fixed size list of some logical type
-    FIXED_SIZE_LIST = 31
-    # DURATION Measure of elapsed time in either seconds milliseconds microseconds
-    # or nanoseconds.
-    DURATION = 33
-    # LARGE_STRING Like STRING but with 64-bit offsets
-    LARGE_STRING = 34
-    # LARGE_BINARY Like BINARY but with 64-bit offsets
-    LARGE_BINARY = 35
-    # LARGE_LIST Like LIST but with 64-bit offsets
-    LARGE_LIST = 36
-    # MAX_ID Leave this at the end
-    MAX_ID = 37
-    DECIMAL = DECIMAL128
-
-    FURY_TYPE_TAG = 256
-    FURY_SET = 257
-    FURY_PRIMITIVE_BOOL_ARRAY = 258
-    FURY_PRIMITIVE_SHORT_ARRAY = 259
-    FURY_PRIMITIVE_INT_ARRAY = 260
-    FURY_PRIMITIVE_LONG_ARRAY = 261
-    FURY_PRIMITIVE_FLOAT_ARRAY = 262
-    FURY_PRIMITIVE_DOUBLE_ARRAY = 263
-    FURY_STRING_ARRAY = 264
-    FURY_SERIALIZED_OBJECT = 265
-    FURY_BUFFER = 266
-    FURY_ARROW_RECORD_BATCH = 267
-    FURY_ARROW_TABLE = 268
+    INT8 = 2
+    INT16 = 3
+    INT32 = 4
+    VAR_INT32 = 5
+    INT64 = 6
+    VAR_INT64 = 7
+    SLI_INT64 = 8
+    FLOAT16 = 9
+    FLOAT32 = 10
+    FLOAT64 = 11
+    STRING = 12
+    ENUM = 13
+    NS_ENUM = 14
+    STRUCT = 15
+    POLYMORPHIC_STRUCT = 16
+    COMPATIBLE_STRUCT = 17
+    POLYMORPHIC_COMPATIBLE_STRUCT = 18
+    NS_STRUCT = 19
+    NS_POLYMORPHIC_STRUCT = 20
+    NS_COMPATIBLE_STRUCT = 21
+    NS_POLYMORPHIC_COMPATIBLE_STRUCT = 22
+    EXT = 23
+    POLYMORPHIC_EXT = 24
+    NS_EXT = 25
+    NS_POLYMORPHIC_EXT = 26
+    LIST = 27
+    SET = 28
+    MAP = 29
+    DURATION = 30
+    TIMESTAMP = 31
+    LOCAL_DATE = 32
+    DECIMAL = 33
+    BINARY = 34
+    ARRAY = 35
+    BOOL_ARRAY = 36
+    INT8_ARRAY = 37
+    INT16_ARRAY = 38
+    INT32_ARRAY = 39
+    INT64_ARRAY = 40
+    FLOAT16_ARRAY = 41
+    FLOAT32_ARRAY = 42
+    FLOAT64_ARRAY = 43
+    ARROW_RECORD_BATCH = 44
+    ARROW_TABLE = 45
 
 
 Int8Type = TypeVar("Int8Type", bound=int)
@@ -250,6 +197,7 @@ def is_primitive_type(type_) -> bool:
 
 
 # Int8ArrayType = TypeVar("Int8ArrayType", bound=array.ArrayType)
+BoolArrayType = TypeVar("BoolArrayType")
 Int16ArrayType = TypeVar("Int16ArrayType", bound=array.ArrayType)
 Int32ArrayType = TypeVar("Int32ArrayType", bound=array.ArrayType)
 Int64ArrayType = TypeVar("Int64ArrayType", bound=array.ArrayType)

@@ -62,6 +62,7 @@ pyx_library(
     ),
     deps = [
         "//cpp/fury/util:fury_util",
+        "//cpp/fury/type:fury_type",
         "@com_google_absl//absl/container:flat_hash_map",
     ],
 )
