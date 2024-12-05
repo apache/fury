@@ -61,6 +61,7 @@ public class Config implements Serializable {
   private transient int configHash;
   private final boolean deserializeNonexistentEnumValueAsNull;
   private final boolean serializeEnumByName;
+  private final int bufferSizeLimitBytes;
 
   public Config(FuryBuilder builder) {
     name = builder.name;
@@ -95,6 +96,7 @@ public class Config implements Serializable {
     scalaOptimizationEnabled = builder.scalaOptimizationEnabled;
     deserializeNonexistentEnumValueAsNull = builder.deserializeNonexistentEnumValueAsNull;
     serializeEnumByName = builder.serializeEnumByName;
+    bufferSizeLimitBytes = builder.bufferSizeLimitBytes;
   }
 
   /** Returns the name for Fury serialization. */
@@ -185,6 +187,10 @@ public class Config implements Serializable {
   /** Returns long encoding. */
   public LongEncoding longEncoding() {
     return longEncoding;
+  }
+
+  public int bufferSizeLimitBytes() {
+    return bufferSizeLimitBytes;
   }
 
   public boolean requireClassRegistration() {
@@ -283,6 +289,7 @@ public class Config implements Serializable {
         && compressString == config.compressString
         && compressInt == config.compressInt
         && compressLong == config.compressLong
+        && bufferSizeLimitBytes == config.bufferSizeLimitBytes
         && requireClassRegistration == config.requireClassRegistration
         && suppressClassRegistrationWarnings == config.suppressClassRegistrationWarnings
         && registerGuavaTypes == config.registerGuavaTypes
@@ -317,6 +324,7 @@ public class Config implements Serializable {
         compressInt,
         compressLong,
         longEncoding,
+        bufferSizeLimitBytes,
         requireClassRegistration,
         suppressClassRegistrationWarnings,
         registerGuavaTypes,
