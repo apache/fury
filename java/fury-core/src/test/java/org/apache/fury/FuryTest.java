@@ -615,4 +615,25 @@ public class FuryTest extends FuryTestBase {
     Object obj = fury.deserializeJavaObjectAndClass(bytes);
     assertNull(obj);
   }
+
+  @Test
+  public void testResetBufferToSizeLimit() {
+    final int minBufferBytes = 64;
+    final int limitInBytes = 1024;
+    Fury fury = Fury.builder().withBufferSizeLimitBytes(limitInBytes).build();
+
+    final byte[] smallPayload = new byte[0];
+    final byte[] serializedSmall = fury.serialize(smallPayload);
+    assertEquals(fury.getBuffer().size(), minBufferBytes);
+
+    fury.deserialize(serializedSmall);
+    assertEquals(fury.getBuffer().size(), minBufferBytes);
+
+    final byte[] largePayload = new byte[limitInBytes * 2];
+    final byte[] serializedLarge = fury.serialize(largePayload);
+    assertEquals(fury.getBuffer().size(), limitInBytes);
+
+    fury.deserialize(serializedLarge);
+    assertEquals(fury.getBuffer().size(), limitInBytes);
+  }
 }

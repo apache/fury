@@ -83,6 +83,7 @@ public final class FuryBuilder {
   boolean suppressClassRegistrationWarnings = true;
   boolean deserializeNonexistentEnumValueAsNull = false;
   boolean serializeEnumByName = false;
+  int bufferSizeLimitBytes = 128 * 1024;
   MetaCompressor metaCompressor = new DeflaterMetaCompressor();
 
   public FuryBuilder() {}
@@ -181,6 +182,17 @@ public final class FuryBuilder {
   /** Whether compress string for small size. */
   public FuryBuilder withStringCompressed(boolean stringCompressed) {
     this.compressString = stringCompressed;
+    return this;
+  }
+
+  /**
+   * Sets the limit for Fury's internal buffer. If the buffer size exceeds this limit, it will be
+   * reset to this limit after every serialization and deserialization.
+   *
+   * <p>The default is 128k.
+   */
+  public FuryBuilder withBufferSizeLimitBytes(int bufferSizeLimitBytes) {
+    this.bufferSizeLimitBytes = bufferSizeLimitBytes;
     return this;
   }
 
