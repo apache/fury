@@ -44,6 +44,7 @@ from pyfury.util import is_little_endian
 from libc.stdint cimport *
 from libcpp.vector cimport vector
 from cpython cimport PyObject
+from cpython.dict cimport PyDict_Next
 from cpython.ref cimport *
 from cpython.list cimport PyList_New, PyList_SET_ITEM
 from cpython.tuple cimport PyTuple_New, PyTuple_SET_ITEM
@@ -2049,7 +2050,13 @@ cdef class MapSerializer(Serializer):
         buffer.write_varint32(len(value))
         cdef ClassInfo key_classinfo
         cdef ClassInfo value_classinfo
-        for k, v in value.items():
+        cdef int64_t key_addr, value_addr
+        cdef Py_ssize_t pos = 0
+        while PyDict_Next(value, &pos, <PyObject **>&key_addr, <PyObject **>&value_addr) != 0:
+            k = int2obj(key_addr)
+            Py_INCREF(k)
+            v = int2obj(value_addr)
+            Py_INCREF(v)
             key_cls = type(k)
             if key_cls is str:
                 buffer.write_int16(NOT_NULL_STRING_FLAG)
@@ -2122,7 +2129,13 @@ cdef class MapSerializer(Serializer):
     cpdef inline xwrite(self, Buffer buffer, o):
         cdef dict value = o
         buffer.write_varint32(len(value))
-        for k, v in value.items():
+        cdef int64_t key_addr, value_addr
+        cdef Py_ssize_t pos = 0
+        while PyDict_Next(value, &pos, <PyObject **>&key_addr, <PyObject **>&value_addr) != 0:
+            k = int2obj(key_addr)
+            Py_INCREF(k)
+            v = int2obj(value_addr)
+            Py_INCREF(v)
             self.fury.xserialize_ref(
                 buffer, k, serializer=self.key_serializer
             )
