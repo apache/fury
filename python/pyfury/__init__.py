@@ -48,7 +48,7 @@ from pyfury.serializer import *  # noqa: F401,F403 # pylint: disable=unused-impo
 from pyfury.type import (  # noqa: F401 # pylint: disable=unused-import
     record_class_factory,
     get_qualified_classname,
-    FuryType,
+    TypeId,
     Int8Type,
     Int16Type,
     Int32Type,

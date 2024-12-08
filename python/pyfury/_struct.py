@@ -19,7 +19,6 @@ import datetime
 import logging
 import typing
 
-from pyfury._serializer import NOT_SUPPORT_CROSS_LANGUAGE
 from pyfury.buffer import Buffer
 from pyfury.error import ClassNotCompatibleError
 from pyfury.serializer import (
@@ -31,7 +30,7 @@ from pyfury.serializer import (
 from pyfury.type import (
     TypeVisitor,
     infer_field,
-    FuryType,
+    TypeId,
     Int8Type,
     Int16Type,
     Int32Type,
@@ -179,13 +178,11 @@ class StructHashVisitor(TypeVisitor):
         self._hash = self._compute_field_hash(self._hash, abs(xtype_id))
 
     def visit_customized(self, field_name, type_, types_path=None):
-        xtype_id = self.fury.class_resolver.get_classinfo(type_).class_id
-        if serializer.get_xtype_id() != NOT_SUPPORT_CROSS_LANGUAGE:
-            tag = serializer.get_xtype_tag()
-        else:
-            tag = qualified_class_name(type_)
-        tag_hash = compute_string_hash(tag)
-        self._hash = self._compute_field_hash(self._hash, tag_hash)
+        classinfo = self.fury.class_resolver.get_classinfo(type_)
+        hash_value = classinfo.xtype_id
+        if TypeId.is_namespaced_type(classinfo.xtype_id):
+            hash_value = compute_string_hash(classinfo.namespace + classinfo.typename)
+        self._hash = self._compute_field_hash(self._hash, hash_value)
 
     def visit_other(self, field_name, type_, types_path=None):
         if type_ not in basic_types and not is_py_array_type(type_):

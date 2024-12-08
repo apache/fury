@@ -20,8 +20,6 @@ import os
 import pickle
 from weakref import WeakValueDictionary
 
-import typing
-
 import pyfury.lib.mmh3
 from pyfury.buffer import Buffer
 from pyfury.codegen import (
@@ -54,8 +52,6 @@ from pyfury._serializer import (  # noqa: F401 # pylint: disable=unused-import
     DateSerializer,
     TimestampSerializer,
     BytesSerializer,
-    PyArraySerializer,
-    Numpy1DArraySerializer,
     CollectionSerializer,
     ListSerializer,
     TupleSerializer,
@@ -67,8 +63,6 @@ from pyfury._serializer import (  # noqa: F401 # pylint: disable=unused-import
     SliceSerializer,
     PickleSerializer,
     NOT_NULL_PYINT_FLAG,
-    PickleStrongCacheStub,
-    PickleCacheStub,
     PICKLE_STRONG_CACHE_CLASS_ID,
     PICKLE_CACHE_CLASS_ID,
 )
@@ -93,8 +87,6 @@ try:
             DateSerializer,
             TimestampSerializer,
             BytesSerializer,
-            PyArraySerializer,
-            Numpy1DArraySerializer,
             CollectionSerializer,
             ListSerializer,
             TupleSerializer,
@@ -105,10 +97,35 @@ try:
             EnumSerializer,
             SliceSerializer,
             PickleSerializer,
-            PickleStrongCacheStub,
-            PickleCacheStub,
         )
 except ImportError:
+    pass
+
+from pyfury.type import (
+    BoolArrayType,
+    Int16ArrayType,
+    Int32ArrayType,
+    Int64ArrayType,
+    Float32ArrayType,
+    Float64ArrayType,
+    BoolNDArrayType,
+    Int16NDArrayType,
+    Int32NDArrayType,
+    Int64NDArrayType,
+    Float32NDArrayType,
+    Float64NDArrayType,
+)
+
+
+class _PickleStub:
+    pass
+
+
+class PickleStrongCacheStub:
+    pass
+
+
+class PickleCacheStub:
     pass
 
 
@@ -401,22 +418,24 @@ class DataClassSerializer(Serializer):
 # Use numpy array or python array module.
 typecode_dict = {
     # use bytes serializer for byte array.
-    "h": (2, Int16ArrayType, FuryType.INT16_ARRAY.value),
-    "i": (4, Int32ArrayType, FuryType.INT32_ARRAY.value),
-    "l": (8, Int64ArrayType, FuryType.INT64_ARRAY.value),
-    "f": (4, Float32ArrayType, FuryType.FLOAT32_ARRAY.value),
-    "d": (8, Float64ArrayType, FuryType.FLOAT64_ARRAY.value),
+    "h": (2, Int16ArrayType, TypeId.INT16_ARRAY),
+    "i": (4, Int32ArrayType, TypeId.INT32_ARRAY),
+    "l": (8, Int64ArrayType, TypeId.INT64_ARRAY),
+    "f": (4, Float32ArrayType, TypeId.FLOAT32_ARRAY),
+    "d": (8, Float64ArrayType, TypeId.FLOAT64_ARRAY),
 }
 
 typeid_code = {
-    FuryType.INT16_ARRAY.value: "h",
-    FuryType.INT32_ARRAY.value: "i",
-    FuryType.INT64_ARRAY.value: "l",
-    FuryType.FLOAT32_ARRAY.value: "f",
-    FuryType.FLOAT64_ARRAY.value: "d",
+    TypeId.INT16_ARRAY: "h",
+    TypeId.INT32_ARRAY: "i",
+    TypeId.INT64_ARRAY: "l",
+    TypeId.FLOAT32_ARRAY: "f",
+    TypeId.FLOAT64_ARRAY: "d",
 }
 
+
 class PyArraySerializer(CrossLanguageCompatibleSerializer):
+    typecode_dict = typecode_dict
     typecodearray_type = {
         "h": Int16ArrayType,
         "i": Int32ArrayType,
@@ -460,8 +479,7 @@ class PyArraySerializer(CrossLanguageCompatibleSerializer):
         return arr
 
 
-class DynamicPyArraySerializer:
-
+class DynamicPyArraySerializer(Serializer):
     def xwrite(self, buffer, value):
         itemsize, ftype, type_id = typecode_dict[value.format]
         view = memoryview(value)
@@ -491,12 +509,12 @@ class DynamicPyArraySerializer:
 if np:
     _np_dtypes_dict = {
         # use bytes serializer for byte array.
-        np.dtype(np.bool_): (1, "?", BoolArrayType, FuryType.BOOL_ARRAY.value),
-        np.dtype(np.int16): (2, "h", Int16ArrayType, FuryType.INT16_ARRAY.value),
-        np.dtype(np.int32): (4, "i", Int32ArrayType, FuryType.INT32_ARRAY.value),
-        np.dtype(np.int64): (8, "l", Int64ArrayType, FuryType.INT64_ARRAY.value),
-        np.dtype(np.float32): (4, "f", Float32ArrayType, FuryType.FLOAT32_ARRAY.value),
-        np.dtype(np.float64): (8, "d", Float64ArrayType, FuryType.FLOAT64_ARRAY.value),
+        np.dtype(np.bool_): (1, "?", BoolNDArrayType, TypeId.BOOL_ARRAY),
+        np.dtype(np.int16): (2, "h", Int16NDArrayType, TypeId.INT16_ARRAY),
+        np.dtype(np.int32): (4, "i", Int32NDArrayType, TypeId.INT32_ARRAY),
+        np.dtype(np.int64): (8, "l", Int64NDArrayType, TypeId.INT64_ARRAY),
+        np.dtype(np.float32): (4, "f", Float32NDArrayType, TypeId.FLOAT32_ARRAY),
+        np.dtype(np.float64): (8, "d", Float64NDArrayType, TypeId.FLOAT64_ARRAY),
     }
 else:
     _np_dtypes_dict = {}
@@ -537,9 +555,8 @@ class Numpy1DArraySerializer:
 
 
 class NDArraySerializer:
-
     def xwrite(self, buffer, value):
-        itemsize, typecode, type_id = _np_dtypes_dict[value.dtype]
+        itemsize, typecode, ftype, type_id = _np_dtypes_dict[value.dtype]
         view = memoryview(value)
         nbytes = len(value) * itemsize
         buffer.write_varint32(type_id)

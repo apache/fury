@@ -24,7 +24,7 @@ from typing import Dict, Iterable, Any
 from pyfury.buffer import Buffer
 from pyfury.resolver import NOT_NULL_VALUE_FLAG, NULL_FLAG
 from pyfury.type import (
-    FuryType,
+    TypeId,
     is_primitive_type,
     # Int8ArrayType,
     Int16ArrayType,
@@ -42,7 +42,6 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-NOT_SUPPORT_CROSS_LANGUAGE = 0
 USE_CLASSNAME = 0
 USE_CLASS_ID = 1
 # preserve 0 as flag for class id not set in ClassInfo`
@@ -60,18 +59,6 @@ NOT_NULL_PYFLOAT_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (PYFLOAT_CLASS_ID << 
 NOT_NULL_PYBOOL_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (PYBOOL_CLASS_ID << 9)
 NOT_NULL_STRING_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (STRING_CLASS_ID << 9)
 SMALL_STRING_THRESHOLD = 16
-
-
-class _PickleStub:
-    pass
-
-
-class PickleStrongCacheStub:
-    pass
-
-
-class PickleCacheStub:
-    pass
 
 
 class BufferObject(ABC):
@@ -164,7 +151,7 @@ class NoneSerializer(Serializer):
 
 class BooleanSerializer(CrossLanguageCompatibleSerializer):
     def get_xtype_id(self):
-        return FuryType.BOOL.value
+        return TypeId.BOOL.value
 
     def write(self, buffer, value):
         buffer.write_bool(value)
@@ -211,6 +198,18 @@ class Int64Serializer(Serializer):
         return buffer.read_varint64()
 
 
+class DynamicIntSerializer(CrossLanguageCompatibleSerializer):
+    def write(self, buffer, value):
+        # TOTO(chaokunyang) check value range and write type and value
+        buffer.write_varint32(TypeId.INT64.value)
+        buffer.write_varint64(value)
+
+    def read(self, buffer):
+        type_id = buffer.read_varint32()
+        assert type_id == TypeId.INT64.value, type_id
+        return buffer.read_varint64()
+
+
 class FloatSerializer(CrossLanguageCompatibleSerializer):
     def write(self, buffer, value):
         buffer.write_float(value)
@@ -224,6 +223,18 @@ class DoubleSerializer(CrossLanguageCompatibleSerializer):
         buffer.write_double(value)
 
     def read(self, buffer):
+        return buffer.read_double()
+
+
+class DynamicFloatSerializer(CrossLanguageCompatibleSerializer):
+    def write(self, buffer, value):
+        # TOTO(chaokunyang) check value range and write type and value
+        buffer.write_varint32(TypeId.FLOAT64.value)
+        buffer.write_double(value)
+
+    def read(self, buffer):
+        type_id = buffer.read_varint32()
+        assert type_id == TypeId.FLOAT64.value, type_id
         return buffer.read_double()
 
 
@@ -290,7 +301,7 @@ class CollectionSerializer(Serializer):
         self.elem_serializer = elem_serializer
 
     def get_xtype_id(self):
-        return -FuryType.LIST.value
+        return -TypeId.LIST.value
 
     def write(self, buffer, value: Iterable[Any]):
         buffer.write_varint32(len(value))
@@ -351,7 +362,7 @@ class CollectionSerializer(Serializer):
 
 class ListSerializer(CollectionSerializer):
     def get_xtype_id(self):
-        return FuryType.LIST.value
+        return TypeId.LIST.value
 
     def read(self, buffer):
         len_ = buffer.read_varint32()
@@ -376,12 +387,12 @@ class StringArraySerializer(ListSerializer):
         super().__init__(fury, type_, StringSerializer(fury, str))
 
     def get_xtype_id(self):
-        return FuryType.FURY_STRING_ARRAY.value
+        return TypeId.FURY_STRING_ARRAY.value
 
 
 class SetSerializer(CollectionSerializer):
     def get_xtype_id(self):
-        return FuryType.FURY_SET.value
+        return TypeId.FURY_SET.value
 
     def new_instance(self, type_):
         instance = set()
@@ -408,7 +419,7 @@ class MapSerializer(Serializer):
         self.value_serializer = value_serializer
 
     def get_xtype_id(self):
-        return FuryType.MAP.value
+        return TypeId.MAP.value
 
     def write(self, buffer, value: Dict):
         buffer.write_varint32(len(value))

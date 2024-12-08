@@ -41,7 +41,7 @@ from pyfury.serializer import (
     Numpy1DArraySerializer,
 )
 from pyfury.tests.core import require_pyarrow
-from pyfury.type import FuryType
+from pyfury.type import TypeId
 from pyfury.util import lazy_import
 
 pa = lazy_import("pyarrow")
@@ -89,10 +89,10 @@ def test_basic_serializer(language):
     assert isinstance(
         datetime_serializer, (TimestampSerializer, _serialization.TimestampSerializer)
     )
-    assert datetime_serializer.get_xtype_id() == FuryType.TIMESTAMP.value
+    assert datetime_serializer.get_xtype_id() == TypeId.TIMESTAMP.value
     date_serializer = fury.class_resolver.get_serializer(datetime.date)
     assert isinstance(date_serializer, (DateSerializer, _serialization.DateSerializer))
-    assert date_serializer.get_xtype_id() == FuryType.DATE32.value
+    assert date_serializer.get_xtype_id() == TypeId.DATE32.value
     assert ser_de(fury, True) is True
     assert ser_de(fury, False) is False
     assert ser_de(fury, -1) == -1
@@ -331,7 +331,7 @@ class BarSerializer(pyfury.Serializer):
         return Bar(buffer.read_int32(), buffer.read_int32())
 
     def get_xtype_id(self):
-        return pyfury.FuryType.FURY_TYPE_TAG.value
+        return pyfury.TypeId.FURY_TYPE_TAG.value
 
 
 class RegisterClass:
@@ -466,12 +466,6 @@ def test_enum():
     assert ser_de(fury, EnumClass.E3) == EnumClass.E3
     assert ser_de(fury, EnumClass.E4) == EnumClass.E4
     assert isinstance(fury.class_resolver.get_serializer(EnumClass), EnumSerializer)
-    assert isinstance(
-        fury.class_resolver.get_serializer(obj=EnumClass.E1), EnumSerializer
-    )
-    assert isinstance(
-        fury.class_resolver.get_serializer(obj=EnumClass.E4), EnumSerializer
-    )
 
 
 def test_duplicate_serialize():

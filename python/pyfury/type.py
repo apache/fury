@@ -25,6 +25,13 @@ import typing
 from typing import TypeVar
 from abc import ABC, abstractmethod
 
+try:
+    import numpy as np
+
+    ndarray = np.ndarray
+except ImportError:
+    np, ndarray = None, None
+
 
 # modified from `fluent python`
 def record_class_factory(cls_name, field_names):
@@ -118,11 +125,12 @@ def get_qualified_classname(obj):
     return t.__module__ + "." + t.__name__
 
 
-class FuryType(enum.Enum):
+class TypeId:
     """
-    Fury added type for cross-language serialization.
+    Fury type for cross-language serialization.
     See `org.apache.fury.types.Type`
     """
+
     BOOL = 1
     INT8 = 2
     INT16 = 3
@@ -168,8 +176,22 @@ class FuryType(enum.Enum):
     FLOAT64_ARRAY = 43
     ARROW_RECORD_BATCH = 44
     ARROW_TABLE = 45
+    BOUND = 64
+
+    @staticmethod
+    def is_namespaced_type(type_id: int) -> bool:
+        return type_id in __NAMESPACED_TYPES__
 
 
+__NAMESPACED_TYPES__ = {
+    TypeId.NS_EXT,
+    TypeId.NS_POLYMORPHIC_EXT,
+    TypeId.NS_ENUM,
+    TypeId.NS_STRUCT,
+    TypeId.NS_POLYMORPHIC_STRUCT,
+    TypeId.NS_COMPATIBLE_STRUCT,
+    TypeId.NS_POLYMORPHIC_COMPATIBLE_STRUCT,
+}
 Int8Type = TypeVar("Int8Type", bound=int)
 Int16Type = TypeVar("Int16Type", bound=int)
 Int32Type = TypeVar("Int32Type", bound=int)
@@ -203,6 +225,12 @@ Int32ArrayType = TypeVar("Int32ArrayType", bound=array.ArrayType)
 Int64ArrayType = TypeVar("Int64ArrayType", bound=array.ArrayType)
 Float32ArrayType = TypeVar("Float32ArrayType", bound=array.ArrayType)
 Float64ArrayType = TypeVar("Float64ArrayType", bound=array.ArrayType)
+BoolNDArrayType = TypeVar("BoolNDArrayType", bound=ndarray)
+Int16NDArrayType = TypeVar("Int16NDArrayType", bound=ndarray)
+Int32NDArrayType = TypeVar("Int32NDArrayType", bound=ndarray)
+Int64NDArrayType = TypeVar("Int64NDArrayType", bound=ndarray)
+Float32NDArrayType = TypeVar("Float32NDArrayType", bound=ndarray)
+Float64NDArrayType = TypeVar("Float64NDArrayType", bound=ndarray)
 
 
 _py_array_types = {

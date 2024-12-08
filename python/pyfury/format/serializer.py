@@ -18,7 +18,7 @@
 import pyarrow as pa
 from pyfury.serializer import CrossLanguageCompatibleSerializer, BufferObject
 from pyfury.buffer import Buffer
-from pyfury.type import FuryType
+from pyfury.type import TypeId
 
 
 class ArrowRecordBatchSerializer(CrossLanguageCompatibleSerializer):
@@ -36,7 +36,7 @@ class ArrowRecordBatchSerializer(CrossLanguageCompatibleSerializer):
         return batch
 
     def get_xtype_id(self):
-        return FuryType.FURY_ARROW_RECORD_BATCH.value
+        return TypeId.FURY_ARROW_RECORD_BATCH.value
 
 
 class ArrowRecordBatchBufferObject(BufferObject):
@@ -82,7 +82,7 @@ class ArrowTableSerializer(CrossLanguageCompatibleSerializer):
         return pa.Table.from_batches(batches)
 
     def get_xtype_id(self):
-        return FuryType.FURY_ARROW_TABLE.value
+        return TypeId.FURY_ARROW_TABLE.value
 
 
 class ArrowTableBufferObject(BufferObject):
