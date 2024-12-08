@@ -620,7 +620,6 @@ cdef class Fury:
     cdef object _unsupported_callback
     cdef object _unsupported_objects  # iterator
     cdef object _peer_language
-    cdef list _native_objects
 
     def __init__(
             self,
@@ -665,7 +664,6 @@ cdef class Fury:
         self._unsupported_callback = None
         self._unsupported_objects = None
         self._peer_language = None
-        self._native_objects = []
 
     def register_serializer(self, cls: Union[type, TypeVar], Serializer serializer):
         self.class_resolver.register_serializer(cls, serializer)
@@ -862,17 +860,6 @@ cdef class Fury:
             )
         if not is_target_x_lang:
             return self.deserialize_ref(buffer)
-        cdef int32_t native_objects_start_offset = buffer.read_int32()
-        cdef int32_t native_objects_size = buffer.read_int32()
-        if self._peer_language == Language.PYTHON:
-            if native_objects_size > 0:
-                native_objects_buffer = buffer.slice(native_objects_start_offset)
-                for i in range(native_objects_size):
-                    self._native_objects.append(
-                        self.deserialize_ref(native_objects_buffer)
-                    )
-                self.ref_resolver.reset_read()
-                self.class_resolver.reset_read()
         return self.xdeserialize_ref(buffer)
 
     cpdef inline deserialize_ref(self, Buffer buffer):
@@ -1000,7 +987,6 @@ cdef class Fury:
         self.ref_resolver.reset_write()
         self.class_resolver.reset_write()
         self.serialization_context.reset()
-        self._native_objects.clear()
         self.pickler.clear_memo()
         self._unsupported_callback = None
 
@@ -1008,7 +994,6 @@ cdef class Fury:
         self.ref_resolver.reset_read()
         self.class_resolver.reset_read()
         self.serialization_context.reset()
-        self._native_objects.clear()
         self._buffers = None
         self.unpickler = None
         self._unsupported_objects = None

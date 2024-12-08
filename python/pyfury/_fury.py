@@ -159,7 +159,6 @@ class Fury:
         "_unsupported_callback",
         "_unsupported_objects",
         "_peer_language",
-        "_native_objects",
     )
     serialization_context: "SerializationContext"
 
@@ -208,7 +207,6 @@ class Fury:
         self._unsupported_callback = None
         self._unsupported_objects = None
         self._peer_language = None
-        self._native_objects = []
 
     def register_serializer(self, cls: type, serializer):
         self.class_resolver.register_serializer(cls, serializer)
@@ -279,18 +277,7 @@ class Fury:
         if self.language == Language.PYTHON:
             self.serialize_ref(buffer, obj)
         else:
-            start_offset = buffer.writer_index
-            buffer.write_int32(-1)  # preserve 4-byte for nativeObjects start offsets.
-            buffer.write_int32(-1)  # preserve 4-byte for nativeObjects size
             self.xserialize_ref(buffer, obj)
-            buffer.put_int32(start_offset, buffer.writer_index)
-            buffer.put_int32(start_offset + 4, len(self._native_objects))
-            self.ref_resolver.reset_write()
-            # fury write opaque object classname which cause later write of classname
-            # only write an id.
-            self.class_resolver.reset_write()
-            for native_object in self._native_objects:
-                self.serialize_ref(buffer, native_object)
         self.reset_write()
         if buffer is not self.buffer:
             return buffer
@@ -416,16 +403,6 @@ class Fury:
                 "produced with buffer_callback null."
             )
         if is_target_x_lang:
-            native_objects_start_offset = buffer.read_int32()
-            native_objects_size = buffer.read_int32()
-            if self._peer_language == Language.PYTHON:
-                native_objects_buffer = buffer.slice(native_objects_start_offset)
-                for i in range(native_objects_size):
-                    self._native_objects.append(
-                        self.deserialize_ref(native_objects_buffer)
-                    )
-                self.ref_resolver.reset_read()
-                self.class_resolver.reset_read()
             obj = self.xdeserialize_ref(buffer)
         else:
             obj = self.deserialize_ref(buffer)
@@ -524,7 +501,6 @@ class Fury:
         self.ref_resolver.reset_write()
         self.class_resolver.reset_write()
         self.serialization_context.reset()
-        self._native_objects.clear()
         self.pickler.clear_memo()
         self._buffer_callback = None
         self._unsupported_callback = None
@@ -533,7 +509,6 @@ class Fury:
         self.ref_resolver.reset_read()
         self.class_resolver.reset_read()
         self.serialization_context.reset()
-        self._native_objects.clear()
         self.unpickler = None
         self._buffers = None
         self._unsupported_objects = None
