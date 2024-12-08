@@ -59,13 +59,9 @@ SMALL_STRING_THRESHOLD = 16
 class ClassResolver:
     __slots__ = (
         "fury",
-        "_type_id_to_class",
-        "_type_id_to_serializer",
-        "_type_id_and_cls_to_serializer",
         "_type_tag_to_class_x_lang_map",
         "_metastr_to_str",
         "_class_id_counter",
-        "_used_classes_id",
         "_classes_info",
         "_registered_id_to_class_info",
         "_hash_to_metastring",
@@ -78,8 +74,6 @@ class ClassResolver:
         "_dynamic_written_metastr",
     )
 
-    _type_id_to_class: Dict[int, type]
-    _type_id_to_serializer: Dict[int, Serializer]
     _classes_info: Dict[type, "ClassInfo"]
 
     def __init__(self, fury):
@@ -92,10 +86,7 @@ class ClassResolver:
         self._dynamic_id_to_metastr_list = list()
         self._dynamic_written_metastr = []
         self._type_id_to_classinfo = dict()
-        self._type_id_to_serializer = dict()
-        self._type_id_and_cls_to_serializer = dict()
         self._type_id_counter = PICKLE_CACHE_CLASS_ID + 1
-        self._used_classes_id = set()
         self._registered_id_to_class_info = list()
         self._dynamic_write_string_id = 0
         self._classes_info = dict()
@@ -263,7 +254,7 @@ class ClassResolver:
                 f"type name {typename} and id {type_id} should not be set at the same time"
             )
         if type_id not in {0, None}:
-            if type_id in self._type_id_to_class:
+            if type_id in self._type_id_to_classinfo:
                 raise TypeError(f"{cls} registered already")
         elif cls in self._classes_info:
             raise TypeError(f"{cls} registered already")
@@ -368,7 +359,7 @@ class ClassResolver:
 
     def _next_type_id(self):
         type_id = self._type_id_counter = self._type_id_counter + 1
-        while type_id in self._used_classes_id:
+        while type_id in self._type_id_to_classinfo:
             type_id = self._type_id_counter = self._type_id_counter + 1
         return type_id
 
@@ -451,10 +442,11 @@ class ClassResolver:
     def write_classinfo(self, buffer: Buffer, classinfo: ClassInfo):
         class_id = classinfo.class_id
         if class_id != NO_CLASS_ID:
-            buffer.write_varint32(class_id << 1)
+            buffer.write_varuint32(class_id << 1)
             return
-        buffer.write_varint32(1)
-        self.write_meta_string_bytes(buffer, classinfo.class_name_bytes)
+        buffer.write_varuint32(1)
+        self.write_meta_string_bytes(buffer, classinfo.namespace_bytes)
+        self.write_meta_string_bytes(buffer, classinfo.typename_bytes)
 
     def read_classinfo(self, buffer):
         header = buffer.read_varuint32()
@@ -464,23 +456,38 @@ class ClassResolver:
             if classinfo.serializer is None:
                 classinfo.serializer = self._create_serializer(classinfo.cls)
             return classinfo
-        meta_str_header = buffer.read_varint32()
-        length = meta_str_header >> 1
-        if meta_str_header & 0b1 != 0:
-            return self._dynamic_id_to_classinfo_list[length - 1]
-        class_name_bytes_hash = buffer.read_int64()
-        reader_index = buffer.reader_index
-        buffer.check_bound(reader_index, length)
-        buffer.reader_index = reader_index + length
-        classinfo = self._hash_to_classinfo.get(class_name_bytes_hash)
-        if classinfo is None:
-            classname_bytes = buffer.get_bytes(reader_index, length)
-            full_class_name = classname_bytes.decode(encoding="utf-8")
-            cls = load_class(full_class_name)
+        ns_metabytes = self.read_meta_string_bytes(buffer)
+        type_metabytes = self.read_meta_string_bytes(buffer)
+        typeinfo = self._ns_type_to_classinfo.get((ns_metabytes, type_metabytes))
+        if typeinfo is None:
+            ns = ns_metabytes.decode(self._namespace_decoder)
+            typename = type_metabytes.decode(self._typename_decoder)
+            cls = load_class(ns + "#" + typename)
             classinfo = self.get_or_create_classinfo(cls)
-            self._hash_to_classinfo[class_name_bytes_hash] = classinfo
-        self._dynamic_id_to_classinfo_list.append(classinfo)
         return classinfo
+
+    def xwrite_typeinfo(self, buffer, classinfo):
+        type_id = classinfo.type_id
+        internal_type_id = type_id & 0xFF
+        buffer.write_varuint32(type_id)
+        if TypeId.is_namespaced_type(type_id):
+            self.write_meta_string_bytes(buffer, classinfo.namespace_bytes)
+            self.write_meta_string_bytes(buffer, classinfo.typename_bytes)
+
+    def xread_typeinfo(self, buffer):
+        type_id = buffer.read_varuint32()
+        internal_type_id = type_id & 0xFF
+        if TypeId.is_namespaced_type(internal_type_id):
+            ns_metabytes = self.read_meta_string_bytes(buffer)
+            type_metabytes = self.read_meta_string_bytes(buffer)
+            typeinfo = self._ns_type_to_classinfo.get((ns_metabytes, type_metabytes))
+            if typeinfo is None:
+                ns = ns_metabytes.decode(self._namespace_decoder)
+                typename = type_metabytes.decode(self._typename_decoder)
+                raise TypeUnregisteredError(f"{ns}.{typename} not registered")
+            return typeinfo
+        else:
+            return self._type_id_to_classinfo[type_id]
 
     def write_meta_string_bytes(self, buffer: Buffer, metastr_bytes: MetaStringBytes):
         dynamic_write_string_id = metastr_bytes.dynamic_write_string_id
@@ -530,30 +537,6 @@ class ClassResolver:
                 self._hash_to_metastring[hashcode] = metastr
         self._dynamic_id_to_metastr_list.append(metastr)
         return metastr
-
-    def xwrite_typeinfo(self, buffer, classinfo):
-        type_id = classinfo.type_id
-        internal_type_id = type_id & 0xFF
-        buffer.write_varuint32(type_id)
-        if TypeId.is_namespaced_type(type_id):
-            self.write_meta_string_bytes(buffer, classinfo.namespace_bytes)
-            self.write_meta_string_bytes(buffer, classinfo.typename_bytes)
-
-    def xread_typeinfo(self, buffer):
-        type_id = buffer.read_varuint32()
-        internal_type_id = type_id & 0xFF
-        if TypeId.is_namespaced_type(internal_type_id):
-            ns_metabytes = self.read_meta_string_bytes(buffer)
-            type_metabytes = self.read_meta_string_bytes(buffer)
-            type_key = (ns_metabytes, type_metabytes)
-            typeinfo = self.ns_type_to_classinfo.get((ns_metabytes, type_metabytes))
-            if typeinfo is None:
-                ns = ns_metabytes.decode(self._namespace_decoder)
-                typename = type_metabytes.decode(self._typename_decoder)
-                raise TypeUnregisteredError(f"{ns}.{typename} not registered")
-            return typeinfo
-        else:
-            return self._type_id_to_classinfo[type_id]
 
     def reset(self):
         self.reset_write()
