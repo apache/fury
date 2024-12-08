@@ -589,16 +589,6 @@ public class CrossLanguageTest {
     }
 
     @Override
-    public short getXtypeId() {
-      return Fury.FURY_TYPE_TAG_ID;
-    }
-
-    @Override
-    public String getCrossLanguageTypeTag() {
-      return "test.ComplexObject1";
-    }
-
-    @Override
     public void xwrite(MemoryBuffer buffer, ComplexObject1 value) {
       fury.xwriteRef(buffer, value.f1);
       fury.xwriteRef(buffer, value.f2);
@@ -625,6 +615,7 @@ public class CrossLanguageTest {
             .withRefTracking(true)
             .requireClassRegistration(false)
             .build();
+    fury.register(ComplexObject1.class, "test.ComplexObject1");
     fury.registerSerializer(ComplexObject1.class, ComplexObject1Serializer.class);
     ComplexObject1 obj = new ComplexObject1();
     obj.f1 = true;

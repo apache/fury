@@ -361,35 +361,44 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
       if (!keyGenericType.hasGenericParameters() && !valueGenericType.hasGenericParameters()) {
         for (Object object : value.entrySet()) {
           Map.Entry entry = (Map.Entry) object;
-          fury.xwriteRefByNullableSerializer(buffer, entry.getKey(), keySerializer);
-          fury.xwriteRefByNullableSerializer(buffer, entry.getValue(), valueSerializer);
+          xwriteRefByNullableSerializer(fury, buffer, entry.getKey(), keySerializer);
+          xwriteRefByNullableSerializer(fury, buffer, entry.getValue(), valueSerializer);
         }
       } else if (valueGenericType.hasGenericParameters()) {
         for (Object object : value.entrySet()) {
           Map.Entry entry = (Map.Entry) object;
-          fury.xwriteRefByNullableSerializer(buffer, entry.getKey(), keySerializer);
+          xwriteRefByNullableSerializer(fury, buffer, entry.getKey(), keySerializer);
           generics.pushGenericType(valueGenericType);
-          fury.xwriteRefByNullableSerializer(buffer, entry.getValue(), valueSerializer);
+          xwriteRefByNullableSerializer(fury, buffer, entry.getValue(), valueSerializer);
           generics.popGenericType();
         }
       } else if (keyGenericType.hasGenericParameters()) {
         for (Object object : value.entrySet()) {
           Map.Entry entry = (Map.Entry) object;
           generics.pushGenericType(keyGenericType);
-          fury.xwriteRefByNullableSerializer(buffer, entry.getKey(), keySerializer);
+          xwriteRefByNullableSerializer(fury, buffer, entry.getKey(), keySerializer);
           generics.popGenericType();
-          fury.xwriteRefByNullableSerializer(buffer, entry.getValue(), valueSerializer);
+          xwriteRefByNullableSerializer(fury, buffer, entry.getValue(), valueSerializer);
         }
       } else {
         for (Object object : value.entrySet()) {
           Map.Entry entry = (Map.Entry) object;
           generics.pushGenericType(keyGenericType);
-          fury.xwriteRefByNullableSerializer(buffer, entry.getKey(), keySerializer);
+          xwriteRefByNullableSerializer(fury, buffer, entry.getKey(), keySerializer);
           generics.pushGenericType(valueGenericType);
-          fury.xwriteRefByNullableSerializer(buffer, entry.getValue(), valueSerializer);
+          xwriteRefByNullableSerializer(fury, buffer, entry.getValue(), valueSerializer);
         }
       }
       generics.popGenericType();
+    }
+  }
+
+  public static <T> void xwriteRefByNullableSerializer(
+      Fury fury, MemoryBuffer buffer, T obj, Serializer<T> serializer) {
+    if (serializer == null) {
+      fury.xwriteRef(buffer, obj);
+    } else {
+      fury.xwriteRef(buffer, obj, serializer);
     }
   }
 
@@ -671,37 +680,46 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
       Serializer valueSerializer = valueGenericType.getSerializer(fury.getClassResolver());
       if (!keyGenericType.hasGenericParameters() && !valueGenericType.hasGenericParameters()) {
         for (int i = 0; i < size; i++) {
-          Object key = fury.xreadRefByNullableSerializer(buffer, keySerializer);
-          Object value = fury.xreadRefByNullableSerializer(buffer, valueSerializer);
+          Object key = xreadRefByNullableSerializer(fury, buffer, keySerializer);
+          Object value = xreadRefByNullableSerializer(fury, buffer, valueSerializer);
           map.put(key, value);
         }
       } else if (valueGenericType.hasGenericParameters()) {
         for (int i = 0; i < size; i++) {
-          Object key = fury.xreadRefByNullableSerializer(buffer, keySerializer);
+          Object key = xreadRefByNullableSerializer(fury, buffer, keySerializer);
           generics.pushGenericType(valueGenericType);
-          Object value = fury.xreadRefByNullableSerializer(buffer, valueSerializer);
+          Object value = xreadRefByNullableSerializer(fury, buffer, valueSerializer);
           generics.popGenericType();
           map.put(key, value);
         }
       } else if (keyGenericType.hasGenericParameters()) {
         for (int i = 0; i < size; i++) {
           generics.pushGenericType(keyGenericType);
-          Object key = fury.xreadRefByNullableSerializer(buffer, keySerializer);
+          Object key = xreadRefByNullableSerializer(fury, buffer, keySerializer);
           generics.popGenericType();
-          Object value = fury.xreadRefByNullableSerializer(buffer, valueSerializer);
+          Object value = xreadRefByNullableSerializer(fury, buffer, valueSerializer);
           map.put(key, value);
         }
       } else {
         for (int i = 0; i < size; i++) {
           // FIXME(chaokunyang) nested generics may be get by mistake.
           generics.pushGenericType(keyGenericType);
-          Object key = fury.xreadRefByNullableSerializer(buffer, keySerializer);
+          Object key = xreadRefByNullableSerializer(fury, buffer, keySerializer);
           generics.pushGenericType(valueGenericType);
-          Object value = fury.xreadRefByNullableSerializer(buffer, valueSerializer);
+          Object value = xreadRefByNullableSerializer(fury, buffer, valueSerializer);
           map.put(key, value);
         }
       }
       generics.popGenericType();
+    }
+  }
+
+  public static Object xreadRefByNullableSerializer(
+      Fury fury, MemoryBuffer buffer, Serializer<?> serializer) {
+    if (serializer == null) {
+      return fury.xreadRef(buffer);
+    } else {
+      return fury.xreadRef(buffer, serializer);
     }
   }
 
