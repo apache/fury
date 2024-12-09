@@ -654,19 +654,14 @@ public class FuryTest extends FuryTestBase {
     double f3;
   }
 
-  static ThreadSafeFury fury1 =
-      Fury.builder().withCompatibleMode(CompatibleMode.COMPATIBLE).buildThreadSafeFury();
-  static ThreadSafeFury fury2 =
-      Fury.builder().withCompatibleMode(CompatibleMode.COMPATIBLE).buildThreadSafeFury();
-
-  static {
-    fury1.register(Struct1.class);
-    fury2.register(Struct2.class);
-  }
-
   @Test
   public void testStructMapping() {
-
+    ThreadSafeFury fury1 =
+        Fury.builder().withCompatibleMode(CompatibleMode.COMPATIBLE).buildThreadSafeFury();
+    ThreadSafeFury fury2 =
+        Fury.builder().withCompatibleMode(CompatibleMode.COMPATIBLE).buildThreadSafeFury();
+    fury1.register(Struct1.class);
+    fury2.register(Struct2.class);
     Struct1 struct1 = new Struct1(10, "abc");
     Struct2 struct2 = (Struct2) fury2.deserialize(fury1.serialize(struct1));
     Assert.assertEquals(struct2.f1, struct1.f1);
