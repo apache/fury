@@ -402,6 +402,7 @@ returned.
 
 Fury support mapping object from one type to another type.
 > Notes:
+>
 > 1. This mapping will execute a deep copy, all mapped fields are serialized into binary and
 deserialized from that binary to map into another type.
 > 2. All struct types must be registered with same ID, otherwise Fury can not mapping to correct struct type.
