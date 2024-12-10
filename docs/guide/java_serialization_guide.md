@@ -398,6 +398,57 @@ losing any information.
 If metadata sharing is not enabled, the new class data will be skipped and an `NonexistentSkipClass` stub object will be
 returned.
 
+### Coping/Mapping object from one type to another type
+
+Fury support mapping object from one type to another type.
+> Notes:
+>
+> 1. This mapping will execute a deep copy, all mapped fields are serialized into binary and
+deserialized from that binary to map into another type.
+> 2. All struct types must be registered with same ID, otherwise Fury can not mapping to correct struct type.
+> Be careful when you use `Fury#register(Class)`, because fury will allocate an auto-grown ID which might be
+> inconsistent if you register classes with different order between Fury instance.
+
+```java
+public class StructMappingExample {
+  static class Struct1 {
+    int f1;
+    String f2;
+
+    public Struct1(int f1, String f2) {
+      this.f1 = f1;
+      this.f2 = f2;
+    }
+  }
+
+  static class Struct2 {
+    int f1;
+    String f2;
+    double f3;
+  }
+
+  static ThreadSafeFury fury1 = Fury.builder()
+    .withCompatibleMode(CompatibleMode.COMPATIBLE).buildThreadSafeFury();
+  static ThreadSafeFury fury2 = Fury.builder()
+    .withCompatibleMode(CompatibleMode.COMPATIBLE).buildThreadSafeFury();
+
+  static {
+    fury1.register(Struct1.class);
+    fury2.register(Struct2.class);
+  }
+
+  public static void main(String[] args) {
+    Struct1 struct1 = new Struct1(10, "abc");
+    Struct2 struct2 = (Struct2) fury2.deserialize(fury1.serialize(struct1));
+    Assert.assertEquals(struct2.f1, struct1.f1);
+    Assert.assertEquals(struct2.f2, struct1.f2);
+    struct1 = (Struct1) fury1.deserialize(fury2.serialize(struct2));
+    Assert.assertEquals(struct1.f1, struct2.f1);
+    Assert.assertEquals(struct1.f2, struct2.f2);
+  }
+}
+```
+
 ## Migration
 
 ### JDK migration
