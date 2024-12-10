@@ -55,6 +55,7 @@ import lombok.EqualsAndHashCode;
 import org.apache.fury.annotation.Expose;
 import org.apache.fury.annotation.Ignore;
 import org.apache.fury.builder.Generated;
+import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.config.FuryBuilder;
 import org.apache.fury.config.Language;
 import org.apache.fury.exception.FuryException;
@@ -635,5 +636,38 @@ public class FuryTest extends FuryTestBase {
 
     fury.deserialize(serializedLarge);
     assertEquals(fury.getBuffer().size(), limitInBytes);
+  }
+
+  static class Struct1 {
+    int f1;
+    String f2;
+
+    public Struct1(int f1, String f2) {
+      this.f1 = f1;
+      this.f2 = f2;
+    }
+  }
+
+  static class Struct2 {
+    int f1;
+    String f2;
+    double f3;
+  }
+
+  @Test
+  public void testStructMapping() {
+    ThreadSafeFury fury1 =
+        Fury.builder().withCompatibleMode(CompatibleMode.COMPATIBLE).buildThreadSafeFury();
+    ThreadSafeFury fury2 =
+        Fury.builder().withCompatibleMode(CompatibleMode.COMPATIBLE).buildThreadSafeFury();
+    fury1.register(Struct1.class);
+    fury2.register(Struct2.class);
+    Struct1 struct1 = new Struct1(10, "abc");
+    Struct2 struct2 = (Struct2) fury2.deserialize(fury1.serialize(struct1));
+    Assert.assertEquals(struct2.f1, struct1.f1);
+    Assert.assertEquals(struct2.f2, struct1.f2);
+    struct1 = (Struct1) fury1.deserialize(fury2.serialize(struct2));
+    Assert.assertEquals(struct1.f1, struct2.f1);
+    Assert.assertEquals(struct1.f2, struct2.f2);
   }
 }
