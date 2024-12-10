@@ -1,6 +1,7 @@
 **/*.cpp
 **/*.so
 **/*.dylib
+**/*.pyd
 bazel-*
 .whl
 python/.cache
