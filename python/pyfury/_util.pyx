@@ -366,6 +366,10 @@ cdef class Buffer:
         return actual_bytes_written
 
     cpdef inline int32_t read_varint32(self):
+        # TODO(chaokunyang) add zig zag
+        return read_varuint32(self)
+
+    cpdef inline int32_t read_varuint32(self):
         cdef:
             uint32_t read_length = 0
             int8_t b

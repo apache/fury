@@ -26,7 +26,6 @@ import java.util.RandomAccess;
 import org.apache.fury.Fury;
 import org.apache.fury.annotation.Internal;
 import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.type.Type;
 
 /** Serializer for {@link ArrayAsList}. Helper for serialization of other classes. */
 @Internal
@@ -35,11 +34,6 @@ public final class FuryArrayAsListSerializer
     extends CollectionSerializer<FuryArrayAsListSerializer.ArrayAsList> {
   public FuryArrayAsListSerializer(Fury fury) {
     super(fury, ArrayAsList.class, true);
-  }
-
-  @Override
-  public short getXtypeId() {
-    return (short) -Type.LIST.getId();
   }
 
   public Collection newCollection(MemoryBuffer buffer) {

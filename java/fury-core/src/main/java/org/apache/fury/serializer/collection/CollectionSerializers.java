@@ -58,7 +58,6 @@ import org.apache.fury.resolver.RefResolver;
 import org.apache.fury.serializer.ReplaceResolveSerializer;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.serializer.Serializers;
-import org.apache.fury.type.Type;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.unsafe._JDKAccess;
 
@@ -72,11 +71,6 @@ public class CollectionSerializers {
   public static final class ArrayListSerializer extends CollectionSerializer<ArrayList> {
     public ArrayListSerializer(Fury fury) {
       super(fury, ArrayList.class, true);
-    }
-
-    @Override
-    public short getXtypeId() {
-      return Type.LIST.getId();
     }
 
     @Override
@@ -115,11 +109,6 @@ public class CollectionSerializers {
       }
       copyElements(originCollection, elements);
       return newCollection;
-    }
-
-    @Override
-    public short getXtypeId() {
-      return (short) -Type.LIST.getId();
     }
 
     @Override
@@ -163,11 +152,6 @@ public class CollectionSerializers {
     }
 
     @Override
-    public short getXtypeId() {
-      return Type.FURY_SET.getId();
-    }
-
-    @Override
     public HashSet newCollection(MemoryBuffer buffer) {
       int numElements = buffer.readVarUint32Small7();
       setNumElements(numElements);
@@ -180,11 +164,6 @@ public class CollectionSerializers {
   public static final class LinkedHashSetSerializer extends CollectionSerializer<LinkedHashSet> {
     public LinkedHashSetSerializer(Fury fury) {
       super(fury, LinkedHashSet.class, true);
-    }
-
-    @Override
-    public short getXtypeId() {
-      return Type.FURY_SET.getId();
     }
 
     @Override
@@ -270,11 +249,6 @@ public class CollectionSerializers {
     public void write(MemoryBuffer buffer, List<?> value) {}
 
     @Override
-    public short getXtypeId() {
-      return (short) -Type.LIST.getId();
-    }
-
-    @Override
     public void xwrite(MemoryBuffer buffer, List<?> value) {
       // write length
       buffer.writeVarUint32Small7(0);
@@ -321,11 +295,6 @@ public class CollectionSerializers {
 
     @Override
     public void write(MemoryBuffer buffer, Set<?> value) {}
-
-    @Override
-    public short getXtypeId() {
-      return (short) -Type.FURY_SET.getId();
-    }
 
     @Override
     public void xwrite(MemoryBuffer buffer, Set<?> value) {
@@ -378,11 +347,6 @@ public class CollectionSerializers {
     }
 
     @Override
-    public short getXtypeId() {
-      return (short) -Type.LIST.getId();
-    }
-
-    @Override
     public void xwrite(MemoryBuffer buffer, List<?> value) {
       buffer.writeVarUint32Small7(1);
       fury.xwriteRef(buffer, value.get(0));
@@ -414,11 +378,6 @@ public class CollectionSerializers {
     @Override
     public void write(MemoryBuffer buffer, Set<?> value) {
       fury.writeRef(buffer, value.iterator().next());
-    }
-
-    @Override
-    public short getXtypeId() {
-      return (short) -Type.FURY_SET.getId();
     }
 
     @Override
@@ -807,46 +766,48 @@ public class CollectionSerializers {
   // TODO Support ArraySubListSerializer, SubListSerializer
 
   public static void registerDefaultSerializers(Fury fury) {
-    fury.registerSerializer(ArrayList.class, new ArrayListSerializer(fury));
+    ClassResolver resolver = fury.getClassResolver();
+    resolver.registerSerializer(ArrayList.class, new ArrayListSerializer(fury));
     Class arrayAsListClass = Arrays.asList(1, 2).getClass();
-    fury.registerSerializer(arrayAsListClass, new ArraysAsListSerializer(fury, arrayAsListClass));
-    fury.registerSerializer(
+    resolver.registerSerializer(
+        arrayAsListClass, new ArraysAsListSerializer(fury, arrayAsListClass));
+    resolver.registerSerializer(
         LinkedList.class, new CollectionSerializer(fury, LinkedList.class, true));
-    fury.registerSerializer(HashSet.class, new HashSetSerializer(fury));
-    fury.registerSerializer(LinkedHashSet.class, new LinkedHashSetSerializer(fury));
-    fury.registerSerializer(TreeSet.class, new SortedSetSerializer<>(fury, TreeSet.class));
-    fury.registerSerializer(
+    resolver.registerSerializer(HashSet.class, new HashSetSerializer(fury));
+    resolver.registerSerializer(LinkedHashSet.class, new LinkedHashSetSerializer(fury));
+    resolver.registerSerializer(TreeSet.class, new SortedSetSerializer<>(fury, TreeSet.class));
+    resolver.registerSerializer(
         Collections.EMPTY_LIST.getClass(),
         new EmptyListSerializer(fury, (Class<List<?>>) Collections.EMPTY_LIST.getClass()));
-    fury.registerSerializer(
+    resolver.registerSerializer(
         Collections.emptySortedSet().getClass(),
         new EmptySortedSetSerializer(
             fury, (Class<SortedSet<?>>) Collections.emptySortedSet().getClass()));
-    fury.registerSerializer(
+    resolver.registerSerializer(
         Collections.EMPTY_SET.getClass(),
         new EmptySetSerializer(fury, (Class<Set<?>>) Collections.EMPTY_SET.getClass()));
-    fury.registerSerializer(
+    resolver.registerSerializer(
         Collections.singletonList(null).getClass(),
         new CollectionsSingletonListSerializer(
             fury, (Class<List<?>>) Collections.singletonList(null).getClass()));
-    fury.registerSerializer(
+    resolver.registerSerializer(
         Collections.singleton(null).getClass(),
         new CollectionsSingletonSetSerializer(
             fury, (Class<Set<?>>) Collections.singleton(null).getClass()));
-    fury.registerSerializer(
+    resolver.registerSerializer(
         ConcurrentSkipListSet.class,
         new ConcurrentSkipListSetSerializer(fury, ConcurrentSkipListSet.class));
-    fury.registerSerializer(Vector.class, new VectorSerializer(fury, Vector.class));
-    fury.registerSerializer(ArrayDeque.class, new ArrayDequeSerializer(fury, ArrayDeque.class));
-    fury.registerSerializer(BitSet.class, new BitSetSerializer(fury, BitSet.class));
-    fury.registerSerializer(
+    resolver.registerSerializer(Vector.class, new VectorSerializer(fury, Vector.class));
+    resolver.registerSerializer(ArrayDeque.class, new ArrayDequeSerializer(fury, ArrayDeque.class));
+    resolver.registerSerializer(BitSet.class, new BitSetSerializer(fury, BitSet.class));
+    resolver.registerSerializer(
         PriorityQueue.class, new PriorityQueueSerializer(fury, PriorityQueue.class));
-    fury.registerSerializer(
+    resolver.registerSerializer(
         CopyOnWriteArrayList.class,
         new CopyOnWriteArrayListSerializer(fury, CopyOnWriteArrayList.class));
     final Class setFromMapClass = Collections.newSetFromMap(new HashMap<>()).getClass();
-    fury.registerSerializer(setFromMapClass, new SetFromMapSerializer(fury, setFromMapClass));
-    fury.registerSerializer(
+    resolver.registerSerializer(setFromMapClass, new SetFromMapSerializer(fury, setFromMapClass));
+    resolver.registerSerializer(
         ConcurrentHashMap.KeySetView.class,
         new ConcurrentHashMapKeySetViewSerializer(fury, ConcurrentHashMap.KeySetView.class));
   }

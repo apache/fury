@@ -51,6 +51,7 @@ import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeParameter;
 import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.StringUtils;
 
 /** Type utils for common type inference and extraction. */
 @SuppressWarnings({"UnstableApiUsage", "unchecked"})
@@ -733,5 +734,13 @@ public class TypeUtils {
       return false;
     }
     return getArrayComponent(clz).isEnum();
+  }
+
+  public static String qualifiedName(String pkg, String className) {
+    if (StringUtils.isBlank(pkg)) {
+      return className;
+    } else {
+      return pkg + "." + className;
+    }
   }
 }
