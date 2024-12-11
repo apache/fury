@@ -29,7 +29,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
 import org.apache.fury.codegen.Expression.Literal;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeRef;
@@ -66,10 +65,11 @@ public class ExpressionVisitorTest {
     assertEquals(serializedLambda.getCapturedArgCount(), 1);
     ExpressionVisitor.ExprHolder exprHolder =
         (ExpressionVisitor.ExprHolder) (serializedLambda.getCapturedArg(0));
-    
+
     // Traversal relies on getDeclaredFields(), nondeterministic order.
     Set<Expression> expressionsSet = new HashSet<>(expressions);
-    Set<Expression> expressionsSet2 = new HashSet<>(Arrays.asList(forLoop, e1, ref, exprHolder.get("e2"), end, start, step));
+    Set<Expression> expressionsSet2 =
+        new HashSet<>(Arrays.asList(forLoop, e1, ref, exprHolder.get("e2"), end, start, step));
     assertEquals(expressionsSet, expressionsSet2);
   }
 }
