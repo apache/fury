@@ -90,9 +90,7 @@ def _run_cpp():
     _install_cpp_deps()
     # run test
     query_result = _bazel("query //...")
-    _bazel(
-        "test {}".format(query_result.replace("\n", " ").replace("\r", " "))
-    )
+    _bazel("test {}".format(query_result.replace("\n", " ").replace("\r", " ")))
 
 
 def _run_rust():
@@ -158,13 +156,13 @@ def _install_bazel():
 
 
 def _update_shell_profile():
-    home = os.path.expanduser('~')
-    profiles = ['.bashrc', '.bash_profile', '.zshrc']
+    home = os.path.expanduser("~")
+    profiles = [".bashrc", ".bash_profile", ".zshrc"]
     path_export = 'export PATH="$PATH:$HOME/bin" # Add Bazel to PATH\n'
     for profile in profiles:
         profile_path = os.path.join(home, profile)
         if os.path.exists(profile_path):
-            with open(profile_path, 'a') as f:
+            with open(profile_path, "a") as f:
                 f.write(path_export)
             logging.info(f"Updated {profile} to include Bazel PATH.")
             break
