@@ -17,7 +17,6 @@
 
 
 import argparse
-import shutil
 import subprocess
 import platform
 import urllib.request as ulib
@@ -128,8 +127,7 @@ def _install_bazel():
     logging.info(bazel_download_url)
     ulib.urlretrieve(bazel_download_url, local_name)
     os.chmod(local_name, 0o777)
-    if shutil.which("bazel"):
-        os.remove(shutil.which("bazel"))
+
     if _is_windows():
         bazel_path = os.path.join(os.getcwd(), local_name)
         _exec_cmd(f'setx path "%PATH%;{bazel_path}"')
