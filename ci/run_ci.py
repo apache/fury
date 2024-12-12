@@ -17,6 +17,7 @@
 
 
 import argparse
+import shutil
 import subprocess
 import platform
 import urllib.request as ulib
@@ -127,14 +128,13 @@ def _install_bazel():
     logging.info(bazel_download_url)
     ulib.urlretrieve(bazel_download_url, local_name)
     os.chmod(local_name, 0o777)
-
+    if shutil.which("bazel"):
+        os.remove(shutil.which("bazel"))
     if _is_windows():
         bazel_path = os.path.join(os.getcwd(), local_name)
         _exec_cmd(f'setx path "%PATH%;{bazel_path}"')
     else:
         _exec_cmd(f"./{local_name} --user")
-        _exec_cmd("sh ~/.bazel/bin/bazel-complete.bash")
-        _exec_cmd("ln -s ~/.bazel/bin/bazel.fish ~/.config/fish/completions/bazel.fish")
         os.remove(local_name)
 
     # bazel install status check
