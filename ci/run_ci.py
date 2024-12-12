@@ -135,7 +135,7 @@ def _install_bazel():
     else:
         if shutil.which("bazel"):
             os.remove(shutil.which("bazel"))
-        _exec_cmd(f"${PROJECT_ROOT_DIR}/ci/run_ci.sh install_bazel")
+        _exec_cmd("ci/run_ci.sh install_bazel")
         os.remove(local_name)
 
     # bazel install status check
