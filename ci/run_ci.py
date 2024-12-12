@@ -17,6 +17,7 @@
 
 
 import argparse
+import shutil
 import subprocess
 import platform
 import urllib.request as ulib
@@ -132,7 +133,9 @@ def _install_bazel():
         bazel_path = os.path.join(os.getcwd(), local_name)
         _exec_cmd(f'setx path "%PATH%;{bazel_path}"')
     else:
-        _exec_cmd(f"./{local_name} --user")
+        if shutil.which("bazel"):
+            os.remove(shutil.which("bazel"))
+        _exec_cmd(f"./run_ci.sh install_bazel")
         os.remove(local_name)
 
     # bazel install status check

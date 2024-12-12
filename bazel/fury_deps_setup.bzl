@@ -125,12 +125,6 @@ def setup_deps():
         ],
     )
     http_archive(
-        name = "rules_cc",
-        urls = ["https://github.com/bazelbuild/rules_cc/releases/download/0.0.17/rules_cc-0.0.17.tar.gz"],
-        sha256 = "abc605dd850f813bb37004b77db20106a19311a96b2da1c92b789da529d28fe1",
-        strip_prefix = "rules_cc-0.0.17",
-    )
-    http_archive(
         name = "rules_python",
         sha256 = "9fcf91dbcc31fde6d1edb15f117246d912c33c36f44cf681976bd886538deba6",
         strip_prefix = "rules_python-0.8.0",
