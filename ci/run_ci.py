@@ -17,6 +17,7 @@
 
 
 import argparse
+import shutil
 import subprocess
 import platform
 import urllib.request as ulib
@@ -35,6 +36,11 @@ PROJECT_ROOT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
+
+
+def _bazel(cmd: str):
+    bazel_cmd = "bazel" if _is_windows() else "~/bin/bazel"
+    return _exec_cmd(f"{bazel_cmd} {cmd}")
 
 
 def _exec_cmd(cmd: str):
@@ -81,10 +87,8 @@ def _cd_project_subdir(subdir):
 def _run_cpp():
     _install_cpp_deps()
     # run test
-    query_result = _exec_cmd("bazel query //...")
-    _exec_cmd(
-        "bazel test {}".format(query_result.replace("\n", " ").replace("\r", " "))
-    )
+    query_result = _bazel("query //...")
+    _bazel("test {}".format(query_result.replace("\n", " ").replace("\r", " ")))
 
 
 def _run_rust():
@@ -132,11 +136,14 @@ def _install_bazel():
         bazel_path = os.path.join(os.getcwd(), local_name)
         _exec_cmd(f'setx path "%PATH%;{bazel_path}"')
     else:
+        if shutil.which("bazel"):
+            os.remove(shutil.which("bazel"))
         _exec_cmd(f"./{local_name} --user")
+        _update_shell_profile()
         os.remove(local_name)
 
     # bazel install status check
-    _exec_cmd("bazel --version")
+    _bazel("--version")
 
     # default is byte
     psutil = importlib.import_module("psutil")
@@ -144,6 +151,21 @@ def _install_bazel():
     limit_jobs = int(total_mem / 1024 / 1024 / 1024 / 3)
     with open(".bazelrc", "a") as file:
         file.write(f"\nbuild --jobs={limit_jobs}")
+
+
+def _update_shell_profile():
+    home = os.path.expanduser("~")
+    profiles = [".bashrc", ".bash_profile", ".zshrc"]
+    path_export = 'export PATH="$PATH:$HOME/bin" # Add Bazel to PATH\n'
+    for profile in profiles:
+        profile_path = os.path.join(home, profile)
+        if os.path.exists(profile_path):
+            with open(profile_path, "a") as f:
+                f.write(path_export)
+            logging.info(f"Updated {profile} to include Bazel PATH.")
+            break
+    else:
+        logging.info("No shell profile found. Please add Bazel to PATH manually.")
 
 
 def _parse_args():
