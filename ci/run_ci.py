@@ -39,10 +39,8 @@ logging.basicConfig(
 
 
 def _bazel(cmd: str):
-    if _is_windows():
-        _exec_cmd(f"bazel {cmd}")
-    else:
-        _exec_cmd(f"~/bin/bazel {cmd}")
+    bazel_cmd = "bazel" if _is_windows() else "~/bin/bazel"
+    return _exec_cmd(f"{bazel_cmd} {cmd}")
 
 
 def _exec_cmd(cmd: str):
