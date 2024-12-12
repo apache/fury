@@ -134,7 +134,7 @@ def _install_bazel():
         _exec_cmd(f'setx path "%PATH%;{bazel_path}"')
     else:
         if shutil.which("bazel"):
-            os.remove("~/bin/bazel")
+            os.remove(shutil.which("bazel"))
         _exec_cmd(f"./{local_name} --user")
         _update_shell_profile()
         os.remove(local_name)
