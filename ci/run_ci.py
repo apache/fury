@@ -134,8 +134,9 @@ def _install_bazel():
         _exec_cmd(f'setx path "%PATH%;{bazel_path}"')
     else:
         if shutil.which("bazel"):
-            os.remove(shutil.which("bazel"))
-        _exec_cmd("ci/run_ci.sh install_bazel")
+            os.remove("~/bin/bazel")
+        _exec_cmd(f"./{local_name} --user")
+        _update_shell_profile()
         os.remove(local_name)
 
     # bazel install status check
@@ -147,6 +148,21 @@ def _install_bazel():
     limit_jobs = int(total_mem / 1024 / 1024 / 1024 / 3)
     with open(".bazelrc", "a") as file:
         file.write(f"\nbuild --jobs={limit_jobs}")
+
+
+def _update_shell_profile():
+    home = os.path.expanduser('~')
+    profiles = ['.bashrc', '.bash_profile', '.zshrc']
+    path_export = 'export PATH="$PATH:$HOME/bin" # Add Bazel to PATH\n'
+    for profile in profiles:
+        profile_path = os.path.join(home, profile)
+        if os.path.exists(profile_path):
+            with open(profile_path, 'a') as f:
+                f.write(path_export)
+            print(f"Updated {profile} to include Bazel PATH.")
+            break
+    else:
+        print("No shell profile found. Please add Bazel to PATH manually.")
 
 
 def _parse_args():
