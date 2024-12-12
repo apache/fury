@@ -133,6 +133,8 @@ def _install_bazel():
         _exec_cmd(f'setx path "%PATH%;{bazel_path}"')
     else:
         _exec_cmd(f"./{local_name} --user")
+        _exec_cmd("source ~/.bazel/bin/bazel-complete.bash")
+        _exec_cmd("ln -s ~/.bazel/bin/bazel.fish ~/.config/fish/completions/bazel.fish")
         os.remove(local_name)
 
     # bazel install status check

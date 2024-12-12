@@ -47,7 +47,6 @@ install_pyfury() {
 }
 
 install_bazel() {
-  rm -rf ~/bin/bazel
   if command -v bazel >/dev/null; then
     echo "existing bazel location $(which bazel)"
     echo "existing bazel version $(bazel version)"
