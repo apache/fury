@@ -38,6 +38,13 @@ logging.basicConfig(
 )
 
 
+def _bazel(cmd: str):
+    if _is_windows():
+        _exec_cmd(f"bazel {cmd}")
+    else:
+        _exec_cmd(f"~/bin/bazel {cmd}")
+
+
 def _exec_cmd(cmd: str):
     logging.info(f"running command: {cmd}")
     try:
@@ -82,9 +89,9 @@ def _cd_project_subdir(subdir):
 def _run_cpp():
     _install_cpp_deps()
     # run test
-    query_result = _exec_cmd("~/bin/bazel query //...")
-    _exec_cmd(
-        "~/bin/bazel test {}".format(query_result.replace("\n", " ").replace("\r", " "))
+    query_result = _bazel("query //...")
+    _bazel(
+        "test {}".format(query_result.replace("\n", " ").replace("\r", " "))
     )
 
 
@@ -140,7 +147,7 @@ def _install_bazel():
         os.remove(local_name)
 
     # bazel install status check
-    _exec_cmd("~/bin/bazel --version")
+    _bazel("--version")
 
     # default is byte
     psutil = importlib.import_module("psutil")
