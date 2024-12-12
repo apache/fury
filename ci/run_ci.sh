@@ -64,7 +64,6 @@ install_bazel() {
   set +x
   ./install.sh --user
   source ~/.bazel/bin/bazel-complete.bash
-  ln -s ~/.bazel/bin/bazel.fish ~/.config/fish/completions/bazel.fish
   set -x
   export PATH=~/bin:$PATH
   echo "$HOME/bin/bazel version: $(~/bin/bazel version)"
