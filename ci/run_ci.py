@@ -82,9 +82,9 @@ def _cd_project_subdir(subdir):
 def _run_cpp():
     _install_cpp_deps()
     # run test
-    query_result = _exec_cmd("bazel query //...")
+    query_result = _exec_cmd("~/bin/bazel query //...")
     _exec_cmd(
-        "bazel test {}".format(query_result.replace("\n", " ").replace("\r", " "))
+        "~/bin/bazel test {}".format(query_result.replace("\n", " ").replace("\r", " "))
     )
 
 
@@ -140,7 +140,7 @@ def _install_bazel():
         os.remove(local_name)
 
     # bazel install status check
-    _exec_cmd("bazel --version")
+    _exec_cmd("~/bin/bazel --version")
 
     # default is byte
     psutil = importlib.import_module("psutil")
@@ -159,10 +159,10 @@ def _update_shell_profile():
         if os.path.exists(profile_path):
             with open(profile_path, 'a') as f:
                 f.write(path_export)
-            print(f"Updated {profile} to include Bazel PATH.")
+            logging.info(f"Updated {profile} to include Bazel PATH.")
             break
     else:
-        print("No shell profile found. Please add Bazel to PATH manually.")
+        logging.info("No shell profile found. Please add Bazel to PATH manually.")
 
 
 def _parse_args():
