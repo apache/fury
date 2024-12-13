@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import org.apache.fury.Fury;
 import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.util.unsafe.DefineClass;
@@ -165,6 +166,33 @@ public class ClassLoaderUtils {
         }
       }
       return super.getResource(name);
+    }
+  }
+
+  /** A classloader to load Fury jar classes only. */
+  public static class FuryJarClassLoader extends URLClassLoader {
+    static {
+      ClassLoader.registerAsParallelCapable();
+    }
+
+    private static final ParentClassLoader LOADER =
+        new ParentClassLoader(Fury.class.getClassLoader());
+    private static final FuryJarClassLoader FURY_JAR_LOADER = new FuryJarClassLoader();
+
+    private FuryJarClassLoader() {
+      super(new URL[0]);
+    }
+
+    @Override
+    public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+      if (name.startsWith(Fury.class.getPackage().getName()) && !name.contains("test")) {
+        return LOADER.loadClass(name, resolve);
+      }
+      return null;
+    }
+
+    public static FuryJarClassLoader getInstance() {
+      return FURY_JAR_LOADER;
     }
   }
 

@@ -23,18 +23,24 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInput;
 import org.apache.fury.Fury;
+import org.apache.fury.config.LongEncoding;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.serializer.PrimitiveSerializers.LongSerializer;
 import org.apache.fury.serializer.StringSerializer;
 import org.apache.fury.util.Preconditions;
 
 /** ObjectInput based on {@link Fury} and {@link MemoryBuffer}. */
 public class MemoryBufferObjectInput extends InputStream implements ObjectInput {
   private final Fury fury;
+  private final boolean compressInt;
+  private final LongEncoding longEncoding;
   private MemoryBuffer buffer;
   private final StringSerializer stringSerializer;
 
   public MemoryBufferObjectInput(Fury fury, MemoryBuffer buffer) {
     this.fury = fury;
+    this.compressInt = fury.compressInt();
+    this.longEncoding = fury.longEncoding();
     this.buffer = buffer;
     this.stringSerializer = new StringSerializer(fury);
   }
@@ -134,12 +140,12 @@ public class MemoryBufferObjectInput extends InputStream implements ObjectInput 
 
   @Override
   public int readInt() throws IOException {
-    return buffer.readInt32();
+    return compressInt ? buffer.readVarInt32() : buffer.readInt32();
   }
 
   @Override
   public long readLong() throws IOException {
-    return buffer.readInt64();
+    return LongSerializer.readInt64(buffer, longEncoding);
   }
 
   @Override

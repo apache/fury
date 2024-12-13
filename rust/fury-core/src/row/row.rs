@@ -74,7 +74,7 @@ impl<'a> Row<'a> for String {
     }
 }
 
-impl<'a> Row<'a> for bool {
+impl Row<'_> for bool {
     type ReadResult = Self;
 
     fn write(v: &Self, writer: &mut Writer) {
@@ -86,7 +86,7 @@ impl<'a> Row<'a> for bool {
     }
 }
 
-impl<'a> Row<'a> for NaiveDate {
+impl Row<'_> for NaiveDate {
     type ReadResult = Result<NaiveDate, Error>;
 
     fn write(v: &Self, writer: &mut Writer) {
@@ -104,7 +104,7 @@ impl<'a> Row<'a> for NaiveDate {
     }
 }
 
-impl<'a> Row<'a> for NaiveDateTime {
+impl Row<'_> for NaiveDateTime {
     type ReadResult = Result<NaiveDateTime, Error>;
 
     fn write(v: &Self, writer: &mut Writer) {
