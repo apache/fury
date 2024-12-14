@@ -247,186 +247,6 @@ cdef int32_t NOT_NULL_STRING_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | \
                                     (STRING_CLASS_ID << 9)
 cdef int32_t SMALL_STRING_THRESHOLD = 16
 
-cdef class BufferObject:
-    """
-    Fury binary representation of an object.
-    Note: This class is used for zero-copy out-of-band serialization and shouldn't be
-    used for any other cases.
-    """
-
-    cpdef int32_t total_bytes(self):
-        """total size for serialized bytes of an object"""
-        raise NotImplementedError
-
-    cpdef write_to(self, Buffer buffer):
-        """Write serialized object to a buffer."""
-        raise NotImplementedError
-
-    cpdef Buffer to_buffer(self):
-        """Write serialized data as Buffer."""
-        raise NotImplementedError
-
-@cython.final
-cdef class BytesBufferObject(BufferObject):
-    cdef public bytes binary
-
-    def __init__(self, bytes binary):
-        self.binary = binary
-
-    cpdef inline int32_t total_bytes(self):
-        return len(self.binary)
-
-    cpdef inline write_to(self, Buffer buffer):
-        buffer.write_bytes(self.binary)
-
-    cpdef inline Buffer to_buffer(self):
-        return Buffer(self.binary)
-
-@cython.final
-cdef class ClassResolver:
-    cdef:
-        readonly Fury fury
-        vector[PyObject *] _c_registered_id_to_class_info
-        # cls -> ClassInfo
-        flat_hash_map[uint64_t, PyObject *] _c_classes_info
-        # hash -> ClassInfo
-        flat_hash_map[int64_t, PyObject *] _c_hash_to_classinfo
-        flat_hash_map[pair[int64_t, int64_t], PyObject *] _c_meta_hash_to_classinfo
-        MetaStringResolver meta_string_resolver
-
-    def __init__(self, fury):
-        self.fury = fury
-        self.metastring_resolver = fury.metastring_resolver
-        from pyfury._registry import ClassResolver
-        self._resolver = ClassResolver(fury)
-
-    def initialize(self):
-        self._resolver.initialize()
-
-    def register_type(
-            self,
-            cls: Union[type, TypeVar],
-            *,
-            type_id: int = None,
-            namespace: str = None,
-            typename: str = None,
-            serializer=None,
-    ):
-
-        self._resolver.register_type(
-            cls,
-            type_id=type_id,
-            namespace=namespace,
-            typename=typename,
-            serializer=serializer,
-        )
-
-    def register_serializer(self, cls: Union[type, TypeVar], serializer):
-
-        self._resolver.register_type(cls, serializer)
-
-    cpdef inline Serializer get_serializer(self, cls=None, obj=None):
-        """
-        Returns
-        -------
-            Returns or create serializer for the provided class
-        """
-        return get_classinfo(cls=cls, obj=obj).serializer
-
-    cpdef inline ClassInfo get_classinfo(self, cls):
-        cdef PyObject * classinfo_ptr = self._c_classes_info[<uintptr_t> <PyObject *> cls]
-        cdef ClassInfo class_info
-        if classinfo_ptr != NULL:
-            class_info = <object> classinfo_ptr
-            if class_info.serializer is not None:
-                return class_info
-            else:
-                class_info.serializer = self._resolver._create_serializer(cls)
-                return class_info
-        else:
-            class_info = self._resolver.get_classinfo(cls)
-            self._c_classes_info[<uintptr_t> <PyObject *> cls] = <PyObject *> class_info
-            return class_info
-
-    cpdef inline write_classinfo(self, Buffer buffer, ClassInfo classinfo):
-        cdef int32_t type_id = classinfo.type_id
-        if type_id != NO_CLASS_ID:
-            buffer.write_varint32((type_id << 1))
-            return
-        buffer.write_varint32(1)
-        self._write_meta_string_bytes(buffer, classinfo.class_name_bytes)
-
-    cpdef inline ClassInfo read_classinfo(self, Buffer buffer):
-        cdef int32_t h1 = buffer.read_varuint32()
-        cdef int32_t type_id = h1 >> 1
-        cdef ClassInfo classinfo
-        cdef PyObject * classinfo_ptr
-        # registered class id are greater than `NO_CLASS_ID`.
-        if h1 & 0b1 == 0:
-            assert type_id >= 0, type_id
-            classinfo_ptr = self._c_registered_id_to_class_info[type_id]
-            if classinfo_ptr == NULL:
-                raise ValueError(f"Unexpected type_id {type_id}")
-            classinfo = <ClassInfo> classinfo_ptr
-            if classinfo.serializer is None:
-                classinfo.serializer = self._resolver._create_serializer(classinfo.cls)
-            return classinfo
-        cdef MetaStringBytes ns_metabytes = self.metastring_resolver.read_meta_string_bytes(buffer)
-        cdef MetaStringBytes type_metabytes = self.metastring_resolver.read_meta_string_bytes(buffer)
-        typeinfo = self._ns_type_to_classinfo.get((ns_metabytes, type_metabytes))
-        if typeinfo is None:
-            ns = ns_metabytes.decode(self._namespace_decoder)
-            typename = type_metabytes.decode(self._typename_decoder)
-            cls = load_class(ns + "#" + typename)
-            classinfo = self.get_classinfo(cls)
-        return classinfo
-
-    cdef inline ClassInfo _load_bytes_to_classinfo(
-            self, int32_t type_id, MetaStringBytes ns_metabytes, MetaStringBytes type_metabytes):
-        cdef PyObject * classinfo_ptr = self._c_meta_hash_to_classinfo[
-            pair[int64_t, int64_t](ns_metabytes.hashcode, type_metabytes.hashcode)]
-        if classinfo_ptr != NULL:
-            return <ClassInfo> classinfo_ptr
-        classinfo = self._resolver._load_metabytes_to_classinfo(ns_metabytes, type_metabytes)
-        classinfo_ptr = <PyObject *> classinfo
-        self._c_meta_hash_to_classinfo[pair[int64_t, int64_t](
-            ns_metabytes.hashcode, type_metabytes.hashcode)] = classinfo_ptr
-        return classinfo
-
-    cpdef xwrite_typeinfo(self, Buffer buffer, ClassInfo classinfo):
-        cdef:
-            int32_t type_id = classinfo.type_id
-            int32_t internal_type_id = type_id & 0xFF
-        buffer.write_varuint32(type_id)
-        if IsNamespacedType(internal_type_id):
-            self.metastring_resolver.write_meta_string_bytes(buffer, classinfo.namespace_bytes)
-            self.metastring_resolver.write_meta_string_bytes(buffer, classinfo.typename_bytes)
-
-    cpdef inline ClassInfo read_typeinfo(self, Buffer buffer):
-        cdef:
-            int32_t type_id = buffer.read_varuint32()
-            int32_t internal_type_id = type_id & 0xFF
-        assert type_id != 0
-        cdef MetaStringBytes namespace_bytes, typename_bytes
-        if IsNamespacedType(internal_type_id):
-            namespace_bytes = self.metastring_resolver.read_meta_string_bytes(buffer)
-            typename_bytes = self.metastring_resolver.read_meta_string_bytes(buffer)
-            return self._load_bytes_to_classinfo(type_id, namespace_bytes, typename_bytes)
-        classinfo_ptr = self._c_registered_id_to_class_info[type_id]
-        if classinfo_ptr == NULL:
-            raise ValueError(f"Unexpected type_id {type_id}")
-        classinfo = <ClassInfo> classinfo_ptr
-        return classinfo
-
-    cpdef inline reset(self):
-            pass
-
-    cpdef inline reset_read(self):
-        pass
-
-    cpdef inline reset_write(self):
-        pass
-
 
 @cython.final
 cdef class MetaStringBytes:
@@ -575,6 +395,153 @@ cdef class ClassInfo:
     def __repr__(self):
         return f"ClassInfo(cls={self.cls}, type_id={self.type_id}, " \
                f"serializer={self.serializer})"
+
+
+@cython.final
+cdef class ClassResolver:
+    cdef:
+        readonly Fury fury
+        vector[PyObject *] _c_registered_id_to_class_info
+        # cls -> ClassInfo
+        flat_hash_map[uint64_t, PyObject *] _c_classes_info
+        # hash -> ClassInfo
+        flat_hash_map[int64_t, PyObject *] _c_hash_to_classinfo
+        flat_hash_map[pair[int64_t, int64_t], PyObject *] _c_meta_hash_to_classinfo
+        MetaStringResolver meta_string_resolver
+
+    def __init__(self, fury):
+        self.fury = fury
+        self.metastring_resolver = fury.metastring_resolver
+        from pyfury._registry import ClassResolver
+        self._resolver = ClassResolver(fury)
+
+    def initialize(self):
+        self._resolver.initialize()
+
+    def register_type(
+            self,
+            cls: Union[type, TypeVar],
+            *,
+            type_id: int = None,
+            namespace: str = None,
+            typename: str = None,
+            serializer=None,
+    ):
+
+        self._resolver.register_type(
+            cls,
+            type_id=type_id,
+            namespace=namespace,
+            typename=typename,
+            serializer=serializer,
+        )
+
+    def register_serializer(self, cls: Union[type, TypeVar], serializer):
+
+        self._resolver.register_type(cls, serializer)
+
+    cpdef inline Serializer get_serializer(self, cls=None, obj=None):
+        """
+        Returns
+        -------
+            Returns or create serializer for the provided class
+        """
+        return get_classinfo(cls=cls, obj=obj).serializer
+
+    cpdef inline ClassInfo get_classinfo(self, cls):
+        cdef PyObject * classinfo_ptr = self._c_classes_info[<uintptr_t> <PyObject *> cls]
+        cdef ClassInfo class_info
+        if classinfo_ptr != NULL:
+            class_info = <object> classinfo_ptr
+            if class_info.serializer is not None:
+                return class_info
+            else:
+                class_info.serializer = self._resolver._create_serializer(cls)
+                return class_info
+        else:
+            class_info = self._resolver.get_classinfo(cls)
+            self._c_classes_info[<uintptr_t> <PyObject *> cls] = <PyObject *> class_info
+            return class_info
+
+    cpdef inline write_classinfo(self, Buffer buffer, ClassInfo classinfo):
+        cdef int32_t type_id = classinfo.type_id
+        if type_id != NO_CLASS_ID:
+            buffer.write_varint32((type_id << 1))
+            return
+        buffer.write_varint32(1)
+        self._write_meta_string_bytes(buffer, classinfo.class_name_bytes)
+
+    cpdef inline ClassInfo read_classinfo(self, Buffer buffer):
+        cdef int32_t h1 = buffer.read_varuint32()
+        cdef int32_t type_id = h1 >> 1
+        cdef ClassInfo classinfo
+        cdef PyObject * classinfo_ptr
+        # registered class id are greater than `NO_CLASS_ID`.
+        if h1 & 0b1 == 0:
+            assert type_id >= 0, type_id
+            classinfo_ptr = self._c_registered_id_to_class_info[type_id]
+            if classinfo_ptr == NULL:
+                raise ValueError(f"Unexpected type_id {type_id}")
+            classinfo = <ClassInfo> classinfo_ptr
+            if classinfo.serializer is None:
+                classinfo.serializer = self._resolver._create_serializer(classinfo.cls)
+            return classinfo
+        cdef MetaStringBytes ns_metabytes = self.metastring_resolver.read_meta_string_bytes(buffer)
+        cdef MetaStringBytes type_metabytes = self.metastring_resolver.read_meta_string_bytes(buffer)
+        typeinfo = self._ns_type_to_classinfo.get((ns_metabytes, type_metabytes))
+        if typeinfo is None:
+            ns = ns_metabytes.decode(self._namespace_decoder)
+            typename = type_metabytes.decode(self._typename_decoder)
+            cls = load_class(ns + "#" + typename)
+            classinfo = self.get_classinfo(cls)
+        return classinfo
+
+    cdef inline ClassInfo _load_bytes_to_classinfo(
+            self, int32_t type_id, MetaStringBytes ns_metabytes, MetaStringBytes type_metabytes):
+        cdef PyObject * classinfo_ptr = self._c_meta_hash_to_classinfo[
+            pair[int64_t, int64_t](ns_metabytes.hashcode, type_metabytes.hashcode)]
+        if classinfo_ptr != NULL:
+            return <ClassInfo> classinfo_ptr
+        classinfo = self._resolver._load_metabytes_to_classinfo(ns_metabytes, type_metabytes)
+        classinfo_ptr = <PyObject *> classinfo
+        self._c_meta_hash_to_classinfo[pair[int64_t, int64_t](
+            ns_metabytes.hashcode, type_metabytes.hashcode)] = classinfo_ptr
+        return classinfo
+
+    cpdef xwrite_typeinfo(self, Buffer buffer, ClassInfo classinfo):
+        cdef:
+            int32_t type_id = classinfo.type_id
+            int32_t internal_type_id = type_id & 0xFF
+        buffer.write_varuint32(type_id)
+        if IsNamespacedType(internal_type_id):
+            self.metastring_resolver.write_meta_string_bytes(buffer, classinfo.namespace_bytes)
+            self.metastring_resolver.write_meta_string_bytes(buffer, classinfo.typename_bytes)
+
+    cpdef inline ClassInfo read_typeinfo(self, Buffer buffer):
+        cdef:
+            int32_t type_id = buffer.read_varuint32()
+            int32_t internal_type_id = type_id & 0xFF
+        assert type_id != 0
+        cdef MetaStringBytes namespace_bytes, typename_bytes
+        if IsNamespacedType(internal_type_id):
+            namespace_bytes = self.metastring_resolver.read_meta_string_bytes(buffer)
+            typename_bytes = self.metastring_resolver.read_meta_string_bytes(buffer)
+            return self._load_bytes_to_classinfo(type_id, namespace_bytes, typename_bytes)
+        classinfo_ptr = self._c_registered_id_to_class_info[type_id]
+        if classinfo_ptr == NULL:
+            raise ValueError(f"Unexpected type_id {type_id}")
+        classinfo = <ClassInfo> classinfo_ptr
+        return classinfo
+
+    cpdef inline reset(self):
+        pass
+
+    cpdef inline reset_read(self):
+        pass
+
+    cpdef inline reset_write(self):
+        pass
+
 
 @cython.final
 cdef class Fury:
@@ -897,7 +864,7 @@ cdef class Fury:
             serializer = self.class_resolver.read_typeinfo(buffer).serializer
         return serializer.xread(buffer)
 
-    cpdef inline write_buffer_object(self, Buffer buffer, BufferObject buffer_object):
+    cpdef inline write_buffer_object(self, Buffer buffer, buffer_object):
         if self._buffer_callback is not None and self._buffer_callback(buffer_object):
             buffer.write_bool(False)
             return

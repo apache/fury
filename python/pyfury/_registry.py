@@ -70,8 +70,43 @@ PICKLE_CACHE_CLASS_ID = 7
 NOT_NULL_PYINT_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (PYINT_CLASS_ID << 9)
 NOT_NULL_PYFLOAT_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (PYFLOAT_CLASS_ID << 9)
 NOT_NULL_PYBOOL_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (PYBOOL_CLASS_ID << 9)
-NOT_NULL_STRING_FLAG = NOT_NULL_VALUE_FLANOT_NULL_STRING_FLAGG & 0b11111111 | (STRING_CLASS_ID << 9)
+NOT_NULL_STRING_FLAG = NOT_NULL_VALUE_FLANOT_NULL_STRING_FLAGG & 0b11111111 | (
+    STRING_CLASS_ID << 9
+)
 SMALL_STRING_THRESHOLD = 16
+
+
+class ClassInfo:
+    __slots__ = (
+        "cls",
+        "class_id",
+        "serializer",
+        "namespace_bytes",
+        "typename_bytes",
+        "dynamic_type",
+    )
+
+    def __init__(
+        self,
+        cls: type = None,
+        class_id: int = NO_CLASS_ID,
+        serializer: Serializer = None,
+        namespace_bytes=None,
+        typename_bytes=None,
+        dynamic_type: bool = False,
+    ):
+        self.cls = cls
+        self.class_id = class_id
+        self.serializer = serializer
+        self.namespace_bytes = namespace_bytes
+        self.typename_bytes = typename_bytes
+        self.dynamic_type = dynamic_type
+
+    def __repr__(self):
+        return (
+            f"ClassInfo(cls={self.cls}, class_id={self.class_id}, "
+            f"serializer={self.serializer})"
+        )
 
 
 class ClassResolver:
@@ -119,6 +154,7 @@ class ClassResolver:
         self._typename_decoder = MetaStringDecoder("$", "_")
 
         from pyfury import MetaStringResolver
+
         self._meta_string_resolver = MetaStringResolver()
 
     def initialize(self):
@@ -360,8 +396,6 @@ class ClassResolver:
         serializer: Serializer = None,
         internal: bool = False,
     ):
-        from pyfury import ClassInfo
-
         if serializer is None:
             serializer = self._create_serializer(cls)
         if typename is None:
@@ -461,8 +495,12 @@ class ClassResolver:
             buffer.write_varuint32(class_id << 1)
             return
         buffer.write_varuint32(1)
-        self._meta_string_resolver.write_meta_string_bytes(buffer, classinfo.namespace_bytes)
-        self._meta_string_resolver.write_meta_string_bytes(buffer, classinfo.typename_bytes)
+        self._meta_string_resolver.write_meta_string_bytes(
+            buffer, classinfo.namespace_bytes
+        )
+        self._meta_string_resolver.write_meta_string_bytes(
+            buffer, classinfo.typename_bytes
+        )
 
     def read_classinfo(self, buffer):
         header = buffer.read_varuint32()
@@ -493,8 +531,12 @@ class ClassResolver:
         internal_type_id = type_id & 0xFF
         buffer.write_varuint32(type_id)
         if TypeId.is_namespaced_type(internal_type_id):
-            self._meta_string_resolver.write_meta_string_bytes(buffer, classinfo.namespace_bytes)
-            self._meta_string_resolver.write_meta_string_bytes(buffer, classinfo.typename_bytes)
+            self._meta_string_resolver.write_meta_string_bytes(
+                buffer, classinfo.namespace_bytes
+            )
+            self._meta_string_resolver.write_meta_string_bytes(
+                buffer, classinfo.typename_bytes
+            )
 
     def xread_typeinfo(self, buffer):
         type_id = buffer.read_varuint32()

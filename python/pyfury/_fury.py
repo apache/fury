@@ -65,39 +65,6 @@ DEFAULT_DYNAMIC_WRITE_STRING_ID = -1
 MAGIC_NUMBER = 0x62D4
 
 
-class ClassInfo:
-    __slots__ = (
-        "cls",
-        "class_id",
-        "serializer",
-        "namespace_bytes",
-        "typename_bytes",
-        "dynamic_type",
-    )
-
-    def __init__(
-        self,
-        cls: type = None,
-        class_id: int = NO_CLASS_ID,
-        serializer: Serializer = None,
-        namespace_bytes = None,
-        typename_bytes = None,
-        dynamic_type: bool = False,
-    ):
-        self.cls = cls
-        self.class_id = class_id
-        self.serializer = serializer
-        self.namespace_bytes = namespace_bytes
-        self.typename_bytes = typename_bytes
-        self.dynamic_type = dynamic_type
-
-    def __repr__(self):
-        return (
-            f"ClassInfo(cls={self.cls}, class_id={self.class_id}, "
-            f"serializer={self.serializer})"
-        )
-
-
 class Language(enum.Enum):
     XLANG = 0
     JAVA = 1
@@ -113,6 +80,26 @@ class OpaqueObject:
     language: Language
     classname: str
     ordinal: int
+
+
+class BufferObject(ABC):
+    """
+    Fury binary representation of an object.
+    Note: This class is used for zero-copy out-of-band serialization and shouldn't
+     be used for any other cases.
+    """
+
+    @abstractmethod
+    def total_bytes(self) -> int:
+        """total size for serialized bytes of an object"""
+
+    @abstractmethod
+    def write_to(self, buffer: "Buffer"):
+        """Write serialized object to a buffer."""
+
+    @abstractmethod
+    def to_buffer(self) -> "Buffer":
+        """Write serialized data as Buffer."""
 
 
 class Fury:

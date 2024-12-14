@@ -42,26 +42,6 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-class BufferObject(ABC):
-    """
-    Fury binary representation of an object.
-    Note: This class is used for zero-copy out-of-band serialization and shouldn't
-     be used for any other cases.
-    """
-
-    @abstractmethod
-    def total_bytes(self) -> int:
-        """total size for serialized bytes of an object"""
-
-    @abstractmethod
-    def write_to(self, buffer: "Buffer"):
-        """Write serialized object to a buffer."""
-
-    @abstractmethod
-    def to_buffer(self) -> "Buffer":
-        """Write serialized data as Buffer."""
-
-
 class BytesBufferObject(BufferObject):
     __slots__ = ("binary",)
 
