@@ -42,25 +42,6 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-USE_CLASSNAME = 0
-USE_CLASS_ID = 1
-# preserve 0 as flag for class id not set in ClassInfo`
-NO_CLASS_ID = 0
-PYINT_CLASS_ID = 1
-PYFLOAT_CLASS_ID = 2
-PYBOOL_CLASS_ID = 3
-STRING_CLASS_ID = 4
-PICKLE_CLASS_ID = 5
-PICKLE_STRONG_CACHE_CLASS_ID = 6
-PICKLE_CACHE_CLASS_ID = 7
-# `NOT_NULL_VALUE_FLAG` + `CLASS_ID << 1` in little-endian order
-NOT_NULL_PYINT_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (PYINT_CLASS_ID << 9)
-NOT_NULL_PYFLOAT_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (PYFLOAT_CLASS_ID << 9)
-NOT_NULL_PYBOOL_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (PYBOOL_CLASS_ID << 9)
-NOT_NULL_STRING_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (STRING_CLASS_ID << 9)
-SMALL_STRING_THRESHOLD = 16
-
-
 class BufferObject(ABC):
     """
     Fury binary representation of an object.
@@ -308,7 +289,7 @@ class CollectionSerializer(Serializer):
         for s in value:
             cls = type(s)
             if cls is str:
-                buffer.write_int16(NOT_NULL_STRING_FLAG)
+                buffer.write_int16()
                 buffer.write_string(s)
             elif cls is int:
                 buffer.write_int16(NOT_NULL_PYINT_FLAG)
@@ -318,7 +299,7 @@ class CollectionSerializer(Serializer):
                 buffer.write_bool(s)
             else:
                 if not self.ref_resolver.write_ref_or_null(buffer, s):
-                    classinfo = self.class_resolver.get_or_create_classinfo(cls)
+                    classinfo = self.class_resolver.get_classinfo(cls)
                     self.class_resolver.write_classinfo(buffer, classinfo)
                     classinfo.serializer.write(buffer, s)
 
@@ -430,7 +411,7 @@ class MapSerializer(Serializer):
                 buffer.write_string(k)
             else:
                 if not self.ref_resolver.write_ref_or_null(buffer, k):
-                    classinfo = self.class_resolver.get_or_create_classinfo(key_cls)
+                    classinfo = self.class_resolver.get_classinfo(key_cls)
                     self.class_resolver.write_classinfo(buffer, classinfo)
                     classinfo.serializer.write(buffer, k)
             value_cls = type(v)
@@ -442,7 +423,7 @@ class MapSerializer(Serializer):
                 buffer.write_varint64(v)
             else:
                 if not self.ref_resolver.write_ref_or_null(buffer, v):
-                    classinfo = self.class_resolver.get_or_create_classinfo(value_cls)
+                    classinfo = self.class_resolver.get_classinfo(value_cls)
                     self.class_resolver.write_classinfo(buffer, classinfo)
                     classinfo.serializer.write(buffer, v)
 

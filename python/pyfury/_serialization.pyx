@@ -285,44 +285,29 @@ cdef class BytesBufferObject(BufferObject):
 cdef class ClassResolver:
     cdef:
         readonly Fury fury
-        dict _type_id_to_class  # Dict[int, type]
-        dict _type_id_to_serializer  # Dict[int, Serializer]
-        dict _type_id_and_cls_to_serializer  # Dict[Tuple[int, type], Serializer]
-        dict _type_tag_to_class_x_lang_map
         int16_t _type_id_counter
-        set _used_classes_id
-
         public list _registered_id_to_class_info
         vector[PyObject *] _c_registered_id_to_class_info
-
         # cls -> ClassInfo
         flat_hash_map[uint64_t, PyObject *] _c_classes_info
         # hash -> ClassInfo
         flat_hash_map[int64_t, PyObject *] _c_hash_to_classinfo
-        flat_hash_map[pair[int64_t, int64_t], PyObject *] _c_2hash_to_classinfo
-        # hash -> MetaStringBytes
-        flat_hash_map[int64_t, PyObject *] _c_hash_to_metastr_bytes
-        flat_hash_map[pair[int64_t, int64_t], PyObject *] _c_hash_to_small_metastring_bytes
-        # classname MetaStringBytes address -> class
-        flat_hash_map[uint64_t, PyObject *] _c_str_bytes_to_class
-        # classname MetaStringBytes address -> str
-        flat_hash_map[uint64_t, PyObject *] _c_enum_str_to_str
-
-        int16_t dynamic_write_string_id
-        vector[PyObject *] _c_dynamic_written_enum_string
-        vector[PyObject *] _c_dynamic_id_to_enum_string_vec
+        flat_hash_map[pair[int64_t, int64_t], PyObject *] _c_meta_hash_to_classinfo
         vector[PyObject *] _c_dynamic_id_to_classinfo_vec
-        Serializer _serializer
-
         # hold objects to avoid gc, since flat_hash_map/vector doesn't
         # hold python reference.
-        public dict _classes_info  # Dict[type, "ClassInfo"]
+        dict _classes_info  # Dict[type, "ClassInfo"]
         set _class_set
         set _classname_set
         set _enum_str_set
+        MetaStringResolver meta_string_resolver
 
     def __init__(self, fury):
         self.fury = fury
+        self.metastring_resolver = fury.metastring_resolver
+
+        from pyfury._registry import ClassResolver
+        self._resolver = ClassResolver(fury)
 
     cpdef inline Serializer get_serializer(self, cls=None, obj=None):
         """
@@ -332,16 +317,7 @@ cdef class ClassResolver:
         """
         return get_classinfo(cls=cls, obj=obj).serializer
 
-    cpdef inline ClassInfo get_classinfo(self, cls=None, obj=None):
-        if cls is None:
-            cls = type(obj)
-        cdef PyObject * py_type_ptr = <PyObject *> cls
-        cdef PyObject * typeinfo_ptr = self._py_type_ptr_to_typeinfo[py_type_ptr]
-        if typeinfo_ptr is NULL:
-            typeinfo_ptr = <PyObject *> self._init_classinfo(cls)
-        return <ClassInfo> typeinfo_ptr
-
-    cpdef inline ClassInfo get_or_create_classinfo(self, cls):
+    cpdef inline ClassInfo get_classinfo(self, cls):
         cdef PyObject * classinfo_ptr = self._c_classes_info[<uintptr_t> <PyObject *> cls]
         cdef ClassInfo class_info
         if classinfo_ptr != NULL:
@@ -349,47 +325,12 @@ cdef class ClassResolver:
             if class_info.serializer is not None:
                 return class_info
             else:
-                class_info.serializer = self._create_serializer(cls)
+                class_info.serializer = self._resolver._create_serializer(cls)
                 return class_info
         else:
-            serializer = self._create_serializer(cls)
-            if type(serializer) is PickleSerializer:
-                type_id = PICKLE_CLASS_ID
-            else:
-                type_id = NO_CLASS_ID
-            class_name_bytes = (cls.__module__ + "#" + cls.__qualname__).encode("utf-8")
-            class_info = ClassInfo(
-                cls=cls, class_name_bytes=class_name_bytes,
-                serializer=serializer, type_id=type_id
-            )
-            self._classes_info[cls] = class_info
+            class_info = self._resolver.get_classinfo(cls)
             self._c_classes_info[<uintptr_t> <PyObject *> cls] = <PyObject *> class_info
             return class_info
-
-    cdef _create_serializer(self, cls):
-        mro = cls.__mro__
-        classinfo_ = self._classes_info.get(cls)
-        for clz in mro:
-            class_info = self._classes_info.get(clz)
-            if (
-                    class_info
-                    and class_info.serializer
-                    and class_info.serializer.support_subclass()
-            ):
-                if classinfo_ is None or classinfo_.type_id == NO_CLASS_ID:
-                    logger.info("Class %s not registered", cls)
-                serializer = type(class_info.serializer)(self.fury, cls)
-                break
-        else:
-            if dataclasses.is_dataclass(cls):
-                if classinfo_ is None or classinfo_.type_id == NO_CLASS_ID:
-                    logger.info("Class %s not registered", cls)
-                from pyfury import DataClassSerializer
-
-                serializer = DataClassSerializer(self.fury, cls)
-            else:
-                serializer = PickleSerializer(self.fury, cls)
-        return serializer
 
     cpdef inline write_classinfo(self, Buffer buffer, ClassInfo classinfo):
         cdef int32_t type_id = classinfo.type_id
@@ -404,14 +345,14 @@ cdef class ClassResolver:
         assert type_id != 0
         cdef MetaStringBytes namespace_bytes, typename_bytes
         if IsNamespacedType(type_id):
-            namespace_bytes = self.class_resolver._read_meta_string_bytes(buffer)
-            typename_bytes = self.class_resolver._read_meta_string_bytes(buffer)
+            namespace_bytes = self.metastring_resolver.read_meta_string_bytes(buffer)
+            typename_bytes = self.metastring_resolver.read_meta_string_bytes(buffer)
             return self._load_bytes_to_classinfo(type_id, namespace_bytes, typename_bytes)
         return self.xtype_id_to_class_map.get(xtypeId)
 
     cdef inline ClassInfo _load_bytes_to_classinfo(
             self, int32_t type_id, MetaStringBytes namespace_bytes, MetaStringBytes typename_bytes):
-        cdef PyObject * classinfo_ptr = self._c_2hash_to_classinfo[
+        cdef PyObject * classinfo_ptr = self._c_meta_hash_to_classinfo[
             pair[int64_t, int64_t](namespace_bytes.hashcode, typename_bytes.hashcode)]
         if classinfo_ptr != NULL:
             return <ClassInfo> classinfo_ptr
@@ -422,7 +363,7 @@ cdef class ClassResolver:
         if classinfo is None:
             raise TypeUnregisteredError(f"{qualified_name} not registered")
         classinfo_ptr = <PyObject *> classinfo
-        self._c_2hash_to_classinfo[pair[int64_t, int64_t](
+        self._c_meta_hash_to_classinfo[pair[int64_t, int64_t](
             namespace_bytes.hashcode, typename_bytes.hashcode)] = classinfo_ptr
         return classinfo
 
@@ -436,11 +377,10 @@ cdef class ClassResolver:
             assert type_id >= 0, type_id
             classinfo_ptr = self._c_registered_id_to_class_info[type_id]
             if classinfo_ptr == NULL:
-                raise ValueError(f"Unexpected type_id {type_id} "
-                                 f"{self._registered_id_to_class_info}")
+                raise ValueError(f"Unexpected type_id {type_id}")
             classinfo = <ClassInfo> classinfo_ptr
             if classinfo.serializer is None:
-                classinfo.serializer = self._create_serializer(classinfo.cls)
+                classinfo.serializer = self._resolver._create_serializer(classinfo.cls)
             return classinfo
         cdef int32_t header = buffer.read_varint32()
         cdef int32_t length = header >> 1
@@ -457,13 +397,63 @@ cdef class ClassResolver:
         cdef bytes classname_bytes = buffer.get_bytes(reader_index, length)
         cdef str full_class_name = classname_bytes.decode(encoding="utf-8")
         cls = load_class(full_class_name)
-        classinfo = self.get_or_create_classinfo(cls)
+        classinfo = self.get_classinfo(cls)
         classinfo_ptr = <PyObject *> classinfo
         self._c_hash_to_classinfo[class_name_bytes_hash] = classinfo_ptr
         self._c_dynamic_id_to_classinfo_vec.push_back(classinfo_ptr)
         return classinfo
 
-    cdef inline _write_meta_string_bytes(
+    cpdef inline reset(self):
+        self.reset_write()
+        self.reset_read()
+
+    cpdef inline reset_read(self):
+        self._c_dynamic_id_to_enum_string_vec.clear()
+        self._c_dynamic_id_to_classinfo_vec.clear()
+
+    cpdef inline reset_write(self):
+        if self.dynamic_write_string_id != 0:
+            self.dynamic_write_string_id = 0
+            for ptr in self._c_dynamic_written_enum_string:
+                (<MetaStringBytes> ptr).dynamic_write_string_id = \
+                    DEFAULT_DYNAMIC_WRITE_STRING_ID
+            self._c_dynamic_written_enum_string.clear()
+
+@cython.final
+cdef class MetaStringBytes:
+    cdef bytes data
+    cdef int16_t length
+    cdef public Encoding encoding
+    cdef int64_t hashcode
+    cdef int16_t dynamic_write_string_id
+
+    def __init__(self, data, hashcode):
+        self.data = data
+        self.length = len(data)
+        self.hashcode = hashcode
+        self.encoding = Encoding(hashcode & 0xff)
+        self.dynamic_write_string_id = DEFAULT_DYNAMIC_WRITE_STRING_ID
+
+    def __eq__(self, other):
+        return type(other) is MetaStringBytes and other.hashcode == self.hashcode
+
+    def __hash__(self):
+        return self.hashcode
+
+    def decode(self, decoder):
+        return decoder.decode(self.data, self.encoding)
+
+
+cdef class MetaStringResolver:
+    cdef:
+        int16_t dynamic_write_string_id = 0
+        vector[PyObject *] _c_dynamic_written_enum_string
+        vector[PyObject *] _c_dynamic_id_to_enum_string_vec
+        # hash -> MetaStringBytes
+        flat_hash_map[int64_t, PyObject *] _c_hash_to_metastr_bytes
+        flat_hash_map[pair[int64_t, int64_t], PyObject *] _c_hash_to_small_metastring_bytes
+
+    cdef inline write_meta_string_bytes(
             self, Buffer buffer, MetaStringBytes metastr_bytes):
         cdef int16_t dynamic_type_id = metastr_bytes.dynamic_write_string_id
         cdef int32_t length = metastr_bytes.length
@@ -474,14 +464,14 @@ cdef class ClassResolver:
             self._c_dynamic_written_enum_string.push_back(<PyObject *> metastr_bytes)
             buffer.write_varint32(length << 1)
             if length <= SMALL_STRING_THRESHOLD:
-                buffer.write_int8(Encoding.UTF_8.value)
+                buffer.write_int8(metastr_bytes.encoding.value)
             else:
                 buffer.write_int64(metastr_bytes.hashcode)
             buffer.write_bytes(metastr_bytes.data)
         else:
             buffer.write_varint32(((dynamic_type_id + 1) << 1) | 1)
 
-    cdef inline MetaStringBytes _read_meta_string_bytes(self, Buffer buffer):
+    cdef inline MetaStringBytes read_meta_string_bytes(self, Buffer buffer):
         cdef int32_t header = buffer.read_varint32()
         cdef int32_t length = header >> 1
         if header & 0b1 != 0:
@@ -489,15 +479,15 @@ cdef class ClassResolver:
         cdef int64_t v1 = 0, v2 = 0, hashcode
         cdef PyObject * enum_str_ptr
         cdef int32_t reader_index
+        cdef encoding = 0
         if length <= SMALL_STRING_THRESHOLD:
-            # TODO(chaokunyang) support metastring encoding
-            buffer.read_int8()
+            encoding = buffer.read_int8()
             if length <= 8:
                 v1 = buffer.read_bytes_as_int64(length)
             else:
                 v1 = buffer.read_int64()
                 v2 = buffer.read_bytes_as_int64(length - 8)
-            hashcode = v1 * 31 + v2
+            hashcode = ((v1 * 31 + v2) & 0xffffffffffffff00) | encoding
             enum_str_ptr = self._c_hash_to_small_metastring_bytes[pair[int64_t, int64_t](v1, v2)]
             if enum_str_ptr == NULL:
                 reader_index = buffer.reader_index
@@ -521,13 +511,8 @@ cdef class ClassResolver:
         self._c_dynamic_id_to_enum_string_vec.push_back(enum_str_ptr)
         return <MetaStringBytes> enum_str_ptr
 
-    cpdef inline reset(self):
-        self.reset_write()
-        self.reset_read()
-
     cpdef inline reset_read(self):
         self._c_dynamic_id_to_enum_string_vec.clear()
-        self._c_dynamic_id_to_classinfo_vec.clear()
 
     cpdef inline reset_write(self):
         if self.dynamic_write_string_id != 0:
@@ -537,29 +522,6 @@ cdef class ClassResolver:
                     DEFAULT_DYNAMIC_WRITE_STRING_ID
             self._c_dynamic_written_enum_string.clear()
 
-@cython.final
-cdef class MetaStringBytes:
-    cdef bytes data
-    cdef int16_t length
-    cdef Encoding encoding
-    cdef int64_t hashcode
-    cdef int16_t dynamic_write_string_id
-
-    def __init__(self, data, hashcode):
-        self.data = data
-        self.length = len(data)
-        self.hashcode = hashcode
-        self.encoding = Encoding(hashcode & 0xff)
-        self.dynamic_write_string_id = DEFAULT_DYNAMIC_WRITE_STRING_ID
-
-    def __eq__(self, other):
-        return type(other) is MetaStringBytes and other.hashcode == self.hashcode
-
-    def __hash__(self):
-        return self.hashcode
-
-    def decode(self, decoder):
-        return decoder.decode(self.encoding)
 
 @cython.final
 cdef class ClassInfo:
@@ -644,6 +606,7 @@ cdef class Fury:
             self.require_class_registration = False
         self.ref_tracking = ref_tracking
         self.ref_resolver = MapRefResolver(ref_tracking)
+        self.metastring_resolver = MetaStringResolver()
         self.class_resolver = ClassResolver(self)
         self.class_resolver.initialize()
         self.serialization_context = SerializationContext()
@@ -756,7 +719,7 @@ cdef class Fury:
         if self.ref_resolver.write_ref_or_null(buffer, obj):
             return
         if classinfo is None:
-            classinfo = self.class_resolver.get_or_create_classinfo(cls)
+            classinfo = self.class_resolver.get_classinfo(cls)
         self.class_resolver.write_classinfo(buffer, classinfo)
         classinfo.serializer.write(buffer, obj)
 
@@ -778,7 +741,7 @@ cdef class Fury:
             buffer.write_varint32(PYFLOAT_CLASS_ID << 1)
             buffer.write_double(obj)
             return
-        cdef ClassInfo classinfo = self.class_resolver.get_or_create_classinfo(cls)
+        cdef ClassInfo classinfo = self.class_resolver.get_classinfo(cls)
         self.class_resolver.write_classinfo(buffer, classinfo)
         classinfo.serializer.write(buffer, obj)
 
@@ -968,7 +931,7 @@ cdef class Fury:
         if self.ref_resolver.write_ref_or_null(buffer, value):
             return
         if classinfo is None:
-            classinfo = self.class_resolver.get_or_create_classinfo(type(value))
+            classinfo = self.class_resolver.get_classinfo(type(value))
         self.class_resolver.write_classinfo(buffer, classinfo)
         classinfo.serializer.write(buffer, value)
 
@@ -986,6 +949,7 @@ cdef class Fury:
     cpdef inline reset_write(self):
         self.ref_resolver.reset_write()
         self.class_resolver.reset_write()
+        self.metastring_resolver.reset_write()
         self.serialization_context.reset()
         self.pickler.clear_memo()
         self._unsupported_callback = None
@@ -993,6 +957,7 @@ cdef class Fury:
     cpdef inline reset_read(self):
         self.ref_resolver.reset_read()
         self.class_resolver.reset_read()
+        self.metastring_resolver.reset_read()
         self.serialization_context.reset()
         self._buffers = None
         self.unpickler = None
@@ -1346,7 +1311,7 @@ cdef class CollectionSerializer(Serializer):
                     buffer.write_double(s)
                 else:
                     if not ref_resolver.write_ref_or_null(buffer, s):
-                        classinfo = class_resolver.get_or_create_classinfo(cls)
+                        classinfo = class_resolver.get_classinfo(cls)
                         class_resolver.write_classinfo(buffer, classinfo)
                         classinfo.serializer.write(buffer, s)
 
@@ -1393,7 +1358,7 @@ cdef class CollectionSerializer(Serializer):
     cpdef _write_same_type_no_ref(self, Buffer buffer, value, elem_type):
         cdef MapRefResolver ref_resolver = self.ref_resolver
         cdef ClassResolver class_resolver = self.class_resolver
-        classinfo = class_resolver.get_or_create_classinfo(elem_type)
+        classinfo = class_resolver.get_classinfo(elem_type)
         class_resolver.write_classinfo(buffer, classinfo)
         for s in value:
             classinfo.serializer.write(buffer, s)
@@ -1409,7 +1374,7 @@ cdef class CollectionSerializer(Serializer):
     cpdef _write_same_type_ref(self, Buffer buffer, value, elem_type):
         cdef MapRefResolver ref_resolver = self.ref_resolver
         cdef ClassResolver class_resolver = self.class_resolver
-        classinfo = class_resolver.get_or_create_classinfo(elem_type)
+        classinfo = class_resolver.get_classinfo(elem_type)
         class_resolver.write_classinfo(buffer, classinfo)
         for s in value:
             if not ref_resolver.write_ref_or_null(buffer, s):
@@ -1666,7 +1631,7 @@ cdef class MapSerializer(Serializer):
                 buffer.write_string(k)
             else:
                 if not self.ref_resolver.write_ref_or_null(buffer, k):
-                    key_classinfo = self.class_resolver.get_or_create_classinfo(key_cls)
+                    key_classinfo = self.class_resolver.get_classinfo(key_cls)
                     self.class_resolver.write_classinfo(buffer, key_classinfo)
                     key_classinfo.serializer.write(buffer, k)
             value_cls = type(v)
@@ -1685,7 +1650,7 @@ cdef class MapSerializer(Serializer):
             else:
                 if not self.ref_resolver.write_ref_or_null(buffer, v):
                     value_classinfo = self.class_resolver. \
-                        get_or_create_classinfo(value_cls)
+                        get_classinfo(value_cls)
                     self.class_resolver.write_classinfo(buffer, value_classinfo)
                     value_classinfo.serializer.write(buffer, v)
 
@@ -1779,7 +1744,7 @@ cdef class SubMapSerializer(Serializer):
                 buffer.write_string(k)
             else:
                 if not self.ref_resolver.write_ref_or_null(buffer, k):
-                    key_classinfo = self.class_resolver.get_or_create_classinfo(key_cls)
+                    key_classinfo = self.class_resolver.get_classinfo(key_cls)
                     self.class_resolver.write_classinfo(buffer, key_classinfo)
                     key_classinfo.serializer.write(buffer, k)
             value_cls = type(v)
@@ -1798,7 +1763,7 @@ cdef class SubMapSerializer(Serializer):
             else:
                 if not self.ref_resolver.write_ref_or_null(buffer, v):
                     value_classinfo = self.class_resolver. \
-                        get_or_create_classinfo(value_cls)
+                        get_classinfo(value_cls)
                     self.class_resolver.write_classinfo(buffer, value_classinfo)
                     value_classinfo.serializer.write(buffer, v)
 

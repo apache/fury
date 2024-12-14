@@ -62,35 +62,7 @@ logger = logging.getLogger(__name__)
 
 
 DEFAULT_DYNAMIC_WRITE_STRING_ID = -1
-
-
 MAGIC_NUMBER = 0x62D4
-
-
-class MetaStringBytes:
-    __slots__ = (
-        "data",
-        "length",
-        "hashcode",
-        "encoding",
-        "dynamic_write_string_id",
-    )
-
-    def __init__(self, data, hashcode):
-        self.data = data
-        self.length = len(data)
-        self.hashcode = hashcode
-        self.encoding = Encoding(hashcode & 0xFF)
-        self.dynamic_write_string_id = DEFAULT_DYNAMIC_WRITE_STRING_ID
-
-    def __eq__(self, other):
-        return type(other) is MetaStringBytes and other.hashcode == self.hashcode
-
-    def __hash__(self):
-        return self.hashcode
-
-    def decode(self, decoder):
-        return decoder.decode(self.encoding)
 
 
 class ClassInfo:
@@ -108,8 +80,8 @@ class ClassInfo:
         cls: type = None,
         class_id: int = NO_CLASS_ID,
         serializer: Serializer = None,
-        namespace_bytes: MetaStringBytes = None,
-        typename_bytes: MetaStringBytes = None,
+        namespace_bytes = None,
+        typename_bytes = None,
         dynamic_type: bool = False,
     ):
         self.cls = cls
@@ -187,6 +159,7 @@ class Fury:
             self.ref_resolver = MapRefResolver()
         else:
             self.ref_resolver = NoRefResolver()
+        self.metastring_resolver = MetaStringResolver(self)
         self.class_resolver = ClassResolver(self)
         self.class_resolver.initialize()
         self.serialization_context = SerializationContext()
@@ -301,7 +274,7 @@ class Fury:
         if self.ref_resolver.write_ref_or_null(buffer, obj):
             return
         if classinfo is None:
-            classinfo = self.class_resolver.get_or_create_classinfo(cls)
+            classinfo = self.class_resolver.get_classinfo(cls)
         self.class_resolver.write_classinfo(buffer, classinfo)
         classinfo.serializer.write(buffer, obj)
 
@@ -320,7 +293,7 @@ class Fury:
             buffer.write_bool(obj)
             return
         else:
-            classinfo = self.class_resolver.get_or_create_classinfo(cls)
+            classinfo = self.class_resolver.get_classinfo(cls)
             self.class_resolver.write_classinfo(buffer, classinfo)
             classinfo.serializer.write(buffer, obj)
 
@@ -490,7 +463,7 @@ class Fury:
         if self.ref_resolver.write_ref_or_null(buffer, value):
             return
         if classinfo is None:
-            classinfo = self.class_resolver.get_or_create_classinfo(type(value))
+            classinfo = self.class_resolver.get_classinfo(type(value))
         self.class_resolver.write_classinfo(buffer, classinfo)
         classinfo.serializer.write(buffer, value)
 
