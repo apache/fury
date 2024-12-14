@@ -105,11 +105,12 @@ class ClassResolver:
         self._metastr_to_class = dict()
         self._hash_to_metastring = dict()
         self._hash_to_classinfo = dict()
-        self._dynamic_id_to_metastr_list = list()
         self._dynamic_written_metastr = []
         self._type_id_to_classinfo = dict()
         self._type_id_counter = PICKLE_CACHE_CLASS_ID + 1
         self._dynamic_write_string_id = 0
+        # hold objects to avoid gc, since `flat_hash_map/vector` doesn't
+        # hold python reference.
         self._classes_info = dict()
         self._ns_type_to_classinfo = dict()
         self._namespace_encoder = MetaStringEncoder(".", "_")
@@ -475,11 +476,17 @@ class ClassResolver:
         type_metabytes = self._meta_string_resolver.read_meta_string_bytes(buffer)
         typeinfo = self._ns_type_to_classinfo.get((ns_metabytes, type_metabytes))
         if typeinfo is None:
+            typeinfo = self._load_metabytes_to_classinfo(ns_metabytes, type_metabytes)
+        return classinfo
+
+    def _load_metabytes_to_classinfo(self, ns_metabytes, typename_metabytes):
+        if typeinfo is None:
             ns = ns_metabytes.decode(self._namespace_decoder)
             typename = type_metabytes.decode(self._typename_decoder)
             cls = load_class(ns + "#" + typename)
             classinfo = self.get_classinfo(cls)
-        return classinfo
+            self._ns_type_to_classinfo[(ns_metabytes, type_metabytes)] = classinfo
+        return typeinfo
 
     def xwrite_typeinfo(self, buffer, classinfo):
         type_id = classinfo.type_id
@@ -507,18 +514,13 @@ class ClassResolver:
             return self._type_id_to_classinfo[type_id]
 
     def reset(self):
-        self.reset_write()
-        self.reset_read()
+        pass
 
     def reset_read(self):
-        self._dynamic_id_to_metastr_list.clear()
+        pass
 
     def reset_write(self):
-        if self._dynamic_write_string_id != 0:
-            self._dynamic_write_string_id = 0
-            for metastr in self._dynamic_written_metastr:
-                metastr.dynamic_write_string_id = DEFAULT_DYNAMIC_WRITE_STRING_ID
-            self._dynamic_written_metastr.clear()
+        pass
 
 
 def _create_metastr_bytes(metastr):
