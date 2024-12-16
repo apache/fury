@@ -56,10 +56,7 @@ try:
 except ImportError:
     np = None
 
-if sys.version_info[:2] < (3, 8):  # pragma: no cover
-    import pickle5 as pickle  # nosec  # pylint: disable=import_pickle
-else:
-    import pickle  # nosec  # pylint: disable=import_pickle
+import pickle  # nosec  # pylint: disable=import_pickle
 
 cimport cython
 
