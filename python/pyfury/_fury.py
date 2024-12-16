@@ -21,7 +21,6 @@ import datetime
 import enum
 import logging
 import os
-import sys
 import warnings
 from dataclasses import dataclass
 from typing import Dict, Tuple, TypeVar, Union, Iterable
@@ -80,10 +79,7 @@ except ImportError:
 
 from cloudpickle import Pickler
 
-if sys.version_info[:2] < (3, 8):  # pragma: no cover
-    from pickle5 import Unpickler
-else:
-    from pickle import Unpickler
+from pickle import Unpickler
 
 logger = logging.getLogger(__name__)
 
