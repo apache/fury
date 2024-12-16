@@ -21,7 +21,6 @@ import datetime
 import enum
 import logging
 import os
-import sys
 import warnings
 from dataclasses import dataclass
 from typing import Dict, Tuple, TypeVar, Union, Iterable
