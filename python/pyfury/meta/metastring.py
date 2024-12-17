@@ -65,6 +65,9 @@ class MetaStringDecoder:
     Decodes MetaString objects back into their original plain text form.
     """
 
+    def __init__(self, char1, char2):
+        pass
+
     def decode(self, encoded_data: bytes, encoding: Encoding) -> str:
         """
         Decodes the encoded data using the specified encoding.
@@ -253,6 +256,9 @@ class MetaStringEncoder:
     """
     Encodes plain text strings into MetaString objects with specified encoding mechanisms.
     """
+
+    def __init__(self, char1, char2):
+        pass
 
     def encode(self, input_string: str) -> MetaString:
         """

@@ -38,7 +38,6 @@ except ImportError:
     np = None
 
 from pyfury._fury import (
-    BufferObject,
     NOT_NULL_PYINT_FLAG,
     PICKLE_STRONG_CACHE_CLASS_ID,
     PICKLE_CACHE_CLASS_ID,

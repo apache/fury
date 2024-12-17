@@ -23,16 +23,6 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Union, Iterable
 
-from pyfury._serializer import SerializationContext
-from pyfury._registry import (
-    PYINT_CLASS_ID,
-    PYBOOL_CLASS_ID,
-    STRING_CLASS_ID,
-    NOT_NULL_STRING_FLAG,
-    NOT_NULL_PYINT_FLAG,
-    NOT_NULL_PYBOOL_FLAG,
-    NO_CLASS_ID,
-)
 from pyfury.buffer import Buffer
 from pyfury.resolver import (
     MapRefResolver,
@@ -54,8 +44,26 @@ from pickle import Unpickler
 logger = logging.getLogger(__name__)
 
 
-DEFAULT_DYNAMIC_WRITE_STRING_ID = -1
 MAGIC_NUMBER = 0x62D4
+DEFAULT_DYNAMIC_WRITE_STRING_ID = -1
+DYNAMIC_TYPE_ID = -1
+USE_CLASSNAME = 0
+USE_CLASS_ID = 1
+# preserve 0 as flag for class id not set in ClassInfo`
+NO_CLASS_ID = 0
+PYINT_CLASS_ID = 1
+PYFLOAT_CLASS_ID = 2
+PYBOOL_CLASS_ID = 3
+STRING_CLASS_ID = 4
+PICKLE_CLASS_ID = 5
+PICKLE_STRONG_CACHE_CLASS_ID = 6
+PICKLE_CACHE_CLASS_ID = 7
+# `NOT_NULL_VALUE_FLAG` + `CLASS_ID << 1` in little-endian order
+NOT_NULL_PYINT_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (PYINT_CLASS_ID << 9)
+NOT_NULL_PYFLOAT_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (PYFLOAT_CLASS_ID << 9)
+NOT_NULL_PYBOOL_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (PYBOOL_CLASS_ID << 9)
+NOT_NULL_STRING_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (STRING_CLASS_ID << 9)
+SMALL_STRING_THRESHOLD = 16
 
 
 class Language(enum.Enum):
@@ -473,6 +481,36 @@ class Fury:
     def reset(self):
         self.reset_write()
         self.reset_read()
+
+
+class SerializationContext:
+    """
+    A context is used to add some context-related information, so that the
+    serializers can setup relation between serializing different objects.
+    The context will be reset after finished serializing/deserializing the
+    object tree.
+    """
+
+    __slots__ = ("objects",)
+
+    def __init__(self):
+        self.objects = dict()
+
+    def add(self, key, obj):
+        self.objects[id(key)] = obj
+
+    def __contains__(self, key):
+        return id(key) in self.objects
+
+    def __getitem__(self, key):
+        return self.objects[id(key)]
+
+    def get(self, key):
+        return self.objects.get(id(key))
+
+    def reset(self):
+        if len(self.objects) > 0:
+            self.objects.clear()
 
 
 _ENABLE_CLASS_REGISTRATION_FORCIBLY = os.getenv(

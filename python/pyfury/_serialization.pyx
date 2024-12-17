@@ -44,7 +44,6 @@ from cpython.list cimport PyList_New, PyList_SET_ITEM
 from cpython.tuple cimport PyTuple_New, PyTuple_SET_ITEM
 from libcpp cimport bool as c_bool
 from libcpp.utility cimport pair
-from libcpp.cast cimport static_cast
 from cython.operator cimport dereference as deref
 from pyfury._util cimport Buffer
 from pyfury.includes.libabsl cimport flat_hash_map
@@ -391,6 +390,8 @@ cdef class ClassInfo:
 cdef class ClassResolver:
     cdef:
         readonly Fury fury
+        readonly MetaStringResolver metastring_resolver
+        object _resolver
         vector[PyObject *] _c_registered_id_to_class_info
         # cls -> ClassInfo
         flat_hash_map[uint64_t, PyObject *] _c_classes_info
@@ -539,6 +540,7 @@ cdef class Fury:
     cdef readonly c_bool require_class_registration
     cdef readonly MapRefResolver ref_resolver
     cdef readonly ClassResolver class_resolver
+    cdef readonly MetaStringResolver metastring_resolver
     cdef readonly SerializationContext serialization_context
     cdef Buffer buffer
     cdef public object pickler  # pickle.Pickler

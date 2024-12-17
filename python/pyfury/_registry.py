@@ -14,17 +14,13 @@ from pyfury.error import TypeUnregisteredError
 from pyfury.lib import mmh3
 from pyfury.serializer import (
     Serializer,
-    EnumSerializer,
-    PickleSerializer,
     Numpy1DArraySerializer,
     NDArraySerializer,
     PyArraySerializer,
     DynamicPyArraySerializer,
-    NoneSerializer,
     _PickleStub,
     PickleStrongCacheStub,
     PickleCacheStub,
-    PickleStrongCacheSerializer,
     NoneSerializer,
     BooleanSerializer,
     ByteSerializer,
@@ -45,14 +41,13 @@ from pyfury.serializer import (
     SetSerializer,
     EnumSerializer,
     SliceSerializer,
+    PickleCacheSerializer,
+    PickleStrongCacheSerializer,
+    PickleSerializer,
 )
 from pyfury._struct import ComplexObjectSerializer
 from pyfury.buffer import Buffer
 from pyfury.meta.metastring import MetaStringEncoder, MetaStringDecoder
-from pyfury.resolver import (
-    NULL_FLAG,
-    NOT_NULL_VALUE_FLAG,
-)
 from pyfury.type import (
     TypeId,
     Int8Type,
@@ -63,35 +58,33 @@ from pyfury.type import (
     Float64Type,
     load_class,
 )
+from pyfury._fury import (
+    DEFAULT_DYNAMIC_WRITE_STRING_ID,
+    DYNAMIC_TYPE_ID,
+    USE_CLASSNAME,
+    USE_CLASS_ID,
+    # preserve 0 as flag for class id not set in ClassInfo`
+    NO_CLASS_ID,
+    PYINT_CLASS_ID,
+    PYFLOAT_CLASS_ID,
+    PYBOOL_CLASS_ID,
+    STRING_CLASS_ID,
+    PICKLE_CLASS_ID,
+    PICKLE_STRONG_CACHE_CLASS_ID,
+    PICKLE_CACHE_CLASS_ID,
+    NOT_NULL_PYINT_FLAG,
+    NOT_NULL_PYFLOAT_FLAG,
+    NOT_NULL_PYBOOL_FLAG,
+    NOT_NULL_STRING_FLAG,
+    SMALL_STRING_THRESHOLD,
+)
 
 try:
     import numpy as np
 except ImportError:
     np = None
 
-
 logger = logging.getLogger(__name__)
-
-
-DEFAULT_DYNAMIC_WRITE_STRING_ID = -1
-DYNAMIC_TYPE_ID = -1
-USE_CLASSNAME = 0
-USE_CLASS_ID = 1
-# preserve 0 as flag for class id not set in ClassInfo`
-NO_CLASS_ID = 0
-PYINT_CLASS_ID = 1
-PYFLOAT_CLASS_ID = 2
-PYBOOL_CLASS_ID = 3
-STRING_CLASS_ID = 4
-PICKLE_CLASS_ID = 5
-PICKLE_STRONG_CACHE_CLASS_ID = 6
-PICKLE_CACHE_CLASS_ID = 7
-# `NOT_NULL_VALUE_FLAG` + `CLASS_ID << 1` in little-endian order
-NOT_NULL_PYINT_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (PYINT_CLASS_ID << 9)
-NOT_NULL_PYFLOAT_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (PYFLOAT_CLASS_ID << 9)
-NOT_NULL_PYBOOL_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (PYBOOL_CLASS_ID << 9)
-NOT_NULL_STRING_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (STRING_CLASS_ID << 9)
-SMALL_STRING_THRESHOLD = 16
 
 
 class ClassInfo:
@@ -105,13 +98,13 @@ class ClassInfo:
     )
 
     def __init__(
-        self,
-        cls: type = None,
-        class_id: int = NO_CLASS_ID,
-        serializer: Serializer = None,
-        namespace_bytes=None,
-        typename_bytes=None,
-        dynamic_type: bool = False,
+            self,
+            cls: type = None,
+            class_id: int = NO_CLASS_ID,
+            serializer: Serializer = None,
+            namespace_bytes=None,
+            typename_bytes=None,
+            dynamic_type: bool = False,
     ):
         self.cls = cls
         self.class_id = class_id
@@ -143,9 +136,9 @@ class ClassResolver:
         "_dynamic_written_metastr",
         "_ns_type_to_classinfo",
         "namespace_encoder",
-        "_namespace_decoder",
-        "_typename_encoder",
-        "_typename_decoder",
+        "namespace_decoder",
+        "typename_encoder",
+        "typename_decoder",
         "require_registration",
         "metastring_resolver",
         "language",
@@ -186,12 +179,6 @@ class ClassResolver:
         register(float, type_id=PYFLOAT_CLASS_ID, serializer=DoubleSerializer)
         register(bool, type_id=PYBOOL_CLASS_ID, serializer=BooleanSerializer)
         register(str, type_id=STRING_CLASS_ID, serializer=StringSerializer)
-        from pyfury import (
-            PickleCacheSerializer,
-            PickleStrongCacheSerializer,
-            PickleSerializer,
-        )
-
         register(_PickleStub, type_id=PICKLE_CLASS_ID, serializer=PickleSerializer)
         register(
             PickleStrongCacheStub,
@@ -278,10 +265,10 @@ class ClassResolver:
             # if pyarray are needed, one must annotate that value with XXXArrayType
             # as a field of a struct.
             for dtype, (
-                itemsize,
-                format,
-                ftype,
-                typeid,
+                    itemsize,
+                    format,
+                    ftype,
+                    typeid,
             ) in Numpy1DArraySerializer.dtypes_dict.items():
                 register(
                     ftype,
@@ -294,13 +281,13 @@ class ClassResolver:
         register(dict, type_id=TypeId.MAP, serializer=MapSerializer)
 
     def register_type(
-        self,
-        cls: Union[type, TypeVar],
-        *,
-        type_id: int = None,
-        namespace: str = None,
-        typename: str = None,
-        serializer=None,
+            self,
+            cls: Union[type, TypeVar],
+            *,
+            type_id: int = None,
+            namespace: str = None,
+            typename: str = None,
+            serializer=None,
     ):
         self._register_type(
             cls,
@@ -311,14 +298,14 @@ class ClassResolver:
         )
 
     def _register_type(
-        self,
-        cls: Union[type, TypeVar],
-        *,
-        type_id: int = None,
-        namespace: str = None,
-        typename: str = None,
-        serializer=None,
-        internal=False,
+            self,
+            cls: Union[type, TypeVar],
+            *,
+            type_id: int = None,
+            namespace: str = None,
+            typename: str = None,
+            serializer=None,
+            internal=False,
     ):
         """Register class with given type id or typename. If typename is not None, it will be used for
         cross-language serialization."""
@@ -351,14 +338,14 @@ class ClassResolver:
         )
 
     def _register_xtype(
-        self,
-        cls: Union[type, TypeVar],
-        *,
-        type_id: int = None,
-        namespace: str = None,
-        typename: str = None,
-        serializer=None,
-        internal=False,
+            self,
+            cls: Union[type, TypeVar],
+            *,
+            type_id: int = None,
+            namespace: str = None,
+            typename: str = None,
+            serializer=None,
+            internal=False,
     ):
         if serializer is None:
             if issubclass(cls, enum.Enum):
@@ -385,14 +372,14 @@ class ClassResolver:
         )
 
     def _register_pytype(
-        self,
-        cls: Union[type, TypeVar],
-        *,
-        type_id: int = None,
-        namespace: str = None,
-        typename: str = None,
-        serializer: Serializer = None,
-        internal: bool = False,
+            self,
+            cls: Union[type, TypeVar],
+            *,
+            type_id: int = None,
+            namespace: str = None,
+            typename: str = None,
+            serializer: Serializer = None,
+            internal: bool = False,
     ):
         self.__register_type(
             cls,
@@ -404,14 +391,14 @@ class ClassResolver:
         )
 
     def __register_type(
-        self,
-        cls: Union[type, TypeVar],
-        *,
-        type_id: int = None,
-        namespace: str = None,
-        typename: str = None,
-        serializer: Serializer = None,
-        internal: bool = False,
+            self,
+            cls: Union[type, TypeVar],
+            *,
+            type_id: int = None,
+            namespace: str = None,
+            typename: str = None,
+            serializer: Serializer = None,
+            internal: bool = False,
     ):
         if not internal and serializer is None:
             serializer = self._create_serializer(cls)
@@ -489,9 +476,9 @@ class ClassResolver:
         for clz in cls.__mro__:
             class_info = self._classes_info.get(clz)
             if (
-                class_info
-                and class_info.serializer
-                and class_info.serializer.support_subclass()
+                    class_info
+                    and class_info.serializer
+                    and class_info.serializer.support_subclass()
             ):
                 serializer = type(class_info.serializer)(self.fury, cls)
                 break

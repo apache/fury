@@ -21,6 +21,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Dict, Iterable, Any
 
+from pyfury._fury import BufferObject
 from pyfury.buffer import Buffer
 from pyfury.resolver import NOT_NULL_VALUE_FLAG, NULL_FLAG
 from pyfury.type import (
@@ -510,33 +511,3 @@ class PickleSerializer(Serializer):
 
     def read(self, buffer):
         return self.fury.handle_unsupported_read(buffer)
-
-
-class SerializationContext:
-    """
-    A context is used to add some context-related information, so that the
-    serializers can setup relation between serializing different objects.
-    The context will be reset after finished serializing/deserializing the
-    object tree.
-    """
-
-    __slots__ = ("objects",)
-
-    def __init__(self):
-        self.objects = dict()
-
-    def add(self, key, obj):
-        self.objects[id(key)] = obj
-
-    def __contains__(self, key):
-        return id(key) in self.objects
-
-    def __getitem__(self, key):
-        return self.objects[id(key)]
-
-    def get(self, key):
-        return self.objects.get(id(key))
-
-    def reset(self):
-        if len(self.objects) > 0:
-            self.objects.clear()
