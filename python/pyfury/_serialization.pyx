@@ -19,29 +19,22 @@
 # cython: embedsignature = True
 # cython: language_level = 3
 # cython: annotate = True
-import array
-import dataclasses
 import datetime
-import enum
 import logging
 import os
-import sys
 import warnings
-from typing import TypeVar, Union, Iterable, get_type_hints
+from typing import TypeVar, Union, Iterable
 
 from pyfury._util import get_bit, set_bit, clear_bit
-from pyfury._fury import Language, OpaqueObject
+from pyfury._fury import Language
 from pyfury._fury import _PicklerStub, _UnpicklerStub, Pickler, Unpickler
 from pyfury._fury import _ENABLE_CLASS_REGISTRATION_FORCIBLY
-from pyfury.error import ClassNotCompatibleError
-from pyfury.lib import mmh3
-from pyfury.meta.metastring import Encoding, MetaStringEncoder, MetaStringDecoder
-from pyfury.type import is_primitive_type, TypeId, Int8Type, Int16Type, Int32Type, \
-    Int64Type, Float32Type, Float64Type, Int16ArrayType, Int32ArrayType, \
-    Int64ArrayType, Float32ArrayType, Float64ArrayType, infer_field, load_class
+from pyfury.meta.metastring import Encoding
+from pyfury.type import is_primitive_type
 from pyfury.util import is_little_endian
 from pyfury.includes.libserialization cimport TypeId, IsNamespacedType
 
+from libc.stdint cimport int8_t, int16_t, int32_t, int64_t, uint64_t
 from libc.stdint cimport *
 from libcpp.vector cimport vector
 from cpython cimport PyObject
@@ -51,6 +44,7 @@ from cpython.list cimport PyList_New, PyList_SET_ITEM
 from cpython.tuple cimport PyTuple_New, PyTuple_SET_ITEM
 from libcpp cimport bool as c_bool
 from libcpp.utility cimport pair
+from libcpp.cast cimport static_cast
 from cython.operator cimport dereference as deref
 from pyfury._util cimport Buffer
 from pyfury.includes.libabsl cimport flat_hash_map
@@ -59,8 +53,6 @@ try:
     import numpy as np
 except ImportError:
     np = None
-
-import pickle  # nosec  # pylint: disable=import_pickle
 
 cimport cython
 
@@ -249,7 +241,7 @@ cdef int32_t SMALL_STRING_THRESHOLD = 16
 cdef class MetaStringBytes:
     cdef bytes data
     cdef int16_t length
-    cdef public Encoding encoding
+    cdef public int8_t encoding
     cdef int64_t hashcode
     cdef int16_t dynamic_write_string_id
 
@@ -257,7 +249,7 @@ cdef class MetaStringBytes:
         self.data = data
         self.length = len(data)
         self.hashcode = hashcode
-        self.encoding = Encoding(hashcode & 0xff)
+        self.encoding = hashcode & 0xff
         self.dynamic_write_string_id = DEFAULT_DYNAMIC_WRITE_STRING_ID
 
     def __eq__(self, other):
@@ -267,12 +259,13 @@ cdef class MetaStringBytes:
         return self.hashcode
 
     def decode(self, decoder):
-        return decoder.decode(self.data, self.encoding)
+        return decoder.decode(self.data, Encoding(self.encoding))
 
 
+@cython.final
 cdef class MetaStringResolver:
     cdef:
-        int16_t dynamic_write_string_id = 0
+        int16_t dynamic_write_string_id
         vector[PyObject *] _c_dynamic_written_enum_string
         vector[PyObject *] _c_dynamic_id_to_enum_string_vec
         # hash -> MetaStringBytes
@@ -437,13 +430,13 @@ cdef class ClassResolver:
 
         self._resolver.register_type(cls, serializer)
 
-    cpdef inline Serializer get_serializer(self, cls=None, obj=None):
+    cpdef inline Serializer get_serializer(self, cls):
         """
         Returns
         -------
             Returns or create serializer for the provided class
         """
-        return get_classinfo(cls=cls, obj=obj).serializer
+        return self.get_classinfo(cls).serializer
 
     cpdef inline ClassInfo get_classinfo(self, cls):
         cdef PyObject * classinfo_ptr = self._c_classes_info[<uintptr_t> <PyObject *> cls]
@@ -465,8 +458,13 @@ cdef class ClassResolver:
         if type_id != NO_CLASS_ID:
             buffer.write_varint32((type_id << 1))
             return
-        buffer.write_varint32(1)
-        self._write_meta_string_bytes(buffer, classinfo.class_name_bytes)
+        buffer.write_varuint32(1)
+        self.metastring_resolver.write_meta_string_bytes(
+            buffer, classinfo.namespace_bytes
+        )
+        self.metastring_resolver.write_meta_string_bytes(
+            buffer, classinfo.typename_bytes
+        )
 
     cpdef inline ClassInfo read_classinfo(self, Buffer buffer):
         cdef int32_t h1 = buffer.read_varuint32()
@@ -485,13 +483,7 @@ cdef class ClassResolver:
             return classinfo
         cdef MetaStringBytes ns_metabytes = self.metastring_resolver.read_meta_string_bytes(buffer)
         cdef MetaStringBytes type_metabytes = self.metastring_resolver.read_meta_string_bytes(buffer)
-        typeinfo = self._ns_type_to_classinfo.get((ns_metabytes, type_metabytes))
-        if typeinfo is None:
-            ns = ns_metabytes.decode(self._namespace_decoder)
-            typename = type_metabytes.decode(self._typename_decoder)
-            cls = load_class(ns + "#" + typename)
-            classinfo = self.get_classinfo(cls)
-        return classinfo
+        return self._load_bytes_to_classinfo(type_id, ns_metabytes, type_metabytes)
 
     cdef inline ClassInfo _load_bytes_to_classinfo(
             self, int32_t type_id, MetaStringBytes ns_metabytes, MetaStringBytes type_metabytes):
@@ -1043,11 +1035,12 @@ cdef class Serializer:
         return False
 
 cdef class CrossLanguageCompatibleSerializer(Serializer):
-    cpdef inline xwrite(self, Buffer buffer, value):
+    cpdef xwrite(self, Buffer buffer, value):
         self.write(buffer, value)
 
-    cpdef inline xread(self, Buffer buffer):
+    cpdef xread(self, Buffer buffer):
         return self.read(buffer)
+
 
 @cython.final
 cdef class BooleanSerializer(CrossLanguageCompatibleSerializer):
@@ -1057,19 +1050,6 @@ cdef class BooleanSerializer(CrossLanguageCompatibleSerializer):
     cpdef inline read(self, Buffer buffer):
         return buffer.read_bool()
 
-@cython.final
-cdef class NoneSerializer(Serializer):
-    cpdef inline xwrite(self, Buffer buffer, value):
-        raise NotImplementedError
-
-    cpdef inline xread(self, Buffer buffer):
-        raise NotImplementedError
-
-    cpdef inline write(self, Buffer buffer, value):
-        pass
-
-    cpdef inline read(self, Buffer buffer):
-        return None
 
 @cython.final
 cdef class ByteSerializer(CrossLanguageCompatibleSerializer):
@@ -1122,12 +1102,12 @@ cdef float FLOAT32_MAX_VALUE = 3.40282e+38
 cdef class DynamicIntSerializer(CrossLanguageCompatibleSerializer):
     cpdef inline write(self, Buffer buffer, value):
         # TOTO(chaokunyang) check value range and write type and value
-        buffer.write_varint32(TypeId.INT64.value)
+        buffer.write_varint32(<int32_t> TypeId.INT64)
         buffer.write_varint64(value)
 
     cpdef inline read(self, Buffer buffer):
         type_id = buffer.read_varint32()
-        assert type_id == TypeId.INT64.value, type_id
+        assert type_id == <int32_t> TypeId.INT64, type_id
         return buffer.read_varint64()
 
 @cython.final
@@ -1138,6 +1118,7 @@ cdef class FloatSerializer(CrossLanguageCompatibleSerializer):
     cpdef inline read(self, Buffer buffer):
         return buffer.read_float()
 
+
 @cython.final
 cdef class DoubleSerializer(CrossLanguageCompatibleSerializer):
     cpdef inline write(self, Buffer buffer, value):
@@ -1147,15 +1128,16 @@ cdef class DoubleSerializer(CrossLanguageCompatibleSerializer):
         return buffer.read_double()
 
 
-class DynamicFloatSerializer(CrossLanguageCompatibleSerializer):
-    def write(self, buffer, value):
+@cython.final
+cdef class DynamicFloatSerializer(CrossLanguageCompatibleSerializer):
+    cpdef inline write(self, Buffer buffer, value):
         # TOTO(chaokunyang) check value range and write type and value
-        buffer.write_varint32(TypeId.FLOAT64.value)
+        buffer.write_varint32(<int32_t> TypeId.FLOAT64)
         buffer.write_double(value)
 
-    def read(self, buffer):
-        type_id = buffer.read_varint32()
-        assert type_id == TypeId.FLOAT64.value, type_id
+    cpdef inline read(self, Buffer buffer):
+        cdef int32_t type_id = buffer.read_varint32()
+        assert type_id == <int32_t> TypeId.FLOAT64, type_id
         return buffer.read_double()
 
 
@@ -1201,14 +1183,6 @@ cdef class TimestampSerializer(CrossLanguageCompatibleSerializer):
         # TODO support timezone
         return datetime.datetime.fromtimestamp(ts)
 
-@cython.final
-cdef class BytesSerializer(CrossLanguageCompatibleSerializer):
-    cpdef inline write(self, Buffer buffer, value):
-        self.fury.write_buffer_object(buffer, BytesBufferObject(value))
-
-    cpdef inline read(self, Buffer buffer):
-        fury_buf = self.fury.read_buffer_object(buffer)
-        return fury_buf.to_pybytes()
 
 """
 Collection serialization format:

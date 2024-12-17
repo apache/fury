@@ -96,20 +96,6 @@ class CrossLanguageCompatibleSerializer(Serializer):
         return self.read(buffer)
 
 
-class NoneSerializer(Serializer):
-    def xwrite(self, buffer, value):
-        raise NotImplementedError
-
-    def xread(self, buffer):
-        raise NotImplementedError
-
-    def write(self, buffer, value):
-        pass
-
-    def read(self, buffer):
-        return None
-
-
 class BooleanSerializer(CrossLanguageCompatibleSerializer):
     def get_xtype_id(self):
         return TypeId.BOOL.value

@@ -14,10 +14,11 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
+import array
 import itertools
 import os
 import pickle
+import typing
 from weakref import WeakValueDictionary
 
 import pyfury.lib.mmh3
@@ -36,8 +37,13 @@ try:
 except ImportError:
     np = None
 
-from pyfury._serializer import (  # noqa: F401 # pylint: disable=unused-import
+from pyfury._fury import (
     BufferObject,
+    NOT_NULL_PYINT_FLAG,
+    PICKLE_STRONG_CACHE_CLASS_ID,
+    PICKLE_CACHE_CLASS_ID,
+)
+from pyfury._serializer import (  # noqa: F401 # pylint: disable=unused-import
     BytesBufferObject,
     Serializer,
     CrossLanguageCompatibleSerializer,
@@ -62,9 +68,8 @@ from pyfury._serializer import (  # noqa: F401 # pylint: disable=unused-import
     EnumSerializer,
     SliceSerializer,
     PickleSerializer,
-    NOT_NULL_PYINT_FLAG,
-    PICKLE_STRONG_CACHE_CLASS_ID,
-    PICKLE_CACHE_CLASS_ID,
+    DynamicIntSerializer,
+    DynamicFloatSerializer,
 )
 
 try:
@@ -72,8 +77,6 @@ try:
 
     if ENABLE_FURY_CYTHON_SERIALIZATION:
         from pyfury._serialization import (  # noqa: F401, F811
-            BufferObject,
-            BytesBufferObject,
             Serializer,
             CrossLanguageCompatibleSerializer,
             BooleanSerializer,
@@ -81,6 +84,7 @@ try:
             Int16Serializer,
             Int32Serializer,
             Int64Serializer,
+            DynamicIntSerializer,
             FloatSerializer,
             DoubleSerializer,
             StringSerializer,
@@ -114,7 +118,22 @@ from pyfury.type import (
     Int64NDArrayType,
     Float32NDArrayType,
     Float64NDArrayType,
+    TypeId,
 )
+
+
+class NoneSerializer(Serializer):
+    def xwrite(self, buffer, value):
+        raise NotImplementedError
+
+    def xread(self, buffer):
+        raise NotImplementedError
+
+    def write(self, buffer, value):
+        pass
+
+    def read(self, buffer):
+        return None
 
 
 class _PickleStub:
@@ -444,9 +463,9 @@ class PyArraySerializer(CrossLanguageCompatibleSerializer):
         "d": Float64ArrayType,
     }
 
-    def __init__(self, fury, type_, typecode: str):
-        super().__init__(fury, type_)
-        self.typecode = typecode
+    def __init__(self, fury, ftype, type_id: str):
+        super().__init__(fury, ftype)
+        self.typecode = typeid_code[type_id]
         self.itemsize, ftype, self.type_id = typecode_dict[self.typecode]
 
     def xwrite(self, buffer, value):
@@ -523,8 +542,8 @@ else:
 class Numpy1DArraySerializer:
     dtypes_dict = _np_dtypes_dict
 
-    def __init__(self, fury, type_, dtype):
-        super().__init__(fury, type_)
+    def __init__(self, fury, ftype, dtype):
+        super().__init__(fury, ftype)
         self.dtype = dtype
         self.itemsize, self.typecode, self.type_id = _np_dtypes_dict[self.dtype]
 
@@ -588,3 +607,12 @@ class PickleSerializer(Serializer):
 
     def read(self, buffer):
         return self.fury.handle_unsupported_read(buffer)
+
+
+class BytesSerializer(CrossLanguageCompatibleSerializer):
+    def write(self, buffer, value):
+        self.fury.write_buffer_object(buffer, BytesBufferObject(value))
+
+    def read(self, buffer):
+        fury_buf = self.fury.read_buffer_object(buffer)
+        return fury_buf.to_pybytes()

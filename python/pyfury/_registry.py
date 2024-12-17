@@ -4,35 +4,55 @@ import datetime
 import enum
 import functools
 import logging
-import sys
-from typing import Dict, Tuple, TypeVar
+from typing import TypeVar, Union
+
+from pyfury._serialization import MetaStringBytes
+
+from pyfury import Language
+from pyfury.error import TypeUnregisteredError
 
 from pyfury.lib import mmh3
 from pyfury.serializer import (
     Serializer,
-    NOT_SUPPORT_CROSS_LANGUAGE,
     EnumSerializer,
     PickleSerializer,
     Numpy1DArraySerializer,
     NDArraySerializer,
     PyArraySerializer,
     DynamicPyArraySerializer,
-    PYINT_CLASS_ID,
-    PYFLOAT_CLASS_ID,
-    PYBOOL_CLASS_ID,
-    STRING_CLASS_ID,
-    PICKLE_CLASS_ID,
-    NO_CLASS_ID,
     NoneSerializer,
+    _PickleStub,
     PickleStrongCacheStub,
-    PICKLE_STRONG_CACHE_CLASS_ID,
-    PICKLE_CACHE_CLASS_ID,
     PickleCacheStub,
-    SMALL_STRING_THRESHOLD,
+    PickleStrongCacheSerializer,
+    NoneSerializer,
+    BooleanSerializer,
+    ByteSerializer,
+    Int16Serializer,
+    Int32Serializer,
+    Int64Serializer,
+    DynamicIntSerializer,
+    FloatSerializer,
+    DoubleSerializer,
+    DynamicFloatSerializer,
+    StringSerializer,
+    DateSerializer,
+    TimestampSerializer,
+    BytesSerializer,
+    ListSerializer,
+    TupleSerializer,
+    MapSerializer,
+    SetSerializer,
+    EnumSerializer,
+    SliceSerializer,
 )
 from pyfury._struct import ComplexObjectSerializer
 from pyfury.buffer import Buffer
-from pyfury.meta.metastring import Encoding, MetaStringEncoder, MetaStringDecoder
+from pyfury.meta.metastring import MetaStringEncoder, MetaStringDecoder
+from pyfury.resolver import (
+    NULL_FLAG,
+    NOT_NULL_VALUE_FLAG,
+)
 from pyfury.type import (
     TypeId,
     Int8Type,
@@ -70,9 +90,7 @@ PICKLE_CACHE_CLASS_ID = 7
 NOT_NULL_PYINT_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (PYINT_CLASS_ID << 9)
 NOT_NULL_PYFLOAT_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (PYFLOAT_CLASS_ID << 9)
 NOT_NULL_PYBOOL_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (PYBOOL_CLASS_ID << 9)
-NOT_NULL_STRING_FLAG = NOT_NULL_VALUE_FLANOT_NULL_STRING_FLAGG & 0b11111111 | (
-    STRING_CLASS_ID << 9
-)
+NOT_NULL_STRING_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (STRING_CLASS_ID << 9)
 SMALL_STRING_THRESHOLD = 16
 
 
@@ -124,11 +142,14 @@ class ClassResolver:
         "_dynamic_write_string_id",
         "_dynamic_written_metastr",
         "_ns_type_to_classinfo",
-        "_namespace_encoder",
+        "namespace_encoder",
         "_namespace_decoder",
         "_typename_encoder",
         "_typename_decoder",
         "require_registration",
+        "metastring_resolver",
+        "language",
+        "_type_id_to_classinfo",
     )
 
     def __init__(self, fury):
@@ -148,14 +169,10 @@ class ClassResolver:
         # hold python reference.
         self._classes_info = dict()
         self._ns_type_to_classinfo = dict()
-        self._namespace_encoder = MetaStringEncoder(".", "_")
-        self._namespace_decoder = MetaStringDecoder(".", "_")
-        self._typename_encoder = MetaStringEncoder("$", "_")
-        self._typename_decoder = MetaStringDecoder("$", "_")
-
-        from pyfury import MetaStringResolver
-
-        self._meta_string_resolver = MetaStringResolver()
+        self.namespace_encoder = MetaStringEncoder(".", "_")
+        self.namespace_decoder = MetaStringDecoder(".", "_")
+        self.typename_encoder = MetaStringEncoder("$", "_")
+        self.typename_decoder = MetaStringDecoder("$", "_")
 
     def initialize(self):
         if self.fury.language == Language.PYTHON:
@@ -213,8 +230,8 @@ class ClassResolver:
             register(pa.Table, serializer=ArrowTableSerializer)
         except Exception:
             pass
-        for size, ftype, type_id in PyArraySerializer.typecode_dict.keys():
-            register(ftype, serializer=PyArraySerializer(self.fury, ftype, typecode))
+        for size, ftype, type_id in PyArraySerializer.typecode_dict.values():
+            register(ftype, serializer=PyArraySerializer(self.fury, ftype, type_id))
         register(
             array.array, type_id=DYNAMIC_TYPE_ID, serializer=DynamicPyArraySerializer
         )
@@ -251,7 +268,7 @@ class ClassResolver:
             register(
                 ftype,
                 type_id=typeid,
-                serializer=PyArraySerializer(self.fury, ftype, typecode),
+                serializer=PyArraySerializer(self.fury, ftype, typeid),
             )
         register(
             array.array, type_id=DYNAMIC_TYPE_ID, serializer=DynamicPyArraySerializer
@@ -260,16 +277,16 @@ class ClassResolver:
             # overwrite pyarray  with same type id.
             # if pyarray are needed, one must annotate that value with XXXArrayType
             # as a field of a struct.
-            for (
+            for dtype, (
                 itemsize,
                 format,
                 ftype,
                 typeid,
-            ) in Numpy1DArraySerializer.dtypes_dict.values():
+            ) in Numpy1DArraySerializer.dtypes_dict.items():
                 register(
                     ftype,
                     type_id=typeid,
-                    serializer=Numpy1DArraySerializer(self.fury, np.ndarray, dtype),
+                    serializer=Numpy1DArraySerializer(self.fury, ftype, dtype),
                 )
             register(np.ndarray, type_id=DYNAMIC_TYPE_ID, serializer=NDArraySerializer)
         register(list, type_id=TypeId.LIST, serializer=ListSerializer)
@@ -307,7 +324,7 @@ class ClassResolver:
         cross-language serialization."""
         if serializer is not None and not isinstance(serializer, Serializer):
             serializer = Serializer(self.fury, cls)
-        n_params = len(set(typename, type_id))
+        n_params = len({typename, type_id})
         if n_params == 0:
             type_id = self._next_type_id()
         if n_params == 2:
@@ -396,14 +413,14 @@ class ClassResolver:
         serializer: Serializer = None,
         internal: bool = False,
     ):
-        if serializer is None:
+        if not internal and serializer is None:
             serializer = self._create_serializer(cls)
         if typename is None:
             classinfo = ClassInfo(cls, type_id, serializer, None, None)
         else:
-            ns_metastr = self._namespace_encoder.encode(namespace)
+            ns_metastr = self.namespace_encoder.encode(namespace)
             ns_meta_bytes = _create_metastr_bytes(ns_metastr)
-            type_metastr = self._typename_encoder.encode(typename)
+            type_metastr = self.typename_encoder.encode(typename)
             type_meta_bytes = _create_metastr_bytes(type_metastr)
             classinfo = ClassInfo(
                 cls, type_id, serializer, ns_meta_bytes, type_meta_bytes
@@ -495,10 +512,10 @@ class ClassResolver:
             buffer.write_varuint32(class_id << 1)
             return
         buffer.write_varuint32(1)
-        self._meta_string_resolver.write_meta_string_bytes(
+        self.metastring_resolver.write_meta_string_bytes(
             buffer, classinfo.namespace_bytes
         )
-        self._meta_string_resolver.write_meta_string_bytes(
+        self.metastring_resolver.write_meta_string_bytes(
             buffer, classinfo.typename_bytes
         )
 
@@ -510,31 +527,30 @@ class ClassResolver:
             if classinfo.serializer is None:
                 classinfo.serializer = self._create_serializer(classinfo.cls)
             return classinfo
-        ns_metabytes = self._meta_string_resolver.read_meta_string_bytes(buffer)
-        type_metabytes = self._meta_string_resolver.read_meta_string_bytes(buffer)
+        ns_metabytes = self.metastring_resolver.read_meta_string_bytes(buffer)
+        type_metabytes = self.metastring_resolver.read_meta_string_bytes(buffer)
         typeinfo = self._ns_type_to_classinfo.get((ns_metabytes, type_metabytes))
         if typeinfo is None:
             typeinfo = self._load_metabytes_to_classinfo(ns_metabytes, type_metabytes)
-        return classinfo
-
-    def _load_metabytes_to_classinfo(self, ns_metabytes, typename_metabytes):
-        if typeinfo is None:
-            ns = ns_metabytes.decode(self._namespace_decoder)
-            typename = type_metabytes.decode(self._typename_decoder)
-            cls = load_class(ns + "#" + typename)
-            classinfo = self.get_classinfo(cls)
-            self._ns_type_to_classinfo[(ns_metabytes, type_metabytes)] = classinfo
         return typeinfo
+
+    def _load_metabytes_to_classinfo(self, ns_metabytes, type_metabytes):
+        ns = ns_metabytes.decode(self.namespace_decoder)
+        typename = type_metabytes.decode(self.typename_decoder)
+        cls = load_class(ns + "#" + typename)
+        classinfo = self.get_classinfo(cls)
+        self._ns_type_to_classinfo[(ns_metabytes, type_metabytes)] = classinfo
+        return classinfo
 
     def xwrite_typeinfo(self, buffer, classinfo):
         type_id = classinfo.type_id
         internal_type_id = type_id & 0xFF
         buffer.write_varuint32(type_id)
         if TypeId.is_namespaced_type(internal_type_id):
-            self._meta_string_resolver.write_meta_string_bytes(
+            self.metastring_resolver.write_meta_string_bytes(
                 buffer, classinfo.namespace_bytes
             )
-            self._meta_string_resolver.write_meta_string_bytes(
+            self.metastring_resolver.write_meta_string_bytes(
                 buffer, classinfo.typename_bytes
             )
 
@@ -542,12 +558,12 @@ class ClassResolver:
         type_id = buffer.read_varuint32()
         internal_type_id = type_id & 0xFF
         if TypeId.is_namespaced_type(internal_type_id):
-            ns_metabytes = self._meta_string_resolver.read_meta_string_bytes(buffer)
-            type_metabytes = self._meta_string_resolver.read_meta_string_bytes(buffer)
+            ns_metabytes = self.metastring_resolver.read_meta_string_bytes(buffer)
+            type_metabytes = self.metastring_resolver.read_meta_string_bytes(buffer)
             typeinfo = self._ns_type_to_classinfo.get((ns_metabytes, type_metabytes))
             if typeinfo is None:
-                ns = ns_metabytes.decode(self._namespace_decoder)
-                typename = type_metabytes.decode(self._typename_decoder)
+                ns = ns_metabytes.decode(self.namespace_decoder)
+                typename = type_metabytes.decode(self.typename_decoder)
                 # TODO(chaokunyang) generate a dynamic class and serializer
                 #  when meta share is enabled.
                 raise TypeUnregisteredError(f"{ns}.{typename} not registered")
@@ -568,6 +584,6 @@ class ClassResolver:
 def _create_metastr_bytes(metastr):
     value_hash = mmh3.hash_buffer(metastr.encoded_data, seed=47)[0]
     value_hash &= 0xFFFFFFFFFFFFFF00
-    header = metastr.encoding.value & 0xFF
+    header = metastr.encoding & 0xFF
     value_hash |= header
     return MetaStringBytes(metastr.encoded_data, value_hash)

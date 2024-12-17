@@ -19,13 +19,12 @@ import enum
 import logging
 import os
 import warnings
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Union, Iterable
 
-from pyfury._serializer import (
-    Serializer,
-    SerializationContext,
-    BufferObject,
+from pyfury._serializer import SerializationContext
+from pyfury._registry import (
     PYINT_CLASS_ID,
     PYBOOL_CLASS_ID,
     STRING_CLASS_ID,
@@ -35,14 +34,12 @@ from pyfury._serializer import (
     NO_CLASS_ID,
 )
 from pyfury.buffer import Buffer
-from pyfury.meta.metastring import Encoding
 from pyfury.resolver import (
     MapRefResolver,
     NoRefResolver,
     NULL_FLAG,
     NOT_NULL_VALUE_FLAG,
 )
-from pyfury.type import TypeId
 from pyfury.util import is_little_endian, set_bit, get_bit, clear_bit
 
 try:
@@ -111,6 +108,7 @@ class Fury:
         "unpickler",
         "_buffer_callback",
         "_buffers",
+        "metastring_resolver",
         "_unsupported_callback",
         "_unsupported_objects",
         "_peer_language",
@@ -142,7 +140,10 @@ class Fury:
             self.ref_resolver = MapRefResolver()
         else:
             self.ref_resolver = NoRefResolver()
-        self.metastring_resolver = MetaStringResolver(self)
+        from pyfury._serialization import MetaStringResolver
+        from pyfury._registry import ClassResolver
+
+        self.metastring_resolver = MetaStringResolver()
         self.class_resolver = ClassResolver(self)
         self.class_resolver.initialize()
         self.serialization_context = SerializationContext()

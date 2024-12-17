@@ -15,15 +15,13 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from libc.stdint cimport *
+from libc.stdint cimport int32_t
 from libcpp cimport bool as c_bool
-from libcpp.memory cimport shared_ptr
-from libcpp.string cimport string as c_string
 
 cdef extern from "fury/type/type.h" namespace "fury" nogil:
 
     # Declare the C++ TypeId enum
-    cdef enum TypeId:
+    cdef enum class TypeId(int32_t):
         BOOL = 1
         INT8 = 2
         INT16 = 3
@@ -70,5 +68,4 @@ cdef extern from "fury/type/type.h" namespace "fury" nogil:
         ARROW_RECORD_BATCH = 44
         ARROW_TABLE = 45
 
-    # Declare the C++ function
-    cdef bool IsNamespacedType(int32_t type_id)
+    cdef c_bool IsNamespacedType(int32_t type_id)
