@@ -378,7 +378,7 @@ cdef class ClassInfo:
         self.type_id = type_id
         self.serializer = serializer
         self.namespace_bytes = namespace_bytes
-        self.type_tag_bytes = typename_bytes
+        self.typename_bytes = typename_bytes
         self.dynamic_type = dynamic_type
 
     def __repr__(self):

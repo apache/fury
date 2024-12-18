@@ -262,6 +262,7 @@ public final class MetaStringResolver {
     LittleEndian.putInt64(data, 0, v1);
     LittleEndian.putInt64(data, 8, v2);
     long hashCode = MurmurHash3.murmurhash3_x64_128(data, 0, len, 47)[0];
+    hashCode = Math.abs(hashCode);
     hashCode = (hashCode & 0xffffffffffffff00L) | encoding;
     MetaStringBytes metaStringBytes = new MetaStringBytes(Arrays.copyOf(data, len), hashCode);
     longLongMap.put(v1, v2, metaStringBytes);

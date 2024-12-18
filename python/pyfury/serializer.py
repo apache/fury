@@ -42,67 +42,62 @@ from pyfury._fury import (
     PICKLE_STRONG_CACHE_CLASS_ID,
     PICKLE_CACHE_CLASS_ID,
 )
-from pyfury._serializer import (  # noqa: F401 # pylint: disable=unused-import
-    BytesBufferObject,
-    Serializer,
-    CrossLanguageCompatibleSerializer,
-    BooleanSerializer,
-    ByteSerializer,
-    Int16Serializer,
-    Int32Serializer,
-    Int64Serializer,
-    FloatSerializer,
-    DoubleSerializer,
-    StringSerializer,
-    DateSerializer,
-    TimestampSerializer,
-    BytesSerializer,
-    CollectionSerializer,
-    ListSerializer,
-    TupleSerializer,
-    StringArraySerializer,
-    SetSerializer,
-    MapSerializer,
-    SubMapSerializer,
-    EnumSerializer,
-    SliceSerializer,
-    PickleSerializer,
-    DynamicIntSerializer,
-    DynamicFloatSerializer,
-)
 
-try:
-    from pyfury._serialization import ENABLE_FURY_CYTHON_SERIALIZATION
+from pyfury._serialization import ENABLE_FURY_CYTHON_SERIALIZATION
 
-    if ENABLE_FURY_CYTHON_SERIALIZATION:
-        from pyfury._serialization import (  # noqa: F401, F811
-            Serializer,
-            CrossLanguageCompatibleSerializer,
-            BooleanSerializer,
-            ByteSerializer,
-            Int16Serializer,
-            Int32Serializer,
-            Int64Serializer,
-            DynamicIntSerializer,
-            FloatSerializer,
-            DoubleSerializer,
-            StringSerializer,
-            DateSerializer,
-            TimestampSerializer,
-            BytesSerializer,
-            CollectionSerializer,
-            ListSerializer,
-            TupleSerializer,
-            StringArraySerializer,
-            SetSerializer,
-            MapSerializer,
-            SubMapSerializer,
-            EnumSerializer,
-            SliceSerializer,
-            PickleSerializer,
-        )
-except ImportError:
-    pass
+if ENABLE_FURY_CYTHON_SERIALIZATION:
+    from pyfury._serialization import (  # noqa: F401, F811
+        Serializer,
+        CrossLanguageCompatibleSerializer,
+        BooleanSerializer,
+        ByteSerializer,
+        Int16Serializer,
+        Int32Serializer,
+        Int64Serializer,
+        DynamicIntSerializer,
+        FloatSerializer,
+        DoubleSerializer,
+        DynamicFloatSerializer,
+        StringSerializer,
+        DateSerializer,
+        TimestampSerializer,
+        CollectionSerializer,
+        ListSerializer,
+        TupleSerializer,
+        StringArraySerializer,
+        SetSerializer,
+        MapSerializer,
+        SubMapSerializer,
+        EnumSerializer,
+        SliceSerializer,
+    )
+else:
+    from pyfury._serializer import (  # noqa: F401 # pylint: disable=unused-import
+        BytesBufferObject,
+        Serializer,
+        CrossLanguageCompatibleSerializer,
+        BooleanSerializer,
+        ByteSerializer,
+        Int16Serializer,
+        Int32Serializer,
+        Int64Serializer,
+        FloatSerializer,
+        DoubleSerializer,
+        StringSerializer,
+        DateSerializer,
+        TimestampSerializer,
+        CollectionSerializer,
+        ListSerializer,
+        TupleSerializer,
+        StringArraySerializer,
+        SetSerializer,
+        MapSerializer,
+        SubMapSerializer,
+        EnumSerializer,
+        SliceSerializer,
+        DynamicIntSerializer,
+        DynamicFloatSerializer,
+    )
 
 from pyfury.type import (
     BoolArrayType,
@@ -615,3 +610,17 @@ class BytesSerializer(CrossLanguageCompatibleSerializer):
     def read(self, buffer):
         fury_buf = self.fury.read_buffer_object(buffer)
         return fury_buf.to_pybytes()
+
+
+class PickleSerializer(Serializer):
+    def xwrite(self, buffer, value):
+        raise NotImplementedError
+
+    def xread(self, buffer):
+        raise NotImplementedError
+
+    def write(self, buffer, value):
+        self.fury.handle_unsupported_write(buffer, value)
+
+    def read(self, buffer):
+        return self.fury.handle_unsupported_read(buffer)

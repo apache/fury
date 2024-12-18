@@ -229,16 +229,6 @@ class TimestampSerializer(CrossLanguageCompatibleSerializer):
         return datetime.datetime.fromtimestamp(ts)
 
 
-class BytesSerializer(CrossLanguageCompatibleSerializer):
-    def write(self, buffer, value: bytes):
-        assert isinstance(value, bytes)
-        self.fury.write_buffer_object(buffer, BytesBufferObject(value))
-
-    def read(self, buffer):
-        fury_buf = self.fury.read_buffer_object(buffer)
-        return fury_buf.to_pybytes()
-
-
 class CollectionSerializer(Serializer):
     __slots__ = "class_resolver", "ref_resolver", "elem_serializer"
 
@@ -497,17 +487,3 @@ class SliceSerializer(Serializer):
 
     def xread(self, buffer):
         raise NotImplementedError
-
-
-class PickleSerializer(Serializer):
-    def xwrite(self, buffer, value):
-        raise NotImplementedError
-
-    def xread(self, buffer):
-        raise NotImplementedError
-
-    def write(self, buffer, value):
-        self.fury.handle_unsupported_write(buffer, value)
-
-    def read(self, buffer):
-        return self.fury.handle_unsupported_read(buffer)
