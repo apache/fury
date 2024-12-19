@@ -171,19 +171,6 @@ class PickleStrongCacheSerializer(Serializer):
     def xread(self, buffer):
         raise NotImplementedError
 
-    @staticmethod
-    def new_classinfo(fury, clear_threshold: int = 1000):
-        from pyfury import ClassInfo
-
-        return ClassInfo(
-            PickleStrongCacheStub,
-            PICKLE_STRONG_CACHE_CLASS_ID,
-            serializer=PickleStrongCacheSerializer(
-                fury, clear_threshold=clear_threshold
-            ),
-            class_name_bytes=b"PickleStrongCacheStub",
-        )
-
 
 class PickleCacheSerializer(Serializer):
     __slots__ = "_cached", "_reverse_cached"
@@ -219,17 +206,6 @@ class PickleCacheSerializer(Serializer):
 
     def xread(self, buffer):
         raise NotImplementedError
-
-    @staticmethod
-    def new_classinfo(fury):
-        from pyfury import ClassInfo
-
-        return ClassInfo(
-            PickleCacheStub,
-            PICKLE_CACHE_CLASS_ID,
-            serializer=PickleCacheSerializer(fury),
-            class_name_bytes=b"PickleCacheStub",
-        )
 
 
 class PandasRangeIndexSerializer(Serializer):

@@ -492,14 +492,6 @@ def test_cache_serializer():
     fury.register_type(CacheClass1, serializer=pyfury.PickleCacheSerializer(fury))
     assert ser_de(fury, CacheClass1(1)) == CacheClass1(1)
 
-    classinfo = pyfury.PickleStrongCacheSerializer.new_classinfo(fury)
-    buffer = Buffer.allocate(32)
-    fury.serialize_ref(buffer, CacheClass1(1), classinfo)
-    assert fury.deserialize_ref(buffer) == CacheClass1(1)
-    classinfo = pyfury.PickleCacheSerializer.new_classinfo(fury)
-    fury.serialize_ref(buffer, CacheClass1(1), classinfo)
-    assert fury.deserialize_ref(buffer) == CacheClass1(1)
-
 
 def test_pandas_range_index():
     fury = Fury(

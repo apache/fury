@@ -32,10 +32,10 @@ from pyfury._fury import (  # noqa: F401,F403,F811 # pylint: disable=unused-impo
     Language,
     OpaqueObject,
 )
-
+from pyfury._registry import ClassInfo
 if ENABLE_FURY_CYTHON_SERIALIZATION:
     from pyfury._serialization import (  # noqa: F401,F811
-        Fury,
+        Fury, ClassInfo
     )
 
 from pyfury._struct import (  # noqa: F401,F403,F811 # pylint: disable=unused-import
