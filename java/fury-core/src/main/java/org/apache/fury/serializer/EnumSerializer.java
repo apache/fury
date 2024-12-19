@@ -100,6 +100,20 @@ public class EnumSerializer extends ImmutableSerializer<Enum> {
     }
   }
 
+  @Override
+  public void xwrite(MemoryBuffer buffer, Enum value) {
+    buffer.writeVarUint32Small7(value.ordinal());
+  }
+
+  @Override
+  public Enum xread(MemoryBuffer buffer) {
+    int value = buffer.readVarUint32Small7();
+    if (value >= enumConstants.length) {
+      return handleNonexistentEnumValue(value);
+    }
+    return enumConstants[value];
+  }
+
   private Enum handleNonexistentEnumValue(int value) {
     if (fury.getConfig().deserializeNonexistentEnumValueAsNull()) {
       return null;

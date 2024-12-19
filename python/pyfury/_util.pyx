@@ -359,6 +359,9 @@ cdef class Buffer:
         return data
 
     cpdef inline write_varint32(self, int32_t value):
+        return self.write_varuint32(value)
+
+    cpdef inline write_varuint32(self, int32_t value):
         self.grow(<int8_t>5)
         cdef int32_t actual_bytes_written = self.c_buffer.get()\
             .PutVarUint32(self.writer_index, value)
@@ -366,6 +369,10 @@ cdef class Buffer:
         return actual_bytes_written
 
     cpdef inline int32_t read_varint32(self):
+        # TODO(chaokunyang) add zig zag
+        return self.read_varuint32()
+
+    cpdef inline int32_t read_varuint32(self):
         cdef:
             uint32_t read_length = 0
             int8_t b

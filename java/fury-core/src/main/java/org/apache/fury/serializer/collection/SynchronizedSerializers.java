@@ -40,6 +40,7 @@ import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
+import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.util.ExceptionUtils;
 
@@ -211,8 +212,9 @@ public class SynchronizedSerializers {
    */
   public static void registerSerializers(Fury fury) {
     try {
+      ClassResolver resolver = fury.getClassResolver();
       for (Tuple2<Class<?>, Function> factory : synchronizedFactories()) {
-        fury.registerSerializer(factory.f0, createSerializer(fury, factory));
+        resolver.registerSerializer(factory.f0, createSerializer(fury, factory));
       }
     } catch (Throwable e) {
       ExceptionUtils.ignore(e);

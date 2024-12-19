@@ -65,6 +65,9 @@ class MetaStringDecoder:
     Decodes MetaString objects back into their original plain text form.
     """
 
+    def __init__(self, char1=None, char2=None):
+        pass
+
     def decode(self, encoded_data: bytes, encoding: Encoding) -> str:
         """
         Decodes the encoded data using the specified encoding.
@@ -253,6 +256,9 @@ class MetaStringEncoder:
     """
     Encodes plain text strings into MetaString objects with specified encoding mechanisms.
     """
+
+    def __init__(self, char1=None, char2=None):
+        pass
 
     def encode(self, input_string: str) -> MetaString:
         """
@@ -465,7 +471,7 @@ class MetaStringEncoder:
         strip_last_char = len(bytes_array) * 8 >= total_bits + bits_per_char
         if strip_last_char:
             bytes_array[0] = bytes_array[0] | 0x80
-        return bytes_array
+        return bytes(bytes_array)
 
     def _char_to_value(self, c: str, bits_per_char: int) -> int:
         """

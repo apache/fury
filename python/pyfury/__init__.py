@@ -27,29 +27,25 @@ try:
 except ImportError:
     ENABLE_FURY_CYTHON_SERIALIZATION = False
 
+from pyfury._fury import (  # noqa: F401,F403,F811 # pylint: disable=unused-import
+    Fury,
+    Language,
+    OpaqueObject,
+)
+
 if ENABLE_FURY_CYTHON_SERIALIZATION:
     from pyfury._serialization import (  # noqa: F401,F811
         Fury,
-        Language,
-        ClassInfo,
-        OpaqueObject,
-        ComplexObjectSerializer,
     )
-else:
-    from pyfury._fury import (  # noqa: F401,F403,F811 # pylint: disable=unused-import
-        Fury,
-        Language,
-        ClassInfo,
-        OpaqueObject,
-    )
-    from pyfury._struct import (  # noqa: F401,F403,F811 # pylint: disable=unused-import
-        ComplexObjectSerializer,
-    )
+
+from pyfury._struct import (  # noqa: F401,F403,F811 # pylint: disable=unused-import
+    ComplexObjectSerializer,
+)
 from pyfury.serializer import *  # noqa: F401,F403 # pylint: disable=unused-import
 from pyfury.type import (  # noqa: F401 # pylint: disable=unused-import
     record_class_factory,
     get_qualified_classname,
-    FuryType,
+    TypeId,
     Int8Type,
     Int16Type,
     Int32Type,
