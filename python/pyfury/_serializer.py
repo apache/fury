@@ -147,12 +147,12 @@ class Int64Serializer(Serializer):
 
 
 class DynamicIntSerializer(CrossLanguageCompatibleSerializer):
-    def write(self, buffer, value):
+    def xwrite(self, buffer, value):
         # TOTO(chaokunyang) check value range and write type and value
         buffer.write_varint32(TypeId.INT64.value)
         buffer.write_varint64(value)
 
-    def read(self, buffer):
+    def xread(self, buffer):
         type_id = buffer.read_varint32()
         assert type_id == TypeId.INT64.value, type_id
         return buffer.read_varint64()
@@ -175,12 +175,12 @@ class DoubleSerializer(CrossLanguageCompatibleSerializer):
 
 
 class DynamicFloatSerializer(CrossLanguageCompatibleSerializer):
-    def write(self, buffer, value):
+    def xwrite(self, buffer, value):
         # TOTO(chaokunyang) check value range and write type and value
         buffer.write_varint32(TypeId.FLOAT64.value)
         buffer.write_double(value)
 
-    def read(self, buffer):
+    def xread(self, buffer):
         type_id = buffer.read_varint32()
         assert type_id == TypeId.FLOAT64.value, type_id
         return buffer.read_double()

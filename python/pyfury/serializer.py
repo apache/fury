@@ -533,13 +533,15 @@ else:
     _np_dtypes_dict = {}
 
 
-class Numpy1DArraySerializer:
+class Numpy1DArraySerializer(Serializer):
     dtypes_dict = _np_dtypes_dict
 
     def __init__(self, fury, ftype, dtype):
         super().__init__(fury, ftype)
         self.dtype = dtype
-        self.itemsize, self.typecode, self.type_id = _np_dtypes_dict[self.dtype]
+        self.itemsize, self.format, self.typecode, self.type_id = _np_dtypes_dict[
+            self.dtype
+        ]
 
     def xwrite(self, buffer, value):
         assert value.itemsize == self.itemsize
@@ -567,7 +569,7 @@ class Numpy1DArraySerializer:
         return self.fury.handle_unsupported_read(buffer)
 
 
-class NDArraySerializer:
+class NDArraySerializer(Serializer):
     def xwrite(self, buffer, value):
         itemsize, typecode, ftype, type_id = _np_dtypes_dict[value.dtype]
         view = memoryview(value)

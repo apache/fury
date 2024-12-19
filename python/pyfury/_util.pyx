@@ -359,7 +359,7 @@ cdef class Buffer:
         return data
 
     cpdef inline write_varint32(self, int32_t value):
-        self.write_varint32(value)
+        return self.write_varuint32(value)
 
     cpdef inline write_varuint32(self, int32_t value):
         self.grow(<int8_t>5)

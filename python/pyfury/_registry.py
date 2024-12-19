@@ -3,6 +3,7 @@ import dataclasses
 import datetime
 import enum
 import functools
+import inspect
 import logging
 from typing import TypeVar, Union
 from enum import Enum
@@ -295,7 +296,7 @@ class ClassResolver:
         typename: str = None,
         serializer=None,
     ):
-        self._register_type(
+        return self._register_type(
             cls,
             type_id=type_id,
             namespace=namespace,
@@ -316,7 +317,13 @@ class ClassResolver:
         """Register class with given type id or typename. If typename is not None, it will be used for
         cross-language serialization."""
         if serializer is not None and not isinstance(serializer, Serializer):
-            serializer = Serializer(self.fury, cls)
+            try:
+                serializer = serializer(self.fury, cls)
+            except:
+                try:
+                    serializer = serializer(self.fury)
+                except:
+                    serializer = serializer()
         n_params = len({typename, type_id, None}) - 1
         if n_params == 0:
             type_id = self._next_type_id()
@@ -334,7 +341,7 @@ class ClassResolver:
             if self.fury.language == Language.XLANG
             else self._register_pytype
         )
-        register_type(
+        return register_type(
             cls,
             type_id=type_id,
             namespace=namespace,
@@ -368,7 +375,7 @@ class ClassResolver:
                 )
         elif not internal:
             type_id = TypeId.NS_EXT if type_id is None else (type_id << 8 + TypeId.EXT)
-        self.__register_type(
+        return self.__register_type(
             cls,
             type_id=type_id,
             serializer=serializer,
@@ -387,7 +394,7 @@ class ClassResolver:
         serializer: Serializer = None,
         internal: bool = False,
     ):
-        self.__register_type(
+        return self.__register_type(
             cls,
             type_id=type_id,
             namespace=namespace,
