@@ -63,21 +63,23 @@ class MetaString:
         if not isinstance(other, MetaString):
             return NotImplemented
         return (
-                self.original == other.original and
-                self.encoding == other.encoding and
-                self.encoded_data == other.encoded_data and
-                self.length == other.length and
-                self.strip_last_char == other.strip_last_char
+            self.original == other.original
+            and self.encoding == other.encoding
+            and self.encoded_data == other.encoded_data
+            and self.length == other.length
+            and self.strip_last_char == other.strip_last_char
         )
 
     def __hash__(self):
-        return hash((
-            self.original,
-            self.encoding,
-            self.encoded_data,
-            self.length,
-            self.strip_last_char
-        ))
+        return hash(
+            (
+                self.original,
+                self.encoding,
+                self.encoded_data,
+                self.length,
+                self.strip_last_char,
+            )
+        )
 
     def __repr__(self):
         return (

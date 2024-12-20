@@ -279,6 +279,23 @@ class ClassResolver:
         register(list, type_id=TypeId.LIST, serializer=ListSerializer)
         register(set, type_id=TypeId.SET, serializer=SetSerializer)
         register(dict, type_id=TypeId.MAP, serializer=MapSerializer)
+        try:
+            import pyarrow as pa
+            from pyfury.format.serializer import (
+                ArrowRecordBatchSerializer,
+                ArrowTableSerializer,
+            )
+
+            register(
+                pa.RecordBatch,
+                type_id=TypeId.ARROW_RECORD_BATCH,
+                serializer=ArrowRecordBatchSerializer,
+            )
+            register(
+                pa.Table, type_id=TypeId.ARROW_TABLE, serializer=ArrowTableSerializer
+            )
+        except Exception:
+            pass
 
     def register_type(
         self,
@@ -413,6 +430,10 @@ class ClassResolver:
         if typename is None:
             classinfo = ClassInfo(cls, type_id, serializer, None, None, dynamic_type)
         else:
+            if namespace is None:
+                splits = typename.rsplit(".", 1)
+                if len(splits) == 2:
+                    namespace, typename = splits
             ns_metastr = self.namespace_encoder.encode(namespace or "")
             ns_meta_bytes = self.metastring_resolver.get_metastr_bytes(ns_metastr)
             type_metastr = self.typename_encoder.encode(typename)
@@ -422,7 +443,9 @@ class ClassResolver:
             )
             self._ns_type_to_classinfo[(ns_meta_bytes, type_meta_bytes)] = classinfo
         self._classes_info[cls] = classinfo
-        if type_id > 0 and (self.language == Language.PYTHON or not TypeId.is_namespaced_type(type_id)):
+        if type_id > 0 and (
+            self.language == Language.PYTHON or not TypeId.is_namespaced_type(type_id)
+        ):
             if type_id not in self._type_id_to_classinfo or not internal:
                 self._type_id_to_classinfo[type_id] = classinfo
         self._classes_info[cls] = classinfo
@@ -466,9 +489,9 @@ class ClassResolver:
                 class_info.serializer = self._create_serializer(cls)
             return class_info
         if self.language != Language.PYTHON or (
-            self.require_registration and isinstance(cls, Enum)
+            self.require_registration and not issubclass(cls, Enum)
         ):
-            raise TypeError(f"{cls} not registered")
+            raise TypeUnregisteredError(f"{cls} not registered")
         logger.info("Class %s not registered", cls)
         serializer = self._create_serializer(cls)
         type_id = (
@@ -566,7 +589,8 @@ class ClassResolver:
                 typename = type_metabytes.decode(self.typename_decoder)
                 # TODO(chaokunyang) generate a dynamic class and serializer
                 #  when meta share is enabled.
-                raise TypeUnregisteredError(f"{ns}.{typename} not registered")
+                name = ns + "." + typename if ns else typename
+                raise TypeUnregisteredError(f"{name} not registered")
             return typeinfo
         else:
             return self._type_id_to_classinfo[type_id]

@@ -1548,6 +1548,7 @@ cdef class TupleSerializer(CollectionSerializer):
             PyTuple_SET_ITEM(tuple_, i, elem)
         return tuple_
 
+
 @cython.final
 cdef class StringArraySerializer(ListSerializer):
     def __init__(self, fury, type_):

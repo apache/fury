@@ -178,13 +178,13 @@ class Fury:
 
     # `Union[type, TypeVar]` is not supported in py3.6
     def register_type(
-            self,
-            cls: Union[type, TypeVar],
-            *,
-            type_id: int = None,
-            namespace: str = None,
-            typename: str = None,
-            serializer=None,
+        self,
+        cls: Union[type, TypeVar],
+        *,
+        type_id: int = None,
+        namespace: str = None,
+        typename: str = None,
+        serializer=None,
     ):
         return self.class_resolver.register_type(
             cls,

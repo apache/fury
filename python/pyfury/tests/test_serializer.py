@@ -89,12 +89,14 @@ def test_basic_serializer(language):
     assert isinstance(
         classinfo.serializer, (TimestampSerializer, _serialization.TimestampSerializer)
     )
-    assert classinfo.type_id == TypeId.TIMESTAMP
+    if language == Language.XLANG:
+        assert classinfo.type_id == TypeId.TIMESTAMP
     classinfo = fury.class_resolver.get_classinfo(datetime.date)
     assert isinstance(
         classinfo.serializer, (DateSerializer, _serialization.DateSerializer)
     )
-    assert classinfo.type_id == TypeId.LOCAL_DATE
+    if language == Language.XLANG:
+        assert classinfo.type_id == TypeId.LOCAL_DATE
     assert ser_de(fury, True) is True
     assert ser_de(fury, False) is False
     assert ser_de(fury, -1) == -1
@@ -229,7 +231,8 @@ def test_array_serializer(language):
     fury = Fury(language=language, ref_tracking=True, require_class_registration=False)
     for typecode in PyArraySerializer.typecode_dict.keys():
         arr = array.array(typecode, list(range(10)))
-        assert ser_de(fury, arr) == arr
+        new_arr = ser_de(fury, arr)
+        assert np.array_equal(new_arr, arr)
     for dtype in Numpy1DArraySerializer.dtypes_dict.keys():
         arr = np.array(list(range(10)), dtype=dtype)
         new_arr = ser_de(fury, arr)
@@ -407,7 +410,9 @@ def test_pickle_fallback():
 
 
 def test_unsupported_callback():
-    fury = Fury(language=Language.PYTHON, ref_tracking=True)
+    fury = Fury(
+        language=Language.PYTHON, ref_tracking=True, require_class_registration=False
+    )
 
     def f1(x):
         return x
@@ -416,8 +421,6 @@ def test_unsupported_callback():
         return x + x
 
     obj1 = [1, True, f1, f2, {1: 2}]
-    with pytest.raises(Exception):
-        fury.serialize(obj1)
     unsupported_objects = []
     binary1 = fury.serialize(obj1, unsupported_callback=unsupported_objects.append)
     assert len(unsupported_objects) == 2
@@ -514,7 +517,9 @@ class PyDataClass1:
 
 
 def test_py_serialize_dataclass():
-    fury = Fury(language=Language.PYTHON, ref_tracking=True)
+    fury = Fury(
+        language=Language.PYTHON, ref_tracking=True, require_class_registration=False
+    )
     obj1 = PyDataClass1(
         f1=1, f2=-2.0, f3="abc", f4=True, f5="xyz", f6=[1, 2], f7={"k1": "v1"}
     )

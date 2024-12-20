@@ -38,7 +38,8 @@ except ImportError:
     np = None
 
 from pyfury._fury import (
-    NOT_NULL_PYINT_FLAG, BufferObject,
+    NOT_NULL_PYINT_FLAG,
+    BufferObject,
 )
 
 from pyfury._serialization import ENABLE_FURY_CYTHON_SERIALIZATION
