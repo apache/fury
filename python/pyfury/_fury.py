@@ -320,8 +320,7 @@ class Fury:
             return
         cls = type(obj)
         classinfo = self.class_resolver.get_classinfo(cls)
-        if not classinfo.dynamic_type:
-            self.class_resolver.write_typeinfo(buffer, classinfo)
+        self.class_resolver.write_typeinfo(buffer, classinfo)
         classinfo.serializer.xwrite(buffer, obj)
 
     def deserialize(

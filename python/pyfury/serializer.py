@@ -38,9 +38,7 @@ except ImportError:
     np = None
 
 from pyfury._fury import (
-    NOT_NULL_PYINT_FLAG,
-    PICKLE_STRONG_CACHE_CLASS_ID,
-    PICKLE_CACHE_CLASS_ID,
+    NOT_NULL_PYINT_FLAG, BufferObject,
 )
 
 from pyfury._serialization import ENABLE_FURY_CYTHON_SERIALIZATION
@@ -73,7 +71,6 @@ if ENABLE_FURY_CYTHON_SERIALIZATION:
     )
 else:
     from pyfury._serializer import (  # noqa: F401 # pylint: disable=unused-import
-        BytesBufferObject,
         Serializer,
         CrossLanguageCompatibleSerializer,
         BooleanSerializer,
@@ -470,12 +467,12 @@ class PyArraySerializer(CrossLanguageCompatibleSerializer):
 
 class DynamicPyArraySerializer(Serializer):
     def xwrite(self, buffer, value):
-        itemsize, ftype, type_id = typecode_dict[value.format]
+        itemsize, ftype, type_id = typecode_dict[value.typecode]
         view = memoryview(value)
         nbytes = len(value) * itemsize
         buffer.write_varint32(type_id)
         buffer.write_varint32(nbytes)
-        if value.dtype == np.dtype("bool") or not view.c_contiguous:
+        if not view.c_contiguous:
             buffer.write_bytes(value.tobytes())
         else:
             buffer.write_buffer(value)
@@ -558,7 +555,7 @@ class NDArraySerializer(Serializer):
             buffer.write_buffer(value)
 
     def xread(self, buffer):
-        raise NotImplementedError("Multi-demensional array not supported currently")
+        raise NotImplementedError("Multi-dimensional array not supported currently")
 
     def write(self, buffer, value):
         self.fury.handle_unsupported_write(buffer, value)
@@ -588,6 +585,22 @@ class BytesSerializer(CrossLanguageCompatibleSerializer):
     def read(self, buffer):
         fury_buf = self.fury.read_buffer_object(buffer)
         return fury_buf.to_pybytes()
+
+
+class BytesBufferObject(BufferObject):
+    __slots__ = ("binary",)
+
+    def __init__(self, binary: bytes):
+        self.binary = binary
+
+    def total_bytes(self) -> int:
+        return len(self.binary)
+
+    def write_to(self, buffer: "Buffer"):
+        buffer.write_bytes(self.binary)
+
+    def to_buffer(self) -> "Buffer":
+        return Buffer(self.binary)
 
 
 class PickleSerializer(Serializer):

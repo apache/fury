@@ -41,22 +41,6 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-class BytesBufferObject(BufferObject):
-    __slots__ = ("binary",)
-
-    def __init__(self, binary: bytes):
-        self.binary = binary
-
-    def total_bytes(self) -> int:
-        return len(self.binary)
-
-    def write_to(self, buffer: "Buffer"):
-        buffer.write_bytes(self.binary)
-
-    def to_buffer(self) -> "Buffer":
-        return Buffer(self.binary)
-
-
 class Serializer(ABC):
     __slots__ = "fury", "type_", "need_to_write_ref"
 
