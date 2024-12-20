@@ -400,7 +400,7 @@ public final class FuryBuilder {
       if (deserializeNonexistentClass == null) {
         deserializeNonexistentClass = false;
       }
-      if (scopedMetaShareEnabled != null) {
+      if (scopedMetaShareEnabled != null && scopedMetaShareEnabled) {
         LOG.warn("Scoped meta share is for CompatibleMode only, disable it for {}", compatibleMode);
       }
       scopedMetaShareEnabled = false;
