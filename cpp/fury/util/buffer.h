@@ -27,6 +27,7 @@
 
 #include "fury/util/bit_util.h"
 #include "fury/util/logging.h"
+#include "fury/util/status.h"
 
 namespace fury {
 
@@ -132,6 +133,29 @@ public:
   inline float GetFloat(uint32_t offset) { return Get<float>(offset); }
 
   inline double GetDouble(uint32_t offset) { return Get<double>(offset); }
+
+  inline Status GetBytesAsInt64(uint32_t offset, uint32_t length,
+                                int64_t *target) {
+    if (length == 0) {
+      *target = 0;
+      return Status::OK();
+    }
+    if (size_ - (offset + 8) > 0) {
+      uint64_t mask = 0xffffffffffffffff;
+      uint64_t x = (mask >> (8 - length) * 8);
+      *target = GetInt64(offset) & x;
+    } else {
+      if (size_ - (offset + length) < 0) {
+        return Status::OutOfBound("buffer out of bound");
+      }
+      int64_t result = 0;
+      for (size_t i = 0; i < length; i++) {
+        result = result | ((int64_t)(data_[offset + i])) << (i * 8);
+      }
+      *target = result;
+    }
+    return Status::OK();
+  }
 
   inline uint32_t PutVarUint32(uint32_t offset, int32_t value) {
     if (value >> 7 == 0) {

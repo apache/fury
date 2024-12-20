@@ -26,7 +26,7 @@ from libcpp.memory cimport shared_ptr, make_shared
 from libc.stdint cimport *
 from libcpp cimport bool as c_bool
 from pyfury.includes.libutil cimport(
-    CBuffer, AllocateBuffer, GetBit, SetBit, ClearBit, SetBitTo
+    CBuffer, AllocateBuffer, GetBit, SetBit, ClearBit, SetBitTo, CStatus, StatusCode
 )
 
 cdef int32_t max_buffer_size = 2 ** 31 - 1
@@ -238,16 +238,10 @@ cdef class Buffer:
         return value
 
     cpdef inline int64_t read_bytes_as_int64(self, int32_t length):
-        cdef int32_t size_ = self.c_buffer.get().size()
-        cdef int64_t result
-        cdef int32_t i
-        # if offset + length > size_:
-        if size_- (self.reader_index + 8) > 0:
-            result = self.get_int64(self.reader_index)
-            result = result & (0xffffffffffffffffL >> ((8 - length) * 8))
-        else:
-            for i in range(length):
-                result = result | (<int64_t>(self.read_int8()) & 0xff) << (i * 8)
+        cdef int64_t result = 0
+        cdef CStatus status = self.c_buffer.get().GetBytesAsInt64(self.reader_index, length,  &result)
+        if status.code() != StatusCode.OK:
+            raise ValueError(status.message())
         self.reader_index += length
         return result
 
