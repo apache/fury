@@ -474,12 +474,14 @@ class ClassResolver:
         """
         return self.get_classinfo(cls).serializer
 
-    def get_classinfo(self, cls):
+    def get_classinfo(self, cls, create=True):
         class_info = self._classes_info.get(cls)
         if class_info is not None:
             if class_info.serializer is None:
                 class_info.serializer = self._create_serializer(cls)
             return class_info
+        elif not create:
+            return
         if self.language != Language.PYTHON or (
             self.require_registration and not issubclass(cls, Enum)
         ):

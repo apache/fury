@@ -485,7 +485,7 @@ cdef class ClassResolver:
         """
         return self.get_classinfo(cls).serializer
 
-    cpdef inline ClassInfo get_classinfo(self, cls):
+    cpdef inline ClassInfo get_classinfo(self, cls, create=True):
         cdef PyObject * classinfo_ptr = self._c_classes_info[<uintptr_t> <PyObject *> cls]
         cdef ClassInfo class_info
         if classinfo_ptr != NULL:
@@ -495,8 +495,10 @@ cdef class ClassResolver:
             else:
                 class_info.serializer = self._resolver._create_serializer(cls)
                 return class_info
+        elif not create:
+            return
         else:
-            class_info = self._resolver.get_classinfo(cls)
+            class_info = self._resolver.get_classinfo(cls, create=create)
             self._c_classes_info[<uintptr_t> <PyObject *> cls] = <PyObject *> class_info
             self._populate_typeinfo(class_info)
             return class_info
