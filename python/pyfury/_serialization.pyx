@@ -79,6 +79,7 @@ cdef int8_t NOT_NULL_VALUE_FLAG = -1
 # this flag indicates that the object is a referencable and first read.
 cdef int8_t REF_VALUE_FLAG = 0
 
+
 @cython.final
 cdef class MapRefResolver:
     cdef flat_hash_map[uint64_t, int32_t] written_objects_id  # id(obj) -> ref_id
@@ -1050,6 +1051,7 @@ cpdef inline read_nullable_pystr(Buffer buffer):
     else:
         return None
 
+
 @cython.final
 cdef class SerializationContext:
     cdef dict objects
@@ -1124,6 +1126,7 @@ cdef class ByteSerializer(CrossLanguageCompatibleSerializer):
     cpdef inline read(self, Buffer buffer):
         return buffer.read_int8()
 
+
 @cython.final
 cdef class Int16Serializer(CrossLanguageCompatibleSerializer):
     cpdef inline write(self, Buffer buffer, value):
@@ -1132,6 +1135,7 @@ cdef class Int16Serializer(CrossLanguageCompatibleSerializer):
     cpdef inline read(self, Buffer buffer):
         return buffer.read_int16()
 
+
 @cython.final
 cdef class Int32Serializer(CrossLanguageCompatibleSerializer):
     cpdef inline write(self, Buffer buffer, value):
@@ -1139,6 +1143,7 @@ cdef class Int32Serializer(CrossLanguageCompatibleSerializer):
 
     cpdef inline read(self, Buffer buffer):
         return buffer.read_int32()
+
 
 @cython.final
 cdef class Int64Serializer(CrossLanguageCompatibleSerializer):
@@ -1163,6 +1168,7 @@ cdef int64_t INT32_MAX_VALUE = 1 << 31 - 1
 cdef float FLOAT32_MIN_VALUE = 1.17549e-38
 cdef float FLOAT32_MAX_VALUE = 3.40282e+38
 
+
 @cython.final
 cdef class DynamicIntSerializer(CrossLanguageCompatibleSerializer):
     cpdef inline xwrite(self, Buffer buffer, value):
@@ -1174,6 +1180,7 @@ cdef class DynamicIntSerializer(CrossLanguageCompatibleSerializer):
         type_id = buffer.read_varint32()
         assert type_id == <int32_t> TypeId.INT64, type_id
         return buffer.read_varint64()
+
 
 @cython.final
 cdef class FloatSerializer(CrossLanguageCompatibleSerializer):
@@ -1214,7 +1221,9 @@ cdef class StringSerializer(CrossLanguageCompatibleSerializer):
     cpdef inline read(self, Buffer buffer):
         return buffer.read_string()
 
+
 cdef _base_date = datetime.date(1970, 1, 1)
+
 
 @cython.final
 cdef class DateSerializer(CrossLanguageCompatibleSerializer):
@@ -1231,6 +1240,7 @@ cdef class DateSerializer(CrossLanguageCompatibleSerializer):
     cpdef inline read(self, Buffer buffer):
         days = buffer.read_int32()
         return _base_date + datetime.timedelta(days=days)
+
 
 @cython.final
 cdef class TimestampSerializer(CrossLanguageCompatibleSerializer):
@@ -1500,6 +1510,7 @@ cdef inline get_next_elenment(
         ref_resolver.set_read_object(ref_id, o)
         return o
 
+
 @cython.final
 cdef class TupleSerializer(CollectionSerializer):
     cpdef inline read(self, Buffer buffer):
@@ -1553,6 +1564,7 @@ cdef class TupleSerializer(CollectionSerializer):
 cdef class StringArraySerializer(ListSerializer):
     def __init__(self, fury, type_):
         super().__init__(fury, type_, StringSerializer(fury, str))
+
 
 @cython.final
 cdef class SetSerializer(CollectionSerializer):
@@ -1618,6 +1630,7 @@ cdef class SetSerializer(CollectionSerializer):
                 buffer, serializer=self.elem_serializer
             ))
         return instance
+
 
 @cython.final
 cdef class MapSerializer(Serializer):
@@ -1745,6 +1758,7 @@ cdef class MapSerializer(Serializer):
             map_[k] = v
         return map_
 
+
 @cython.final
 cdef class SubMapSerializer(Serializer):
     cdef ClassResolver class_resolver
@@ -1833,6 +1847,7 @@ cdef class SubMapSerializer(Serializer):
             map_[key] = value
         return map_
 
+
 @cython.final
 cdef class EnumSerializer(Serializer):
     @classmethod
@@ -1851,6 +1866,7 @@ cdef class EnumSerializer(Serializer):
 
     cpdef inline xread(self, Buffer buffer):
         raise NotImplementedError
+
 
 @cython.final
 cdef class SliceSerializer(Serializer):

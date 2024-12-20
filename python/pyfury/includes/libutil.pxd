@@ -22,9 +22,9 @@ from libcpp.string cimport string as c_string
 
 cdef extern from "fury/util/buffer.h" namespace "fury" nogil:
     cdef cppclass CStatus" fury::Status":
-        c_string ToString() const;
+        c_string ToString() const
 
-        c_string CodeAsString() const;
+        c_string CodeAsString() const
 
         c_string message() const
 
@@ -39,7 +39,6 @@ cdef extern from "fury/util/buffer.h" namespace "fury" nogil:
         Invalid = 5,
         IOError = 6,
         UnknownError = 7
-
 
     cdef cppclass CBuffer" fury::Buffer":
         CBuffer(uint8_t* data, uint32_t size, c_bool own_data=True)
@@ -83,7 +82,7 @@ cdef extern from "fury/util/buffer.h" namespace "fury" nogil:
 
         inline double GetDouble(uint32_t offset)
 
-        inline CStatus GetBytesAsInt64(uint32_t offset, uint32_t length, int64_t* target);
+        inline CStatus GetBytesAsInt64(uint32_t offset, uint32_t length, int64_t* target)
 
         inline uint32_t PutVarUint32(uint32_t offset, int32_t value)
 

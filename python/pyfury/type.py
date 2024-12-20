@@ -17,7 +17,6 @@
 
 import array
 import dataclasses
-import enum
 import importlib
 import inspect
 

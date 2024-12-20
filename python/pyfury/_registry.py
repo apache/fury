@@ -7,10 +7,7 @@ import logging
 from typing import TypeVar, Union
 from enum import Enum
 
-from pyfury._serialization import (
-    ENABLE_FURY_CYTHON_SERIALIZATION,
-    ClassInfo,
-)
+from pyfury._serialization import ENABLE_FURY_CYTHON_SERIALIZATION
 from pyfury import Language
 from pyfury.error import TypeUnregisteredError
 
@@ -81,7 +78,9 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-if not ENABLE_FURY_CYTHON_SERIALIZATION:
+if ENABLE_FURY_CYTHON_SERIALIZATION:
+    from pyfury._serialization import ClassInfo
+else:
 
     class ClassInfo:
         __slots__ = (
