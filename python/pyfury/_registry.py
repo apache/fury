@@ -221,9 +221,7 @@ class ClassResolver:
             pass
         for size, ftype, type_id in PyArraySerializer.typecode_dict.values():
             register(ftype, serializer=PyArraySerializer(self.fury, ftype, type_id))
-        register(
-            array.array, type_id=DYNAMIC_TYPE_ID, serializer=DynamicPyArraySerializer
-        )
+        register(array.array, serializer=DynamicPyArraySerializer)
         if np:
             register(np.ndarray, serializer=NDArraySerializer)
 
@@ -425,7 +423,8 @@ class ClassResolver:
             self._ns_type_to_classinfo[(ns_meta_bytes, type_meta_bytes)] = classinfo
         self._classes_info[cls] = classinfo
         if type_id > 0 and (self.language == Language.PYTHON or not TypeId.is_namespaced_type(type_id)):
-            self._type_id_to_classinfo[type_id] = classinfo
+            if type_id not in self._type_id_to_classinfo or not internal:
+                self._type_id_to_classinfo[type_id] = classinfo
         self._classes_info[cls] = classinfo
         return classinfo
 
