@@ -29,6 +29,7 @@ from pyfury._util import get_bit, set_bit, clear_bit
 from pyfury._fury import Language
 from pyfury._fury import _PicklerStub, _UnpicklerStub, Pickler, Unpickler
 from pyfury._fury import _ENABLE_CLASS_REGISTRATION_FORCIBLY
+from pyfury.lib import mmh3
 from pyfury.meta.metastring import Encoding
 from pyfury.type import is_primitive_type
 from pyfury.util import is_little_endian
@@ -238,11 +239,11 @@ cdef int32_t SMALL_STRING_THRESHOLD = 16
 
 @cython.final
 cdef class MetaStringBytes:
-    cdef bytes data
+    cdef public bytes data
     cdef int16_t length
     cdef public int8_t encoding
-    cdef int64_t hashcode
-    cdef int16_t dynamic_write_string_id
+    cdef public int64_t hashcode
+    cdef public int16_t dynamic_write_string_id
 
     def __init__(self, data, hashcode):
         self.data = data
@@ -260,6 +261,9 @@ cdef class MetaStringBytes:
     def decode(self, decoder):
         return decoder.decode(self.data, Encoding(self.encoding))
 
+    def __repr__(self):
+        return f"MetaStringBytes(data={self.data}, hashcode={self.hashcode})"
+
 
 @cython.final
 cdef class MetaStringResolver:
@@ -271,11 +275,13 @@ cdef class MetaStringResolver:
         flat_hash_map[int64_t, PyObject *] _c_hash_to_metastr_bytes
         flat_hash_map[pair[int64_t, int64_t], PyObject *] _c_hash_to_small_metastring_bytes
         set _enum_str_set
+        dict _metastr_to_metastr_bytes
 
     def __init__(self):
         self._enum_str_set = set()
+        self._metastr_to_metastr_bytes = dict()
 
-    cdef inline write_meta_string_bytes(
+    cpdef inline write_meta_string_bytes(
             self, Buffer buffer, MetaStringBytes metastr_bytes):
         cdef int16_t dynamic_type_id = metastr_bytes.dynamic_write_string_id
         cdef int32_t length = metastr_bytes.length
@@ -293,7 +299,7 @@ cdef class MetaStringResolver:
         else:
             buffer.write_varint32(((dynamic_type_id + 1) << 1) | 1)
 
-    cdef inline MetaStringBytes read_meta_string_bytes(self, Buffer buffer):
+    cpdef inline MetaStringBytes read_meta_string_bytes(self, Buffer buffer):
         cdef int32_t header = buffer.read_varint32()
         cdef int32_t length = header >> 1
         if header & 0b1 != 0:
@@ -309,7 +315,7 @@ cdef class MetaStringResolver:
             else:
                 v1 = buffer.read_int64()
                 v2 = buffer.read_bytes_as_int64(length - 8)
-            hashcode = ((v1 * 31 + v2) & 0xffffffffffffff00) | encoding
+            hashcode = ((v1 * 31 + v2) >> 8 << 8) | encoding
             enum_str_ptr = self._c_hash_to_small_metastring_bytes[pair[int64_t, int64_t](v1, v2)]
             if enum_str_ptr == NULL:
                 reader_index = buffer.reader_index
@@ -332,6 +338,27 @@ cdef class MetaStringResolver:
                 self._c_hash_to_metastr_bytes[hashcode] = enum_str_ptr
         self._c_dynamic_id_to_enum_string_vec.push_back(enum_str_ptr)
         return <MetaStringBytes> enum_str_ptr
+
+    def get_metastr_bytes(self, metastr):
+        metastr_bytes = self._metastr_to_metastr_bytes.get(metastr)
+        if metastr_bytes is not None:
+            return metastr_bytes
+        cdef int64_t v1 = 0, v2 = 0, hashcode
+        length = len(metastr.encoded_data)
+        if length <= SMALL_STRING_THRESHOLD:
+            data_buf = Buffer(metastr.encoded_data)
+            if length <= 8:
+                v1 = data_buf.read_bytes_as_int64(length)
+            else:
+                v1 = data_buf.read_int64()
+                v2 = data_buf.read_bytes_as_int64(length - 8)
+            value_hash = ((v1 * 31 + v2) >> 8 << 8) | metastr.encoding.value
+        else:
+            value_hash = mmh3.hash_buffer(metastr.encoded_data, seed=47)[0]
+            value_hash = value_hash >> 8 << 8
+            value_hash |= metastr.encoding.value & 0xFF
+        self._metastr_to_metastr_bytes[metastr] = metastr_bytes = MetaStringBytes(metastr.encoded_data, value_hash)
+        return metastr_bytes
 
     cpdef inline reset_read(self):
         self._c_dynamic_id_to_enum_string_vec.clear()
@@ -422,7 +449,6 @@ cdef class ClassResolver:
             typename: str = None,
             serializer=None,
     ):
-
         typeinfo = self._resolver.register_type(
             cls,
             type_id=type_id,
@@ -433,10 +459,14 @@ cdef class ClassResolver:
         self._populate_typeinfo(typeinfo)
 
     cdef _populate_typeinfo(self, typeinfo):
-        if typeinfo.type_id >= self._c_registered_id_to_class_info.size():
-            self._c_registered_id_to_class_info.resize(typeinfo.type_id * 2, NULL)
-        if typeinfo.type_id > 0:
-            self._c_registered_id_to_class_info[typeinfo.type_id] = <PyObject *> typeinfo
+        type_id = typeinfo.type_id
+        if type_id >= self._c_registered_id_to_class_info.size():
+            self._c_registered_id_to_class_info.resize(type_id * 2, NULL)
+        if type_id > 0 and (self.fury.language == Language.PYTHON or not IsNamespacedType(type_id)):
+            self._c_registered_id_to_class_info[type_id] = <PyObject *> typeinfo
+        self._c_classes_info[<uintptr_t> <PyObject *> typeinfo.cls] = <PyObject *> typeinfo
+        if typeinfo.typename_bytes is not None:
+            self._load_bytes_to_classinfo(type_id, typeinfo.namespace_bytes, typeinfo.typename_bytes)
 
     def register_serializer(self, cls: Union[type, TypeVar], serializer):
         classinfo1 = self._resolver.get_classinfo(cls)

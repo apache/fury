@@ -96,9 +96,6 @@ class CrossLanguageCompatibleSerializer(Serializer):
 
 
 class BooleanSerializer(CrossLanguageCompatibleSerializer):
-    def get_xtype_id(self):
-        return TypeId.BOOL.value
-
     def write(self, buffer, value):
         buffer.write_bool(value)
 
@@ -294,9 +291,6 @@ class CollectionSerializer(Serializer):
 
 
 class ListSerializer(CollectionSerializer):
-    def get_xtype_id(self):
-        return TypeId.LIST
-
     def read(self, buffer):
         len_ = buffer.read_varint32()
         instance = []
@@ -319,14 +313,8 @@ class StringArraySerializer(ListSerializer):
     def __init__(self, fury, type_):
         super().__init__(fury, type_, StringSerializer(fury, str))
 
-    def get_xtype_id(self):
-        return TypeId.FURY_STRING_ARRAY
-
 
 class SetSerializer(CollectionSerializer):
-    def get_xtype_id(self):
-        return TypeId.FURY_SET
-
     def new_instance(self, type_):
         instance = set()
         self.fury.ref_resolver.reference(instance)

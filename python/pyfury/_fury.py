@@ -21,7 +21,7 @@ import os
 import warnings
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Union, Iterable
+from typing import Union, Iterable, TypeVar
 
 from pyfury.buffer import Buffer
 from pyfury.resolver import (
@@ -177,8 +177,22 @@ class Fury:
         self.class_resolver.register_serializer(cls, serializer)
 
     # `Union[type, TypeVar]` is not supported in py3.6
-    def register_type(self, cls, *, class_id: int = None, type_tag: str = None):
-        self.class_resolver.register_type(cls, class_id=class_id, type_tag=type_tag)
+    def register_type(
+            self,
+            cls: Union[type, TypeVar],
+            *,
+            type_id: int = None,
+            namespace: str = None,
+            typename: str = None,
+            serializer=None,
+    ):
+        return self.class_resolver.register_type(
+            cls,
+            type_id=type_id,
+            namespace=namespace,
+            typename=typename,
+            serializer=serializer,
+        )
 
     def serialize(
         self,

@@ -102,9 +102,8 @@ def _get_hash(fury, field_names: list, type_hints: dict):
 
 
 class ComplexObjectSerializer(Serializer):
-    def __init__(self, fury, clz: type, type_tag: str):
+    def __init__(self, fury, clz):
         super().__init__(fury, clz)
-        self._type_tag = type_tag
         self._type_hints = typing.get_type_hints(clz)
         self._field_names = sorted(self._type_hints.keys())
         self._serializers = [None] * len(self._field_names)
@@ -169,18 +168,18 @@ class StructHashVisitor(TypeVisitor):
 
     def visit_list(self, field_name, elem_type, types_path=None):
         # TODO add list element type to hash.
-        xtype_id = self.fury.class_resolver.get_classinfo(list).class_id
+        xtype_id = self.fury.class_resolver.get_classinfo(list).type_id
         self._hash = self._compute_field_hash(self._hash, abs(xtype_id))
 
     def visit_dict(self, field_name, key_type, value_type, types_path=None):
         # TODO add map key/value type to hash.
-        xtype_id = self.fury.class_resolver.get_classinfo(dict).class_id
+        xtype_id = self.fury.class_resolver.get_classinfo(dict).type_id
         self._hash = self._compute_field_hash(self._hash, abs(xtype_id))
 
     def visit_customized(self, field_name, type_, types_path=None):
         classinfo = self.fury.class_resolver.get_classinfo(type_)
-        hash_value = classinfo.xtype_id
-        if TypeId.is_namespaced_type(classinfo.xtype_id):
+        hash_value = classinfo.type_id
+        if TypeId.is_namespaced_type(classinfo.type_id):
             hash_value = compute_string_hash(classinfo.namespace + classinfo.typename)
         self._hash = self._compute_field_hash(self._hash, hash_value)
 
@@ -188,9 +187,10 @@ class StructHashVisitor(TypeVisitor):
         if type_ not in basic_types and not is_py_array_type(type_):
             # FIXME ignore unknown types for hash calculation
             return None
-        serializer = self.fury.class_resolver.get_serializer(type_)
+        classinfo = self.fury.class_resolver.get_classinfo(type_)
+        serializer = classinfo.serializer
         assert not isinstance(serializer, (PickleSerializer,))
-        id_ = serializer.get_xtype_id()
+        id_ = classinfo.type_id
         assert id_ is not None, serializer
         id_ = abs(id_)
         self._hash = self._compute_field_hash(self._hash, id_)

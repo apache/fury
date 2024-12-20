@@ -332,9 +332,6 @@ class BarSerializer(pyfury.Serializer):
     def xread(self, buffer):
         return Bar(buffer.read_int32(), buffer.read_int32())
 
-    def get_xtype_id(self):
-        return pyfury.TypeId.FURY_TYPE_TAG
-
 
 class RegisterClass:
     def __init__(self, f1=None):

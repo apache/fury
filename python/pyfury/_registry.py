@@ -77,10 +77,6 @@ from pyfury._fury import (
     PICKLE_CLASS_ID,
     PICKLE_STRONG_CACHE_CLASS_ID,
     PICKLE_CACHE_CLASS_ID,
-    NOT_NULL_PYINT_FLAG,
-    NOT_NULL_PYFLOAT_FLAG,
-    NOT_NULL_PYBOOL_FLAG,
-    NOT_NULL_STRING_FLAG,
     SMALL_STRING_THRESHOLD,
 )
 
@@ -130,7 +126,6 @@ if not ENABLE_FURY_CYTHON_SERIALIZATION:
 class ClassResolver:
     __slots__ = (
         "fury",
-        "_type_tag_to_class_x_lang_map",
         "_metastr_to_str",
         "_type_id_counter",
         "_classes_info",
@@ -420,16 +415,16 @@ class ClassResolver:
         if typename is None:
             classinfo = ClassInfo(cls, type_id, serializer, None, None, dynamic_type)
         else:
-            ns_metastr = self.namespace_encoder.encode(namespace)
-            ns_meta_bytes = _create_metastr_bytes(ns_metastr)
+            ns_metastr = self.namespace_encoder.encode(namespace or "")
+            ns_meta_bytes = self.metastring_resolver.get_metastr_bytes(ns_metastr)
             type_metastr = self.typename_encoder.encode(typename)
-            type_meta_bytes = _create_metastr_bytes(type_metastr)
+            type_meta_bytes = self.metastring_resolver.get_metastr_bytes(type_metastr)
             classinfo = ClassInfo(
                 cls, type_id, serializer, ns_meta_bytes, type_meta_bytes, dynamic_type
             )
             self._ns_type_to_classinfo[(ns_meta_bytes, type_meta_bytes)] = classinfo
         self._classes_info[cls] = classinfo
-        if type_id > 0:
+        if type_id > 0 and (self.language == Language.PYTHON or not TypeId.is_namespaced_type(type_id)):
             self._type_id_to_classinfo[type_id] = classinfo
         self._classes_info[cls] = classinfo
         return classinfo
@@ -535,12 +530,12 @@ class ClassResolver:
             return classinfo
         ns_metabytes = self.metastring_resolver.read_meta_string_bytes(buffer)
         type_metabytes = self.metastring_resolver.read_meta_string_bytes(buffer)
-        typeinfo = self._ns_type_to_classinfo.get((ns_metabytes, type_metabytes))
-        if typeinfo is None:
-            typeinfo = self._load_metabytes_to_classinfo(ns_metabytes, type_metabytes)
-        return typeinfo
+        return self._load_metabytes_to_classinfo(ns_metabytes, type_metabytes)
 
     def _load_metabytes_to_classinfo(self, ns_metabytes, type_metabytes):
+        typeinfo = self._ns_type_to_classinfo.get((ns_metabytes, type_metabytes))
+        if typeinfo is not None:
+            return typeinfo
         ns = ns_metabytes.decode(self.namespace_decoder)
         typename = type_metabytes.decode(self.typename_decoder)
         cls = load_class(ns + "#" + typename)
@@ -585,11 +580,3 @@ class ClassResolver:
 
     def reset_write(self):
         pass
-
-
-def _create_metastr_bytes(metastr):
-    value_hash = abs(mmh3.hash_buffer(metastr.encoded_data, seed=47)[0])
-    value_hash &= 0xFFFFFFFFFFFFFF00
-    header = metastr.encoding.value & 0xFF
-    value_hash |= header
-    return MetaStringBytes(metastr.encoded_data, value_hash)

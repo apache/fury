@@ -35,9 +35,6 @@ class ArrowRecordBatchSerializer(CrossLanguageCompatibleSerializer):
         [batch] = [batch for batch in reader]
         return batch
 
-    def get_xtype_id(self):
-        return TypeId.FURY_ARROW_RECORD_BATCH.value
-
 
 class ArrowRecordBatchBufferObject(BufferObject):
     def __init__(self, batch: pa.RecordBatch):
@@ -80,9 +77,6 @@ class ArrowTableSerializer(CrossLanguageCompatibleSerializer):
         reader = pa.ipc.open_stream(pa.py_buffer(fury_buf))
         batches = [batch for batch in reader]
         return pa.Table.from_batches(batches)
-
-    def get_xtype_id(self):
-        return TypeId.FURY_ARROW_TABLE.value
 
 
 class ArrowTableBufferObject(BufferObject):
