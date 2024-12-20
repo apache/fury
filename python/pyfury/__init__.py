@@ -33,10 +33,9 @@ from pyfury._fury import (  # noqa: F401,F403,F811 # pylint: disable=unused-impo
     OpaqueObject,
 )
 from pyfury._registry import ClassInfo
+
 if ENABLE_FURY_CYTHON_SERIALIZATION:
-    from pyfury._serialization import (  # noqa: F401,F811
-        Fury, ClassInfo
-    )
+    from pyfury._serialization import Fury, ClassInfo  # noqa: F401,F811
 
 from pyfury._struct import (  # noqa: F401,F403,F811 # pylint: disable=unused-import
     ComplexObjectSerializer,

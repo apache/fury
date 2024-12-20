@@ -516,7 +516,7 @@ cdef class ClassResolver:
             ns_metabytes.hashcode, type_metabytes.hashcode)] = classinfo_ptr
         return classinfo
 
-    cpdef xwrite_typeinfo(self, Buffer buffer, ClassInfo classinfo):
+    cpdef write_typeinfo(self, Buffer buffer, ClassInfo classinfo):
         cdef:
             int32_t type_id = classinfo.type_id
             int32_t internal_type_id = type_id & 0xFF
@@ -757,7 +757,11 @@ cdef class Fury:
 
     cpdef inline xserialize_nonref(
             self, Buffer buffer, obj, Serializer serializer=None):
-        serializer = serializer or self.class_resolver.write_typeinfo(obj)
+        if serializer is None:
+            classinfo = self.class_resolver.get_classinfo(type(obj))
+            if not classinfo.dynamic_type:
+                self.class_resolver.write_typeinfo(buffer, classinfo)
+            serializer = classinfo.serializer
         serializer.xwrite(buffer, obj)
 
     def deserialize(
@@ -1106,10 +1110,10 @@ cdef class Int32Serializer(CrossLanguageCompatibleSerializer):
 @cython.final
 cdef class Int64Serializer(CrossLanguageCompatibleSerializer):
     cpdef inline xwrite(self, Buffer buffer, value):
-        buffer.write_int64(value)
+        buffer.write_varint64(value)
 
     cpdef inline xread(self, Buffer buffer):
-        return buffer.read_int64()
+        return buffer.read_varint64()
 
     cpdef inline write(self, Buffer buffer, value):
         buffer.write_varint64(value)
@@ -1160,11 +1164,11 @@ cdef class DoubleSerializer(CrossLanguageCompatibleSerializer):
 cdef class DynamicFloatSerializer(CrossLanguageCompatibleSerializer):
     cpdef inline xwrite(self, Buffer buffer, value):
         # TOTO(chaokunyang) check value range and write type and value
-        buffer.write_varint32(<int32_t> TypeId.FLOAT64)
+        buffer.write_varuint32(<int32_t> TypeId.FLOAT64)
         buffer.write_double(value)
 
     cpdef inline xread(self, Buffer buffer):
-        cdef int32_t type_id = buffer.read_varint32()
+        cdef int32_t type_id = buffer.read_varuint32()
         assert type_id == <int32_t> TypeId.FLOAT64, type_id
         return buffer.read_double()
 

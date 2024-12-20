@@ -307,7 +307,7 @@ class Fury:
         cls = type(obj)
         classinfo = self.class_resolver.get_classinfo(cls)
         if not classinfo.dynamic_type:
-            self.class_resolver.write_classinfo(classinfo)
+            self.class_resolver.write_typeinfo(buffer, classinfo)
         classinfo.serializer.xwrite(buffer, obj)
 
     def deserialize(
@@ -408,7 +408,7 @@ class Fury:
 
     def xdeserialize_nonref(self, buffer, serializer=None):
         if serializer is None:
-            serializer = self.class_resolver.read_classinfo(buffer).serializer
+            serializer = self.class_resolver.read_typeinfo(buffer).serializer
         return serializer.xread(buffer)
 
     def write_buffer_object(self, buffer, buffer_object: BufferObject):

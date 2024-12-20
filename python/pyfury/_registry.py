@@ -97,7 +97,7 @@ if not ENABLE_FURY_CYTHON_SERIALIZATION:
     class ClassInfo:
         __slots__ = (
             "cls",
-            "class_id",
+            "type_id",
             "serializer",
             "namespace_bytes",
             "typename_bytes",
@@ -107,14 +107,14 @@ if not ENABLE_FURY_CYTHON_SERIALIZATION:
         def __init__(
             self,
             cls: type = None,
-            class_id: int = NO_CLASS_ID,
+            type_id: int = NO_CLASS_ID,
             serializer: Serializer = None,
             namespace_bytes=None,
             typename_bytes=None,
             dynamic_type: bool = False,
         ):
             self.cls = cls
-            self.class_id = class_id
+            self.type_id = type_id
             self.serializer = serializer
             self.namespace_bytes = namespace_bytes
             self.typename_bytes = typename_bytes
@@ -122,7 +122,7 @@ if not ENABLE_FURY_CYTHON_SERIALIZATION:
 
         def __repr__(self):
             return (
-                f"ClassInfo(cls={self.cls}, class_id={self.class_id}, "
+                f"ClassInfo(cls={self.cls}, type_id={self.type_id}, "
                 f"serializer={self.serializer})"
             )
 
@@ -248,7 +248,7 @@ class ClassResolver:
         register(
             Float64Type,
             type_id=TypeId.FLOAT64,
-            serializer=FloatSerializer,
+            serializer=DoubleSerializer,
         )
         register(float, type_id=DYNAMIC_TYPE_ID, serializer=DynamicFloatSerializer)
         register(str, type_id=TypeId.STRING, serializer=StringSerializer)
@@ -332,7 +332,8 @@ class ClassResolver:
                 f"type name {typename} and id {type_id} should not be set at the same time"
             )
         if type_id not in {0, None}:
-            if type_id in self._type_id_to_classinfo:
+            # multiple class can have same tpe id
+            if type_id in self._type_id_to_classinfo and cls in self._classes_info:
                 raise TypeError(f"{cls} registered already")
         elif cls in self._classes_info:
             raise TypeError(f"{cls} registered already")
@@ -413,17 +414,18 @@ class ClassResolver:
         serializer: Serializer = None,
         internal: bool = False,
     ):
+        dynamic_type = type_id < 0
         if not internal and serializer is None:
             serializer = self._create_serializer(cls)
         if typename is None:
-            classinfo = ClassInfo(cls, type_id, serializer, None, None)
+            classinfo = ClassInfo(cls, type_id, serializer, None, None, dynamic_type)
         else:
             ns_metastr = self.namespace_encoder.encode(namespace)
             ns_meta_bytes = _create_metastr_bytes(ns_metastr)
             type_metastr = self.typename_encoder.encode(typename)
             type_meta_bytes = _create_metastr_bytes(type_metastr)
             classinfo = ClassInfo(
-                cls, type_id, serializer, ns_meta_bytes, type_meta_bytes
+                cls, type_id, serializer, ns_meta_bytes, type_meta_bytes, dynamic_type
             )
             self._ns_type_to_classinfo[(ns_meta_bytes, type_meta_bytes)] = classinfo
         self._classes_info[cls] = classinfo
@@ -509,9 +511,11 @@ class ClassResolver:
         return serializer
 
     def write_classinfo(self, buffer: Buffer, classinfo):
-        class_id = classinfo.class_id
-        if class_id != NO_CLASS_ID:
-            buffer.write_varuint32(class_id << 1)
+        if classinfo.dynamic_type:
+            return
+        type_id = classinfo.type_id
+        if type_id != NO_CLASS_ID:
+            buffer.write_varuint32(type_id << 1)
             return
         buffer.write_varuint32(1)
         self.metastring_resolver.write_meta_string_bytes(
@@ -524,8 +528,8 @@ class ClassResolver:
     def read_classinfo(self, buffer):
         header = buffer.read_varuint32()
         if header & 0b1 == 0:
-            class_id = header >> 1
-            classinfo = self._type_id_to_classinfo[class_id]
+            type_id = header >> 1
+            classinfo = self._type_id_to_classinfo[type_id]
             if classinfo.serializer is None:
                 classinfo.serializer = self._create_serializer(classinfo.cls)
             return classinfo
@@ -544,7 +548,7 @@ class ClassResolver:
         self._ns_type_to_classinfo[(ns_metabytes, type_metabytes)] = classinfo
         return classinfo
 
-    def xwrite_typeinfo(self, buffer, classinfo):
+    def write_typeinfo(self, buffer, classinfo):
         type_id = classinfo.type_id
         internal_type_id = type_id & 0xFF
         buffer.write_varuint32(type_id)
@@ -556,7 +560,7 @@ class ClassResolver:
                 buffer, classinfo.typename_bytes
             )
 
-    def xread_typeinfo(self, buffer):
+    def read_typeinfo(self, buffer):
         type_id = buffer.read_varuint32()
         internal_type_id = type_id & 0xFF
         if TypeId.is_namespaced_type(internal_type_id):

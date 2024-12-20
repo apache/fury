@@ -15,24 +15,22 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import array
 import datetime
 import logging
 from abc import ABC, abstractmethod
 from typing import Dict, Iterable, Any
 
-from pyfury._fury import BufferObject
+from pyfury._fury import (
+    BufferObject,
+    NOT_NULL_STRING_FLAG,
+    NOT_NULL_PYINT_FLAG,
+    NOT_NULL_PYBOOL_FLAG,
+)
 from pyfury.buffer import Buffer
 from pyfury.resolver import NOT_NULL_VALUE_FLAG, NULL_FLAG
 from pyfury.type import (
     TypeId,
     is_primitive_type,
-    # Int8ArrayType,
-    Int16ArrayType,
-    Int32ArrayType,
-    Int64ArrayType,
-    Float32ArrayType,
-    Float64ArrayType,
 )
 
 try:
@@ -134,10 +132,10 @@ class Int32Serializer(CrossLanguageCompatibleSerializer):
 
 class Int64Serializer(Serializer):
     def xwrite(self, buffer, value):
-        buffer.write_int64(value)
+        buffer.write_varint64(value)
 
     def xread(self, buffer):
-        return buffer.read_int64()
+        return buffer.read_varint64()
 
     def write(self, buffer, value):
         buffer.write_varint64(value)
@@ -149,12 +147,12 @@ class Int64Serializer(Serializer):
 class DynamicIntSerializer(CrossLanguageCompatibleSerializer):
     def xwrite(self, buffer, value):
         # TOTO(chaokunyang) check value range and write type and value
-        buffer.write_varint32(TypeId.INT64.value)
+        buffer.write_varint32(TypeId.INT64)
         buffer.write_varint64(value)
 
     def xread(self, buffer):
         type_id = buffer.read_varint32()
-        assert type_id == TypeId.INT64.value, type_id
+        assert type_id == TypeId.INT64, type_id
         return buffer.read_varint64()
 
 
@@ -177,12 +175,12 @@ class DoubleSerializer(CrossLanguageCompatibleSerializer):
 class DynamicFloatSerializer(CrossLanguageCompatibleSerializer):
     def xwrite(self, buffer, value):
         # TOTO(chaokunyang) check value range and write type and value
-        buffer.write_varint32(TypeId.FLOAT64.value)
+        buffer.write_varint32(TypeId.FLOAT64)
         buffer.write_double(value)
 
     def xread(self, buffer):
         type_id = buffer.read_varint32()
-        assert type_id == TypeId.FLOAT64.value, type_id
+        assert type_id == TypeId.FLOAT64, type_id
         return buffer.read_double()
 
 
@@ -237,9 +235,6 @@ class CollectionSerializer(Serializer):
         self.class_resolver = fury.class_resolver
         self.ref_resolver = fury.ref_resolver
         self.elem_serializer = elem_serializer
-
-    def get_xtype_id(self):
-        return -TypeId.LIST.value
 
     def write(self, buffer, value: Iterable[Any]):
         buffer.write_varint32(len(value))
@@ -300,7 +295,7 @@ class CollectionSerializer(Serializer):
 
 class ListSerializer(CollectionSerializer):
     def get_xtype_id(self):
-        return TypeId.LIST.value
+        return TypeId.LIST
 
     def read(self, buffer):
         len_ = buffer.read_varint32()
@@ -325,12 +320,12 @@ class StringArraySerializer(ListSerializer):
         super().__init__(fury, type_, StringSerializer(fury, str))
 
     def get_xtype_id(self):
-        return TypeId.FURY_STRING_ARRAY.value
+        return TypeId.FURY_STRING_ARRAY
 
 
 class SetSerializer(CollectionSerializer):
     def get_xtype_id(self):
-        return TypeId.FURY_SET.value
+        return TypeId.FURY_SET
 
     def new_instance(self, type_):
         instance = set()
@@ -355,9 +350,6 @@ class MapSerializer(Serializer):
         self.ref_resolver = fury.ref_resolver
         self.key_serializer = key_serializer
         self.value_serializer = value_serializer
-
-    def get_xtype_id(self):
-        return TypeId.MAP.value
 
     def write(self, buffer, value: Dict):
         buffer.write_varint32(len(value))
