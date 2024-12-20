@@ -144,7 +144,6 @@ public class ClassInfo {
     needToWriteClassDef = serializer != null && resolver.needToWriteClassDef(serializer);
   }
 
-
   public String decodeNamespace() {
     return packageNameBytes.decode(PACKAGE_DECODER);
   }

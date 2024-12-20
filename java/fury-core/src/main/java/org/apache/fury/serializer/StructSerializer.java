@@ -222,7 +222,8 @@ public class StructSerializer<T> extends Serializer<T> {
         ClassInfo classInfo = fury.getClassResolver().getClassInfo(fieldGeneric.getCls());
         int xtypeId = classInfo.getXtypeId();
         if (Types.isStructType((byte) xtypeId)) {
-          id = TypeUtils.computeStringHash(classInfo.decodeNamespace() + classInfo.decodeTypeName());
+          id =
+              TypeUtils.computeStringHash(classInfo.decodeNamespace() + classInfo.decodeTypeName());
         } else {
           id = Math.abs(xtypeId);
         }

@@ -248,8 +248,7 @@ public class XtypeResolver {
     ClassInfo classInfo = classInfoMap.get(type);
     Preconditions.checkArgument(
         classInfo != null
-            && (classInfo.xtypeId != 0
-                || !type.getSimpleName().equals(classInfo.decodeTypeName())),
+            && (classInfo.xtypeId != 0 || !type.getSimpleName().equals(classInfo.decodeTypeName())),
         "Type %s should be registered with id or namespace+typename before register serializer",
         type);
     return classInfo;
