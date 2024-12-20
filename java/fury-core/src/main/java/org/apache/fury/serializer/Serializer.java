@@ -27,8 +27,7 @@ import org.apache.fury.type.TypeUtils;
 
 /**
  * Serialize/deserializer objects into binary. Note that this class is designed as an abstract class
- * instead of interface to reduce virtual method call cost of {@link #needToWriteRef}/{@link
- * #getXtypeId}.
+ * instead of interface to reduce virtual method call cost of {@link #needToWriteRef}.
  *
  * @param <T> type of objects being serializing/deserializing
  */
@@ -60,23 +59,6 @@ public abstract class Serializer<T> {
   }
 
   public T read(MemoryBuffer buffer) {
-    throw new UnsupportedOperationException();
-  }
-
-  /**
-   * Returns {@link Fury#NOT_SUPPORT_CROSS_LANGUAGE} if the serializer doesn't support
-   * cross-language serialization. Return a number in range (0, 32767) if the serializer support
-   * cross-language serialization and native serialization data is the same with cross-language
-   * serialization. Return a negative short in range [-32768, 0) if the serializer support
-   * cross-language serialization and native serialization data is not the same with cross-language
-   * serialization.
-   */
-  public short getXtypeId() {
-    return Fury.NOT_SUPPORT_CROSS_LANGUAGE;
-  }
-
-  /** Returns a type tag used for setup type mapping between languages. */
-  public String getCrossLanguageTypeTag() {
     throw new UnsupportedOperationException();
   }
 

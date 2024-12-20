@@ -25,6 +25,7 @@ import java.util.OptionalInt;
 import java.util.OptionalLong;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.resolver.ClassResolver;
 
 /**
  * Serializers for {@link Optional}, {@link OptionalInt}, {@link OptionalLong} and {@link
@@ -130,9 +131,10 @@ public final class OptionalSerializers {
   }
 
   public static void registerDefaultSerializers(Fury fury) {
-    fury.registerSerializer(Optional.class, new OptionalSerializer(fury));
-    fury.registerSerializer(OptionalInt.class, new OptionalIntSerializer(fury));
-    fury.registerSerializer(OptionalLong.class, new OptionalLongSerializer(fury));
-    fury.registerSerializer(OptionalDouble.class, new OptionalDoubleSerializer(fury));
+    ClassResolver resolver = fury.getClassResolver();
+    resolver.registerSerializer(Optional.class, new OptionalSerializer(fury));
+    resolver.registerSerializer(OptionalInt.class, new OptionalIntSerializer(fury));
+    resolver.registerSerializer(OptionalLong.class, new OptionalLongSerializer(fury));
+    resolver.registerSerializer(OptionalDouble.class, new OptionalDoubleSerializer(fury));
   }
 }

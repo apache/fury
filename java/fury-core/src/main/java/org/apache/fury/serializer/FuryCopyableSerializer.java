@@ -48,25 +48,6 @@ public class FuryCopyableSerializer<T> extends Serializer<T> {
     return serializer.read(buffer);
   }
 
-  /**
-   * Returns {@link Fury#NOT_SUPPORT_CROSS_LANGUAGE} if the serializer doesn't support
-   * cross-language serialization. Return a number in range (0, 32767) if the serializer support
-   * cross-language serialization and native serialization data is the same with cross-language
-   * serialization. Return a negative short in range [-32768, 0) if the serializer support
-   * cross-language serialization and native serialization data is not the same with cross-language
-   * serialization.
-   */
-  @Override
-  public short getXtypeId() {
-    return serializer.getXtypeId();
-  }
-
-  /** Returns a type tag used for setup type mapping between languages. */
-  @Override
-  public String getCrossLanguageTypeTag() {
-    return serializer.getCrossLanguageTypeTag();
-  }
-
   @Override
   public void xwrite(MemoryBuffer buffer, T value) {
     serializer.xwrite(buffer, value);

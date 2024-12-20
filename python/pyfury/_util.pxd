@@ -134,9 +134,13 @@ cdef class Buffer:
 
     cpdef inline int64_t read_varint64(self)
 
+    cpdef inline write_varuint32(self, int32_t value)
+
     cpdef inline write_varint32(self, int32_t value)
 
     cpdef inline int32_t read_varint32(self)
+
+    cpdef inline int32_t read_varuint32(self)
 
     cpdef put_buffer(self, uint32_t offset, v, int32_t src_index, int32_t length)
 

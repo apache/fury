@@ -59,11 +59,46 @@ class MetaString:
         else:
             self.strip_last_char = False
 
+    def __eq__(self, other):
+        if not isinstance(other, MetaString):
+            return NotImplemented
+        return (
+            self.original == other.original
+            and self.encoding == other.encoding
+            and self.encoded_data == other.encoded_data
+            and self.length == other.length
+            and self.strip_last_char == other.strip_last_char
+        )
+
+    def __hash__(self):
+        return hash(
+            (
+                self.original,
+                self.encoding,
+                self.encoded_data,
+                self.length,
+                self.strip_last_char,
+            )
+        )
+
+    def __repr__(self):
+        return (
+            f"MetaString("
+            f"original={self.original!r}, "
+            f"encoding={self.encoding!r}, "
+            f"encoded_data={self.encoded_data!r}, "
+            f"length={self.length!r}, "
+            f"strip_last_char={self.strip_last_char!r})"
+        )
+
 
 class MetaStringDecoder:
     """
     Decodes MetaString objects back into their original plain text form.
     """
+
+    def __init__(self, char1=None, char2=None):
+        pass
 
     def decode(self, encoded_data: bytes, encoding: Encoding) -> str:
         """
@@ -253,6 +288,9 @@ class MetaStringEncoder:
     """
     Encodes plain text strings into MetaString objects with specified encoding mechanisms.
     """
+
+    def __init__(self, char1=None, char2=None):
+        pass
 
     def encode(self, input_string: str) -> MetaString:
         """
@@ -465,7 +503,7 @@ class MetaStringEncoder:
         strip_last_char = len(bytes_array) * 8 >= total_bits + bits_per_char
         if strip_last_char:
             bytes_array[0] = bytes_array[0] | 0x80
-        return bytes_array
+        return bytes(bytes_array)
 
     def _char_to_value(self, c: str, bits_per_char: int) -> int:
         """
