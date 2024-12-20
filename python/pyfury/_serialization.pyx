@@ -501,6 +501,8 @@ cdef class ClassResolver:
             return class_info
 
     cpdef inline write_classinfo(self, Buffer buffer, ClassInfo classinfo):
+        if classinfo.dynamic_type:
+            return
         cdef int32_t type_id = classinfo.type_id
         if type_id != NO_CLASS_ID:
             buffer.write_varint32((type_id << 1))
@@ -520,8 +522,7 @@ cdef class ClassResolver:
         cdef PyObject * classinfo_ptr
         # registered class id are greater than `NO_CLASS_ID`.
         if h1 & 0b1 == 0:
-            assert type_id >= 0, type_id
-            if type_id >= self._c_registered_id_to_class_info.size():
+            if type_id < 0 or type_id >= self._c_registered_id_to_class_info.size():
                 raise ValueError(f"Unexpected type_id {type_id}")
             classinfo_ptr = self._c_registered_id_to_class_info[type_id]
             if classinfo_ptr == NULL:
@@ -547,6 +548,8 @@ cdef class ClassResolver:
         return classinfo
 
     cpdef write_typeinfo(self, Buffer buffer, ClassInfo classinfo):
+        if classinfo.dynamic_type:
+            return
         cdef:
             int32_t type_id = classinfo.type_id
             int32_t internal_type_id = type_id & 0xFF
@@ -559,12 +562,13 @@ cdef class ClassResolver:
         cdef:
             int32_t type_id = buffer.read_varuint32()
             int32_t internal_type_id = type_id & 0xFF
-        assert type_id != 0
         cdef MetaStringBytes namespace_bytes, typename_bytes
         if IsNamespacedType(internal_type_id):
             namespace_bytes = self.metastring_resolver.read_meta_string_bytes(buffer)
             typename_bytes = self.metastring_resolver.read_meta_string_bytes(buffer)
             return self._load_bytes_to_classinfo(type_id, namespace_bytes, typename_bytes)
+        if type_id < 0 or type_id > self._c_registered_id_to_class_info.size():
+            raise ValueError(f"Unexpected type_id {type_id}")
         classinfo_ptr = self._c_registered_id_to_class_info[type_id]
         if classinfo_ptr == NULL:
             raise ValueError(f"Unexpected type_id {type_id}")
@@ -789,8 +793,7 @@ cdef class Fury:
             self, Buffer buffer, obj, Serializer serializer=None):
         if serializer is None:
             classinfo = self.class_resolver.get_classinfo(type(obj))
-            if not classinfo.dynamic_type:
-                self.class_resolver.write_typeinfo(buffer, classinfo)
+            self.class_resolver.write_typeinfo(buffer, classinfo)
             serializer = classinfo.serializer
         serializer.xwrite(buffer, obj)
 
