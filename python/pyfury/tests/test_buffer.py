@@ -233,5 +233,22 @@ def test_write_buffer():
     assert buf.read(3) == b"123"
 
 
+def test_read_bytes_as_int64():
+    # test small buffer whose length < 8
+    buf = Buffer(b"1234")
+    assert buf.read_bytes_as_int64(0) == 0
+    assert buf.read_bytes_as_int64(1) == 49
+
+    # test big buffer whose length > 8
+    buf = Buffer(b"12345678901234")
+    assert buf.read_bytes_as_int64(0) == 0
+    assert buf.read_bytes_as_int64(1) == 49
+    assert buf.read_bytes_as_int64(8) == 4123106164818064178
+
+    # test fix for `OverflowError: Python int too large to convert to C long`
+    buf = Buffer(b"\xa6IOr\x9ch)\x80\x12\x02")
+    buf.read_bytes_as_int64(8)
+
+
 if __name__ == "__main__":
     test_grow()
