@@ -18,7 +18,6 @@
 import pyarrow as pa
 from pyfury.serializer import CrossLanguageCompatibleSerializer, BufferObject
 from pyfury.buffer import Buffer
-from pyfury.type import TypeId
 
 
 class ArrowRecordBatchSerializer(CrossLanguageCompatibleSerializer):

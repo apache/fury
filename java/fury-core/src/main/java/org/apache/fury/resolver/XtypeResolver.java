@@ -345,6 +345,8 @@ public class XtypeResolver {
         assert classInfo.classNameBytes != null;
         metaStringResolver.writeMetaStringBytes(buffer, classInfo.classNameBytes);
         break;
+      default:
+        break;
     }
     return classInfo;
   }
@@ -402,6 +404,8 @@ public class XtypeResolver {
             break;
           case Types.NS_EXT:
             throw new SerializerUnregisteredException(qualifiedName);
+          default:
+            break;
         }
       } else {
         throw new ClassUnregisteredException(qualifiedName);

@@ -39,7 +39,6 @@ from pyfury.type import (
     Float64Type,
     is_py_array_type,
     compute_string_hash,
-    qualified_class_name,
 )
 
 logger = logging.getLogger(__name__)

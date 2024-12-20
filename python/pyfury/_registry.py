@@ -3,20 +3,17 @@ import dataclasses
 import datetime
 import enum
 import functools
-import inspect
 import logging
 from typing import TypeVar, Union
 from enum import Enum
 
 from pyfury._serialization import (
-    MetaStringBytes,
     ENABLE_FURY_CYTHON_SERIALIZATION,
     ClassInfo,
 )
 from pyfury import Language
 from pyfury.error import TypeUnregisteredError
 
-from pyfury.lib import mmh3
 from pyfury.serializer import (
     Serializer,
     Numpy1DArraySerializer,
@@ -64,10 +61,7 @@ from pyfury.type import (
     load_class,
 )
 from pyfury._fury import (
-    DEFAULT_DYNAMIC_WRITE_STRING_ID,
     DYNAMIC_TYPE_ID,
-    USE_CLASSNAME,
-    USE_CLASS_ID,
     # preserve 0 as flag for class id not set in ClassInfo`
     NO_CLASS_ID,
     PYINT_CLASS_ID,
@@ -77,7 +71,6 @@ from pyfury._fury import (
     PICKLE_CLASS_ID,
     PICKLE_STRONG_CACHE_CLASS_ID,
     PICKLE_CACHE_CLASS_ID,
-    SMALL_STRING_THRESHOLD,
 )
 
 try:
@@ -329,10 +322,10 @@ class ClassResolver:
         if serializer is not None and not isinstance(serializer, Serializer):
             try:
                 serializer = serializer(self.fury, cls)
-            except:
+            except BaseException:
                 try:
                     serializer = serializer(self.fury)
-                except:
+                except BaseException:
                     serializer = serializer()
         n_params = len({typename, type_id, None}) - 1
         if n_params == 0:
@@ -506,7 +499,6 @@ class ClassResolver:
         )
 
     def _create_serializer(self, cls):
-        classinfo_ = self._classes_info.get(cls)
         for clz in cls.__mro__:
             class_info = self._classes_info.get(clz)
             if (

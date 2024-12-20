@@ -98,7 +98,6 @@ else:
     )
 
 from pyfury.type import (
-    BoolArrayType,
     Int16ArrayType,
     Int32ArrayType,
     Int64ArrayType,
@@ -557,20 +556,6 @@ class NDArraySerializer(Serializer):
 
     def xread(self, buffer):
         raise NotImplementedError("Multi-dimensional array not supported currently")
-
-    def write(self, buffer, value):
-        self.fury.handle_unsupported_write(buffer, value)
-
-    def read(self, buffer):
-        return self.fury.handle_unsupported_read(buffer)
-
-
-class PickleSerializer(Serializer):
-    def xwrite(self, buffer, value):
-        raise NotImplementedError
-
-    def xread(self, buffer):
-        raise NotImplementedError
 
     def write(self, buffer, value):
         self.fury.handle_unsupported_write(buffer, value)

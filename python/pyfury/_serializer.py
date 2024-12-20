@@ -21,12 +21,10 @@ from abc import ABC, abstractmethod
 from typing import Dict, Iterable, Any
 
 from pyfury._fury import (
-    BufferObject,
     NOT_NULL_STRING_FLAG,
     NOT_NULL_PYINT_FLAG,
     NOT_NULL_PYBOOL_FLAG,
 )
-from pyfury.buffer import Buffer
 from pyfury.resolver import NOT_NULL_VALUE_FLAG, NULL_FLAG
 from pyfury.type import (
     TypeId,
