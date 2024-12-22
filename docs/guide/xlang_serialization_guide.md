@@ -225,8 +225,8 @@ class SomeClass2:
 
 if __name__ == "__main__":
     f = pyfury.Fury()
-    f.register_class(SomeClass1, type_tag="example.SomeClass1")
-    f.register_class(SomeClass2, type_tag="example.SomeClass2")
+    f.register_type(SomeClass1, typename="example.SomeClass1")
+    f.register_type(SomeClass2, typename="example.SomeClass2")
     obj1 = SomeClass1(f1=True, f2={-1: 2})
     obj = SomeClass2(
         f1=obj1,
@@ -444,7 +444,7 @@ class SomeClass:
     f3: Dict[str, str]
 
 fury = pyfury.Fury(ref_tracking=True)
-fury.register_class(SomeClass, type_tag="example.SomeClass")
+fury.register_type(SomeClass, typename="example.SomeClass")
 obj = SomeClass()
 obj.f2 = {"k1": "v1", "k2": "v2"}
 obj.f1, obj.f3 = obj, obj.f2

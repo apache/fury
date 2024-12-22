@@ -65,6 +65,16 @@ TEST(Buffer, TestVarUint) {
   }
 }
 
+TEST(Buffer, TestGetBytesAsInt64) {
+  std::shared_ptr<Buffer> buffer;
+  AllocateBuffer(64, &buffer);
+  buffer->UnsafePut<int32_t>(0, 100);
+  int64_t result = -1;
+  EXPECT_TRUE(buffer->GetBytesAsInt64(0, 0, &result).ok());
+  EXPECT_EQ(result, 0);
+  EXPECT_TRUE(buffer->GetBytesAsInt64(0, 1, &result).ok());
+  EXPECT_EQ(result, 100);
+}
 } // namespace fury
 
 int main(int argc, char **argv) {

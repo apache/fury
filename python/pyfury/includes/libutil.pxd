@@ -21,6 +21,25 @@ from libcpp.memory cimport shared_ptr
 from libcpp.string cimport string as c_string
 
 cdef extern from "fury/util/buffer.h" namespace "fury" nogil:
+    cdef cppclass CStatus" fury::Status":
+        c_string ToString() const
+
+        c_string CodeAsString() const
+
+        c_string message() const
+
+        StatusCode code() const
+
+    cdef enum class StatusCode(char):
+        OK = 0,
+        OutOfMemory = 1,
+        OutOfBound = 2,
+        KeyError = 3,
+        TypeError = 4,
+        Invalid = 5,
+        IOError = 6,
+        UnknownError = 7
+
     cdef cppclass CBuffer" fury::Buffer":
         CBuffer(uint8_t* data, uint32_t size, c_bool own_data=True)
 
@@ -62,6 +81,8 @@ cdef extern from "fury/util/buffer.h" namespace "fury" nogil:
         inline float GetFloat(uint32_t offset)
 
         inline double GetDouble(uint32_t offset)
+
+        inline CStatus GetBytesAsInt64(uint32_t offset, uint32_t length, int64_t* target)
 
         inline uint32_t PutVarUint32(uint32_t offset, int32_t value)
 

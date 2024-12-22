@@ -82,6 +82,7 @@ public final class MetaStringResolver {
       }
       dynamicWrittenMetaString[id] = byteString;
       int length = byteString.bytes.length;
+      // last bit `1` indicates class is written by name instead of registered id.
       buffer.writeVarUint32Small7(length << 2 | 0b1);
       if (length > SMALL_STRING_THRESHOLD) {
         buffer.writeInt64(byteString.hashCode);
@@ -90,6 +91,7 @@ public final class MetaStringResolver {
       }
       buffer.writeBytes(byteString.bytes);
     } else {
+      // last bit `1` indicates class is written by name instead of registered id.
       buffer.writeVarUint32Small7(((id + 1) << 2) | 0b11);
     }
   }
@@ -260,7 +262,8 @@ public final class MetaStringResolver {
     LittleEndian.putInt64(data, 0, v1);
     LittleEndian.putInt64(data, 8, v2);
     long hashCode = MurmurHash3.murmurhash3_x64_128(data, 0, len, 47)[0];
-    hashCode = ((hashCode) & 0xffffffffffffff00L) | encoding;
+    hashCode = Math.abs(hashCode);
+    hashCode = (hashCode & 0xffffffffffffff00L) | encoding;
     MetaStringBytes metaStringBytes = new MetaStringBytes(Arrays.copyOf(data, len), hashCode);
     longLongMap.put(v1, v2, metaStringBytes);
     return metaStringBytes;

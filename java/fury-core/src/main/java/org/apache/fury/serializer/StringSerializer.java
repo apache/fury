@@ -41,7 +41,6 @@ import org.apache.fury.memory.LittleEndian;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
 import org.apache.fury.reflect.ReflectionUtils;
-import org.apache.fury.type.Type;
 import org.apache.fury.util.MathUtils;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.StringEncodingUtils;
@@ -113,11 +112,6 @@ public final class StringSerializer extends ImmutableSerializer<String> {
   public StringSerializer(Fury fury) {
     super(fury, String.class, fury.trackingRef() && !fury.isStringRefIgnored());
     compressString = fury.compressString();
-  }
-
-  @Override
-  public short getXtypeId() {
-    return Type.STRING.getId();
   }
 
   @Override

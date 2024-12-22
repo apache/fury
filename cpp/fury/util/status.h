@@ -83,11 +83,12 @@ namespace fury {
 enum class StatusCode : char {
   OK = 0,
   OutOfMemory = 1,
-  KeyError = 2,
-  TypeError = 3,
-  Invalid = 4,
-  IOError = 5,
-  UnknownError = 6,
+  OutOfBound = 2,
+  KeyError = 3,
+  TypeError = 4,
+  Invalid = 5,
+  IOError = 6,
+  UnknownError = 7,
 };
 
 class Status {
@@ -120,6 +121,10 @@ public:
 
   // Return error status of an appropriate type.
   static Status OutOfMemory(const std::string &msg) {
+    return Status(StatusCode::OutOfMemory, msg);
+  }
+
+  static Status OutOfBound(const std::string &msg) {
     return Status(StatusCode::OutOfMemory, msg);
   }
 
