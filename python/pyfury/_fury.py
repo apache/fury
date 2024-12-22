@@ -76,13 +76,6 @@ class Language(enum.Enum):
     RUST = 6
 
 
-@dataclass
-class OpaqueObject:
-    language: Language
-    classname: str
-    ordinal: int
-
-
 class BufferObject(ABC):
     """
     Fury binary representation of an object.

@@ -19,7 +19,6 @@ from pyfury import lib  # noqa: F401 # pylint: disable=unused-import
 from pyfury._fury import (  # noqa: F401 # pylint: disable=unused-import
     Fury,
     Language,
-    OpaqueObject,
 )
 
 try:
@@ -27,11 +26,6 @@ try:
 except ImportError:
     ENABLE_FURY_CYTHON_SERIALIZATION = False
 
-from pyfury._fury import (  # noqa: F401,F403,F811 # pylint: disable=unused-import
-    Fury,
-    Language,
-    OpaqueObject,
-)
 from pyfury._registry import ClassInfo
 
 if ENABLE_FURY_CYTHON_SERIALIZATION:

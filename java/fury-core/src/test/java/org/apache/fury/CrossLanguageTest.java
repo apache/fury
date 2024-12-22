@@ -65,7 +65,7 @@ import org.testng.annotations.Test;
 public class CrossLanguageTest {
   private static final Logger LOG = LoggerFactory.getLogger(CrossLanguageTest.class);
   private static final String PYTHON_MODULE = "pyfury.tests.test_cross_language";
-  private static final String PYTHON_EXECUTABLE = "python";
+  private static final String PYTHON_EXECUTABLE = "/Users/chaokunyang/Desktop/ant/DeveProjects/mellow/venv/bin/python";
 
   /**
    * Execute an external command.
@@ -517,59 +517,6 @@ public class CrossLanguageTest {
             PYTHON_EXECUTABLE, "-m", PYTHON_MODULE, testName, dataFile.toAbsolutePath().toString());
     Assert.assertTrue(executeCommand(command, 30));
     Assert.assertEquals(fury.deserialize(Files.readAllBytes(dataFile)), obj);
-  }
-
-  @Test
-  public void testSerializeOpaqueObjectSimple() {
-    Fury fury =
-        Fury.builder()
-            .withLanguage(Language.XLANG)
-            .withRefTracking(true)
-            .requireClassRegistration(false)
-            .build();
-    fury.register(ComplexObject2.class, "test.ComplexObject2");
-    ComplexObject2 obj = new ComplexObject2();
-    obj.f1 = Foo.create();
-    byte[] serialized = fury.serialize(obj);
-    Assert.assertEquals(fury.deserialize(serialized), obj);
-  }
-
-  @Test
-  public void testSerializeOpaqueObject() throws Exception {
-    Fury fury =
-        Fury.builder()
-            .withLanguage(Language.XLANG)
-            .withRefTracking(true)
-            .requireClassRegistration(false)
-            .build();
-    fury.register(ComplexObject1.class, "test.ComplexObject1");
-    // don't register ComplexObject2/Foo to make them serialize as opaque blobs.
-    ComplexObject1 obj = new ComplexObject1();
-    obj.f1 = new ComplexObject2();
-    ((ComplexObject2) obj.f1).f1 = true;
-    ((ComplexObject2) obj.f1).f2 = new HashMap<>(ImmutableMap.of((byte) -1, 2));
-    obj.f2 = "abc";
-    obj.f3 = Arrays.asList(obj.f1, Foo.create());
-    byte[] serialized = fury.serialize(obj);
-    Assert.assertEquals(fury.deserialize(serialized), obj);
-
-    Path dataFile = Files.createTempFile("test_serialize_opaque_object", "data");
-    ImmutableList<String> command =
-        ImmutableList.of(
-            PYTHON_EXECUTABLE,
-            "-m",
-            PYTHON_MODULE,
-            "test_serialize_opaque_object",
-            dataFile.toAbsolutePath().toString());
-    Files.write(dataFile, serialized);
-    Assert.assertTrue(executeCommand(command, 30));
-    // TODO support OpaqueObject itself serialization
-    // ComplexObject1 newObj = (ComplexObject1) fury.deserialize(Files.readAllBytes(dataFile));
-    // assertEquals(newObj.f1.getClass(), OpaqueObjects.OpaqueObject.class);
-    // assertEquals(newObj.f2, obj.f2);
-    // assertNotNull(newObj.f3);
-    // assertTrue(newObj.f3.get(0) instanceof OpaqueObjects.OpaqueObject);
-    // assertTrue(newObj.f3.get(1) instanceof OpaqueObjects.OpaqueObject);
   }
 
   private static class ComplexObject1Serializer extends Serializer<ComplexObject1> {

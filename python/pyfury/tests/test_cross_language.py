@@ -498,26 +498,6 @@ def struct_round_back(data_file_path, fury, obj1):
         f.write(new_buf)
 
 
-@cross_language_test
-def test_serialize_opaque_object(data_file_path):
-    with open(data_file_path, "rb") as f:
-        data_bytes = f.read()
-    debug_print(f"len {len(data_bytes)}")
-    fury = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
-    fury.register_type(ComplexObject1, namespace="test", typename="ComplexObject1")
-    new_obj = fury.deserialize(data_bytes)
-    debug_print(new_obj)
-    assert new_obj.f2 == "abc"
-    assert isinstance(new_obj.f1, pyfury.OpaqueObject)
-    assert isinstance(new_obj.f3[0], pyfury.OpaqueObject)
-    assert isinstance(new_obj.f3[1], pyfury.OpaqueObject)
-    # new_buf = fury.serialize(new_obj)
-    # debug_print(f"new_buf size {len(new_buf)}")
-    # assert fury.deserialize(new_buf) == new_obj
-    # with open(data_file_path, "wb+") as f:
-    #     f.write(new_buf)
-
-
 class ComplexObject1Serializer(pyfury.serializer.Serializer):
     def write(self, buffer, value):
         self.xwrite(buffer, value)
