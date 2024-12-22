@@ -15,6 +15,9 @@
 // specific language governing permissions and limitations
 // under the License.
 
+//go:build skiptest
+// +build skiptest
+
 package fury_test
 
 import (
