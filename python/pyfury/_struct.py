@@ -176,7 +176,7 @@ class StructHashVisitor(TypeVisitor):
         self._hash = self._compute_field_hash(self._hash, abs(xtype_id))
 
     def visit_customized(self, field_name, type_, types_path=None):
-        classinfo = self.fury.class_resolver.get_classinfo(type_)
+        classinfo = self.fury.class_resolver.get_classinfo(type_, create=False)
         if classinfo is None:
             return
         hash_value = classinfo.type_id
