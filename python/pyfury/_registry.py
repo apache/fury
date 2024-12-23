@@ -384,17 +384,17 @@ class ClassResolver:
             if issubclass(cls, enum.Enum):
                 serializer = EnumSerializer(self.fury, cls)
                 type_id = (
-                    TypeId.NS_ENUM if type_id is None else (type_id << 8 + TypeId.ENUM)
+                    TypeId.NAMED_ENUM if type_id is None else (type_id << 8 + TypeId.ENUM)
                 )
             else:
                 serializer = ComplexObjectSerializer(self.fury, cls)
                 type_id = (
-                    TypeId.NS_STRUCT
+                    TypeId.NAMED_STRUCT
                     if type_id is None
                     else (type_id << 8 + TypeId.STRUCT)
                 )
         elif not internal:
-            type_id = TypeId.NS_EXT if type_id is None else (type_id << 8 + TypeId.EXT)
+            type_id = TypeId.NAMED_EXT if type_id is None else (type_id << 8 + TypeId.EXT)
         return self.__register_type(
             cls,
             type_id=type_id,
@@ -478,7 +478,7 @@ class ClassResolver:
         self._type_id_to_classinfo.pop(prev_type_id)
         if classinfo.serializer is not serializer:
             if classinfo.typename_bytes is not None:
-                type_id = classinfo.type_id & 0xFFFFFF00 | TypeId.NS_EXT
+                type_id = classinfo.type_id & 0xFFFFFF00 | TypeId.NAMED_EXT
             else:
                 type_id = classinfo.type_id & 0xFFFFFF00 | TypeId.EXT
         self._type_id_to_classinfo[type_id] = classinfo

@@ -35,19 +35,19 @@ enum class TypeId : int32_t {
   FLOAT64 = 11,
   STRING = 12,
   ENUM = 13,
-  NS_ENUM = 14,
+  NAMED_ENUM = 14,
   STRUCT = 15,
   POLYMORPHIC_STRUCT = 16,
   COMPATIBLE_STRUCT = 17,
   POLYMORPHIC_COMPATIBLE_STRUCT = 18,
-  NS_STRUCT = 19,
-  NS_POLYMORPHIC_STRUCT = 20,
-  NS_COMPATIBLE_STRUCT = 21,
-  NS_POLYMORPHIC_COMPATIBLE_STRUCT = 22,
+  NAMED_STRUCT = 19,
+  NAMED_POLYMORPHIC_STRUCT = 20,
+  NAMED_COMPATIBLE_STRUCT = 21,
+  NAMED_POLYMORPHIC_COMPATIBLE_STRUCT = 22,
   EXT = 23,
   POLYMORPHIC_EXT = 24,
-  NS_EXT = 25,
-  NS_POLYMORPHIC_EXT = 26,
+  NAMED_EXT = 25,
+  NAMED_POLYMORPHIC_EXT = 26,
   LIST = 27,
   SET = 28,
   MAP = 29,
@@ -71,13 +71,13 @@ enum class TypeId : int32_t {
 
 inline bool IsNamespacedType(int32_t type_id) {
   switch (static_cast<TypeId>(type_id)) {
-  case TypeId::NS_ENUM:
-  case TypeId::NS_STRUCT:
-  case TypeId::NS_POLYMORPHIC_STRUCT:
-  case TypeId::NS_COMPATIBLE_STRUCT:
-  case TypeId::NS_POLYMORPHIC_COMPATIBLE_STRUCT:
-  case TypeId::NS_EXT:
-  case TypeId::NS_POLYMORPHIC_EXT:
+  case TypeId::NAMED_ENUM:
+  case TypeId::NAMED_STRUCT:
+  case TypeId::NAMED_POLYMORPHIC_STRUCT:
+  case TypeId::NAMED_COMPATIBLE_STRUCT:
+  case TypeId::NAMED_POLYMORPHIC_COMPATIBLE_STRUCT:
+  case TypeId::NAMED_EXT:
+  case TypeId::NAMED_POLYMORPHIC_EXT:
     return true;
   default:
     return false;

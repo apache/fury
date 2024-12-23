@@ -33,19 +33,19 @@ public class Types {
   public static final int FLOAT64 = 11;
   public static final int STRING = 12;
   public static final int ENUM = 13;
-  public static final int NS_ENUM = 14;
+  public static final int NAMED_ENUM = 14;
   public static final int STRUCT = 15;
   public static final int POLYMORPHIC_STRUCT = 16;
   public static final int COMPATIBLE_STRUCT = 17;
   public static final int POLYMORPHIC_COMPATIBLE_STRUCT = 18;
-  public static final int NS_STRUCT = 19;
-  public static final int NS_POLYMORPHIC_STRUCT = 20;
-  public static final int NS_COMPATIBLE_STRUCT = 21;
-  public static final int NS_POLYMORPHIC_COMPATIBLE_STRUCT = 22;
+  public static final int NAMED_STRUCT = 19;
+  public static final int NAMED_POLYMORPHIC_STRUCT = 20;
+  public static final int NAMED_COMPATIBLE_STRUCT = 21;
+  public static final int NAMED_POLYMORPHIC_COMPATIBLE_STRUCT = 22;
   public static final int EXT = 23;
   public static final int POLYMORPHIC_EXT = 24;
-  public static final int NS_EXT = 25;
-  public static final int NS_POLYMORPHIC_EXT = 26;
+  public static final int NAMED_EXT = 25;
+  public static final int NAMED_POLYMORPHIC_EXT = 26;
   public static final int LIST = 27;
   public static final int SET = 28;
   public static final int MAP = 29;
@@ -71,9 +71,9 @@ public class Types {
         || value == POLYMORPHIC_STRUCT
         || value == COMPATIBLE_STRUCT
         || value == POLYMORPHIC_COMPATIBLE_STRUCT
-        || value == NS_STRUCT
-        || value == NS_POLYMORPHIC_STRUCT
-        || value == NS_COMPATIBLE_STRUCT
-        || value == NS_POLYMORPHIC_COMPATIBLE_STRUCT;
+        || value == NAMED_STRUCT
+        || value == NAMED_POLYMORPHIC_STRUCT
+        || value == NAMED_COMPATIBLE_STRUCT
+        || value == NAMED_POLYMORPHIC_COMPATIBLE_STRUCT;
   }
 }

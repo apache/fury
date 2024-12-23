@@ -184,17 +184,17 @@ public class XtypeResolver {
     short xtypeId;
     if (serializer != null) {
       if (serializer instanceof StructSerializer) {
-        xtypeId = Types.NS_STRUCT;
+        xtypeId = Types.NAMED_STRUCT;
       } else if (serializer instanceof EnumSerializer) {
-        xtypeId = Types.NS_ENUM;
+        xtypeId = Types.NAMED_ENUM;
       } else {
-        xtypeId = Types.NS_EXT;
+        xtypeId = Types.NAMED_EXT;
       }
     } else {
       if (type.isEnum()) {
-        xtypeId = Types.NS_ENUM;
+        xtypeId = Types.NAMED_ENUM;
       } else {
-        xtypeId = Types.NS_STRUCT;
+        xtypeId = Types.NAMED_STRUCT;
       }
     }
     register(type, serializer, namespace, typeName, xtypeId);
@@ -341,9 +341,9 @@ public class XtypeResolver {
     byte internalTypeId = (byte) xtypeId;
     buffer.writeVarUint32Small7(xtypeId);
     switch (internalTypeId) {
-      case Types.NS_ENUM:
-      case Types.NS_STRUCT:
-      case Types.NS_EXT:
+      case Types.NAMED_ENUM:
+      case Types.NAMED_STRUCT:
+      case Types.NAMED_EXT:
         assert classInfo.packageNameBytes != null;
         metaStringResolver.writeMetaStringBytes(buffer, classInfo.packageNameBytes);
         assert classInfo.classNameBytes != null;
@@ -359,10 +359,10 @@ public class XtypeResolver {
     long xtypeId = buffer.readVarUint32Small14();
     byte internalTypeId = (byte) xtypeId;
     switch (internalTypeId) {
-      case Types.NS_ENUM:
-      case Types.NS_STRUCT:
-      case Types.NS_COMPATIBLE_STRUCT:
-      case Types.NS_EXT:
+      case Types.NAMED_ENUM:
+      case Types.NAMED_STRUCT:
+      case Types.NAMED_COMPATIBLE_STRUCT:
+      case Types.NAMED_EXT:
         MetaStringBytes packageBytes = metaStringResolver.readMetaStringBytes(buffer);
         MetaStringBytes simpleClassNameBytes = metaStringResolver.readMetaStringBytes(buffer);
         return loadBytesToClassInfo(internalTypeId, packageBytes, simpleClassNameBytes);
@@ -414,14 +414,14 @@ public class XtypeResolver {
       if (config.deserializeNonexistentClass()) {
         LOG.warn(msg);
         switch (typeId) {
-          case Types.NS_ENUM:
-          case Types.NS_STRUCT:
-          case Types.NS_COMPATIBLE_STRUCT:
+          case Types.NAMED_ENUM:
+          case Types.NAMED_STRUCT:
+          case Types.NAMED_COMPATIBLE_STRUCT:
             type =
                 NonexistentClass.getNonexistentClass(
                     qualifiedName, isEnum(typeId), 0, config.isMetaShareEnabled());
             break;
-          case Types.NS_EXT:
+          case Types.NAMED_EXT:
             throw new SerializerUnregisteredException(qualifiedName);
           default:
             break;
@@ -451,6 +451,6 @@ public class XtypeResolver {
   }
 
   private boolean isEnum(int internalTypeId) {
-    return internalTypeId == Types.ENUM || internalTypeId == Types.NS_ENUM;
+    return internalTypeId == Types.ENUM || internalTypeId == Types.NAMED_ENUM;
   }
 }
