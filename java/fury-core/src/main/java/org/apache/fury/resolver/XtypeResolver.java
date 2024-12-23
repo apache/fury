@@ -67,6 +67,8 @@ import org.apache.fury.serializer.Serializers;
 import org.apache.fury.serializer.StructSerializer;
 import org.apache.fury.serializer.collection.CollectionSerializer;
 import org.apache.fury.serializer.collection.MapSerializer;
+import org.apache.fury.type.GenericType;
+import org.apache.fury.type.Generics;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.type.Types;
 import org.apache.fury.util.Preconditions;
@@ -98,11 +100,13 @@ public class XtypeResolver {
   // ClassInfo[] is faster, but we can't have bigger type id.
   private final LongMap<ClassInfo> xtypeIdToClassMap = new LongMap<>(8, loadFactor);
   private final Set<Integer> registeredTypeIds = new HashSet<>();
+  private final Generics generics;
 
   public XtypeResolver(Fury fury) {
     this.config = fury.getConfig();
     this.fury = fury;
     this.classResolver = fury.getClassResolver();
+    this.generics = fury.getGenerics();
     this.metaStringResolver = fury.getMetaStringResolver();
     registerDefaultTypes();
   }
@@ -362,9 +366,24 @@ public class XtypeResolver {
         MetaStringBytes packageBytes = metaStringResolver.readMetaStringBytes(buffer);
         MetaStringBytes simpleClassNameBytes = metaStringResolver.readMetaStringBytes(buffer);
         return loadBytesToClassInfo(internalTypeId, packageBytes, simpleClassNameBytes);
+      case Types.LIST:
+        return getListClassInfo();
       default:
         return xtypeIdToClassMap.get(xtypeId);
     }
+  }
+
+  private ClassInfo getListClassInfo() {
+    fury.incDepth(1);
+    GenericType genericType = generics.nextGenericType();
+    fury.incDepth(-1);
+    if (genericType != null) {
+      Class<?> cls = genericType.getCls();
+      if (cls.isArray()) {
+        return classResolver.getClassInfo(cls);
+      }
+    }
+    return xtypeIdToClassMap.get(Types.LIST);
   }
 
   private ClassInfo loadBytesToClassInfo(

@@ -142,13 +142,13 @@ public final class Fury implements BaseFury {
       this.refResolver = new NoRefResolver();
     }
     jitContext = new JITContext(this);
+    generics = new Generics(this);
     metaStringResolver = new MetaStringResolver();
     classResolver = new ClassResolver(this);
     classResolver.initialize();
     xtypeResolver = new XtypeResolver(this);
     serializationContext = new SerializationContext(config);
     this.classLoader = classLoader;
-    generics = new Generics(this);
     stringSerializer = new StringSerializer(this);
     arrayListSerializer = new ArrayListSerializer(this);
     hashMapSerializer = new HashMapSerializer(this);
@@ -731,6 +731,17 @@ public final class Fury implements BaseFury {
   @Override
   public Object deserialize(byte[] bytes) {
     return deserialize(MemoryUtils.wrap(bytes), null);
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public <T> T deserialize(byte[] bytes, Class<T> type) {
+    generics.pushGenericType(classResolver.buildGenericType(type));
+    try {
+      return (T) deserialize(MemoryUtils.wrap(bytes), null);
+    } finally {
+      generics.popGenericType();
+    }
   }
 
   @Override

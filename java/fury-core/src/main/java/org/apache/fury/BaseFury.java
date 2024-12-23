@@ -130,6 +130,8 @@ public interface BaseFury {
   /** Deserialize <code>obj</code> from a byte array. */
   Object deserialize(byte[] bytes);
 
+  <T> T deserialize(byte[] bytes, Class<T> type);
+
   Object deserialize(byte[] bytes, Iterable<MemoryBuffer> outOfBandBuffers);
 
   /**

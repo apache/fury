@@ -32,6 +32,7 @@ import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.resolver.RefResolver;
 import org.apache.fury.serializer.collection.CollectionFlags;
 import org.apache.fury.serializer.collection.FuryArrayAsListSerializer;
+import org.apache.fury.type.GenericType;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.type.Types;
 import org.apache.fury.util.Preconditions;
@@ -182,8 +183,19 @@ public class ArraySerializers {
     public T[] xread(MemoryBuffer buffer) {
       int numElements = buffer.readVarUint32Small7();
       Object[] value = newArray(numElements);
+      boolean pushGenerics =
+          componentTypeSerializer != null && componentTypeSerializer.getType().isArray();
+      if (pushGenerics) {
+        GenericType genericType =
+            fury.getClassResolver().buildGenericType(componentTypeSerializer.getType());
+        fury.getGenerics().pushGenericType(genericType);
+      }
       for (int i = 0; i < numElements; i++) {
-        value[i] = fury.xreadRef(buffer);
+        Object x = fury.xreadRef(buffer);
+        value[i] = x;
+      }
+      if (pushGenerics) {
+        fury.getGenerics().popGenericType();
       }
       return (T[]) value;
     }

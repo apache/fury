@@ -252,7 +252,9 @@ public class ClassResolver {
         descriptorsCache = new ConcurrentHashMap<>();
     private ClassChecker classChecker = (classResolver, className) -> true;
     private GenericType objectGenericType;
-    private Map<List<ClassLoader>, CodeGenerator> codeGeneratorMap = new HashMap<>();
+    private final IdentityMap<Type, GenericType> genericTypes = new IdentityMap<>();
+    ;
+    private final Map<List<ClassLoader>, CodeGenerator> codeGeneratorMap = new HashMap<>();
   }
 
   public ClassResolver(Fury fury) {
@@ -1852,15 +1854,26 @@ public class ClassResolver {
   }
 
   public GenericType buildGenericType(Type type) {
-    return GenericType.build(
-        type,
-        t -> {
-          if (t.getClass() == Class.class) {
-            return isMonomorphic((Class<?>) t);
-          } else {
-            return isMonomorphic(getRawType(t));
-          }
-        });
+    GenericType genericType = extRegistry.genericTypes.get(type);
+    if (genericType != null) {
+      return genericType;
+    }
+    return populateGenericType(type);
+  }
+
+  private GenericType populateGenericType(Type type) {
+    GenericType genericType =
+        GenericType.build(
+            type,
+            t -> {
+              if (t.getClass() == Class.class) {
+                return isMonomorphic((Class<?>) t);
+              } else {
+                return isMonomorphic(getRawType(t));
+              }
+            });
+    extRegistry.genericTypes.put(type, genericType);
+    return genericType;
   }
 
   public GenericType getObjectGenericType() {

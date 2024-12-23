@@ -65,7 +65,8 @@ import org.testng.annotations.Test;
 public class CrossLanguageTest {
   private static final Logger LOG = LoggerFactory.getLogger(CrossLanguageTest.class);
   private static final String PYTHON_MODULE = "pyfury.tests.test_cross_language";
-  private static final String PYTHON_EXECUTABLE = "/Users/chaokunyang/Desktop/ant/DeveProjects/mellow/venv/bin/python";
+  private static final String PYTHON_EXECUTABLE =
+      "/Users/chaokunyang/Desktop/ant/DeveProjects/mellow/venv/bin/python";
 
   /**
    * Execute an external command.
@@ -321,13 +322,11 @@ public class CrossLanguageTest {
             .withRefTracking(true)
             .requireClassRegistration(false)
             .build();
-    Assert.assertEquals(
-        new String[] {"str", "str"}, (Object[]) serDe(fury, new String[] {"str", "str"}));
-    Assert.assertEquals(new Object[] {"str", 1}, (Object[]) serDe(fury, new Object[] {"str", 1}));
+    Assert.assertEquals(new String[] {"str", "str"}, serDeTyped(fury, new String[] {"str", "str"}));
+    Assert.assertEquals(new Object[] {"str", 1}, serDeTyped(fury, new Object[] {"str", 1}));
     Assert.assertTrue(
         Arrays.deepEquals(
-            new Integer[][] {{1, 2}, {1, 2}},
-            (Integer[][]) serDe(fury, new Integer[][] {{1, 2}, {1, 2}})));
+            new Integer[][] {{1, 2}, {1, 2}}, serDeTyped(fury, new Integer[][] {{1, 2}, {1, 2}})));
 
     Assert.assertEquals(Arrays.asList(1, 2), serDe(fury, Arrays.asList(1, 2)));
     List<String> arrayList = Arrays.asList("str", "str");
@@ -392,6 +391,12 @@ public class CrossLanguageTest {
   private Object serDe(Fury fury, Object obj) {
     byte[] bytes = fury.serialize(obj);
     return fury.deserialize(bytes);
+  }
+
+  @SuppressWarnings("unchecked")
+  private <T> T serDeTyped(Fury fury, T obj) {
+    byte[] bytes = fury.serialize(obj);
+    return (T) fury.deserialize(bytes, obj.getClass());
   }
 
   @SuppressWarnings("unchecked")
