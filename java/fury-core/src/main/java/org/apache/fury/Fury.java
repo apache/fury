@@ -146,7 +146,11 @@ public final class Fury implements BaseFury {
     metaStringResolver = new MetaStringResolver();
     classResolver = new ClassResolver(this);
     classResolver.initialize();
-    xtypeResolver = new XtypeResolver(this);
+    if (language != Language.JAVA) {
+      xtypeResolver = new XtypeResolver(this);
+    } else {
+      xtypeResolver = null;
+    }
     serializationContext = new SerializationContext(config);
     this.classLoader = classLoader;
     stringSerializer = new StringSerializer(this);
