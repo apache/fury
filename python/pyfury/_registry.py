@@ -146,6 +146,7 @@ class ClassResolver:
         "_dynamic_write_string_id",
         "_dynamic_written_metastr",
         "_ns_type_to_classinfo",
+        "_named_type_to_classinfo",
         "namespace_encoder",
         "namespace_decoder",
         "typename_encoder",
@@ -173,6 +174,7 @@ class ClassResolver:
         # hold python reference.
         self._classes_info = dict()
         self._ns_type_to_classinfo = dict()
+        self._named_type_to_classinfo = dict()
         self.namespace_encoder = MetaStringEncoder(".", "_")
         self.namespace_decoder = MetaStringDecoder(".", "_")
         self.typename_encoder = MetaStringEncoder("$", "_")
@@ -344,7 +346,7 @@ class ClassResolver:
                 except BaseException:
                     serializer = serializer()
         n_params = len({typename, type_id, None}) - 1
-        if n_params == 0:
+        if n_params == 0 and typename is None:
             type_id = self._next_type_id()
         if n_params == 2:
             raise TypeError(
@@ -454,6 +456,7 @@ class ClassResolver:
             classinfo = ClassInfo(
                 cls, type_id, serializer, ns_meta_bytes, type_meta_bytes, dynamic_type
             )
+            self._named_type_to_classinfo[(namespace, typename)] = classinfo
             self._ns_type_to_classinfo[(ns_meta_bytes, type_meta_bytes)] = classinfo
         self._classes_info[cls] = classinfo
         if type_id > 0 and (
@@ -574,6 +577,11 @@ class ClassResolver:
             return typeinfo
         ns = ns_metabytes.decode(self.namespace_decoder)
         typename = type_metabytes.decode(self.typename_decoder)
+        # the hash computed between languages may be different.
+        typeinfo = self._named_type_to_classinfo.get((ns, typename))
+        if typeinfo is not None:
+            self._ns_type_to_classinfo[(ns_metabytes, type_metabytes)] = typeinfo
+            return typeinfo
         cls = load_class(ns + "#" + typename)
         classinfo = self.get_classinfo(cls)
         self._ns_type_to_classinfo[(ns_metabytes, type_metabytes)] = classinfo
