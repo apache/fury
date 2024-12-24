@@ -23,8 +23,10 @@
 
 namespace fury {
 
-bool isLatin(const std::string &str);
+    bool isLatin(const std::string &str);
 
-std::string utf16ToUtf8(const std::u16string &utf16, bool is_little_endian);
+    std::string utf16ToUtf8(const std::u16string &utf16, bool is_little_endian);
+
+    std::u16string utf8ToUtf16(const std::string &utf8, bool is_little_endian);
 
 } // namespace fury
