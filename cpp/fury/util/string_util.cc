@@ -28,7 +28,6 @@
 #endif
 
 #include <chrono>
-#include <stdexcept>
 #include <string>
 
 namespace fury {
