@@ -280,15 +280,15 @@ class Fury:
     def serialize_nonref(self, buffer, obj):
         cls = type(obj)
         if cls is str:
-            buffer.write_varint32(STRING_CLASS_ID << 1)
+            buffer.write_varuint32(STRING_CLASS_ID << 1)
             buffer.write_string(obj)
             return
         elif cls is int:
-            buffer.write_varint32(PYINT_CLASS_ID << 1)
+            buffer.write_varuint32(PYINT_CLASS_ID << 1)
             buffer.write_varint64(obj)
             return
         elif cls is bool:
-            buffer.write_varint32(PYBOOL_CLASS_ID << 1)
+            buffer.write_varuint32(PYBOOL_CLASS_ID << 1)
             buffer.write_bool(obj)
             return
         else:
@@ -422,7 +422,7 @@ class Fury:
             buffer.write_bool(True)
             size = buffer_object.total_bytes()
             # writer length.
-            buffer.write_varint32(size)
+            buffer.write_varuint32(size)
             writer_index = buffer.writer_index
             buffer.ensure(writer_index + size)
             buf = buffer.slice(buffer.writer_index, size)

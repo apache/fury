@@ -443,7 +443,7 @@ class PyArraySerializer(CrossLanguageCompatibleSerializer):
         assert view.itemsize == self.itemsize
         assert view.c_contiguous  # TODO handle contiguous
         nbytes = len(value) * self.itemsize
-        buffer.write_varint32(nbytes)
+        buffer.write_varuint32(nbytes)
         buffer.write_buffer(value)
 
     def xread(self, buffer):
@@ -455,7 +455,7 @@ class PyArraySerializer(CrossLanguageCompatibleSerializer):
     def write(self, buffer, value: array.array):
         nbytes = len(value) * value.itemsize
         buffer.write_string(value.typecode)
-        buffer.write_varint32(nbytes)
+        buffer.write_varuint32(nbytes)
         buffer.write_buffer(value)
 
     def read(self, buffer):
@@ -471,8 +471,8 @@ class DynamicPyArraySerializer(Serializer):
         itemsize, ftype, type_id = typecode_dict[value.typecode]
         view = memoryview(value)
         nbytes = len(value) * itemsize
-        buffer.write_varint32(type_id)
-        buffer.write_varint32(nbytes)
+        buffer.write_varuint32(type_id)
+        buffer.write_varuint32(nbytes)
         if not view.c_contiguous:
             buffer.write_bytes(value.tobytes())
         else:
@@ -526,7 +526,7 @@ class Numpy1DArraySerializer(Serializer):
             raise e
         assert view.itemsize == self.itemsize
         nbytes = len(value) * self.itemsize
-        buffer.write_varint32(nbytes)
+        buffer.write_varuint32(nbytes)
         if self.dtype == np.dtype("bool") or not view.c_contiguous:
             buffer.write_bytes(value.tobytes())
         else:
@@ -548,8 +548,8 @@ class NDArraySerializer(Serializer):
         itemsize, typecode, ftype, type_id = _np_dtypes_dict[value.dtype]
         view = memoryview(value)
         nbytes = len(value) * itemsize
-        buffer.write_varint32(type_id)
-        buffer.write_varint32(nbytes)
+        buffer.write_varuint32(type_id)
+        buffer.write_varuint32(nbytes)
         if value.dtype == np.dtype("bool") or not view.c_contiguous:
             buffer.write_bytes(value.tobytes())
         else:

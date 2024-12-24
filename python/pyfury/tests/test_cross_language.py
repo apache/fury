@@ -286,7 +286,8 @@ def test_cross_language_serializer(data_file_path):
         assert _deserialize_and_append(fury, buffer, objects) == -(2**15)
         assert _deserialize_and_append(fury, buffer, objects) == 2**31 - 1
         assert _deserialize_and_append(fury, buffer, objects) == -(2**31)
-        assert _deserialize_and_append(fury, buffer, objects) == 2**63 - 1
+        x = _deserialize_and_append(fury, buffer, objects)
+        assert x == 2**63 - 1, x
         assert _deserialize_and_append(fury, buffer, objects) == -(2**63)
         assert _deserialize_and_append(fury, buffer, objects) == -1.0
         assert _deserialize_and_append(fury, buffer, objects) == -1.0

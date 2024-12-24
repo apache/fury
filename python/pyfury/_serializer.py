@@ -103,10 +103,10 @@ class Int16Serializer(CrossLanguageCompatibleSerializer):
 
 class Int32Serializer(CrossLanguageCompatibleSerializer):
     def write(self, buffer, value):
-        buffer.write_int32(value)
+        buffer.write_varint32(value)
 
     def read(self, buffer):
-        return buffer.read_int32()
+        return buffer.read_varint32()
 
 
 class Int64Serializer(Serializer):
@@ -126,11 +126,11 @@ class Int64Serializer(Serializer):
 class DynamicIntSerializer(CrossLanguageCompatibleSerializer):
     def xwrite(self, buffer, value):
         # TOTO(chaokunyang) check value range and write type and value
-        buffer.write_varint32(TypeId.INT64)
+        buffer.write_varuint32(TypeId.INT64)
         buffer.write_varint64(value)
 
     def xread(self, buffer):
-        type_id = buffer.read_varint32()
+        type_id = buffer.read_varuint32()
         assert type_id == TypeId.INT64, type_id
         return buffer.read_varint64()
 
@@ -154,11 +154,11 @@ class DoubleSerializer(CrossLanguageCompatibleSerializer):
 class DynamicFloatSerializer(CrossLanguageCompatibleSerializer):
     def xwrite(self, buffer, value):
         # TOTO(chaokunyang) check value range and write type and value
-        buffer.write_varint32(TypeId.FLOAT64)
+        buffer.write_varuint32(TypeId.FLOAT64)
         buffer.write_double(value)
 
     def xread(self, buffer):
-        type_id = buffer.read_varint32()
+        type_id = buffer.read_varuint32()
         assert type_id == TypeId.FLOAT64, type_id
         return buffer.read_double()
 
@@ -216,7 +216,7 @@ class CollectionSerializer(Serializer):
         self.elem_serializer = elem_serializer
 
     def write(self, buffer, value: Iterable[Any]):
-        buffer.write_varint32(len(value))
+        buffer.write_varuint32(len(value))
         for s in value:
             cls = type(s)
             if cls is str:
@@ -235,7 +235,7 @@ class CollectionSerializer(Serializer):
                     classinfo.serializer.write(buffer, s)
 
     def read(self, buffer):
-        len_ = buffer.read_varint32()
+        len_ = buffer.read_varuint32()
         collection_ = self.new_instance(self.type_)
         for i in range(len_):
             self.handle_read_elem(self.fury.deserialize_ref(buffer), collection_)
@@ -256,13 +256,13 @@ class CollectionSerializer(Serializer):
         except AttributeError:
             value = list(value)
             len_ = len(value)
-        buffer.write_varint32(len_)
+        buffer.write_varuint32(len_)
         for s in value:
             self.fury.xserialize_ref(buffer, s, serializer=self.elem_serializer)
             len_ += 1
 
     def xread(self, buffer):
-        len_ = buffer.read_varint32()
+        len_ = buffer.read_varuint32()
         collection_ = self.new_instance(self.type_)
         for i in range(len_):
             self.handle_read_elem(
@@ -274,7 +274,7 @@ class CollectionSerializer(Serializer):
 
 class ListSerializer(CollectionSerializer):
     def read(self, buffer):
-        len_ = buffer.read_varint32()
+        len_ = buffer.read_varuint32()
         instance = []
         self.fury.ref_resolver.reference(instance)
         for i in range(len_):
@@ -284,7 +284,7 @@ class ListSerializer(CollectionSerializer):
 
 class TupleSerializer(CollectionSerializer):
     def read(self, buffer):
-        len_ = buffer.read_varint32()
+        len_ = buffer.read_varuint32()
         collection_ = []
         for i in range(len_):
             collection_.append(self.fury.deserialize_ref(buffer))
@@ -322,7 +322,7 @@ class MapSerializer(Serializer):
         self.value_serializer = value_serializer
 
     def write(self, buffer, value: Dict):
-        buffer.write_varint32(len(value))
+        buffer.write_varuint32(len(value))
         for k, v in value.items():
             key_cls = type(k)
             if key_cls is str:
@@ -347,7 +347,7 @@ class MapSerializer(Serializer):
                     classinfo.serializer.write(buffer, v)
 
     def read(self, buffer):
-        len_ = buffer.read_varint32()
+        len_ = buffer.read_varuint32()
         map_ = self.type_()
         self.fury.ref_resolver.reference(map_)
         for i in range(len_):
@@ -357,13 +357,13 @@ class MapSerializer(Serializer):
         return map_
 
     def xwrite(self, buffer, value: Dict):
-        buffer.write_varint32(len(value))
+        buffer.write_varuint32(len(value))
         for k, v in value.items():
             self.fury.xserialize_ref(buffer, k, serializer=self.key_serializer)
             self.fury.xserialize_ref(buffer, v, serializer=self.value_serializer)
 
     def xread(self, buffer):
-        len_ = buffer.read_varint32()
+        len_ = buffer.read_varuint32()
         map_ = {}
         self.fury.ref_resolver.reference(map_)
         for i in range(len_):
