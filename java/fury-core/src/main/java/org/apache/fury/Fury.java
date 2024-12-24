@@ -516,19 +516,16 @@ public final class Fury implements BaseFury {
           buffer.writeInt16((Short) obj);
           break;
         case Types.INT32:
-          buffer.writeInt32((Integer) obj);
-          break;
         case Types.VAR_INT32:
+          // TODO(chaokunyang) support other encoding
           buffer.writeVarInt32((Integer) obj);
           break;
         case Types.INT64:
-          buffer.writeInt64((Long) obj);
-          break;
         case Types.VAR_INT64:
-          buffer.writeVarInt64((Long) obj);
-          break;
+          // TODO(chaokunyang) support other encoding
         case Types.SLI_INT64:
-          buffer.writeSliInt64((Long) obj);
+          // TODO(chaokunyang) support varint encoding
+          buffer.writeVarInt64((Long) obj);
           break;
         case Types.FLOAT32:
           buffer.writeFloat32((Float) obj);
@@ -1024,15 +1021,14 @@ public final class Fury implements BaseFury {
       case Types.INT16:
         return buffer.readInt16();
       case Types.INT32:
-        return buffer.readInt32();
       case Types.VAR_INT32:
-        return buffer.readVarUint32();
+        // TODO(chaokunyang) support other encoding
+        return buffer.readVarInt32();
       case Types.INT64:
-        return buffer.readInt64();
       case Types.VAR_INT64:
-        return buffer.readVarInt64();
+        // TODO(chaokunyang) support other encoding
       case Types.SLI_INT64:
-        return buffer.readSliInt64();
+        return buffer.readVarInt64();
       case Types.FLOAT32:
         return buffer.readFloat32();
       case Types.FLOAT64:

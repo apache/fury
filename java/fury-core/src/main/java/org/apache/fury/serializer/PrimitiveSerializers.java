@@ -166,12 +166,12 @@ public class PrimitiveSerializers {
     @Override
     public void xwrite(MemoryBuffer buffer, Integer value) {
       // TODO support varint in cross-language serialization
-      buffer.writeInt32(value);
+      buffer.writeVarInt32(value);
     }
 
     @Override
     public Integer xread(MemoryBuffer buffer) {
-      return buffer.readInt32();
+      return buffer.readVarInt32();
     }
   }
 
@@ -247,13 +247,13 @@ public class PrimitiveSerializers {
 
     @Override
     public void xwrite(MemoryBuffer buffer, Long value) {
-      // TODO support var long in cross-language serialization
-      buffer.writeInt64(value);
+      // TODO(chaokunyang) support var long in cross-language serialization
+      buffer.writeVarInt64(value);
     }
 
     @Override
     public Long xread(MemoryBuffer buffer) {
-      return buffer.readInt64();
+      return buffer.readVarInt64();
     }
   }
 
