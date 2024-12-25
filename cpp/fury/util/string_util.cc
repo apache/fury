@@ -33,272 +33,272 @@
 namespace fury {
 
 // Swap bytes to convert from big endian to little endian
-    inline uint16_t swapBytes(uint16_t value) {
-        return (value >> 8) | (value << 8);
-    }
+inline uint16_t swapBytes(uint16_t value) {
+  return (value >> 8) | (value << 8);
+}
 
-    inline void utf16ToUtf8(uint16_t code_unit, char *&output) {
-        if (code_unit < 0x80) {
-            *output++ = static_cast<char>(code_unit);
-        } else if (code_unit < 0x800) {
-            *output++ = static_cast<char>(0xC0 | (code_unit >> 6));
-            *output++ = static_cast<char>(0x80 | (code_unit & 0x3F));
-        } else {
-            *output++ = static_cast<char>(0xE0 | (code_unit >> 12));
-            *output++ = static_cast<char>(0x80 | ((code_unit >> 6) & 0x3F));
-            *output++ = static_cast<char>(0x80 | (code_unit & 0x3F));
+inline void utf16ToUtf8(uint16_t code_unit, char *&output) {
+  if (code_unit < 0x80) {
+    *output++ = static_cast<char>(code_unit);
+  } else if (code_unit < 0x800) {
+    *output++ = static_cast<char>(0xC0 | (code_unit >> 6));
+    *output++ = static_cast<char>(0x80 | (code_unit & 0x3F));
+  } else {
+    *output++ = static_cast<char>(0xE0 | (code_unit >> 12));
+    *output++ = static_cast<char>(0x80 | ((code_unit >> 6) & 0x3F));
+    *output++ = static_cast<char>(0x80 | (code_unit & 0x3F));
+  }
+}
+
+inline void utf16SurrogatePairToUtf8(uint16_t high, uint16_t low, char *&utf8) {
+  uint32_t code_point = 0x10000 + ((high - 0xD800) << 10) + (low - 0xDC00);
+  *utf8++ = static_cast<char>((code_point >> 18) | 0xF0);
+  *utf8++ = static_cast<char>(((code_point >> 12) & 0x3F) | 0x80);
+  *utf8++ = static_cast<char>(((code_point >> 6) & 0x3F) | 0x80);
+  *utf8++ = static_cast<char>((code_point & 0x3F) | 0x80);
+}
+
+std::u16string utf8ToUtf16SIMD(const std::string &utf8, bool is_little_endian) {
+  std::u16string utf16;
+  utf16.reserve(utf8.size()); // Reserve space to avoid frequent reallocations
+
+  char buffer[64]; // Buffer to hold temporary UTF-16 results
+  char16_t *output =
+      reinterpret_cast<char16_t *>(buffer); // Use char16_t for output
+
+  size_t i = 0;
+  size_t n = utf8.size();
+
+  while (i + 32 <= n) {
+
+    // Now process the characters in 'in' SIMD register
+    for (int j = 0; j < 32; ++j) {
+      uint8_t byte = utf8[i + j];
+
+      if (byte < 0x80) {
+        // 1-byte character (ASCII)
+        *output++ = static_cast<char16_t>(byte);
+      } else if (byte < 0xE0) {
+        // 2-byte character
+        uint16_t utf16_char = ((byte & 0x1F) << 6) | (utf8[i + j + 1] & 0x3F);
+        if (!is_little_endian) {
+          utf16_char = (utf16_char >> 8) |
+                       (utf16_char << 8); // Swap bytes for big-endian
         }
-    }
+        *output++ = utf16_char;
+        ++j;
+      } else if (byte < 0xF0) {
+        // 3-byte character
+        uint16_t utf16_char = ((byte & 0x0F) << 12) |
+                              ((utf8[i + j + 1] & 0x3F) << 6) |
+                              (utf8[i + j + 2] & 0x3F);
+        if (!is_little_endian) {
+          utf16_char = (utf16_char >> 8) |
+                       (utf16_char << 8); // Swap bytes for big-endian
+        }
+        *output++ = utf16_char;
+        j += 2;
+      } else {
+        // 4-byte character (surrogate pair handling required)
+        uint32_t code_point =
+            ((byte & 0x07) << 18) | ((utf8[i + j + 1] & 0x3F) << 12) |
+            ((utf8[i + j + 2] & 0x3F) << 6) | (utf8[i + j + 3] & 0x3F);
 
-    inline void utf16SurrogatePairToUtf8(uint16_t high, uint16_t low, char *&utf8) {
-        uint32_t code_point = 0x10000 + ((high - 0xD800) << 10) + (low - 0xDC00);
-        *utf8++ = static_cast<char>((code_point >> 18) | 0xF0);
-        *utf8++ = static_cast<char>(((code_point >> 12) & 0x3F) | 0x80);
-        *utf8++ = static_cast<char>(((code_point >> 6) & 0x3F) | 0x80);
-        *utf8++ = static_cast<char>((code_point & 0x3F) | 0x80);
-    }
+        // Convert the code point to a surrogate pair
+        uint16_t high_surrogate = 0xD800 + ((code_point - 0x10000) >> 10);
+        uint16_t low_surrogate = 0xDC00 + (code_point & 0x3FF);
 
-    std::u16string utf8ToUtf16SIMD(const std::string &utf8, bool is_little_endian) {
-        std::u16string utf16;
-        utf16.reserve(utf8.size()); // Reserve space to avoid frequent reallocations
-
-        char buffer[64]; // Buffer to hold temporary UTF-16 results
-        char16_t *output =
-                reinterpret_cast<char16_t *>(buffer); // Use char16_t for output
-
-        size_t i = 0;
-        size_t n = utf8.size();
-
-        while (i + 32 <= n) {
-
-            // Now process the characters in 'in' SIMD register
-            for (int j = 0; j < 32; ++j) {
-                uint8_t byte = utf8[i + j];
-
-                if (byte < 0x80) {
-                    // 1-byte character (ASCII)
-                    *output++ = static_cast<char16_t>(byte);
-                } else if (byte < 0xE0) {
-                    // 2-byte character
-                    uint16_t utf16_char = ((byte & 0x1F) << 6) | (utf8[i + j + 1] & 0x3F);
-                    if (!is_little_endian) {
-                        utf16_char = (utf16_char >> 8) |
-                                     (utf16_char << 8); // Swap bytes for big-endian
-                    }
-                    *output++ = utf16_char;
-                    ++j;
-                } else if (byte < 0xF0) {
-                    // 3-byte character
-                    uint16_t utf16_char = ((byte & 0x0F) << 12) |
-                                          ((utf8[i + j + 1] & 0x3F) << 6) |
-                                          (utf8[i + j + 2] & 0x3F);
-                    if (!is_little_endian) {
-                        utf16_char = (utf16_char >> 8) |
-                                     (utf16_char << 8); // Swap bytes for big-endian
-                    }
-                    *output++ = utf16_char;
-                    j += 2;
-                } else {
-                    // 4-byte character (surrogate pair handling required)
-                    uint32_t code_point =
-                            ((byte & 0x07) << 18) | ((utf8[i + j + 1] & 0x3F) << 12) |
-                            ((utf8[i + j + 2] & 0x3F) << 6) | (utf8[i + j + 3] & 0x3F);
-
-                    // Convert the code point to a surrogate pair
-                    uint16_t high_surrogate = 0xD800 + ((code_point - 0x10000) >> 10);
-                    uint16_t low_surrogate = 0xDC00 + (code_point & 0x3FF);
-
-                    if (!is_little_endian) {
-                        high_surrogate = (high_surrogate >> 8) |
-                                         (high_surrogate << 8); // Swap bytes for big-endian
-                        low_surrogate = (low_surrogate >> 8) |
-                                        (low_surrogate << 8); // Swap bytes for big-endian
-                    }
-
-                    *output++ = high_surrogate;
-                    *output++ = low_surrogate;
-
-                    j += 3;
-                }
-            }
-
-            // Append the processed buffer to the final utf16 string
-            utf16.append(reinterpret_cast<char16_t *>(buffer),
-                         output - reinterpret_cast<char16_t *>(buffer));
-            output =
-                    reinterpret_cast<char16_t *>(buffer); // Reset output buffer pointer
-            i += 32;
+        if (!is_little_endian) {
+          high_surrogate = (high_surrogate >> 8) |
+                           (high_surrogate << 8); // Swap bytes for big-endian
+          low_surrogate = (low_surrogate >> 8) |
+                          (low_surrogate << 8); // Swap bytes for big-endian
         }
 
-        // Handle remaining characters
-        while (i < n) {
-            uint8_t byte = utf8[i];
+        *output++ = high_surrogate;
+        *output++ = low_surrogate;
 
-            if (byte < 0x80) {
-                *output++ = static_cast<char16_t>(byte);
-            } else if (byte < 0xE0) {
-                uint16_t utf16_char = ((byte & 0x1F) << 6) | (utf8[i + 1] & 0x3F);
-                if (!is_little_endian) {
-                    utf16_char =
-                            (utf16_char >> 8) | (utf16_char << 8); // Swap bytes for big-endian
-                }
-                *output++ = utf16_char;
-                ++i;
-            } else if (byte < 0xF0) {
-                uint16_t utf16_char = ((byte & 0x0F) << 12) |
-                                      ((utf8[i + 1] & 0x3F) << 6) | (utf8[i + 2] & 0x3F);
-                if (!is_little_endian) {
-                    utf16_char =
-                            (utf16_char >> 8) | (utf16_char << 8); // Swap bytes for big-endian
-                }
-                *output++ = utf16_char;
-                i += 2;
-            } else {
-                uint32_t code_point = ((byte & 0x07) << 18) |
-                                      ((utf8[i + 1] & 0x3F) << 12) |
-                                      ((utf8[i + 2] & 0x3F) << 6) | (utf8[i + 3] & 0x3F);
-
-                uint16_t high_surrogate = 0xD800 + ((code_point - 0x10000) >> 10);
-                uint16_t low_surrogate = 0xDC00 + (code_point & 0x3FF);
-
-                if (!is_little_endian) {
-                    high_surrogate = (high_surrogate >> 8) | (high_surrogate << 8);
-                    low_surrogate = (low_surrogate >> 8) | (low_surrogate << 8);
-                }
-
-                *output++ = high_surrogate;
-                *output++ = low_surrogate;
-
-                i += 3;
-            }
-
-            ++i;
-        }
-
-        // Append the last part of the buffer to the utf16 string
-        utf16.append(reinterpret_cast<char16_t *>(buffer),
-                     output - reinterpret_cast<char16_t *>(buffer));
-
-        return utf16;
+        j += 3;
+      }
     }
+
+    // Append the processed buffer to the final utf16 string
+    utf16.append(reinterpret_cast<char16_t *>(buffer),
+                 output - reinterpret_cast<char16_t *>(buffer));
+    output =
+        reinterpret_cast<char16_t *>(buffer); // Reset output buffer pointer
+    i += 32;
+  }
+
+  // Handle remaining characters
+  while (i < n) {
+    uint8_t byte = utf8[i];
+
+    if (byte < 0x80) {
+      *output++ = static_cast<char16_t>(byte);
+    } else if (byte < 0xE0) {
+      uint16_t utf16_char = ((byte & 0x1F) << 6) | (utf8[i + 1] & 0x3F);
+      if (!is_little_endian) {
+        utf16_char =
+            (utf16_char >> 8) | (utf16_char << 8); // Swap bytes for big-endian
+      }
+      *output++ = utf16_char;
+      ++i;
+    } else if (byte < 0xF0) {
+      uint16_t utf16_char = ((byte & 0x0F) << 12) |
+                            ((utf8[i + 1] & 0x3F) << 6) | (utf8[i + 2] & 0x3F);
+      if (!is_little_endian) {
+        utf16_char =
+            (utf16_char >> 8) | (utf16_char << 8); // Swap bytes for big-endian
+      }
+      *output++ = utf16_char;
+      i += 2;
+    } else {
+      uint32_t code_point = ((byte & 0x07) << 18) |
+                            ((utf8[i + 1] & 0x3F) << 12) |
+                            ((utf8[i + 2] & 0x3F) << 6) | (utf8[i + 3] & 0x3F);
+
+      uint16_t high_surrogate = 0xD800 + ((code_point - 0x10000) >> 10);
+      uint16_t low_surrogate = 0xDC00 + (code_point & 0x3FF);
+
+      if (!is_little_endian) {
+        high_surrogate = (high_surrogate >> 8) | (high_surrogate << 8);
+        low_surrogate = (low_surrogate >> 8) | (low_surrogate << 8);
+      }
+
+      *output++ = high_surrogate;
+      *output++ = low_surrogate;
+
+      i += 3;
+    }
+
+    ++i;
+  }
+
+  // Append the last part of the buffer to the utf16 string
+  utf16.append(reinterpret_cast<char16_t *>(buffer),
+               output - reinterpret_cast<char16_t *>(buffer));
+
+  return utf16;
+}
 
 #if defined(__x86_64__) || defined(_M_X64)
 
-    bool isLatin(const std::string &str) {
-        const char *data = str.data();
-        size_t len = str.size();
+bool isLatin(const std::string &str) {
+  const char *data = str.data();
+  size_t len = str.size();
 
-        size_t i = 0;
-        __m256i latin_mask = _mm256_set1_epi8(0x80);
-        for (; i + 32 <= len; i += 32) {
-            __m256i chars =
-                    _mm256_loadu_si256(reinterpret_cast<const __m256i *>(data + i));
-            __m256i result = _mm256_and_si256(chars, latin_mask);
-            if (!_mm256_testz_si256(result, result)) {
-                return false;
-            }
-        }
+  size_t i = 0;
+  __m256i latin_mask = _mm256_set1_epi8(0x80);
+  for (; i + 32 <= len; i += 32) {
+    __m256i chars =
+        _mm256_loadu_si256(reinterpret_cast<const __m256i *>(data + i));
+    __m256i result = _mm256_and_si256(chars, latin_mask);
+    if (!_mm256_testz_si256(result, result)) {
+      return false;
+    }
+  }
 
-        for (; i < len; ++i) {
-            if (static_cast<unsigned char>(data[i]) >= 128) {
-                return false;
-            }
-        }
+  for (; i < len; ++i) {
+    if (static_cast<unsigned char>(data[i]) >= 128) {
+      return false;
+    }
+  }
 
-        return true;
+  return true;
+}
+
+std::string utf16ToUtf8(const std::u16string &utf16, bool is_little_endian) {
+  std::string utf8;
+  utf8.reserve(utf16.size() *
+               3); // Reserve enough space to avoid frequent reallocations
+
+  const __m256i limit1 = _mm256_set1_epi16(0x80);
+  const __m256i limit2 = _mm256_set1_epi16(0x800);
+  const __m256i surrogate_high_start = _mm256_set1_epi16(0xD800);
+  const __m256i surrogate_high_end = _mm256_set1_epi16(0xDBFF);
+  const __m256i surrogate_low_start = _mm256_set1_epi16(0xDC00);
+  const __m256i surrogate_low_end = _mm256_set1_epi16(0xDFFF);
+
+  char buffer[64]; // Buffer to hold temporary UTF-8 bytes
+  char *output = buffer;
+
+  size_t i = 0;
+  size_t n = utf16.size();
+
+  while (i + 16 <= n) {
+    __m256i in =
+        _mm256_loadu_si256(reinterpret_cast<const __m256i *>(utf16.data() + i));
+
+    if (!is_little_endian) {
+      in = _mm256_or_si256(
+          _mm256_slli_epi16(in, 8),
+          _mm256_srli_epi16(in, 8)); // Swap bytes for big-endian
     }
 
-    std::string utf16ToUtf8(const std::u16string &utf16, bool is_little_endian) {
-        std::string utf8;
-        utf8.reserve(utf16.size() *
-                     3); // Reserve enough space to avoid frequent reallocations
+    __m256i mask1 = _mm256_cmpgt_epi16(in, limit1);
+    __m256i mask2 = _mm256_cmpgt_epi16(in, limit2);
+    __m256i high_surrogate_mask =
+        _mm256_and_si256(_mm256_cmpgt_epi16(in, surrogate_high_start),
+                         _mm256_cmpgt_epi16(in, surrogate_high_end));
+    __m256i low_surrogate_mask =
+        _mm256_and_si256(_mm256_cmpgt_epi16(in, surrogate_low_start),
+                         _mm256_cmpgt_epi16(in, surrogate_low_end));
 
-        const __m256i limit1 = _mm256_set1_epi16(0x80);
-        const __m256i limit2 = _mm256_set1_epi16(0x800);
-        const __m256i surrogate_high_start = _mm256_set1_epi16(0xD800);
-        const __m256i surrogate_high_end = _mm256_set1_epi16(0xDBFF);
-        const __m256i surrogate_low_start = _mm256_set1_epi16(0xDC00);
-        const __m256i surrogate_low_end = _mm256_set1_epi16(0xDFFF);
-
-        char buffer[64]; // Buffer to hold temporary UTF-8 bytes
-        char *output = buffer;
-
-        size_t i = 0;
-        size_t n = utf16.size();
-
-        while (i + 16 <= n) {
-            __m256i in =
-                    _mm256_loadu_si256(reinterpret_cast<const __m256i *>(utf16.data() + i));
-
-            if (!is_little_endian) {
-                in = _mm256_or_si256(
-                        _mm256_slli_epi16(in, 8),
-                        _mm256_srli_epi16(in, 8)); // Swap bytes for big-endian
-            }
-
-            __m256i mask1 = _mm256_cmpgt_epi16(in, limit1);
-            __m256i mask2 = _mm256_cmpgt_epi16(in, limit2);
-            __m256i high_surrogate_mask =
-                    _mm256_and_si256(_mm256_cmpgt_epi16(in, surrogate_high_start),
-                                     _mm256_cmpgt_epi16(in, surrogate_high_end));
-            __m256i low_surrogate_mask =
-                    _mm256_and_si256(_mm256_cmpgt_epi16(in, surrogate_low_start),
-                                     _mm256_cmpgt_epi16(in, surrogate_low_end));
-
-            if (_mm256_testz_si256(mask1, mask1)) {
-                // All values < 0x80, 1 byte per character
-                for (int j = 0; j < 16; ++j) {
-                    *output++ = static_cast<char>(utf16[i + j]);
-                }
-            } else if (_mm256_testz_si256(mask2, mask2)) {
-                // All values < 0x800, 2 bytes per character
-                for (int j = 0; j < 16; ++j) {
-                    utf16ToUtf8(utf16[i + j], output);
-                }
-            } else {
-                // Mix of 1, 2, and 3 byte characters
-                for (int j = 0; j < 16; ++j) {
-                    if (_mm256_testz_si256(high_surrogate_mask, high_surrogate_mask) &&
-                        j + 1 < 16 &&
-                        !_mm256_testz_si256(low_surrogate_mask, low_surrogate_mask)) {
-                        // Surrogate pair
-                        utf16SurrogatePairToUtf8(utf16[i + j], utf16[i + j + 1], output);
-                        ++j;
-                    } else {
-                        utf16ToUtf8(utf16[i + j], output);
-                    }
-                }
-            }
-
-            utf8.append(buffer, output - buffer);
-            output = buffer; // Reset output buffer pointer
-            i += 16;
+    if (_mm256_testz_si256(mask1, mask1)) {
+      // All values < 0x80, 1 byte per character
+      for (int j = 0; j < 16; ++j) {
+        *output++ = static_cast<char>(utf16[i + j]);
+      }
+    } else if (_mm256_testz_si256(mask2, mask2)) {
+      // All values < 0x800, 2 bytes per character
+      for (int j = 0; j < 16; ++j) {
+        utf16ToUtf8(utf16[i + j], output);
+      }
+    } else {
+      // Mix of 1, 2, and 3 byte characters
+      for (int j = 0; j < 16; ++j) {
+        if (_mm256_testz_si256(high_surrogate_mask, high_surrogate_mask) &&
+            j + 1 < 16 &&
+            !_mm256_testz_si256(low_surrogate_mask, low_surrogate_mask)) {
+          // Surrogate pair
+          utf16SurrogatePairToUtf8(utf16[i + j], utf16[i + j + 1], output);
+          ++j;
+        } else {
+          utf16ToUtf8(utf16[i + j], output);
         }
-
-        // Handle remaining characters
-        while (i < n) {
-            if (i + 1 < n && utf16[i] >= 0xD800 && utf16[i] <= 0xDBFF &&
-                utf16[i + 1] >= 0xDC00 && utf16[i + 1] <= 0xDFFF) {
-                // Surrogate pair
-                utf16SurrogatePairToUtf8(utf16[i], utf16[i + 1], output);
-                ++i;
-            } else {
-                utf16ToUtf8(utf16[i], output);
-            }
-            ++i;
-        }
-        utf8.append(buffer, output - buffer);
-
-        return utf8;
+      }
     }
 
-    std::u16string utf8ToUtf16(const std::string &utf8, bool is_little_endian) {
-        return utf8ToUtf16SIMD(utf8, is_little_endian);
+    utf8.append(buffer, output - buffer);
+    output = buffer; // Reset output buffer pointer
+    i += 16;
+  }
+
+  // Handle remaining characters
+  while (i < n) {
+    if (i + 1 < n && utf16[i] >= 0xD800 && utf16[i] <= 0xDBFF &&
+        utf16[i + 1] >= 0xDC00 && utf16[i + 1] <= 0xDFFF) {
+      // Surrogate pair
+      utf16SurrogatePairToUtf8(utf16[i], utf16[i + 1], output);
+      ++i;
+    } else {
+      utf16ToUtf8(utf16[i], output);
     }
+    ++i;
+  }
+  utf8.append(buffer, output - buffer);
+
+  return utf8;
+}
+
+std::u16string utf8ToUtf16(const std::string &utf8, bool is_little_endian) {
+  return utf8ToUtf16SIMD(utf8, is_little_endian);
+}
 
 #elif defined(__ARM_NEON) || defined(__ARM_NEON__)
 
-    bool isLatin(const std::string &str) {
+bool isLatin(const std::string &str) {
   const char *data = str.data();
   size_t len = str.size();
 
