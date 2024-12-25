@@ -71,7 +71,6 @@ std::u16string utf8ToUtf16SIMD(const std::string &utf8, bool is_little_endian) {
 
   while (i + 32 <= n) {
 
-    // Now process the characters in 'in' SIMD register
     for (int j = 0; j < 32; ++j) {
       uint8_t byte = utf8[i + j];
 
