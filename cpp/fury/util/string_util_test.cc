@@ -307,6 +307,13 @@ std::string generateRandomUTF8String(size_t length) {
     while (str.size() < length) {
         uint32_t code_point = distribution(generator);
 
+        // Skip surrogate pairs (0xD800 to 0xDFFF) and other invalid Unicode code
+        // points
+        if ((code_point >= 0xD800 && code_point <= 0xDFFF) ||
+            code_point > 0x10FFFF) {
+            continue;
+        }
+
         if (code_point <= 0x7F) {
             str.push_back(static_cast<char>(code_point));
         } else if (code_point <= 0x7FF) {
@@ -479,9 +486,14 @@ test_strings.push_back(generateRandomUTF8String(string_length));
 // Standard Library
 try {
 auto start_time = std::chrono::high_resolution_clock::now();
+std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> convert;
+// Loop through test strings and convert each UTF-8 string to UTF-16
 for (const auto &str : test_strings) {
-std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
-std::u16string utf16 = convert.from_bytes(str);
+std::wstring wide_str = convert.from_bytes(str);
+std::u16string utf16;
+for (wchar_t wc : wide_str) {
+utf16.push_back(static_cast<char16_t>(wc));
+}
 }
 auto end_time = std::chrono::high_resolution_clock::now();
 auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(
