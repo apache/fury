@@ -23,6 +23,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.Hashing;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -56,6 +57,7 @@ import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.serializer.BufferObject;
 import org.apache.fury.serializer.Serializer;
+import org.apache.fury.serializer.StructSerializer;
 import org.apache.fury.util.MurmurHash3;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -466,6 +468,24 @@ public class CrossLanguageTest {
   }
 
   @Test
+  public void testStructHash() throws Exception {
+    Fury fury =
+        Fury.builder()
+            .withLanguage(Language.XLANG)
+            .withRefTracking(true)
+            .requireClassRegistration(false)
+            .build();
+    fury.register(ComplexObject1.class, "test.ComplexObject1");
+    StructSerializer serializer = (StructSerializer) fury.getSerializer(ComplexObject1.class);
+    Method method = StructSerializer.class.getDeclaredMethod("computeStructHash");
+    method.setAccessible(true);
+    Integer hash = (Integer) method.invoke(serializer);
+    MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(4);
+    buffer.writeInt32(hash);
+    roundBytes("test_struct_hash", buffer.getBytes(0, 4));
+  }
+
+  @Test
   public void testSerializeSimpleStruct() throws Exception {
     Fury fury =
         Fury.builder()
@@ -586,6 +606,19 @@ public class CrossLanguageTest {
             dataFile.toAbsolutePath().toString());
     Assert.assertTrue(executeCommand(command, 30));
     Assert.assertEquals(fury.deserialize(Files.readAllBytes(dataFile)), obj);
+  }
+
+  private byte[] roundBytes(String testName, byte[] bytes) throws IOException {
+    Path dataFile = Paths.get(testName);
+    System.out.println(dataFile.toAbsolutePath());
+    Files.deleteIfExists(dataFile);
+    Files.write(dataFile, bytes);
+    dataFile.toFile().deleteOnExit();
+    ImmutableList<String> command =
+        ImmutableList.of(
+            PYTHON_EXECUTABLE, "-m", PYTHON_MODULE, testName, dataFile.toAbsolutePath().toString());
+    Assert.assertTrue(executeCommand(command, 30));
+    return Files.readAllBytes(dataFile);
   }
 
   @Test

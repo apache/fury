@@ -460,6 +460,21 @@ def test_serialize_simple_struct(data_file_path):
 
 
 @cross_language_test
+def test_struct_hash(data_file_path):
+    with open(data_file_path, "rb") as f:
+        data_bytes = f.read()
+    debug_print(f"len {len(data_bytes)}")
+    read_hash = pyfury.Buffer(data_bytes).read_int32()
+    fury = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
+    fury.register_type(ComplexObject1, typename="ComplexObject1")
+    serializer = fury.class_resolver.get_serializer(ComplexObject1)
+    from pyfury._struct import _get_hash
+
+    v = _get_hash(fury, serializer._field_names, serializer._type_hints)
+    assert read_hash == v, (read_hash, v)
+
+
+@cross_language_test
 def test_serialize_complex_struct(data_file_path):
     fury = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
     fury.register_type(ComplexObject1, namespace="test", typename="ComplexObject1")

@@ -185,14 +185,14 @@ class StructHashVisitor(TypeVisitor):
         self._hash = self._compute_field_hash(self._hash, hash_value)
 
     def visit_other(self, field_name, type_, types_path=None):
-        if type_ not in basic_types and not is_py_array_type(type_):
-            # FIXME ignore unknown types for hash calculation
-            return None
-        classinfo = self.fury.class_resolver.get_classinfo(type_)
-        serializer = classinfo.serializer
-        assert not isinstance(serializer, (PickleSerializer,))
-        id_ = classinfo.type_id
-        assert id_ is not None, serializer
+        classinfo = self.fury.class_resolver.get_classinfo(type_, create=False)
+        if classinfo is None:
+            id_ = 0
+        else:
+            serializer = classinfo.serializer
+            assert not isinstance(serializer, (PickleSerializer,))
+            id_ = classinfo.type_id
+            assert id_ is not None, serializer
         id_ = abs(id_)
         self._hash = self._compute_field_hash(self._hash, id_)
 

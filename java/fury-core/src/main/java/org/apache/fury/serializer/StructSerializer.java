@@ -20,7 +20,6 @@
 package org.apache.fury.serializer;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -50,6 +49,7 @@ import org.apache.fury.type.TypeUtils;
 import org.apache.fury.type.Types;
 import org.apache.fury.util.ExceptionUtils;
 import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.StringUtils;
 
 /**
  * A serializer used for cross-language serialization for custom objects.
@@ -83,7 +83,7 @@ public class StructSerializer<T> extends Serializer<T> {
     this.constructor = ctr;
     fieldAccessors =
         Descriptor.getFields(cls).stream()
-            .sorted(Comparator.comparing(Field::getName))
+            .sorted(Comparator.comparing(f -> StringUtils.lowerCamelToLowerUnderscore(f.getName())))
             .map(FieldAccessor::createAccessor)
             .toArray(FieldAccessor[]::new);
     fieldGenerics = buildFieldGenerics(fury, TypeRef.of(cls), fieldAccessors);
@@ -252,7 +252,7 @@ public class StructSerializer<T> extends Serializer<T> {
       id = Types.MAP;
     } else {
       try {
-        ClassInfo classInfo = fury.getClassResolver().getClassInfo(fieldGeneric.getCls());
+        ClassInfo classInfo = fury.getXtypeResolver().getClassInfo(fieldGeneric.getCls());
         int xtypeId = classInfo.getXtypeId();
         if (Types.isStructType((byte) xtypeId)) {
           id =
@@ -261,7 +261,7 @@ public class StructSerializer<T> extends Serializer<T> {
           id = Math.abs(xtypeId);
         }
       } catch (Exception e) {
-        return hash;
+        id = 0;
       }
     }
     long newHash = ((long) hash) * 31 + id;
