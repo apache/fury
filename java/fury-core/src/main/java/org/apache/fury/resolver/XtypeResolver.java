@@ -258,6 +258,14 @@ public class XtypeResolver {
     return classInfo;
   }
 
+  public ClassInfo getClassInfo(Class<?> cls) {
+    ClassInfo classInfo = classInfoMap.get(cls);
+    if (classInfo == null) {
+      classInfo = buildClassInfo(cls);
+    }
+    return classInfo;
+  }
+
   public ClassInfo getClassInfo(Class<?> cls, ClassInfoHolder classInfoHolder) {
     ClassInfo classInfo = classInfoHolder.classInfo;
     if (classInfo.getCls() != cls) {

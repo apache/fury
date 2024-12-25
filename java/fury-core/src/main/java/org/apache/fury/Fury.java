@@ -250,6 +250,15 @@ public final class Fury implements BaseFury {
     return classResolver.getSerializerFactory();
   }
 
+  public <T> Serializer<T> getSerializer(Class<T> cls) {
+    Preconditions.checkNotNull(cls);
+    if (language == Language.JAVA) {
+      return classResolver.getSerializer(cls);
+    } else {
+      return xtypeResolver.getClassInfo(cls).getSerializer();
+    }
+  }
+
   @Override
   public MemoryBuffer serialize(Object obj, long address, int size) {
     MemoryBuffer buffer = MemoryUtils.buffer(address, size);
@@ -1523,6 +1532,10 @@ public final class Fury implements BaseFury {
 
   public ClassResolver getClassResolver() {
     return classResolver;
+  }
+
+  public XtypeResolver getXtypeResolver() {
+    return xtypeResolver;
   }
 
   public MetaStringResolver getMetaStringResolver() {
