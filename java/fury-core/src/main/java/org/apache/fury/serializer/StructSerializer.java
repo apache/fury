@@ -121,6 +121,8 @@ public class StructSerializer<T> extends Serializer<T> {
           ReflectionUtils.isAbstract(cls)
               ? new CollectionSerializer(fury, ArrayList.class)
               : resolver.getSerializer(cls));
+    } else if (cls.isArray()) {
+      t.setSerializer(new ArraySerializers.ObjectArraySerializer(fury, cls));
     }
     return t;
   }
