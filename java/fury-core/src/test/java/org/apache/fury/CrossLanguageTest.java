@@ -19,7 +19,6 @@
 
 package org.apache.fury;
 
-import static org.apache.fury.FuryTestBase.serDeTyped;
 import static org.testng.Assert.assertEquals;
 
 import com.google.common.collect.ImmutableList;
@@ -77,7 +76,8 @@ import org.testng.annotations.Test;
 public class CrossLanguageTest extends FuryTestBase {
   private static final Logger LOG = LoggerFactory.getLogger(CrossLanguageTest.class);
   private static final String PYTHON_MODULE = "pyfury.tests.test_cross_language";
-  private static final String PYTHON_EXECUTABLE = "python";
+  private static final String PYTHON_EXECUTABLE =
+      "/Users/chaokunyang/Desktop/ant/DeveProjects/mellow/venv/bin/python";
 
   /**
    * Execute an external command.
