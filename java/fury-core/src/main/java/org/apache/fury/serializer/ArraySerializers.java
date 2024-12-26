@@ -47,6 +47,7 @@ public class ArraySerializers {
     private final Serializer componentTypeSerializer;
     private final ClassInfoHolder classInfoHolder;
     private final int[] stubDims;
+    private final GenericType componentGenericType;
 
     public ObjectArraySerializer(Fury fury, Class<T[]> cls) {
       super(fury, cls);
@@ -64,6 +65,7 @@ public class ArraySerializers {
       }
       this.innerType = (Class<T>) innerType;
       Class<?> componentType = cls.getComponentType();
+      componentGenericType = fury.getClassResolver().buildGenericType(componentType);
       if (fury.getClassResolver().isMonomorphic(componentType)) {
         this.componentTypeSerializer = fury.getClassResolver().getSerializer(componentType);
       } else {
@@ -183,20 +185,12 @@ public class ArraySerializers {
     public T[] xread(MemoryBuffer buffer) {
       int numElements = buffer.readVarUint32Small7();
       Object[] value = newArray(numElements);
-      boolean pushGenerics =
-          componentTypeSerializer != null && componentTypeSerializer.getType().isArray();
-      if (pushGenerics) {
-        GenericType genericType =
-            fury.getClassResolver().buildGenericType(componentTypeSerializer.getType());
-        fury.getGenerics().pushGenericType(genericType);
-      }
+      fury.getGenerics().pushGenericType(componentGenericType);
       for (int i = 0; i < numElements; i++) {
         Object x = fury.xreadRef(buffer);
         value[i] = x;
       }
-      if (pushGenerics) {
-        fury.getGenerics().popGenericType();
-      }
+      fury.getGenerics().popGenericType();
       return (T[]) value;
     }
 

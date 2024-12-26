@@ -106,15 +106,15 @@ public class ArraySerializersTest extends FuryTestBase {
             .requireClassRegistration(false);
     Fury fury1 = builder.build();
     Fury fury2 = builder.build();
-    serDeCheck(fury1, fury2, new Object[][] {{false, true}, {false, true}});
-    serDeCheck(
+    serDeCheckTyped(fury1, fury2, new Object[][] {{false, true}, {false, true}});
+    serDeCheckTyped(
         fury1,
         fury2,
         new Object[][] {
           {false, true, (byte) 1, (byte) 1, (float) 1.0, (float) 1.1},
           {false, true, (byte) 1, (byte) 1, (float) 1.0, (float) 1.1}
         });
-    serDeCheck(fury1, fury2, new Integer[][] {{1, 2}, {1, 2}});
+    serDeCheckTyped(fury1, fury2, new Integer[][] {{1, 2}, {1, 2}});
   }
 
   @Test(dataProvider = "furyCopyConfig")

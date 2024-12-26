@@ -257,6 +257,12 @@ public abstract class FuryTestBase {
     return (T) fury2.deserialize(bytes);
   }
 
+  public static <T> T serDeCheckTyped(Fury fury1, Fury fury2, T obj) {
+    T o = serDeTyped(fury1, fury2, obj);
+    Assert.assertEquals(o, obj);
+    return o;
+  }
+
   public static <T> T serDeCheck(Fury fury1, Fury fury2, T obj) {
     T o = serDe(fury1, fury2, obj);
     Assert.assertEquals(o, obj);
