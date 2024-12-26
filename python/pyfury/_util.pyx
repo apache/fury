@@ -364,7 +364,7 @@ cdef class Buffer:
 
     cpdef inline int32_t read_varint32(self):
         cdef uint32_t v = self.read_varuint32()
-        return (v >> 1) ^ -(v & 1);
+        return (v >> 1) ^ -(v & 1)
 
     cpdef inline int32_t read_varuint32(self):
         cdef:
