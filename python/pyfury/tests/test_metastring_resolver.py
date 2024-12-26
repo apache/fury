@@ -22,7 +22,7 @@ from pyfury.meta.metastring import MetaStringEncoder
 
 def test_metastring_resolver():
     resolver = MetaStringResolver()
-    encoder = MetaStringEncoder()
+    encoder = MetaStringEncoder("$", "_")
     metastr1 = encoder.encode("hello, world")
     metabytes1 = resolver.get_metastr_bytes(metastr1)
     buffer = Buffer.allocate(32)
