@@ -105,13 +105,10 @@ public class FuryTest extends FuryTestBase {
     assertEquals(Double.MAX_VALUE, serDe(fury1, fury2, Double.MAX_VALUE));
   }
 
-  @Test(dataProvider = "crossLanguageReferenceTrackingConfig")
-  public void basicTest(boolean referenceTracking, Language language) {
+  @Test(dataProvider = "referenceTrackingConfig")
+  public void basicTest(boolean referenceTracking) {
     FuryBuilder builder =
-        Fury.builder()
-            .withLanguage(language)
-            .withRefTracking(referenceTracking)
-            .requireClassRegistration(false);
+        Fury.builder().withRefTracking(referenceTracking).requireClassRegistration(false);
     Fury fury1 = builder.build();
     Fury fury2 = builder.build();
     assertEquals("str", serDe(fury1, fury2, "str"));
