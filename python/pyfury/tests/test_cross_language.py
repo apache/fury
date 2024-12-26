@@ -543,8 +543,11 @@ def test_register_serializer(data_file_path):
         data_bytes = f.read()
     buffer = pyfury.Buffer(data_bytes)
     fury = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
-    fury.register_type(ComplexObject1, typename="test.ComplexObject1",
-                       serializer=ComplexObject1Serializer(fury, ComplexObject1))
+    fury.register_type(
+        ComplexObject1,
+        typename="test.ComplexObject1",
+        serializer=ComplexObject1Serializer(fury, ComplexObject1),
+    )
     new_obj = fury.deserialize(buffer)
     expected = ComplexObject1(*[None] * 12)
     expected.f1, expected.f2, expected.f3 = True, "abc", ["abc", "abc"]
