@@ -13,6 +13,12 @@ internal static partial class ThrowHelper
     }
 
     [DoesNotReturn]
+    public static TReturn ThrowNotSupportedException<TReturn>(string? message = null)
+    {
+        throw new NotSupportedException(message);
+    }
+
+    [DoesNotReturn]
     public static void ThrowInvalidOperationException(string? message = null)
     {
         throw new InvalidOperationException(message);

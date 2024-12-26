@@ -7,17 +7,19 @@ using Fury.Serializer;
 
 namespace Fury;
 
+// Async methods do not work with ref, so DeserializationContext is a class
+
 public sealed class DeserializationContext
 {
     public Fury Fury { get; }
     public BatchReader Reader { get; }
     private RefResolver RefResolver { get; }
 
-    internal DeserializationContext(Fury fury, BatchReader reader)
+    internal DeserializationContext(Fury fury, BatchReader reader, RefResolver refResolver)
     {
         Fury = fury;
         Reader = reader;
-        RefResolver = new RefResolver();
+        RefResolver = refResolver;
     }
 
     public bool TryGetDeserializer<TValue>([NotNullWhen(true)] out IDeserializer? deserializer)

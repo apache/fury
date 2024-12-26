@@ -39,4 +39,10 @@ internal static class ExceptionMessages
 
     public static string NotSupportedDeserializer(Type type) =>
         $"This deserializer for type '{type.FullName}' is not supported yet.";
+
+    public static string InvalidMagicNumber() => "Invalid magic number.";
+
+    public static string NotCrossLanguage() => "Not cross language.";
+
+    public static string NotLittleEndian() => "Not little endian.";
 }

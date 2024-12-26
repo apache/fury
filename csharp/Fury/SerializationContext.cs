@@ -5,6 +5,8 @@ using Fury.Serializer;
 
 namespace Fury;
 
+// BatchWriter is ref struct, so SerializationContext must be ref struct too
+
 public ref struct SerializationContext
 {
     public Fury Fury { get; }
