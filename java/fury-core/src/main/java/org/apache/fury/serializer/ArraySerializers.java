@@ -681,7 +681,7 @@ public class ArraySerializers {
       buffer.writeVarUint32Small7(len);
       for (String elem : value) {
         if (elem != null) {
-          buffer.writeByte(Fury.REF_VALUE_FLAG);
+          buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
           stringSerializer.writeUTF8String(buffer, elem);
         } else {
           buffer.writeByte(Fury.NULL_FLAG);
@@ -694,7 +694,7 @@ public class ArraySerializers {
       int numElements = buffer.readVarUint32Small7();
       String[] value = new String[numElements];
       for (int i = 0; i < numElements; i++) {
-        if (buffer.readByte() == Fury.REF_VALUE_FLAG) {
+        if (buffer.readByte() >= Fury.NOT_NULL_VALUE_FLAG) {
           value[i] = stringSerializer.readUTF8String(buffer);
         } else {
           value[i] = null;

@@ -58,7 +58,6 @@ import org.apache.fury.memory.Platform;
 import org.apache.fury.meta.Encoders;
 import org.apache.fury.meta.MetaString;
 import org.apache.fury.reflect.ReflectionUtils;
-import org.apache.fury.serializer.ArraySerializers.ObjectArraySerializer;
 import org.apache.fury.serializer.EnumSerializer;
 import org.apache.fury.serializer.NonexistentClass;
 import org.apache.fury.serializer.NonexistentClassSerializers;
@@ -288,7 +287,7 @@ public class XtypeResolver {
       serializer = new CollectionSerializer(fury, cls);
       xtypeId = Types.LIST;
     } else if (cls.isArray() && !TypeUtils.getArrayComponent(cls).isPrimitive()) {
-      serializer = new ObjectArraySerializer(fury, cls);
+      serializer = classResolver.getSerializer(cls);
       xtypeId = Types.LIST;
     } else if (classResolver.isMap(cls)) {
       serializer = new MapSerializer(fury, cls);
