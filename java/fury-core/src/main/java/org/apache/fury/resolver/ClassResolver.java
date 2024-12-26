@@ -253,7 +253,6 @@ public class ClassResolver {
     private ClassChecker classChecker = (classResolver, className) -> true;
     private GenericType objectGenericType;
     private final IdentityMap<Type, GenericType> genericTypes = new IdentityMap<>();
-    ;
     private final Map<List<ClassLoader>, CodeGenerator> codeGeneratorMap = new HashMap<>();
   }
 
