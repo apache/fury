@@ -20,7 +20,6 @@ import logging
 import os
 import warnings
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from typing import Union, Iterable, TypeVar
 
 from pyfury.buffer import Buffer
