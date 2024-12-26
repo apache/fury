@@ -142,14 +142,13 @@ public class XtypeResolver {
     }
     int xtypeId = typeId;
     if (type.isEnum()) {
-      xtypeId = xtypeId << 8 + Types.ENUM;
-
+      xtypeId = (xtypeId << 8) + Types.ENUM;
     } else {
       if (serializer != null) {
         if (serializer instanceof StructSerializer) {
-          xtypeId = xtypeId << 8 + Types.STRUCT;
+          xtypeId = (xtypeId << 8) + Types.STRUCT;
         } else {
-          xtypeId = xtypeId << 8 + Types.EXT;
+          xtypeId = (xtypeId << 8) + Types.EXT;
         }
       }
     }
@@ -295,7 +294,13 @@ public class XtypeResolver {
       serializer = new MapSerializer(fury, cls);
       xtypeId = Types.MAP;
     } else {
-      throw new ClassUnregisteredException(cls);
+      Class<Enum> enclosingClass = (Class<Enum>) cls.getEnclosingClass();
+      if (enclosingClass != null && enclosingClass.isEnum()) {
+        serializer = new EnumSerializer(fury, (Class<Enum>) cls);
+        xtypeId = getClassInfo(enclosingClass).xtypeId;
+      } else {
+        throw new ClassUnregisteredException(cls);
+      }
     }
     ClassInfo info = newClassInfo(cls, serializer, (short) xtypeId);
     classInfoMap.put(cls, info);
@@ -310,10 +315,15 @@ public class XtypeResolver {
     registerDefaultTypes(Types.INT64, Long.class, long.class, AtomicLong.class);
     registerDefaultTypes(Types.FLOAT32, Float.class, float.class);
     registerDefaultTypes(Types.FLOAT64, Double.class, double.class);
-    registerDefaultTypes(Types.STRING, String.class);
+    registerDefaultTypes(Types.STRING, String.class, StringBuilder.class, StringBuffer.class);
     registerDefaultTypes(Types.DURATION, Duration.class);
     registerDefaultTypes(
-        Types.TIMESTAMP, Instant.class, Date.class, Timestamp.class, LocalDateTime.class);
+        Types.TIMESTAMP,
+        Instant.class,
+        Date.class,
+        java.sql.Date.class,
+        Timestamp.class,
+        LocalDateTime.class);
     registerDefaultTypes(Types.DECIMAL, BigDecimal.class, BigInteger.class);
     registerDefaultTypes(
         Types.BINARY,
@@ -376,6 +386,8 @@ public class XtypeResolver {
         return loadBytesToClassInfo(internalTypeId, packageBytes, simpleClassNameBytes);
       case Types.LIST:
         return getListClassInfo();
+      case Types.TIMESTAMP:
+        return getGenericClassInfo();
       default:
         return xtypeIdToClassMap.get(xtypeId);
     }
@@ -392,6 +404,16 @@ public class XtypeResolver {
       }
     }
     return xtypeIdToClassMap.get(Types.LIST);
+  }
+
+  private ClassInfo getGenericClassInfo() {
+    fury.incDepth(1);
+    GenericType genericType = generics.nextGenericType();
+    fury.incDepth(-1);
+    if (genericType != null) {
+      return classResolver.getClassInfo(genericType.getCls());
+    }
+    return xtypeIdToClassMap.get(Types.TIMESTAMP);
   }
 
   private ClassInfo loadBytesToClassInfo(

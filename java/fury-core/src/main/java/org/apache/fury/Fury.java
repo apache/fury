@@ -543,8 +543,10 @@ public final class Fury implements BaseFury {
           buffer.writeFloat64((Double) obj);
           break;
         case Types.STRING:
-          stringSerializer.writeString(buffer, (String) obj);
-          break;
+          if (obj.getClass() == String.class) {
+            stringSerializer.writeString(buffer, (String) obj);
+            break;
+          }
           // TODO(add fastpath for other types)
         default:
           depth++;

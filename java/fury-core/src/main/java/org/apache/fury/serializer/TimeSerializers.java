@@ -76,6 +76,16 @@ public class TimeSerializers {
       return newInstance(buffer.readInt64());
     }
 
+    @Override
+    public void xwrite(MemoryBuffer buffer, T value) {
+      buffer.writeInt64(value.getTime());
+    }
+
+    @Override
+    public T xread(MemoryBuffer buffer) {
+      return newInstance(buffer.readInt64());
+    }
+
     protected abstract T newInstance(long time);
   }
 
