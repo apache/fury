@@ -37,6 +37,9 @@ public struct Box<T>(in T value)
 
 public static class BoxExtensions
 {
+    // Users may not know Unsafe.Unbox<T>(ref T) or be afraid of "Unsafe" in the name.
+
+    /// <inheritdoc cref="Unsafe.Unbox{T}"/>
     public static ref T Unbox<T>(this Box<T> box)
         where T : struct
     {
