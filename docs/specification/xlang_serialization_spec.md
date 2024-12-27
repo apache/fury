@@ -40,9 +40,10 @@ also introduce more complexities compared to static serialization frameworks. So
 - enum: a data type consisting of a set of named values. Rust enum with non-predefined field values are not supported as
   an enum.
 - named_enum: an enum whose value will be serialized as the registered name.
-- struct: a morphic(final) type serialized by Fury Struct serializer.
-- polymorphic_struct: a type which is not morphic(not final). i.e. it don't have subclasses. Suppose we're deserializing
-  `List<SomeClass>`, we can save dynamic serializer dispatch if `SomeClass` is morphic(final).
+- struct: a morphic(final) type serialized by Fury Struct serializer. i.e. it doesn't have subclasses. Suppose we're
+  deserializing `List<SomeClass>`, we can save dynamic serializer dispatch since `SomeClass` is morphic(final).
+- polymorphic_struct: a type which is not morphic(not final). i.e. it has subclasses. Suppose we're deserializing
+  `List<SomeClass>`, we must dispatch serializer dynamically since `SomeClass` is morphic(final).
 - compatible_struct: a morphic(final) type serialized by Fury compatible Struct serializer.
 - polymorphic_compatible_struct: a non-morphic(non-final) type serialized by Fury compatible Struct serializer.
 - named_struct: a `struct` whose type mapping will be encoded as a name.
