@@ -505,7 +505,7 @@ class ClassResolver:
                 class_info.serializer = self._create_serializer(cls)
             return class_info
         elif not create:
-            return
+            return None
         if self.language != Language.PYTHON or (
             self.require_registration and not issubclass(cls, Enum)
         ):

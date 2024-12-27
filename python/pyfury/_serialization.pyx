@@ -496,7 +496,7 @@ cdef class ClassResolver:
                 class_info.serializer = self._resolver._create_serializer(cls)
                 return class_info
         elif not create:
-            return
+            return None
         else:
             class_info = self._resolver.get_classinfo(cls, create=create)
             self._c_classes_info[<uintptr_t> <PyObject *> cls] = <PyObject *> class_info
@@ -1174,7 +1174,7 @@ cdef float FLOAT32_MAX_VALUE = 3.40282e+38
 @cython.final
 cdef class DynamicIntSerializer(CrossLanguageCompatibleSerializer):
     cpdef inline xwrite(self, Buffer buffer, value):
-        # TOTO(chaokunyang) check value range and write type and value
+        # TODO(chaokunyang) check value range and write type and value
         buffer.write_varuint32(<int32_t> TypeId.INT64)
         buffer.write_varint64(value)
 
@@ -1205,7 +1205,7 @@ cdef class DoubleSerializer(CrossLanguageCompatibleSerializer):
 @cython.final
 cdef class DynamicFloatSerializer(CrossLanguageCompatibleSerializer):
     cpdef inline xwrite(self, Buffer buffer, value):
-        # TOTO(chaokunyang) check value range and write type and value
+        # TODO(chaokunyang) check value range and write type and value
         buffer.write_varuint32(<int32_t> TypeId.FLOAT64)
         buffer.write_double(value)
 
