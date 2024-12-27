@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -142,94 +143,192 @@ public static class BatchReaderExtensions
         CancellationToken cancellationToken = default
     )
     {
-        var result = await reader.ReadAtLeastAsync(5, cancellationToken);
+        var result = await Read7BitEncodedUintAsync(reader, cancellationToken);
+        return (int)((result >> 1) | (result << 31));
+    }
+
+    public static async ValueTask<uint> Read7BitEncodedUintAsync(
+        this BatchReader reader,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var result = await reader.ReadAtLeastAsync(MaxBytesOfVarInt32WithoutOverflow + 1, cancellationToken);
         var buffer = result.Buffer;
 
         // Fast path
-        var consumed = Read7BitEncodedIntFast(buffer.First.Span, out var value);
+        var value = DoRead7BitEncodedUintFast(buffer.First.Span, out var consumed);
         if (consumed == 0)
         {
             // Slow path
-            consumed = Read7BitEncodedIntSlow(buffer, out value);
+            value = DoRead7BitEncodedUintSlow(buffer, out consumed);
         }
 
         reader.AdvanceTo(consumed);
 
-        return (int)value;
+        return value;
     }
 
     private const int MaxBytesOfVarInt32WithoutOverflow = 4;
-    private const int MaxBytesOfVarInt32 = MaxBytesOfVarInt32WithoutOverflow + 1;
 
-    private static int Read7BitEncodedIntFast(ReadOnlySpan<byte> bytes, out uint result)
+    private static uint DoRead7BitEncodedUintFast(ReadOnlySpan<byte> buffer, out int consumed)
     {
-        if (bytes.Length <= MaxBytesOfVarInt32WithoutOverflow)
+        if (buffer.Length <= MaxBytesOfVarInt32WithoutOverflow)
         {
-            result = 0;
+            consumed = 0;
             return 0;
         }
-
-        uint value = 0;
-        var consumedByteCount = 0;
-        byte byteValue;
-        while (consumedByteCount < MaxBytesOfVarInt32WithoutOverflow)
+        uint result = 0;
+        consumed = 0;
+        uint readByte;
+        for (var i = 0; i < MaxBytesOfVarInt32WithoutOverflow; i++)
         {
-            byteValue = bytes[consumedByteCount];
-            value |= (byteValue & 0x7Fu) << (consumedByteCount * 7);
-            consumedByteCount++;
-            if (byteValue <= 0x7Fu)
+            readByte = buffer[i];
+            result |= (readByte & 0x7F) << (i * 7);
+            if ((readByte & 0x80) == 0)
             {
-                result = value;
-                return consumedByteCount; // early exit
+                consumed = i + 1;
+                return result;
             }
         }
 
-        byteValue = bytes[MaxBytesOfVarInt32WithoutOverflow];
-        if (byteValue > 0b_1111u)
+        readByte = buffer[MaxBytesOfVarInt32WithoutOverflow];
+        if (readByte > 0b_1111u)
         {
             ThrowHelper.ThrowBadSerializationDataException(ExceptionMessages.VarInt32Overflow());
         }
 
-        value |= (uint)byteValue << (MaxBytesOfVarInt32WithoutOverflow * 7);
-        result = value;
-        return MaxBytesOfVarInt32;
+        result |= readByte << (MaxBytesOfVarInt32WithoutOverflow * 7);
+        consumed = MaxBytesOfVarInt32WithoutOverflow + 1;
+        return result;
     }
 
-    private static int Read7BitEncodedIntSlow(ReadOnlySequence<byte> buffer, out uint result)
+    private static uint DoRead7BitEncodedUintSlow(ReadOnlySequence<byte> buffer, out int consumed)
     {
-        uint value = 0;
-        var consumedByteCount = 0;
+        uint result = 0;
+        var consumedBytes = 0;
         foreach (var memory in buffer)
         {
-            var bytes = memory.Span;
-            foreach (var byteValue in bytes)
+            var span = memory.Span;
+            foreach (uint readByte in span)
             {
-                if (consumedByteCount < MaxBytesOfVarInt32WithoutOverflow)
+                if (consumedBytes < MaxBytesOfVarInt32WithoutOverflow)
                 {
-                    value |= (byteValue & 0x7Fu) << (consumedByteCount * 7);
-                    consumedByteCount++;
-                    if (byteValue <= 0x7Fu)
+                    result |= (readByte & 0x7F) << (7 * consumedBytes);
+                    ++consumedBytes;
+                    if ((readByte & 0x80) == 0)
                     {
-                        result = value;
-                        return consumedByteCount; // early exit
+                        consumed = consumedBytes;
+                        return result;
                     }
-                }
-                else if (byteValue <= 0b_1111u)
-                {
-                    value |= (uint)byteValue << (MaxBytesOfVarInt32WithoutOverflow * 7);
-                    result = value;
-                    return MaxBytesOfVarInt32; // early exit
                 }
                 else
                 {
-                    ThrowHelper.ThrowBadSerializationDataException(ExceptionMessages.VarInt32Overflow());
+                    if (readByte > 0b_1111u)
+                    {
+                        ThrowHelper.ThrowBadSerializationDataException(ExceptionMessages.VarInt32Overflow());
+                    }
+                    result |= readByte << (7 * MaxBytesOfVarInt32WithoutOverflow);
+                    consumed = consumedBytes + 1;
+                    return result;
                 }
             }
         }
+        consumed = 0;
+        return result;
+    }
 
-        ThrowHelper.ThrowBadSerializationDataException(ExceptionMessages.VarInt32Truncated());
-        result = 0;
-        return 0;
+    public static async ValueTask<long> Read7BitEncodedLongAsync(
+        this BatchReader reader,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var result = await Read7BitEncodedUlongAsync(reader, cancellationToken);
+        return (long)((result >> 1) | (result << 63));
+    }
+
+    public static async ValueTask<ulong> Read7BitEncodedUlongAsync(
+        this BatchReader reader,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var result = await reader.ReadAtLeastAsync(MaxBytesOfVarInt64WithoutOverflow + 1, cancellationToken);
+        var buffer = result.Buffer;
+
+        // Fast path
+        var value = DoRead7BitEncodedUlongFast(buffer.First.Span, out var consumed);
+        if (consumed == 0)
+        {
+            // Slow path
+            value = DoRead7BitEncodedUlongSlow(buffer, out consumed);
+        }
+
+        reader.AdvanceTo(consumed);
+
+        return value;
+    }
+
+    private const int MaxBytesOfVarInt64WithoutOverflow = 8;
+
+    private static ulong DoRead7BitEncodedUlongFast(ReadOnlySpan<byte> buffer, out int consumed)
+    {
+        if (buffer.Length <= MaxBytesOfVarInt64WithoutOverflow)
+        {
+            consumed = 0;
+            return 0;
+        }
+        ulong result = 0;
+        consumed = 0;
+        ulong readByte;
+        for (var i = 0; i < MaxBytesOfVarInt64WithoutOverflow; i++)
+        {
+            readByte = buffer[i];
+            result |= (readByte & 0x7F) << (i * 7);
+            if ((readByte & 0x80) == 0)
+            {
+                consumed = i + 1;
+                return result;
+            }
+        }
+
+        readByte = buffer[MaxBytesOfVarInt64WithoutOverflow];
+        result |= readByte << (MaxBytesOfVarInt64WithoutOverflow * 7);
+        return result;
+    }
+
+    private static ulong DoRead7BitEncodedUlongSlow(ReadOnlySequence<byte> buffer, out int consumed)
+    {
+        ulong result = 0;
+        var consumedBytes = 0;
+        foreach (var memory in buffer)
+        {
+            var span = memory.Span;
+            foreach (ulong readByte in span)
+            {
+                if (consumedBytes < MaxBytesOfVarInt64WithoutOverflow)
+                {
+                    result |= (readByte & 0x7F) << (7 * consumedBytes);
+                    ++consumedBytes;
+                    if ((readByte & 0x80) == 0)
+                    {
+                        consumed = consumedBytes;
+                        return result;
+                    }
+                }
+                else
+                {
+                    result |= readByte << (7 * MaxBytesOfVarInt64WithoutOverflow);
+                    consumed = consumedBytes + 1;
+                    return result;
+                }
+            }
+        }
+        consumed = 0;
+        return result;
+    }
+
+    public static async ValueTask<int> ReadCountAsync(this BatchReader reader, CancellationToken cancellationToken)
+    {
+        return (int)await reader.Read7BitEncodedUintAsync(cancellationToken);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -247,7 +346,7 @@ public static class BatchReaderExtensions
         CancellationToken cancellationToken = default
     )
     {
-        return new TypeId(await reader.Read7BitEncodedIntAsync(cancellationToken));
+        return new TypeId((int)await reader.Read7BitEncodedUintAsync(cancellationToken));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -256,6 +355,6 @@ public static class BatchReaderExtensions
         CancellationToken cancellationToken = default
     )
     {
-        return new RefId(await reader.Read7BitEncodedIntAsync(cancellationToken));
+        return new RefId((int)await reader.Read7BitEncodedUintAsync(cancellationToken));
     }
 }

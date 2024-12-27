@@ -32,4 +32,12 @@ public sealed class BatchReader(PipeReader reader)
     {
         _cachedBuffer = _cachedBuffer.Slice(consumed);
     }
+
+    public void Complete()
+    {
+        reader.AdvanceTo(_cachedBuffer.Start);
+        _cachedBuffer = default;
+        _isCompleted = true;
+        reader.Complete();
+    }
 }

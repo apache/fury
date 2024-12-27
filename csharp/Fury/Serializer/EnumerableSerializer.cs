@@ -28,7 +28,7 @@ public class EnumerableSerializer<TElement, TEnumerable>(ISerializer<TElement>? 
     public override void Write(SerializationContext context, in TEnumerable value)
     {
         var count = value.Count();
-        context.Writer.Write7BitEncodedInt(count);
+        context.Writer.WriteCount(count);
         if (count <= 0)
         {
             return;
@@ -96,7 +96,7 @@ public class NullableEnumerableSerializer<TElement, TEnumerable>(ISerializer<TEl
     public override void Write(SerializationContext context, in TEnumerable value)
     {
         var count = value.Count();
-        context.Writer.Write7BitEncodedInt(count);
+        context.Writer.WriteCount(count);
         if (count <= 0)
         {
             return;

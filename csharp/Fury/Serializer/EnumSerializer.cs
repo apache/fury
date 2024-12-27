@@ -11,8 +11,8 @@ internal sealed class EnumSerializer<TEnum> : AbstractSerializer<TEnum>
     {
         // TODO: Serialize by name
 
-        var v = Convert.ToInt32(value);
-        context.Writer.Write7BitEncodedInt(v);
+        var v = Convert.ToUInt32(value);
+        context.Writer.Write7BitEncodedUint(v);
     }
 }
 
@@ -33,7 +33,7 @@ internal sealed class EnumDeserializer<TEnum> : AbstractDeserializer<TEnum>
         CancellationToken cancellationToken = default
     )
     {
-        var v = await context.Reader.Read7BitEncodedIntAsync(cancellationToken);
+        var v = await context.Reader.Read7BitEncodedUintAsync(cancellationToken);
         instance.Value = (TEnum)Enum.ToObject(typeof(TEnum), v);
     }
 }

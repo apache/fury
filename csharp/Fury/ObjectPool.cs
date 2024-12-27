@@ -7,7 +7,7 @@ namespace Fury;
 /// </summary>
 /// <typeparam name="T"></typeparam>
 internal readonly struct ObjectPool<T>()
-where T : class, new()
+    where T : class, new()
 {
     private readonly List<T> _objects = [];
 

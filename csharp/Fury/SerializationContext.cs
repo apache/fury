@@ -67,7 +67,7 @@ public ref struct SerializationContext
             else
             {
                 Writer.Write(ReferenceFlag.Ref);
-                Writer.Write7BitEncodedInt(refId.Value);
+                Writer.Write(refId);
             }
         }
         else
@@ -86,7 +86,7 @@ public ref struct SerializationContext
                 if (referenceable == ReferenceTrackingPolicy.OnlyCircularDependency)
                 {
                     Writer.Write(ReferenceFlag.Ref);
-                    Writer.Write7BitEncodedInt(refId.Value);
+                    Writer.Write(refId);
                 }
                 else
                 {

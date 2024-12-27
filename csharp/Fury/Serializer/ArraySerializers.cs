@@ -12,7 +12,7 @@ internal class ArraySerializer<TElement>(ISerializer<TElement>? elementSerialize
 
     public override void Write(SerializationContext context, in TElement?[] value)
     {
-        context.Writer.Write7BitEncodedInt(value.Length);
+        context.Writer.WriteCount(value.Length);
         foreach (var element in value)
         {
             context.Write(element, elementSerializer);
@@ -29,7 +29,7 @@ internal class NullableArraySerializer<TElement>(ISerializer<TElement>? elementS
 
     public override void Write(SerializationContext context, in TElement?[] value)
     {
-        context.Writer.Write7BitEncodedInt(value.Length);
+        context.Writer.WriteCount(value.Length);
         foreach (var element in value)
         {
             context.Write(element, elementSerializer);
@@ -48,7 +48,7 @@ internal class ArrayDeserializer<TElement>(IDeserializer<TElement>? elementDeser
         CancellationToken cancellationToken = default
     )
     {
-        var length = await context.Reader.Read7BitEncodedIntAsync(cancellationToken);
+        var length = await context.Reader.ReadCountAsync(cancellationToken);
         return new TElement?[length];
     }
 
@@ -70,7 +70,7 @@ internal class ArrayDeserializer<TElement>(IDeserializer<TElement>? elementDeser
         CancellationToken cancellationToken = default
     )
     {
-        var length = await context.Reader.Read7BitEncodedIntAsync(cancellationToken);
+        var length = await context.Reader.ReadCountAsync(cancellationToken);
         var result = new TElement?[length];
         for (var i = 0; i < result.Length; i++)
         {
@@ -92,7 +92,7 @@ internal class NullableArrayDeserializer<TElement>(IDeserializer<TElement>? elem
         CancellationToken cancellationToken = default
     )
     {
-        var length = await context.Reader.Read7BitEncodedIntAsync(cancellationToken);
+        var length = await context.Reader.ReadCountAsync(cancellationToken);
         return new TElement?[length];
     }
 
@@ -117,7 +117,7 @@ internal sealed class PrimitiveArraySerializer<TElement> : AbstractSerializer<TE
 
     public override void Write(SerializationContext context, in TElement[] value)
     {
-        context.Writer.Write7BitEncodedInt(value.Length);
+        context.Writer.WriteCount(value.Length);
         context.Writer.Write<TElement>(value);
     }
 }
