@@ -11,13 +11,13 @@ public ref struct SerializationContext
 {
     public Fury Fury { get; }
     public BatchWriter Writer;
-    private RefResolver RefResolver { get; }
+    private RefRegistration RefRegistration { get; }
 
-    internal SerializationContext(Fury fury, BatchWriter writer, RefResolver refResolver)
+    internal SerializationContext(Fury fury, BatchWriter writer, RefRegistration refRegistration)
     {
         Fury = fury;
         Writer = writer;
-        RefResolver = refResolver;
+        RefRegistration = refRegistration;
     }
 
     public bool TryGetSerializer<TValue>([NotNullWhen(true)] out ISerializer? serializer)
@@ -46,42 +46,42 @@ public ref struct SerializationContext
             return;
         }
 
-        var declaredType = typeof(TValue);
+        if (TypeHelper<TValue>.IsValueType)
+        {
+            // Objects declared as ValueType are not possible to be referenced
+
+            Writer.Write(ReferenceFlag.NotNullValue);
+            DoWriteValueType(in value, serializer);
+            return;
+        }
+
         if (referenceable == ReferenceTrackingPolicy.Enabled)
         {
-            if (declaredType.IsValueType)
+            var refId = RefRegistration.GetOrPushRefId(value, out var processingState);
+            if (processingState == RefRegistration.ObjectProcessingState.Unprocessed)
             {
-                RefResolver.AddRefId();
-                Writer.Write(ReferenceFlag.RefValue);
-                DoWriteValueType(in value, serializer);
-                return;
-            }
+                // A new referenceable object
 
-            var refId = RefResolver.GetOrPushRefId(value, out var processingState);
-            if (processingState == RefResolver.ObjectProcessingState.Unprocessed)
-            {
                 Writer.Write(ReferenceFlag.RefValue);
                 DoWriteReferenceType(value, serializer);
-                RefResolver.MarkFullyProcessed(refId);
+                RefRegistration.MarkFullyProcessed(refId);
             }
             else
             {
+                // A referenceable object that has been recorded
+
                 Writer.Write(ReferenceFlag.Ref);
                 Writer.Write(refId);
             }
         }
         else
         {
-            if (declaredType.IsValueType)
+            var refId = RefRegistration.GetOrPushRefId(value, out var processingState);
+            if (processingState == RefRegistration.ObjectProcessingState.PartiallyProcessed)
             {
-                Writer.Write(ReferenceFlag.NotNullValue);
-                DoWriteValueType(in value, serializer);
-                return;
-            }
+                // A referenceable object that has been recorded but not fully processed,
+                // which means it is the ancestor of the current object.
 
-            var refId = RefResolver.GetOrPushRefId(value, out var processingState);
-            if (processingState == RefResolver.ObjectProcessingState.PartiallyProcessed)
-            {
                 // Circular dependency detected
                 if (referenceable == ReferenceTrackingPolicy.OnlyCircularDependency)
                 {
@@ -95,15 +95,19 @@ public ref struct SerializationContext
                 return;
             }
 
-            // processingState should not be FullyProcessed
+            // ProcessingState should not be FullyProcessed,
             // because we pop the referenceable object after writing it
 
-            var flag = referenceable == ReferenceTrackingPolicy.OnlyCircularDependency
-                ? ReferenceFlag.RefValue
-                : ReferenceFlag.NotNullValue;
+            // For the possible circular dependency in the future,
+            // we need to write RefValue instead of NotNullValue
+
+            var flag =
+                referenceable == ReferenceTrackingPolicy.OnlyCircularDependency
+                    ? ReferenceFlag.RefValue
+                    : ReferenceFlag.NotNullValue;
             Writer.Write(flag);
             DoWriteReferenceType(value, serializer);
-            RefResolver.PopReferenceableObject();
+            RefRegistration.PopReferenceableObject();
         }
     }
 
@@ -116,15 +120,8 @@ public ref struct SerializationContext
             return;
         }
 
-        if (referenceable == ReferenceTrackingPolicy.Enabled)
-        {
-            RefResolver.GetOrPushRefId(value.Value, out _);
-            Writer.Write(ReferenceFlag.RefValue);
-        }
-        else
-        {
-            Writer.Write(ReferenceFlag.NotNullValue);
-        }
+        // Objects declared as ValueType are not possible to be referenced
+        Writer.Write(ReferenceFlag.NotNullValue);
 #if NET8_0_OR_GREATER
         DoWriteValueType(in Nullable.GetValueRefOrDefaultRef(in value), serializer);
 #else
@@ -147,7 +144,7 @@ public ref struct SerializationContext
     }
 
     private void DoWriteValueType<TValue>(in TValue value, ISerializer? serializer)
-    where TValue : notnull
+        where TValue : notnull
     {
         var type = typeof(TValue);
         var typeInfo = GetOrRegisterTypeInfo(type);
@@ -190,9 +187,10 @@ public ref struct SerializationContext
 
     private void WriteTypeMeta(TypeInfo typeInfo)
     {
-        Writer.Write(typeInfo.TypeId);
-        switch (typeInfo.TypeId) {
-            // TODO: Write package name and class name when new spec is implemented
+        var typeId = typeInfo.TypeId;
+        Writer.Write(typeId);
+        if (typeId.IsNamed())
+        {
         }
     }
 

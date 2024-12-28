@@ -12,7 +12,7 @@ public sealed class Fury(Config config)
 
     public TypeResolver TypeResolver { get; } = new(config.SerializerProviders, config.DeserializerProviders);
 
-    private readonly ObjectPool<RefResolver> _refResolverPool = new();
+    private readonly ObjectPool<RefRegistration> _refResolverPool = new();
 
     public void Serialize<T>(PipeWriter writer, in T? value)
         where T : notnull
@@ -51,7 +51,7 @@ public sealed class Fury(Config config)
     private bool SerializeCommon<T>(
         BatchWriter writer,
         in T? value,
-        RefResolver refResolver,
+        RefRegistration refRegistration,
         out SerializationContext context
     )
     {
@@ -66,7 +66,7 @@ public sealed class Fury(Config config)
         }
         writer.Write((byte)headerFlag);
         writer.Write((byte)Language.Csharp);
-        context = new SerializationContext(this, writer, refResolver);
+        context = new SerializationContext(this, writer, refRegistration);
         return true;
     }
 
@@ -115,7 +115,7 @@ public sealed class Fury(Config config)
         return result;
     }
 
-    private async ValueTask<DeserializationContext?> DeserializeCommonAsync(BatchReader reader, RefResolver resolver)
+    private async ValueTask<DeserializationContext?> DeserializeCommonAsync(BatchReader reader, RefRegistration registration)
     {
         var magicNumber = await reader.ReadAsync<short>();
         if (magicNumber != MagicNumber)
@@ -140,7 +140,7 @@ public sealed class Fury(Config config)
             return ThrowHelper.ThrowNotSupportedException<DeserializationContext>(ExceptionMessages.NotLittleEndian());
         }
         await reader.ReadAsync<byte>();
-        var context = new DeserializationContext(this, reader, resolver);
+        var context = new DeserializationContext(this, reader, registration);
         return context;
     }
 }

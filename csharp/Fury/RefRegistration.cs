@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace Fury;
 
-internal sealed class RefResolver
+internal sealed class RefRegistration
 {
     private readonly Dictionary<object, int> _objectsToRefId = new();
     private readonly List<object?> _readObjects = [];
@@ -117,14 +117,5 @@ internal sealed class RefResolver
     public void MarkFullyProcessed(RefId refId)
     {
         _partiallyProcessedRefIds.Remove(refId.Value);
-    }
-
-    public RefId AddRefId()
-    {
-        // Simply add a meaningless refId.
-        // This is designed for writing unreferenceable value with ref.
-
-        _readObjects.Add(null);
-        return new RefId(_readObjects.Count - 1);
     }
 }

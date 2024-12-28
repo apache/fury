@@ -13,13 +13,13 @@ public sealed class DeserializationContext
 {
     public Fury Fury { get; }
     public BatchReader Reader { get; }
-    private RefResolver RefResolver { get; }
+    private RefRegistration RefRegistration { get; }
 
-    internal DeserializationContext(Fury fury, BatchReader reader, RefResolver refResolver)
+    internal DeserializationContext(Fury fury, BatchReader reader, RefRegistration refRegistration)
     {
         Fury = fury;
         Reader = reader;
-        RefResolver = refResolver;
+        RefRegistration = refRegistration;
     }
 
     public bool TryGetDeserializer<TValue>([NotNullWhen(true)] out IDeserializer? deserializer)
@@ -50,7 +50,7 @@ public sealed class DeserializationContext
         if (refFlag == ReferenceFlag.Ref)
         {
             var refId = await Reader.ReadRefIdAsync(cancellationToken);
-            if (!RefResolver.TryGetReadValue(refId, out var readObject))
+            if (!RefRegistration.TryGetReadValue(refId, out var readObject))
             {
                 ThrowHelper.ThrowBadSerializationDataException(ExceptionMessages.ReferencedObjectNotFound(refId));
             }
@@ -80,7 +80,7 @@ public sealed class DeserializationContext
         if (refFlag == ReferenceFlag.Ref)
         {
             var refId = await Reader.ReadRefIdAsync(cancellationToken);
-            if (!RefResolver.TryGetReadValue(refId, out var readObject))
+            if (!RefRegistration.TryGetReadValue(refId, out var readObject))
             {
                 ThrowHelper.ThrowBadSerializationDataException(ExceptionMessages.ReferencedObjectNotFound(refId));
             }
@@ -122,7 +122,7 @@ public sealed class DeserializationContext
         var typeInfo = await ReadTypeMetaAsync(cancellationToken);
         deserializer ??= GetPreferredDeserializer(typeInfo.Type);
         var newObj = await deserializer.CreateInstanceAsync(this, cancellationToken);
-        RefResolver.PushReferenceableObject(newObj);
+        RefRegistration.PushReferenceableObject(newObj);
         await deserializer.ReadAndFillAsync(this, newObj, cancellationToken);
         return newObj;
     }
