@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Buffers;
-using System.IO;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -9,46 +9,56 @@ using System.Threading.Tasks;
 
 namespace Fury;
 
-public static class BatchReaderExtensions
+public sealed partial class BatchReader
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static unsafe TValue ReadFixedSized<TValue>(ReadOnlySequence<byte> buffer)
+    private static unsafe TValue ReadFixedSized<TValue>(ReadOnlySequence<byte> buffer, int size)
         where TValue : unmanaged
     {
-        var size = Unsafe.SizeOf<TValue>();
-        TValue result;
+        TValue result = default;
         buffer.Slice(0, size).CopyTo(new Span<byte>(&result, size));
         return result;
     }
 
-    public static async ValueTask<T> ReadAsync<T>(
-        this BatchReader reader,
-        CancellationToken cancellationToken = default
-    )
+    public async ValueTask<T> ReadAsync<T>(CancellationToken cancellationToken = default)
         where T : unmanaged
     {
         var requiredSize = Unsafe.SizeOf<T>();
-        var result = await reader.ReadAtLeastAsync(requiredSize, cancellationToken);
+        var result = await ReadAtLeastAsync(requiredSize, cancellationToken);
         var buffer = result.Buffer;
         if (buffer.Length < requiredSize)
         {
             ThrowHelper.ThrowBadSerializationDataException(ExceptionMessages.InsufficientData());
         }
 
-        var value = ReadFixedSized<T>(buffer);
-        reader.AdvanceTo(requiredSize);
+        var value = ReadFixedSized<T>(buffer, requiredSize);
+        AdvanceTo(requiredSize);
         return value;
     }
 
-    public static async ValueTask ReadMemoryAsync<TElement>(
-        this BatchReader reader,
+    public async ValueTask<T> ReadAsAsync<T>(int size, CancellationToken cancellationToken = default)
+        where T : unmanaged
+    {
+        var result = await ReadAtLeastAsync(size, cancellationToken);
+        var buffer = result.Buffer;
+        if (buffer.Length < size)
+        {
+            ThrowHelper.ThrowBadSerializationDataException(ExceptionMessages.InsufficientData());
+        }
+
+        var value = ReadFixedSized<T>(buffer, size);
+        AdvanceTo(size);
+        return value;
+    }
+
+    public async ValueTask ReadMemoryAsync<TElement>(
         Memory<TElement> destination,
         CancellationToken cancellationToken = default
     )
         where TElement : unmanaged
     {
         var requiredSize = destination.Length;
-        var result = await reader.ReadAtLeastAsync(requiredSize, cancellationToken);
+        var result = await ReadAtLeastAsync(requiredSize, cancellationToken);
         var buffer = result.Buffer;
         if (result.IsCompleted && buffer.Length < requiredSize)
         {
@@ -56,17 +66,16 @@ public static class BatchReaderExtensions
         }
 
         buffer.Slice(0, requiredSize).CopyTo(MemoryMarshal.AsBytes(destination.Span));
-        reader.AdvanceTo(requiredSize);
+        AdvanceTo(requiredSize);
     }
 
-    public static async ValueTask<string> ReadStringAsync(
-        this BatchReader reader,
+    public async ValueTask<string> ReadStringAsync(
         int byteCount,
         Encoding encoding,
         CancellationToken cancellationToken = default
     )
     {
-        var result = await reader.ReadAtLeastAsync(byteCount, cancellationToken);
+        var result = await ReadAtLeastAsync(byteCount, cancellationToken);
         var buffer = result.Buffer;
         if (result.IsCompleted && buffer.Length < byteCount)
         {
@@ -74,7 +83,7 @@ public static class BatchReaderExtensions
         }
 
         var value = DoReadString(byteCount, buffer, encoding);
-        reader.AdvanceTo(byteCount);
+        AdvanceTo(byteCount);
         return value;
     }
 
@@ -138,21 +147,15 @@ public static class BatchReaderExtensions
         return writtenChars;
     }
 
-    public static async ValueTask<int> Read7BitEncodedIntAsync(
-        this BatchReader reader,
-        CancellationToken cancellationToken = default
-    )
+    public async ValueTask<int> Read7BitEncodedIntAsync(CancellationToken cancellationToken = default)
     {
-        var result = await Read7BitEncodedUintAsync(reader, cancellationToken);
-        return (int)((result >> 1) | (result << 31));
+        var result = await Read7BitEncodedUintAsync(cancellationToken);
+        return (int)BitOperations.RotateRight(result, 1);
     }
 
-    public static async ValueTask<uint> Read7BitEncodedUintAsync(
-        this BatchReader reader,
-        CancellationToken cancellationToken = default
-    )
+    public async ValueTask<uint> Read7BitEncodedUintAsync(CancellationToken cancellationToken = default)
     {
-        var result = await reader.ReadAtLeastAsync(MaxBytesOfVarInt32WithoutOverflow + 1, cancellationToken);
+        var result = await ReadAtLeastAsync(MaxBytesOfVarInt32WithoutOverflow + 1, cancellationToken);
         var buffer = result.Buffer;
 
         // Fast path
@@ -163,7 +166,7 @@ public static class BatchReaderExtensions
             value = DoRead7BitEncodedUintSlow(buffer, out consumed);
         }
 
-        reader.AdvanceTo(consumed);
+        AdvanceTo(consumed);
 
         return value;
     }
@@ -237,21 +240,15 @@ public static class BatchReaderExtensions
         return result;
     }
 
-    public static async ValueTask<long> Read7BitEncodedLongAsync(
-        this BatchReader reader,
-        CancellationToken cancellationToken = default
-    )
+    public async ValueTask<long> Read7BitEncodedLongAsync(CancellationToken cancellationToken = default)
     {
-        var result = await Read7BitEncodedUlongAsync(reader, cancellationToken);
-        return (long)((result >> 1) | (result << 63));
+        var result = await Read7BitEncodedUlongAsync(cancellationToken);
+        return (long)BitOperations.RotateRight(result, 1);
     }
 
-    public static async ValueTask<ulong> Read7BitEncodedUlongAsync(
-        this BatchReader reader,
-        CancellationToken cancellationToken = default
-    )
+    public async ValueTask<ulong> Read7BitEncodedUlongAsync(CancellationToken cancellationToken = default)
     {
-        var result = await reader.ReadAtLeastAsync(MaxBytesOfVarInt64WithoutOverflow + 1, cancellationToken);
+        var result = await ReadAtLeastAsync(MaxBytesOfVarInt64WithoutOverflow + 1, cancellationToken);
         var buffer = result.Buffer;
 
         // Fast path
@@ -262,7 +259,7 @@ public static class BatchReaderExtensions
             value = DoRead7BitEncodedUlongSlow(buffer, out consumed);
         }
 
-        reader.AdvanceTo(consumed);
+        AdvanceTo(consumed);
 
         return value;
     }
@@ -326,35 +323,26 @@ public static class BatchReaderExtensions
         return result;
     }
 
-    public static async ValueTask<int> ReadCountAsync(this BatchReader reader, CancellationToken cancellationToken)
+    public async ValueTask<int> ReadCountAsync(CancellationToken cancellationToken)
     {
-        return (int)await reader.Read7BitEncodedUintAsync(cancellationToken);
+        return (int)await Read7BitEncodedUintAsync(cancellationToken);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static async ValueTask<ReferenceFlag> ReadReferenceFlagAsync(
-        this BatchReader reader,
-        CancellationToken cancellationToken = default
-    )
+    internal async ValueTask<ReferenceFlag> ReadReferenceFlagAsync(CancellationToken cancellationToken = default)
     {
-        return (ReferenceFlag)await reader.ReadAsync<sbyte>(cancellationToken);
+        return (ReferenceFlag)await ReadAsync<sbyte>(cancellationToken);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static async ValueTask<TypeId> ReadTypeIdAsync(
-        this BatchReader reader,
-        CancellationToken cancellationToken = default
-    )
+    internal async ValueTask<TypeId> ReadTypeIdAsync(CancellationToken cancellationToken = default)
     {
-        return new TypeId((int)await reader.Read7BitEncodedUintAsync(cancellationToken));
+        return new TypeId((int)await Read7BitEncodedUintAsync(cancellationToken));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static async ValueTask<RefId> ReadRefIdAsync(
-        this BatchReader reader,
-        CancellationToken cancellationToken = default
-    )
+    internal async ValueTask<RefId> ReadRefIdAsync(CancellationToken cancellationToken = default)
     {
-        return new RefId((int)await reader.Read7BitEncodedUintAsync(cancellationToken));
+        return new RefId((int)await Read7BitEncodedUintAsync(cancellationToken));
     }
 }

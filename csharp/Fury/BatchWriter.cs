@@ -1,12 +1,14 @@
 ﻿using System;
 using System.IO.Pipelines;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace Fury;
 
 // This is used to reduce the virtual call overhead of the PipeWriter
 
-public ref struct BatchWriter(PipeWriter writer)
+[StructLayout(LayoutKind.Auto)]
+public ref partial struct BatchWriter(PipeWriter writer)
 {
     private Span<byte> _cachedBuffer = Span<byte>.Empty;
     private int _consumed = 0;

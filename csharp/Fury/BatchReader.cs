@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Fury;
 
-public sealed class BatchReader(PipeReader reader)
+public sealed partial class BatchReader(PipeReader reader)
 {
     private ReadOnlySequence<byte> _cachedBuffer;
     private bool _isCanceled;
@@ -13,7 +13,7 @@ public sealed class BatchReader(PipeReader reader)
 
     public async ValueTask<ReadResult> ReadAtLeastAsync(
         int minimumSize,
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken = default
     )
     {
         if (_cachedBuffer.Length < minimumSize)
