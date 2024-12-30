@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import lombok.Data;
 import org.apache.fury.Fury;
 import org.apache.fury.FuryTestBase;
 import org.apache.fury.collection.Tuple2;
@@ -158,6 +159,35 @@ public class StringSerializerTest extends FuryTestBase {
       assertEquals(str, serializer.readJavaString(buffer));
       Assert.assertEquals(buffer.writerIndex(), buffer.readerIndex());
     }
+  }
+
+  @Data
+  public static class Simple {
+    private String str;
+
+    public Simple(String str) {
+      this.str = str;
+    }
+  }
+
+  /** Test for <a href="https://github.com/apache/fury/issues/1984">#1984</a> */
+  @Test
+  public void testJavaCompressedString() {
+    Fury fury =
+        Fury.builder()
+            .withStringCompressed(true)
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(false)
+            .build();
+
+    Simple a =
+        new Simple(
+            "STG@ON DEMAND Solutions@GeoComputing Switch/ Hub@Digi Edgeport/216 – 16 port Serial Hub");
+
+    byte[] bytes = fury.serialize(a);
+
+    Simple b = (Simple) fury.deserialize(bytes);
+    assertEquals(a, b);
   }
 
   @Test(dataProvider = "stringCompress")
