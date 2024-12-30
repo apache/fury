@@ -41,7 +41,7 @@ from pyfury.serializer import (
     Numpy1DArraySerializer,
 )
 from pyfury.tests.core import require_pyarrow
-from pyfury.type import FuryType
+from pyfury.type import TypeId
 from pyfury.util import lazy_import
 
 pa = lazy_import("pyarrow")
@@ -85,14 +85,18 @@ def test_dict():
 @pytest.mark.parametrize("language", [Language.XLANG, Language.PYTHON])
 def test_basic_serializer(language):
     fury = Fury(language=language, ref_tracking=True)
-    datetime_serializer = fury.class_resolver.get_serializer(datetime.datetime)
+    classinfo = fury.class_resolver.get_classinfo(datetime.datetime)
     assert isinstance(
-        datetime_serializer, (TimestampSerializer, _serialization.TimestampSerializer)
+        classinfo.serializer, (TimestampSerializer, _serialization.TimestampSerializer)
     )
-    assert datetime_serializer.get_xtype_id() == FuryType.TIMESTAMP.value
-    date_serializer = fury.class_resolver.get_serializer(datetime.date)
-    assert isinstance(date_serializer, (DateSerializer, _serialization.DateSerializer))
-    assert date_serializer.get_xtype_id() == FuryType.DATE32.value
+    if language == Language.XLANG:
+        assert classinfo.type_id == TypeId.TIMESTAMP
+    classinfo = fury.class_resolver.get_classinfo(datetime.date)
+    assert isinstance(
+        classinfo.serializer, (DateSerializer, _serialization.DateSerializer)
+    )
+    if language == Language.XLANG:
+        assert classinfo.type_id == TypeId.LOCAL_DATE
     assert ser_de(fury, True) is True
     assert ser_de(fury, False) is False
     assert ser_de(fury, -1) == -1
@@ -227,7 +231,8 @@ def test_array_serializer(language):
     fury = Fury(language=language, ref_tracking=True, require_class_registration=False)
     for typecode in PyArraySerializer.typecode_dict.keys():
         arr = array.array(typecode, list(range(10)))
-        assert ser_de(fury, arr) == arr
+        new_arr = ser_de(fury, arr)
+        assert np.array_equal(new_arr, arr)
     for dtype in Numpy1DArraySerializer.dtypes_dict.keys():
         arr = np.array(list(range(10)), dtype=dtype)
         new_arr = ser_de(fury, arr)
@@ -330,12 +335,6 @@ class BarSerializer(pyfury.Serializer):
     def xread(self, buffer):
         return Bar(buffer.read_int32(), buffer.read_int32())
 
-    def get_xtype_id(self):
-        return pyfury.FuryType.FURY_TYPE_TAG.value
-
-    def get_xtype_tag(self):
-        return "test.Bar"
-
 
 class RegisterClass:
     def __init__(self, f1=None):
@@ -362,7 +361,7 @@ def test_register_py_serializer():
         def xread(self, buffer):
             raise NotImplementedError
 
-    fury.register_serializer(A, Serializer(fury, RegisterClass))
+    fury.register_type(A, serializer=Serializer(fury, RegisterClass))
     assert fury.deserialize(fury.serialize(RegisterClass(100))).f1 == 100
 
 
@@ -372,7 +371,7 @@ class A:
             pass
 
 
-def test_register_class():
+def test_register_type():
     fury = Fury(language=Language.PYTHON, ref_tracking=True)
 
     class Serializer(pyfury.Serializer):
@@ -388,9 +387,9 @@ def test_register_class():
         def xread(self, buffer):
             raise NotImplementedError
 
-    fury.register_serializer(A, Serializer(fury, A))
-    fury.register_serializer(A.B, Serializer(fury, A.B))
-    fury.register_serializer(A.B.C, Serializer(fury, A.B.C))
+    fury.register_type(A, serializer=Serializer(fury, A))
+    fury.register_type(A.B, serializer=Serializer(fury, A.B))
+    fury.register_type(A.B.C, serializer=Serializer(fury, A.B.C))
     assert isinstance(fury.deserialize(fury.serialize(A())), A)
     assert isinstance(fury.deserialize(fury.serialize(A.B())), A.B)
     assert isinstance(fury.deserialize(fury.serialize(A.B.C())), A.B.C)
@@ -411,7 +410,9 @@ def test_pickle_fallback():
 
 
 def test_unsupported_callback():
-    fury = Fury(language=Language.PYTHON, ref_tracking=True)
+    fury = Fury(
+        language=Language.PYTHON, ref_tracking=True, require_class_registration=False
+    )
 
     def f1(x):
         return x
@@ -420,8 +421,6 @@ def test_unsupported_callback():
         return x + x
 
     obj1 = [1, True, f1, f2, {1: 2}]
-    with pytest.raises(Exception):
-        fury.serialize(obj1)
     unsupported_objects = []
     binary1 = fury.serialize(obj1, unsupported_callback=unsupported_objects.append)
     assert len(unsupported_objects) == 2
@@ -469,12 +468,6 @@ def test_enum():
     assert ser_de(fury, EnumClass.E3) == EnumClass.E3
     assert ser_de(fury, EnumClass.E4) == EnumClass.E4
     assert isinstance(fury.class_resolver.get_serializer(EnumClass), EnumSerializer)
-    assert isinstance(
-        fury.class_resolver.get_serializer(obj=EnumClass.E1), EnumSerializer
-    )
-    assert isinstance(
-        fury.class_resolver.get_serializer(obj=EnumClass.E4), EnumSerializer
-    )
 
 
 def test_duplicate_serialize():
@@ -494,25 +487,19 @@ class CacheClass1:
 
 def test_cache_serializer():
     fury = Fury(language=Language.PYTHON, ref_tracking=True)
-    fury.register_serializer(CacheClass1, pyfury.PickleStrongCacheSerializer(fury))
+    fury.register_type(CacheClass1, serializer=pyfury.PickleStrongCacheSerializer(fury))
     assert ser_de(fury, CacheClass1(1)) == CacheClass1(1)
-    fury.register_serializer(CacheClass1, pyfury.PickleCacheSerializer(fury))
+    fury.register_type(CacheClass1, serializer=pyfury.PickleCacheSerializer(fury))
     assert ser_de(fury, CacheClass1(1)) == CacheClass1(1)
-
-    classinfo = pyfury.PickleStrongCacheSerializer.new_classinfo(fury)
-    buffer = Buffer.allocate(32)
-    fury.serialize_ref(buffer, CacheClass1(1), classinfo)
-    assert fury.deserialize_ref(buffer) == CacheClass1(1)
-    classinfo = pyfury.PickleCacheSerializer.new_classinfo(fury)
-    fury.serialize_ref(buffer, CacheClass1(1), classinfo)
-    assert fury.deserialize_ref(buffer) == CacheClass1(1)
 
 
 def test_pandas_range_index():
     fury = Fury(
         language=Language.PYTHON, ref_tracking=True, require_class_registration=False
     )
-    fury.register_serializer(pd.RangeIndex, pyfury.PandasRangeIndexSerializer(fury))
+    fury.register_type(
+        pd.RangeIndex, serializer=pyfury.PandasRangeIndexSerializer(fury)
+    )
     index = pd.RangeIndex(1, 100, 2, name="a")
     new_index = ser_de(fury, index)
     pd.testing.assert_index_equal(new_index, new_index)
@@ -530,7 +517,9 @@ class PyDataClass1:
 
 
 def test_py_serialize_dataclass():
-    fury = Fury(language=Language.PYTHON, ref_tracking=True)
+    fury = Fury(
+        language=Language.PYTHON, ref_tracking=True, require_class_registration=False
+    )
     obj1 = PyDataClass1(
         f1=1, f2=-2.0, f3="abc", f4=True, f5="xyz", f6=[1, 2], f7={"k1": "v1"}
     )

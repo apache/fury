@@ -19,21 +19,26 @@
 
 package org.apache.fury;
 
+import static org.testng.Assert.assertEquals;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.Hashing;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -41,6 +46,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -49,20 +55,25 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.Data;
+import org.apache.fury.config.FuryBuilder;
 import org.apache.fury.config.Language;
 import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.serializer.ArraySerializersTest;
 import org.apache.fury.serializer.BufferObject;
+import org.apache.fury.serializer.EnumSerializerTest;
 import org.apache.fury.serializer.Serializer;
+import org.apache.fury.serializer.StructSerializer;
+import org.apache.fury.util.DateTimeUtils;
 import org.apache.fury.util.MurmurHash3;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 /** Tests in this class need fury python installed. */
 @Test
-public class CrossLanguageTest {
+public class CrossLanguageTest extends FuryTestBase {
   private static final Logger LOG = LoggerFactory.getLogger(CrossLanguageTest.class);
   private static final String PYTHON_MODULE = "pyfury.tests.test_cross_language";
   private static final String PYTHON_EXECUTABLE = "python";
@@ -321,37 +332,35 @@ public class CrossLanguageTest {
             .withRefTracking(true)
             .requireClassRegistration(false)
             .build();
-    Assert.assertEquals(
-        new String[] {"str", "str"}, (Object[]) serDe(fury, new String[] {"str", "str"}));
-    Assert.assertEquals(new Object[] {"str", 1}, (Object[]) serDe(fury, new Object[] {"str", 1}));
+    Assert.assertEquals(new String[] {"str", "str"}, serDeTyped(fury, new String[] {"str", "str"}));
+    Assert.assertEquals(new Object[] {"str", 1}, serDeTyped(fury, new Object[] {"str", 1}));
     Assert.assertTrue(
         Arrays.deepEquals(
-            new Integer[][] {{1, 2}, {1, 2}},
-            (Integer[][]) serDe(fury, new Integer[][] {{1, 2}, {1, 2}})));
+            new Integer[][] {{1, 2}, {1, 2}}, serDeTyped(fury, new Integer[][] {{1, 2}, {1, 2}})));
 
-    Assert.assertEquals(Arrays.asList(1, 2), serDe(fury, Arrays.asList(1, 2)));
+    Assert.assertEquals(Arrays.asList(1, 2), xserDe(fury, Arrays.asList(1, 2)));
     List<String> arrayList = Arrays.asList("str", "str");
-    Assert.assertEquals(arrayList, serDe(fury, arrayList));
-    Assert.assertEquals(new LinkedList<>(arrayList), serDe(fury, new LinkedList<>(arrayList)));
-    Assert.assertEquals(new HashSet<>(arrayList), serDe(fury, new HashSet<>(arrayList)));
+    Assert.assertEquals(arrayList, xserDe(fury, arrayList));
+    Assert.assertEquals(new LinkedList<>(arrayList), xserDe(fury, new LinkedList<>(arrayList)));
+    Assert.assertEquals(new HashSet<>(arrayList), xserDe(fury, new HashSet<>(arrayList)));
     TreeSet<String> treeSet = new TreeSet<>(Comparator.naturalOrder());
     treeSet.add("str1");
     treeSet.add("str2");
-    Assert.assertEquals(treeSet, serDe(fury, treeSet));
+    Assert.assertEquals(treeSet, xserDe(fury, treeSet));
 
     HashMap<String, Integer> hashMap = new HashMap<>();
     hashMap.put("k1", 1);
     hashMap.put("k2", 2);
-    Assert.assertEquals(hashMap, serDe(fury, hashMap));
-    Assert.assertEquals(new LinkedHashMap<>(hashMap), serDe(fury, new LinkedHashMap<>(hashMap)));
-    Assert.assertEquals(Collections.EMPTY_LIST, serDe(fury, Collections.EMPTY_LIST));
-    Assert.assertEquals(Collections.EMPTY_SET, serDe(fury, Collections.EMPTY_SET));
-    Assert.assertEquals(Collections.EMPTY_MAP, serDe(fury, Collections.EMPTY_MAP));
+    Assert.assertEquals(hashMap, xserDe(fury, hashMap));
+    Assert.assertEquals(new LinkedHashMap<>(hashMap), xserDe(fury, new LinkedHashMap<>(hashMap)));
+    Assert.assertEquals(Collections.EMPTY_LIST, xserDe(fury, Collections.EMPTY_LIST));
+    Assert.assertEquals(Collections.EMPTY_SET, xserDe(fury, Collections.EMPTY_SET));
+    Assert.assertEquals(Collections.EMPTY_MAP, xserDe(fury, Collections.EMPTY_MAP));
     Assert.assertEquals(
-        Collections.singletonList("str"), serDe(fury, Collections.singletonList("str")));
-    Assert.assertEquals(Collections.singleton("str"), serDe(fury, Collections.singleton("str")));
+        Collections.singletonList("str"), xserDe(fury, Collections.singletonList("str")));
+    Assert.assertEquals(Collections.singleton("str"), xserDe(fury, Collections.singleton("str")));
     Assert.assertEquals(
-        Collections.singletonMap("k", 1), serDe(fury, Collections.singletonMap("k", 1)));
+        Collections.singletonMap("k", 1), xserDe(fury, Collections.singletonMap("k", 1)));
   }
 
   @SuppressWarnings("unchecked")
@@ -389,7 +398,7 @@ public class CrossLanguageTest {
     }
   }
 
-  private Object serDe(Fury fury, Object obj) {
+  private Object xserDe(Fury fury, Object obj) {
     byte[] bytes = fury.serialize(obj);
     return fury.deserialize(bytes);
   }
@@ -461,6 +470,24 @@ public class CrossLanguageTest {
   }
 
   @Test
+  public void testStructHash() throws Exception {
+    Fury fury =
+        Fury.builder()
+            .withLanguage(Language.XLANG)
+            .withRefTracking(true)
+            .requireClassRegistration(false)
+            .build();
+    fury.register(ComplexObject1.class, "test.ComplexObject1");
+    StructSerializer serializer = (StructSerializer) fury.getSerializer(ComplexObject1.class);
+    Method method = StructSerializer.class.getDeclaredMethod("computeStructHash");
+    method.setAccessible(true);
+    Integer hash = (Integer) method.invoke(serializer);
+    MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(4);
+    buffer.writeInt32(hash);
+    roundBytes("test_struct_hash", buffer.getBytes(0, 4));
+  }
+
+  @Test
   public void testSerializeSimpleStruct() throws Exception {
     Fury fury =
         Fury.builder()
@@ -519,59 +546,6 @@ public class CrossLanguageTest {
     Assert.assertEquals(fury.deserialize(Files.readAllBytes(dataFile)), obj);
   }
 
-  @Test
-  public void testSerializeOpaqueObjectSimple() {
-    Fury fury =
-        Fury.builder()
-            .withLanguage(Language.XLANG)
-            .withRefTracking(true)
-            .requireClassRegistration(false)
-            .build();
-    fury.register(ComplexObject2.class, "test.ComplexObject2");
-    ComplexObject2 obj = new ComplexObject2();
-    obj.f1 = Foo.create();
-    byte[] serialized = fury.serialize(obj);
-    Assert.assertEquals(fury.deserialize(serialized), obj);
-  }
-
-  @Test
-  public void testSerializeOpaqueObject() throws Exception {
-    Fury fury =
-        Fury.builder()
-            .withLanguage(Language.XLANG)
-            .withRefTracking(true)
-            .requireClassRegistration(false)
-            .build();
-    fury.register(ComplexObject1.class, "test.ComplexObject1");
-    // don't register ComplexObject2/Foo to make them serialize as opaque blobs.
-    ComplexObject1 obj = new ComplexObject1();
-    obj.f1 = new ComplexObject2();
-    ((ComplexObject2) obj.f1).f1 = true;
-    ((ComplexObject2) obj.f1).f2 = new HashMap<>(ImmutableMap.of((byte) -1, 2));
-    obj.f2 = "abc";
-    obj.f3 = Arrays.asList(obj.f1, Foo.create());
-    byte[] serialized = fury.serialize(obj);
-    Assert.assertEquals(fury.deserialize(serialized), obj);
-
-    Path dataFile = Files.createTempFile("test_serialize_opaque_object", "data");
-    ImmutableList<String> command =
-        ImmutableList.of(
-            PYTHON_EXECUTABLE,
-            "-m",
-            PYTHON_MODULE,
-            "test_serialize_opaque_object",
-            dataFile.toAbsolutePath().toString());
-    Files.write(dataFile, serialized);
-    Assert.assertTrue(executeCommand(command, 30));
-    // TODO support OpaqueObject itself serialization
-    // ComplexObject1 newObj = (ComplexObject1) fury.deserialize(Files.readAllBytes(dataFile));
-    // assertEquals(newObj.f1.getClass(), OpaqueObjects.OpaqueObject.class);
-    // assertEquals(newObj.f2, obj.f2);
-    // assertNotNull(newObj.f3);
-    // assertTrue(newObj.f3.get(0) instanceof OpaqueObjects.OpaqueObject);
-    // assertTrue(newObj.f3.get(1) instanceof OpaqueObjects.OpaqueObject);
-  }
-
   private static class ComplexObject1Serializer extends Serializer<ComplexObject1> {
 
     public ComplexObject1Serializer(Fury fury, Class<ComplexObject1> cls) {
@@ -586,16 +560,6 @@ public class CrossLanguageTest {
     @Override
     public ComplexObject1 read(MemoryBuffer buffer) {
       return xread(buffer);
-    }
-
-    @Override
-    public short getXtypeId() {
-      return Fury.FURY_TYPE_TAG_ID;
-    }
-
-    @Override
-    public String getCrossLanguageTypeTag() {
-      return "test.ComplexObject1";
     }
 
     @Override
@@ -625,6 +589,7 @@ public class CrossLanguageTest {
             .withRefTracking(true)
             .requireClassRegistration(false)
             .build();
+    fury.register(ComplexObject1.class, "test.ComplexObject1");
     fury.registerSerializer(ComplexObject1.class, ComplexObject1Serializer.class);
     ComplexObject1 obj = new ComplexObject1();
     obj.f1 = true;
@@ -643,6 +608,19 @@ public class CrossLanguageTest {
             dataFile.toAbsolutePath().toString());
     Assert.assertTrue(executeCommand(command, 30));
     Assert.assertEquals(fury.deserialize(Files.readAllBytes(dataFile)), obj);
+  }
+
+  private byte[] roundBytes(String testName, byte[] bytes) throws IOException {
+    Path dataFile = Paths.get(testName);
+    System.out.println(dataFile.toAbsolutePath());
+    Files.deleteIfExists(dataFile);
+    Files.write(dataFile, bytes);
+    dataFile.toFile().deleteOnExit();
+    ImmutableList<String> command =
+        ImmutableList.of(
+            PYTHON_EXECUTABLE, "-m", PYTHON_MODULE, testName, dataFile.toAbsolutePath().toString());
+    Assert.assertTrue(executeCommand(command, 30));
+    return Files.readAllBytes(dataFile);
   }
 
   @Test
@@ -734,6 +712,69 @@ public class CrossLanguageTest {
     a.a = "123";
     ArrayStruct struct = new ArrayStruct();
     struct.f1 = new ArrayField[] {a};
-    Assert.assertEquals(serDe(fury, struct), struct);
+    Assert.assertEquals(xserDe(fury, struct), struct);
+  }
+
+  @Test(dataProvider = "referenceTrackingConfig")
+  public void basicTest(boolean referenceTracking) {
+    FuryBuilder builder =
+        Fury.builder()
+            .withLanguage(Language.XLANG)
+            .withRefTracking(referenceTracking)
+            .requireClassRegistration(false);
+    Fury fury1 = builder.build();
+    Fury fury2 = builder.build();
+    assertEquals("str", serDe(fury1, fury2, "str"));
+    assertEquals("str", serDeObject(fury1, fury2, new StringBuilder("str")).toString());
+    assertEquals("str", serDeObject(fury1, fury2, new StringBuffer("str")).toString());
+    fury1.register(EnumSerializerTest.EnumFoo.class);
+    fury2.register(EnumSerializerTest.EnumFoo.class);
+    fury1.register(EnumSerializerTest.EnumSubClass.class);
+    fury2.register(EnumSerializerTest.EnumSubClass.class);
+    assertEquals(EnumSerializerTest.EnumFoo.A, serDe(fury1, fury2, EnumSerializerTest.EnumFoo.A));
+    assertEquals(EnumSerializerTest.EnumFoo.B, serDe(fury1, fury2, EnumSerializerTest.EnumFoo.B));
+    assertEquals(
+        EnumSerializerTest.EnumSubClass.A, serDe(fury1, fury2, EnumSerializerTest.EnumSubClass.A));
+    assertEquals(
+        EnumSerializerTest.EnumSubClass.B, serDe(fury1, fury2, EnumSerializerTest.EnumSubClass.B));
+    java.sql.Date sqlDate = new java.sql.Date(System.currentTimeMillis());
+    assertEquals(sqlDate, serDeTyped(fury1, fury2, sqlDate));
+    LocalDate localDate = LocalDate.now();
+    assertEquals(localDate, serDeTyped(fury1, fury2, localDate));
+    Date utilDate = new Date();
+    assertEquals(utilDate, serDeTyped(fury1, fury2, utilDate));
+    Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+    assertEquals(timestamp, serDeTyped(fury1, fury2, timestamp));
+    Instant instant = DateTimeUtils.truncateInstantToMicros(Instant.now());
+    assertEquals(instant, serDeTyped(fury1, fury2, instant));
+
+    ArraySerializersTest.testPrimitiveArray(fury1, fury2);
+
+    assertEquals(Arrays.asList(1, 2), serDe(fury1, fury2, Arrays.asList(1, 2)));
+    List<String> arrayList = Arrays.asList("str", "str");
+    assertEquals(arrayList, serDe(fury1, fury2, arrayList));
+    assertEquals(new LinkedList<>(arrayList), serDe(fury1, fury2, new LinkedList<>(arrayList)));
+    assertEquals(new HashSet<>(arrayList), serDe(fury1, fury2, new HashSet<>(arrayList)));
+    TreeSet<String> treeSet = new TreeSet<>(Comparator.naturalOrder());
+    treeSet.add("str1");
+    treeSet.add("str2");
+    assertEquals(treeSet, serDe(fury1, fury2, treeSet));
+
+    HashMap<String, Integer> hashMap = new HashMap<>();
+    hashMap.put("k1", 1);
+    hashMap.put("k2", 2);
+    assertEquals(hashMap, serDe(fury1, fury2, hashMap));
+    assertEquals(new LinkedHashMap<>(hashMap), serDe(fury1, fury2, new LinkedHashMap<>(hashMap)));
+    TreeMap<String, Integer> treeMap = new TreeMap<>(Comparator.naturalOrder());
+    treeMap.putAll(hashMap);
+    assertEquals(treeMap, serDe(fury1, fury2, treeMap));
+    assertEquals(Collections.EMPTY_LIST, serDe(fury1, fury2, Collections.EMPTY_LIST));
+    assertEquals(Collections.EMPTY_SET, serDe(fury1, fury2, Collections.EMPTY_SET));
+    assertEquals(Collections.EMPTY_MAP, serDe(fury1, fury2, Collections.EMPTY_MAP));
+    assertEquals(
+        Collections.singletonList("str"), serDe(fury1, fury2, Collections.singletonList("str")));
+    assertEquals(Collections.singleton("str"), serDe(fury1, fury2, Collections.singleton("str")));
+    assertEquals(
+        Collections.singletonMap("k", 1), serDe(fury1, fury2, Collections.singletonMap("k", 1)));
   }
 }

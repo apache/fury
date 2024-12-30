@@ -105,13 +105,10 @@ public class FuryTest extends FuryTestBase {
     assertEquals(Double.MAX_VALUE, serDe(fury1, fury2, Double.MAX_VALUE));
   }
 
-  @Test(dataProvider = "crossLanguageReferenceTrackingConfig")
-  public void basicTest(boolean referenceTracking, Language language) {
+  @Test(dataProvider = "referenceTrackingConfig")
+  public void basicTest(boolean referenceTracking) {
     FuryBuilder builder =
-        Fury.builder()
-            .withLanguage(language)
-            .withRefTracking(referenceTracking)
-            .requireClassRegistration(false);
+        Fury.builder().withRefTracking(referenceTracking).requireClassRegistration(false);
     Fury fury1 = builder.build();
     Fury fury2 = builder.build();
     assertEquals("str", serDe(fury1, fury2, "str"));
@@ -193,6 +190,12 @@ public class FuryTest extends FuryTestBase {
     assertEquals(Short.MAX_VALUE, serDeCheckIndex(fury1, fury2, buffer, Short.MAX_VALUE));
     assertEquals("str", serDeCheckIndex(fury1, fury2, buffer, "str"));
     assertEquals("str", serDeCheckIndex(fury1, fury2, buffer, new StringBuilder("str")).toString());
+    if (fury1.getLanguage() != Language.JAVA) {
+      fury1.register(EnumSerializerTest.EnumFoo.class);
+      fury2.register(EnumSerializerTest.EnumFoo.class);
+      fury1.register(EnumSerializerTest.EnumSubClass.class);
+      fury2.register(EnumSerializerTest.EnumSubClass.class);
+    }
     assertEquals(
         EnumSerializerTest.EnumFoo.A,
         serDeCheckIndex(fury1, fury2, buffer, EnumSerializerTest.EnumFoo.A));

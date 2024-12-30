@@ -541,7 +541,7 @@ class MetaStringEncoder:
         strip_last_char = len(bytes_array) * 8 >= total_bits + bits_per_char
         if strip_last_char:
             bytes_array[0] = bytes_array[0] | 0x80
-        return bytes_array
+        return bytes(bytes_array)
 
     def _char_to_value(self, c: str, bits_per_char: int) -> int:
         """

@@ -147,7 +147,7 @@ class MapRefResolver(RefResolver):
             # The obj has been written previously.
             if written_id is not None:
                 buffer.write_int8(REF_FLAG)
-                buffer.write_varint32(written_id[0])
+                buffer.write_varuint32(written_id[0])
                 return True
             else:
                 written_id = len(self.written_objects)

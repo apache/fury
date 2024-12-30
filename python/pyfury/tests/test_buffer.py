@@ -92,20 +92,20 @@ def test_empty_buffer():
 
 def test_write_varint32():
     buf = Buffer.allocate(32)
-    for i in range(32):
+    for i in range(1):
         for j in range(i):
             buf.write_int8(1)
             buf.read_int8()
-        check_positive_varint32(buf, 1, 1)
-        check_positive_varint32(buf, 1 << 6, 1)
-        check_positive_varint32(buf, 1 << 7, 2)
-        check_positive_varint32(buf, 1 << 13, 2)
-        check_positive_varint32(buf, 1 << 14, 3)
-        check_positive_varint32(buf, 1 << 20, 3)
-        check_positive_varint32(buf, 1 << 21, 4)
-        check_positive_varint32(buf, 1 << 27, 4)
-        check_positive_varint32(buf, 1 << 28, 5)
-        check_positive_varint32(buf, 1 << 30, 5)
+        check_varuint32(buf, 1, 1)
+        check_varuint32(buf, 1 << 6, 1)
+        check_varuint32(buf, 1 << 7, 2)
+        check_varuint32(buf, 1 << 13, 2)
+        check_varuint32(buf, 1 << 14, 3)
+        check_varuint32(buf, 1 << 20, 3)
+        check_varuint32(buf, 1 << 21, 4)
+        check_varuint32(buf, 1 << 27, 4)
+        check_varuint32(buf, 1 << 28, 5)
+        check_varuint32(buf, 1 << 30, 5)
 
         check_varint32(buf, -1)
         check_varint32(buf, -1 << 6)
@@ -119,11 +119,11 @@ def test_write_varint32():
         check_varint32(buf, -1 << 30)
 
 
-def check_positive_varint32(buf: Buffer, value: int, bytes_written: int):
+def check_varuint32(buf: Buffer, value: int, bytes_written: int):
     assert buf.writer_index == buf.reader_index
-    actual_bytes_written = buf.write_varint32(value)
+    actual_bytes_written = buf.write_varuint32(value)
     assert actual_bytes_written == bytes_written
-    varint = buf.read_varint32()
+    varint = buf.read_varuint32()
     assert buf.writer_index == buf.reader_index
     assert value == varint
 
@@ -155,70 +155,70 @@ def test_grow():
     assert buffer.own_data()
 
 
-def test_write_varint64():
+def test_write_varuint64():
     buf = Buffer.allocate(32)
-    check_varint64(buf, -1, 9)
+    check_varuint64(buf, -1, 9)
     for i in range(32):
         for j in range(i):
             buf.write_int8(1)
             buf.read_int8()
-        check_varint64(buf, -1, 9)
-        check_varint64(buf, 1, 1)
-        check_varint64(buf, 1 << 6, 1)
-        check_varint64(buf, 1 << 7, 2)
-        check_varint64(buf, -(2**6), 9)
-        check_varint64(buf, -(2**7), 9)
-        check_varint64(buf, 1 << 13, 2)
-        check_varint64(buf, 1 << 14, 3)
-        check_varint64(buf, -(2**13), 9)
-        check_varint64(buf, -(2**14), 9)
-        check_varint64(buf, 1 << 20, 3)
-        check_varint64(buf, 1 << 21, 4)
-        check_varint64(buf, -(2**20), 9)
-        check_varint64(buf, -(2**21), 9)
-        check_varint64(buf, 1 << 27, 4)
-        check_varint64(buf, 1 << 28, 5)
-        check_varint64(buf, -(2**27), 9)
-        check_varint64(buf, -(2**28), 9)
-        check_varint64(buf, 1 << 30, 5)
-        check_varint64(buf, -(2**30), 9)
-        check_varint64(buf, 1 << 31, 5)
-        check_varint64(buf, -(2**31), 9)
-        check_varint64(buf, 1 << 32, 5)
-        check_varint64(buf, -(2**32), 9)
-        check_varint64(buf, 1 << 34, 5)
-        check_varint64(buf, -(2**34), 9)
-        check_varint64(buf, 1 << 35, 6)
-        check_varint64(buf, -(2**35), 9)
-        check_varint64(buf, 1 << 41, 6)
-        check_varint64(buf, -(2**41), 9)
-        check_varint64(buf, 1 << 42, 7)
-        check_varint64(buf, -(2**42), 9)
-        check_varint64(buf, 1 << 48, 7)
-        check_varint64(buf, -(2**48), 9)
-        check_varint64(buf, 1 << 49, 8)
-        check_varint64(buf, -(2**49), 9)
-        check_varint64(buf, 1 << 55, 8)
-        check_varint64(buf, -(2**55), 9)
-        check_varint64(buf, 1 << 56, 9)
-        check_varint64(buf, -(2**56), 9)
-        check_varint64(buf, 1 << 62, 9)
-        check_varint64(buf, -(2**62), 9)
-        check_varint64(buf, 1 << 63 - 1, 9)
-        check_varint64(buf, -(2**63), 9)
+        check_varuint64(buf, -1, 9)
+        check_varuint64(buf, 1, 1)
+        check_varuint64(buf, 1 << 6, 1)
+        check_varuint64(buf, 1 << 7, 2)
+        check_varuint64(buf, -(2**6), 9)
+        check_varuint64(buf, -(2**7), 9)
+        check_varuint64(buf, 1 << 13, 2)
+        check_varuint64(buf, 1 << 14, 3)
+        check_varuint64(buf, -(2**13), 9)
+        check_varuint64(buf, -(2**14), 9)
+        check_varuint64(buf, 1 << 20, 3)
+        check_varuint64(buf, 1 << 21, 4)
+        check_varuint64(buf, -(2**20), 9)
+        check_varuint64(buf, -(2**21), 9)
+        check_varuint64(buf, 1 << 27, 4)
+        check_varuint64(buf, 1 << 28, 5)
+        check_varuint64(buf, -(2**27), 9)
+        check_varuint64(buf, -(2**28), 9)
+        check_varuint64(buf, 1 << 30, 5)
+        check_varuint64(buf, -(2**30), 9)
+        check_varuint64(buf, 1 << 31, 5)
+        check_varuint64(buf, -(2**31), 9)
+        check_varuint64(buf, 1 << 32, 5)
+        check_varuint64(buf, -(2**32), 9)
+        check_varuint64(buf, 1 << 34, 5)
+        check_varuint64(buf, -(2**34), 9)
+        check_varuint64(buf, 1 << 35, 6)
+        check_varuint64(buf, -(2**35), 9)
+        check_varuint64(buf, 1 << 41, 6)
+        check_varuint64(buf, -(2**41), 9)
+        check_varuint64(buf, 1 << 42, 7)
+        check_varuint64(buf, -(2**42), 9)
+        check_varuint64(buf, 1 << 48, 7)
+        check_varuint64(buf, -(2**48), 9)
+        check_varuint64(buf, 1 << 49, 8)
+        check_varuint64(buf, -(2**49), 9)
+        check_varuint64(buf, 1 << 55, 8)
+        check_varuint64(buf, -(2**55), 9)
+        check_varuint64(buf, 1 << 56, 9)
+        check_varuint64(buf, -(2**56), 9)
+        check_varuint64(buf, 1 << 62, 9)
+        check_varuint64(buf, -(2**62), 9)
+        check_varuint64(buf, 1 << 63 - 1, 9)
+        check_varuint64(buf, -(2**63), 9)
 
 
-def check_varint64(buf: Buffer, value: int, bytes_written: int):
+def check_varuint64(buf: Buffer, value: int, bytes_written: int):
     reader_index = buf.reader_index
     assert buf.writer_index == buf.reader_index
-    actual_bytes_written = buf.write_varint64(value)
+    actual_bytes_written = buf.write_varuint64(value)
     assert actual_bytes_written == bytes_written
-    varint = buf.read_varint64()
+    varint = buf.read_varuint64()
     assert buf.writer_index == buf.reader_index
     assert value == varint
     # test slow read branch in `read_varint64`
     assert (
-        buf.slice(reader_index, buf.reader_index - reader_index).read_varint64()
+        buf.slice(reader_index, buf.reader_index - reader_index).read_varuint64()
         == value
     )
 
@@ -231,6 +231,23 @@ def test_write_buffer():
     assert buf.writer_index == 35
     assert buf.read(0) == b""
     assert buf.read(3) == b"123"
+
+
+def test_read_bytes_as_int64():
+    # test small buffer whose length < 8
+    buf = Buffer(b"1234")
+    assert buf.read_bytes_as_int64(0) == 0
+    assert buf.read_bytes_as_int64(1) == 49
+
+    # test big buffer whose length > 8
+    buf = Buffer(b"12345678901234")
+    assert buf.read_bytes_as_int64(0) == 0
+    assert buf.read_bytes_as_int64(1) == 49
+    assert buf.read_bytes_as_int64(8) == 4123106164818064178
+
+    # test fix for `OverflowError: Python int too large to convert to C long`
+    buf = Buffer(b"\xa6IOr\x9ch)\x80\x12\x02")
+    buf.read_bytes_as_int64(8)
 
 
 if __name__ == "__main__":

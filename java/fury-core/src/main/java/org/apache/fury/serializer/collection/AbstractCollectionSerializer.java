@@ -744,7 +744,12 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
       if (elemGenericType.isMonomorphic()) {
         Serializer elemSerializer = elemGenericType.getSerializer(fury.getClassResolver());
         for (int i = 0; i < numElements; i++) {
-          Object elem = fury.xreadRefByNullableSerializer(buffer, elemSerializer);
+          Object elem;
+          if (elemSerializer == null) {
+            elem = fury.xreadRef(buffer);
+          } else {
+            elem = fury.xreadRef(buffer, elemSerializer);
+          }
           collection.add(elem);
         }
       } else {

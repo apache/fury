@@ -243,7 +243,7 @@ def test_buffer(data_file_path):
         assert buffer.read_int64() == 2**63 - 1
         assert math.isclose(buffer.read_float(), -1.1, rel_tol=1e-03)
         assert math.isclose(buffer.read_double(), -1.1, rel_tol=1e-03)
-        assert buffer.read_varint32() == 100
+        assert buffer.read_varuint32() == 100
         binary = b"ab"
         assert buffer.read_bytes(buffer.read_int32()) == binary
         buffer.write_bool(True)
@@ -253,7 +253,7 @@ def test_buffer(data_file_path):
         buffer.write_int64(2**63 - 1)
         buffer.write_float(-1.1)
         buffer.write_double(-1.1)
-        buffer.write_varint32(100)
+        buffer.write_varuint32(100)
         buffer.write_int32(len(binary))
         buffer.write_bytes(binary)
     with open(data_file_path, "wb+") as f:
@@ -286,7 +286,8 @@ def test_cross_language_serializer(data_file_path):
         assert _deserialize_and_append(fury, buffer, objects) == -(2**15)
         assert _deserialize_and_append(fury, buffer, objects) == 2**31 - 1
         assert _deserialize_and_append(fury, buffer, objects) == -(2**31)
-        assert _deserialize_and_append(fury, buffer, objects) == 2**63 - 1
+        x = _deserialize_and_append(fury, buffer, objects)
+        assert x == 2**63 - 1, x
         assert _deserialize_and_append(fury, buffer, objects) == -(2**63)
         assert _deserialize_and_append(fury, buffer, objects) == -1.0
         assert _deserialize_and_append(fury, buffer, objects) == -1.0
@@ -444,7 +445,7 @@ class ComplexObject2:
 
 def test_serialize_simple_struct_local():
     fury = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
-    fury.register_class(ComplexObject2, type_tag="test.ComplexObject2")
+    fury.register_type(ComplexObject2, namespace="test", typename="ComplexObject2")
     obj = ComplexObject2(f1=True, f2={-1: 2})
     new_buf = fury.serialize(obj)
     assert fury.deserialize(new_buf) == obj
@@ -453,16 +454,31 @@ def test_serialize_simple_struct_local():
 @cross_language_test
 def test_serialize_simple_struct(data_file_path):
     fury = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
-    fury.register_class(ComplexObject2, type_tag="test.ComplexObject2")
+    fury.register_type(ComplexObject2, namespace="test", typename="ComplexObject2")
     obj = ComplexObject2(f1=True, f2={-1: 2})
     struct_round_back(data_file_path, fury, obj)
 
 
 @cross_language_test
+def test_struct_hash(data_file_path):
+    with open(data_file_path, "rb") as f:
+        data_bytes = f.read()
+    debug_print(f"len {len(data_bytes)}")
+    read_hash = pyfury.Buffer(data_bytes).read_int32()
+    fury = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
+    fury.register_type(ComplexObject1, typename="ComplexObject1")
+    serializer = fury.class_resolver.get_serializer(ComplexObject1)
+    from pyfury._struct import _get_hash
+
+    v = _get_hash(fury, serializer._field_names, serializer._type_hints)
+    assert read_hash == v, (read_hash, v)
+
+
+@cross_language_test
 def test_serialize_complex_struct(data_file_path):
     fury = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
-    fury.register_class(ComplexObject1, type_tag="test.ComplexObject1")
-    fury.register_class(ComplexObject2, type_tag="test.ComplexObject2")
+    fury.register_type(ComplexObject1, namespace="test", typename="ComplexObject1")
+    fury.register_type(ComplexObject2, namespace="test", typename="ComplexObject2")
 
     obj2 = ComplexObject2(f1=True, f2={-1: 2})
     obj1 = ComplexObject1(
@@ -498,33 +514,7 @@ def struct_round_back(data_file_path, fury, obj1):
         f.write(new_buf)
 
 
-@cross_language_test
-def test_serialize_opaque_object(data_file_path):
-    with open(data_file_path, "rb") as f:
-        data_bytes = f.read()
-    debug_print(f"len {len(data_bytes)}")
-    fury = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
-    fury.register_class(ComplexObject1, type_tag="test.ComplexObject1")
-    new_obj = fury.deserialize(data_bytes)
-    debug_print(new_obj)
-    assert new_obj.f2 == "abc"
-    assert isinstance(new_obj.f1, pyfury.OpaqueObject)
-    assert isinstance(new_obj.f3[0], pyfury.OpaqueObject)
-    assert isinstance(new_obj.f3[1], pyfury.OpaqueObject)
-    # new_buf = fury.serialize(new_obj)
-    # debug_print(f"new_buf size {len(new_buf)}")
-    # assert fury.deserialize(new_buf) == new_obj
-    # with open(data_file_path, "wb+") as f:
-    #     f.write(new_buf)
-
-
 class ComplexObject1Serializer(pyfury.serializer.Serializer):
-    def get_xtype_id(self):
-        return pyfury.type.FuryType.FURY_TYPE_TAG.value
-
-    def get_xtype_tag(self):
-        return "test.ComplexObject1"
-
     def write(self, buffer, value):
         self.xwrite(buffer, value)
 
@@ -553,8 +543,10 @@ def test_register_serializer(data_file_path):
         data_bytes = f.read()
     buffer = pyfury.Buffer(data_bytes)
     fury = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
-    fury.register_serializer(
-        ComplexObject1, ComplexObject1Serializer(fury, ComplexObject1)
+    fury.register_type(
+        ComplexObject1,
+        typename="test.ComplexObject1",
+        serializer=ComplexObject1Serializer(fury, ComplexObject1),
     )
     new_obj = fury.deserialize(buffer)
     expected = ComplexObject1(*[None] * 12)

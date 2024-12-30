@@ -32,6 +32,7 @@ import java.util.Set;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
+import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.util.unsafe._JDKAccess;
 
 /** Serializers for jdk9+ java.util.ImmutableCollections. */
@@ -259,12 +260,13 @@ public class ImmutableCollectionSerializers {
   }
 
   public static void registerSerializers(Fury fury) {
-    fury.registerSerializer(List12, new ImmutableListSerializer(fury, List12));
-    fury.registerSerializer(ListN, new ImmutableListSerializer(fury, ListN));
-    fury.registerSerializer(SubList, new ImmutableListSerializer(fury, SubList));
-    fury.registerSerializer(Set12, new ImmutableSetSerializer(fury, Set12));
-    fury.registerSerializer(SetN, new ImmutableSetSerializer(fury, SetN));
-    fury.registerSerializer(Map1, new ImmutableMapSerializer(fury, Map1));
-    fury.registerSerializer(MapN, new ImmutableMapSerializer(fury, MapN));
+    ClassResolver resolver = fury.getClassResolver();
+    resolver.registerSerializer(List12, new ImmutableListSerializer(fury, List12));
+    resolver.registerSerializer(ListN, new ImmutableListSerializer(fury, ListN));
+    resolver.registerSerializer(SubList, new ImmutableListSerializer(fury, SubList));
+    resolver.registerSerializer(Set12, new ImmutableSetSerializer(fury, Set12));
+    resolver.registerSerializer(SetN, new ImmutableSetSerializer(fury, SetN));
+    resolver.registerSerializer(Map1, new ImmutableMapSerializer(fury, Map1));
+    resolver.registerSerializer(MapN, new ImmutableMapSerializer(fury, MapN));
   }
 }

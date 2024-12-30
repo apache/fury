@@ -138,6 +138,11 @@ public class ThreadLocalFury extends AbstractThreadSafeFury {
   }
 
   @Override
+  public <T> T deserialize(byte[] bytes, Class<T> type) {
+    return bindingThreadLocal.get().get().deserialize(bytes, type);
+  }
+
+  @Override
   public Object deserialize(byte[] bytes, Iterable<MemoryBuffer> outOfBandBuffers) {
     return bindingThreadLocal.get().get().deserialize(bytes, outOfBandBuffers);
   }

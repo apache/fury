@@ -30,6 +30,7 @@ import org.apache.fury.reflect.TypeRef;
 public class ScalaTypes {
   private static volatile Class<?> SCALA_MAP_TYPE;
   private static volatile Class<?> SCALA_SEQ_TYPE;
+  private static volatile Class<?> SCALA_SET_TYPE;
   private static volatile Class<?> SCALA_ITERABLE_TYPE;
   private static volatile java.lang.reflect.Type SCALA_ITERATOR_RETURN_TYPE;
   private static volatile java.lang.reflect.Type SCALA_NEXT_RETURN_TYPE;
@@ -48,6 +49,13 @@ public class ScalaTypes {
       SCALA_SEQ_TYPE = ReflectionUtils.loadClass("scala.collection.Seq");
     }
     return SCALA_SEQ_TYPE;
+  }
+
+  public static Class<?> getScalaSetType() {
+    if (SCALA_SET_TYPE == null) {
+      SCALA_SET_TYPE = ReflectionUtils.loadClass("scala.collection.Set");
+    }
+    return SCALA_SET_TYPE;
   }
 
   public static Class<?> getScalaIterableType() {

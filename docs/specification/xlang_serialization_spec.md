@@ -39,34 +39,56 @@ also introduce more complexities compared to static serialization frameworks. So
 - string: a text string encoded using Latin1/UTF16/UTF-8 encoding.
 - enum: a data type consisting of a set of named values. Rust enum with non-predefined field values are not supported as
   an enum.
+- named_enum: an enum whose value will be serialized as the registered name.
+- struct: a morphic(final) type serialized by Fury Struct serializer. i.e. it doesn't have subclasses. Suppose we're
+  deserializing `List<SomeClass>`, we can save dynamic serializer dispatch since `SomeClass` is morphic(final).
+- polymorphic_struct: a type which is not morphic(not final). i.e. it has subclasses. Suppose we're deserializing
+  `List<SomeClass>`, we must dispatch serializer dynamically since `SomeClass` is morphic(final).
+- compatible_struct: a morphic(final) type serialized by Fury compatible Struct serializer.
+- polymorphic_compatible_struct: a non-morphic(non-final) type serialized by Fury compatible Struct serializer.
+- named_struct: a `struct` whose type mapping will be encoded as a name.
+- named_polymorphic_struct: a `polymorphic_struct` whose type mapping will be encoded as a name.
+- named_compatible_struct: a `compatible_struct` whose type mapping will be encoded as a name.
+- named_polymorphic_compatible_struct: a `polymorphic_compatible_struct` whose type mapping will be encoded as a name.
+- ext: a type which will be serialized by a customized serializer.
+- polymorphic_ext: an `ext` type which is not morphic(not final).
+- named_ext: an `ext` type whose type mapping will be encoded as a name.
+- named_polymorphic_ext: an `polymorphic_ext` type whose type mapping will be encoded as a name.
 - list: a sequence of objects.
 - set: an unordered set of unique elements.
 - map: a map of key-value pairs. Mutable types such as `list/map/set/array/tensor/arrow` are not allowed as key of map.
-- time types:
-  - duration: an absolute length of time, independent of any calendar/timezone, as a count of nanoseconds.
-  - timestamp: a point in time, independent of any calendar/timezone, as a count of nanoseconds. The count is relative
-      to an epoch at UTC midnight on January 1, 1970.
+- duration: an absolute length of time, independent of any calendar/timezone, as a count of nanoseconds.
+- timestamp: a point in time, independent of any calendar/timezone, as a count of nanoseconds. The count is relative
+  to an epoch at UTC midnight on January 1, 1970.
+- local_date: a naive date without timezone. The count is days relative to an epoch at UTC midnight on Jan 1, 1970.
 - decimal: exact decimal value represented as an integer value in two's complement.
 - binary: an variable-length array of bytes.
-- array type: only allow numeric components. Other arrays will be taken as List. The implementation should support the
+- array: only allow numeric components. Other arrays will be taken as List. The implementation should support the
   interoperability between array and list.
-  - array: multidimensional array which every sub-array can have different sizes but all have same type.
-  - bool_array: one dimensional int16 array.
-  - int8_array: one dimensional int8 array.
-  - int16_array: one dimensional int16 array.
-  - int32_array: one dimensional int32 array.
-  - int64_array: one dimensional int64 array.
-  - float16_array: one dimensional half_float_16 array.
-  - float32_array: one dimensional float32 array.
-  - float64_array: one dimensional float64 array.
-- tensor: a multidimensional dense array of fixed-size values such as a NumPy ndarray.
-- sparse tensor: a multidimensional array whose elements are almost all zeros.
+- array: multidimensional array which every sub-array can have different sizes but all have same type.
+- bool_array: one dimensional int16 array.
+- int8_array: one dimensional int8 array.
+- int16_array: one dimensional int16 array.
+- int32_array: one dimensional int32 array.
+- int64_array: one dimensional int64 array.
+- float16_array: one dimensional half_float_16 array.
+- float32_array: one dimensional float32 array.
+- float64_array: one dimensional float64 array.
 - arrow record batch: an arrow [record batch](https://arrow.apache.org/docs/cpp/tables.html#record-batches) object.
 - arrow table: an arrow [table](https://arrow.apache.org/docs/cpp/tables.html#tables) object.
 
 Note:
 
 - Unsigned int/long are not added here, since not every language support those types.
+
+### Polymorphisms
+
+For polymorphism, if one non-final class is registered, and only one subclass is registered, then we can take all
+elements in List/Map have same type, thus reduce runtime check cost.
+
+Collection/Array polymorphism are not fully supported, since some languages such as golang have only one collection
+type. If users want to get exactly the type he passed, he must pass that type when deserializing or annotate that type
+to the field of struct.
 
 ### Type disambiguation
 
@@ -117,8 +139,8 @@ Such information can be provided in other languages too:
 
 ### Type ID
 
-All internal data types are expressed using an ID in range `-64~-1`. Users can use `0~32703` for representing their
-types. At runtime, all type ids are added by `64`, and then encoded as an unsigned varint.
+All internal data types are expressed using an ID in range `0~64`. Users can use `0~4096` for representing their
+types.
 
 ### Type mapping
 
@@ -298,19 +320,17 @@ Meta header is a 64 bits number value encoded in little endian order.
 - type id: the registered id for the current type, which will be written as an unsigned varint.
 - field info:
   - header(8
-      bits): `3 bits size + 2 bits field name encoding + polymorphism flag + nullability flag + ref tracking flag`.
+      bits): `4 bits size + 2 bits field name encoding + nullability flag + ref tracking flag`.
       Users can use annotation to provide those info.
     - 2 bits field name encoding:
       - encoding: `UTF8/ALL_TO_LOWER_SPECIAL/LOWER_UPPER_DIGIT_SPECIAL/TAG_ID`
       - If tag id is used, i.e. field name is written by an unsigned varint tag id. 2 bits encoding will be `11`.
     - size of field name:
-      - The `3 bits size: 0~7`  will be used to indicate length `1~7`, the value `7` indicates to read more bytes,
-              the encoding will encode `size - 7` as a varint next.
+      - The `4 bits size: 0~14`  will be used to indicate length `1~15`, the value `15` indicates to read more bytes,
+              the encoding will encode `size - 15` as a varint next.
       - If encoding is `TAG_ID`, then num_bytes of field name will be used to store tag id.
     - ref tracking: when set to 1, ref tracking will be enabled for this field.
     - nullability: when set to 1, this field can be null.
-    - polymorphism: when set to 1, the actual type of field will be the declared field type even the type if
-          not `final`.
   - field name: If tag id is set, tag id will be used instead. Otherwise meta string encoding `[length]` and data will
       be written instead.
   - type id:
