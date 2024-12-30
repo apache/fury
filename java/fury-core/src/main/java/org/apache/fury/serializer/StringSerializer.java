@@ -182,7 +182,11 @@ public final class StringSerializer extends ImmutableSerializer<String> {
   public Expression readStringExpr(Expression strSerializer, Expression buffer) {
     if (isJava) {
       if (STRING_VALUE_FIELD_IS_BYTES) {
-        return new Invoke(strSerializer, "readBytesString", STRING_TYPE, buffer);
+        if (compressString) {
+          return new Invoke(strSerializer, "readCompressedBytesString", STRING_TYPE, buffer);
+        } else {
+          return new Invoke(strSerializer, "readBytesString", STRING_TYPE, buffer);
+        }
       } else {
         if (!STRING_VALUE_FIELD_IS_CHARS) {
           throw new UnsupportedOperationException();
