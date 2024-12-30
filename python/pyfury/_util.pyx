@@ -26,7 +26,7 @@ from libcpp.memory cimport shared_ptr, make_shared
 from libc.stdint cimport *
 from libcpp cimport bool as c_bool
 from pyfury.includes.libutil cimport(
-    CBuffer, AllocateBuffer, GetBit, SetBit, ClearBit, SetBitTo
+    CBuffer, AllocateBuffer, GetBit, SetBit, ClearBit, SetBitTo, CStatus, StatusCode
 )
 
 cdef int32_t max_buffer_size = 2 ** 31 - 1
@@ -212,14 +212,14 @@ cdef class Buffer:
     cpdef inline write_bytes_and_size(self, bytes value):
         cdef const unsigned char[:] data = value
         cdef int32_t length = data.nbytes
-        self.write_varint32(length)
+        self.write_varuint32(length)
         if length > 0:
             self.grow(length)
             self.c_buffer.get().CopyFrom(self.writer_index, &data[0], 0, length)
             self.writer_index += length
 
     cpdef inline bytes read_bytes_and_size(self):
-        cdef int32_t length = self.read_varint32()
+        cdef int32_t length = self.read_varuint32()
         value = self.get_bytes(self.reader_index, length)
         self.reader_index += length
         return value
@@ -238,16 +238,10 @@ cdef class Buffer:
         return value
 
     cpdef inline int64_t read_bytes_as_int64(self, int32_t length):
-        cdef int32_t size_ = self.c_buffer.get().size()
-        cdef int64_t result
-        cdef int32_t i
-        # if offset + length > size_:
-        if size_- (self.reader_index + 8) > 0:
-            result = self.get_int64(self.reader_index)
-            result = result & (0xffffffffffffffffL >> ((8 - length) * 8))
-        else:
-            for i in range(length):
-                result = result | (<int64_t>(self.read_int8()) & 0xff) << (i * 8)
+        cdef int64_t result = 0
+        cdef CStatus status = self.c_buffer.get().GetBytesAsInt64(self.reader_index, length,  &result)
+        if status.code() != StatusCode.OK:
+            raise ValueError(status.message())
         self.reader_index += length
         return result
 
@@ -359,6 +353,9 @@ cdef class Buffer:
         return data
 
     cpdef inline write_varint32(self, int32_t value):
+        return self.write_varuint32((value << 1) ^ (value >> 31))
+
+    cpdef inline write_varuint32(self, int32_t value):
         self.grow(<int8_t>5)
         cdef int32_t actual_bytes_written = self.c_buffer.get()\
             .PutVarUint32(self.writer_index, value)
@@ -366,6 +363,10 @@ cdef class Buffer:
         return actual_bytes_written
 
     cpdef inline int32_t read_varint32(self):
+        cdef uint32_t v = self.read_varuint32()
+        return (v >> 1) ^ -(v & 1)
+
+    cpdef inline int32_t read_varuint32(self):
         cdef:
             uint32_t read_length = 0
             int8_t b
@@ -392,98 +393,10 @@ cdef class Buffer:
                             result |= (b & 0x7F) << 28
             return result
 
-    cpdef inline write_flagged_varint32(self, c_bool flag, int32_t v):
-        self.grow(5)
-        cdef:
-            int32_t value = v
-            int32_t offset = self.writer_index
-            int8_t first = (value & 0x3F)
-            uint8_t* arr = self.c_buffer.get().data()
-        if flag:
-            # Mask first 6 bits, bit 8 is the flag.
-            first = first | 0x80
-        if value >> 6 == 0:
-            arr[offset] = first
-            self.writer_index += 1
-            return 1
-        if value >> 13 == 0:
-            arr[offset] = first | 0x40  # Set bit 7.
-            arr[offset + 1] = <int8_t> (value >> 6)
-            self.writer_index += 2
-            return 2
-        if value >> 20 == 0:
-            arr[offset] = first | 0x40  # Set bit 7.
-            arr[offset + 1] = <int8_t> (value >> 6 | 0x80)
-            arr[offset + 2] = <int8_t> (value >> 13)
-            self.writer_index += 3
-            return 3
-        if value >> 27 == 0:
-            arr[offset] = first | 0x40  # Set bit 7.
-            arr[offset + 1] = <int8_t> (value >> 6 | 0x80)
-            arr[offset + 2] = <int8_t> (value >> 13 | 0x80)
-            arr[offset + 3] = <int8_t> (value >> 20)
-            self.writer_index += 4
-            return 4
-        arr[offset] = first | 0x40  # Set bit 7.
-        arr[offset + 1] = <int8_t> (value >> 6 | 0x80)
-        arr[offset + 2] = <int8_t> (value >> 13 | 0x80)
-        arr[offset + 3] = <int8_t> (value >> 20 | 0x80)
-        arr[offset + 4] = <int8_t> (value >> 27)
-        self.writer_index += 5
-        return 5
+    cpdef inline write_varint64(self, int64_t value):
+        return self.write_varuint64((value << 1) ^ (value >> 63))
 
-    cpdef inline c_bool read_varint32_flag(self):
-        cdef int32_t offset = self.reader_index
-        self.check_bound(offset, <int32_t>1)
-        cdef int8_t head = (<int8_t *>(self._c_address + offset))[0]
-        return (head & 0x80) != 0
-
-    cpdef inline int32_t read_flagged_varint(self):
-        cdef:
-            uint32_t read_bytes_length = 1
-            int32_t b
-            int32_t result
-            uint32_t position = self.reader_index
-            int8_t * arr = <int8_t *> (self.c_buffer.get().data() + position)
-        if self._c_size - self.reader_index > 5:
-            b = arr[0]
-            result = b & 0x3F  # Mask first 6 bits.
-            if (b & 0x40) != 0:  # Bit 7 means another byte, bit 8 is flag bit.
-                read_bytes_length += 1
-                b = arr[1]
-                result |= (b & 0x7F) << 6
-                if (b & 0x80) != 0:
-                    read_bytes_length += 1
-                    b = arr[2]
-                    result |= (b & 0x7F) << 13
-                    if (b & 0x80) != 0:
-                        read_bytes_length += 1
-                        b = arr[3]
-                        result |= (b & 0x7F) << 20
-                        if (b & 0x80) != 0:
-                            read_bytes_length += 1
-                            b = arr[4]
-                            result |= b << 27
-            self.reader_index += read_bytes_length
-            return result
-        else:
-            b = self.read_int8()
-            result = b & 0x3F  # Mask first 6 bits.
-            if (b & 0x40) != 0:
-                b = self.read_int8()
-                result |= (b & 0x7F) << 6
-                if (b & 0x80) != 0:
-                    b = self.read_int8()
-                    result |= (b & 0x7F) << 13
-                    if (b & 0x80) != 0:
-                        b = self.read_int8()
-                        result |= (b & 0x7F) << 20
-                        if (b & 0x80) != 0:
-                            b = self.read_int8()
-                            result |= b << 27
-            return result
-
-    cpdef inline write_varint64(self, int64_t v):
+    cpdef inline write_varuint64(self, int64_t v):
         cdef:
             uint64_t value = v
             int64_t offset = self.writer_index
@@ -534,6 +447,10 @@ cdef class Buffer:
         return 9
 
     cpdef inline int64_t read_varint64(self):
+        cdef uint64_t v = self.read_varuint64()
+        return ((v >> 1) ^ -(v & 1))
+
+    cpdef inline int64_t read_varuint64(self):
         cdef:
             uint32_t read_length = 1
             int64_t b
@@ -609,7 +526,7 @@ cdef class Buffer:
             return result
 
     cdef inline write_c_buffer(self, const uint8_t* value, int32_t length):
-        self.write_varint32(length)
+        self.write_varuint32(length)
         if length <= 0:  # access an emtpy buffer may raise out-of-bound exception.
             return
         self.grow(length)
@@ -618,7 +535,7 @@ cdef class Buffer:
         self.writer_index += length
 
     cdef inline int32_t read_c_buffer(self, uint8_t** buf):
-        cdef int32_t length = self.read_varint32()
+        cdef int32_t length = self.read_varuint32()
         cdef uint8_t* binary_data = self.c_buffer.get().data()
         self.check_bound(self.reader_index, length)
         buf[0] = binary_data + self.reader_index

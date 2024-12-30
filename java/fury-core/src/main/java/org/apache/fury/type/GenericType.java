@@ -177,6 +177,10 @@ public class GenericType {
     return typeParameter1;
   }
 
+  public void setSerializer(Serializer<?> serializer) {
+    this.serializer = serializer;
+  }
+
   public Serializer<?> getSerializer(ClassResolver classResolver) {
     Serializer<?> serializer = this.serializer;
     if (serializer == null) {
@@ -186,16 +190,12 @@ public class GenericType {
     return serializer;
   }
 
-  public boolean isMonomorphic() {
-    return isMonomorphic;
+  public Serializer<?> getSerializer() {
+    return serializer;
   }
 
-  public Serializer<?> getSerializerOrNull(ClassResolver classResolver) {
-    if (isMonomorphic) {
-      return getSerializer(classResolver);
-    } else {
-      return null;
-    }
+  public boolean isMonomorphic() {
+    return isMonomorphic;
   }
 
   public boolean trackingRef(ClassResolver classResolver) {

@@ -17,38 +17,15 @@
  * under the License.
  */
 
-package org.apache.fury.serializer;
+package org.apache.fury.exception;
 
-import org.apache.fury.config.Language;
+public class SerializerUnregisteredException extends FuryException {
 
-/** Stub objects for unsupported cross-language serializing type. */
-public class OpaqueObjects {
-
-  public static OpaqueObject of(Language language, String className, int ordinal) {
-    return new OpaqueObject(language, className, ordinal);
+  public SerializerUnregisteredException(Class<?> cls) {
+    this(cls.getName());
   }
 
-  public static class OpaqueObject {
-    private final Language language;
-    private final String className;
-    private final int ordinal;
-
-    public OpaqueObject(Language language, String className, int ordinal) {
-      this.language = language;
-      this.className = className;
-      this.ordinal = ordinal;
-    }
-
-    public Language language() {
-      return language;
-    }
-
-    public String className() {
-      return className;
-    }
-
-    public int ordinal() {
-      return ordinal;
-    }
+  public SerializerUnregisteredException(String qualifiedName) {
+    super(String.format("Class %s is not registered with a serializer", qualifiedName));
   }
 }

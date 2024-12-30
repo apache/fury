@@ -247,9 +247,20 @@ public abstract class FuryTestBase {
     return (T) fury.deserialize(bytes);
   }
 
+  public static Object serDeObject(Fury fury1, Fury fury2, Object obj) {
+    byte[] bytes = fury1.serialize(obj);
+    return fury2.deserialize(bytes);
+  }
+
   public static <T> T serDe(Fury fury1, Fury fury2, T obj) {
     byte[] bytes = fury1.serialize(obj);
     return (T) fury2.deserialize(bytes);
+  }
+
+  public static <T> T serDeCheckTyped(Fury fury1, Fury fury2, T obj) {
+    T o = serDeTyped(fury1, fury2, obj);
+    Assert.assertEquals(o, obj);
+    return o;
   }
 
   public static <T> T serDeCheck(Fury fury1, Fury fury2, T obj) {
@@ -284,6 +295,18 @@ public abstract class FuryTestBase {
     Object newObj = fury2.deserialize(buffer);
     Assert.assertEquals(buffer.writerIndex(), buffer.readerIndex());
     return newObj;
+  }
+
+  @SuppressWarnings("unchecked")
+  public static <T> T serDeTyped(Fury fury, T obj) {
+    byte[] bytes = fury.serialize(obj);
+    return (T) fury.deserialize(bytes, obj.getClass());
+  }
+
+  @SuppressWarnings("unchecked")
+  public static <T> T serDeTyped(Fury fury1, Fury fury2, T obj) {
+    byte[] bytes = fury1.serialize(obj);
+    return (T) fury2.deserialize(bytes, obj.getClass());
   }
 
   public static void copyCheck(Fury fury, Object obj) {
