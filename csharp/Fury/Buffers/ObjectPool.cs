@@ -1,22 +1,23 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using Fury.Collections;
 
-namespace Fury;
+namespace Fury.Buffers;
 
 /// <summary>
 /// A simple object pool.
 /// </summary>
 /// <typeparam name="T"></typeparam>
-internal readonly struct ObjectPool<T>()
-    where T : class, new()
+internal readonly struct ObjectPool<T>(IArrayPoolProvider poolProvider, Func<T> factory)
+    where T : class
 {
-    private readonly List<T> _objects = [];
+    private readonly PooledList<T> _objects = new(poolProvider);
 
     public T Rent()
     {
         var lastIndex = _objects.Count - 1;
         if (lastIndex < 0)
         {
-            return new T();
+            return factory();
         }
 
         var obj = _objects[lastIndex];

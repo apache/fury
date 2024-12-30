@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.InteropServices;
+using Fury.Buffers;
+using Fury.Collections;
 using Fury.Serializer;
 using Fury.Serializer.Provider;
 
@@ -13,18 +15,20 @@ public sealed class TypeResolver
     private readonly Dictionary<Type, ISerializer> _typeToSerializers = new();
     private readonly Dictionary<Type, IDeserializer> _typeToDeserializers = new();
     private readonly Dictionary<Type, TypeInfo> _typeToTypeInfos = new();
-    private readonly List<Type> _types = [];
+    private readonly PooledList<Type> _types;
 
     private readonly ISerializerProvider[] _serializerProviders;
     private readonly IDeserializerProvider[] _deserializerProviders;
 
     internal TypeResolver(
         IEnumerable<ISerializerProvider> serializerProviders,
-        IEnumerable<IDeserializerProvider> deserializerProviders
+        IEnumerable<IDeserializerProvider> deserializerProviders,
+        IArrayPoolProvider poolProvider
     )
     {
         _serializerProviders = serializerProviders.ToArray();
         _deserializerProviders = deserializerProviders.ToArray();
+        _types = new PooledList<Type>(poolProvider);
     }
 
     public bool TryGetOrCreateSerializer(Type type, [NotNullWhen(true)] out ISerializer? serializer)

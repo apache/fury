@@ -1,6 +1,7 @@
 ﻿using System.IO.Pipelines;
 using System.Threading;
 using System.Threading.Tasks;
+using Fury.Buffers;
 
 namespace Fury;
 
@@ -10,9 +11,11 @@ public sealed class Fury(Config config)
 
     private const short MagicNumber = 0x62D4;
 
-    public TypeResolver TypeResolver { get; } = new(config.SerializerProviders, config.DeserializerProviders);
+    public TypeResolver TypeResolver { get; } =
+        new(config.SerializerProviders, config.DeserializerProviders, config.ArrayPoolProvider);
 
-    private readonly ObjectPool<RefRegistration> _refResolverPool = new();
+    private readonly ObjectPool<RefContext> _refResolverPool =
+        new(config.ArrayPoolProvider, () => new RefContext(config.ArrayPoolProvider));
 
     public void Serialize<T>(PipeWriter writer, in T? value)
         where T : notnull
@@ -51,7 +54,7 @@ public sealed class Fury(Config config)
     private bool SerializeCommon<T>(
         BatchWriter writer,
         in T? value,
-        RefRegistration refRegistration,
+        RefContext refContext,
         out SerializationContext context
     )
     {
@@ -66,7 +69,7 @@ public sealed class Fury(Config config)
         }
         writer.Write((byte)headerFlag);
         writer.Write((byte)Language.Csharp);
-        context = new SerializationContext(this, writer, refRegistration);
+        context = new SerializationContext(this, writer, refContext);
         return true;
     }
 
@@ -115,7 +118,7 @@ public sealed class Fury(Config config)
         return result;
     }
 
-    private async ValueTask<DeserializationContext?> DeserializeCommonAsync(BatchReader reader, RefRegistration registration)
+    private async ValueTask<DeserializationContext?> DeserializeCommonAsync(BatchReader reader, RefContext refContext)
     {
         var magicNumber = await reader.ReadAsync<short>();
         if (magicNumber != MagicNumber)
@@ -140,7 +143,7 @@ public sealed class Fury(Config config)
             return ThrowHelper.ThrowNotSupportedException<DeserializationContext>(ExceptionMessages.NotLittleEndian());
         }
         await reader.ReadAsync<byte>();
-        var context = new DeserializationContext(this, reader, registration);
+        var context = new DeserializationContext(this, reader, refContext);
         return context;
     }
 }

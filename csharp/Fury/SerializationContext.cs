@@ -11,13 +11,13 @@ public ref struct SerializationContext
 {
     public Fury Fury { get; }
     public BatchWriter Writer;
-    private RefRegistration RefRegistration { get; }
+    private RefContext RefContext { get; }
 
-    internal SerializationContext(Fury fury, BatchWriter writer, RefRegistration refRegistration)
+    internal SerializationContext(Fury fury, BatchWriter writer, RefContext refContext)
     {
         Fury = fury;
         Writer = writer;
-        RefRegistration = refRegistration;
+        RefContext = refContext;
     }
 
     public bool TryGetSerializer<TValue>([NotNullWhen(true)] out ISerializer? serializer)
@@ -57,14 +57,14 @@ public ref struct SerializationContext
 
         if (referenceable == ReferenceTrackingPolicy.Enabled)
         {
-            var refId = RefRegistration.GetOrPushRefId(value, out var processingState);
-            if (processingState == RefRegistration.ObjectProcessingState.Unprocessed)
+            var refId = RefContext.GetOrPushRefId(value, out var processingState);
+            if (processingState == RefContext.ObjectProcessingState.Unprocessed)
             {
                 // A new referenceable object
 
                 Writer.Write(ReferenceFlag.RefValue);
                 DoWriteReferenceType(value, serializer);
-                RefRegistration.MarkFullyProcessed(refId);
+                RefContext.MarkFullyProcessed(refId);
             }
             else
             {
@@ -76,8 +76,8 @@ public ref struct SerializationContext
         }
         else
         {
-            var refId = RefRegistration.GetOrPushRefId(value, out var processingState);
-            if (processingState == RefRegistration.ObjectProcessingState.PartiallyProcessed)
+            var refId = RefContext.GetOrPushRefId(value, out var processingState);
+            if (processingState == RefContext.ObjectProcessingState.PartiallyProcessed)
             {
                 // A referenceable object that has been recorded but not fully processed,
                 // which means it is the ancestor of the current object.
@@ -107,7 +107,7 @@ public ref struct SerializationContext
                     : ReferenceFlag.NotNullValue;
             Writer.Write(flag);
             DoWriteReferenceType(value, serializer);
-            RefRegistration.PopReferenceableObject();
+            RefContext.PopReferenceableObject();
         }
     }
 

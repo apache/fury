@@ -1,13 +1,15 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
+using Fury.Buffers;
+using Fury.Collections;
 
 namespace Fury;
 
-internal sealed class RefRegistration
+internal sealed class RefContext(IArrayPoolProvider poolProvider)
 {
     private readonly Dictionary<object, int> _objectsToRefId = new();
-    private readonly List<object?> _readObjects = [];
+    private readonly PooledList<object?> _readObjects = new(poolProvider);
     private readonly HashSet<int> _partiallyProcessedRefIds = [];
 
     public bool Contains(RefId refId) => refId.IsValid && refId.Value < _readObjects.Count;

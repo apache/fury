@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Fury.Buffers;
 using Fury.Serializer.Provider;
 
 namespace Fury;
@@ -6,7 +7,8 @@ namespace Fury;
 public sealed record Config(
     ReferenceTrackingPolicy ReferenceTracking,
     IEnumerable<ISerializerProvider> SerializerProviders,
-    IEnumerable<IDeserializerProvider> DeserializerProviders
+    IEnumerable<IDeserializerProvider> DeserializerProviders,
+    IArrayPoolProvider ArrayPoolProvider
 );
 
 /// <summary>

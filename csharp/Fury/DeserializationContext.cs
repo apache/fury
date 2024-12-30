@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
-using System.IO.Pipelines;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Fury.Serializer;
@@ -13,13 +14,13 @@ public sealed class DeserializationContext
 {
     public Fury Fury { get; }
     public BatchReader Reader { get; }
-    private RefRegistration RefRegistration { get; }
+    private RefContext RefContext { get; }
 
-    internal DeserializationContext(Fury fury, BatchReader reader, RefRegistration refRegistration)
+    internal DeserializationContext(Fury fury, BatchReader reader, RefContext refContext)
     {
         Fury = fury;
         Reader = reader;
-        RefRegistration = refRegistration;
+        RefContext = refContext;
     }
 
     public bool TryGetDeserializer<TValue>([NotNullWhen(true)] out IDeserializer? deserializer)
@@ -50,7 +51,7 @@ public sealed class DeserializationContext
         if (refFlag == ReferenceFlag.Ref)
         {
             var refId = await Reader.ReadRefIdAsync(cancellationToken);
-            if (!RefRegistration.TryGetReadValue(refId, out var readObject))
+            if (!RefContext.TryGetReadValue(refId, out var readObject))
             {
                 ThrowHelper.ThrowBadSerializationDataException(ExceptionMessages.ReferencedObjectNotFound(refId));
             }
@@ -80,7 +81,7 @@ public sealed class DeserializationContext
         if (refFlag == ReferenceFlag.Ref)
         {
             var refId = await Reader.ReadRefIdAsync(cancellationToken);
-            if (!RefRegistration.TryGetReadValue(refId, out var readObject))
+            if (!RefContext.TryGetReadValue(refId, out var readObject))
             {
                 ThrowHelper.ThrowBadSerializationDataException(ExceptionMessages.ReferencedObjectNotFound(refId));
             }
@@ -122,7 +123,7 @@ public sealed class DeserializationContext
         var typeInfo = await ReadTypeMetaAsync(cancellationToken);
         deserializer ??= GetPreferredDeserializer(typeInfo.Type);
         var newObj = await deserializer.CreateInstanceAsync(this, cancellationToken);
-        RefRegistration.PushReferenceableObject(newObj);
+        RefContext.PushReferenceableObject(newObj);
         await deserializer.ReadAndFillAsync(this, newObj, cancellationToken);
         return newObj;
     }
@@ -155,4 +156,5 @@ public sealed class DeserializationContext
         }
         return deserializer;
     }
+
 }
