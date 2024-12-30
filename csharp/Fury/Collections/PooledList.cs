@@ -17,11 +17,13 @@ namespace Fury.Collections;
 /// The type of elements in the list.
 /// </typeparam>
 internal sealed class PooledList<TElement>(IArrayPoolProvider poolProvider) : IList<TElement>, IDisposable
+    where TElement : class
 {
     private static readonly bool NeedClear = TypeHelper<TElement>.IsReferenceOrContainsReferences;
 
-    private readonly ArrayPool<TElement> _pool = poolProvider.GetArrayPool<TElement>();
-    private TElement[] _elements = [];
+    // Use object instead of TElement to improve possibility of reusing pooled objects.
+    private readonly ArrayPool<object> _pool = poolProvider.GetArrayPool<object>();
+    private object[] _elements = [];
     public int Count { get; private set; }
 
     public Enumerator GetEnumerator() => new(this);
@@ -124,7 +126,7 @@ internal sealed class PooledList<TElement>(IArrayPoolProvider poolProvider) : IL
         get
         {
             ThrowIfOutOfRange(index, nameof(index));
-            return _elements[index];
+            return Unsafe.As<TElement>(_elements[index]);
         }
         set
         {
@@ -162,9 +164,9 @@ internal sealed class PooledList<TElement>(IArrayPoolProvider poolProvider) : IL
             _current = 0;
         }
 
-        public TElement Current => list._elements[_current];
+        public TElement Current => Unsafe.As<TElement>(list._elements[_current]);
 
-        object? IEnumerator.Current => Current;
+        object IEnumerator.Current => Current;
 
         public void Dispose() { }
     }
