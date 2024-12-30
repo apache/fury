@@ -48,12 +48,20 @@ _METASTRING_NUM_CHARS_LIMIT = 32767
 
 class MetaString:
     def __init__(
-        self, original: str, encoding: Encoding, encoded_data: bytes, length: int
+        self,
+        original: str,
+        encoding: Encoding,
+        encoded_data: bytes,
+        length: int,
+        special_char1: str = ".",
+        special_char2: str = "|",
     ):
         self.original = original
         self.encoding = encoding
         self.encoded_data = encoded_data
         self.length = length
+        self.special_char1 = special_char1
+        self.special_char2 = special_char2
         if self.encoding != Encoding.UTF_8:
             self.strip_last_char = (encoded_data[0] & 0x80) != 0
         else:
@@ -64,6 +72,17 @@ class MetaStringDecoder:
     """
     Decodes MetaString objects back into their original plain text form.
     """
+
+    def __init__(self, special_char1: str, special_char2: str):
+        """
+        Creates a MetaStringDecoder with specified special characters used for decoding.
+
+        Args:
+            special_char1 (str): The first special character used for encoding.
+            special_char2 (str): The second special character used for encoding.
+        """
+        self.special_char1 = special_char1
+        self.special_char2 = special_char2
 
     def decode(self, encoded_data: bytes, encoding: Encoding) -> str:
         """
@@ -203,9 +222,9 @@ class MetaStringDecoder:
         elif 52 <= char_value <= 61:
             return chr(ord("0") + (char_value - 52))
         elif char_value == 62:
-            return "."
+            return self.special_char1  # Use special_char1 for the encoding
         elif char_value == 63:
-            return "_"
+            return self.special_char2  # Use special_char2 for the encoding
         else:
             raise ValueError(
                 f"Invalid character value for LOWER_UPPER_DIGIT_SPECIAL: {char_value}"
@@ -250,9 +269,16 @@ class MetaStringDecoder:
 
 
 class MetaStringEncoder:
-    """
-    Encodes plain text strings into MetaString objects with specified encoding mechanisms.
-    """
+    def __init__(self, special_char1: str, special_char2: str):
+        """
+        Creates a MetaStringEncoder with specified special characters used for encoding.
+
+        Args:
+            special_char1 (str): The first special character used in custom encoding.
+            special_char2 (str): The second special character used in custom encoding.
+        """
+        self.special_char1 = special_char1
+        self.special_char2 = special_char2
 
     def encode(self, input_string: str) -> MetaString:
         """
@@ -270,7 +296,14 @@ class MetaStringEncoder:
         ), "Long meta string than _METASTRING_NUM_CHARS_LIMIT is not allowed."
 
         if not input_string:
-            return MetaString(input_string, Encoding.UTF_8, bytes(), 0)
+            return MetaString(
+                input_string,
+                Encoding.UTF_8,
+                bytes(),
+                0,
+                self.special_char1,
+                self.special_char2,
+            )
 
         encoding = self.compute_encoding(input_string)
         return self.encode_with_encoding(input_string, encoding)
@@ -292,29 +325,67 @@ class MetaStringEncoder:
         ), "Long meta string than _METASTRING_NUM_CHARS_LIMIT is not allowed."
 
         if not input_string:
-            return MetaString(input_string, Encoding.UTF_8, bytes(), 0)
+            return MetaString(
+                input_string,
+                Encoding.UTF_8,
+                bytes(),
+                0,
+                self.special_char1,
+                self.special_char2,
+            )
 
         length = len(input_string)
         if encoding == Encoding.LOWER_SPECIAL:
             encoded_data = self._encode_lower_special(input_string)
-            return MetaString(input_string, encoding, encoded_data, length * 5)
+            return MetaString(
+                input_string,
+                encoding,
+                encoded_data,
+                length * 5,
+                self.special_char1,
+                self.special_char2,
+            )
         elif encoding == Encoding.LOWER_UPPER_DIGIT_SPECIAL:
             encoded_data = self._encode_lower_upper_digit_special(input_string)
-            return MetaString(input_string, encoding, encoded_data, length * 6)
+            return MetaString(
+                input_string,
+                encoding,
+                encoded_data,
+                length * 6,
+                self.special_char1,
+                self.special_char2,
+            )
         elif encoding == Encoding.FIRST_TO_LOWER_SPECIAL:
             encoded_data = self._encode_first_to_lower_special(input_string)
-            return MetaString(input_string, encoding, encoded_data, length * 5)
+            return MetaString(
+                input_string,
+                encoding,
+                encoded_data,
+                length * 5,
+                self.special_char1,
+                self.special_char2,
+            )
         elif encoding == Encoding.ALL_TO_LOWER_SPECIAL:
             chars = list(input_string)
             upper_count = sum(1 for c in chars if c.isupper())
             encoded_data = self._encode_all_to_lower_special(chars)
             return MetaString(
-                input_string, encoding, encoded_data, (upper_count + length) * 5
+                input_string,
+                encoding,
+                encoded_data,
+                (upper_count + length) * 5,
+                self.special_char1,
+                self.special_char2,
             )
         else:
             encoded_data = bytes(input_string, "utf-8")
             return MetaString(
-                input_string, Encoding.UTF_8, encoded_data, len(encoded_data) * 8
+                input_string,
+                Encoding.UTF_8,
+                encoded_data,
+                len(encoded_data) * 8,
+                self.special_char1,
+                self.special_char2,
             )
 
     def compute_encoding(self, input_string: str) -> Encoding:
@@ -363,7 +434,12 @@ class MetaStringEncoder:
         upper_count = 0
         for c in chars:
             if can_lower_upper_digit_special_encoded:
-                if not (c.islower() or c.isupper() or c.isdigit() or c in {".", "_"}):
+                if not (
+                    c.islower()
+                    or c.isupper()
+                    or c.isdigit()
+                    or c in {self.special_char1, self.special_char2}
+                ):
                     can_lower_upper_digit_special_encoded = False
             if can_lower_special_encoded:
                 if not (c.islower() or c in {".", "_", "$", "|"}):
@@ -465,7 +541,7 @@ class MetaStringEncoder:
         strip_last_char = len(bytes_array) * 8 >= total_bits + bits_per_char
         if strip_last_char:
             bytes_array[0] = bytes_array[0] | 0x80
-        return bytes_array
+        return bytes(bytes_array)
 
     def _char_to_value(self, c: str, bits_per_char: int) -> int:
         """
@@ -500,9 +576,9 @@ class MetaStringEncoder:
                 return 26 + (ord(c) - ord("A"))
             elif "0" <= c <= "9":
                 return 52 + (ord(c) - ord("0"))
-            elif c == ".":
+            elif c == self.special_char1:
                 return 62
-            elif c == "_":
+            elif c == self.special_char2:
                 return 63
             else:
                 raise ValueError(

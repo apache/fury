@@ -64,6 +64,12 @@ public class EnumSerializerTest extends FuryTestBase {
             .requireClassRegistration(false);
     Fury fury1 = builder.build();
     Fury fury2 = builder.build();
+    if (fury1.getLanguage() != Language.JAVA) {
+      fury1.register(EnumSerializerTest.EnumFoo.class);
+      fury2.register(EnumSerializerTest.EnumFoo.class);
+      fury1.register(EnumSerializerTest.EnumSubClass.class);
+      fury2.register(EnumSerializerTest.EnumSubClass.class);
+    }
     assertEquals(EnumFoo.A, serDe(fury1, fury2, EnumFoo.A));
     assertEquals(EnumFoo.B, serDe(fury1, fury2, EnumFoo.B));
     assertEquals(EnumSubClass.A, serDe(fury1, fury2, EnumSubClass.A));

@@ -27,7 +27,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.annotation.concurrent.NotThreadSafe;
@@ -53,10 +52,10 @@ import org.apache.fury.resolver.MetaStringResolver;
 import org.apache.fury.resolver.NoRefResolver;
 import org.apache.fury.resolver.RefResolver;
 import org.apache.fury.resolver.SerializationContext;
+import org.apache.fury.resolver.XtypeResolver;
 import org.apache.fury.serializer.ArraySerializers;
 import org.apache.fury.serializer.BufferCallback;
 import org.apache.fury.serializer.BufferObject;
-import org.apache.fury.serializer.OpaqueObjects;
 import org.apache.fury.serializer.PrimitiveSerializers.LongSerializer;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.serializer.SerializerFactory;
@@ -64,7 +63,7 @@ import org.apache.fury.serializer.StringSerializer;
 import org.apache.fury.serializer.collection.CollectionSerializers.ArrayListSerializer;
 import org.apache.fury.serializer.collection.MapSerializers.HashMapSerializer;
 import org.apache.fury.type.Generics;
-import org.apache.fury.type.Type;
+import org.apache.fury.type.Types;
 import org.apache.fury.util.ExceptionUtils;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.StringUtils;
@@ -90,8 +89,7 @@ public final class Fury implements BaseFury {
   public static final byte NOT_NULL_VALUE_FLAG = -1;
   // this flag indicates that the object is a referencable and first write.
   public static final byte REF_VALUE_FLAG = 0;
-  public static final byte NOT_SUPPORT_CROSS_LANGUAGE = 0;
-  public static final short FURY_TYPE_TAG_ID = Type.FURY_TYPE_TAG.getId();
+  public static final byte NOT_SUPPORT_XLANG = 0;
   private static final byte isNilFlag = 1;
   private static final byte isLittleEndianFlag = 1 << 1;
   private static final byte isCrossLanguageFlag = 1 << 2;
@@ -105,12 +103,12 @@ public final class Fury implements BaseFury {
   private final boolean shareMeta;
   private final RefResolver refResolver;
   private final ClassResolver classResolver;
+  private final XtypeResolver xtypeResolver;
   private final MetaStringResolver metaStringResolver;
   private final SerializationContext serializationContext;
   private final ClassLoader classLoader;
   private final JITContext jitContext;
   private MemoryBuffer buffer;
-  private final List<Object> nativeObjects;
   private final StringSerializer stringSerializer;
   private final ArrayListSerializer arrayListSerializer;
   private final HashMapSerializer hashMapSerializer;
@@ -144,13 +142,17 @@ public final class Fury implements BaseFury {
       this.refResolver = new NoRefResolver();
     }
     jitContext = new JITContext(this);
+    generics = new Generics(this);
     metaStringResolver = new MetaStringResolver();
     classResolver = new ClassResolver(this);
     classResolver.initialize();
+    if (language != Language.JAVA) {
+      xtypeResolver = new XtypeResolver(this);
+    } else {
+      xtypeResolver = null;
+    }
     serializationContext = new SerializationContext(config);
     this.classLoader = classLoader;
-    nativeObjects = new ArrayList<>();
-    generics = new Generics(this);
     stringSerializer = new StringSerializer(this);
     arrayListSerializer = new ArrayListSerializer(this);
     hashMapSerializer = new HashMapSerializer(this);
@@ -161,42 +163,82 @@ public final class Fury implements BaseFury {
 
   @Override
   public void register(Class<?> cls) {
-    classResolver.register(cls);
+    if (language == Language.JAVA) {
+      classResolver.register(cls);
+    } else {
+      xtypeResolver.register(cls);
+    }
+  }
+
+  @Override
+  public void register(Class<?> cls, int id) {
+    if (language == Language.JAVA) {
+      classResolver.register(cls, id);
+    } else {
+      xtypeResolver.register(cls, id);
+    }
   }
 
   @Override
   public void register(Class<?> cls, boolean createSerializer) {
-    classResolver.register(cls, createSerializer);
+    if (language == Language.JAVA) {
+      classResolver.register(cls, createSerializer);
+    } else {
+      xtypeResolver.register(cls);
+    }
   }
 
   @Override
-  public void register(Class<?> cls, Short id) {
-    classResolver.register(cls, id);
-  }
-
-  @Override
-  public void register(Class<?> cls, Short id, boolean createSerializer) {
-    classResolver.register(cls, id, createSerializer);
+  public void register(Class<?> cls, int id, boolean createSerializer) {
+    if (language == Language.JAVA) {
+      classResolver.register(cls, id, createSerializer);
+    } else {
+      xtypeResolver.register(cls, id);
+    }
   }
 
   /** register class with given type tag which will be used for cross-language serialization. */
-  public void register(Class<?> cls, String typeTag) {
-    classResolver.register(cls, typeTag);
+  public void register(Class<?> cls, String typeName) {
+    Preconditions.checkArgument(language != Language.JAVA);
+    int idx = typeName.lastIndexOf('.');
+    String namespace = "";
+    if (idx > 0) {
+      namespace = typeName.substring(0, idx);
+      typeName = typeName.substring(idx + 1);
+    }
+    register(cls, namespace, typeName);
+  }
+
+  public void register(Class<?> cls, String namespace, String typeName) {
+    Preconditions.checkArgument(language != Language.JAVA);
+    xtypeResolver.register(cls, namespace, typeName);
   }
 
   @Override
   public <T> void registerSerializer(Class<T> type, Class<? extends Serializer> serializerClass) {
-    classResolver.registerSerializer(type, serializerClass);
+    if (language == Language.JAVA) {
+      classResolver.registerSerializer(type, serializerClass);
+    } else {
+      xtypeResolver.registerSerializer(type, serializerClass);
+    }
   }
 
   @Override
   public void registerSerializer(Class<?> type, Serializer<?> serializer) {
-    classResolver.registerSerializer(type, serializer);
+    if (language == Language.JAVA) {
+      classResolver.registerSerializer(type, serializer);
+    } else {
+      xtypeResolver.registerSerializer(type, serializer);
+    }
   }
 
   @Override
   public void registerSerializer(Class<?> type, Function<Fury, Serializer<?>> serializerCreator) {
-    classResolver.registerSerializer(type, serializerCreator.apply(this));
+    if (language == Language.JAVA) {
+      classResolver.registerSerializer(type, serializerCreator.apply(this));
+    } else {
+      xtypeResolver.registerSerializer(type, serializerCreator.apply(this));
+    }
   }
 
   @Override
@@ -206,6 +248,15 @@ public final class Fury implements BaseFury {
 
   public SerializerFactory getSerializerFactory() {
     return classResolver.getSerializerFactory();
+  }
+
+  public <T> Serializer<T> getSerializer(Class<T> cls) {
+    Preconditions.checkNotNull(cls);
+    if (language == Language.JAVA) {
+      return classResolver.getSerializer(cls);
+    } else {
+      return xtypeResolver.getClassInfo(cls).getSerializer();
+    }
   }
 
   @Override
@@ -268,7 +319,7 @@ public final class Fury implements BaseFury {
         write(buffer, obj);
       } else {
         buffer.writeByte((byte) Language.JAVA.ordinal());
-        xserializeInternal(buffer, obj);
+        xwriteRef(buffer, obj);
       }
       return buffer;
     } catch (StackOverflowError t) {
@@ -336,8 +387,9 @@ public final class Fury implements BaseFury {
 
   private void write(MemoryBuffer buffer, Object obj) {
     int startOffset = buffer.writerIndex();
+    boolean shareMeta = config.isMetaShareEnabled();
     if (shareMeta) {
-      buffer.writeInt32(-1); // preserve 4-byte for nativeObjects start offsets.
+      buffer.writeInt32(-1); // preserve 4-byte for meta start offsets.
     }
     // reduce caller stack
     if (!refResolver.writeRefOrNull(buffer, obj)) {
@@ -349,22 +401,6 @@ public final class Fury implements BaseFury {
     if (shareMeta && metaContext != null && !metaContext.writingClassDefs.isEmpty()) {
       buffer.putInt32(startOffset, buffer.writerIndex() - startOffset - 4);
       classResolver.writeClassDefs(buffer);
-    }
-  }
-
-  private void xserializeInternal(MemoryBuffer buffer, Object obj) {
-    int startOffset = buffer.writerIndex();
-    buffer.writeInt32(-1); // preserve 4-byte for nativeObjects start offsets.
-    buffer.writeInt32(-1); // preserve 4-byte for nativeObjects size
-    xwriteRef(buffer, obj);
-    buffer.putInt32(startOffset, buffer.writerIndex());
-    buffer.putInt32(startOffset + 4, nativeObjects.size());
-    refResolver.resetWrite();
-    // fury write opaque object classname which cause later write of classname only write an id.
-    classResolver.resetWrite();
-    metaStringResolver.resetWrite();
-    for (Object nativeObject : nativeObjects) {
-      writeRef(buffer, nativeObject);
     }
   }
 
@@ -475,72 +511,63 @@ public final class Fury implements BaseFury {
     depth--;
   }
 
-  public <T> void writeNonRef(MemoryBuffer buffer, T obj, Serializer<T> serializer) {
-    depth++;
-    serializer.write(buffer, obj);
-    depth--;
-  }
-
   public void xwriteRef(MemoryBuffer buffer, Object obj) {
     if (!refResolver.writeRefOrNull(buffer, obj)) {
-      xwriteNonRef(buffer, obj, null);
+      ClassInfo classInfo = xtypeResolver.writeClassInfo(buffer, obj);
+      switch (classInfo.getXtypeId()) {
+        case Types.BOOL:
+          buffer.writeBoolean((Boolean) obj);
+          break;
+        case Types.INT8:
+          buffer.writeByte((Byte) obj);
+          break;
+        case Types.INT16:
+          buffer.writeInt16((Short) obj);
+          break;
+        case Types.INT32:
+        case Types.VAR_INT32:
+          // TODO(chaokunyang) support other encoding
+          buffer.writeVarInt32((Integer) obj);
+          break;
+        case Types.INT64:
+        case Types.VAR_INT64:
+          // TODO(chaokunyang) support other encoding
+        case Types.SLI_INT64:
+          // TODO(chaokunyang) support varint encoding
+          buffer.writeVarInt64((Long) obj);
+          break;
+        case Types.FLOAT32:
+          buffer.writeFloat32((Float) obj);
+          break;
+        case Types.FLOAT64:
+          buffer.writeFloat64((Double) obj);
+          break;
+          // TODO(add fastpath for other types)
+        default:
+          depth++;
+          classInfo.getSerializer().xwrite(buffer, obj);
+          depth--;
+      }
     }
   }
 
   public <T> void xwriteRef(MemoryBuffer buffer, T obj, Serializer<T> serializer) {
     if (serializer.needToWriteRef()) {
       if (!refResolver.writeRefOrNull(buffer, obj)) {
-        xwriteNonRef(buffer, obj, serializer);
+        depth++;
+        serializer.xwrite(buffer, obj);
+        depth--;
       }
     } else {
       if (obj == null) {
         buffer.writeByte(Fury.NULL_FLAG);
       } else {
         buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
-        xwriteNonRef(buffer, obj, serializer);
+        depth++;
+        serializer.xwrite(buffer, obj);
+        depth--;
       }
     }
-  }
-
-  public <T> void xwriteRefByNullableSerializer(
-      MemoryBuffer buffer, T obj, Serializer<T> serializer) {
-    if (serializer == null) {
-      xwriteRef(buffer, obj);
-    } else {
-      xwriteRef(buffer, obj, serializer);
-    }
-  }
-
-  public <T> void xwriteNonRef(MemoryBuffer buffer, T obj, Serializer<T> serializer) {
-    depth++;
-    @SuppressWarnings("unchecked")
-    Class<T> cls = (Class<T>) obj.getClass();
-    if (serializer == null) {
-      serializer = classResolver.getSerializer(cls);
-    }
-    short typeId = serializer.getXtypeId();
-    buffer.writeInt16(typeId);
-    if (typeId != NOT_SUPPORT_CROSS_LANGUAGE) {
-      if (typeId == FURY_TYPE_TAG_ID) {
-        classResolver.xwriteTypeTag(buffer, cls);
-      }
-      if (typeId < NOT_SUPPORT_CROSS_LANGUAGE) {
-        classResolver.xwriteClass(buffer, cls);
-      }
-      serializer.xwrite(buffer, obj);
-    } else {
-      // Write classname so it can be used for debugging which object doesn't support
-      // cross-language.
-      // TODO add a config to disable this to reduce space cost.
-      classResolver.xwriteClass(buffer, cls);
-      // serializer may increase reference id multi times internally, thus peer cross-language later
-      // fields/objects deserialization will use wrong reference id since we skip opaque objects
-      // deserialization.
-      // So we stash native objects and serialize all those object at the last.
-      buffer.writeVarUint32(nativeObjects.size());
-      nativeObjects.add(obj);
-    }
-    depth--;
   }
 
   /** Write not null data to buffer. */
@@ -713,6 +740,17 @@ public final class Fury implements BaseFury {
     return deserialize(MemoryUtils.wrap(bytes), null);
   }
 
+  @SuppressWarnings("unchecked")
+  @Override
+  public <T> T deserialize(byte[] bytes, Class<T> type) {
+    generics.pushGenericType(classResolver.buildGenericType(type));
+    try {
+      return (T) deserialize(MemoryUtils.wrap(bytes), null);
+    } finally {
+      generics.popGenericType();
+    }
+  }
+
   @Override
   public Object deserialize(byte[] bytes, Iterable<MemoryBuffer> outOfBandBuffers) {
     return deserialize(MemoryUtils.wrap(bytes), outOfBandBuffers);
@@ -784,7 +822,7 @@ public final class Fury implements BaseFury {
       }
       Object obj;
       if (isTargetXLang) {
-        obj = xdeserializeInternal(buffer);
+        obj = xreadRef(buffer);
       } else {
         if (shareMeta) {
           readClassDefs(buffer);
@@ -827,28 +865,6 @@ public final class Fury implements BaseFury {
   public Object deserialize(FuryReadableChannel channel, Iterable<MemoryBuffer> outOfBandBuffers) {
     MemoryBuffer buf = channel.getBuffer();
     return deserialize(buf, outOfBandBuffers);
-  }
-
-  private Object xdeserializeInternal(MemoryBuffer buffer) {
-    Object obj;
-    int nativeObjectsStartOffset = buffer.readInt32();
-    int nativeObjectsSize = buffer.readInt32();
-    int endReaderIndex = nativeObjectsStartOffset;
-    if (peerLanguage == Language.JAVA) {
-      int readerIndex = buffer.readerIndex();
-      buffer.readerIndex(nativeObjectsStartOffset);
-      for (int i = 0; i < nativeObjectsSize; i++) {
-        nativeObjects.add(readRef(buffer));
-      }
-      endReaderIndex = buffer.readerIndex();
-      buffer.readerIndex(readerIndex);
-      refResolver.resetRead();
-      classResolver.resetRead();
-      metaStringResolver.resetRead();
-    }
-    obj = xreadRef(buffer);
-    buffer.readerIndex(endReaderIndex);
-    return obj;
   }
 
   /** Deserialize nullable referencable object from <code>buffer</code>. */
@@ -965,7 +981,7 @@ public final class Fury implements BaseFury {
     RefResolver refResolver = this.refResolver;
     int nextReadRefId = refResolver.tryPreserveRefId(buffer);
     if (nextReadRefId >= NOT_NULL_VALUE_FLAG) {
-      Object o = xreadNonRef(buffer, null);
+      Object o = xreadNonRef(buffer, xtypeResolver.readClassInfo(buffer));
       refResolver.setReadObject(nextReadRefId, o);
       return o;
     } else {
@@ -994,52 +1010,41 @@ public final class Fury implements BaseFury {
     }
   }
 
-  public Object xreadRefByNullableSerializer(MemoryBuffer buffer, Serializer<?> serializer) {
-    if (serializer == null) {
-      return xreadRef(buffer);
-    } else {
-      return xreadRef(buffer, serializer);
-    }
-  }
-
   public Object xreadNonRef(MemoryBuffer buffer, Serializer<?> serializer) {
     depth++;
-    short typeId = buffer.readInt16();
-    ClassResolver classResolver = this.classResolver;
-    if (typeId != NOT_SUPPORT_CROSS_LANGUAGE) {
-      Class<?> cls = null;
-      if (typeId == FURY_TYPE_TAG_ID) {
-        cls = classResolver.readClassByTypeTag(buffer);
-      }
-      if (typeId < NOT_SUPPORT_CROSS_LANGUAGE) {
-        if (peerLanguage != Language.JAVA) {
-          classResolver.xreadClassName(buffer);
-          cls = classResolver.getClassByTypeId((short) -typeId);
-        } else {
-          cls = classResolver.xreadClass(buffer);
-        }
-      } else {
-        if (typeId != FURY_TYPE_TAG_ID) {
-          cls = classResolver.getClassByTypeId(typeId);
-        }
-      }
-      Preconditions.checkNotNull(cls);
-      if (serializer == null) {
-        serializer = classResolver.getSerializer(cls);
-      }
-      // TODO check serializer consistent with `classResolver.getSerializer(cls)` when serializer
-      // not null;
-      Object o = serializer.xread(buffer);
-      depth--;
-      return o;
-    } else {
-      String className = classResolver.xreadClassName(buffer);
-      int ordinal = buffer.readVarUint32();
-      if (peerLanguage != Language.JAVA) {
-        return OpaqueObjects.of(peerLanguage, className, ordinal);
-      } else {
-        return nativeObjects.get(ordinal);
-      }
+    Object o = serializer.xread(buffer);
+    depth--;
+    return o;
+  }
+
+  public Object xreadNonRef(MemoryBuffer buffer, ClassInfo classInfo) {
+    assert classInfo != null;
+    switch (classInfo.getXtypeId()) {
+      case Types.BOOL:
+        return buffer.readBoolean();
+      case Types.INT8:
+        return buffer.readByte();
+      case Types.INT16:
+        return buffer.readInt16();
+      case Types.INT32:
+      case Types.VAR_INT32:
+        // TODO(chaokunyang) support other encoding
+        return buffer.readVarInt32();
+      case Types.INT64:
+      case Types.VAR_INT64:
+        // TODO(chaokunyang) support other encoding
+      case Types.SLI_INT64:
+        return buffer.readVarInt64();
+      case Types.FLOAT32:
+        return buffer.readFloat32();
+      case Types.FLOAT64:
+        return buffer.readFloat64();
+        // TODO(add fastpath for other types)
+      default:
+        depth++;
+        Object o = classInfo.getSerializer().xread(buffer);
+        depth--;
+        return o;
     }
   }
 
@@ -1062,7 +1067,7 @@ public final class Fury implements BaseFury {
       }
       if (config.isMetaShareEnabled()) {
         int startOffset = buffer.writerIndex();
-        buffer.writeInt32(-1); // preserve 4-byte for nativeObjects start offsets.
+        buffer.writeInt32(-1); // preserve 4-byte for meta start offsets.
         if (!refResolver.writeRefOrNull(buffer, obj)) {
           ClassInfo classInfo = classResolver.getOrUpdateClassInfo(obj.getClass());
           writeData(buffer, classInfo, obj);
@@ -1458,7 +1463,6 @@ public final class Fury implements BaseFury {
     classResolver.reset();
     metaStringResolver.reset();
     serializationContext.reset();
-    nativeObjects.clear();
     peerOutOfBandEnabled = false;
     bufferCallback = null;
     depth = 0;
@@ -1470,7 +1474,6 @@ public final class Fury implements BaseFury {
     classResolver.resetWrite();
     metaStringResolver.resetWrite();
     serializationContext.resetWrite();
-    nativeObjects.clear();
     bufferCallback = null;
     depth = 0;
   }
@@ -1480,7 +1483,6 @@ public final class Fury implements BaseFury {
     classResolver.resetRead();
     metaStringResolver.resetRead();
     serializationContext.resetRead();
-    nativeObjects.clear();
     peerOutOfBandEnabled = false;
     depth = 0;
     classDefEndOffset = -1;
@@ -1525,6 +1527,10 @@ public final class Fury implements BaseFury {
 
   public ClassResolver getClassResolver() {
     return classResolver;
+  }
+
+  public XtypeResolver getXtypeResolver() {
+    return xtypeResolver;
   }
 
   public MetaStringResolver getMetaStringResolver() {

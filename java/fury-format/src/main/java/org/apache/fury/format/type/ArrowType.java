@@ -17,12 +17,12 @@
  * under the License.
  */
 
-package org.apache.fury.type;
+package org.apache.fury.format.type;
 
 import org.apache.fury.util.Preconditions;
 
 /** Keep in sync with Type::type in arrow/type_fwd.h */
-public enum Type {
+public enum ArrowType {
   /// A NULL type having no physical storage
   NA, // NA = 0
 
@@ -164,12 +164,12 @@ public enum Type {
 
   private short id;
 
-  Type() {
+  ArrowType() {
     Preconditions.checkArgument(ordinal() < Short.MAX_VALUE);
     this.id = (short) ordinal();
   }
 
-  Type(int id) {
+  ArrowType(int id) {
     Preconditions.checkArgument(id < Short.MAX_VALUE && id >= 0);
     this.id = (short) id;
   }

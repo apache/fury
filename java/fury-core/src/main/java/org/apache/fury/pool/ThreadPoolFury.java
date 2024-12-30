@@ -139,6 +139,11 @@ public class ThreadPoolFury extends AbstractThreadSafeFury {
   }
 
   @Override
+  public <T> T deserialize(byte[] bytes, Class<T> type) {
+    return execute(fury -> fury.deserialize(bytes, type));
+  }
+
+  @Override
   public Object deserialize(byte[] bytes, Iterable<MemoryBuffer> outOfBandBuffers) {
     return execute(fury -> fury.deserialize(bytes, outOfBandBuffers));
   }

@@ -52,26 +52,30 @@ public class ArraySerializersTest extends FuryTestBase {
             .requireClassRegistration(false);
     Fury fury1 = builder.build();
     Fury fury2 = builder.build();
-    serDeCheck(fury1, fury2, new Object[] {false, true});
-    serDeCheck(fury1, fury2, new Object[] {(byte) 1, (byte) 1});
-    serDeCheck(fury1, fury2, new Object[] {(short) 1, (short) 1});
-    serDeCheck(fury1, fury2, new Object[] {(char) 1, (char) 1});
-    serDeCheck(fury1, fury2, new Object[] {1, 1});
-    serDeCheck(fury1, fury2, new Object[] {(float) 1.0, (float) 1.1});
-    serDeCheck(fury1, fury2, new Object[] {1.0, 1.1});
-    serDeCheck(fury1, fury2, new Object[] {1L, 2L});
-    serDeCheck(fury1, fury2, new Boolean[] {false, true});
-    serDeCheck(fury1, fury2, new Byte[] {(byte) 1, (byte) 1});
-    serDeCheck(fury1, fury2, new Short[] {(short) 1, (short) 1});
-    serDeCheck(fury1, fury2, new Character[] {(char) 1, (char) 1});
-    serDeCheck(fury1, fury2, new Integer[] {1, 1});
-    serDeCheck(fury1, fury2, new Float[] {(float) 1.0, (float) 1.1});
-    serDeCheck(fury1, fury2, new Double[] {1.0, 1.1});
-    serDeCheck(fury1, fury2, new Long[] {1L, 2L});
-    serDeCheck(
+    serDeCheckTyped(fury1, fury2, new Object[] {false, true});
+    serDeCheckTyped(fury1, fury2, new Object[] {(byte) 1, (byte) 1});
+    serDeCheckTyped(fury1, fury2, new Object[] {(short) 1, (short) 1});
+    if (language == Language.JAVA) {
+      serDeCheckTyped(fury1, fury2, new Object[] {(char) 1, (char) 1});
+    }
+    serDeCheckTyped(fury1, fury2, new Object[] {1, 1});
+    serDeCheckTyped(fury1, fury2, new Object[] {(float) 1.0, (float) 1.1});
+    serDeCheckTyped(fury1, fury2, new Object[] {1.0, 1.1});
+    serDeCheckTyped(fury1, fury2, new Object[] {1L, 2L});
+    serDeCheckTyped(fury1, fury2, new Boolean[] {false, true});
+    serDeCheckTyped(fury1, fury2, new Byte[] {(byte) 1, (byte) 1});
+    serDeCheckTyped(fury1, fury2, new Short[] {(short) 1, (short) 1});
+    if (language == Language.JAVA) {
+      serDeCheckTyped(fury1, fury2, new Character[] {(char) 1, (char) 1});
+    }
+    serDeCheckTyped(fury1, fury2, new Integer[] {1, 1});
+    serDeCheckTyped(fury1, fury2, new Float[] {(float) 1.0, (float) 1.1});
+    serDeCheckTyped(fury1, fury2, new Double[] {1.0, 1.1});
+    serDeCheckTyped(fury1, fury2, new Long[] {1L, 2L});
+    serDeCheckTyped(
         fury1, fury2, new Object[] {false, true, (byte) 1, (byte) 1, (float) 1.0, (float) 1.1});
-    serDeCheck(fury1, fury2, new String[] {"str", "str"});
-    serDeCheck(fury1, fury2, new Object[] {"str", 1});
+    serDeCheckTyped(fury1, fury2, new String[] {"str", "str"});
+    serDeCheckTyped(fury1, fury2, new Object[] {"str", 1});
   }
 
   @Test(dataProvider = "furyCopyConfig")
@@ -106,15 +110,15 @@ public class ArraySerializersTest extends FuryTestBase {
             .requireClassRegistration(false);
     Fury fury1 = builder.build();
     Fury fury2 = builder.build();
-    serDeCheck(fury1, fury2, new Object[][] {{false, true}, {false, true}});
-    serDeCheck(
+    serDeCheckTyped(fury1, fury2, new Object[][] {{false, true}, {false, true}});
+    serDeCheckTyped(
         fury1,
         fury2,
         new Object[][] {
           {false, true, (byte) 1, (byte) 1, (float) 1.0, (float) 1.1},
           {false, true, (byte) 1, (byte) 1, (float) 1.0, (float) 1.1}
         });
-    serDeCheck(fury1, fury2, new Integer[][] {{1, 2}, {1, 2}});
+    serDeCheckTyped(fury1, fury2, new Integer[][] {{1, 2}, {1, 2}});
   }
 
   @Test(dataProvider = "furyCopyConfig")

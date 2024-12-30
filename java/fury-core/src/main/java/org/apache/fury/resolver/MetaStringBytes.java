@@ -65,6 +65,7 @@ public final class MetaStringBytes {
     byte[] bytes = metaString.getBytes();
     // Set seed to ensure hash is deterministic.
     long hashCode = MurmurHash3.murmurhash3_x64_128(bytes, 0, bytes.length, 47)[0];
+    hashCode = Math.abs(hashCode);
     if (hashCode == 0) {
       // Ensure hashcode is not 0, so we can do some optimization to avoid boxing.
       hashCode += 256; // last byte is reserved for header.

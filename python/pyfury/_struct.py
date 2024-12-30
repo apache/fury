@@ -19,7 +19,6 @@ import datetime
 import logging
 import typing
 
-from pyfury._serializer import NOT_SUPPORT_CROSS_LANGUAGE
 from pyfury.buffer import Buffer
 from pyfury.error import ClassNotCompatibleError
 from pyfury.serializer import (
@@ -31,7 +30,7 @@ from pyfury.serializer import (
 from pyfury.type import (
     TypeVisitor,
     infer_field,
-    FuryType,
+    TypeId,
     Int8Type,
     Int16Type,
     Int32Type,
@@ -40,7 +39,6 @@ from pyfury.type import (
     Float64Type,
     is_py_array_type,
     compute_string_hash,
-    qualified_class_name,
 )
 
 logger = logging.getLogger(__name__)
@@ -103,9 +101,8 @@ def _get_hash(fury, field_names: list, type_hints: dict):
 
 
 class ComplexObjectSerializer(Serializer):
-    def __init__(self, fury, clz: type, type_tag: str):
+    def __init__(self, fury, clz):
         super().__init__(fury, clz)
-        self._type_tag = type_tag
         self._type_hints = typing.get_type_hints(clz)
         self._field_names = sorted(self._type_hints.keys())
         self._serializers = [None] * len(self._field_names)
@@ -122,12 +119,6 @@ class ComplexObjectSerializer(Serializer):
                 clz,
             )
         self._hash = 0
-
-    def get_xtype_id(self):
-        return FuryType.FURY_TYPE_TAG.value
-
-    def get_xtype_tag(self):
-        return self._type_tag
 
     def write(self, buffer, value):
         return self.xwrite(buffer, value)
@@ -176,31 +167,32 @@ class StructHashVisitor(TypeVisitor):
 
     def visit_list(self, field_name, elem_type, types_path=None):
         # TODO add list element type to hash.
-        id_ = abs(ListSerializer(self.fury, list).get_xtype_id())
-        self._hash = self._compute_field_hash(self._hash, id_)
+        xtype_id = self.fury.class_resolver.get_classinfo(list).type_id
+        self._hash = self._compute_field_hash(self._hash, abs(xtype_id))
 
     def visit_dict(self, field_name, key_type, value_type, types_path=None):
         # TODO add map key/value type to hash.
-        id_ = abs(MapSerializer(self.fury, dict).get_xtype_id())
-        self._hash = self._compute_field_hash(self._hash, id_)
+        xtype_id = self.fury.class_resolver.get_classinfo(dict).type_id
+        self._hash = self._compute_field_hash(self._hash, abs(xtype_id))
 
     def visit_customized(self, field_name, type_, types_path=None):
-        serializer = self.fury.class_resolver.get_serializer(type_)
-        if serializer.get_xtype_id() != NOT_SUPPORT_CROSS_LANGUAGE:
-            tag = serializer.get_xtype_tag()
-        else:
-            tag = qualified_class_name(type_)
-        tag_hash = compute_string_hash(tag)
-        self._hash = self._compute_field_hash(self._hash, tag_hash)
+        classinfo = self.fury.class_resolver.get_classinfo(type_, create=False)
+        if classinfo is None:
+            return
+        hash_value = classinfo.type_id
+        if TypeId.is_namespaced_type(classinfo.type_id):
+            hash_value = compute_string_hash(classinfo.namespace + classinfo.typename)
+        self._hash = self._compute_field_hash(self._hash, hash_value)
 
     def visit_other(self, field_name, type_, types_path=None):
-        if type_ not in basic_types and not is_py_array_type(type_):
-            # FIXME ignore unknown types for hash calculation
-            return None
-        serializer = self.fury.class_resolver.get_serializer(type_)
-        assert not isinstance(serializer, (PickleSerializer,))
-        id_ = serializer.get_xtype_id()
-        assert id_ is not None, serializer
+        classinfo = self.fury.class_resolver.get_classinfo(type_, create=False)
+        if classinfo is None:
+            id_ = 0
+        else:
+            serializer = classinfo.serializer
+            assert not isinstance(serializer, (PickleSerializer,))
+            id_ = classinfo.type_id
+            assert id_ is not None, serializer
         id_ = abs(id_)
         self._hash = self._compute_field_hash(self._hash, id_)
 

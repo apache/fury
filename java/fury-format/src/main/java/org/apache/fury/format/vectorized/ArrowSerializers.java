@@ -31,6 +31,7 @@ import org.apache.arrow.vector.ipc.message.ArrowRecordBatch;
 import org.apache.arrow.vector.ipc.message.IpcOption;
 import org.apache.arrow.vector.ipc.message.MessageSerializer;
 import org.apache.fury.Fury;
+import org.apache.fury.config.Language;
 import org.apache.fury.io.MemoryBufferReadableChannel;
 import org.apache.fury.io.MemoryBufferWritableChannel;
 import org.apache.fury.io.MockWritableChannel;
@@ -39,7 +40,7 @@ import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.memory.Platform;
 import org.apache.fury.serializer.BufferObject;
 import org.apache.fury.serializer.Serializers.CrossLanguageCompatibleSerializer;
-import org.apache.fury.type.Type;
+import org.apache.fury.type.Types;
 
 /** Serializers for apache arrow. */
 public class ArrowSerializers {
@@ -57,7 +58,7 @@ public class ArrowSerializers {
     }
 
     public VectorSchemaRootSerializer(Fury fury, BufferAllocator allocator) {
-      super(fury, VectorSchemaRoot.class, Type.FURY_ARROW_RECORD_BATCH.getId());
+      super(fury, VectorSchemaRoot.class);
       this.allocator = allocator;
     }
 
@@ -166,6 +167,10 @@ public class ArrowSerializers {
   }
 
   public static void registerSerializers(Fury fury) {
+    if (fury.getLanguage() != Language.JAVA) {
+      fury.register(ArrowTable.class, Types.ARROW_TABLE);
+      fury.register(VectorSchemaRoot.class, Types.ARROW_RECORD_BATCH);
+    }
     fury.registerSerializer(ArrowTable.class, new ArrowTableSerializer(fury));
     fury.registerSerializer(VectorSchemaRoot.class, new VectorSchemaRootSerializer(fury));
   }
