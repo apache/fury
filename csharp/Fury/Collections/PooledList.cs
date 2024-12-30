@@ -108,7 +108,10 @@ internal sealed class PooledList<TElement>(IArrayPoolProvider poolProvider) : IL
     {
         ThrowIfOutOfRange(index, nameof(index));
 
-        Array.Copy(_elements, index + 1, _elements, index, Count - index - 1);
+        if (index < Count - 1)
+        {
+            Array.Copy(_elements, index + 1, _elements, index, Count - index - 1);
+        }
         Count--;
         if (NeedClear)
         {
