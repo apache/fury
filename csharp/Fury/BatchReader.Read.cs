@@ -98,10 +98,7 @@ public sealed partial class BatchReader
             // Fast path
             Span<char> stringBuffer = stackalloc char[byteCount];
             writtenChars = ReadStringCommon(decoder, byteSequence, stringBuffer);
-            fixed (char* pChars = stringBuffer)
-            {
-                result = new string(pChars, 0, writtenChars);
-            }
+            result = stringBuffer.Slice(0, writtenChars).ToString();
         }
         else
         {
