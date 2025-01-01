@@ -2,9 +2,12 @@
 
 namespace Fury.Meta;
 
-internal sealed class Utf8Encoding(char specialChar1, char specialChar2)
-    : MetaStringEncoding(specialChar1, specialChar2, MetaString.Encoding.Utf8)
+internal sealed class Utf8Encoding() : MetaStringEncoding(MetaString.Encoding.Utf8)
 {
+    public static readonly Utf8Encoding Instance = new();
+
+    public override bool CanEncode(ReadOnlySpan<char> chars) => true;
+
     public override int GetMaxByteCount(int charCount) => UTF8.GetMaxByteCount(charCount);
 
     public override int GetMaxCharCount(int byteCount) => UTF8.GetMaxCharCount(byteCount);

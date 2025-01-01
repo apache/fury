@@ -3,22 +3,15 @@ using System.Text;
 
 namespace Fury.Meta;
 
-internal abstract class MetaStringEncoding(char specialChar1, char specialChar2, MetaString.Encoding encoding)
+internal abstract class MetaStringEncoding(MetaString.Encoding encoding)
     : Encoding
 {
     protected const int BitsOfByte = sizeof(byte) * 8;
     protected const int NumberOfEnglishLetters = 26;
 
-    protected readonly char SpecialChar1 = specialChar1;
-    protected readonly char SpecialChar2 = specialChar2;
-
     public MetaString.Encoding Encoding { get; } = encoding;
 
-    public MetaString GetMetaString(string s)
-    {
-        var bytes = GetBytes(s);
-        return new MetaString(s, Encoding, SpecialChar1, SpecialChar2, bytes);
-    }
+    public abstract bool CanEncode(ReadOnlySpan<char> chars);
 
 #if !NET8_0_OR_GREATER
     public abstract int GetByteCount(ReadOnlySpan<char> chars);

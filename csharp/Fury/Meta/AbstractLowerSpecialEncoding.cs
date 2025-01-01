@@ -2,8 +2,8 @@
 
 namespace Fury.Meta;
 
-internal abstract class AbstractLowerSpecialEncoding(char specialChar1, char specialChar2, MetaString.Encoding encoding)
-    : MetaStringEncoding(specialChar1, specialChar2, encoding)
+internal abstract class AbstractLowerSpecialEncoding(MetaString.Encoding encoding)
+    : MetaStringEncoding(encoding)
 {
     protected const int BitsPerChar = 5;
     protected const int UnusedBitsPerChar = BitsOfByte - BitsPerChar;
@@ -29,29 +29,31 @@ internal abstract class AbstractLowerSpecialEncoding(char specialChar1, char spe
         return GetMaxCharCount(bytes.Length) - (stripLastChar ? 1 : 0);
     }
 
-    protected static byte EncodeCharToByte(char c)
+    protected static bool TryEncodeCharToByte(char c, out byte b)
     {
-        return c switch
+        (var success, b) = c switch
         {
-            >= 'a' and <= 'z' => (byte)(c - 'a'),
-            '.' => NumberOfEnglishLetters,
-            '_' => NumberOfEnglishLetters + 1,
-            '$' => NumberOfEnglishLetters + 2,
-            '|' => NumberOfEnglishLetters + 3,
-            _ => ThrowHelper.ThrowArgumentException<byte>(nameof(c)),
+            >= 'a' and <= 'z' => (true, (byte)(c - 'a')),
+            '.' => (true, NumberOfEnglishLetters),
+            '_' => (true, NumberOfEnglishLetters + 1),
+            '$' => (true, NumberOfEnglishLetters + 2),
+            '|' => (true, NumberOfEnglishLetters + 3),
+            _ => (false, default)
         };
+        return success;
     }
 
-    protected static char DecodeByteToChar(byte b)
+    protected static bool TryDecodeByteToChar(byte b, out char c)
     {
-        return b switch
+        (var success, c) = b switch
         {
-            < NumberOfEnglishLetters => (char)(b + 'a'),
-            NumberOfEnglishLetters => '.',
-            NumberOfEnglishLetters + 1 => '_',
-            NumberOfEnglishLetters + 2 => '$',
-            NumberOfEnglishLetters + 3 => '|',
-            _ => ThrowHelper.ThrowArgumentException<char>(nameof(b)),
+            < NumberOfEnglishLetters => (true, (char)(b + 'a')),
+            NumberOfEnglishLetters => (true, '.'),
+            NumberOfEnglishLetters + 1 => (true, '_'),
+            NumberOfEnglishLetters + 2 => (true, '$'),
+            NumberOfEnglishLetters + 3 => (true, '|'),
+            _ => (false, default)
         };
+        return success;
     }
 }

@@ -2,11 +2,32 @@
 
 namespace Fury.Meta;
 
-internal sealed class AllToLowerSpecialEncoding(char specialChar1, char specialChar2)
-    : AbstractLowerSpecialEncoding(specialChar1, specialChar2, MetaString.Encoding.AllToLowerSpecial)
+internal sealed class AllToLowerSpecialEncoding()
+    : AbstractLowerSpecialEncoding(MetaString.Encoding.AllToLowerSpecial)
 {
+    public static readonly AllToLowerSpecialEncoding Instance = new();
+
     private const char UpperCaseFlag = '|';
-    private static readonly byte EncodedUpperCaseFlag = EncodeCharToByte(UpperCaseFlag);
+    private static readonly byte EncodedUpperCaseFlag;
+
+    static AllToLowerSpecialEncoding()
+    {
+        TryEncodeCharToByte(UpperCaseFlag, out EncodedUpperCaseFlag);
+    }
+
+    public override bool CanEncode(ReadOnlySpan<char> chars)
+    {
+        foreach (var t in chars)
+        {
+            var c = char.ToLowerInvariant(t);
+            if (!TryEncodeCharToByte(c, out _))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
 
     private static (int byteCount, bool stripLastChar) GetByteAndStripLastChar(ReadOnlySpan<char> chars)
     {
@@ -65,7 +86,10 @@ internal sealed class AllToLowerSpecialEncoding(char specialChar1, char specialC
                 currentBit += BitsPerChar;
                 c = char.ToLowerInvariant(c);
             }
-            var v = EncodeCharToByte(c);
+            if (!TryEncodeCharToByte(c, out var v))
+            {
+                ThrowHelper.ThrowArgumentOutOfRangeException(nameof(chars), chars.ToString());
+            }
             WriteBits(bytes, v, currentBit);
             currentBit += BitsPerChar;
         }
@@ -162,6 +186,11 @@ internal sealed class AllToLowerSpecialEncoding(char specialChar1, char specialC
             );
         }
 
-        return DecodeByteToChar(charByte);
+        if (!TryDecodeByteToChar(charByte, out var c))
+        {
+            ThrowHelper.ThrowArgumentOutOfRangeException(nameof(bytes));
+        }
+
+        return c;
     }
 }

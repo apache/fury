@@ -2,9 +2,32 @@
 
 namespace Fury.Meta;
 
-internal sealed class FirstToLowerSpecialEncoding(char specialChar1, char specialChar2)
-    : AbstractLowerSpecialEncoding(specialChar1, specialChar2, MetaString.Encoding.FirstToLowerSpecial)
+internal sealed class FirstToLowerSpecialEncoding()
+    : AbstractLowerSpecialEncoding(MetaString.Encoding.FirstToLowerSpecial)
 {
+    public static readonly FirstToLowerSpecialEncoding Instance = new();
+
+    public override bool CanEncode(ReadOnlySpan<char> chars)
+    {
+        if (chars.Length == 0)
+        {
+            return true;
+        }
+
+        if (!TryEncodeCharToByte(char.ToLowerInvariant(chars[0]), out _))
+        {
+            return false;
+        }
+        foreach (var c in chars)
+        {
+            if (!TryEncodeCharToByte(c, out _))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public override int GetBytes(ReadOnlySpan<char> chars, Span<byte> bytes)
     {
         var (byteCount, stripLastChar) = GetByteAndStripLastChar(chars.Length);
@@ -17,7 +40,10 @@ internal sealed class FirstToLowerSpecialEncoding(char specialChar1, char specia
         {
             var firstChar = chars[0];
             firstChar = char.ToLowerInvariant(firstChar);
-            var v = EncodeCharToByte(firstChar);
+            if (!TryEncodeCharToByte(firstChar, out var v))
+            {
+                ThrowHelper.ThrowArgumentOutOfRangeException(nameof(chars), chars.ToString());
+            }
             var byteIndex = currentBit / BitsOfByte;
             var bitOffset = currentBit % BitsOfByte;
             // bitOffset locations   write locations
@@ -28,7 +54,10 @@ internal sealed class FirstToLowerSpecialEncoding(char specialChar1, char specia
         }
         foreach (var c in chars)
         {
-            var v = EncodeCharToByte(c);
+            if (!TryEncodeCharToByte(c, out var v))
+            {
+                ThrowHelper.ThrowArgumentOutOfRangeException(nameof(chars), chars.ToString());
+            }
             var byteIndex = currentBit / BitsOfByte;
             var bitOffset = currentBit % BitsOfByte;
             if (bitOffset <= UnusedBitsPerChar)
@@ -105,7 +134,11 @@ internal sealed class FirstToLowerSpecialEncoding(char specialChar1, char specia
                 );
             }
 
-            chars[i] = DecodeByteToChar(charByte);
+            if (!TryDecodeByteToChar(charByte, out var c))
+            {
+                ThrowHelper.ThrowArgumentOutOfRangeException(nameof(bytes));
+            }
+            chars[i] = c;
         }
 
         if (chars.Length > 0)

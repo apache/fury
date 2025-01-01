@@ -3,11 +3,23 @@
 namespace Fury.Meta;
 
 internal sealed class LowerUpperDigitSpecialEncoding(char specialChar1, char specialChar2)
-    : MetaStringEncoding(specialChar1, specialChar2, MetaString.Encoding.LowerUpperDigitSpecial)
+    : MetaStringEncoding(MetaString.Encoding.LowerUpperDigitSpecial)
 {
     private const int BitsPerChar = 6;
     private const int UnusedBitsPerChar = BitsOfByte - BitsPerChar;
     private const int MaxRepresentableChar = (1 << BitsPerChar) - 1;
+
+    public override bool CanEncode(ReadOnlySpan<char> chars)
+    {
+        foreach (var c in chars)
+        {
+            if (!TryEncodeCharToByte(c, out _))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
 
     private static (int byteCount, bool stripLastChar) GetByteAndStripLastChar(int charCount)
     {
@@ -39,7 +51,10 @@ internal sealed class LowerUpperDigitSpecialEncoding(char specialChar1, char spe
         var currentBit = 1;
         foreach (var c in chars)
         {
-            var v = EncodeCharToByte(c);
+            if (!TryEncodeCharToByte(c, out var b))
+            {
+                ThrowHelper.ThrowArgumentOutOfRangeException(nameof(chars), chars.ToString());
+            }
             var byteIndex = currentBit / BitsOfByte;
             var bitOffset = currentBit % BitsOfByte;
             if (bitOffset <= UnusedBitsPerChar)
@@ -49,7 +64,7 @@ internal sealed class LowerUpperDigitSpecialEncoding(char specialChar1, char spe
                 // _ x _ _ _ _ _ _       _ x x x x x x _
                 // _ _ x _ _ _ _ _       _ _ x x x x x x
 
-                bytes[byteIndex] |= (byte)(v << (UnusedBitsPerChar - bitOffset));
+                bytes[byteIndex] |= (byte)(b << (UnusedBitsPerChar - bitOffset));
             }
             else
             {
@@ -60,8 +75,8 @@ internal sealed class LowerUpperDigitSpecialEncoding(char specialChar1, char spe
                 // _ _ _ _ _ _ x _       _ _ _ _ _ _ x x | x x x x _ _ _ _
                 // _ _ _ _ _ _ _ x       _ _ _ _ _ _ _ x | x x x x x _ _ _
 
-                bytes[byteIndex] |= (byte)(v >>> (bitOffset - UnusedBitsPerChar));
-                bytes[byteIndex + 1] |= (byte)(v << (BitsOfByte + UnusedBitsPerChar - bitOffset));
+                bytes[byteIndex] |= (byte)(b >>> (bitOffset - UnusedBitsPerChar));
+                bytes[byteIndex + 1] |= (byte)(b << (BitsOfByte + UnusedBitsPerChar - bitOffset));
             }
             currentBit += BitsPerChar;
         }
@@ -116,49 +131,53 @@ internal sealed class LowerUpperDigitSpecialEncoding(char specialChar1, char spe
                 );
             }
 
-            chars[i] = DecodeByteToChar(charByte);
+            if (!TryDecodeByteToChar(charByte, out var c))
+            {
+                ThrowHelper.ThrowArgumentOutOfRangeException(nameof(bytes));
+            }
+            chars[i] = c;
         }
 
         return charCount;
     }
 
-    private byte EncodeCharToByte(char c)
+    private bool TryEncodeCharToByte(char c, out byte b)
     {
-        byte v;
-        if (c == SpecialChar1)
+        var success = true;
+        if (c == specialChar1)
         {
-            v = MaxRepresentableChar - 1;
+            b = MaxRepresentableChar - 1;
         }
-        else if (c == SpecialChar2)
+        else if (c == specialChar2)
         {
-            v = MaxRepresentableChar;
+            b = MaxRepresentableChar;
         }
         else
         {
-            v = c switch
+            (success, b) = c switch
             {
-                >= 'a' and <= 'z' => (byte)(c - 'a'),
-                >= 'A' and <= 'Z' => (byte)(c - 'A' + NumberOfEnglishLetters),
-                >= '0' and <= '9' => (byte)(c - '0' + NumberOfEnglishLetters * 2),
-                _ => ThrowHelper.ThrowArgumentException<byte>(nameof(c)),
+                >= 'a' and <= 'z' => (true, (byte)(c - 'a')),
+                >= 'A' and <= 'Z' => (true, (byte)(c - 'A' + NumberOfEnglishLetters)),
+                >= '0' and <= '9' => (true, (byte)(c - '0' + NumberOfEnglishLetters * 2)),
+                _ => (false, default),
             };
         }
 
-        return v;
+        return success;
     }
 
-    private char DecodeByteToChar(byte b)
+    private bool TryDecodeByteToChar(byte b, out char c)
     {
-        var c = b switch
+        (var success, c) = b switch
         {
-            < NumberOfEnglishLetters => (char)(b + 'a'),
-            < NumberOfEnglishLetters * 2 => (char)(b - NumberOfEnglishLetters + 'A'),
-            < NumberOfEnglishLetters * 2 + 10 => (char)(b - NumberOfEnglishLetters * 2 + '0'),
-            MaxRepresentableChar - 1 => SpecialChar1,
-            MaxRepresentableChar => SpecialChar2,
-            _ => ThrowHelper.ThrowArgumentException<char>(nameof(b)),
+            < NumberOfEnglishLetters => (true, (char)(b + 'a')),
+            < NumberOfEnglishLetters * 2 => (true, (char)(b - NumberOfEnglishLetters + 'A')),
+            < NumberOfEnglishLetters * 2 + 10 => (true, (char)(b - NumberOfEnglishLetters * 2 + '0')),
+            MaxRepresentableChar - 1 => (true, SpecialChar1: specialChar1),
+            MaxRepresentableChar => (true, SpecialChar2: specialChar2),
+            _ => (false, default),
         };
 
-        return c;
+        return success;
     }
 }

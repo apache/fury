@@ -2,9 +2,22 @@
 
 namespace Fury.Meta;
 
-internal sealed class LowerSpecialEncoding(char specialChar1, char specialChar2)
-    : AbstractLowerSpecialEncoding(specialChar1, specialChar2, MetaString.Encoding.LowerSpecial)
+internal sealed class LowerSpecialEncoding() : AbstractLowerSpecialEncoding(MetaString.Encoding.LowerSpecial)
 {
+    public static readonly LowerSpecialEncoding Instance = new();
+
+    public override bool CanEncode(ReadOnlySpan<char> chars)
+    {
+        foreach (var c in chars)
+        {
+            if (!TryEncodeCharToByte(c, out _))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public override int GetBytes(ReadOnlySpan<char> chars, Span<byte> bytes)
     {
         var (byteCount, stripLastChar) = GetByteAndStripLastChar(chars.Length);
@@ -15,7 +28,10 @@ internal sealed class LowerSpecialEncoding(char specialChar1, char specialChar2)
         var currentBit = 1;
         foreach (var c in chars)
         {
-            var v = EncodeCharToByte(c);
+            if (!TryEncodeCharToByte(c, out var v))
+            {
+                ThrowHelper.ThrowArgumentOutOfRangeException(nameof(chars), chars.ToString());
+            }
             var byteIndex = currentBit / BitsOfByte;
             var bitOffset = currentBit % BitsOfByte;
             if (bitOffset <= UnusedBitsPerChar)
@@ -92,7 +108,11 @@ internal sealed class LowerSpecialEncoding(char specialChar1, char specialChar2)
                 );
             }
 
-            chars[i] = DecodeByteToChar(charByte);
+            if (!TryDecodeByteToChar(charByte, out var c))
+            {
+                ThrowHelper.ThrowArgumentOutOfRangeException(nameof(bytes));
+            }
+            chars[i] = c;
         }
 
         return charCount;
