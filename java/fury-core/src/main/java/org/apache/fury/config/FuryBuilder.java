@@ -77,6 +77,7 @@ public final class FuryBuilder {
   Boolean scopedMetaShareEnabled;
   boolean codeGenEnabled = true;
   Boolean deserializeNonexistentClass;
+  boolean deserializeNonexistentClassNotWriteFullClassInfo = false;
   boolean asyncCompilationEnabled = false;
   boolean registerGuavaTypes = true;
   boolean scalaOptimizationEnabled = false;
@@ -306,6 +307,18 @@ public final class FuryBuilder {
    */
   public FuryBuilder withDeserializeNonexistentClass(boolean deserializeNonexistentClass) {
     this.deserializeNonexistentClass = deserializeNonexistentClass;
+    return this;
+  }
+
+  /**
+   * Whether deserialize/skip data of un-existed class. if write class full info
+   *
+   * @see Config#deserializeNonexistentClassNotWriteFullClassInfo()
+   */
+  public FuryBuilder withDeserializeNonexistentClassNotWriteFullClassInfo(
+      boolean deserializeNonexistentClassNotWriteFullClassInfo) {
+    this.deserializeNonexistentClassNotWriteFullClassInfo =
+        deserializeNonexistentClassNotWriteFullClassInfo;
     return this;
   }
 
