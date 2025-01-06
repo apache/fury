@@ -19,14 +19,20 @@
 
 #pragma once
 
+#include <cstdint>
 #include <string>
 
 namespace fury {
 
-bool isLatin(const std::string &str);
+inline bool isLatin(const std::string &str);
 
-std::string utf16ToUtf8(const std::u16string &utf16, bool is_little_endian);
+inline bool utf16HasSurrogatePairs(const std::u16string &str);
 
-std::u16string utf8ToUtf16(const std::string &utf8, bool is_little_endian);
+inline bool utf16HasSurrogatePairs(const std::uint16_t *data, size_t size);
+
+inline std::string utf16ToUtf8(const std::u16string &utf16,
+                               bool is_little_endian);
+
+inline std::u16string utf8ToUtf16(const std::string &utf8, bool is_little_endian);
 
 } // namespace fury

@@ -100,6 +100,12 @@ TEST(StringUtilTest, TestIsLatinLogic) {
   EXPECT_FALSE(isLatin("Javaone Keynote\u1234"));
 }
 
+TEST(StringUtilTest, TestUtf16HasSurrogatePairs) {
+  EXPECT_FALSE(utf16HasSurrogatePairs({0x99, 0x100}));
+  std::u16string utf16 = {0xD83D, 0xDE00}; // 😀 emoji
+  EXPECT_TRUE(utf16HasSurrogatePairs(utf16));
+}
+
 // Generate random UTF-16 string ensuring valid surrogate pairs
 std::u16string generateRandomUTF16String(size_t length) {
   std::u16string str;
