@@ -548,7 +548,7 @@ cdef class Buffer:
         cdef int32_t kind = PyUnicode_KIND(value)
         # Note: buffer will be native endian for PyUnicode_2BYTE_KIND
         cdef void* buffer = PyUnicode_DATA(value)
-        cdef int64_t header = 0
+        cdef uint64_t header = 0
         cdef int32_t buffer_size
         if kind == PyUnicode_1BYTE_KIND:
             buffer_size = length
@@ -559,7 +559,7 @@ cdef class Buffer:
         else:
             buffer = <void *>(PyUnicode_AsUTF8AndSize(value, &length))
             buffer_size = length
-            header = (buffer_size << 2) | 3
+            header = (buffer_size << 2) | 2
         self.write_varuint64(header)
         if buffer_size == 0:  # access an emtpy buffer may raise out-of-bound exception.
             return
@@ -569,12 +569,12 @@ cdef class Buffer:
         self.writer_index += buffer_size
 
     cpdef inline str read_string(self):
-        cdef int64_t header = self.read_varuint64()
-        cdef int32_t size = header >> 2
+        cdef uint64_t header = self.read_varuint64()
+        cdef uint32_t size = header >> 2
         self.check_bound(self.reader_index, size)
         cdef const char * buf = <const char *>(self.c_buffer.get().data() + self.reader_index)
         self.reader_index += size
-        cdef int32_t encoding = header & 0x11
+        cdef uint32_t encoding = header & <uint32_t>0x11
         if encoding == 0:
             # PyUnicode_FromASCII
             return PyUnicode_DecodeLatin1(buf, size, "strict")
@@ -587,7 +587,7 @@ cdef class Buffer:
                     &UTF16_LE,  # fury use little-endian
                 )
             else:
-                return PyUnicode_FromKindAndData(PyUnicode_2BYTE_KIND, buf, size)
+                return PyUnicode_FromKindAndData(PyUnicode_2BYTE_KIND, buf, size >> 1)
         else:
             return PyUnicode_DecodeUTF8(buf, size, "strict")
         return str_obj
