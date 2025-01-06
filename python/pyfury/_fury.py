@@ -156,7 +156,7 @@ class Fury:
                 stacklevel=2,
             )
             self.pickler = Pickler(self.buffer)
-            self.unpickler = Unpickler(buffer)
+            self.unpickler = Unpickler(self.buffer)
         else:
             self.pickler = _PicklerStub()
             self.unpickler = _UnpicklerStub()
