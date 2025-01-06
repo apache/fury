@@ -24,15 +24,29 @@
 
 namespace fury {
 
-inline bool isLatin(const std::string &str);
+bool isLatin(const std::string &str);
 
-inline bool utf16HasSurrogatePairs(const std::u16string &str);
+inline bool utf16HasSurrogatePairs(const std::uint16_t *data, size_t size) {
+  // TODO add a simd version
+  for (size_t i = 0; i < size; ++i) {
+    auto c = data[i];
+    if (c >= 0xD800 && c <= 0xDFFF) {
+      return true;
+    }
+  }
+  return false;
+}
 
-inline bool utf16HasSurrogatePairs(const std::uint16_t *data, size_t size);
+inline bool utf16HasSurrogatePairs(const std::u16string &str) {
+  // Get the data pointer
+  const std::uint16_t *data =
+      reinterpret_cast<const std::uint16_t *>(str.data());
+  return utf16HasSurrogatePairs(data, str.size());
+}
 
-inline std::string utf16ToUtf8(const std::u16string &utf16,
+std::string utf16ToUtf8(const std::u16string &utf16,
                                bool is_little_endian);
 
-inline std::u16string utf8ToUtf16(const std::string &utf8, bool is_little_endian);
+std::u16string utf8ToUtf16(const std::string &utf8, bool is_little_endian);
 
 } // namespace fury

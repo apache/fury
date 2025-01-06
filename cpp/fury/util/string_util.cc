@@ -37,24 +37,6 @@ inline uint16_t swapBytes(uint16_t value) {
   return (value >> 8) | (value << 8);
 }
 
-bool utf16HasSurrogatePairs(const std::u16string &str) {
-  // Get the data pointer
-  const std::uint16_t *data =
-      reinterpret_cast<const std::uint16_t *>(str.data());
-  return utf16HasSurrogatePairs(data, str.size());
-}
-
-bool utf16HasSurrogatePairs(const std::uint16_t *data, size_t size) {
-  // TODO add a simd version
-  for (size_t i = 0; i < size; ++i) {
-    auto c = data[i];
-    if (c >= 0xD800 && c <= 0xDFFF) {
-      return true;
-    }
-  }
-  return false;
-}
-
 inline void utf16ToUtf8(uint16_t code_unit, char *&output) {
   if (code_unit < 0x80) {
     *output++ = static_cast<char>(code_unit);
