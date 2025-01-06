@@ -574,7 +574,7 @@ cdef class Buffer:
         self.check_bound(self.reader_index, size)
         cdef const char * buf = <const char *>(self.c_buffer.get().data() + self.reader_index)
         self.reader_index += size
-        cdef uint32_t encoding = header & <uint32_t>0x11
+        cdef uint32_t encoding = header & <uint32_t>0b11
         if encoding == 0:
             # PyUnicode_FromASCII
             return PyUnicode_DecodeLatin1(buf, size, "strict")
