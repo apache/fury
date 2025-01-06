@@ -110,7 +110,7 @@ public class ClassInfo {
     if (cls != null) {
       boolean isLambda = Functions.isLambda(cls);
       boolean isProxy = classId != ClassResolver.REPLACE_STUB_ID && ReflectionUtils.isJdkProxy(cls);
-      this.isDynamicGeneratedClass = isLambda || isProxy;
+      this.isDynamicGeneratedClass = isLambda || isProxy || cls.getName().contains("fury.Target");
       if (isLambda) {
         this.classId = ClassResolver.LAMBDA_STUB_ID;
       }
