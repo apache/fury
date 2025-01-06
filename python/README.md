@@ -12,7 +12,7 @@ pip install -v -e .
 
 ### Environment Requirements
 
-- python 3.6+
+- python 3.8+
 
 ## Testing
 

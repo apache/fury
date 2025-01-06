@@ -524,7 +524,6 @@ _ENABLE_CLASS_REGISTRATION_FORCIBLY = os.getenv(
 
 
 class _PicklerStub:
-
     def dump(self, o):
         raise ValueError(
             f"Class {type(o)} is not registered, "
@@ -537,7 +536,6 @@ class _PicklerStub:
 
 
 class _UnpicklerStub:
-
     def load(self):
         raise ValueError(
             "pickle is not allowed when class registration enabled, Please register"
