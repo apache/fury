@@ -544,7 +544,7 @@ cdef class Buffer:
         return length
 
     cpdef inline write_string(self, str value):
-        cdef Py_ssize_t length = PyUnicode_GET_LENGTH(value);
+        cdef Py_ssize_t length = PyUnicode_GET_LENGTH(value)
         cdef int32_t kind = PyUnicode_KIND(value)
         # Note: buffer will be native endian for PyUnicode_2BYTE_KIND
         cdef void* buffer = PyUnicode_DATA(value)
@@ -577,17 +577,17 @@ cdef class Buffer:
         cdef int32_t encoding = header & 0x11
         if encoding == 0:
             # PyUnicode_FromASCII
-            return PyUnicode_DecodeLatin1(buf, size, "strict");
+            return PyUnicode_DecodeLatin1(buf, size, "strict")
         elif encoding == 1:
             if utf16HasSurrogatePairs(<const uint16_t *>buf, size >> 1):
                 return PyUnicode_DecodeUTF16(
                     buf,
-                    size, # len of string in bytes
-                    NULL, # special error handling options, we don't need any
-                    &UTF16_LE, # fury use little-endian
+                    size, #  len of string in bytes
+                    NULL, #  special error handling options, we don't need any
+                    &UTF16_LE, #  fury use little-endian
                 )
             else:
-                return PyUnicode_FromKindAndData(PyUnicode_2BYTE_KIND, buf, size);
+                return PyUnicode_FromKindAndData(PyUnicode_2BYTE_KIND, buf, size)
         else:
             return PyUnicode_DecodeUTF8(buf, size, "strict")
         return str_obj

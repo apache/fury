@@ -110,4 +110,4 @@ cdef extern from "fury/util/bit_util.h" namespace "fury::util" nogil:
 
 
 cdef extern from "fury/util/string_util.h" namespace "fury" nogil:
-    c_bool utf16HasSurrogatePairs(uint16_t* data, size_t size);
+    c_bool utf16HasSurrogatePairs(uint16_t* data, size_t size)
