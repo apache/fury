@@ -16,19 +16,19 @@ namespace Fury.Collections;
 /// <typeparam name="TElement">
 /// The type of elements in the list.
 /// </typeparam>
-internal sealed class PooledList<TElement>(IArrayPoolProvider poolProvider) : IList<TElement>, IDisposable
+internal sealed class PooledList<TElement>(IArrayPoolProvider poolProvider) : IList<TElement?>, IDisposable
     where TElement : class
 {
     private static readonly bool NeedClear = TypeHelper<TElement>.IsReferenceOrContainsReferences;
 
     // Use object instead of TElement to improve possibility of reusing pooled objects.
-    private readonly ArrayPool<object> _pool = poolProvider.GetArrayPool<object>();
-    private object[] _elements = [];
+    private readonly ArrayPool<object?> _pool = poolProvider.GetArrayPool<object?>();
+    private object?[] _elements = [];
     public int Count { get; private set; }
 
     public Enumerator GetEnumerator() => new(this);
 
-    public void Add(TElement item)
+    public void Add(TElement? item)
     {
         var length = _elements.Length;
         if (Count == length)
@@ -58,11 +58,11 @@ internal sealed class PooledList<TElement>(IArrayPoolProvider poolProvider) : IL
         }
     }
 
-    public bool Contains(TElement item) => Array.IndexOf(_elements, item) != -1;
+    public bool Contains(TElement? item) => Array.IndexOf(_elements, item) != -1;
 
-    public void CopyTo(TElement[] array, int arrayIndex) => _elements.CopyTo(array, arrayIndex);
+    public void CopyTo(TElement?[] array, int arrayIndex) => _elements.CopyTo(array, arrayIndex);
 
-    public bool Remove(TElement item)
+    public bool Remove(TElement? item)
     {
         var index = Array.IndexOf(_elements, item);
         if (index == -1)
@@ -76,9 +76,9 @@ internal sealed class PooledList<TElement>(IArrayPoolProvider poolProvider) : IL
 
     public bool IsReadOnly => _elements.IsReadOnly;
 
-    public int IndexOf(TElement item) => Array.IndexOf(_elements, item);
+    public int IndexOf(TElement? item) => Array.IndexOf(_elements, item);
 
-    public void Insert(int index, TElement item)
+    public void Insert(int index, TElement? item)
     {
         if (index < 0 || index > Count)
         {
@@ -121,7 +121,7 @@ internal sealed class PooledList<TElement>(IArrayPoolProvider poolProvider) : IL
         }
     }
 
-    public TElement this[int index]
+    public TElement? this[int index]
     {
         get
         {
@@ -144,11 +144,11 @@ internal sealed class PooledList<TElement>(IArrayPoolProvider poolProvider) : IL
         }
     }
 
-    IEnumerator<TElement> IEnumerable<TElement>.GetEnumerator() => GetEnumerator();
+    IEnumerator<TElement> IEnumerable<TElement?>.GetEnumerator() => GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    public struct Enumerator(PooledList<TElement> list) : IEnumerator<TElement>
+    public struct Enumerator(PooledList<TElement> list) : IEnumerator<TElement?>
     {
         private int _count = list.Count;
         private int _current = 0;
@@ -164,9 +164,9 @@ internal sealed class PooledList<TElement>(IArrayPoolProvider poolProvider) : IL
             _current = 0;
         }
 
-        public TElement Current => Unsafe.As<TElement>(list._elements[_current]);
+        public TElement? Current => Unsafe.As<TElement>(list._elements[_current]);
 
-        object IEnumerator.Current => Current;
+        object? IEnumerator.Current => Current;
 
         public void Dispose() { }
     }
