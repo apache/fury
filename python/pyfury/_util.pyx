@@ -582,9 +582,9 @@ cdef class Buffer:
             if utf16HasSurrogatePairs(<const uint16_t *>buf, size >> 1):
                 return PyUnicode_DecodeUTF16(
                     buf,
-                    size, #  len of string in bytes
-                    NULL, #  special error handling options, we don't need any
-                    &UTF16_LE, #  fury use little-endian
+                    size,  # len of string in bytes
+                    NULL,  # special error handling options, we don't need any
+                    &UTF16_LE,  # fury use little-endian
                 )
             else:
                 return PyUnicode_FromKindAndData(PyUnicode_2BYTE_KIND, buf, size)
