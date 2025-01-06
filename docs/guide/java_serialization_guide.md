@@ -512,7 +512,7 @@ serialization error, it may be caused by class inconsistency between serializati
 
 If you create fury and set `CompatibleMode` to `org.apache.fury.config.CompatibleMode.COMPATIBLE`, you need to register
 the class that you want to serialize or deserialize(You don't need to register any class inside that class).
-[See example here](java/fury-core/src/test/java/org/apache/fury/serializer/compatible/CompatibleSerializerTest.java)
+[See example here](/java/fury-core/src/test/java/org/apache/fury/serializer/compatible/CompatibleSerializerTest.java)
 
 In such cases, you can invoke `FuryBuilder#withClassVersionCheck` to create fury to validate it, if deserialization
 throws `org.apache.fury.exception.ClassNotCompatibleException`, it shows class are inconsistent, and you should create
