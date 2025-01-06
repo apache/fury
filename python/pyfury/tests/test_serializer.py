@@ -552,5 +552,6 @@ def test_function():
     df_sum = fury.deserialize(fury.serialize(df.sum))
     assert df_sum().equals(df.sum())
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     test_string()
