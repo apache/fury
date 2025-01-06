@@ -27,7 +27,7 @@ import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.fury.test.bean.BeanA;
 import org.testng.annotations.Test;
 
-public class DataFieldTypeTest {
+public class DataTypeTest {
 
   @Test
   public void parseSchema() {
