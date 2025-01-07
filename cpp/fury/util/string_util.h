@@ -65,15 +65,13 @@ inline bool hasSurrogatePairNEON(const uint16_t *data, size_t length) {
 #ifdef USE_SSE2_SIMD
 inline bool hasSurrogatePairSSE2(const uint16_t *data, size_t length) {
   size_t i = 0;
-  __m128i lower_bound = _mm_set1_epi16(0xD800);
-  __m128i higher_bound = _mm_set1_epi16(0xDFFF);
+  __m128i lower_bound = _mm_set1_epi16(0xd7ff);
+  __m128i higher_bound = _mm_set1_epi16(0xe000);
   for (; i + 7 < length; i += 8) {
     __m128i chunk =
         _mm_loadu_si128(reinterpret_cast<const __m128i *>(data + i));
-    __m128i cmp1 =
-        _mm_cmpgt_epi16(chunk, _mm_sub_epi16(lower_bound, _mm_set1_epi16(1)));
-    __m128i cmp2 =
-        _mm_cmpgt_epi16(_mm_add_epi16(higher_bound, _mm_set1_epi16(1)), chunk);
+    __m128i cmp1 = _mm_cmpgt_epi16(chunk, lower_bound);
+    __m128i cmp2 = _mm_cmpgt_epi16(higher_bound, chunk);
     if (_mm_movemask_epi8(_mm_and_si128(cmp1, cmp2)) != 0) {
       return true; // Detected a surrogate
     }
