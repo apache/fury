@@ -1070,6 +1070,7 @@ public final class Fury implements BaseFury {
         buffer.writeInt32(-1); // preserve 4-byte for meta start offsets.
         if (!refResolver.writeRefOrNull(buffer, obj)) {
           ClassInfo classInfo = classResolver.getOrUpdateClassInfo(obj.getClass());
+          classResolver.writeClass(buffer, classInfo);
           writeData(buffer, classInfo, obj);
           MetaContext metaContext = serializationContext.getMetaContext();
           if (metaContext != null && !metaContext.writingClassDefs.isEmpty()) {
@@ -1119,7 +1120,13 @@ public final class Fury implements BaseFury {
       T obj;
       int nextReadRefId = refResolver.tryPreserveRefId(buffer);
       if (nextReadRefId >= NOT_NULL_VALUE_FLAG) {
-        obj = (T) readDataInternal(buffer, classResolver.getClassInfo(cls));
+        ClassInfo classInfo;
+        if (shareMeta) {
+          classInfo = classResolver.readClassInfo(buffer);
+        } else {
+          classInfo = classResolver.getClassInfo(cls);
+        }
+        obj = (T) readDataInternal(buffer, classInfo);
         return obj;
       } else {
         return null;
