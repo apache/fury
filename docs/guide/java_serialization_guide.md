@@ -518,7 +518,7 @@ fury with
 `CompatibleMode.COMPATIBLE` has more performance and space cost, do not set it by default if your classes are always
 consistent between serialization and deserialization.
 
-### Different POJO deserialization
+### Deserialize POJO into another type
 
 Fury allows you to serialize one POJO and deserialize it into a different POJO. To achieve this, configure Fury with
 `CompatibleMode` set to `org.apache.fury.config.CompatibleMode.COMPATIBLE`. Additionally, you only need to register the
