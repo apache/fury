@@ -35,7 +35,7 @@ namespace fury {
 
 bool isLatin(const std::string &str);
 
-inline bool hasSurrogatePairFallback(const uint16_t *data, size_t size) {
+static inline bool hasSurrogatePairFallback(const uint16_t *data, size_t size) {
   for (size_t i = 0; i < size; ++i) {
     auto c = data[i];
     if (c >= 0xD800 && c <= 0xDFFF) {
@@ -45,8 +45,8 @@ inline bool hasSurrogatePairFallback(const uint16_t *data, size_t size) {
   return false;
 }
 
-#ifdef USE_NEON_SIMD
-inline bool hasSurrogatePairNEON(const uint16_t *data, size_t length) {
+#if defined(USE_NEON_SIMD)
+inline bool utf16HasSurrogatePairs(const uint16_t *data, size_t length) {
   size_t i = 0;
   uint16x8_t lower_bound = vdupq_n_u16(0xD800);
   uint16x8_t higher_bound = vdupq_n_u16(0xDFFF);
@@ -60,10 +60,8 @@ inline bool hasSurrogatePairNEON(const uint16_t *data, size_t length) {
   }
   return hasSurrogatePairFallback(data + i, length - i);
 }
-#endif
-
-#ifdef USE_SSE2_SIMD
-inline bool hasSurrogatePairSSE2(const uint16_t *data, size_t length) {
+#elif defined(USE_SSE2_SIMD)
+inline bool utf16HasSurrogatePairs(const uint16_t *data, size_t length) {
   size_t i = 0;
   __m128i lower_bound = _mm_set1_epi16(0xd7ff);
   __m128i higher_bound = _mm_set1_epi16(0xe000);
@@ -78,17 +76,11 @@ inline bool hasSurrogatePairSSE2(const uint16_t *data, size_t length) {
   }
   return hasSurrogatePairFallback(data + i, length - i);
 }
-#endif
-
-inline bool utf16HasSurrogatePairs(const uint16_t *data, size_t length) {
-#if defined(USE_NEON_SIMD)
-  return hasSurrogatePairNEON(data, length);
-#elif defined(USE_SSE2_SIMD)
-  return hasSurrogatePairSSE2(data, length);
 #else
+inline bool utf16HasSurrogatePairs(const uint16_t *data, size_t length) {
   return hasSurrogatePairFallback(data, length);
-#endif
 }
+#endif
 
 inline bool utf16HasSurrogatePairs(const std::u16string &str) {
   // Get the data pointer
