@@ -100,12 +100,6 @@ TEST(StringUtilTest, TestIsLatinLogic) {
   EXPECT_FALSE(isLatin("Javaone Keynote\u1234"));
 }
 
-TEST(StringUtilTest, TestUtf16HasSurrogatePairs) {
-  EXPECT_FALSE(utf16HasSurrogatePairs({0x99, 0x100}));
-  std::u16string utf16 = {0xD83D, 0xDE00}; // 😀 emoji
-  EXPECT_TRUE(utf16HasSurrogatePairs(utf16));
-}
-
 // Generate random UTF-16 string ensuring valid surrogate pairs
 std::u16string generateRandomUTF16String(size_t length) {
   std::u16string str;
@@ -128,7 +122,24 @@ std::u16string generateRandomUTF16String(size_t length) {
   return str;
 }
 
-// Basic implementation
+TEST(StringUtilTest, TestUtf16HasSurrogatePairs) {
+  EXPECT_FALSE(utf16HasSurrogatePairs(std::u16string({0x99, 0x100})));
+  std::u16string utf16 = {0xD83D, 0xDE00}; // 😀 emoji
+  EXPECT_TRUE(utf16HasSurrogatePairs(utf16));
+  EXPECT_TRUE(utf16HasSurrogatePairs(generateRandomUTF16String(3) + u"性能好"));
+  EXPECT_TRUE(
+      utf16HasSurrogatePairs(generateRandomUTF16String(10) + u"性能好"));
+  EXPECT_TRUE(
+      utf16HasSurrogatePairs(generateRandomUTF16String(30) + u"性能好"));
+  EXPECT_TRUE(
+      utf16HasSurrogatePairs(generateRandomUTF16String(60) + u"性能好"));
+  EXPECT_TRUE(
+      utf16HasSurrogatePairs(generateRandomUTF16String(120) + u"性能好"));
+  EXPECT_TRUE(
+      utf16HasSurrogatePairs(generateRandomUTF16String(200) + u"性能好"));
+  EXPECT_TRUE(
+      utf16HasSurrogatePairs(generateRandomUTF16String(300) + u"性能好"));
+}
 
 // Swap bytes to convert from big endian to little endian
 inline uint16_t swapBytes(uint16_t value) {

@@ -65,7 +65,9 @@ def test_string():
     fury = Fury(language=Language.PYTHON, ref_tracking=True)
     assert ser_de(fury, "hello") == "hello"
     assert ser_de(fury, "hello，世界") == "hello，世界"
+    assert ser_de(fury, "hello，世界" * 10) == "hello，世界" * 10
     assert ser_de(fury, "hello，😀") == "hello，😀"
+    assert ser_de(fury, "hello，😀" * 10) == "hello，😀" * 10
 
 
 def test_dict():

@@ -46,7 +46,7 @@ inline bool hasSurrogatePairFallback(const uint16_t *data, size_t size) {
 }
 
 #ifdef USE_NEON_SIMD
-inline bool hasSurrogatePair(const uint16_t *data, size_t length) {
+inline bool hasSurrogatePairNEON(const uint16_t *data, size_t length) {
   size_t i = 0;
   uint16x8_t lower_bound = vdupq_n_u16(0xD800);
   uint16x8_t higher_bound = vdupq_n_u16(0xDFFF);
