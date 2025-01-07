@@ -522,7 +522,7 @@ consistent between serialization and deserialization.
 
 Fury allows you to serialize one POJO and deserialize it into a different POJO. To achieve this, configure Fury with
 `CompatibleMode` set to `org.apache.fury.config.CompatibleMode.COMPATIBLE`. Additionally, you only need to register the
-specific classes you want to serialize or deserialize; there's no need to register any nested classes within them.
+specific classes you want to serialize or deserialize to setup type mapping relationship; there's no need to register any nested classes within them.
 [See example here](/java/fury-core/src/test/java/org/apache/fury/serializer/compatible/DifferentPOJOCompatibleSerializerTest.java)
 
 ### Use wrong API for deserialization
