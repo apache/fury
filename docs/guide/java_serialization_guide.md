@@ -510,10 +510,6 @@ If you create fury without setting `CompatibleMode` to `org.apache.fury.config.C
 strange
 serialization error, it may be caused by class inconsistency between serialization peer and deserialization peer.
 
-If you create fury and set `CompatibleMode` to `org.apache.fury.config.CompatibleMode.COMPATIBLE`, you need to register
-the class that you want to serialize or deserialize(You don't need to register any class inside that class).
-[See example here](/java/fury-core/src/test/java/org/apache/fury/serializer/compatible/CompatibleSerializerTest.java)
-
 In such cases, you can invoke `FuryBuilder#withClassVersionCheck` to create fury to validate it, if deserialization
 throws `org.apache.fury.exception.ClassNotCompatibleException`, it shows class are inconsistent, and you should create
 fury with
@@ -521,6 +517,12 @@ fury with
 
 `CompatibleMode.COMPATIBLE` has more performance and space cost, do not set it by default if your classes are always
 consistent between serialization and deserialization.
+
+### Different POJO deserialization
+Fury allows you to serialize one POJO and deserialize it into a different POJO. To achieve this, configure Fury with
+`CompatibleMode` set to `org.apache.fury.config.CompatibleMode.COMPATIBLE`. Additionally, you only need to register the
+specific classes you want to serialize or deserialize; there's no need to register any nested classes within them.
+[See example here](/java/fury-core/src/test/java/org/apache/fury/serializer/compatible/DifferentPOJOCompatibleSerializerTest.java)
 
 ### Use wrong API for deserialization
 

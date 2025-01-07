@@ -32,7 +32,7 @@ import org.testng.annotations.Test;
  * class with different name - scrambled field order to make sure it could handle different field
  * order - missing or extra field from source class to target class - generic class
  */
-public class CompatibleSerializerTest extends Assert {
+public class DifferentPOJOCompatibleSerializerTest extends Assert {
 
   Fury getFury(Class<?>... classes) {
     Fury instance =
