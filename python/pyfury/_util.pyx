@@ -590,7 +590,6 @@ cdef class Buffer:
                 return PyUnicode_FromKindAndData(PyUnicode_2BYTE_KIND, buf, size >> 1)
         else:
             return PyUnicode_DecodeUTF8(buf, size, "strict")
-        return str_obj
 
     def __len__(self):
         return self._c_size
