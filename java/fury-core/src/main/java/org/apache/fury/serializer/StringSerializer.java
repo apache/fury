@@ -121,7 +121,7 @@ public final class StringSerializer extends ImmutableSerializer<String> {
 
   @Override
   public void xwrite(MemoryBuffer buffer, String value) {
-    writeUTF8String(buffer, value);
+    writeJavaString(buffer, value);
   }
 
   @Override
@@ -131,68 +131,52 @@ public final class StringSerializer extends ImmutableSerializer<String> {
 
   @Override
   public String xread(MemoryBuffer buffer) {
-    return readUTF8String(buffer);
+    return readJavaString(buffer);
   }
 
   public void writeString(MemoryBuffer buffer, String value) {
-    if (isJava) {
-      writeJavaString(buffer, value);
-    } else {
-      writeUTF8String(buffer, value);
-    }
+    writeJavaString(buffer, value);
   }
 
   public Expression writeStringExpr(Expression strSerializer, Expression buffer, Expression str) {
-    if (isJava) {
-      if (STRING_VALUE_FIELD_IS_BYTES) {
-        if (compressString) {
-          return new Invoke(strSerializer, "writeCompressedBytesString", buffer, str);
-        } else {
-          return new StaticInvoke(StringSerializer.class, "writeBytesString", buffer, str);
-        }
+    if (STRING_VALUE_FIELD_IS_BYTES) {
+      if (compressString) {
+        return new Invoke(strSerializer, "writeCompressedBytesString", buffer, str);
       } else {
-        if (!STRING_VALUE_FIELD_IS_CHARS) {
-          throw new UnsupportedOperationException();
-        }
-        if (compressString) {
-          return new Invoke(strSerializer, "writeCompressedCharsString", buffer, str);
-        } else {
-          return new Invoke(strSerializer, "writeCharsString", buffer, str);
-        }
+        return new StaticInvoke(StringSerializer.class, "writeBytesString", buffer, str);
       }
     } else {
-      return new Invoke(strSerializer, "writeUTF8String", buffer, str);
+      if (!STRING_VALUE_FIELD_IS_CHARS) {
+        throw new UnsupportedOperationException();
+      }
+      if (compressString) {
+        return new Invoke(strSerializer, "writeCompressedCharsString", buffer, str);
+      } else {
+        return new Invoke(strSerializer, "writeCharsString", buffer, str);
+      }
     }
   }
 
   public String readString(MemoryBuffer buffer) {
-    if (isJava) {
-      return readJavaString(buffer);
-    } else {
-      return readUTF8String(buffer);
-    }
+    return readJavaString(buffer);
   }
 
   public Expression readStringExpr(Expression strSerializer, Expression buffer) {
-    if (isJava) {
-      if (STRING_VALUE_FIELD_IS_BYTES) {
-        if (compressString) {
-          return new Invoke(strSerializer, "readCompressedBytesString", STRING_TYPE, buffer);
-        } else {
-          return new Invoke(strSerializer, "readBytesString", STRING_TYPE, buffer);
-        }
+    if (STRING_VALUE_FIELD_IS_BYTES) {
+      if (compressString) {
+        return new Invoke(strSerializer, "readCompressedBytesString", STRING_TYPE, buffer);
       } else {
-        if (!STRING_VALUE_FIELD_IS_CHARS) {
-          throw new UnsupportedOperationException();
-        }
-        if (compressString) {
-          return new Invoke(strSerializer, "readCompressedCharsString", STRING_TYPE, buffer);
-        } else {
-          return new Invoke(strSerializer, "readCharsString", STRING_TYPE, buffer);
-        }
+        return new Invoke(strSerializer, "readBytesString", STRING_TYPE, buffer);
       }
     } else {
-      return new Invoke(strSerializer, "readUTF8String", STRING_TYPE, buffer);
+      if (!STRING_VALUE_FIELD_IS_CHARS) {
+        throw new UnsupportedOperationException();
+      }
+      if (compressString) {
+        return new Invoke(strSerializer, "readCompressedCharsString", STRING_TYPE, buffer);
+      } else {
+        return new Invoke(strSerializer, "readCharsString", STRING_TYPE, buffer);
+      }
     }
   }
 
@@ -273,13 +257,6 @@ public final class StringSerializer extends ImmutableSerializer<String> {
         writeCharsString(buffer, value);
       }
     }
-  }
-
-  @CodegenInvoke
-  public void writeUTF8String(MemoryBuffer buffer, String value) {
-    byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
-    buffer.writeVarUint32(bytes.length);
-    buffer.writeBytes(bytes);
   }
 
   // Invoked by fury JIT
@@ -364,24 +341,6 @@ public final class StringSerializer extends ImmutableSerializer<String> {
       writeCharsLatin1(buffer, chars, chars.length);
     } else {
       writeCharsUTF16(buffer, chars, chars.length);
-    }
-  }
-
-  @CodegenInvoke
-  public String readUTF8String(MemoryBuffer buffer) {
-    int numBytes = buffer.readVarUint32Small14();
-    buffer.checkReadableBytes(numBytes);
-    final byte[] targetArray = buffer.getHeapMemory();
-    if (targetArray != null) {
-      String str =
-          new String(
-              targetArray, buffer._unsafeHeapReaderIndex(), numBytes, StandardCharsets.UTF_8);
-      buffer.increaseReaderIndex(numBytes);
-      return str;
-    } else {
-      final byte[] tmpArray = getByteArray(numBytes);
-      buffer.readBytes(tmpArray, 0, numBytes);
-      return new String(tmpArray, 0, numBytes, StandardCharsets.UTF_8);
     }
   }
 

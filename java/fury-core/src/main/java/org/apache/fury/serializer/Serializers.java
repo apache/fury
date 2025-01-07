@@ -228,7 +228,7 @@ public class Serializers {
 
     @Override
     public void xwrite(MemoryBuffer buffer, T value) {
-      stringSerializer.writeUTF8String(buffer, value.toString());
+      stringSerializer.writeString(buffer, value.toString());
     }
 
     @Override
@@ -276,7 +276,7 @@ public class Serializers {
 
     @Override
     public StringBuilder xread(MemoryBuffer buffer) {
-      return new StringBuilder(stringSerializer.readUTF8String(buffer));
+      return new StringBuilder(stringSerializer.readString(buffer));
     }
   }
 
@@ -299,7 +299,7 @@ public class Serializers {
 
     @Override
     public StringBuffer xread(MemoryBuffer buffer) {
-      return new StringBuffer(stringSerializer.readUTF8String(buffer));
+      return new StringBuffer(stringSerializer.readString(buffer));
     }
   }
 

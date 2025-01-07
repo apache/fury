@@ -61,6 +61,15 @@ def test_tuple():
     assert ser_de(fury, (-1.0, 2)) == (-1.0, 2)
 
 
+def test_string():
+    fury = Fury(language=Language.PYTHON, ref_tracking=True)
+    assert ser_de(fury, "hello") == "hello"
+    assert ser_de(fury, "hello，世界") == "hello，世界"
+    assert ser_de(fury, "hello，世界" * 10) == "hello，世界" * 10
+    assert ser_de(fury, "hello，😀") == "hello，😀"
+    assert ser_de(fury, "hello，😀" * 10) == "hello，😀" * 10
+
+
 def test_dict():
     fury = Fury(language=Language.PYTHON, ref_tracking=True)
     assert ser_de(fury, {1: 2}) == {1: 2}
@@ -544,3 +553,7 @@ def test_function():
     df = pd.DataFrame({"a": list(range(10))})
     df_sum = fury.deserialize(fury.serialize(df.sum))
     assert df_sum().equals(df.sum())
+
+
+if __name__ == "__main__":
+    test_string()

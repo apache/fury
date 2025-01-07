@@ -156,9 +156,10 @@ class Fury:
                 stacklevel=2,
             )
             self.pickler = Pickler(self.buffer)
+            self.unpickler = Unpickler(self.buffer)
         else:
-            self.pickler = _PicklerStub(self.buffer)
-        self.unpickler = None
+            self.pickler = _PicklerStub()
+            self.unpickler = _UnpicklerStub()
         self._buffer_callback = None
         self._buffers = None
         self._unsupported_callback = None
@@ -334,10 +335,6 @@ class Fury:
     ):
         if type(buffer) == bytes:
             buffer = Buffer(buffer)
-        if self.require_class_registration:
-            self.unpickler = _UnpicklerStub(buffer)
-        else:
-            self.unpickler = Unpickler(buffer)
         if unsupported_objects is not None:
             self._unsupported_objects = iter(unsupported_objects)
         if self.language == Language.XLANG:
@@ -527,9 +524,6 @@ _ENABLE_CLASS_REGISTRATION_FORCIBLY = os.getenv(
 
 
 class _PicklerStub:
-    def __init__(self, buf):
-        self.buf = buf
-
     def dump(self, o):
         raise ValueError(
             f"Class {type(o)} is not registered, "
@@ -542,9 +536,6 @@ class _PicklerStub:
 
 
 class _UnpicklerStub:
-    def __init__(self, buf):
-        self.buf = buf
-
     def load(self):
         raise ValueError(
             "pickle is not allowed when class registration enabled, Please register"

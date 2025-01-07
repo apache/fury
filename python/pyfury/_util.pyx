@@ -22,14 +22,16 @@
 
 cimport cython
 from cpython cimport *
+from cpython.unicode cimport *
 from libcpp.memory cimport shared_ptr, make_shared
 from libc.stdint cimport *
 from libcpp cimport bool as c_bool
 from pyfury.includes.libutil cimport(
-    CBuffer, AllocateBuffer, GetBit, SetBit, ClearBit, SetBitTo, CStatus, StatusCode
+    CBuffer, AllocateBuffer, GetBit, SetBit, ClearBit, SetBitTo, CStatus, StatusCode, utf16HasSurrogatePairs
 )
 
 cdef int32_t max_buffer_size = 2 ** 31 - 1
+cdef int UTF16_LE = -1
 
 
 @cython.final
@@ -149,7 +151,6 @@ cdef class Buffer:
 
     cpdef inline check_bound(self, int32_t offset, int32_t length):
         cdef int32_t size_ = self.c_buffer.get().size()
-        # if offset + length > size_:
         if offset | length | (offset + length) | (size_- (offset + length)) < 0:
             raise ValueError(f"Address range {offset, offset + length} "
                              f"out of bound {0, size_}")
@@ -543,15 +544,52 @@ cdef class Buffer:
         return length
 
     cpdef inline write_string(self, str value):
-        cdef Py_ssize_t length
-        cdef const char * buf = PyUnicode_AsUTF8AndSize(value, &length)
-        self.write_c_buffer(<const uint8_t *>buf, length)
+        cdef Py_ssize_t length = PyUnicode_GET_LENGTH(value)
+        cdef int32_t kind = PyUnicode_KIND(value)
+        # Note: buffer will be native endian for PyUnicode_2BYTE_KIND
+        cdef void* buffer = PyUnicode_DATA(value)
+        cdef uint64_t header = 0
+        cdef int32_t buffer_size
+        if kind == PyUnicode_1BYTE_KIND:
+            buffer_size = length
+            header = (length << 2) | 0
+        elif kind == PyUnicode_2BYTE_KIND:
+            buffer_size = length << 1
+            header = (length << 3) | 1
+        else:
+            buffer = <void *>(PyUnicode_AsUTF8AndSize(value, &length))
+            buffer_size = length
+            header = (buffer_size << 2) | 2
+        self.write_varuint64(header)
+        if buffer_size == 0:  # access an emtpy buffer may raise out-of-bound exception.
+            return
+        self.grow(buffer_size)
+        self.check_bound(self.writer_index, buffer_size)
+        self.c_buffer.get().CopyFrom(self.writer_index, <const uint8_t *>buffer, 0, buffer_size)
+        self.writer_index += buffer_size
 
     cpdef inline str read_string(self):
-        cdef uint8_t* buf
-        cdef int32_t length = self.read_c_buffer(&buf)
-        str_obj = PyUnicode_DecodeUTF8(<const char *>buf, length, "strict")
-        return str_obj
+        cdef uint64_t header = self.read_varuint64()
+        cdef uint32_t size = header >> 2
+        self.check_bound(self.reader_index, size)
+        cdef const char * buf = <const char *>(self.c_buffer.get().data() + self.reader_index)
+        self.reader_index += size
+        cdef uint32_t encoding = header & <uint32_t>0b11
+        if encoding == 0:
+            # PyUnicode_FromASCII
+            return PyUnicode_DecodeLatin1(buf, size, "strict")
+        elif encoding == 1:
+            if utf16HasSurrogatePairs(<const uint16_t *>buf, size >> 1):
+                return PyUnicode_DecodeUTF16(
+                    buf,
+                    size,  # len of string in bytes
+                    NULL,  # special error handling options, we don't need any
+                    &UTF16_LE,  # fury use little-endian
+                )
+            else:
+                return PyUnicode_FromKindAndData(PyUnicode_2BYTE_KIND, buf, size >> 1)
+        else:
+            return PyUnicode_DecodeUTF8(buf, size, "strict")
 
     def __len__(self):
         return self._c_size
