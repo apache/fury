@@ -45,6 +45,11 @@ std::string generateRandomString(size_t length) {
   return result;
 }
 
+TEST(StringUtilTest, TestIsAscii) {
+  EXPECT_TRUE(isAscii("Fury"));
+  EXPECT_FALSE(isAscii("Fury序列化"));
+}
+
 bool isLatin_BaseLine(const std::string &str) {
   for (char c : str) {
     if (static_cast<unsigned char>(c) >= 128) {

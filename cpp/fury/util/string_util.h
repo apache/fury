@@ -33,6 +33,26 @@
 
 namespace fury {
 
+static inline bool isAsciiFallback(const char *data, size_t size) {
+  size_t i = 0;
+  // Loop through 8-byte chunks
+  for (; i + 7 < size; i += 8) {
+    // Load 8 bytes from the string
+    uint64_t chunk = *reinterpret_cast<const uint64_t *>(data + i);
+    // Check if any byte in the 64-bit chunk is >= 128
+    // This checks if any of the top bits of each byte are set
+    if (chunk & 0x8080808080808080ULL) {
+      return false;
+    }
+  }
+  for (; i < size; ++i) {
+    if (static_cast<unsigned char>(data[i]) >= 128) {
+      return false;
+    }
+  }
+  return true;
+}
+
 bool isLatin(const std::string &str);
 
 static inline bool hasSurrogatePairFallback(const uint16_t *data, size_t size) {
@@ -46,6 +66,20 @@ static inline bool hasSurrogatePairFallback(const uint16_t *data, size_t size) {
 }
 
 #if defined(USE_NEON_SIMD)
+inline bool isAscii(const char *data, size_t length) {
+  size_t i = 0;
+  uint8x16_t mostSignificantBit = vdupq_n_u8(0x80);
+  for (; i + 15 < length; i += 16) {
+    uint8x16_t chunk = vld1q_u8(reinterpret_cast<const uint8_t *>(&data[i]));
+    uint8x16_t result = vandq_u8(chunk, mostSignificantBit);
+    if (vmaxvq_u8(result) != 0) {
+      return false;
+    }
+  }
+  // Check the remaining characters
+  return isAsciiFallback(data + i, length - i);
+}
+
 inline bool utf16HasSurrogatePairs(const uint16_t *data, size_t length) {
   size_t i = 0;
   uint16x8_t lower_bound = vdupq_n_u16(0xD800);
@@ -61,6 +95,20 @@ inline bool utf16HasSurrogatePairs(const uint16_t *data, size_t length) {
   return hasSurrogatePairFallback(data + i, length - i);
 }
 #elif defined(USE_SSE2_SIMD)
+inline bool isAscii(const char *data, size_t length) {
+  const __m128i mostSignificantBit = _mm_set1_epi8(static_cast<char>(0x80));
+  size_t i = 0;
+  for (; i + 15 < length; i += 16) {
+    __m128i chunk =
+        _mm_loadu_si128(reinterpret_cast<const __m128i *>(&data[i]));
+    __m128i result = _mm_and_si128(chunk, mostSignificantBit);
+    if (_mm_movemask_epi8(result) != 0) {
+      return false;
+    }
+  }
+  // Check the remaining characters
+  return isAsciiFallback(data + i, length - i);
+}
 inline bool utf16HasSurrogatePairs(const uint16_t *data, size_t length) {
   size_t i = 0;
   __m128i lower_bound = _mm_set1_epi16(0xd7ff);
@@ -77,10 +125,17 @@ inline bool utf16HasSurrogatePairs(const uint16_t *data, size_t length) {
   return hasSurrogatePairFallback(data + i, length - i);
 }
 #else
+inline bool isAscii(const char *data, size_t length) {
+  return isAsciiFallback(data, length);
+}
 inline bool utf16HasSurrogatePairs(const uint16_t *data, size_t length) {
   return hasSurrogatePairFallback(data, length);
 }
 #endif
+
+inline bool isAscii(const std::string &str) {
+  return isAscii(str.data(), str.size());
+}
 
 inline bool utf16HasSurrogatePairs(const std::u16string &str) {
   // Get the data pointer
