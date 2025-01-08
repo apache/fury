@@ -141,32 +141,6 @@ TEST(StringUtilTest, TestUtf16HasSurrogatePairs) {
       utf16HasSurrogatePairs(generateRandomUTF16String(300) + u"性能好"));
 }
 
-// Swap bytes to convert from big endian to little endian
-inline uint16_t swapBytes(uint16_t value) {
-  return (value >> 8) | (value << 8);
-}
-
-inline void utf16ToUtf8(uint16_t code_unit, char *&output) {
-  if (code_unit < 0x80) {
-    *output++ = static_cast<char>(code_unit);
-  } else if (code_unit < 0x800) {
-    *output++ = static_cast<char>(0xC0 | (code_unit >> 6));
-    *output++ = static_cast<char>(0x80 | (code_unit & 0x3F));
-  } else {
-    *output++ = static_cast<char>(0xE0 | (code_unit >> 12));
-    *output++ = static_cast<char>(0x80 | ((code_unit >> 6) & 0x3F));
-    *output++ = static_cast<char>(0x80 | (code_unit & 0x3F));
-  }
-}
-
-inline void utf16SurrogatePairToUtf8(uint16_t high, uint16_t low, char *&utf8) {
-  uint32_t code_point = 0x10000 + ((high - 0xD800) << 10) + (low - 0xDC00);
-  *utf8++ = static_cast<char>((code_point >> 18) | 0xF0);
-  *utf8++ = static_cast<char>(((code_point >> 12) & 0x3F) | 0x80);
-  *utf8++ = static_cast<char>(((code_point >> 6) & 0x3F) | 0x80);
-  *utf8++ = static_cast<char>((code_point & 0x3F) | 0x80);
-}
-
 std::string utf16ToUtf8BaseLine(const std::u16string &utf16,
                                 bool is_little_endian) {
   std::string utf8;
