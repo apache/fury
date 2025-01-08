@@ -108,6 +108,8 @@ TEST(StringUtilTest, TestisAsciiLogic) {
 TEST(StringUtilTest, TestisLatin1) {
   // Test strings with only Latin characters
   EXPECT_TRUE(isLatin1(u"Fury"));
+  EXPECT_TRUE(isLatin1(u"\xE9")); // é in Latin-1
+  EXPECT_TRUE(isLatin1(u"\xF1")); // ñ in Latin-1
   // Test strings with non-Latin characters
   EXPECT_FALSE(isLatin1(u"你好, Fury"));
   EXPECT_FALSE(isLatin1(u"a\u1234"));
@@ -115,10 +117,18 @@ TEST(StringUtilTest, TestisLatin1) {
   EXPECT_FALSE(isLatin1(u"abc\u1234"));
   EXPECT_FALSE(isLatin1(u"abcd\u1234"));
   EXPECT_FALSE(isLatin1(u"Javaone Keynote\u1234"));
+  EXPECT_TRUE(isLatin1(u"a\xFF")); // ÿ in Latin-1
+  EXPECT_TRUE(isLatin1(u"\x80"));  //  in Latin-1
+  const uint16_t str[] = {256, 256};
+  EXPECT_FALSE(isLatin1(str, 2)); // Ā (not in Latin-1)
 
   for (size_t i = 1; i < 256; i++) {
     EXPECT_TRUE(isLatin1(std::u16string(i, '.') + u"Fury"));
     EXPECT_FALSE(isLatin1(std::u16string(i, '.') + u"序列化"));
+    EXPECT_TRUE(isLatin1(std::u16string(i, '.') + u"a\xFF")); // ÿ in Latin-1
+    EXPECT_TRUE(isLatin1(std::u16string(i, '.') + u"\x80"));  //  in Latin-1
+    EXPECT_FALSE(isLatin1(std::u16string(i, '.') +
+                          std::u16string({256}))); // Ā (not in Latin-1)
   }
 }
 
