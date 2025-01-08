@@ -47,7 +47,19 @@ std::string generateRandomString(size_t length) {
 
 TEST(StringUtilTest, TestIsAscii) {
   EXPECT_TRUE(isAscii("Fury"));
+  EXPECT_TRUE(isAscii(std::string(5, '.') + "Fury"));
+  EXPECT_TRUE(isAscii(std::string(119, '.')));
+  EXPECT_TRUE(isAscii(std::string(120, '.')));
+  EXPECT_TRUE(isAscii(std::string(125, '.')));
+  EXPECT_TRUE(isAscii(std::string(130, '.')));
+  EXPECT_TRUE(isAscii(std::string(136, '.')));
+  EXPECT_TRUE(isAscii(std::string(138, '.')));
   EXPECT_FALSE(isAscii("Fury序列化"));
+  EXPECT_FALSE(isAscii(std::string(110, '.') + "Fury序列化"));
+  EXPECT_FALSE(isAscii(std::string(115, '.') + "Fury序列化"));
+  EXPECT_FALSE(isAscii(std::string(125, '.') + "Fury序列化"));
+  EXPECT_FALSE(isAscii(std::string(130, '.') + "Fury序列化"));
+  EXPECT_FALSE(isAscii(std::string(135, '.') + "Fury序列化"));
 }
 
 bool isLatin_BaseLine(const std::string &str) {
