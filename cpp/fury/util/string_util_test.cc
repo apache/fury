@@ -105,6 +105,23 @@ TEST(StringUtilTest, TestisAsciiLogic) {
   }
 }
 
+TEST(StringUtilTest, TestisLatin1) {
+  // Test strings with only Latin characters
+  EXPECT_TRUE(isLatin1(u"Fury"));
+  // Test strings with non-Latin characters
+  EXPECT_FALSE(isLatin1(u"你好, Fury"));
+  EXPECT_FALSE(isLatin1(u"a\u1234"));
+  EXPECT_FALSE(isLatin1(u"ab\u1234"));
+  EXPECT_FALSE(isLatin1(u"abc\u1234"));
+  EXPECT_FALSE(isLatin1(u"abcd\u1234"));
+  EXPECT_FALSE(isLatin1(u"Javaone Keynote\u1234"));
+
+  for (size_t i = 1; i < 256; i++) {
+    EXPECT_TRUE(isLatin1(std::u16string(i, '.') + u"Fury"));
+    EXPECT_FALSE(isLatin1(std::u16string(i, '.') + u"序列化"));
+  }
+}
+
 // Generate random UTF-16 string ensuring valid surrogate pairs
 std::u16string generateRandomUTF16String(size_t length) {
   std::u16string str;

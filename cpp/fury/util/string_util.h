@@ -53,6 +53,15 @@ static inline bool isAsciiFallback(const char *data, size_t size) {
   return true;
 }
 
+static inline bool isLatin1Fallback(const uint16_t *data, size_t size) {
+  for (size_t i = 0; i < size; ++i) {
+    if (data[i] > 0xFF) {
+      return false;
+    }
+  }
+  return true;
+}
+
 static inline bool hasSurrogatePairFallback(const uint16_t *data, size_t size) {
   for (size_t i = 0; i < size; ++i) {
     auto c = data[i];
@@ -76,6 +85,20 @@ inline bool isAscii(const char *data, size_t length) {
   }
   // Check the remaining characters
   return isAsciiFallback(data + i, length - i);
+}
+
+inline bool isLatin1(const uint16_t *data, size_t length) {
+  size_t i = 0;
+  uint16x8_t maxAllowed = vdupq_n_u16(0xFF);
+  for (; i + 7 < length; i += 8) {
+    uint16x8_t chunk = vld1q_u16(&data[i]);
+    uint16x8_t cmp = vcgtq_u16(chunk, maxAllowed);
+    if (vmaxvq_u16(cmp) != 0) {
+      return false;
+    }
+  }
+  // Check the remaining elements
+  return isLatin1Fallback(data + i, length - i);
 }
 
 inline bool utf16HasSurrogatePairs(const uint16_t *data, size_t length) {
@@ -107,6 +130,22 @@ inline bool isAscii(const char *data, size_t length) {
   // Check the remaining characters
   return isAsciiFallback(data + i, length - i);
 }
+
+inline bool isLatin1(const uint16_t *data, size_t length) {
+  const __m128i maxAllowed = _mm_set1_epi16(0xFF);
+  size_t i = 0;
+  for (; i + 7 < length; i += 8) {
+    __m128i chunk =
+        _mm_loadu_si128(reinterpret_cast<const __m128i *>(&data[i]));
+    __m128i cmp = _mm_cmpgt_epi16(chunk, maxAllowed);
+    if (_mm_movemask_epi8(cmp) != 0) {
+      return false;
+    }
+  }
+  // Check the remaining elements
+  return isLatin1Fallback(data + i, length - i);
+}
+
 inline bool utf16HasSurrogatePairs(const uint16_t *data, size_t length) {
   size_t i = 0;
   __m128i lower_bound = _mm_set1_epi16(0xd7ff);
@@ -126,6 +165,11 @@ inline bool utf16HasSurrogatePairs(const uint16_t *data, size_t length) {
 inline bool isAscii(const char *data, size_t length) {
   return isAsciiFallback(data, length);
 }
+
+inline bool isLatin1(const uint16_t *data, size_t length) {
+  return isLatin1Fallback(data, length);
+}
+
 inline bool utf16HasSurrogatePairs(const uint16_t *data, size_t length) {
   return hasSurrogatePairFallback(data, length);
 }
@@ -133,6 +177,12 @@ inline bool utf16HasSurrogatePairs(const uint16_t *data, size_t length) {
 
 inline bool isAscii(const std::string &str) {
   return isAscii(str.data(), str.size());
+}
+
+inline bool isLatin1(const std::u16string &str) {
+  const std::uint16_t *data =
+      reinterpret_cast<const std::uint16_t *>(str.data());
+  return isLatin1(data, str.size());
 }
 
 inline bool utf16HasSurrogatePairs(const std::u16string &str) {
