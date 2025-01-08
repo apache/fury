@@ -53,8 +53,6 @@ static inline bool isAsciiFallback(const char *data, size_t size) {
   return true;
 }
 
-bool isLatin(const std::string &str);
-
 static inline bool hasSurrogatePairFallback(const uint16_t *data, size_t size) {
   for (size_t i = 0; i < size; ++i) {
     auto c = data[i];
