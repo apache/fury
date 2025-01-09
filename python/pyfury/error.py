@@ -24,5 +24,9 @@ class ClassNotCompatibleError(FuryError):
     pass
 
 
+class TypeUnregisteredError(FuryError):
+    pass
+
+
 class CompileError(FuryError):
     pass

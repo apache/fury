@@ -64,6 +64,12 @@ public class EnumSerializerTest extends FuryTestBase {
             .requireClassRegistration(false);
     Fury fury1 = builder.build();
     Fury fury2 = builder.build();
+    if (fury1.getLanguage() != Language.JAVA) {
+      fury1.register(EnumSerializerTest.EnumFoo.class);
+      fury2.register(EnumSerializerTest.EnumFoo.class);
+      fury1.register(EnumSerializerTest.EnumSubClass.class);
+      fury2.register(EnumSerializerTest.EnumSubClass.class);
+    }
     assertEquals(EnumFoo.A, serDe(fury1, fury2, EnumFoo.A));
     assertEquals(EnumFoo.B, serDe(fury1, fury2, EnumFoo.B));
     assertEquals(EnumSubClass.A, serDe(fury1, fury2, EnumSubClass.A));
@@ -134,8 +140,10 @@ public class EnumSerializerTest extends FuryTestBase {
             .build();
 
     // serialize enum "B"
+    furySerialization.register(cls1);
     byte[] bytes = furySerialization.serializeJavaObject(cls1.getEnumConstants()[1]);
 
+    furyDeserialize.register(cls2);
     Object data = furyDeserialize.deserializeJavaObject(bytes, cls2);
     assertEquals(cls2.getEnumConstants()[0], data);
   }
@@ -169,8 +177,10 @@ public class EnumSerializerTest extends FuryTestBase {
             .build();
 
     // serialize enum "B"
+    furySerialization.register(cls1);
     byte[] bytes = furySerialization.serializeJavaObject(cls1.getEnumConstants()[1]);
 
+    furyDeserialize.register(cls2);
     Object data = furyDeserialize.deserializeJavaObject(bytes, cls2);
     assertEquals(cls2.getEnumConstants()[0], data);
   }
@@ -203,9 +213,11 @@ public class EnumSerializerTest extends FuryTestBase {
             .withAsyncCompilation(false)
             .build();
 
+    furySerialization.register(cls1);
     byte[] bytes = furySerialization.serializeJavaObject(cls1.getEnumConstants()[0]);
 
     try {
+      furyDeserialize.register(cls2);
       furyDeserialize.deserializeJavaObject(bytes, cls2);
       fail("expected to throw exception");
     } catch (Exception e) {

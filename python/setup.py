@@ -159,8 +159,6 @@ setup(
     ],
     zip_safe=False,
     install_requires=[
-        'dataclasses; python_version<"3.7"',
-        'pickle5; python_version<"3.8"',
         "cloudpickle",
     ],
     extras_require={

@@ -24,8 +24,10 @@ from pyfury.meta.metastring import (
 
 
 def test_encode_metastring_lower_special():
-    encoder = MetaStringEncoder()
-    decoder = MetaStringDecoder()
+    encoder = MetaStringEncoder(special_char1=".", special_char2="_")
+    decoder = MetaStringDecoder(special_char1=".", special_char2="_")
+
+    # Test for encoding and decoding
     encoded = encoder._encode_lower_special("abc_def")
     assert len(encoded) == 5
     assert len(encoder.encode("org.apache.fury.benchmark.data").encoded_data) == 19
@@ -41,10 +43,12 @@ def test_encode_metastring_lower_special():
 
 
 def test_encode_metastring_lower_upper_digit_special():
-    encoder = MetaStringEncoder()
+    encoder = MetaStringEncoder(special_char1=".", special_char2="_")
+    decoder = MetaStringDecoder(special_char1=".", special_char2="_")
+
+    # Test for encoding and decoding
     encoded = encoder._encode_lower_upper_digit_special("ExampleInput123")
     assert len(encoded) == 12
-    decoder = MetaStringDecoder()
     decoded = decoder.decode(encoded, Encoding.LOWER_UPPER_DIGIT_SPECIAL)
     assert decoded == "ExampleInput123"
 
@@ -73,8 +77,9 @@ def create_string(length):
 
 
 def test_metastring():
+    encoder = MetaStringEncoder(special_char1=".", special_char2="_")
+    decoder = MetaStringDecoder(special_char1=".", special_char2="_")
 
-    encoder = MetaStringEncoder()
     for i in range(1, 128):
         try:
             string = create_string(i)
@@ -82,7 +87,6 @@ def test_metastring():
             assert metastring.encoding != Encoding.UTF_8
             assert metastring.original == string
 
-            decoder = MetaStringDecoder()
             new_string = decoder.decode(metastring.encoded_data, metastring.encoding)
             assert new_string == string
         except Exception as e:
@@ -90,8 +94,9 @@ def test_metastring():
 
 
 def test_encode_empty_string():
-    encoder = MetaStringEncoder()
-    decoder = MetaStringDecoder()
+    encoder = MetaStringEncoder(special_char1=".", special_char2="_")
+    decoder = MetaStringDecoder(special_char1=".", special_char2="_")
+
     for encoding in [
         Encoding.LOWER_SPECIAL,
         Encoding.LOWER_UPPER_DIGIT_SPECIAL,
@@ -106,7 +111,7 @@ def test_encode_empty_string():
 
 
 def test_encode_characters_outside_of_lower_special():
-    encoder = MetaStringEncoder()
+    encoder = MetaStringEncoder(special_char1=".", special_char2="_")
 
     test_string = "abcdefABCDEF1234!@#"
     metastring = encoder.encode(test_string)
@@ -114,8 +119,9 @@ def test_encode_characters_outside_of_lower_special():
 
 
 def test_all_to_upper_special_encoding():
-    encoder = MetaStringEncoder()
-    decoder = MetaStringDecoder()
+    encoder = MetaStringEncoder(special_char1=".", special_char2="_")
+    decoder = MetaStringDecoder(special_char1=".", special_char2="_")
+
     test_string = "ABC_DEF"
     metastring = encoder.encode(test_string)
     assert metastring.encoding == Encoding.LOWER_UPPER_DIGIT_SPECIAL
@@ -124,8 +130,9 @@ def test_all_to_upper_special_encoding():
 
 
 def test_first_to_lower_special_encoding():
-    encoder = MetaStringEncoder()
-    decoder = MetaStringDecoder()
+    encoder = MetaStringEncoder(special_char1=".", special_char2="_")
+    decoder = MetaStringDecoder(special_char1=".", special_char2="_")
+
     test_string = "Aabcdef"
     metastring = encoder.encode(test_string)
     assert metastring.encoding == Encoding.FIRST_TO_LOWER_SPECIAL
@@ -134,8 +141,9 @@ def test_first_to_lower_special_encoding():
 
 
 def test_utf8_encoding():
-    encoder = MetaStringEncoder()
-    decoder = MetaStringDecoder()
+    encoder = MetaStringEncoder(special_char1=".", special_char2="_")
+    decoder = MetaStringDecoder(special_char1=".", special_char2="_")
+
     test_string = "你好，世界"  # Non-Latin characters
     metastring = encoder.encode(test_string)
     assert metastring.encoding == Encoding.UTF_8
@@ -144,7 +152,7 @@ def test_utf8_encoding():
 
 
 def test_strip_last_char():
-    encoder = MetaStringEncoder()
+    encoder = MetaStringEncoder(special_char1=".", special_char2="_")
 
     test_string = "abc"  # encoded as 1|00000|00, 001|00010, exactly two bytes
     encoded_metastring = encoder.encode(test_string)
@@ -156,8 +164,9 @@ def test_strip_last_char():
 
 
 def test_empty_string():
-    encoder = MetaStringEncoder()
-    decoder = MetaStringDecoder()
+    encoder = MetaStringEncoder(special_char1=".", special_char2="_")
+    decoder = MetaStringDecoder(special_char1=".", special_char2="_")
+
     metastring = encoder.encode("")
     assert metastring.encoded_data == bytes()
 
@@ -166,7 +175,7 @@ def test_empty_string():
 
 
 def test_ascii_encoding():
-    encoder = MetaStringEncoder()
+    encoder = MetaStringEncoder(special_char1=".", special_char2="_")
 
     test_string = "asciiOnly"
     encoded_metastring = encoder.encode(test_string)
@@ -175,7 +184,7 @@ def test_ascii_encoding():
 
 
 def test_non_ascii_encoding():
-    encoder = MetaStringEncoder()
+    encoder = MetaStringEncoder(special_char1=".", special_char2="_")
 
     test_string = "こんにちは"  # Non-ASCII string
     encoded_metastring = encoder.encode(test_string)
@@ -183,7 +192,7 @@ def test_non_ascii_encoding():
 
 
 def test_non_ascii_encoding_and_non_utf8():
-    encoder = MetaStringEncoder()
+    encoder = MetaStringEncoder(special_char1=".", special_char2="_")
 
     non_ascii_string = "こんにちは"  # Non-ASCII string
 

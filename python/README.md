@@ -12,7 +12,7 @@ pip install -v -e .
 
 ### Environment Requirements
 
-- python 3.6+
+- python 3.8+
 
 ## Testing
 
@@ -48,4 +48,14 @@ python setup.py develop
 FURY_DEBUG=true python setup.py build_ext --inplace
 # For linux
 cygdb build
+```
+
+## Debug with lldb
+
+```bash
+lldb
+(lldb) target create -- python
+(lldb) settings set -- target.run-args "-c" "from pyfury.tests.test_serializer import test_enum; test_enum()"
+(lldb) run
+(lldb) bt
 ```

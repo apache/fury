@@ -57,17 +57,14 @@ public class SerializersTest extends FuryTestBase {
     Fury fury1 = builder.build();
     Fury fury2 = builder.build();
     assertEquals("str", serDe(fury1, fury2, "str"));
-    assertEquals("str", serDe(fury1, fury2, new StringBuilder("str")).toString());
-    assertEquals("str", serDe(fury1, fury2, new StringBuffer("str")).toString());
+    assertEquals("str", serDeObject(fury1, fury2, new StringBuilder("str")).toString());
+    assertEquals("str", serDeObject(fury1, fury2, new StringBuffer("str")).toString());
   }
 
-  @Test(dataProvider = "crossLanguageReferenceTrackingConfig")
-  public void testBigInt(boolean referenceTracking, Language language) {
+  @Test(dataProvider = "referenceTrackingConfig")
+  public void testBigInt(boolean referenceTracking) {
     FuryBuilder builder =
-        Fury.builder()
-            .withLanguage(language)
-            .withRefTracking(referenceTracking)
-            .requireClassRegistration(false);
+        Fury.builder().withRefTracking(referenceTracking).requireClassRegistration(false);
     Fury fury1 = builder.build();
     Fury fury2 = builder.build();
     assertEquals(BigInteger.valueOf(100), serDe(fury1, fury2, BigInteger.valueOf(100)));

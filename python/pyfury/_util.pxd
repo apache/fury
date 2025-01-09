@@ -124,19 +124,21 @@ cdef class Buffer:
 
     cpdef inline double read_double(self)
 
-    cpdef inline write_flagged_varint32(self, c_bool flag, int32_t v)
-
-    cpdef inline c_bool read_varint32_flag(self)
-
-    cpdef inline int32_t read_flagged_varint(self)
-
     cpdef inline write_varint64(self, int64_t v)
 
+    cpdef inline write_varuint64(self, int64_t v)
+
     cpdef inline int64_t read_varint64(self)
+
+    cpdef inline int64_t read_varuint64(self)
+
+    cpdef inline write_varuint32(self, int32_t value)
 
     cpdef inline write_varint32(self, int32_t value)
 
     cpdef inline int32_t read_varint32(self)
+
+    cpdef inline int32_t read_varuint32(self)
 
     cpdef put_buffer(self, uint32_t offset, v, int32_t src_index, int32_t length)
 

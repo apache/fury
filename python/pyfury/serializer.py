@@ -15,12 +15,12 @@
 # specific language governing permissions and limitations
 # under the License.
 
+import array
 import itertools
 import os
 import pickle
-from weakref import WeakValueDictionary
-
 import typing
+from weakref import WeakValueDictionary
 
 import pyfury.lib.mmh3
 from pyfury.buffer import Buffer
@@ -38,77 +38,105 @@ try:
 except ImportError:
     np = None
 
-from pyfury._serializer import (  # noqa: F401 # pylint: disable=unused-import
-    BufferObject,
-    BytesBufferObject,
-    Serializer,
-    CrossLanguageCompatibleSerializer,
-    BooleanSerializer,
-    ByteSerializer,
-    Int16Serializer,
-    Int32Serializer,
-    Int64Serializer,
-    FloatSerializer,
-    DoubleSerializer,
-    StringSerializer,
-    DateSerializer,
-    TimestampSerializer,
-    BytesSerializer,
-    PyArraySerializer,
-    Numpy1DArraySerializer,
-    CollectionSerializer,
-    ListSerializer,
-    TupleSerializer,
-    StringArraySerializer,
-    SetSerializer,
-    MapSerializer,
-    SubMapSerializer,
-    EnumSerializer,
-    SliceSerializer,
-    PickleSerializer,
+from pyfury._fury import (
     NOT_NULL_PYINT_FLAG,
-    PickleStrongCacheStub,
-    PickleCacheStub,
-    PICKLE_STRONG_CACHE_CLASS_ID,
-    PICKLE_CACHE_CLASS_ID,
+    BufferObject,
 )
 
-try:
-    from pyfury._serialization import ENABLE_FURY_CYTHON_SERIALIZATION
+from pyfury._serialization import ENABLE_FURY_CYTHON_SERIALIZATION
 
-    if ENABLE_FURY_CYTHON_SERIALIZATION:
-        from pyfury._serialization import (  # noqa: F401, F811
-            BufferObject,
-            BytesBufferObject,
-            Serializer,
-            CrossLanguageCompatibleSerializer,
-            BooleanSerializer,
-            ByteSerializer,
-            Int16Serializer,
-            Int32Serializer,
-            Int64Serializer,
-            FloatSerializer,
-            DoubleSerializer,
-            StringSerializer,
-            DateSerializer,
-            TimestampSerializer,
-            BytesSerializer,
-            PyArraySerializer,
-            Numpy1DArraySerializer,
-            CollectionSerializer,
-            ListSerializer,
-            TupleSerializer,
-            StringArraySerializer,
-            SetSerializer,
-            MapSerializer,
-            SubMapSerializer,
-            EnumSerializer,
-            SliceSerializer,
-            PickleSerializer,
-            PickleStrongCacheStub,
-            PickleCacheStub,
-        )
-except ImportError:
+if ENABLE_FURY_CYTHON_SERIALIZATION:
+    from pyfury._serialization import (  # noqa: F401, F811
+        Serializer,
+        CrossLanguageCompatibleSerializer,
+        BooleanSerializer,
+        ByteSerializer,
+        Int16Serializer,
+        Int32Serializer,
+        Int64Serializer,
+        DynamicIntSerializer,
+        FloatSerializer,
+        DoubleSerializer,
+        DynamicFloatSerializer,
+        StringSerializer,
+        DateSerializer,
+        TimestampSerializer,
+        CollectionSerializer,
+        ListSerializer,
+        TupleSerializer,
+        StringArraySerializer,
+        SetSerializer,
+        MapSerializer,
+        SubMapSerializer,
+        EnumSerializer,
+        SliceSerializer,
+    )
+else:
+    from pyfury._serializer import (  # noqa: F401 # pylint: disable=unused-import
+        Serializer,
+        CrossLanguageCompatibleSerializer,
+        BooleanSerializer,
+        ByteSerializer,
+        Int16Serializer,
+        Int32Serializer,
+        Int64Serializer,
+        FloatSerializer,
+        DoubleSerializer,
+        StringSerializer,
+        DateSerializer,
+        TimestampSerializer,
+        CollectionSerializer,
+        ListSerializer,
+        TupleSerializer,
+        StringArraySerializer,
+        SetSerializer,
+        MapSerializer,
+        SubMapSerializer,
+        EnumSerializer,
+        SliceSerializer,
+        DynamicIntSerializer,
+        DynamicFloatSerializer,
+    )
+
+from pyfury.type import (
+    Int16ArrayType,
+    Int32ArrayType,
+    Int64ArrayType,
+    Float32ArrayType,
+    Float64ArrayType,
+    BoolNDArrayType,
+    Int16NDArrayType,
+    Int32NDArrayType,
+    Int64NDArrayType,
+    Float32NDArrayType,
+    Float64NDArrayType,
+    TypeId,
+)
+
+
+class NoneSerializer(Serializer):
+    def xwrite(self, buffer, value):
+        raise NotImplementedError
+
+    def xread(self, buffer):
+        raise NotImplementedError
+
+    def write(self, buffer, value):
+        pass
+
+    def read(self, buffer):
+        return None
+
+
+class _PickleStub:
+    pass
+
+
+class PickleStrongCacheStub:
+    pass
+
+
+class PickleCacheStub:
     pass
 
 
@@ -140,19 +168,6 @@ class PickleStrongCacheSerializer(Serializer):
 
     def xread(self, buffer):
         raise NotImplementedError
-
-    @staticmethod
-    def new_classinfo(fury, clear_threshold: int = 1000):
-        from pyfury import ClassInfo
-
-        return ClassInfo(
-            PickleStrongCacheStub,
-            PICKLE_STRONG_CACHE_CLASS_ID,
-            serializer=PickleStrongCacheSerializer(
-                fury, clear_threshold=clear_threshold
-            ),
-            class_name_bytes=b"PickleStrongCacheStub",
-        )
 
 
 class PickleCacheSerializer(Serializer):
@@ -189,17 +204,6 @@ class PickleCacheSerializer(Serializer):
 
     def xread(self, buffer):
         raise NotImplementedError
-
-    @staticmethod
-    def new_classinfo(fury):
-        from pyfury import ClassInfo
-
-        return ClassInfo(
-            PickleCacheStub,
-            PICKLE_CACHE_CLASS_ID,
-            serializer=PickleCacheSerializer(fury),
-            class_name_bytes=b"PickleCacheStub",
-        )
 
 
 class PandasRangeIndexSerializer(Serializer):
@@ -396,3 +400,205 @@ class DataClassSerializer(Serializer):
 
     def xread(self, buffer):
         raise NotImplementedError
+
+
+# Use numpy array or python array module.
+typecode_dict = {
+    # use bytes serializer for byte array.
+    "h": (2, Int16ArrayType, TypeId.INT16_ARRAY),
+    "i": (4, Int32ArrayType, TypeId.INT32_ARRAY),
+    "l": (8, Int64ArrayType, TypeId.INT64_ARRAY),
+    "f": (4, Float32ArrayType, TypeId.FLOAT32_ARRAY),
+    "d": (8, Float64ArrayType, TypeId.FLOAT64_ARRAY),
+}
+
+typeid_code = {
+    TypeId.INT16_ARRAY: "h",
+    TypeId.INT32_ARRAY: "i",
+    TypeId.INT64_ARRAY: "l",
+    TypeId.FLOAT32_ARRAY: "f",
+    TypeId.FLOAT64_ARRAY: "d",
+}
+
+
+class PyArraySerializer(CrossLanguageCompatibleSerializer):
+    typecode_dict = typecode_dict
+    typecodearray_type = {
+        "h": Int16ArrayType,
+        "i": Int32ArrayType,
+        "l": Int64ArrayType,
+        "f": Float32ArrayType,
+        "d": Float64ArrayType,
+    }
+
+    def __init__(self, fury, ftype, type_id: str):
+        super().__init__(fury, ftype)
+        self.typecode = typeid_code[type_id]
+        self.itemsize, ftype, self.type_id = typecode_dict[self.typecode]
+
+    def xwrite(self, buffer, value):
+        assert value.itemsize == self.itemsize
+        view = memoryview(value)
+        assert view.format == self.typecode
+        assert view.itemsize == self.itemsize
+        assert view.c_contiguous  # TODO handle contiguous
+        nbytes = len(value) * self.itemsize
+        buffer.write_varuint32(nbytes)
+        buffer.write_buffer(value)
+
+    def xread(self, buffer):
+        data = buffer.read_bytes_and_size()
+        arr = array.array(self.typecode, [])
+        arr.frombytes(data)
+        return arr
+
+    def write(self, buffer, value: array.array):
+        nbytes = len(value) * value.itemsize
+        buffer.write_string(value.typecode)
+        buffer.write_varuint32(nbytes)
+        buffer.write_buffer(value)
+
+    def read(self, buffer):
+        typecode = buffer.read_string()
+        data = buffer.read_bytes_and_size()
+        arr = array.array(typecode, [])
+        arr.frombytes(data)
+        return arr
+
+
+class DynamicPyArraySerializer(Serializer):
+    def xwrite(self, buffer, value):
+        itemsize, ftype, type_id = typecode_dict[value.typecode]
+        view = memoryview(value)
+        nbytes = len(value) * itemsize
+        buffer.write_varuint32(type_id)
+        buffer.write_varuint32(nbytes)
+        if not view.c_contiguous:
+            buffer.write_bytes(value.tobytes())
+        else:
+            buffer.write_buffer(value)
+
+    def xread(self, buffer):
+        type_id = buffer.read_varint32()
+        typecode = typeid_code[type_id]
+        data = buffer.read_bytes_and_size()
+        arr = array.array(typecode, [])
+        arr.frombytes(data)
+        return arr
+
+    def write(self, buffer, value):
+        self.fury.handle_unsupported_write(buffer, value)
+
+    def read(self, buffer):
+        return self.fury.handle_unsupported_read(buffer)
+
+
+if np:
+    _np_dtypes_dict = {
+        # use bytes serializer for byte array.
+        np.dtype(np.bool_): (1, "?", BoolNDArrayType, TypeId.BOOL_ARRAY),
+        np.dtype(np.int16): (2, "h", Int16NDArrayType, TypeId.INT16_ARRAY),
+        np.dtype(np.int32): (4, "i", Int32NDArrayType, TypeId.INT32_ARRAY),
+        np.dtype(np.int64): (8, "l", Int64NDArrayType, TypeId.INT64_ARRAY),
+        np.dtype(np.float32): (4, "f", Float32NDArrayType, TypeId.FLOAT32_ARRAY),
+        np.dtype(np.float64): (8, "d", Float64NDArrayType, TypeId.FLOAT64_ARRAY),
+    }
+else:
+    _np_dtypes_dict = {}
+
+
+class Numpy1DArraySerializer(Serializer):
+    dtypes_dict = _np_dtypes_dict
+
+    def __init__(self, fury, ftype, dtype):
+        super().__init__(fury, ftype)
+        self.dtype = dtype
+        self.itemsize, self.format, self.typecode, self.type_id = _np_dtypes_dict[
+            self.dtype
+        ]
+
+    def xwrite(self, buffer, value):
+        assert value.itemsize == self.itemsize
+        view = memoryview(value)
+        try:
+            assert view.format == self.typecode
+        except AssertionError as e:
+            raise e
+        assert view.itemsize == self.itemsize
+        nbytes = len(value) * self.itemsize
+        buffer.write_varuint32(nbytes)
+        if self.dtype == np.dtype("bool") or not view.c_contiguous:
+            buffer.write_bytes(value.tobytes())
+        else:
+            buffer.write_buffer(value)
+
+    def xread(self, buffer):
+        data = buffer.read_bytes_and_size()
+        return np.frombuffer(data, dtype=self.dtype)
+
+    def write(self, buffer, value):
+        self.fury.handle_unsupported_write(buffer, value)
+
+    def read(self, buffer):
+        return self.fury.handle_unsupported_read(buffer)
+
+
+class NDArraySerializer(Serializer):
+    def xwrite(self, buffer, value):
+        itemsize, typecode, ftype, type_id = _np_dtypes_dict[value.dtype]
+        view = memoryview(value)
+        nbytes = len(value) * itemsize
+        buffer.write_varuint32(type_id)
+        buffer.write_varuint32(nbytes)
+        if value.dtype == np.dtype("bool") or not view.c_contiguous:
+            buffer.write_bytes(value.tobytes())
+        else:
+            buffer.write_buffer(value)
+
+    def xread(self, buffer):
+        raise NotImplementedError("Multi-dimensional array not supported currently")
+
+    def write(self, buffer, value):
+        self.fury.handle_unsupported_write(buffer, value)
+
+    def read(self, buffer):
+        return self.fury.handle_unsupported_read(buffer)
+
+
+class BytesSerializer(CrossLanguageCompatibleSerializer):
+    def write(self, buffer, value):
+        self.fury.write_buffer_object(buffer, BytesBufferObject(value))
+
+    def read(self, buffer):
+        fury_buf = self.fury.read_buffer_object(buffer)
+        return fury_buf.to_pybytes()
+
+
+class BytesBufferObject(BufferObject):
+    __slots__ = ("binary",)
+
+    def __init__(self, binary: bytes):
+        self.binary = binary
+
+    def total_bytes(self) -> int:
+        return len(self.binary)
+
+    def write_to(self, buffer: "Buffer"):
+        buffer.write_bytes(self.binary)
+
+    def to_buffer(self) -> "Buffer":
+        return Buffer(self.binary)
+
+
+class PickleSerializer(Serializer):
+    def xwrite(self, buffer, value):
+        raise NotImplementedError
+
+    def xread(self, buffer):
+        raise NotImplementedError
+
+    def write(self, buffer, value):
+        self.fury.handle_unsupported_write(buffer, value)
+
+    def read(self, buffer):
+        return self.fury.handle_unsupported_read(buffer)

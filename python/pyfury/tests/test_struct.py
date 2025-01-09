@@ -23,6 +23,7 @@ import typing
 
 import pyfury
 from pyfury import Fury, Language
+from pyfury.error import TypeUnregisteredError
 
 
 def ser_de(fury, obj):
@@ -51,10 +52,10 @@ class ComplexObject:
 
 def test_struct():
     fury = Fury(language=Language.XLANG, ref_tracking=True)
-    fury.register_class(SimpleObject, type_tag="example.SimpleObject")
-    fury.register_class(ComplexObject, type_tag="example.ComplexObject")
+    fury.register_type(SimpleObject, typename="SimpleObject")
+    fury.register_type(ComplexObject, typename="example.ComplexObject")
     o = SimpleObject(f1={1: 1.0 / 3})
-    # assert ser_de(fury, o) == o
+    assert ser_de(fury, o) == o
 
     o = ComplexObject(
         f1="str",
@@ -92,11 +93,20 @@ class ChildClass1(SuperClass1):
     f3: Dict[str, pyfury.Float64Type] = None
 
 
+def test_require_class_registration():
+    fury = Fury(language=Language.PYTHON, ref_tracking=True)
+    obj = ChildClass1(f1="a", f2=-10, f3={"a": -10.0, "b": 1 / 3})
+    with pytest.raises(TypeUnregisteredError):
+        fury.serialize(obj)
+
+
 def test_inheritance():
     type_hints = typing.get_type_hints(ChildClass1)
     print(type_hints)
     assert type_hints.keys() == {"f1", "f2", "f3"}
-    fury = Fury(language=Language.PYTHON, ref_tracking=True)
+    fury = Fury(
+        language=Language.PYTHON, ref_tracking=True, require_class_registration=False
+    )
     obj = ChildClass1(f1="a", f2=-10, f3={"a": -10.0, "b": 1 / 3})
     assert ser_de(fury, obj) == obj
     assert (
