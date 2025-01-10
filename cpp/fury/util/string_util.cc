@@ -17,46 +17,13 @@
  * under the License.
  */
 
-#include "string_util.h"
-
-#if defined(__x86_64__) || defined(_M_X64)
-#include <immintrin.h>
-#elif defined(__ARM_NEON) || defined(__ARM_NEON__)
-#include <arm_neon.h>
-#elif defined(__riscv) && __riscv_vector
-#include <riscv_vector.h>
-#endif
-
 #include <chrono>
 #include <string>
 
+#include "platform.h"
+#include "string_util.h"
+
 namespace fury {
-
-// Swap bytes to convert from big endian to little endian
-inline uint16_t swapBytes(uint16_t value) {
-  return (value >> 8) | (value << 8);
-}
-
-inline void utf16ToUtf8(uint16_t code_unit, char *&output) {
-  if (code_unit < 0x80) {
-    *output++ = static_cast<char>(code_unit);
-  } else if (code_unit < 0x800) {
-    *output++ = static_cast<char>(0xC0 | (code_unit >> 6));
-    *output++ = static_cast<char>(0x80 | (code_unit & 0x3F));
-  } else {
-    *output++ = static_cast<char>(0xE0 | (code_unit >> 12));
-    *output++ = static_cast<char>(0x80 | ((code_unit >> 6) & 0x3F));
-    *output++ = static_cast<char>(0x80 | (code_unit & 0x3F));
-  }
-}
-
-inline void utf16SurrogatePairToUtf8(uint16_t high, uint16_t low, char *&utf8) {
-  uint32_t code_point = 0x10000 + ((high - 0xD800) << 10) + (low - 0xDC00);
-  *utf8++ = static_cast<char>((code_point >> 18) | 0xF0);
-  *utf8++ = static_cast<char>(((code_point >> 12) & 0x3F) | 0x80);
-  *utf8++ = static_cast<char>(((code_point >> 6) & 0x3F) | 0x80);
-  *utf8++ = static_cast<char>((code_point & 0x3F) | 0x80);
-}
 
 std::u16string utf8ToUtf16SIMD(const std::string &utf8, bool is_little_endian) {
   std::u16string utf16;
@@ -181,7 +148,7 @@ std::u16string utf8ToUtf16SIMD(const std::string &utf8, bool is_little_endian) {
   return utf16;
 }
 
-#if defined(__x86_64__) || defined(_M_X64)
+#if defined(FURY_HAS_IMMINTRIN)
 
 std::string utf16ToUtf8(const std::u16string &utf16, bool is_little_endian) {
   std::string utf8;
@@ -271,7 +238,7 @@ std::u16string utf8ToUtf16(const std::string &utf8, bool is_little_endian) {
   return utf8ToUtf16SIMD(utf8, is_little_endian);
 }
 
-#elif defined(__ARM_NEON) || defined(__ARM_NEON__)
+#elif defined(FURY_HAS_NEON)
 
 std::string utf16ToUtf8(const std::u16string &utf16, bool is_little_endian) {
   std::string utf8;
@@ -348,7 +315,7 @@ std::u16string utf8ToUtf16(const std::string &utf8, bool is_little_endian) {
   return utf8ToUtf16SIMD(utf8, is_little_endian);
 }
 
-#elif defined(__riscv) && __riscv_vector
+#elif defined(FURY_HAS_RISCV_VECTOR)
 
 std::string utf16ToUtf8(const std::u16string &utf16, bool is_little_endian) {
   std::string utf8;
