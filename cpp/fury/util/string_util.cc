@@ -17,21 +17,11 @@
  * under the License.
  */
 
-#include "string_util.h"
-
-#if defined(__x86_64__) || defined(_M_X64)
-#include <immintrin.h>
-#define USE_IMMINTRIN_SIMD
-#elif defined(__ARM_NEON) || defined(__ARM_NEON__)
-#include <arm_neon.h>
-#define USE_NEON_SIMD
-#elif defined(__riscv) && __riscv_vector
-#include <riscv_vector.h>
-#define USE_RISCV_VECTOR_SIMD
-#endif
-
 #include <chrono>
 #include <string>
+
+#include "platform.h"
+#include "string_util.h"
 
 namespace fury {
 
@@ -158,7 +148,7 @@ std::u16string utf8ToUtf16SIMD(const std::string &utf8, bool is_little_endian) {
   return utf16;
 }
 
-#if defined(USE_IMMINTRIN_SIMD)
+#if defined(FURY_HAS_IMMINTRIN)
 
 std::string utf16ToUtf8(const std::u16string &utf16, bool is_little_endian) {
   std::string utf8;
@@ -248,7 +238,7 @@ std::u16string utf8ToUtf16(const std::string &utf8, bool is_little_endian) {
   return utf8ToUtf16SIMD(utf8, is_little_endian);
 }
 
-#elif defined(USE_NEON_SIMD)
+#elif defined(FURY_HAS_NEON)
 
 std::string utf16ToUtf8(const std::u16string &utf16, bool is_little_endian) {
   std::string utf8;
@@ -325,7 +315,7 @@ std::u16string utf8ToUtf16(const std::string &utf8, bool is_little_endian) {
   return utf8ToUtf16SIMD(utf8, is_little_endian);
 }
 
-#elif defined(USE_RISCV_VECTOR_SIMD)
+#elif defined(FURY_HAS_RISCV_VECTOR)
 
 std::string utf16ToUtf8(const std::u16string &utf16, bool is_little_endian) {
   std::string utf8;

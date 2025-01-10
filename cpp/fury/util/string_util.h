@@ -19,17 +19,9 @@
 
 #pragma once
 
+#include "platform.h"
 #include <cstdint>
 #include <string>
-// AVX not included here since some older intel cpu doesn't support avx2
-// but the built wheel for avx2 is same as sse2.
-#if defined(__ARM_NEON) || defined(__ARM_NEON__)
-#include <arm_neon.h>
-#define USE_NEON_SIMD
-#elif defined(__SSE2__)
-#include <emmintrin.h>
-#define USE_SSE2_SIMD
-#endif
 
 namespace fury {
 
@@ -104,7 +96,7 @@ static inline bool hasSurrogatePairFallback(const uint16_t *data, size_t size) {
   return false;
 }
 
-#if defined(USE_NEON_SIMD)
+#if defined(FURY_HAS_NEON)
 inline bool isAscii(const char *data, size_t length) {
   size_t i = 0;
   uint8x16_t mostSignificantBit = vdupq_n_u8(0x80);
@@ -147,7 +139,7 @@ inline bool utf16HasSurrogatePairs(const uint16_t *data, size_t length) {
   }
   return hasSurrogatePairFallback(data + i, length - i);
 }
-#elif defined(USE_SSE2_SIMD)
+#elif defined(FURY_HAS_SSE2)
 inline bool isAscii(const char *data, size_t length) {
   const __m128i mostSignificantBit = _mm_set1_epi8(static_cast<char>(0x80));
   size_t i = 0;

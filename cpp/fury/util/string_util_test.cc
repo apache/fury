@@ -23,6 +23,7 @@
 #include <locale>
 #include <random>
 
+#include "platform.h"
 #include "fury/util/logging.h"
 #include "string_util.h"
 #include "gtest/gtest.h"
