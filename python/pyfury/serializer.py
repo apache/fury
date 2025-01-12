@@ -288,7 +288,7 @@ class DataClassSerializer(Serializer):
         # This will get superclass type hints too.
         self._type_hints = typing.get_type_hints(clz)
         self._field_names = sorted(self._type_hints.keys())
-        self._has_slots = hasattr(clz, '__slots__')
+        self._has_slots = hasattr(clz, "__slots__")
         # TODO compute hash
         self._hash = len(self._field_names)
         self._generated_write_method = self._gen_write_method()
@@ -338,7 +338,13 @@ class DataClassSerializer(Serializer):
 
     def _gen_read_method(self):
         context = dict(_jit_context)
-        buffer, fury, obj_class, obj, obj_dict = "buffer", "fury", "obj_class", "obj", "obj_dict"
+        buffer, fury, obj_class, obj, obj_dict = (
+            "buffer",
+            "fury",
+            "obj_class",
+            "obj",
+            "obj_dict",
+        )
         ref_resolver = "ref_resolver"
         context[fury] = self.fury
         context[obj_class] = self.type_
