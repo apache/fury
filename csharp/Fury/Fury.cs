@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Fury.Buffers;
+using Fury.Meta;
 
 namespace Fury;
 
@@ -143,7 +144,8 @@ public sealed class Fury(Config config)
             return ThrowHelper.ThrowNotSupportedException<DeserializationContext>(ExceptionMessages.NotLittleEndian());
         }
         await reader.ReadAsync<byte>();
-        var context = new DeserializationContext(this, reader, refContext);
+        var metaStringResolver = new MetaStringResolver(Config.ArrayPoolProvider);
+        var context = new DeserializationContext(this, reader, refContext, metaStringResolver);
         return context;
     }
 }

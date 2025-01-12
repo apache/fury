@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 
 namespace Fury.Meta;
 
@@ -7,6 +8,8 @@ internal sealed class FirstToLowerSpecialEncoding()
 {
     public static readonly FirstToLowerSpecialEncoding Instance = new();
 
+    private static readonly FirstToLowerSpecialDecoder SharedDecoder = new();
+
     public override bool CanEncode(ReadOnlySpan<char> chars)
     {
         if (chars.Length == 0)
@@ -14,138 +17,167 @@ internal sealed class FirstToLowerSpecialEncoding()
             return true;
         }
 
-        if (!TryEncodeCharToByte(char.ToLowerInvariant(chars[0]), out _))
+        if (!TryEncodeChar(char.ToLowerInvariant(chars[0]), out _))
         {
             return false;
         }
+
         foreach (var c in chars)
         {
-            if (!TryEncodeCharToByte(c, out _))
+            if (!TryEncodeChar(c, out _))
             {
                 return false;
             }
         }
+
         return true;
+    }
+
+    public override int GetByteCount(ReadOnlySpan<char> chars)
+    {
+        return LowerSpecialEncoding.Instance.GetByteCount(chars);
+    }
+
+    public override int GetCharCount(ReadOnlySpan<byte> bytes)
+    {
+        return LowerSpecialEncoding.Instance.GetCharCount(bytes);
+    }
+
+    public override int GetMaxByteCount(int charCount)
+    {
+        return LowerSpecialEncoding.Instance.GetMaxByteCount(charCount);
+    }
+
+    public override int GetMaxCharCount(int byteCount)
+    {
+        return LowerSpecialEncoding.Instance.GetMaxCharCount(byteCount);
     }
 
     public override int GetBytes(ReadOnlySpan<char> chars, Span<byte> bytes)
     {
-        var (byteCount, stripLastChar) = GetByteAndStripLastChar(chars.Length);
-        if (bytes.Length < byteCount)
-        {
-            ThrowHelper.ThrowArgumentException(nameof(bytes));
-        }
-        var currentBit = 1;
-        if (chars.Length > 0)
-        {
-            var firstChar = chars[0];
-            firstChar = char.ToLowerInvariant(firstChar);
-            if (!TryEncodeCharToByte(firstChar, out var v))
-            {
-                ThrowHelper.ThrowArgumentOutOfRangeException(nameof(chars), chars.ToString());
-            }
-            var byteIndex = currentBit / BitsOfByte;
-            var bitOffset = currentBit % BitsOfByte;
-            // bitOffset locations   write locations
-            // _ x _ _ _ _ _ _       _ x x x x x _ _
+        var bitsWriter = new BitsWriter(bytes);
+        var charsReader = new CharsReader(chars);
 
-            bytes[byteIndex] |= (byte)(v << (UnusedBitsPerChar - bitOffset));
-            currentBit += BitsPerChar;
-        }
-        foreach (var c in chars)
+        bitsWriter.Advance(1);
+        var writtenFirstCharBits = false;
+        while (charsReader.TryReadChar(out var c))
         {
-            if (!TryEncodeCharToByte(c, out var v))
+            if (!writtenFirstCharBits)
             {
-                ThrowHelper.ThrowArgumentOutOfRangeException(nameof(chars), chars.ToString());
+                c = char.ToLowerInvariant(c);
+                writtenFirstCharBits = true;
             }
-            var byteIndex = currentBit / BitsOfByte;
-            var bitOffset = currentBit % BitsOfByte;
-            if (bitOffset <= UnusedBitsPerChar)
-            {
-                // bitOffset locations   write locations
-                // x _ _ _ _ _ _ _       x x x x x _ _ _
-                // _ x _ _ _ _ _ _       _ x x x x x _ _
-                // _ _ x _ _ _ _ _       _ _ x x x x x _
-                // _ _ _ x _ _ _ _       _ _ _ x x x x x
 
-                bytes[byteIndex] |= (byte)(v << (UnusedBitsPerChar - bitOffset));
+            var charByte = EncodeChar(c);
+
+            if (bitsWriter.TryWriteBits(BitsPerChar, charByte))
+            {
+                charsReader.Advance();
+                bitsWriter.Advance(BitsPerChar);
             }
             else
             {
-                // bitOffset locations   write locations
-                // _ _ _ _ x _ _ _       _ _ _ _ x x x x | x _ _ _ _ _ _ _
-                // _ _ _ _ _ x _ _       _ _ _ _ _ x x x | x x _ _ _ _ _ _
-                // _ _ _ _ _ _ x _       _ _ _ _ _ _ x x | x x x _ _ _ _ _
-                // _ _ _ _ _ _ _ x       _ _ _ _ _ _ _ x | x x x x _ _ _ _
-
-                bytes[byteIndex] |= (byte)(v >>> (bitOffset - UnusedBitsPerChar));
-                bytes[byteIndex + 1] |= (byte)(v << (BitsOfByte + UnusedBitsPerChar - bitOffset));
+                break;
             }
-            currentBit += BitsPerChar;
         }
 
-        if (stripLastChar)
+        if (charsReader.CharsUsed < chars.Length)
         {
-            bytes[0] |= 0x80;
+            ThrowHelper.ThrowArgumentException_InsufficientSpaceInTheOutputBuffer(nameof(bytes));
         }
 
-        return byteCount;
+        if (bitsWriter.UnusedBitCountInLastUsedByte >= BitsPerChar)
+        {
+            bitsWriter[0] = true;
+        }
+
+        return bitsWriter.BytesUsed;
     }
 
     public override int GetChars(ReadOnlySpan<byte> bytes, Span<char> chars)
     {
-        const byte bitMask = MaxRepresentableChar;
+        SharedDecoder.Convert(bytes, chars, true, out _, out var charsUsed, out _);
+        SharedDecoder.Reset();
+        return charsUsed;
+    }
 
-        var charCount = GetCharCount(bytes);
-        if (chars.Length < charCount)
+    private static bool TryWriteChar(ref CharsWriter writer, byte charByte, FirstToLowerSpecialDecoder decoder)
+    {
+        var decodedChar = DecodeByte(charByte);
+        if (!decoder.WrittenFirstChar)
         {
-            ThrowHelper.ThrowArgumentException(nameof(chars));
+            decodedChar = char.ToUpperInvariant(decodedChar);
         }
-        for (var i = 0; i < charCount; i++)
+
+        return writer.TryWriteChar(decodedChar);
+    }
+
+    internal static void GetChars(
+        ReadOnlySpan<byte> bytes,
+        Span<char> chars,
+        FirstToLowerSpecialDecoder decoder,
+        out int bytesUsed,
+        out int charsUsed
+    )
+    {
+        var bitsReader = new BitsReader(bytes);
+        var charsWriter = new CharsWriter(chars);
+        if (!decoder.HasState)
         {
-            var currentBit = i * BitsPerChar + 1;
-            var byteIndex = currentBit / BitsOfByte;
-            var bitOffset = currentBit % BitsOfByte;
-
-            byte charByte;
-            if (bitOffset <= UnusedBitsPerChar)
+            decoder.HasState = true;
+            if (bitsReader.TryReadBits(1, out var stripLastCharFlag))
             {
-                // bitOffset locations   read locations
-                // x _ _ _ _ _ _ _       x x x x x _ _ _
-                // _ x _ _ _ _ _ _       _ x x x x x _ _
-                // _ _ x _ _ _ _ _       _ _ x x x x x _
-                // _ _ _ x _ _ _ _       _ _ _ x x x x x
+                bitsReader.Advance(1);
+                decoder.StripLastChar = stripLastCharFlag != 0;
+            }
+        }
+        else
+        {
+            if (TryReadLeftOver(decoder, ref bitsReader, BitsPerChar, out var charByte, out var bitsUsedFromBitsReader))
+            {
+                if (TryWriteChar(ref charsWriter, charByte, decoder))
+                {
+                    decoder.WrittenFirstChar = true;
+                    bitsReader.Advance(bitsUsedFromBitsReader);
+                    charsWriter.Advance();
 
-                charByte = (byte)((bytes[byteIndex] >>> (UnusedBitsPerChar - bitOffset)) & bitMask);
+                    if (TryReadLeftOver(decoder, ref bitsReader, BitsPerChar, out charByte, out bitsUsedFromBitsReader))
+                    {
+                        if (TryWriteChar(ref charsWriter, charByte, decoder))
+                        {
+                            decoder.WrittenFirstChar = true;
+                            bitsReader.Advance(bitsUsedFromBitsReader);
+                            charsWriter.Advance();
+                        }
+                    }
+                }
+            }
+        }
+
+        while (bitsReader.TryReadBits(BitsPerChar, out var charByte))
+        {
+            if (bitsReader.GetRemainingCount(BitsPerChar) == 1 && decoder is { MustFlush: true, StripLastChar: true })
+            {
+                break;
+            }
+
+            if (TryWriteChar(ref charsWriter, charByte, decoder))
+            {
+                decoder.WrittenFirstChar = true;
+                bitsReader.Advance(BitsPerChar);
+                charsWriter.Advance();
             }
             else
             {
-                // bitOffset locations   read locations
-                // _ _ _ _ x _ _ _       _ _ _ _ x x x x | x _ _ _ _ _ _ _
-                // _ _ _ _ _ x _ _       _ _ _ _ _ x x x | x x _ _ _ _ _ _
-                // _ _ _ _ _ _ x _       _ _ _ _ _ _ x x | x x x _ _ _ _ _
-                // _ _ _ _ _ _ _ x       _ _ _ _ _ _ _ x | x x x x _ _ _ _
-
-                charByte = (byte)(
-                    (
-                        bytes[byteIndex] << (bitOffset - (UnusedBitsPerChar))
-                        | bytes[byteIndex + 1] >>> (BitsOfByte + UnusedBitsPerChar - bitOffset)
-                    ) & bitMask
-                );
+                break;
             }
-
-            if (!TryDecodeByteToChar(charByte, out var c))
-            {
-                ThrowHelper.ThrowArgumentOutOfRangeException(nameof(bytes));
-            }
-            chars[i] = c;
         }
 
-        if (chars.Length > 0)
-        {
-            chars[0] = char.ToUpperInvariant(chars[0]);
-        }
+        decoder.SetLeftoverData(bitsReader.UnusedBitsInLastUsedByte, bitsReader.UnusedBitCountInLastUsedByte);
 
-        return charCount;
+        bytesUsed = bitsReader.BytesUsed;
+        charsUsed = charsWriter.CharsUsed;
     }
+
+    public override Decoder GetDecoder() => new FirstToLowerSpecialDecoder();
 }

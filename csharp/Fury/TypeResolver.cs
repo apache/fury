@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using Fury.Buffers;
 using Fury.Collections;
+using Fury.Meta;
 using Fury.Serializer;
 using Fury.Serializer.Provider;
 
@@ -15,7 +16,9 @@ public sealed class TypeResolver
     private readonly Dictionary<Type, ISerializer> _typeToSerializers = new();
     private readonly Dictionary<Type, IDeserializer> _typeToDeserializers = new();
     private readonly Dictionary<Type, TypeInfo> _typeToTypeInfos = new();
+    private readonly Dictionary<UInt128, TypeInfo> _fullNameHashToTypeInfos = new();
     private readonly PooledList<Type> _types;
+
 
     private readonly ISerializerProvider[] _serializerProviders;
     private readonly IDeserializerProvider[] _deserializerProviders;
@@ -152,5 +155,19 @@ public sealed class TypeResolver
 
         deserializer = null;
         return false;
+    }
+
+    internal void GetOrRegisterTypeInfo(TypeId typeId, MetaStringBytes namespaceBytes, MetaStringBytes typeNameBytes)
+    {
+        var hashCode = new UInt128((ulong)namespaceBytes.HashCode, (ulong)typeNameBytes.HashCode);
+#if NET8_0_OR_GREATER
+        ref var typeInfo = ref CollectionsMarshal.GetValueRefOrAddDefault(_fullNameHashToTypeInfos, hashCode, out var exists);
+        #else
+        var exists = _fullNameHashToTypeInfos.TryGetValue(hashCode, out var typeInfo);
+#endif
+        if (!exists)
+        {
+
+        }
     }
 }

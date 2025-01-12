@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Fury.Meta;
 using Fury.Serializer;
 
 namespace Fury;
@@ -14,13 +15,21 @@ public sealed class DeserializationContext
 {
     public Fury Fury { get; }
     public BatchReader Reader { get; }
-    private RefContext RefContext { get; }
+    private readonly RefContext _refContext;
+    private readonly MetaStringResolver _metaStringResolver;
+    private readonly TypeResolver _typeResolver;
 
-    internal DeserializationContext(Fury fury, BatchReader reader, RefContext refContext)
+    internal DeserializationContext(
+        Fury fury,
+        BatchReader reader,
+        RefContext refContext,
+        MetaStringResolver metaStringResolver
+    )
     {
         Fury = fury;
         Reader = reader;
-        RefContext = refContext;
+        _refContext = refContext;
+        _metaStringResolver = metaStringResolver;
     }
 
     public bool TryGetDeserializer<TValue>([NotNullWhen(true)] out IDeserializer? deserializer)
@@ -32,7 +41,10 @@ public sealed class DeserializationContext
     {
         if (!TryGetDeserializer<TValue>(out var deserializer))
         {
-            ThrowHelper.ThrowDeserializerNotFoundException(typeof(TValue), message: ExceptionMessages.DeserializerNotFound(typeof(TValue)));
+            ThrowHelper.ThrowDeserializerNotFoundException(
+                typeof(TValue),
+                message: ExceptionMessages.DeserializerNotFound(typeof(TValue))
+            );
         }
         return deserializer;
     }
@@ -51,7 +63,7 @@ public sealed class DeserializationContext
         if (refFlag == ReferenceFlag.Ref)
         {
             var refId = await Reader.ReadRefIdAsync(cancellationToken);
-            if (!RefContext.TryGetReadValue(refId, out var readObject))
+            if (!_refContext.TryGetReadValue(refId, out var readObject))
             {
                 ThrowHelper.ThrowBadSerializationDataException(ExceptionMessages.ReferencedObjectNotFound(refId));
             }
@@ -81,7 +93,7 @@ public sealed class DeserializationContext
         if (refFlag == ReferenceFlag.Ref)
         {
             var refId = await Reader.ReadRefIdAsync(cancellationToken);
-            if (!RefContext.TryGetReadValue(refId, out var readObject))
+            if (!_refContext.TryGetReadValue(refId, out var readObject))
             {
                 ThrowHelper.ThrowBadSerializationDataException(ExceptionMessages.ReferencedObjectNotFound(refId));
             }
@@ -101,7 +113,7 @@ public sealed class DeserializationContext
         IDeserializer? deserializer,
         CancellationToken cancellationToken = default
     )
-    where TValue : notnull
+        where TValue : notnull
     {
         var declaredType = typeof(TValue);
         var typeInfo = await ReadTypeMetaAsync(cancellationToken);
@@ -123,7 +135,7 @@ public sealed class DeserializationContext
         var typeInfo = await ReadTypeMetaAsync(cancellationToken);
         deserializer ??= GetPreferredDeserializer(typeInfo.Type);
         var newObj = await deserializer.CreateInstanceAsync(this, cancellationToken);
-        RefContext.PushReferenceableObject(newObj);
+        _refContext.PushReferenceableObject(newObj);
         await deserializer.ReadAndFillAsync(this, newObj, cancellationToken);
         return newObj;
     }
@@ -132,6 +144,12 @@ public sealed class DeserializationContext
     {
         var typeId = await Reader.ReadTypeIdAsync(cancellationToken);
         TypeInfo typeInfo;
+        if (typeId.IsNamed())
+        {
+            var namespaceBytes = await _metaStringResolver.ReadMetaStringBytesAsync(Reader, cancellationToken);
+            var typeNameBytes = await _metaStringResolver.ReadMetaStringBytesAsync(Reader, cancellationToken);
+
+        }
         switch (typeId)
         {
             // TODO: Read namespace
@@ -156,5 +174,4 @@ public sealed class DeserializationContext
         }
         return deserializer;
     }
-
 }

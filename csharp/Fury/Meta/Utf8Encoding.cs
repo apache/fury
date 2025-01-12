@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 
 namespace Fury.Meta;
 
@@ -44,5 +45,10 @@ internal sealed class Utf8Encoding() : MetaStringEncoding(MetaString.Encoding.Ut
         {
             return UTF8.GetChars(pBytes, bytes.Length, pChars, chars.Length);
         }
+    }
+
+    public override Encoder GetEncoder()
+    {
+        return UTF8.GetEncoder();
     }
 }

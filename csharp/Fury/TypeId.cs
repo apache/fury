@@ -1,14 +1,40 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Fury;
 
-public readonly struct TypeId
+public readonly struct TypeId : IEquatable<TypeId>
 {
     internal int Value { get; }
 
     internal TypeId(int value)
     {
         Value = value;
+    }
+
+    public bool Equals(TypeId other)
+    {
+        return Value == other.Value;
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is TypeId other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        return Value;
+    }
+
+    public static bool operator ==(TypeId left, TypeId right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(TypeId left, TypeId right)
+    {
+        return !left.Equals(right);
     }
 
     /// <summary>
@@ -248,13 +274,24 @@ public readonly struct TypeId
     /// </returns>
     public bool IsStructType()
     {
-        return Value == Struct.Value
-            || Value == PolymorphicStruct.Value
-            || Value == CompatibleStruct.Value
-            || Value == PolymorphicCompatibleStruct.Value
-            || Value == NamedStruct.Value
-            || Value == NamedPolymorphicStruct.Value
-            || Value == NamedCompatibleStruct.Value
-            || Value == NamedPolymorphicCompatibleStruct.Value;
+        return this == Struct
+            || this == PolymorphicStruct
+            || this == CompatibleStruct
+            || this == PolymorphicCompatibleStruct
+            || this == NamedStruct
+            || this == NamedPolymorphicStruct
+            || this == NamedCompatibleStruct
+            || this == NamedPolymorphicCompatibleStruct;
+    }
+
+    internal bool IsNamed()
+    {
+        return this == NamedEnum
+            || this == NamedStruct
+            || this == NamedPolymorphicStruct
+            || this == NamedCompatibleStruct
+            || this == NamedPolymorphicCompatibleStruct
+            || this == NamedExt
+            || this == NamedPolymorphicExt;
     }
 }

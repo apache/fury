@@ -1,37 +1,17 @@
-﻿using System;
+﻿using System.Text;
 
 namespace Fury.Meta;
 
-internal abstract class AbstractLowerSpecialEncoding(MetaString.Encoding encoding)
-    : MetaStringEncoding(encoding)
+internal abstract class AbstractLowerSpecialEncoding(MetaString.Encoding encoding) : MetaStringEncoding(encoding)
 {
-    protected const int BitsPerChar = 5;
-    protected const int UnusedBitsPerChar = BitsOfByte - BitsPerChar;
-    protected const int MaxRepresentableChar = (1 << BitsPerChar) - 1;
+    internal const int BitsPerChar = 5;
 
-    protected static (int byteCount, bool stripLastChar) GetByteAndStripLastChar(int charCount)
+    public sealed override Encoder GetEncoder() =>
+        ThrowHelper.ThrowNotSupportedException_EncoderNotSupportedForThisEncoding<Encoder>(GetType().Name);
+
+    internal static bool TryEncodeChar(char c, out byte b)
     {
-        var totalBits = charCount * BitsPerChar + 1;
-        var byteLength = (totalBits + (BitsOfByte - 1)) / BitsOfByte;
-        var stripLastChar = byteLength * BitsOfByte >= totalBits * BitsPerChar;
-        return (byteLength, stripLastChar);
-    }
-
-    public override int GetMaxByteCount(int charCount) => GetByteAndStripLastChar(charCount).byteCount;
-
-    public override int GetMaxCharCount(int byteCount) => (byteCount * BitsOfByte - 1) / BitsPerChar;
-
-    public override int GetByteCount(ReadOnlySpan<char> chars) => GetMaxByteCount(chars.Length);
-
-    public override int GetCharCount(ReadOnlySpan<byte> bytes)
-    {
-        var stripLastChar = (bytes[0] & 0x80) != 0;
-        return GetMaxCharCount(bytes.Length) - (stripLastChar ? 1 : 0);
-    }
-
-    protected static bool TryEncodeCharToByte(char c, out byte b)
-    {
-        (var success, b) = c switch
+        var (success, encoded) = c switch
         {
             >= 'a' and <= 'z' => (true, (byte)(c - 'a')),
             '.' => (true, NumberOfEnglishLetters),
@@ -40,10 +20,21 @@ internal abstract class AbstractLowerSpecialEncoding(MetaString.Encoding encodin
             '|' => (true, NumberOfEnglishLetters + 3),
             _ => (false, default)
         };
+        b = (byte)encoded;
         return success;
     }
 
-    protected static bool TryDecodeByteToChar(byte b, out char c)
+    internal static byte EncodeChar(char c)
+    {
+        if (!TryEncodeChar(c, out var b))
+        {
+            ThrowHelper.ThrowBadSerializationInputException_UnsupportedMetaStringChar(c);
+        }
+
+        return b;
+    }
+
+    internal static bool TryDecodeByte(byte b, out char c)
     {
         (var success, c) = b switch
         {
@@ -55,5 +46,15 @@ internal abstract class AbstractLowerSpecialEncoding(MetaString.Encoding encodin
             _ => (false, default)
         };
         return success;
+    }
+
+    internal static char DecodeByte(byte b)
+    {
+        if (!TryDecodeByte(b, out var c))
+        {
+            ThrowHelper.ThrowBadSerializationDataException_UnrecognizedMetaStringCodePoint(b);
+        }
+
+        return c;
     }
 }
