@@ -307,12 +307,12 @@ class DataClassSerializer(Serializer):
             f'"""write method for {self.type_}"""',
             f"{buffer}.write_int32({self._hash})",
         ]
-        if self._has_slots:
+        if not self._has_slots:
             stmts.append(f"{value_dict} = {value}.__dict__")
         for field_name in self._field_names:
             field_type = self._type_hints[field_name]
             field_value = f"field_value{next(counter)}"
-            if self._has_slots:
+            if not self._has_slots:
                 stmts.append(f"{field_value} = {value_dict}['{field_name}']")
             else:
                 stmts.append(f"{field_value} = {value}.{field_name}")
@@ -352,11 +352,11 @@ class DataClassSerializer(Serializer):
             f"""   raise ClassNotCompatibleError(
             "Hash read_hash is not consistent with {self._hash} for {self.type_}")""",
         ]
-        if self._has_slots:
+        if not self._has_slots:
             stmts.append(f"{obj_dict} = {obj}.__dict__")
 
         def set_action(value: str):
-            if self._has_slots:
+            if not self._has_slots:
                 return f"{obj_dict}['{field_name}'] = {value}"
             else:
                 return f"{obj}.{field_name} = {value}"
