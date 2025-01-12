@@ -682,7 +682,7 @@ public class ArraySerializers {
       for (String elem : value) {
         if (elem != null) {
           buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
-          stringSerializer.writeUTF8String(buffer, elem);
+          stringSerializer.writeString(buffer, elem);
         } else {
           buffer.writeByte(Fury.NULL_FLAG);
         }
@@ -695,7 +695,7 @@ public class ArraySerializers {
       String[] value = new String[numElements];
       for (int i = 0; i < numElements; i++) {
         if (buffer.readByte() >= Fury.NOT_NULL_VALUE_FLAG) {
-          value[i] = stringSerializer.readUTF8String(buffer);
+          value[i] = stringSerializer.readString(buffer);
         } else {
           value[i] = null;
         }

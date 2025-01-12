@@ -643,7 +643,8 @@ cdef class Fury:
             )
             self.pickler = Pickler(self.buffer)
         else:
-            self.pickler = _PicklerStub(self.buffer)
+            self.pickler = _PicklerStub()
+            self.unpickler = _UnpicklerStub()
         self.unpickler = None
         self._buffer_callback = None
         self._buffers = None
@@ -815,9 +816,7 @@ cdef class Fury:
 
     cpdef inline _deserialize(
             self, Buffer buffer, buffers=None, unsupported_objects=None):
-        if self.require_class_registration:
-            self.unpickler = _UnpicklerStub(buffer)
-        else:
+        if not self.require_class_registration:
             self.unpickler = Unpickler(buffer)
         if unsupported_objects is not None:
             self._unsupported_objects = iter(unsupported_objects)
@@ -955,6 +954,8 @@ cdef class Fury:
     cpdef inline handle_unsupported_read(self, Buffer buffer):
         cdef c_bool in_band = buffer.read_bool()
         if in_band:
+            if self.unpickler is None:
+                self.unpickler.buffer = Unpickler(buffer)
             return self.unpickler.load()
         else:
             assert self._unsupported_objects is not None

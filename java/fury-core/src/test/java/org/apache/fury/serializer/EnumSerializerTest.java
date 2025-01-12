@@ -140,8 +140,10 @@ public class EnumSerializerTest extends FuryTestBase {
             .build();
 
     // serialize enum "B"
+    furySerialization.register(cls1);
     byte[] bytes = furySerialization.serializeJavaObject(cls1.getEnumConstants()[1]);
 
+    furyDeserialize.register(cls2);
     Object data = furyDeserialize.deserializeJavaObject(bytes, cls2);
     assertEquals(cls2.getEnumConstants()[0], data);
   }
@@ -175,8 +177,10 @@ public class EnumSerializerTest extends FuryTestBase {
             .build();
 
     // serialize enum "B"
+    furySerialization.register(cls1);
     byte[] bytes = furySerialization.serializeJavaObject(cls1.getEnumConstants()[1]);
 
+    furyDeserialize.register(cls2);
     Object data = furyDeserialize.deserializeJavaObject(bytes, cls2);
     assertEquals(cls2.getEnumConstants()[0], data);
   }
@@ -209,9 +213,11 @@ public class EnumSerializerTest extends FuryTestBase {
             .withAsyncCompilation(false)
             .build();
 
+    furySerialization.register(cls1);
     byte[] bytes = furySerialization.serializeJavaObject(cls1.getEnumConstants()[0]);
 
     try {
+      furyDeserialize.register(cls2);
       furyDeserialize.deserializeJavaObject(bytes, cls2);
       fail("expected to throw exception");
     } catch (Exception e) {
