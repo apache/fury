@@ -11,10 +11,7 @@ public sealed partial class BatchReader(PipeReader reader)
     private bool _isCanceled;
     private bool _isCompleted;
 
-    public async ValueTask<ReadResult> ReadAtLeastAsync(
-        int minimumSize,
-        CancellationToken cancellationToken = default
-    )
+    public async ValueTask<ReadResult> ReadAtLeastAsync(int minimumSize, CancellationToken cancellationToken = default)
     {
         if (_cachedBuffer.Length < minimumSize)
         {

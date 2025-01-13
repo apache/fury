@@ -20,7 +20,8 @@ internal class ArraySerializer<TElement>(ISerializer<TElement>? elementSerialize
     }
 }
 
-internal class NullableArraySerializer<TElement>(ISerializer<TElement>? elementSerializer) : AbstractSerializer<TElement?[]>
+internal class NullableArraySerializer<TElement>(ISerializer<TElement>? elementSerializer)
+    : AbstractSerializer<TElement?[]>
     where TElement : struct
 {
     // ReSharper disable once UnusedMember.Global
@@ -37,7 +38,8 @@ internal class NullableArraySerializer<TElement>(ISerializer<TElement>? elementS
     }
 }
 
-internal class ArrayDeserializer<TElement>(IDeserializer<TElement>? elementDeserializer) : AbstractDeserializer<TElement?[]>
+internal class ArrayDeserializer<TElement>(IDeserializer<TElement>? elementDeserializer)
+    : AbstractDeserializer<TElement?[]>
     where TElement : notnull
 {
     public ArrayDeserializer()

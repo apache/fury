@@ -18,7 +18,6 @@ namespace Fury
             throw new UnreachableException(message);
         }
 
-
         [DoesNotReturn]
         [Conditional("DEBUG")]
         public static void ThrowUnreachableExceptionDebugOnly(string? message = null)

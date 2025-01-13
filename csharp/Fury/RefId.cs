@@ -7,5 +7,6 @@ public readonly struct RefId(int value)
     internal int Value { get; } = value;
 
     public bool IsValid => Value >= 0;
+
     public override string ToString() => Value.ToString();
 }

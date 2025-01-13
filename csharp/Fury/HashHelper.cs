@@ -7,7 +7,6 @@ namespace Fury;
 
 internal static class HashHelper
 {
-
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ulong FinalizationMix(ulong k)
     {
@@ -40,7 +39,6 @@ internal static class HashHelper
         {
             k1 = blocks[i * 2];
             k2 = blocks[i * 2 + 1];
-
 
             k1 *= c1;
             k1 = BitOperations.RotateLeft(k1, 31);

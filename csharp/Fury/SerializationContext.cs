@@ -183,9 +183,7 @@ public ref struct SerializationContext
     {
         var typeId = typeInfo.TypeId;
         Writer.Write(typeId);
-        if (typeId.IsNamed())
-        {
-        }
+        if (typeId.IsNamed()) { }
     }
 
     private ISerializer GetPreferredSerializer(Type typeOfSerializedObject)

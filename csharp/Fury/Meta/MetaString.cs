@@ -29,7 +29,10 @@ internal struct MetaString
         {
             if (bytes.Length <= 0)
             {
-                ThrowHelper.ThrowArgumentException(message: "At least one byte must be provided.", paramName: nameof(bytes));
+                ThrowHelper.ThrowArgumentException(
+                    message: "At least one byte must be provided.",
+                    paramName: nameof(bytes)
+                );
             }
             _stripLastChar = (bytes[0] & 0x80) != 0;
         }

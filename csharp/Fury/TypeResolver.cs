@@ -21,7 +21,6 @@ public sealed class TypeResolver
     private readonly Dictionary<UInt128, TypeInfo> _fullNameHashToTypeInfos = new();
     private readonly PooledList<Type> _types;
 
-
     private readonly ISerializerProvider[] _serializerProviders;
     private readonly IDeserializerProvider[] _deserializerProviders;
 
@@ -163,13 +162,14 @@ public sealed class TypeResolver
     {
         var hashCode = new UInt128((ulong)namespaceBytes.HashCode, (ulong)typeNameBytes.HashCode);
 #if NET8_0_OR_GREATER
-        ref var typeInfo = ref CollectionsMarshal.GetValueRefOrAddDefault(_fullNameHashToTypeInfos, hashCode, out var exists);
-        #else
+        ref var typeInfo = ref CollectionsMarshal.GetValueRefOrAddDefault(
+            _fullNameHashToTypeInfos,
+            hashCode,
+            out var exists
+        );
+#else
         var exists = _fullNameHashToTypeInfos.TryGetValue(hashCode, out var typeInfo);
 #endif
-        if (!exists)
-        {
-
-        }
+        if (!exists) { }
     }
 }

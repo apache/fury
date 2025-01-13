@@ -1,10 +1,10 @@
 ﻿namespace Fury;
 
-
 /// <summary>
 /// Type forward/backward compatibility config.
 /// </summary>
-public enum CompatibleMode {
+public enum CompatibleMode
+{
     /// <summary>
     /// Class schema must be consistent between serialization peer and deserialization peer.
     /// </summary>

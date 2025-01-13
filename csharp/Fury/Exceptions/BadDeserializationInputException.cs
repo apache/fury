@@ -81,5 +81,4 @@ internal static partial class ThrowHelper
     {
         throw new BadDeserializationInputException("Not little endian.");
     }
-
 }

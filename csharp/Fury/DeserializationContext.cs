@@ -143,8 +143,6 @@ public sealed class DeserializationContext
         {
             var namespaceBytes = await _metaStringResolver.ReadMetaStringBytesAsync(Reader, cancellationToken);
             var typeNameBytes = await _metaStringResolver.ReadMetaStringBytesAsync(Reader, cancellationToken);
-
-
         }
         switch (typeId)
         {
