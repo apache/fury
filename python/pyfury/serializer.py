@@ -288,6 +288,7 @@ class DataClassSerializer(Serializer):
         # This will get superclass type hints too.
         self._type_hints = typing.get_type_hints(clz)
         self._field_names = sorted(self._type_hints.keys())
+        self._has_slots = hasattr(clz, "__slots__")
         # TODO compute hash
         self._hash = len(self._field_names)
         self._generated_write_method = self._gen_write_method()
@@ -300,16 +301,21 @@ class DataClassSerializer(Serializer):
     def _gen_write_method(self):
         context = {}
         counter = itertools.count(0)
-        buffer, fury, value = "buffer", "fury", "value"
+        buffer, fury, value, value_dict = "buffer", "fury", "value", "value_dict"
         context[fury] = self.fury
         stmts = [
             f'"""write method for {self.type_}"""',
             f"{buffer}.write_int32({self._hash})",
         ]
+        if not self._has_slots:
+            stmts.append(f"{value_dict} = {value}.__dict__")
         for field_name in self._field_names:
             field_type = self._type_hints[field_name]
             field_value = f"field_value{next(counter)}"
-            stmts.append(f"{field_value} = {value}.{field_name}")
+            if not self._has_slots:
+                stmts.append(f"{field_value} = {value_dict}['{field_name}']")
+            else:
+                stmts.append(f"{field_value} = {value}.{field_name}")
             if field_type is bool:
                 stmts.extend(gen_write_nullable_basic_stmts(buffer, field_value, bool))
             elif field_type == int:
@@ -332,7 +338,13 @@ class DataClassSerializer(Serializer):
 
     def _gen_read_method(self):
         context = dict(_jit_context)
-        buffer, fury, obj_class, obj = "buffer", "fury", "obj_class", "obj"
+        buffer, fury, obj_class, obj, obj_dict = (
+            "buffer",
+            "fury",
+            "obj_class",
+            "obj",
+            "obj_dict",
+        )
         ref_resolver = "ref_resolver"
         context[fury] = self.fury
         context[obj_class] = self.type_
@@ -346,9 +358,14 @@ class DataClassSerializer(Serializer):
             f"""   raise ClassNotCompatibleError(
             "Hash read_hash is not consistent with {self._hash} for {self.type_}")""",
         ]
+        if not self._has_slots:
+            stmts.append(f"{obj_dict} = {obj}.__dict__")
 
         def set_action(value: str):
-            return f"{obj}.{field_name} = {value}"
+            if not self._has_slots:
+                return f"{obj_dict}['{field_name}'] = {value}"
+            else:
+                return f"{obj}.{field_name} = {value}"
 
         for field_name in self._field_names:
             field_type = self._type_hints[field_name]
