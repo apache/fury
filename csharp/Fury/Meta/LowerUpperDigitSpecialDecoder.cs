@@ -4,7 +4,6 @@ namespace Fury.Meta;
 
 internal sealed class LowerUpperDigitSpecialDecoder(LowerUpperDigitSpecialEncoding encoding) : MetaStringDecoder
 {
-
     public override void Convert(
         ReadOnlySpan<byte> bytes,
         Span<char> chars,

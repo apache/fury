@@ -28,7 +28,7 @@ public sealed partial class BatchReader
         var buffer = result.Buffer;
         if (buffer.Length < requiredSize)
         {
-            ThrowHelper.ThrowBadSerializationDataException(ExceptionMessages.InsufficientData());
+            ThrowHelper.ThrowBadDeserializationInputException_InsufficientData();
         }
 
         var value = ReadFixedSized<T>(buffer, requiredSize);
@@ -43,7 +43,7 @@ public sealed partial class BatchReader
         var buffer = result.Buffer;
         if (buffer.Length < size)
         {
-            ThrowHelper.ThrowBadSerializationDataException(ExceptionMessages.InsufficientData());
+            ThrowHelper.ThrowBadDeserializationInputException_InsufficientData();
         }
 
         var value = ReadFixedSized<T>(buffer, size);
@@ -62,7 +62,7 @@ public sealed partial class BatchReader
         var buffer = result.Buffer;
         if (result.IsCompleted && buffer.Length < requiredSize)
         {
-            ThrowHelper.ThrowBadSerializationDataException(ExceptionMessages.InsufficientData());
+            ThrowHelper.ThrowBadDeserializationInputException_InsufficientData();
         }
 
         buffer.Slice(0, requiredSize).CopyTo(MemoryMarshal.AsBytes(destination.Span));
@@ -79,7 +79,7 @@ public sealed partial class BatchReader
         var buffer = result.Buffer;
         if (result.IsCompleted && buffer.Length < byteCount)
         {
-            ThrowHelper.ThrowBadSerializationDataException(ExceptionMessages.InsufficientData());
+            ThrowHelper.ThrowBadDeserializationInputException_InsufficientData();
         }
 
         var value = DoReadString(byteCount, buffer, encoding);
@@ -194,7 +194,7 @@ public sealed partial class BatchReader
         readByte = buffer[MaxBytesOfVarInt32WithoutOverflow];
         if (readByte > 0b_1111u)
         {
-            ThrowHelper.ThrowBadSerializationDataException(ExceptionMessages.VarInt32Overflow());
+            ThrowHelper.ThrowBadDeserializationInputException_VarInt32Overflow();
         }
 
         result |= readByte << (MaxBytesOfVarInt32WithoutOverflow * 7);
@@ -225,7 +225,7 @@ public sealed partial class BatchReader
                 {
                     if (readByte > 0b_1111u)
                     {
-                        ThrowHelper.ThrowBadSerializationDataException(ExceptionMessages.VarInt32Overflow());
+                        ThrowHelper.ThrowBadDeserializationInputException_VarInt32Overflow();
                     }
                     result |= readByte << (7 * MaxBytesOfVarInt32WithoutOverflow);
                     consumed = consumedBytes + 1;

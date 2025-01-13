@@ -25,24 +25,28 @@ internal sealed class MetaStringResolver(IArrayPoolProvider poolProvider)
     {
         var header = (int)await reader.Read7BitEncodedUintAsync(cancellationToken);
         var isMetaStringId = (header & 0b1) != 0;
-        if (!isMetaStringId)
+        if (isMetaStringId)
         {
-            var length = header >>> 1;
-            MetaStringBytes byteString;
-            if (length <= SmallStringThreshold)
+            var id = header >>> 1;
+            if (id > _readMetaStrings.Count || id <= 0)
             {
-                byteString = await ReadSmallMetaStringBytesAsync(reader, length, cancellationToken);
+                ThrowHelper.ThrowBadDeserializationInputException_UnknownMetaStringId(id);
             }
-            else
-            {
-                byteString = await ReadBigMetaStringBytesAsync(reader, length, cancellationToken);
-            }
-            _readMetaStrings.Add(byteString);
-            return byteString;
+            return _readMetaStrings[id - 1]!;
         }
 
-        var id = header >>> 1;
-        return _readMetaStrings[id - 1];
+        var length = header >>> 1;
+        MetaStringBytes byteString;
+        if (length <= SmallStringThreshold)
+        {
+            byteString = await ReadSmallMetaStringBytesAsync(reader, length, cancellationToken);
+        }
+        else
+        {
+            byteString = await ReadBigMetaStringBytesAsync(reader, length, cancellationToken);
+        }
+        _readMetaStrings.Add(byteString);
+        return byteString;
     }
 
     private async ValueTask<MetaStringBytes> ReadSmallMetaStringBytesAsync(

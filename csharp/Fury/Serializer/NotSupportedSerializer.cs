@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -9,17 +9,12 @@ public sealed class NotSupportedSerializer<TValue> : ISerializer<TValue>
 {
     public void Write(SerializationContext context, in TValue value)
     {
-        ThrowNotSupportedException();
+        throw new NotSupportedException();
     }
 
     public void Write(SerializationContext context, object value)
     {
-        ThrowNotSupportedException();
-    }
-
-    private static void ThrowNotSupportedException()
-    {
-        ThrowHelper.ThrowNotSupportedException(ExceptionMessages.NotSupportedSerializer(typeof(TValue)));
+        throw new NotSupportedException();
     }
 }
 
@@ -31,8 +26,7 @@ public sealed class NotSupportedDeserializer<TValue> : IDeserializer<TValue>
         CancellationToken cancellationToken = default
     )
     {
-        ThrowNotSupportedException();
-        return default!;
+        throw new NotSupportedException();
     }
 
     public ValueTask<Box> CreateInstanceAsync(
@@ -40,8 +34,7 @@ public sealed class NotSupportedDeserializer<TValue> : IDeserializer<TValue>
         CancellationToken cancellationToken = default
     )
     {
-        ThrowNotSupportedException();
-        return default!;
+        throw new NotSupportedException();
     }
 
     public ValueTask ReadAndFillAsync(
@@ -50,13 +43,6 @@ public sealed class NotSupportedDeserializer<TValue> : IDeserializer<TValue>
         CancellationToken cancellationToken = default
     )
     {
-        ThrowNotSupportedException();
-        return default!;
-    }
-
-    [DoesNotReturn]
-    private static void ThrowNotSupportedException()
-    {
-        ThrowHelper.ThrowNotSupportedException(ExceptionMessages.NotSupportedDeserializer(typeof(TValue)));
+        throw new NotSupportedException();
     }
 }

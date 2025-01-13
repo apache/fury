@@ -26,4 +26,10 @@ internal static partial class ThrowHelper
     {
         throw new SerializerNotFoundException(type, typeId, message);
     }
+
+    [DoesNotReturn]
+    public static void ThrowSerializerNotFoundException_SerializerNotFound(Type type)
+    {
+        throw new SerializerNotFoundException(type, $"No serializer found for type '{type.FullName}'.");
+    }
 }

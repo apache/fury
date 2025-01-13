@@ -124,9 +124,8 @@ public sealed class Fury(Config config)
         var magicNumber = await reader.ReadAsync<short>();
         if (magicNumber != MagicNumber)
         {
-            return ThrowHelper.ThrowBadSerializationDataException<DeserializationContext>(
-                ExceptionMessages.InvalidMagicNumber()
-            );
+            ThrowHelper.ThrowBadDeserializationInputException_InvalidMagicNumber();
+            return default;
         }
         var headerFlag = (HeaderFlag)await reader.ReadAsync<byte>();
         if (headerFlag.HasFlag(HeaderFlag.NullRootObject))
@@ -135,13 +134,13 @@ public sealed class Fury(Config config)
         }
         if (!headerFlag.HasFlag(HeaderFlag.CrossLanguage))
         {
-            return ThrowHelper.ThrowBadSerializationDataException<DeserializationContext>(
-                ExceptionMessages.NotCrossLanguage()
-            );
+            ThrowHelper.ThrowBadDeserializationInputException_NotCrossLanguage();
+            return default;
         }
         if (!headerFlag.HasFlag(HeaderFlag.LittleEndian))
         {
-            return ThrowHelper.ThrowNotSupportedException<DeserializationContext>(ExceptionMessages.NotLittleEndian());
+            ThrowHelper.ThrowBadDeserializationInputException_NotLittleEndian();
+            return default;
         }
         await reader.ReadAsync<byte>();
         var metaStringResolver = new MetaStringResolver(Config.ArrayPoolProvider);

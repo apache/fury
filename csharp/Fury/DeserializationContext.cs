@@ -39,10 +39,7 @@ public sealed class DeserializationContext
     {
         if (!TryGetDeserializer<TValue>(out var deserializer))
         {
-            ThrowHelper.ThrowDeserializerNotFoundException(
-                typeof(TValue),
-                message: ExceptionMessages.DeserializerNotFound(typeof(TValue))
-            );
+            ThrowHelper.ThrowDeserializerNotFoundException_DeserializerNotFound(typeof(TValue));
         }
         return deserializer;
     }
@@ -63,7 +60,7 @@ public sealed class DeserializationContext
             var refId = await Reader.ReadRefIdAsync(cancellationToken);
             if (!_refContext.TryGetReadValue(refId, out var readObject))
             {
-                ThrowHelper.ThrowBadSerializationDataException(ExceptionMessages.ReferencedObjectNotFound(refId));
+                ThrowHelper.ThrowBadDeserializationInputException_ReferencedObjectNotFound(refId);
             }
 
             return (TValue)readObject;
@@ -93,7 +90,7 @@ public sealed class DeserializationContext
             var refId = await Reader.ReadRefIdAsync(cancellationToken);
             if (!_refContext.TryGetReadValue(refId, out var readObject))
             {
-                ThrowHelper.ThrowBadSerializationDataException(ExceptionMessages.ReferencedObjectNotFound(refId));
+                ThrowHelper.ThrowBadDeserializationInputException_ReferencedObjectNotFound(refId);
             }
 
             return (TValue?)readObject;
@@ -147,6 +144,7 @@ public sealed class DeserializationContext
             var namespaceBytes = await _metaStringResolver.ReadMetaStringBytesAsync(Reader, cancellationToken);
             var typeNameBytes = await _metaStringResolver.ReadMetaStringBytesAsync(Reader, cancellationToken);
 
+
         }
         switch (typeId)
         {
@@ -154,7 +152,7 @@ public sealed class DeserializationContext
             default:
                 if (!Fury.TypeResolver.TryGetTypeInfo(typeId, out typeInfo))
                 {
-                    ThrowHelper.ThrowBadSerializationDataException(ExceptionMessages.TypeInfoNotFound(typeId));
+                    ThrowHelper.ThrowBadDeserializationInputException_TypeInfoNotFound(typeId);
                 }
                 break;
         }
@@ -165,10 +163,7 @@ public sealed class DeserializationContext
     {
         if (!Fury.TypeResolver.TryGetOrCreateDeserializer(typeOfDeserializedObject, out var deserializer))
         {
-            ThrowHelper.ThrowDeserializerNotFoundException(
-                typeOfDeserializedObject,
-                message: ExceptionMessages.DeserializerNotFound(typeOfDeserializedObject)
-            );
+            ThrowHelper.ThrowDeserializerNotFoundException_DeserializerNotFound(typeOfDeserializedObject);
         }
         return deserializer;
     }

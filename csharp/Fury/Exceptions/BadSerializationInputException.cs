@@ -24,4 +24,16 @@ internal static partial class ThrowHelper
     {
         throw new BadSerializationInputException($"Unsupported MetaString character: '{c}'");
     }
+
+    [DoesNotReturn]
+    public static void ThrowBadSerializationInputException_UnregisteredType(Type type)
+    {
+        throw new BadSerializationInputException($"Type '{type.FullName}' is not registered.");
+    }
+
+    [DoesNotReturn]
+    public static void ThrowBadSerializationInputException_CircularDependencyDetected()
+    {
+        throw new BadSerializationInputException("Circular dependency detected.");
+    }
 }

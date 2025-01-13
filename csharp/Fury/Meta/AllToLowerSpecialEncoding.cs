@@ -118,7 +118,7 @@ internal sealed class AllToLowerSpecialEncoding() : AbstractLowerSpecialEncoding
         {
             if (decoder.WasLastCharUpperCaseFlag)
             {
-                ThrowHelper.ThrowBadSerializationDataException_UpperCaseFlagCannotAppearConsecutively();
+                ThrowHelper.ThrowBadDeserializationInputException_UpperCaseFlagCannotAppearConsecutively();
             }
             writtenChar = false;
             return true;

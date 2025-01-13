@@ -27,4 +27,10 @@ internal static partial class ThrowHelper
     {
         throw new DeserializerNotFoundException(type, typeId, message);
     }
+
+    [DoesNotReturn]
+    public static void ThrowDeserializerNotFoundException_DeserializerNotFound(Type type)
+    {
+        throw new DeserializerNotFoundException(type, $"No deserializer found for type '{type.FullName}'.");
+    }
 }

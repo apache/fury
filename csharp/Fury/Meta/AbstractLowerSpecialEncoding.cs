@@ -52,7 +52,7 @@ internal abstract class AbstractLowerSpecialEncoding(MetaString.Encoding encodin
     {
         if (!TryDecodeByte(b, out var c))
         {
-            ThrowHelper.ThrowBadSerializationDataException_UnrecognizedMetaStringCodePoint(b);
+            ThrowHelper.ThrowBadDeserializationInputException_UnrecognizedMetaStringCodePoint(b);
         }
 
         return c;

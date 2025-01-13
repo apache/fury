@@ -29,10 +29,7 @@ public ref struct SerializationContext
     {
         if (!TryGetSerializer<TValue>(out var serializer))
         {
-            ThrowHelper.ThrowSerializerNotFoundException(
-                typeof(TValue),
-                message: ExceptionMessages.SerializerNotFound(typeof(TValue))
-            );
+            ThrowHelper.ThrowSerializerNotFoundException_SerializerNotFound(typeof(TValue));
         }
         return serializer;
     }
@@ -90,7 +87,7 @@ public ref struct SerializationContext
                 }
                 else
                 {
-                    ThrowHelper.ThrowCircularDependencyException(ExceptionMessages.CircularDependencyDetected());
+                    ThrowHelper.ThrowBadSerializationInputException_CircularDependencyDetected();
                 }
                 return;
             }
@@ -176,10 +173,7 @@ public ref struct SerializationContext
     {
         if (!Fury.TypeResolver.TryGetTypeInfo(typeOfSerializedObject, out var typeInfo))
         {
-            ThrowHelper.ThrowUnregisteredTypeException(
-                typeOfSerializedObject,
-                ExceptionMessages.UnregisteredType(typeOfSerializedObject)
-            );
+            ThrowHelper.ThrowBadSerializationInputException_UnregisteredType(typeOfSerializedObject);
         }
 
         return typeInfo;
@@ -198,10 +192,7 @@ public ref struct SerializationContext
     {
         if (!Fury.TypeResolver.TryGetOrCreateSerializer(typeOfSerializedObject, out var serializer))
         {
-            ThrowHelper.ThrowSerializerNotFoundException(
-                typeOfSerializedObject,
-                message: ExceptionMessages.SerializerNotFound(typeOfSerializedObject)
-            );
+            ThrowHelper.ThrowSerializerNotFoundException_SerializerNotFound(typeOfSerializedObject);
         }
         return serializer;
     }
