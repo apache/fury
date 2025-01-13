@@ -1,28 +1,36 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace Fury;
 
 internal static class BitUtility
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int GetBitMask(int bitsCount) => (1 << bitsCount) - 1;
+    public static int GetBitMask32(int bitsCount) => (1 << bitsCount) - 1;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static byte ClearLowBits(byte value, int lowBitsCount) => (byte)(value & ~GetBitMask(lowBitsCount));
+    public static long GetBitMask64(int bitsCount) => (1L << bitsCount) - 1;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static byte ClearHighBits(byte value, int highBitsCount) => (byte)(value & GetBitMask(8 - highBitsCount));
+    public static byte ClearLowBits(byte value, int lowBitsCount) => (byte)(value & ~GetBitMask32(lowBitsCount));
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static byte KeepLowBits(byte value, int lowBitsCount) => (byte)(value & GetBitMask(lowBitsCount));
+    public static long ClearLowBits(long value, int lowBitsCount) => value & ~GetBitMask64(lowBitsCount);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static byte KeepHighBits(byte value, int highBitsCount) => (byte)(value & ~GetBitMask(8 - highBitsCount));
+    public static byte ClearHighBits(byte value, int highBitsCount) => (byte)(value & GetBitMask32(8 - highBitsCount));
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static byte KeepLowBits(byte value, int lowBitsCount) => (byte)(value & GetBitMask32(lowBitsCount));
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static byte KeepHighBits(byte value, int highBitsCount) => (byte)(value & ~GetBitMask32(8 - highBitsCount));
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static byte ReadBits(byte b1, int bitOffset, int bitCount)
     {
-        return (byte)((b1 >>> (8 - bitCount - bitOffset)) & BitUtility.GetBitMask(bitCount));
+        return (byte)((b1 >>> (8 - bitCount - bitOffset)) & GetBitMask32(bitCount));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -30,6 +38,6 @@ internal static class BitUtility
     {
         var byteFromB1 = b1 << (bitOffset + bitCount - 8);
         var byteFromB2 = b2 >>> (8 * 2 - bitCount - bitOffset);
-        return (byte)((byteFromB1 | byteFromB2) & BitUtility.GetBitMask(bitCount));
+        return (byte)((byteFromB1 | byteFromB2) & GetBitMask32(bitCount));
     }
 }

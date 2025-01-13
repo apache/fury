@@ -74,7 +74,7 @@ public ref struct BitsWriter(Span<byte> bytes)
         {
             return false;
         }
-        bits = (byte)(bits & BitUtility.GetBitMask(bitCount));
+        bits = (byte)(bits & BitUtility.GetBitMask32(bitCount));
         var currentByteIndex = CurrentByteIndex;
         if (currentByteIndex >= _bytes.Length)
         {
@@ -97,7 +97,7 @@ public ref struct BitsWriter(Span<byte> bytes)
         }
 
         var bitsToWriteInCurrentByte = bits >>> (bitCount - bitsLeftInCurrentByte);
-        var bitsToWriteInNextByte = bits & BitUtility.GetBitMask(bitCount - bitsLeftInCurrentByte);
+        var bitsToWriteInNextByte = bits & BitUtility.GetBitMask32(bitCount - bitsLeftInCurrentByte);
         currentByte = BitUtility.ClearLowBits(_bytes[currentByteIndex], bitsLeftInCurrentByte);
         _bytes[currentByteIndex] = (byte)(currentByte | bitsToWriteInCurrentByte);
         _bytes[currentByteIndex + 1] = (byte)(bitsToWriteInNextByte << (BitsOfByte - bitCount + bitsLeftInCurrentByte));
