@@ -2,9 +2,9 @@
 
 namespace Fury;
 
-public struct Box(object value)
+public readonly struct Box(object value)
 {
-    public object? Value { get; set; } = value;
+    public object? Value { get; init; } = value;
 
     public Box<T> AsTyped<T>()
         where T : notnull
