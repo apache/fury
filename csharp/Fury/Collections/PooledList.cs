@@ -19,8 +19,6 @@ namespace Fury.Collections;
 internal sealed class PooledList<TElement>(IArrayPoolProvider poolProvider) : IList<TElement?>, IDisposable
     where TElement : class
 {
-    private static readonly bool NeedClear = TypeHelper<TElement>.IsReferenceOrContainsReferences;
-
     // Use object instead of TElement to improve possibility of reusing pooled objects.
     private readonly ArrayPool<object?> _pool = poolProvider.GetArrayPool<object?>();
     private object?[] _elements = [];
@@ -36,7 +34,7 @@ internal sealed class PooledList<TElement>(IArrayPoolProvider poolProvider) : IL
             var newLength = Math.Max(length * 2, StaticConfigs.BuiltInListDefaultCapacity);
             var newElements = _pool.Rent(newLength);
             _elements.CopyTo(newElements, 0);
-            ClearElementsIfNeeded();
+            ClearElements();
             _pool.Return(_elements);
             _elements = newElements;
         }
@@ -45,17 +43,14 @@ internal sealed class PooledList<TElement>(IArrayPoolProvider poolProvider) : IL
 
     public void Clear()
     {
-        ClearElementsIfNeeded();
+        ClearElements();
         Count = 0;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void ClearElementsIfNeeded()
+    private void ClearElements()
     {
-        if (NeedClear)
-        {
-            Array.Clear(_elements, 0, _elements.Length);
-        }
+        Array.Clear(_elements, 0, _elements.Length);
     }
 
     public bool Contains(TElement? item) => Array.IndexOf(_elements, item) != -1;
@@ -94,7 +89,7 @@ internal sealed class PooledList<TElement>(IArrayPoolProvider poolProvider) : IL
             Array.Copy(_elements, 0, newElements, 0, index);
             newElements[index] = item;
             Array.Copy(_elements, index, newElements, index + 1, Count - index);
-            ClearElementsIfNeeded();
+            ClearElements();
             _pool.Return(_elements);
             _elements = newElements;
         }
@@ -115,10 +110,7 @@ internal sealed class PooledList<TElement>(IArrayPoolProvider poolProvider) : IL
             Array.Copy(_elements, index + 1, _elements, index, Count - index - 1);
         }
         Count--;
-        if (NeedClear)
-        {
-            _elements[Count] = default!;
-        }
+        _elements[Count] = default!;
     }
 
     public TElement? this[int index]
@@ -178,7 +170,7 @@ internal sealed class PooledList<TElement>(IArrayPoolProvider poolProvider) : IL
             return;
         }
 
-        ClearElementsIfNeeded();
+        ClearElements();
         _pool.Return(_elements);
         _elements = [];
     }
