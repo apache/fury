@@ -180,7 +180,7 @@ inline uint16_t getMaxValue(const uint16_t* arr, size_t length) {
   return max_val;
 }
 
-inline void copyValue(const uint16_t* from, const uint8_t* to, size_t length) {
+inline void copyValue(const uint16_t* from, uint8_t* to, size_t length) {
   // Fallback for systems without SSE2/NEON
   for (size_t i = 0; i < length; ++i) {
     to[i] = static_cast<uint8_t>(from[i]);
