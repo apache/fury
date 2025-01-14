@@ -23,9 +23,6 @@
 #elif defined(__ARM_NEON) || defined(__ARM_NEON__)
 #include <arm_neon.h>
 #define FURY_HAS_NEON
-#elif defined(__SSE2__)
-#include <emmintrin.h>
-#define FURY_HAS_SSE2
 #elif defined(__riscv) && __riscv_vector
 #include <riscv_vector.h>
 #define FURY_HAS_RISCV_VECTOR

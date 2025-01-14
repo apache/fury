@@ -2,13 +2,14 @@
 
 namespace fury {
 #if defined(FURY_HAS_IMMINTRIN)
-inline uint16_t getMaxValue(const uint16_t* arr, size_t length) {
+// TODO: runtime dispatch for avx
+// We can not distribute a seperate wheel for avx, so we need to
+// check instcuctions set at runtime
+inline uint16_t getMaxValueAVX(const uint16_t* arr, size_t length) {
   if (length == 0) {
     return 0;  // Return 0 for empty arrays
   }
-
   __m256i max_val = _mm256_setzero_si256();  // Initialize max vector with zeros
-
   size_t i = 0;
   for (; i + 16 <= length; i += 16) {
     __m256i current_val = _mm256_loadu_si256((__m256i*)&arr[i]);
@@ -34,7 +35,7 @@ inline uint16_t getMaxValue(const uint16_t* arr, size_t length) {
   return max_avx;
 }
 
-inline void copyValue(const uint16_t* from, uint8_t* to, size_t length) {
+inline void copyValueAVX(const uint16_t* from, uint8_t* to, size_t length) {
   size_t i = 0;
   // Process chunks of 32 bytes (16 uint16_t elements at a time)
   for (; i + 31 < length; i += 32) {
@@ -71,7 +72,8 @@ inline void copyValue(const uint16_t* from, uint8_t* to, size_t length) {
     to[i] = static_cast<uint8_t>(from[i]);
   }
 }
-#elif defined(FURY_HAS_NEON)
+#endif
+#if defined(FURY_HAS_NEON)
 inline uint16_t getMaxValue(const uint16_t* arr, size_t length) {
   if (length == 0) {
     return 0;  // Return 0 for empty arrays

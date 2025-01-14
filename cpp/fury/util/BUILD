@@ -63,3 +63,13 @@ cc_test(
         "@com_google_googletest//:gtest",
     ],
 )
+
+
+cc_test(
+    name = "array_util_test",
+    srcs = ["array_util_test.cc"],
+    deps = [
+        ":fury_util",
+        "@com_google_googletest//:gtest",
+    ],
+)
