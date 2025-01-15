@@ -27,3 +27,7 @@
 #include <riscv_vector.h>
 #define FURY_HAS_RISCV_VECTOR
 #endif
+#if defined(__SSE2__)
+#include <emmintrin.h>
+#define FURY_HAS_SSE2
+#endif

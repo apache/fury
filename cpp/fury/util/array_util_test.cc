@@ -25,9 +25,9 @@ TEST(GetMaxValueTest, HandlesLargeArray) {
   }
   EXPECT_EQ(getMaxValue(arr, length), 1023);
 }
-}  // namespace fury
+} // namespace fury
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

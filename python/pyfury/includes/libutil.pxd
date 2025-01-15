@@ -115,5 +115,5 @@ cdef extern from "fury/util/string_util.h" namespace "fury" nogil:
 
 
 cdef extern from "fury/python/pyunicode.h" namespace "fury" nogil:
-    PyObject* Fury_PyUnicode_FromUCS1(const uint8_t* u, Py_ssize_t size)
+    PyObject* Fury_PyUnicode_FromUCS1(const char* u, Py_ssize_t size)
     PyObject* Fury_PyUnicode_FromUCS2(const uint16_t* u, Py_ssize_t size)

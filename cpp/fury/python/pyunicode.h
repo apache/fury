@@ -29,69 +29,9 @@
 
 namespace fury {
 
-static PyObject* unicode_latin1[256] = {nullptr};
-
-static PyObject* get_latin1_char(unsigned char ch) {
-  PyObject* unicode = unicode_latin1[ch];
-  if (!unicode) {
-    unicode = PyUnicode_New(1, ch);
-    if (!unicode) return NULL;
-    PyUnicode_1BYTE_DATA(unicode)[0] = ch;
-    // assert(_PyUnicode_CheckConsistency(unicode, 1));
-    unicode_latin1[ch] = unicode;
-  }
-  Py_INCREF(unicode);
-  return unicode;
-}
-
 // unicodeobject.c
-inline PyObject* Fury_PyUnicode_FromUCS1(const uint8_t* u, Py_ssize_t size) {
-  PyObject* res;
-  unsigned char max_char;
-  FURY_CHECK(size > 0);
-  if (size == 1) return get_latin1_char(u[0]);
-  max_char = isAscii(reinterpret_cast<const char*>(u), size) ? 127 : 255;
-  res = PyUnicode_New(size, max_char);
-  if (!res) return NULL;
-  std::memcpy(PyUnicode_1BYTE_DATA(res), u, size);
-  // assert(_PyUnicode_CheckConsistency(res, 1));
-  return res;
-}
+PyObject* Fury_PyUnicode_FromUCS1(const char* u, Py_ssize_t size);
 
-inline PyObject* Fury_PyUnicode_FromUCS2(const uint16_t* u, Py_ssize_t size) {
-  PyObject* res;
-  Py_UCS2 max_char;
-  FURY_CHECK(size > 0);
-  if (size == 1) {
-    max_char = u[0];
-    if (max_char < 256) {
-      return get_latin1_char(max_char);
-    } else {
-      res = PyUnicode_New(1, max_char);
-      if (res == NULL) {
-        return NULL;
-      }
-      if (PyUnicode_KIND(res) == PyUnicode_2BYTE_KIND) {
-        PyUnicode_2BYTE_DATA(res)[0] = (Py_UCS2)max_char;
-      } else {
-        FURY_CHECK(PyUnicode_KIND(res) == PyUnicode_4BYTE_KIND);
-        PyUnicode_4BYTE_DATA(res)[0] = max_char;
-      }
-      return res;
-    }
-  }
-  max_char = getMaxValue(u, size);
-  res = PyUnicode_New(size, max_char);
-  if (!res) {
-    return NULL;
-  }
-  if (max_char >= 256) {
-    std::memcpy(PyUnicode_2BYTE_DATA(res), u, sizeof(Py_UCS2) * size);
-  } else {
-     copyValue(u, PyUnicode_1BYTE_DATA(res), size);
-  }
-  // assert(_PyUnicode_CheckConsistency(res, 1));
-  return res;
-}
+PyObject* Fury_PyUnicode_FromUCS2(const uint16_t* u, Py_ssize_t size);
 
 }  // namespace fury
