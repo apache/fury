@@ -21,7 +21,6 @@
 #include "Python.h"
 #include "object.h"
 #include "pyport.h"
-#include "unicodeobject.h"
 #include <cstdint>
 #include <cstring>
 #include <string>

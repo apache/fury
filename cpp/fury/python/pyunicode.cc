@@ -21,6 +21,7 @@
 #include "fury/util/array_util.h"
 #include "fury/util/logging.h"
 #include "fury/util/string_util.h"
+#include "unicodeobject.h"
 #include <cassert>
 
 namespace fury {
