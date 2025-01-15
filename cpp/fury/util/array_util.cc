@@ -17,9 +17,7 @@
  * under the License.
  */
 
-#pragma once
-#include "fury/util/platform.h"
-#include <cstdint>
+#include "fury/util/array_util.h"
 
 namespace fury {
 #if defined(FURY_HAS_NEON)
