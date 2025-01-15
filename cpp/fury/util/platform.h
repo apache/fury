@@ -17,6 +17,8 @@
  * under the License.
  */
 
+#pragma once
+
 #if defined(__x86_64__) || defined(_M_X64)
 #include <immintrin.h>
 #define FURY_HAS_IMMINTRIN
