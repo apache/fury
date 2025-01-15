@@ -35,7 +35,6 @@ static PyObject *get_latin1_char(unsigned char ch) {
     if (!unicode)
       return NULL;
     PyUnicode_1BYTE_DATA(unicode)[0] = ch;
-    // assert(_PyUnicode_CheckConsistency(unicode, 1));
     unicode_latin1[ch] = unicode;
   }
   Py_INCREF(unicode);
@@ -53,7 +52,6 @@ PyObject *Fury_PyUnicode_FromUCS1(const char *u, Py_ssize_t size) {
   if (!res)
     return NULL;
   memcpy(PyUnicode_1BYTE_DATA(res), u, size);
-  // assert(_PyUnicode_CheckConsistency(res, 1));
   return res;
 }
 
@@ -89,7 +87,6 @@ PyObject *Fury_PyUnicode_FromUCS2(const uint16_t *u, Py_ssize_t size) {
   } else {
     copyArray(u, PyUnicode_1BYTE_DATA(res), size);
   }
-  // assert(_PyUnicode_CheckConsistency(res, 1));
   return res;
 }
 } // namespace fury
