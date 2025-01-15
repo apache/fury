@@ -18,21 +18,21 @@
  */
 
 #pragma once
-#include <cstdint>
 #include "fury/util/platform.h"
+#include <cstdint>
 
 namespace fury {
 #if defined(FURY_HAS_NEON)
-inline uint16_t getMaxValue(const uint16_t* arr, size_t length) {
+inline uint16_t getMaxValue(const uint16_t *arr, size_t length) {
   if (length == 0) {
-    return 0;  // Return 0 for empty arrays
+    return 0; // Return 0 for empty arrays
   }
-  uint16x8_t max_val = vdupq_n_u16(0);  // Initialize max vector to zero
+  uint16x8_t max_val = vdupq_n_u16(0); // Initialize max vector to zero
 
   size_t i = 0;
   for (; i + 8 <= length; i += 8) {
     uint16x8_t current_val = vld1q_u16(&arr[i]);
-    max_val = vmaxq_u16(max_val, current_val);  // Max operation
+    max_val = vmaxq_u16(max_val, current_val); // Max operation
   }
 
   // Find the max value in the resulting vector
@@ -54,7 +54,7 @@ inline uint16_t getMaxValue(const uint16_t* arr, size_t length) {
   return max_neon;
 }
 
-inline void copyArray(const uint16_t* from, uint8_t* to, size_t length) {
+inline void copyArray(const uint16_t *from, uint8_t *to, size_t length) {
   size_t i = 0;
   for (; i + 7 < length; i += 8) {
     uint16x8_t src = vld1q_u16(&from[i]);
@@ -68,22 +68,22 @@ inline void copyArray(const uint16_t* from, uint8_t* to, size_t length) {
   }
 }
 #elif defined(FURY_HAS_SSE2)
-inline uint16_t getMaxValue(const uint16_t* arr, size_t length) {
+inline uint16_t getMaxValue(const uint16_t *arr, size_t length) {
   if (length == 0) {
-    return 0;  // Return 0 for empty arrays
+    return 0; // Return 0 for empty arrays
   }
 
-  __m128i max_val = _mm_setzero_si128();  // Initialize max vector with zeros
+  __m128i max_val = _mm_setzero_si128(); // Initialize max vector with zeros
 
   size_t i = 0;
   for (; i + 8 <= length; i += 8) {
-    __m128i current_val = _mm_loadu_si128((__m128i*)&arr[i]);
-    max_val = _mm_max_epu16(max_val, current_val);  // Max operation
+    __m128i current_val = _mm_loadu_si128((__m128i *)&arr[i]);
+    max_val = _mm_max_epu16(max_val, current_val); // Max operation
   }
 
   // Find the max value in the resulting vector
   uint16_t temp[8];
-  _mm_storeu_si128((__m128i*)temp, max_val);
+  _mm_storeu_si128((__m128i *)temp, max_val);
   uint16_t max_sse = temp[0];
   for (int j = 1; j < 8; j++) {
     if (temp[j] > max_sse) {
@@ -100,13 +100,13 @@ inline uint16_t getMaxValue(const uint16_t* arr, size_t length) {
   return max_sse;
 }
 
-inline void copyArray(const uint16_t* from, uint8_t* to, size_t length) {
+inline void copyArray(const uint16_t *from, uint8_t *to, size_t length) {
   size_t i = 0;
-  __m128i mask = _mm_set1_epi16(0xFF);  // Mask to zero out the high byte
+  __m128i mask = _mm_set1_epi16(0xFF); // Mask to zero out the high byte
   for (; i + 7 < length; i += 8) {
-    __m128i src = _mm_loadu_si128(reinterpret_cast<const __m128i*>(&from[i]));
+    __m128i src = _mm_loadu_si128(reinterpret_cast<const __m128i *>(&from[i]));
     __m128i result = _mm_and_si128(src, mask);
-    _mm_storel_epi64(reinterpret_cast<__m128i*>(&to[i]),
+    _mm_storel_epi64(reinterpret_cast<__m128i *>(&to[i]),
                      _mm_packus_epi16(result, result));
   }
 
@@ -116,9 +116,9 @@ inline void copyArray(const uint16_t* from, uint8_t* to, size_t length) {
   }
 }
 #else
-inline uint16_t getMaxValue(const uint16_t* arr, size_t length) {
+inline uint16_t getMaxValue(const uint16_t *arr, size_t length) {
   if (length == 0) {
-    return 0;  // Return 0 for empty arrays
+    return 0; // Return 0 for empty arrays
   }
   uint16_t max_val = arr[0];
   for (size_t i = 1; i < length; i++) {
@@ -129,11 +129,11 @@ inline uint16_t getMaxValue(const uint16_t* arr, size_t length) {
   return max_val;
 }
 
-inline void copyArray(const uint16_t* from, uint8_t* to, size_t length) {
+inline void copyArray(const uint16_t *from, uint8_t *to, size_t length) {
   // Fallback for systems without SSE2/NEON
   for (size_t i = 0; i < length; ++i) {
     to[i] = static_cast<uint8_t>(from[i]);
   }
 }
 #endif
-}  // namespace fury
+} // namespace fury

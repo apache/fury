@@ -17,21 +17,21 @@
  * under the License.
  */
 
-#include <string>
-#include <cstring>
 #include "fury/util/array_util.h"
 #include "fury/util/buffer.h"
 #include "fury/util/logging.h"
 #include "fury/util/string_util.h"
-#include "pyport.h"
 #include "object.h"
+#include "pyport.h"
 #include "unicodeobject.h"
+#include <cstring>
+#include <string>
 
 namespace fury {
 
 // unicodeobject.c
-PyObject* Fury_PyUnicode_FromUCS1(const char* u, Py_ssize_t size);
+PyObject *Fury_PyUnicode_FromUCS1(const char *u, Py_ssize_t size);
 
-PyObject* Fury_PyUnicode_FromUCS2(const uint16_t* u, Py_ssize_t size);
+PyObject *Fury_PyUnicode_FromUCS2(const uint16_t *u, Py_ssize_t size);
 
-}  // namespace fury
+} // namespace fury
