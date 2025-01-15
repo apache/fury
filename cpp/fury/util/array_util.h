@@ -20,6 +20,7 @@
 #pragma once
 #include "fury/util/platform.h"
 #include <cstdint>
+#include <stdlib.h>
 
 namespace fury {
 uint16_t getMaxValue(const uint16_t *arr, size_t length);
