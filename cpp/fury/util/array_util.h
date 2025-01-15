@@ -18,6 +18,7 @@
  */
 
 #pragma once
+#include <cstdint>
 #include "fury/util/platform.h"
 
 namespace fury {
