@@ -19,13 +19,9 @@
 
 #include "pyunicode.h"
 #include "fury/util/array_util.h"
-#include "fury/util/buffer.h"
 #include "fury/util/logging.h"
 #include "fury/util/string_util.h"
-#include "unicodeobject.h"
 #include <cassert>
-#include <cstring>
-#include <string>
 
 namespace fury {
 
