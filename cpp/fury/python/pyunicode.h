@@ -17,6 +17,8 @@
  * under the License.
  */
 
+#pragma once
+
 #include "fury/util/array_util.h"
 #include "fury/util/buffer.h"
 #include "fury/util/logging.h"
