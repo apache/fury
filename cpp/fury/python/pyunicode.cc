@@ -18,6 +18,7 @@
  */
 
 #include "pyunicode.h"
+#include <cassert>
 
 namespace fury {
 
