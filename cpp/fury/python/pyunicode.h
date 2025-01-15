@@ -21,6 +21,7 @@
 #include <string>
 #include <cstring>
 #include <cstdint>
+#include "Python.h"
 #include "pyport.h"
 #include "object.h"
 #include "unicodeobject.h"

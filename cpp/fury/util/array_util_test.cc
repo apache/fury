@@ -22,7 +22,7 @@
 
 namespace fury {
 TEST(GetMaxValueTest, HandlesEmptyArray) {
-  uint16_t arr[] = {};
+  uint16_t* arr = nullptr;
   EXPECT_EQ(getMaxValue(arr, 0), 0);
 }
 
