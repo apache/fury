@@ -18,13 +18,13 @@
  */
 
 #pragma once
-#include <string>
-#include <cstring>
-#include <cstdint>
 #include "Python.h"
-#include "pyport.h"
 #include "object.h"
+#include "pyport.h"
 #include "unicodeobject.h"
+#include <cstdint>
+#include <cstring>
+#include <string>
 
 namespace fury {
 
