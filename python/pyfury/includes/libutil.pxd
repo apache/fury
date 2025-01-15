@@ -19,6 +19,7 @@ from libc.stdint cimport *
 from libcpp cimport bool as c_bool
 from libcpp.memory cimport shared_ptr
 from libcpp.string cimport string as c_string
+from cpython cimport PyObject
 
 cdef extern from "fury/util/buffer.h" namespace "fury" nogil:
     cdef cppclass CStatus" fury::Status":
@@ -111,3 +112,8 @@ cdef extern from "fury/util/bit_util.h" namespace "fury::util" nogil:
 
 cdef extern from "fury/util/string_util.h" namespace "fury" nogil:
     c_bool utf16HasSurrogatePairs(uint16_t* data, size_t size)
+
+
+cdef extern from "fury/python/pyunicode.h" namespace "fury" nogil:
+    PyObject* Fury_PyUnicode_FromUCS1(const uint8_t* u, Py_ssize_t size)
+    PyObject* Fury_PyUnicode_FromUCS2(const uint16_t* u, Py_ssize_t size)
