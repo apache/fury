@@ -21,8 +21,7 @@
 
 #include "object.h"
 #include "pyport.h"
-#include <cstring>
-#include <string>
+#include <cstdint>
 
 namespace fury {
 

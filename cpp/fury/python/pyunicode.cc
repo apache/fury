@@ -24,6 +24,8 @@
 #include "fury/util/string_util.h"
 #include "unicodeobject.h"
 #include <cassert>
+#include <cstring>
+#include <string>
 
 namespace fury {
 
