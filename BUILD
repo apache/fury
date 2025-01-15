@@ -31,6 +31,7 @@ pyx_library(
     ),
     deps = [
         "//cpp/fury/util:fury_util",
+        "//cpp/fury/python:pyunicode",
     ],
 )
 
@@ -63,6 +64,7 @@ pyx_library(
     deps = [
         "//cpp/fury/util:fury_util",
         "//cpp/fury/type:fury_type",
+        "//cpp/fury/python:pyunicode",
         "@com_google_absl//absl/container:flat_hash_map",
     ],
 )
@@ -83,6 +85,7 @@ pyx_library(
     ),
     deps = [
         "//cpp/fury:fury",
+        "//cpp/fury/python:pyunicode",
         "@local_config_pyarrow//:python_numpy_headers",
         "@local_config_pyarrow//:arrow_python_shared_library"
     ],

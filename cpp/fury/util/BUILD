@@ -63,3 +63,15 @@ cc_test(
         "@com_google_googletest//:gtest",
     ],
 )
+
+
+cc_test(
+    name = "array_util_test",
+    srcs = ["array_util_test.cc"],
+    deps = [
+        ":fury_util",
+        "@com_google_googletest//:gtest",
+    ],
+    copts = ["-mavx2"],  # Enable AVX2 support
+    linkopts = ["-mavx2"],  # Ensure linker also knows about AVX2
+)

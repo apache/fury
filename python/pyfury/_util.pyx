@@ -27,7 +27,8 @@ from libcpp.memory cimport shared_ptr, make_shared
 from libc.stdint cimport *
 from libcpp cimport bool as c_bool
 from pyfury.includes.libutil cimport(
-    CBuffer, AllocateBuffer, GetBit, SetBit, ClearBit, SetBitTo, CStatus, StatusCode, utf16HasSurrogatePairs
+    CBuffer, AllocateBuffer, GetBit, SetBit, ClearBit, SetBitTo, CStatus, StatusCode, utf16HasSurrogatePairs,
+    Fury_PyUnicode_FromUCS1, Fury_PyUnicode_FromUCS2
 )
 
 cdef int32_t max_buffer_size = 2 ** 31 - 1
@@ -572,12 +573,15 @@ cdef class Buffer:
         cdef uint64_t header = self.read_varuint64()
         cdef uint32_t size = header >> 2
         self.check_bound(self.reader_index, size)
+        if size == 0:
+            return ""
         cdef const char * buf = <const char *>(self.c_buffer.get().data() + self.reader_index)
         self.reader_index += size
         cdef uint32_t encoding = header & <uint32_t>0b11
         if encoding == 0:
             # PyUnicode_FromASCII
-            return PyUnicode_DecodeLatin1(buf, size, "strict")
+            return <unicode>Fury_PyUnicode_FromUCS1(buf, size)
+            # return PyUnicode_DecodeLatin1(buf, size, "strict")
         elif encoding == 1:
             if utf16HasSurrogatePairs(<const uint16_t *>buf, size >> 1):
                 return PyUnicode_DecodeUTF16(
@@ -587,7 +591,8 @@ cdef class Buffer:
                     &UTF16_LE,  # fury use little-endian
                 )
             else:
-                return PyUnicode_FromKindAndData(PyUnicode_2BYTE_KIND, buf, size >> 1)
+                # return PyUnicode_FromKindAndData(PyUnicode_2BYTE_KIND, buf, size >> 1)
+                return <unicode>Fury_PyUnicode_FromUCS2(<const uint16_t *>buf, size >> 1)
         else:
             return PyUnicode_DecodeUTF8(buf, size, "strict")
 

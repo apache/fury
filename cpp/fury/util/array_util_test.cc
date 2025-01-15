@@ -17,19 +17,36 @@
  * under the License.
  */
 
-#pragma once
+#include "fury/util/array_util.h"
+#include "gtest/gtest.h"
 
-#if defined(__x86_64__) || defined(_M_X64)
-#include <immintrin.h>
-#define FURY_HAS_IMMINTRIN
-#elif defined(__ARM_NEON) || defined(__ARM_NEON__)
-#include <arm_neon.h>
-#define FURY_HAS_NEON
-#elif defined(__riscv) && __riscv_vector
-#include <riscv_vector.h>
-#define FURY_HAS_RISCV_VECTOR
-#endif
-#if defined(__SSE2__)
-#include <emmintrin.h>
-#define FURY_HAS_SSE2
-#endif
+namespace fury {
+TEST(GetMaxValueTest, HandlesEmptyArray) {
+  uint16_t *arr = nullptr;
+  EXPECT_EQ(getMaxValue(arr, 0), 0);
+}
+
+TEST(GetMaxValueTest, HandlesSingleElementArray) {
+  uint16_t arr[] = {42};
+  EXPECT_EQ(getMaxValue(arr, 1), 42);
+}
+
+TEST(GetMaxValueTest, HandlesSmallArray) {
+  uint16_t arr[] = {10, 20, 30, 40, 5};
+  EXPECT_EQ(getMaxValue(arr, 5), 40);
+}
+
+TEST(GetMaxValueTest, HandlesLargeArray) {
+  const size_t length = 1024;
+  uint16_t arr[length];
+  for (size_t i = 0; i < length; ++i) {
+    arr[i] = static_cast<uint16_t>(i);
+  }
+  EXPECT_EQ(getMaxValue(arr, length), 1023);
+}
+} // namespace fury
+
+int main(int argc, char **argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}
