@@ -79,7 +79,7 @@ PyObject* Fury_PyUnicode_FromUCS2(const uint16_t* u, Py_ssize_t size) {
   if (max_char >= 256) {
     memcpy(PyUnicode_2BYTE_DATA(res), u, sizeof(Py_UCS2) * size);
   } else {
-     copyValue(u, PyUnicode_1BYTE_DATA(res), size);
+     copyArray(u, PyUnicode_1BYTE_DATA(res), size);
   }
   // assert(_PyUnicode_CheckConsistency(res, 1));
   return res;

@@ -33,7 +33,7 @@ inline uint16_t getMaxValue(const uint16_t* arr, size_t length) {
   return max_neon;
 }
 
-inline void copyValue(const uint16_t* from, uint8_t* to, size_t length) {
+inline void copyArray(const uint16_t* from, uint8_t* to, size_t length) {
   size_t i = 0;
   for (; i + 7 < length; i += 8) {
     uint16x8_t src = vld1q_u16(&from[i]);
@@ -79,7 +79,7 @@ inline uint16_t getMaxValue(const uint16_t* arr, size_t length) {
   return max_sse;
 }
 
-inline void copyValue(const uint16_t* from, uint8_t* to, size_t length) {
+inline void copyArray(const uint16_t* from, uint8_t* to, size_t length) {
   size_t i = 0;
   __m128i mask = _mm_set1_epi16(0xFF);  // Mask to zero out the high byte
   for (; i + 7 < length; i += 8) {
@@ -108,7 +108,7 @@ inline uint16_t getMaxValue(const uint16_t* arr, size_t length) {
   return max_val;
 }
 
-inline void copyValue(const uint16_t* from, uint8_t* to, size_t length) {
+inline void copyArray(const uint16_t* from, uint8_t* to, size_t length) {
   // Fallback for systems without SSE2/NEON
   for (size_t i = 0; i < length; ++i) {
     to[i] = static_cast<uint8_t>(from[i]);
