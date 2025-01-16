@@ -36,15 +36,16 @@ cdef int UTF16_LE = -1
 
 @cython.final
 cdef class Buffer:
-    def __init__(self,  data not None, int offset=0, length=None):
+    def __init__(self,  data not None, int32_t offset=0, length=None):
         self.data = data
-        assert 0 <= offset <= len(data), f'offset {offset} length {len(data)}'
+        cdef int32_t buffer_len = len(data)
         cdef int length_
         if length is None:
-            length_ = len(data) - offset
+            length_ = buffer_len - offset
         else:
             length_ = length
-        assert length_ >= 0, f'length should be >= 0 but got {length}'
+        if offset < 0 or offset + length_ > buffer_len:
+            raise ValueError(f'Wrong offset {offset} or length {length} for buffer with size {buffer_len}')
         if length_ > 0:
             self._c_address = get_address(data) + offset
         else:
@@ -659,6 +660,8 @@ cdef class Buffer:
 
 
 cdef inline uint8_t* get_address(v):
+    if type(v) is bytes:
+        return <uint8_t*>(PyBytes_AsString(v))
     view = memoryview(v)
     cdef str dtype = view.format
     cdef:
