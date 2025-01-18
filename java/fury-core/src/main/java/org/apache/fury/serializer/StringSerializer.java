@@ -516,28 +516,53 @@ public final class StringSerializer extends ImmutableSerializer<String> {
 
   public void writeCharsUTF8(MemoryBuffer buffer, char[] chars) {
     int estimateMaxBytes = chars.length * 3;
-    int numBytes = MathUtils.doubleExact(chars.length);
+    // num bytes of utf8 should be smaller than utf16, otherwise we should
+    // utf16 instead.
+    // We can't use length in header since we don't know num chars in go/c++
+    int approxNumBytes = (int) (chars.length * 1.5) + 1;
     int writerIndex = buffer.writerIndex();
-    long header = ((long) numBytes << 2) | UTF8;
+    // 9 for max bytes of header
     buffer.ensure(writerIndex + 9 + estimateMaxBytes);
     byte[] targetArray = buffer.getHeapMemory();
     if (targetArray != null) {
+      // noinspection Duplicates
       int targetIndex = buffer._unsafeHeapWriterIndex();
+      // keep this index in case actual num utf8 bytes need different bytes for header
+      int headerPos = targetIndex;
       int arrIndex = targetIndex;
-      arrIndex += LittleEndian.putVarUint36Small(targetArray, arrIndex, header);
-      writerIndex += arrIndex - targetIndex;
-      targetIndex = StringEncodingUtils.convertUTF16ToUTF8(chars, targetArray, arrIndex + 4);
-      int written = targetIndex - arrIndex - 4;
-      buffer._unsafePutInt32(writerIndex, written);
-      buffer._unsafeWriterIndex(writerIndex + 4 + written);
+      long header = ((long) approxNumBytes << 2) | UTF8;
+      int headerBytesWritten = LittleEndian.putVarUint36Small(targetArray, arrIndex, header);
+      arrIndex += headerBytesWritten;
+      writerIndex += headerBytesWritten;
+      // noinspection Duplicates
+      targetIndex = StringEncodingUtils.convertUTF16ToUTF8(chars, targetArray, arrIndex);
+      byte stashedByte = targetArray[arrIndex];
+      int written = targetIndex - arrIndex;
+      header = ((long) written << 2) | UTF8;
+      int diff =
+          LittleEndian.putVarUint36Small(targetArray, headerPos, header) - headerBytesWritten;
+      if (diff != 0) {
+        handleWriteCharsUTF8UnalignedHeaderBytes(targetArray, arrIndex, diff, written, stashedByte);
+      }
+      buffer._unsafeWriterIndex(writerIndex + written + diff);
     } else {
+      // noinspection Duplicates
       final byte[] tmpArray = getByteArray(estimateMaxBytes);
       int written = StringEncodingUtils.convertUTF16ToUTF8(chars, tmpArray, 0);
+      long header = ((long) written << 2) | UTF8;
       writerIndex += buffer._unsafePutVarUint36Small(writerIndex, header);
-      buffer._unsafePutInt32(writerIndex, written);
-      writerIndex += 4;
       buffer.put(writerIndex, tmpArray, 0, written);
       buffer._unsafeWriterIndex(writerIndex + written);
+    }
+  }
+
+  private void handleWriteCharsUTF8UnalignedHeaderBytes(
+      byte[] targetArray, int arrIndex, int diff, int written, byte stashed) {
+    if (diff == 1) {
+      System.arraycopy(targetArray, arrIndex + 1, targetArray, arrIndex + 2, written - 1);
+      targetArray[arrIndex + 1] = stashed;
+    } else {
+      System.arraycopy(targetArray, arrIndex, targetArray, arrIndex - 1, written);
     }
   }
 
@@ -545,24 +570,35 @@ public final class StringSerializer extends ImmutableSerializer<String> {
     int numBytes = bytes.length;
     int estimateMaxBytes = bytes.length / 2 * 3;
     int writerIndex = buffer.writerIndex();
-    long header = ((long) numBytes << 2) | UTF8;
     buffer.ensure(writerIndex + 9 + estimateMaxBytes);
     byte[] targetArray = buffer.getHeapMemory();
     if (targetArray != null) {
+      // noinspection Duplicates
       int targetIndex = buffer._unsafeHeapWriterIndex();
+      // keep this index in case actual num utf8 bytes need different bytes for header
+      int headerPos = targetIndex;
       int arrIndex = targetIndex;
-      arrIndex += LittleEndian.putVarUint36Small(targetArray, arrIndex, header);
+      long header = ((long) numBytes << 2) | UTF8;
+      int headerBytesWritten = LittleEndian.putVarUint36Small(targetArray, arrIndex, header);
+      arrIndex += headerBytesWritten;
       writerIndex += arrIndex - targetIndex;
-      targetIndex = StringEncodingUtils.convertUTF16ToUTF8(bytes, targetArray, arrIndex + 4);
-      int written = targetIndex - arrIndex - 4;
-      buffer._unsafePutInt32(writerIndex, written);
-      buffer._unsafeWriterIndex(writerIndex + 4 + written);
+      // noinspection Duplicates
+      targetIndex = StringEncodingUtils.convertUTF16ToUTF8(bytes, targetArray, arrIndex);
+      byte stashedByte = targetArray[arrIndex];
+      int written = targetIndex - arrIndex;
+      header = ((long) written << 2) | UTF8;
+      int diff =
+          LittleEndian.putVarUint36Small(targetArray, headerPos, header) - headerBytesWritten;
+      if (diff != 0) {
+        handleWriteCharsUTF8UnalignedHeaderBytes(targetArray, arrIndex, diff, written, stashedByte);
+      }
+      buffer._unsafeWriterIndex(writerIndex + written + diff);
     } else {
+      // noinspection Duplicates
       final byte[] tmpArray = getByteArray(estimateMaxBytes);
       int written = StringEncodingUtils.convertUTF16ToUTF8(bytes, tmpArray, 0);
+      long header = ((long) written << 2) | UTF8;
       writerIndex += buffer._unsafePutVarUint36Small(writerIndex, header);
-      buffer._unsafePutInt32(writerIndex, written);
-      writerIndex += 4;
       buffer.put(writerIndex, tmpArray, 0, written);
       buffer._unsafeWriterIndex(writerIndex + written);
     }
