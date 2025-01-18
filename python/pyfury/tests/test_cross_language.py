@@ -619,7 +619,7 @@ if __name__ == "__main__":
         func = getattr(sys.modules[__name__], args[0])
         if not func:
             raise Exception("Unknown args {}".format(args))
-        func(*args[1:])
+        func(*args[1:])f
     except BaseException as e:
-        logging.exception("Execute %s failed", args)
+        logging.exception("Execute %s failed with %s", args, e)
         raise
