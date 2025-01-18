@@ -612,6 +612,7 @@ def test_oob_buffer(in_band_file_path, out_of_band_file_path):
 if __name__ == "__main__":
     import sys
 
+    print(f"Execute {sys.argv}")
     try:
         args = sys.argv[1:]
         assert len(args) > 0
