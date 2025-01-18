@@ -25,7 +25,9 @@ import static org.apache.fury.format.vectorized.ArrowUtilsTest.createVectorSchem
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.channels.Channels;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -347,16 +349,30 @@ public class CrossLanguageTest {
       List<String> command, int waitTimeoutSeconds, Map<String, String> env) {
     try {
       LOG.info("Executing command: {}", String.join(" ", command));
-      ProcessBuilder processBuilder =
-          new ProcessBuilder(command)
-              .redirectOutput(ProcessBuilder.Redirect.INHERIT)
-              .redirectError(ProcessBuilder.Redirect.INHERIT);
+      // redirectOutput doesn't work for forked jvm such as in maven sure.
+      ProcessBuilder processBuilder = new ProcessBuilder(command);
       for (Map.Entry<String, String> entry : env.entrySet()) {
         processBuilder.environment().put(entry.getKey(), entry.getValue());
       }
       Process process = processBuilder.start();
-      process.waitFor(waitTimeoutSeconds, TimeUnit.SECONDS);
-      return process.exitValue() == 0;
+      // Capture output to log
+      BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+      BufferedReader errorReader =
+          new BufferedReader(new InputStreamReader(process.getErrorStream()));
+      String line;
+      while ((line = reader.readLine()) != null) {
+        System.out.println(line);
+      }
+      while ((line = errorReader.readLine()) != null) {
+        System.err.println(line);
+      }
+      boolean finished = process.waitFor(waitTimeoutSeconds, TimeUnit.SECONDS);
+      if (finished) {
+        return process.exitValue() == 0;
+      } else {
+        process.destroy(); // ensure the process is terminated
+        return false;
+      }
     } catch (Exception e) {
       throw new RuntimeException("Error executing command " + String.join(" ", command), e);
     }
