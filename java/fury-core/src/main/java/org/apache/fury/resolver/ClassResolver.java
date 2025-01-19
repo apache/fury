@@ -19,6 +19,7 @@
 
 package org.apache.fury.resolver;
 
+import static org.apache.fury.Fury.NOT_SUPPORT_XLANG;
 import static org.apache.fury.meta.ClassDef.SIZE_TWO_BYTES_FLAG;
 import static org.apache.fury.meta.Encoders.PACKAGE_DECODER;
 import static org.apache.fury.meta.Encoders.PACKAGE_ENCODER;
@@ -205,14 +206,13 @@ public class ClassResolver {
   public static final short CLASS_CLASS_ID = (short) (PRIMITIVE_DOUBLE_ARRAY_CLASS_ID + 6);
   public static final short EMPTY_OBJECT_ID = (short) (PRIMITIVE_DOUBLE_ARRAY_CLASS_ID + 7);
   // use a lower load factor to minimize hash collision
-  private static final float loadFactor = 0.25f;
   private static final float furyMapLoadFactor = 0.25f;
   private static final int estimatedNumRegistered = 150;
   private static final String SET_META__CONTEXT_MSG =
       "Meta context must be set before serialization, "
           + "please set meta context by SerializationContext.setMetaContext";
-  private static final ClassInfo NIL_CLASS_INFO =
-      new ClassInfo(null, null, null, null, false, null, null, ClassResolver.NO_CLASS_ID);
+  static final ClassInfo NIL_CLASS_INFO =
+      new ClassInfo(null, null, null, null, false, null, NO_CLASS_ID, NOT_SUPPORT_XLANG);
 
   private final Fury fury;
   private ClassInfo[] registeredId2ClassInfo = new ClassInfo[] {};
@@ -221,13 +221,9 @@ public class ClassResolver {
   private final IdentityMap<Class<?>, ClassInfo> classInfoMap =
       new IdentityMap<>(estimatedNumRegistered, furyMapLoadFactor);
   private ClassInfo classInfoCache;
-  private final ObjectMap<MetaStringBytes, Class<?>> classNameBytes2Class =
-      new ObjectMap<>(16, furyMapLoadFactor);
   // Every deserialization for unregistered class will query it, performance is important.
   private final ObjectMap<ClassNameBytes, ClassInfo> compositeClassNameBytes2ClassInfo =
       new ObjectMap<>(16, furyMapLoadFactor);
-  private final HashMap<Short, Class<?>> typeIdToClassXLangMap = new HashMap<>(8, loadFactor);
-  private final HashMap<String, Class<?>> typeTagToClassXLangMap = new HashMap<>(8, loadFactor);
   private final MetaStringResolver metaStringResolver;
   private final boolean metaContextShareEnabled;
   private final Map<Class<?>, ClassDef> classDefMap = new HashMap<>();
@@ -256,7 +252,8 @@ public class ClassResolver {
         descriptorsCache = new ConcurrentHashMap<>();
     private ClassChecker classChecker = (classResolver, className) -> true;
     private GenericType objectGenericType;
-    private Map<List<ClassLoader>, CodeGenerator> codeGeneratorMap = new HashMap<>();
+    private final IdentityMap<Type, GenericType> genericTypes = new IdentityMap<>();
+    private final Map<List<ClassLoader>, CodeGenerator> codeGeneratorMap = new HashMap<>();
   }
 
   public ClassResolver(Fury fury) {
@@ -436,8 +433,7 @@ public class ClassResolver {
               + "Fury#register(Class) or Fury.register(Class<?>, Short)");
     }
     register(cls);
-    Preconditions.checkArgument(!typeTagToClassXLangMap.containsKey(typeTag));
-    addSerializer(cls, new StructSerializer<>(fury, cls, typeTag));
+    addSerializer(cls, new StructSerializer<>(fury, cls));
   }
 
   /**
@@ -476,7 +472,7 @@ public class ClassResolver {
     if (classInfo != null) {
       classInfo.classId = id;
     } else {
-      classInfo = new ClassInfo(this, cls, null, null, id);
+      classInfo = new ClassInfo(this, cls, null, id, NOT_SUPPORT_XLANG);
       // make `extRegistry.registeredClassIdMap` and `classInfoMap` share same classInfo
       // instances.
       classInfoMap.put(cls, classInfo);
@@ -491,7 +487,7 @@ public class ClassResolver {
     register(loadClass(className, false, 0, false), classId);
   }
 
-  public void register(Class<?> cls, Short id, boolean createSerializer) {
+  public void register(Class<?> cls, int id, boolean createSerializer) {
     register(cls, id);
     if (createSerializer) {
       createSerializerAhead(cls);
@@ -729,18 +725,6 @@ public class ClassResolver {
   /** Ass serializer for specified class. */
   private void addSerializer(Class<?> type, Serializer<?> serializer) {
     Preconditions.checkNotNull(serializer);
-    String typeTag = null;
-    short typeId = serializer.getXtypeId();
-    if (typeId != Fury.NOT_SUPPORT_CROSS_LANGUAGE) {
-      if (typeId > Fury.NOT_SUPPORT_CROSS_LANGUAGE) {
-        typeIdToClassXLangMap.put(typeId, type);
-      }
-      if (typeId == Fury.FURY_TYPE_TAG_ID) {
-        typeTag = serializer.getCrossLanguageTypeTag();
-        typeTagToClassXLangMap.put(typeTag, type);
-      }
-    }
-
     // 1. Try to get ClassInfo from `registeredId2ClassInfo` and
     // `classInfoMap` or create a new `ClassInfo`.
     ClassInfo classInfo;
@@ -758,8 +742,8 @@ public class ClassResolver {
       classInfo = classInfoMap.get(type);
     }
 
-    if (classInfo == null || typeTag != null || classId != classInfo.classId) {
-      classInfo = new ClassInfo(this, type, typeTag, null, classId);
+    if (classInfo == null || classId != classInfo.classId) {
+      classInfo = new ClassInfo(this, type, null, classId, (short) 0);
       classInfoMap.put(type, classInfo);
       if (registered) {
         registeredId2ClassInfo[classId] = classInfo;
@@ -968,6 +952,21 @@ public class ClassResolver {
     }
   }
 
+  public boolean isSet(Class<?> cls) {
+    if (Set.class.isAssignableFrom(cls)) {
+      return true;
+    }
+    if (fury.getConfig().isScalaOptimizationEnabled()) {
+      // Scala map is scala iterable too.
+      if (ScalaTypes.getScalaMapType().isAssignableFrom(cls)) {
+        return false;
+      }
+      return ScalaTypes.getScalaSetType().isAssignableFrom(cls);
+    } else {
+      return false;
+    }
+  }
+
   public boolean isMap(Class<?> cls) {
     return Map.class.isAssignableFrom(cls)
         || (fury.getConfig().isScalaOptimizationEnabled()
@@ -1148,6 +1147,10 @@ public class ClassResolver {
     } else {
       return classInfoMap.get(cls);
     }
+  }
+
+  void setClassInfo(Class<?> cls, ClassInfo classInfo) {
+    classInfoMap.put(cls, classInfo);
   }
 
   @Internal
@@ -1435,7 +1438,7 @@ public class ClassResolver {
     Class<?> cls = clz;
     Short classId = extRegistry.registeredClassIdMap.get(cls);
     ClassInfo classInfo =
-        new ClassInfo(this, cls, null, null, classId == null ? NO_CLASS_ID : classId);
+        new ClassInfo(this, cls, null, classId == null ? NO_CLASS_ID : classId, NOT_SUPPORT_XLANG);
     if (NonexistentClass.class.isAssignableFrom(TypeUtils.getComponentIfArray(cls))) {
       if (cls == NonexistentMetaShared.class) {
         classInfo.setSerializer(this, new NonexistentClassSerializer(fury, classDef));
@@ -1603,7 +1606,9 @@ public class ClassResolver {
       Short classId = extRegistry.registeredClassIdMap.get(cls);
       // Don't create serializer in case the object for class is non-serializable,
       // Or class is abstract or interface.
-      classInfo = new ClassInfo(this, cls, null, null, classId == null ? NO_CLASS_ID : classId);
+      classInfo =
+          new ClassInfo(
+              this, cls, null, classId == null ? NO_CLASS_ID : classId, NOT_SUPPORT_XLANG);
       classInfoMap.put(cls, classInfo);
     }
     writeClassInternal(buffer, classInfo);
@@ -1745,7 +1750,7 @@ public class ClassResolver {
     return classInfo;
   }
 
-  private ClassInfo loadBytesToClassInfo(
+  ClassInfo loadBytesToClassInfo(
       MetaStringBytes packageBytes, MetaStringBytes simpleClassNameBytes) {
     ClassNameBytes classNameBytes =
         new ClassNameBytes(packageBytes.hashCode, simpleClassNameBytes.hashCode);
@@ -1775,8 +1780,8 @@ public class ClassResolver {
             simpleClassNameBytes,
             false,
             null,
-            null,
-            NO_CLASS_ID);
+            NO_CLASS_ID,
+            NOT_SUPPORT_XLANG);
     if (NonexistentClass.class.isAssignableFrom(TypeUtils.getComponentIfArray(cls))) {
       classInfo.serializer =
           NonexistentClassSerializers.getSerializer(fury, classSpec.entireClassName, cls);
@@ -1791,37 +1796,8 @@ public class ClassResolver {
     return classInfo;
   }
 
-  public void xwriteClass(MemoryBuffer buffer, Class<?> cls) {
-    metaStringResolver.writeMetaStringBytes(buffer, getOrUpdateClassInfo(cls).fullClassNameBytes);
-  }
-
-  public void xwriteTypeTag(MemoryBuffer buffer, Class<?> cls) {
-    metaStringResolver.writeMetaStringBytes(buffer, getOrUpdateClassInfo(cls).typeTagBytes);
-  }
-
-  public Class<?> xreadClass(MemoryBuffer buffer) {
-    MetaStringBytes byteString = metaStringResolver.readMetaStringBytes(buffer);
-    Class<?> cls = classNameBytes2Class.get(byteString);
-    if (cls == null) {
-      Preconditions.checkNotNull(byteString);
-      String className = byteString.decode(Encoders.GENERIC_DECODER);
-      cls = loadClass(className);
-      classNameBytes2Class.put(byteString, cls);
-    }
-    currentReadClass = cls;
-    return cls;
-  }
-
-  public String xreadClassName(MemoryBuffer buffer) {
-    return metaStringResolver.readMetaString(buffer);
-  }
-
   public Class<?> getCurrentReadClass() {
     return currentReadClass;
-  }
-
-  private Class<?> loadClass(String className) {
-    return loadClass(className, false, 0);
   }
 
   private Class<?> loadClass(ClassSpec classSpec) {
@@ -1864,39 +1840,6 @@ public class ClassResolver {
 
   public void resetWrite() {}
 
-  public Class<?> getClassByTypeId(short typeId) {
-    return typeIdToClassXLangMap.get(typeId);
-  }
-
-  public Class<?> readClassByTypeTag(MemoryBuffer buffer) {
-    String tag = metaStringResolver.readMetaString(buffer);
-    return typeTagToClassXLangMap.get(tag);
-  }
-
-  private static class ClassNameBytes {
-    private final long packageHash;
-    private final long classNameHash;
-
-    private ClassNameBytes(long packageHash, long classNameHash) {
-      this.packageHash = packageHash;
-      this.classNameHash = classNameHash;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      // ClassNameBytes is used internally, skip
-      ClassNameBytes that = (ClassNameBytes) o;
-      return packageHash == that.packageHash && classNameHash == that.classNameHash;
-    }
-
-    @Override
-    public int hashCode() {
-      int result = 31 + (int) (packageHash ^ (packageHash >>> 32));
-      result = result * 31 + (int) (classNameHash ^ (classNameHash >>> 32));
-      return result;
-    }
-  }
-
   public GenericType buildGenericType(TypeRef<?> typeRef) {
     return GenericType.build(
         typeRef.getType(),
@@ -1910,15 +1853,26 @@ public class ClassResolver {
   }
 
   public GenericType buildGenericType(Type type) {
-    return GenericType.build(
-        type,
-        t -> {
-          if (t.getClass() == Class.class) {
-            return isMonomorphic((Class<?>) t);
-          } else {
-            return isMonomorphic(getRawType(t));
-          }
-        });
+    GenericType genericType = extRegistry.genericTypes.get(type);
+    if (genericType != null) {
+      return genericType;
+    }
+    return populateGenericType(type);
+  }
+
+  private GenericType populateGenericType(Type type) {
+    GenericType genericType =
+        GenericType.build(
+            type,
+            t -> {
+              if (t.getClass() == Class.class) {
+                return isMonomorphic((Class<?>) t);
+              } else {
+                return isMonomorphic(getRawType(t));
+              }
+            });
+    extRegistry.genericTypes.put(type, genericType);
+    return genericType;
   }
 
   public GenericType getObjectGenericType() {
@@ -1926,12 +1880,12 @@ public class ClassResolver {
   }
 
   public ClassInfo newClassInfo(Class<?> cls, Serializer<?> serializer, short classId) {
-    return new ClassInfo(this, cls, null, serializer, classId);
+    return new ClassInfo(this, cls, serializer, classId, NOT_SUPPORT_XLANG);
   }
 
   // Invoked by fury JIT.
   public ClassInfo nilClassInfo() {
-    return new ClassInfo(this, null, null, null, NO_CLASS_ID);
+    return new ClassInfo(this, null, null, NO_CLASS_ID, NOT_SUPPORT_XLANG);
   }
 
   public ClassInfoHolder nilClassInfoHolder() {

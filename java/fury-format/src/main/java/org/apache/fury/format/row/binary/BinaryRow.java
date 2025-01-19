@@ -73,6 +73,7 @@ public class BinaryRow extends UnsafeTrait implements Row {
     this.numFields = schema.getFields().size();
     Preconditions.checkArgument(numFields > 0);
     this.bitmapWidthInBytes = BitUtils.calculateBitmapWidthInBytes(numFields);
+    initializeExtData(numFields);
   }
 
   public void pointTo(MemoryBuffer buffer, int offset, int sizeInBytes) {
@@ -155,7 +156,7 @@ public class BinaryRow extends UnsafeTrait implements Row {
 
   @Override
   public BinaryRow getStruct(int ordinal) {
-    return getStruct(ordinal, schema.getFields().get(ordinal));
+    return getStruct(ordinal, schema.getFields().get(ordinal), ordinal);
   }
 
   @Override

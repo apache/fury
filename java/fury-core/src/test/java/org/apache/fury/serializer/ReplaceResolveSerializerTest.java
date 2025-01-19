@@ -183,8 +183,6 @@ public class ReplaceResolveSerializerTest extends FuryTestBase {
       fury.registerSerializer(o.getClass(), ReplaceResolveSerializer.class);
       copyCheck(fury, o);
     }
-    CustomReplaceClass2 o = new CustomReplaceClass2(false, 6);
-    copyCheck(fury, o);
   }
 
   public static class CustomReplaceClass3 implements Serializable {

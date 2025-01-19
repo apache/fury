@@ -28,6 +28,7 @@ import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.reflect.ReflectionUtils;
+import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.ObjectSerializer;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
@@ -74,14 +75,15 @@ public class SubListSerializers {
   }
 
   public static void registerSerializers(Fury fury, boolean preserveView) {
+    ClassResolver classResolver = fury.getClassResolver();
     for (Class<?> cls :
         new Class[] {
           SubListClass, RandomAccessSubListClass, ArrayListSubListClass, ImmutableSubListClass
         }) {
       if (fury.trackingRef() && preserveView && fury.getConfig().getLanguage() == Language.JAVA) {
-        fury.registerSerializer(cls, new SubListViewSerializer(fury, cls));
+        classResolver.registerSerializer(cls, new SubListViewSerializer(fury, cls));
       } else {
-        fury.registerSerializer(cls, new SubListSerializer(fury, (Class<List>) cls));
+        classResolver.registerSerializer(cls, new SubListSerializer(fury, (Class<List>) cls));
       }
     }
   }

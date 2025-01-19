@@ -17,72 +17,138 @@
  * under the License.
  */
 
-#include "string_util.h"
-
-#if defined(__x86_64__) || defined(_M_X64)
-#include <immintrin.h>
-#elif defined(__ARM_NEON) || defined(__ARM_NEON__)
-#include <arm_neon.h>
-#elif defined(__riscv) && __riscv_vector
-#include <riscv_vector.h>
-#endif
-
 #include <chrono>
 #include <string>
 
+#include "platform.h"
+#include "string_util.h"
+
 namespace fury {
 
-// Swap bytes to convert from big endian to little endian
-inline uint16_t swapBytes(uint16_t value) {
-  return (value >> 8) | (value << 8);
-}
+std::u16string utf8ToUtf16SIMD(const std::string &utf8, bool is_little_endian) {
+  std::u16string utf16;
+  utf16.reserve(utf8.size()); // Reserve space to avoid frequent reallocations
 
-inline void utf16ToUtf8(uint16_t code_unit, char *&output) {
-  if (code_unit < 0x80) {
-    *output++ = static_cast<char>(code_unit);
-  } else if (code_unit < 0x800) {
-    *output++ = static_cast<char>(0xC0 | (code_unit >> 6));
-    *output++ = static_cast<char>(0x80 | (code_unit & 0x3F));
-  } else {
-    *output++ = static_cast<char>(0xE0 | (code_unit >> 12));
-    *output++ = static_cast<char>(0x80 | ((code_unit >> 6) & 0x3F));
-    *output++ = static_cast<char>(0x80 | (code_unit & 0x3F));
-  }
-}
-
-inline void utf16SurrogatePairToUtf8(uint16_t high, uint16_t low, char *&utf8) {
-  uint32_t code_point = 0x10000 + ((high - 0xD800) << 10) + (low - 0xDC00);
-  *utf8++ = static_cast<char>((code_point >> 18) | 0xF0);
-  *utf8++ = static_cast<char>(((code_point >> 12) & 0x3F) | 0x80);
-  *utf8++ = static_cast<char>(((code_point >> 6) & 0x3F) | 0x80);
-  *utf8++ = static_cast<char>((code_point & 0x3F) | 0x80);
-}
-
-#if defined(__x86_64__) || defined(_M_X64)
-
-bool isLatin(const std::string &str) {
-  const char *data = str.data();
-  size_t len = str.size();
+  char buffer[64]; // Buffer to hold temporary UTF-16 results
+  char16_t *output =
+      reinterpret_cast<char16_t *>(buffer); // Use char16_t for output
 
   size_t i = 0;
-  __m256i latin_mask = _mm256_set1_epi8(0x80);
-  for (; i + 32 <= len; i += 32) {
-    __m256i chars =
-        _mm256_loadu_si256(reinterpret_cast<const __m256i *>(data + i));
-    __m256i result = _mm256_and_si256(chars, latin_mask);
-    if (!_mm256_testz_si256(result, result)) {
-      return false;
+  size_t n = utf8.size();
+
+  while (i + 32 <= n) {
+
+    for (int j = 0; j < 32; ++j) {
+      uint8_t byte = utf8[i + j];
+
+      if (byte < 0x80) {
+        // 1-byte character (ASCII)
+        *output++ = static_cast<char16_t>(byte);
+      } else if (byte < 0xE0) {
+        // 2-byte character
+        uint16_t utf16_char = ((byte & 0x1F) << 6) | (utf8[i + j + 1] & 0x3F);
+        if (!is_little_endian) {
+          utf16_char = (utf16_char >> 8) |
+                       (utf16_char << 8); // Swap bytes for big-endian
+        }
+        *output++ = utf16_char;
+        ++j;
+      } else if (byte < 0xF0) {
+        // 3-byte character
+        uint16_t utf16_char = ((byte & 0x0F) << 12) |
+                              ((utf8[i + j + 1] & 0x3F) << 6) |
+                              (utf8[i + j + 2] & 0x3F);
+        if (!is_little_endian) {
+          utf16_char = (utf16_char >> 8) |
+                       (utf16_char << 8); // Swap bytes for big-endian
+        }
+        *output++ = utf16_char;
+        j += 2;
+      } else {
+        // 4-byte character (surrogate pair handling required)
+        uint32_t code_point =
+            ((byte & 0x07) << 18) | ((utf8[i + j + 1] & 0x3F) << 12) |
+            ((utf8[i + j + 2] & 0x3F) << 6) | (utf8[i + j + 3] & 0x3F);
+
+        // Convert the code point to a surrogate pair
+        uint16_t high_surrogate = 0xD800 + ((code_point - 0x10000) >> 10);
+        uint16_t low_surrogate = 0xDC00 + (code_point & 0x3FF);
+
+        if (!is_little_endian) {
+          high_surrogate = (high_surrogate >> 8) |
+                           (high_surrogate << 8); // Swap bytes for big-endian
+          low_surrogate = (low_surrogate >> 8) |
+                          (low_surrogate << 8); // Swap bytes for big-endian
+        }
+
+        *output++ = high_surrogate;
+        *output++ = low_surrogate;
+
+        j += 3;
+      }
     }
+
+    // Append the processed buffer to the final utf16 string
+    utf16.append(reinterpret_cast<char16_t *>(buffer),
+                 output - reinterpret_cast<char16_t *>(buffer));
+    output =
+        reinterpret_cast<char16_t *>(buffer); // Reset output buffer pointer
+    i += 32;
   }
 
-  for (; i < len; ++i) {
-    if (static_cast<unsigned char>(data[i]) >= 128) {
-      return false;
+  // Handle remaining characters
+  while (i < n) {
+    uint8_t byte = utf8[i];
+
+    if (byte < 0x80) {
+      *output++ = static_cast<char16_t>(byte);
+    } else if (byte < 0xE0) {
+      uint16_t utf16_char = ((byte & 0x1F) << 6) | (utf8[i + 1] & 0x3F);
+      if (!is_little_endian) {
+        utf16_char =
+            (utf16_char >> 8) | (utf16_char << 8); // Swap bytes for big-endian
+      }
+      *output++ = utf16_char;
+      ++i;
+    } else if (byte < 0xF0) {
+      uint16_t utf16_char = ((byte & 0x0F) << 12) |
+                            ((utf8[i + 1] & 0x3F) << 6) | (utf8[i + 2] & 0x3F);
+      if (!is_little_endian) {
+        utf16_char =
+            (utf16_char >> 8) | (utf16_char << 8); // Swap bytes for big-endian
+      }
+      *output++ = utf16_char;
+      i += 2;
+    } else {
+      uint32_t code_point = ((byte & 0x07) << 18) |
+                            ((utf8[i + 1] & 0x3F) << 12) |
+                            ((utf8[i + 2] & 0x3F) << 6) | (utf8[i + 3] & 0x3F);
+
+      uint16_t high_surrogate = 0xD800 + ((code_point - 0x10000) >> 10);
+      uint16_t low_surrogate = 0xDC00 + (code_point & 0x3FF);
+
+      if (!is_little_endian) {
+        high_surrogate = (high_surrogate >> 8) | (high_surrogate << 8);
+        low_surrogate = (low_surrogate >> 8) | (low_surrogate << 8);
+      }
+
+      *output++ = high_surrogate;
+      *output++ = low_surrogate;
+
+      i += 3;
     }
+
+    ++i;
   }
 
-  return true;
+  // Append the last part of the buffer to the utf16 string
+  utf16.append(reinterpret_cast<char16_t *>(buffer),
+               output - reinterpret_cast<char16_t *>(buffer));
+
+  return utf16;
 }
+
+#if defined(FURY_HAS_IMMINTRIN)
 
 std::string utf16ToUtf8(const std::u16string &utf16, bool is_little_endian) {
   std::string utf8;
@@ -168,30 +234,11 @@ std::string utf16ToUtf8(const std::u16string &utf16, bool is_little_endian) {
   return utf8;
 }
 
-#elif defined(__ARM_NEON) || defined(__ARM_NEON__)
-
-bool isLatin(const std::string &str) {
-  const char *data = str.data();
-  size_t len = str.size();
-
-  size_t i = 0;
-  uint8x16_t latin_mask = vdupq_n_u8(0x80);
-  for (; i + 16 <= len; i += 16) {
-    uint8x16_t chars = vld1q_u8(reinterpret_cast<const uint8_t *>(data + i));
-    uint8x16_t result = vandq_u8(chars, latin_mask);
-    if (vmaxvq_u8(result) != 0) {
-      return false;
-    }
-  }
-
-  for (; i < len; ++i) {
-    if (static_cast<unsigned char>(data[i]) >= 128) {
-      return false;
-    }
-  }
-
-  return true;
+std::u16string utf8ToUtf16(const std::string &utf8, bool is_little_endian) {
+  return utf8ToUtf16SIMD(utf8, is_little_endian);
 }
+
+#elif defined(FURY_HAS_NEON)
 
 std::string utf16ToUtf8(const std::u16string &utf16, bool is_little_endian) {
   std::string utf8;
@@ -264,30 +311,11 @@ std::string utf16ToUtf8(const std::u16string &utf16, bool is_little_endian) {
   return utf8;
 }
 
-#elif defined(__riscv) && __riscv_vector
-
-bool isLatin(const std::string &str) {
-  const char *data = str.data();
-  size_t len = str.size();
-
-  size_t i = 0;
-  auto latin_mask = vmv_v_x_u8m1(0x80, 16);
-  for (; i + 16 <= len; i += 16) {
-    auto chars = vle8_v_u8m1(reinterpret_cast<const uint8_t *>(data + i), 16);
-    auto result = vand_vv_u8m1(chars, latin_mask, 16);
-    if (vfirst_m_b8(vmsne_vx_u8m1_b8(result, 0, 16))) {
-      return false;
-    }
-  }
-
-  for (; i < len; ++i) {
-    if (static_cast<unsigned char>(data[i]) >= 128) {
-      return false;
-    }
-  }
-
-  return true;
+std::u16string utf8ToUtf16(const std::string &utf8, bool is_little_endian) {
+  return utf8ToUtf16SIMD(utf8, is_little_endian);
 }
+
+#elif defined(FURY_HAS_RISCV_VECTOR)
 
 std::string utf16ToUtf8(const std::u16string &utf16, bool is_little_endian) {
   std::string utf8;
@@ -365,16 +393,11 @@ std::string utf16ToUtf8(const std::u16string &utf16, bool is_little_endian) {
   return utf8;
 }
 
-#else
-
-bool isLatin(const std::string &str) {
-  for (char c : str) {
-    if (static_cast<unsigned char>(c) >= 128) {
-      return false;
-    }
-  }
-  return true;
+std::u16string utf8ToUtf16(const std::string &utf8, bool is_little_endian) {
+  return utf8ToUtf16SIMD(utf8, is_little_endian);
 }
+
+#else
 
 // Fallback implementation without SIMD acceleration
 std::string utf16ToUtf8(const std::u16string &utf16, bool is_little_endian) {
@@ -412,6 +435,78 @@ std::string utf16ToUtf8(const std::u16string &utf16, bool is_little_endian) {
     ++i;
   }
   return utf8;
+}
+
+// Fallback implementation without SIMD acceleration
+std::u16string utf8ToUtf16(const std::string &utf8, bool is_little_endian) {
+  std::u16string utf16;   // Resulting UTF-16 string
+  size_t i = 0;           // Index for traversing the UTF-8 string
+  size_t n = utf8.size(); // Total length of the UTF-8 string
+
+  // Loop through each byte of the UTF-8 string
+  while (i < n) {
+    uint32_t code_point = 0;   // The Unicode code point
+    unsigned char c = utf8[i]; // Current byte of the UTF-8 string
+
+    // Determine the number of bytes for this character based on its first byte
+    if ((c & 0x80) == 0) {
+      // 1-byte character (ASCII)
+      code_point = c;
+      ++i;
+    } else if ((c & 0xE0) == 0xC0) {
+      // 2-byte character
+      code_point = c & 0x1F;
+      code_point = (code_point << 6) | (utf8[i + 1] & 0x3F);
+      i += 2;
+    } else if ((c & 0xF0) == 0xE0) {
+      // 3-byte character
+      code_point = c & 0x0F;
+      code_point = (code_point << 6) | (utf8[i + 1] & 0x3F);
+      code_point = (code_point << 6) | (utf8[i + 2] & 0x3F);
+      i += 3;
+    } else if ((c & 0xF8) == 0xF0) {
+      // 4-byte character
+      code_point = c & 0x07;
+      code_point = (code_point << 6) | (utf8[i + 1] & 0x3F);
+      code_point = (code_point << 6) | (utf8[i + 2] & 0x3F);
+      code_point = (code_point << 6) | (utf8[i + 3] & 0x3F);
+      i += 4;
+    } else {
+      // Invalid UTF-8 byte sequence
+      throw std::invalid_argument("Invalid UTF-8 encoding.");
+    }
+
+    // If the code point is beyond the BMP range, use surrogate pairs
+    if (code_point >= 0x10000) {
+      code_point -= 0x10000; // Subtract 0x10000 to get the surrogate pair
+      uint16_t high_surrogate = 0xD800 + (code_point >> 10);  // High surrogate
+      uint16_t low_surrogate = 0xDC00 + (code_point & 0x3FF); // Low surrogate
+
+      // If not little-endian, swap bytes of the surrogates
+      if (!is_little_endian) {
+        high_surrogate = (high_surrogate >> 8) | (high_surrogate << 8);
+        low_surrogate = (low_surrogate >> 8) | (low_surrogate << 8);
+      }
+
+      // Add both high and low surrogates to the UTF-16 string
+      utf16.push_back(high_surrogate);
+      utf16.push_back(low_surrogate);
+    } else {
+      // For code points within the BMP range, directly store as a 16-bit value
+      uint16_t utf16_char = static_cast<uint16_t>(code_point);
+
+      // If not little-endian, swap the bytes of the 16-bit character
+      if (!is_little_endian) {
+        utf16_char = (utf16_char >> 8) | (utf16_char << 8);
+      }
+
+      // Add the UTF-16 character to the string
+      utf16.push_back(utf16_char);
+    }
+  }
+
+  // Return the resulting UTF-16 string
+  return utf16;
 }
 
 #endif

@@ -18,6 +18,16 @@ Step 3: Execute the benchmark script
 python fury_benchmark.py
 ```
 
+### fury options
+
+`--xlang` specify using cross-language mode, otherwise choose python mode
+
+`--no-ref` specify ref tracking is true
+
+`--disable-cython` disable cython serialization
+
+### pyperf options
+
 `--affinity CPU_LIST` specify CPU affinity for worker processes
 
 `-o FILENAME, --output FILENAME` write results encoded to JSON into FILENAME

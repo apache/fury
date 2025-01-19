@@ -46,6 +46,7 @@ public class Config implements Serializable {
   private final boolean checkJdkClassSerializable;
   private final Class<? extends Serializer> defaultJDKStreamSerializerType;
   private final boolean compressString;
+  private final boolean writeNumUtf16BytesForUtf8Encoding;
   private final boolean compressInt;
   private final boolean compressLong;
   private final LongEncoding longEncoding;
@@ -61,6 +62,7 @@ public class Config implements Serializable {
   private transient int configHash;
   private final boolean deserializeNonexistentEnumValueAsNull;
   private final boolean serializeEnumByName;
+  private final int bufferSizeLimitBytes;
 
   public Config(FuryBuilder builder) {
     name = builder.name;
@@ -71,6 +73,7 @@ public class Config implements Serializable {
     timeRefIgnored = !trackingRef || builder.timeRefIgnored;
     copyRef = builder.copyRef;
     compressString = builder.compressString;
+    writeNumUtf16BytesForUtf8Encoding = builder.writeNumUtf16BytesForUtf8Encoding;
     compressInt = builder.compressInt;
     longEncoding = builder.longEncoding;
     compressLong = longEncoding != LongEncoding.LE_RAW_BYTES;
@@ -95,6 +98,7 @@ public class Config implements Serializable {
     scalaOptimizationEnabled = builder.scalaOptimizationEnabled;
     deserializeNonexistentEnumValueAsNull = builder.deserializeNonexistentEnumValueAsNull;
     serializeEnumByName = builder.serializeEnumByName;
+    bufferSizeLimitBytes = builder.bufferSizeLimitBytes;
   }
 
   /** Returns the name for Fury serialization. */
@@ -174,6 +178,10 @@ public class Config implements Serializable {
     return compressString;
   }
 
+  public boolean writeNumUtf16BytesForUtf8Encoding() {
+    return writeNumUtf16BytesForUtf8Encoding;
+  }
+
   public boolean compressInt() {
     return compressInt;
   }
@@ -185,6 +193,10 @@ public class Config implements Serializable {
   /** Returns long encoding. */
   public LongEncoding longEncoding() {
     return longEncoding;
+  }
+
+  public int bufferSizeLimitBytes() {
+    return bufferSizeLimitBytes;
   }
 
   public boolean requireClassRegistration() {
@@ -281,8 +293,10 @@ public class Config implements Serializable {
         && checkClassVersion == config.checkClassVersion
         && checkJdkClassSerializable == config.checkJdkClassSerializable
         && compressString == config.compressString
+        && writeNumUtf16BytesForUtf8Encoding == config.writeNumUtf16BytesForUtf8Encoding
         && compressInt == config.compressInt
         && compressLong == config.compressLong
+        && bufferSizeLimitBytes == config.bufferSizeLimitBytes
         && requireClassRegistration == config.requireClassRegistration
         && suppressClassRegistrationWarnings == config.suppressClassRegistrationWarnings
         && registerGuavaTypes == config.registerGuavaTypes
@@ -314,9 +328,11 @@ public class Config implements Serializable {
         checkJdkClassSerializable,
         defaultJDKStreamSerializerType,
         compressString,
+        writeNumUtf16BytesForUtf8Encoding,
         compressInt,
         compressLong,
         longEncoding,
+        bufferSizeLimitBytes,
         requireClassRegistration,
         suppressClassRegistrationWarnings,
         registerGuavaTypes,

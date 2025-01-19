@@ -17,13 +17,19 @@
 
 import array
 import dataclasses
-import enum
 import importlib
 import inspect
 
 import typing
 from typing import TypeVar
 from abc import ABC, abstractmethod
+
+try:
+    import numpy as np
+
+    ndarray = np.ndarray
+except ImportError:
+    np, ndarray = None, None
 
 
 # modified from `fluent python`
@@ -118,111 +124,124 @@ def get_qualified_classname(obj):
     return t.__module__ + "." + t.__name__
 
 
-class FuryType(enum.Enum):
+class TypeId:
     """
-    Fury added type for cross-language serialization.
+    Fury type for cross-language serialization.
     See `org.apache.fury.types.Type`
     """
 
-    NA = 0
-    # BOOL Boolean as 1 bit LSB bit-packed ordering
+    # a boolean value (true or false).
     BOOL = 1
-    # UINT8 Unsigned 8-bit little-endian integer
-    UINT8 = 2
-    # INT8 Signed 8-bit little-endian integer
-    INT8 = 3
-    # UINT16 Unsigned 16-bit little-endian integer
-    UINT16 = 4
-    # INT16 Signed 16-bit little-endian integer
-    INT16 = 5
-    # UINT32 Unsigned 32-bit little-endian integer
-    UINT32 = 6
-    # INT32 Signed 32-bit little-endian integer
-    INT32 = 7
-    # UINT64 Unsigned 64-bit little-endian integer
-    UINT64 = 8
-    # INT64 Signed 64-bit little-endian integer
-    INT64 = 9
-    # HALF_FLOAT 2-byte floating point value
-    HALF_FLOAT = 10
-    # FLOAT 4-byte floating point value
-    FLOAT = 11
-    # DOUBLE 8-byte floating point value
-    DOUBLE = 12
-    # STRING UTF8 variable-length string as List<Char>
-    STRING = 13
-    # BINARY Variable-length bytes (no guarantee of UTF8-ness)
-    BINARY = 14
-    # FIXED_SIZE_BINARY Fixed-size binary. Each value occupies the same number of bytes
-    FIXED_SIZE_BINARY = 15
-    # DATE32 int32_t days since the UNIX epoch
-    DATE32 = 16
-    # DATE64 int64_t milliseconds since the UNIX epoch
-    DATE64 = 17
-    # TIMESTAMP Exact timestamp encoded with int64 since UNIX epoch
-    # Default unit millisecond
-    TIMESTAMP = 18
-    # TIME32 Time as signed 32-bit integer representing either seconds or
-    # milliseconds since midnight
-    TIME32 = 19
-    # TIME64 Time as signed 64-bit integer representing either microseconds or
-    # nanoseconds since midnight
-    TIME64 = 20
-    # INTERVAL_MONTHS YEAR_MONTH interval in SQL style
-    INTERVAL_MONTHS = 21
-    # INTERVAL_DAY_TIME DAY_TIME interval in SQL style
-    INTERVAL_DAY_TIME = 22
-    # DECIMAL128 Precision- and scale-based decimal type with 128 bits.
-    DECIMAL128 = 23
-    # DECIMAL256 Precision- and scale-based decimal type with 256 bits.
-    DECIMAL256 = 24
-    # LIST A list of some logical data type
-    LIST = 25
-    # STRUCT Struct of logical types
-    STRUCT = 26
-    # SPARSE_UNION Sparse unions of logical types
-    SPARSE_UNION = 27
-    # DENSE_UNION Dense unions of logical types
-    DENSE_UNION = 28
-    # DICTIONARY Dictionary-encoded type also called "categorical" or "factor"
-    # in other programming languages. Holds the dictionary value
-    # type but not the dictionary itself which is part of the
-    # ArrayData struct
-    DICTIONARY = 29
-    # MAP Map a repeated struct logical type
-    MAP = 30
-    # EXTENSION Custom data type implemented by user
-    EXTENSION = 31
-    # FIXED_SIZE_LIST Fixed size list of some logical type
-    FIXED_SIZE_LIST = 31
-    # DURATION Measure of elapsed time in either seconds milliseconds microseconds
-    # or nanoseconds.
-    DURATION = 33
-    # LARGE_STRING Like STRING but with 64-bit offsets
-    LARGE_STRING = 34
-    # LARGE_BINARY Like BINARY but with 64-bit offsets
-    LARGE_BINARY = 35
-    # LARGE_LIST Like LIST but with 64-bit offsets
-    LARGE_LIST = 36
-    # MAX_ID Leave this at the end
-    MAX_ID = 37
-    DECIMAL = DECIMAL128
+    # a 8-bit signed integer.
+    INT8 = 2
+    # a 16-bit signed integer.
+    INT16 = 3
+    # a 32-bit signed integer.
+    INT32 = 4
+    # a 32-bit signed integer which use fury var_int32 encoding.
+    VAR_INT32 = 5
+    # a 64-bit signed integer.
+    INT64 = 6
+    # a 64-bit signed integer which use fury PVL encoding.
+    VAR_INT64 = 7
+    # a 64-bit signed integer which use fury SLI encoding.
+    SLI_INT64 = 8
+    # a 16-bit floating point number.
+    FLOAT16 = 9
+    #  a 32-bit floating point number.
+    FLOAT32 = 10
+    # a 64-bit floating point number including NaN and Infinity.
+    FLOAT64 = 11
+    # a text string encoded using Latin1/UTF16/UTF-8 encoding.
+    STRING = 12
+    # a data type consisting of a set of named values. Rust enum with non-predefined field values are not supported as
+    # an enum
+    ENUM = 13
+    # an enum whose value will be serialized as the registered name.
+    NAMED_ENUM = 14
+    # a morphic(final) type serialized by Fury Struct serializer. i.e. it doesn't have subclasses. Suppose we're
+    # deserializing `List[SomeClass]`, we can save dynamic serializer dispatch since `SomeClass` is morphic(final).
+    STRUCT = 15
+    # a type which is not morphic(not final). i.e. it have subclasses. Suppose we're deserializing
+    # `List[SomeClass]`, we must dispatch serializer dynamically since `SomeClass` is polymorphic(non-final).
+    POLYMORPHIC_STRUCT = 16
+    # a morphic(final) type serialized by Fury compatible Struct serializer.
+    COMPATIBLE_STRUCT = 17
+    # a non-morphic(non-final) type serialized by Fury compatible Struct serializer.
+    POLYMORPHIC_COMPATIBLE_STRUCT = 18
+    # a `struct` whose type mapping will be encoded as a name.
+    NAMED_STRUCT = 19
+    # a `polymorphic_struct` whose type mapping will be encoded as a name.
+    NAMED_POLYMORPHIC_STRUCT = 20
+    # a `compatible_struct` whose type mapping will be encoded as a name.
+    NAMED_COMPATIBLE_STRUCT = 21
+    # a `polymorphic_compatible_struct` whose type mapping will be encoded as a name.
+    NAMED_POLYMORPHIC_COMPATIBLE_STRUCT = 22
+    # a type which will be serialized by a customized serializer.
+    EXT = 23
+    # an `ext` type which is not morphic(not final).
+    POLYMORPHIC_EXT = 24
+    # an `ext` type whose type mapping will be encoded as a name.
+    NAMED_EXT = 25
+    # an `polymorphic_ext` type whose type mapping will be encoded as a name.
+    NAMED_POLYMORPHIC_EXT = 26
+    # a sequence of objects.
+    LIST = 27
+    # an unordered set of unique elements.
+    SET = 28
+    # a map of key-value pairs. Mutable types such as `list/map/set/array/tensor/arrow` are not allowed as key of map.
+    MAP = 29
+    # an absolute length of time, independent of any calendar/timezone, as a count of nanoseconds.
+    DURATION = 30
+    # a point in time, independent of any calendar/timezone, as a count of nanoseconds. The count is relative
+    # to an epoch at UTC midnight on January 1, 1970.
+    TIMESTAMP = 31
+    # a naive date without timezone. The count is days relative to an epoch at UTC midnight on Jan 1, 1970.
+    LOCAL_DATE = 32
+    # exact decimal value represented as an integer value in two's complement.
+    DECIMAL = 33
+    # an variable-length array of bytes.
+    BINARY = 34
+    # a multidimensional array which every sub-array can have different sizes but all have same type.
+    # only allow numeric components. Other arrays will be taken as List. The implementation should support the
+    # interoperability between array and list.
+    ARRAY = 35
+    # one dimensional bool array.
+    BOOL_ARRAY = 36
+    # one dimensional int16 array.
+    INT8_ARRAY = 37
+    # one dimensional int16 array.
+    INT16_ARRAY = 38
+    # one dimensional int32 array.
+    INT32_ARRAY = 39
+    # one dimensional int64 array.
+    INT64_ARRAY = 40
+    # one dimensional half_float_16 array.
+    FLOAT16_ARRAY = 41
+    # one dimensional float32 array.
+    FLOAT32_ARRAY = 42
+    # one dimensional float64 array.
+    FLOAT64_ARRAY = 43
+    # an arrow [record batch](https://arrow.apache.org/docs/cpp/tables.html#record-batches) object.
+    ARROW_RECORD_BATCH = 44
+    # an arrow [table](https://arrow.apache.org/docs/cpp/tables.html#tables) object.
+    ARROW_TABLE = 45
+    BOUND = 64
 
-    FURY_TYPE_TAG = 256
-    FURY_SET = 257
-    FURY_PRIMITIVE_BOOL_ARRAY = 258
-    FURY_PRIMITIVE_SHORT_ARRAY = 259
-    FURY_PRIMITIVE_INT_ARRAY = 260
-    FURY_PRIMITIVE_LONG_ARRAY = 261
-    FURY_PRIMITIVE_FLOAT_ARRAY = 262
-    FURY_PRIMITIVE_DOUBLE_ARRAY = 263
-    FURY_STRING_ARRAY = 264
-    FURY_SERIALIZED_OBJECT = 265
-    FURY_BUFFER = 266
-    FURY_ARROW_RECORD_BATCH = 267
-    FURY_ARROW_TABLE = 268
+    @staticmethod
+    def is_namespaced_type(type_id: int) -> bool:
+        return type_id in __NAMESPACED_TYPES__
 
 
+__NAMESPACED_TYPES__ = {
+    TypeId.NAMED_EXT,
+    TypeId.NAMED_POLYMORPHIC_EXT,
+    TypeId.NAMED_ENUM,
+    TypeId.NAMED_STRUCT,
+    TypeId.NAMED_POLYMORPHIC_STRUCT,
+    TypeId.NAMED_COMPATIBLE_STRUCT,
+    TypeId.NAMED_POLYMORPHIC_COMPATIBLE_STRUCT,
+}
 Int8Type = TypeVar("Int8Type", bound=int)
 Int16Type = TypeVar("Int16Type", bound=int)
 Int32Type = TypeVar("Int32Type", bound=int)
@@ -250,11 +269,18 @@ def is_primitive_type(type_) -> bool:
 
 
 # Int8ArrayType = TypeVar("Int8ArrayType", bound=array.ArrayType)
+BoolArrayType = TypeVar("BoolArrayType")
 Int16ArrayType = TypeVar("Int16ArrayType", bound=array.ArrayType)
 Int32ArrayType = TypeVar("Int32ArrayType", bound=array.ArrayType)
 Int64ArrayType = TypeVar("Int64ArrayType", bound=array.ArrayType)
 Float32ArrayType = TypeVar("Float32ArrayType", bound=array.ArrayType)
 Float64ArrayType = TypeVar("Float64ArrayType", bound=array.ArrayType)
+BoolNDArrayType = TypeVar("BoolNDArrayType", bound=ndarray)
+Int16NDArrayType = TypeVar("Int16NDArrayType", bound=ndarray)
+Int32NDArrayType = TypeVar("Int32NDArrayType", bound=ndarray)
+Int64NDArrayType = TypeVar("Int64NDArrayType", bound=ndarray)
+Float32NDArrayType = TypeVar("Float32NDArrayType", bound=ndarray)
+Float64NDArrayType = TypeVar("Float64NDArrayType", bound=ndarray)
 
 
 _py_array_types = {

@@ -20,10 +20,11 @@
 package org.apache.fury.serializer;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,24 +36,29 @@ import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
 import org.apache.fury.reflect.FieldAccessor;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeRef;
+import org.apache.fury.resolver.ClassInfo;
+import org.apache.fury.resolver.ClassResolver;
+import org.apache.fury.serializer.collection.CollectionSerializer;
+import org.apache.fury.serializer.collection.MapSerializer;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.GenericType;
 import org.apache.fury.type.Generics;
-import org.apache.fury.type.Type;
 import org.apache.fury.type.TypeUtils;
+import org.apache.fury.type.Types;
 import org.apache.fury.util.ExceptionUtils;
 import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.StringUtils;
 
 /**
  * A serializer used for cross-language serialization for custom objects.
  *
  * <p>TODO(chaokunyang) support generics optimization for {@code SomeClass<T>}.
  */
-@SuppressWarnings({"unchecked", "rawtypes", "UnstableApiUsage"})
+@SuppressWarnings({"unchecked", "rawtypes"})
 public class StructSerializer<T> extends Serializer<T> {
   private static final Logger LOG = LoggerFactory.getLogger(StructSerializer.class);
-  private final String typeTag;
   private final Constructor<T> constructor;
   private final FieldAccessor[] fieldAccessors;
   private GenericType[] fieldGenerics;
@@ -60,9 +66,8 @@ public class StructSerializer<T> extends Serializer<T> {
   private final IdentityHashMap<GenericType, GenericType[]> genericTypesCache;
   private int typeHash;
 
-  public StructSerializer(Fury fury, Class<T> cls, String typeTag) {
+  public StructSerializer(Fury fury, Class<T> cls) {
     super(fury, cls);
-    this.typeTag = typeTag;
     if (fury.getLanguage() == Language.JAVA) {
       LOG.warn("Type of class {} shouldn't be serialized using cross-language serializer", cls);
     }
@@ -78,19 +83,48 @@ public class StructSerializer<T> extends Serializer<T> {
     this.constructor = ctr;
     fieldAccessors =
         Descriptor.getFields(cls).stream()
-            .sorted(Comparator.comparing(Field::getName))
+            .sorted(Comparator.comparing(f -> StringUtils.lowerCamelToLowerUnderscore(f.getName())))
             .map(FieldAccessor::createAccessor)
             .toArray(FieldAccessor[]::new);
-    fieldGenerics = buildFieldGenerics(TypeRef.of(cls), fieldAccessors);
+    fieldGenerics = buildFieldGenerics(fury, TypeRef.of(cls), fieldAccessors);
     genericTypesCache = new IdentityHashMap<>();
     genericTypesCache.put(null, fieldGenerics);
   }
 
-  private static <T> GenericType[] buildFieldGenerics(
-      TypeRef<T> type, FieldAccessor[] fieldAccessors) {
+  private <T> GenericType[] buildFieldGenerics(
+      Fury fury, TypeRef<T> type, FieldAccessor[] fieldAccessors) {
     return Arrays.stream(fieldAccessors)
-        .map(fieldAccessor -> GenericType.build(type, fieldAccessor.getField().getGenericType()))
+        .map(fieldAccessor -> getGenericType(fury, type, fieldAccessor))
         .toArray(GenericType[]::new);
+  }
+
+  private static <T> GenericType getGenericType(
+      Fury fury, TypeRef<T> type, FieldAccessor fieldAccessor) {
+    GenericType t = GenericType.build(type, fieldAccessor.getField().getGenericType());
+    ClassResolver resolver = fury.getClassResolver();
+    Class cls = t.getCls();
+    if (resolver.isMonomorphic(cls)) {
+      t.setSerializer(fury.getXtypeResolver().getClassInfo(cls).getSerializer());
+      return t;
+    }
+    // We have one type id for map, there is no map polymorphic support.
+    // If one want to deserialize map data into different map type, he should
+    // use the concrete map subclass type to declare the field type or use some hints
+    // such as field annotation.
+    if (resolver.isMap(cls)) {
+      t.setSerializer(
+          ReflectionUtils.isAbstract(cls)
+              ? new MapSerializer(fury, HashMap.class)
+              : resolver.getSerializer(cls));
+    } else if (resolver.isCollection(cls)) {
+      t.setSerializer(
+          ReflectionUtils.isAbstract(cls)
+              ? new CollectionSerializer(fury, ArrayList.class)
+              : resolver.getSerializer(cls));
+    } else if (cls.isArray()) {
+      t.setSerializer(new ArraySerializers.ObjectArraySerializer(fury, cls));
+    }
+    return t;
   }
 
   @Override
@@ -101,16 +135,6 @@ public class StructSerializer<T> extends Serializer<T> {
   @Override
   public T read(MemoryBuffer buffer) {
     return xread(buffer);
-  }
-
-  @Override
-  public short getXtypeId() {
-    return Fury.FURY_TYPE_TAG_ID;
-  }
-
-  @Override
-  public String getCrossLanguageTypeTag() {
-    return typeTag;
   }
 
   @Override
@@ -128,11 +152,11 @@ public class StructSerializer<T> extends Serializer<T> {
     for (int i = 0; i < fieldAccessors.length; i++) {
       FieldAccessor fieldAccessor = fieldAccessors[i];
       GenericType fieldGeneric = fieldGenerics[i];
-      Serializer serializer = fieldGeneric.getSerializerOrNull(fury.getClassResolver());
       boolean hasGenerics = fieldGeneric.hasGenericParameters();
       if (hasGenerics) {
         generics.pushGenericType(fieldGeneric);
       }
+      Serializer serializer = fieldGeneric.getSerializer();
       if (serializer != null) {
         fury.xwriteRef(buffer, fieldAccessor.get(value), serializer);
       } else {
@@ -152,7 +176,7 @@ public class StructSerializer<T> extends Serializer<T> {
       this.genericType = genericType;
       fieldGenerics = genericTypesCache.get(genericType);
       if (fieldGenerics == null) {
-        fieldGenerics = buildFieldGenerics(genericType.getTypeRef(), fieldAccessors);
+        fieldGenerics = buildFieldGenerics(fury, genericType.getTypeRef(), fieldAccessors);
         genericTypesCache.put(genericType, fieldGenerics);
       }
       this.fieldGenerics = fieldGenerics;
@@ -181,12 +205,17 @@ public class StructSerializer<T> extends Serializer<T> {
     for (int i = 0; i < fieldAccessors.length; i++) {
       FieldAccessor fieldAccessor = fieldAccessors[i];
       GenericType fieldGeneric = fieldGenerics[i];
-      Serializer serializer = fieldGeneric.getSerializerOrNull(fury.getClassResolver());
       boolean hasGenerics = fieldGeneric.hasGenericParameters();
       if (hasGenerics) {
         generics.pushGenericType(fieldGeneric);
       }
-      Object fieldValue = fury.xreadRefByNullableSerializer(buffer, serializer);
+      Object fieldValue;
+      Serializer serializer = fieldGeneric.getSerializer();
+      if (serializer == null) {
+        fieldValue = fury.xreadRef(buffer);
+      } else {
+        fieldValue = fury.xreadRef(buffer, serializer);
+      }
       fieldAccessor.set(obj, fieldValue);
       if (hasGenerics) {
         generics.popGenericType();
@@ -219,23 +248,22 @@ public class StructSerializer<T> extends Serializer<T> {
     int id;
     if (fieldGeneric.getTypeRef().isSubtypeOf(List.class)) {
       // TODO(chaokunyang) add list element type into schema hash
-      id = Type.LIST.getId();
+      id = Types.LIST;
     } else if (fieldGeneric.getTypeRef().isSubtypeOf(Map.class)) {
       // TODO(chaokunyang) add map key&value type into schema hash
-      id = Type.MAP.getId();
+      id = Types.MAP;
     } else {
       try {
-        Serializer<?> serializer = fury.getClassResolver().getSerializer(fieldGeneric.getCls());
-        short xtypeId = serializer.getXtypeId();
-        if (xtypeId == Fury.NOT_SUPPORT_CROSS_LANGUAGE) {
-          return hash;
-        }
-        id = Math.abs(xtypeId);
-        if (id == Type.FURY_TYPE_TAG.getId()) {
-          id = TypeUtils.computeStringHash(serializer.getCrossLanguageTypeTag());
+        ClassInfo classInfo = fury.getXtypeResolver().getClassInfo(fieldGeneric.getCls());
+        int xtypeId = classInfo.getXtypeId();
+        if (Types.isStructType((byte) xtypeId)) {
+          id =
+              TypeUtils.computeStringHash(classInfo.decodeNamespace() + classInfo.decodeTypeName());
+        } else {
+          id = Math.abs(xtypeId);
         }
       } catch (Exception e) {
-        return hash;
+        id = 0;
       }
     }
     long newHash = ((long) hash) * 31 + id;

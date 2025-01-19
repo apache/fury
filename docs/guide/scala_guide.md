@@ -19,13 +19,34 @@ Scala 2 and 3 are both supported.
 To add a dependency on Fury scala for scala 2 with sbt, use the following:
 
 ```sbt
-libraryDependencies += "org.apache.fury" % "fury-scala_2.13" % "0.8.0"
+libraryDependencies += "org.apache.fury" % "fury-scala_2.13" % "0.9.0"
 ```
 
 To add a dependency on Fury scala for scala 3 with sbt, use the following:
 
 ```sbt
-libraryDependencies += "org.apache.fury" % "fury-scala_3" % "0.8.0"
+libraryDependencies += "org.apache.fury" % "fury-scala_3" % "0.9.0"
+```
+
+## Quict Start
+
+```scala
+case class Person(name: String, id: Long, github: String)
+case class Point(x : Int, y : Int, z : Int)
+
+object ScalaExample {
+  val fury: Fury = Fury.builder().withScalaOptimizationEnabled(true).build()
+  // Register optimized fury serializers for scala
+  ScalaSerializers.registerSerializers(fury)
+  fury.register(classOf[Person])
+  fury.register(classOf[Point])
+
+  def main(args: Array[String]): Unit = {
+    val p = Person("Shawn Yang", 1, "https://github.com/chaokunyang")
+    println(fury.deserialize(fury.serialize(p)))
+    println(fury.deserialize(fury.serialize(Point(1, 2, 3))))
+  }
+}
 ```
 
 ## Fury creation
@@ -35,29 +56,16 @@ When using fury for scala serialization, you should create fury at least with fo
 ```scala
 import org.apache.fury.Fury
 import org.apache.fury.serializer.scala.ScalaSerializers
-import org.apache.fury.serializer.collection.CollectionSerializers.DefaultJavaCollectionSerializer
 
-val fury = Fury.builder()
-  .withScalaOptimizationEnabled(true)
-  .requireClassRegistration(true)
-  .withRefTracking(true)
-  .build()
+val fury = Fury.builder().withScalaOptimizationEnabled(true).build()
 
 // Register optimized fury serializers for scala
 ScalaSerializers.registerSerializers(fury)
-// serialize range as (start, step, end) instead of collection
-// this will be handled in next version automatically.
-fury.registerSerializer(classOf[Range.Inclusive], classOf[DefaultJavaCollectionSerializer])
-fury.registerSerializer(classOf[Range.Exclusive], classOf[DefaultJavaCollectionSerializer])
-fury.registerSerializer(classOf[NumericRange], classOf[DefaultJavaCollectionSerializer])
-fury.registerSerializer(classOf[NumericRange.Inclusive], classOf[DefaultJavaCollectionSerializer])
-fury.registerSerializer(classOf[NumericRange.Exclusive], classOf[DefaultJavaCollectionSerializer])
 ```
 
 Depending on the object types you serialize, you may need to register some scala internal types:
 
 ```scala
-fury.register(Class.forName("scala.collection.generic.DefaultSerializationProxy"))
 fury.register(Class.forName("scala.Enumeration.Val"))
 ```
 

@@ -17,23 +17,28 @@
  * under the License.
  */
 
-package org.apache.fury.test.bean;
+package org.apache.fury.serializer.compatible.classes;
 
-import java.util.Random;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 
-public class TestUtils {
-  public static String random(int size, int rand) {
-    return random(size, new Random(rand));
-  }
+@Getter
+@EqualsAndHashCode
+public class SubclassMissingField {
+  private boolean privateBoolean = true;
+  private int privateInt = 10;
+  private String privateString = "notNull";
+  private Map<String, String> privateMap;
+  private List<String> privateList;
 
-  public static String random(int size, Random random) {
-    char[] chars = new char[size];
-    char start = ' ';
-    char end = 'z' + 1;
-    int gap = end - start;
-    for (int i = 0; i < size; i++) {
-      chars[i] = (char) (start + random.nextInt(gap));
-    }
-    return new String(chars);
+  public SubclassMissingField() {
+    privateMap = new HashMap<>();
+    privateMap.put("a", "b");
+    privateList = new ArrayList<>();
+    privateList.add("a");
   }
 }
