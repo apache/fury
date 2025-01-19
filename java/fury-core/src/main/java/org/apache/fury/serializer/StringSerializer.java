@@ -30,6 +30,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import org.apache.fury.Fury;
@@ -108,8 +109,9 @@ public final class StringSerializer extends ImmutableSerializer<String> {
   private final boolean compressString;
   private byte[] byteArray = new byte[DEFAULT_BUFFER_SIZE];
   private int smoothByteArrayLength = DEFAULT_BUFFER_SIZE;
-  private char[] charArray = new char[DEFAULT_BUFFER_SIZE];
+  private char[] charArray = new char[16];
   private int smoothCharArrayLength = DEFAULT_BUFFER_SIZE;
+  private byte[] byteArray2 = new byte[16];
 
   public StringSerializer(Fury fury) {
     super(fury, String.class, fury.trackingRef() && !fury.isStringRefIgnored());
@@ -367,25 +369,21 @@ public final class StringSerializer extends ImmutableSerializer<String> {
   }
 
   public byte[] readBytesUTF8(MemoryBuffer buffer, int numBytes) {
-    byte[] bytes = new byte[numBytes];
+    byte[] tmpArray = getByteArray(numBytes << 1);
     buffer.checkReadableBytes(numBytes);
+    int utf16NumBytes;
     byte[] srcArray = buffer.getHeapMemory();
     if (srcArray != null) {
       int srcIndex = buffer._unsafeHeapReaderIndex();
-      int readLen = StringEncodingUtils.convertUTF8ToUTF16(srcArray, srcIndex, numBytes, bytes);
-      if (readLen != numBytes) {
-        throw new RuntimeException("Decode UTF8 to UTF16 failed");
-      }
+      utf16NumBytes =
+          StringEncodingUtils.convertUTF8ToUTF16(srcArray, srcIndex, numBytes, tmpArray);
       buffer._increaseReaderIndexUnsafe(numBytes);
     } else {
-      byte[] tmpArray = getByteArray(numBytes);
-      buffer.readBytes(tmpArray, 0, numBytes);
-      int readLen = StringEncodingUtils.convertUTF8ToUTF16(tmpArray, 0, numBytes, bytes);
-      if (readLen != numBytes) {
-        throw new RuntimeException("Decode UTF8 to UTF16 failed");
-      }
+      byte[] byteArray2 = getByteArray2(numBytes);
+      buffer.readBytes(byteArray2, 0, numBytes);
+      utf16NumBytes = StringEncodingUtils.convertUTF8ToUTF16(byteArray2, 0, numBytes, tmpArray);
     }
-    return bytes;
+    return Arrays.copyOf(tmpArray, utf16NumBytes);
   }
 
   public byte[] readBytesUnCompressedUTF16(MemoryBuffer buffer, int numBytes) {
@@ -439,7 +437,7 @@ public final class StringSerializer extends ImmutableSerializer<String> {
 
   public String readCharsUTF8(MemoryBuffer buffer, int numBytes) {
     char[] chars = getCharArray(numBytes);
-    int charsLen = 0;
+    int charsLen;
     buffer.checkReadableBytes(numBytes);
     byte[] srcArray = buffer.getHeapMemory();
     if (srcArray != null) {
@@ -876,5 +874,21 @@ public final class StringSerializer extends ImmutableSerializer<String> {
       }
     }
     return byteArray;
+  }
+
+  private byte[] getByteArray2(int numElements) {
+    byte[] byteArray2 = this.byteArray2;
+    if (byteArray2.length < numElements) {
+      byteArray2 = new byte[numElements];
+      this.byteArray = byteArray2;
+    }
+    if (byteArray2.length > DEFAULT_BUFFER_SIZE) {
+      smoothByteArrayLength =
+          Math.max(((int) (smoothByteArrayLength * 0.9 + numElements * 0.1)), DEFAULT_BUFFER_SIZE);
+      if (smoothByteArrayLength <= DEFAULT_BUFFER_SIZE) {
+        this.byteArray2 = new byte[DEFAULT_BUFFER_SIZE];
+      }
+    }
+    return byteArray2;
   }
 }
