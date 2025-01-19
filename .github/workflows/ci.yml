@@ -227,6 +227,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install bazel
+        shell: bash
         run: ./ci/run_ci.sh install_bazel
       - name: Run Python CI
         shell: bash
