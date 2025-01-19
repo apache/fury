@@ -129,6 +129,16 @@ public abstract class FuryTestBase {
   }
 
   @DataProvider
+  public static Object[][] oneBoolOption() {
+    return new Object[][] {{false}, {true}};
+  }
+
+  @DataProvider
+  public static Object[][] twoBoolOptions() {
+    return new Object[][] {{false, false}, {true, false}, {false, true}, {true, true}};
+  }
+
+  @DataProvider
   public static Object[][] compressNumberAndCodeGen() {
     return new Object[][] {{false, false}, {true, false}, {false, true}, {true, true}};
   }
