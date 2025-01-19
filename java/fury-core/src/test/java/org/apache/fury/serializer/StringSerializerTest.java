@@ -190,6 +190,22 @@ public class StringSerializerTest extends FuryTestBase {
     assertEquals(a, b);
   }
 
+  @Test
+  public void testCompressedStringEstimatedWrongSize() {
+    Fury fury =
+        Fury.builder()
+            .withStringCompressed(true)
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(false)
+            .build();
+    // estimated 41 bytes, header needs 2 byte.
+    // encoded utf8 is 31 bytes, took 1 byte for header.
+    serDeCheck(fury, StringUtils.random(25, 47) + "你好");
+    // estimated 31 bytes, header needs 1 byte.
+    // encoded utf8 is 32 bytes, took 2 byte for header.
+    serDeCheck(fury, "hello, world. 你好，世界。");
+  }
+
   @Test(dataProvider = "stringCompress")
   public void testJavaString(boolean stringCompress) {
     Fury fury =
