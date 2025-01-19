@@ -36,6 +36,7 @@ cdef int UTF16_LE = -1
 
 _WINDOWS = os.name == 'nt'
 
+
 @cython.final
 cdef class Buffer:
     def __init__(self,  data not None, int32_t offset=0, length=None):
