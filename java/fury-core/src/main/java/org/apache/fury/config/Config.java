@@ -46,6 +46,7 @@ public class Config implements Serializable {
   private final boolean checkJdkClassSerializable;
   private final Class<? extends Serializer> defaultJDKStreamSerializerType;
   private final boolean compressString;
+  private final boolean writeNumUtf16BytesForUtf8Encoding;
   private final boolean compressInt;
   private final boolean compressLong;
   private final LongEncoding longEncoding;
@@ -72,6 +73,7 @@ public class Config implements Serializable {
     timeRefIgnored = !trackingRef || builder.timeRefIgnored;
     copyRef = builder.copyRef;
     compressString = builder.compressString;
+    writeNumUtf16BytesForUtf8Encoding = builder.writeNumUtf16BytesForUtf8Encoding;
     compressInt = builder.compressInt;
     longEncoding = builder.longEncoding;
     compressLong = longEncoding != LongEncoding.LE_RAW_BYTES;
@@ -174,6 +176,10 @@ public class Config implements Serializable {
 
   public boolean compressString() {
     return compressString;
+  }
+
+  public boolean writeNumUtf16BytesForUtf8Encoding() {
+    return writeNumUtf16BytesForUtf8Encoding;
   }
 
   public boolean compressInt() {
@@ -287,6 +293,7 @@ public class Config implements Serializable {
         && checkClassVersion == config.checkClassVersion
         && checkJdkClassSerializable == config.checkJdkClassSerializable
         && compressString == config.compressString
+        && writeNumUtf16BytesForUtf8Encoding == config.writeNumUtf16BytesForUtf8Encoding
         && compressInt == config.compressInt
         && compressLong == config.compressLong
         && bufferSizeLimitBytes == config.bufferSizeLimitBytes
@@ -321,6 +328,7 @@ public class Config implements Serializable {
         checkJdkClassSerializable,
         defaultJDKStreamSerializerType,
         compressString,
+        writeNumUtf16BytesForUtf8Encoding,
         compressInt,
         compressLong,
         longEncoding,
