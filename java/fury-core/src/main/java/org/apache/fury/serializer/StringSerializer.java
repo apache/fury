@@ -108,6 +108,8 @@ public final class StringSerializer extends ImmutableSerializer<String> {
   private final boolean compressString;
   private byte[] byteArray = new byte[DEFAULT_BUFFER_SIZE];
   private int smoothByteArrayLength = DEFAULT_BUFFER_SIZE;
+  private char[] charArray = new char[DEFAULT_BUFFER_SIZE];
+  private int smoothCharArrayLength = DEFAULT_BUFFER_SIZE;
 
   public StringSerializer(Fury fury) {
     super(fury, String.class, fury.trackingRef() && !fury.isStringRefIgnored());
@@ -232,7 +234,7 @@ public final class StringSerializer extends ImmutableSerializer<String> {
     if (coder == LATIN1) {
       chars = readCharsLatin1(buffer, numBytes);
     } else if (coder == UTF8) {
-      chars = readCharsUTF8(buffer, numBytes);
+      return readCharsUTF8(buffer, numBytes);
     } else if (coder == UTF16) {
       chars = readCharsUTF16(buffer, numBytes);
     } else {
@@ -365,21 +367,20 @@ public final class StringSerializer extends ImmutableSerializer<String> {
   }
 
   public byte[] readBytesUTF8(MemoryBuffer buffer, int numBytes) {
-    int udf8Bytes = buffer.readInt32();
     byte[] bytes = new byte[numBytes];
-    buffer.checkReadableBytes(udf8Bytes);
+    buffer.checkReadableBytes(numBytes);
     byte[] srcArray = buffer.getHeapMemory();
     if (srcArray != null) {
       int srcIndex = buffer._unsafeHeapReaderIndex();
-      int readLen = StringEncodingUtils.convertUTF8ToUTF16(srcArray, srcIndex, udf8Bytes, bytes);
+      int readLen = StringEncodingUtils.convertUTF8ToUTF16(srcArray, srcIndex, numBytes, bytes);
       if (readLen != numBytes) {
         throw new RuntimeException("Decode UTF8 to UTF16 failed");
       }
-      buffer._increaseReaderIndexUnsafe(udf8Bytes);
+      buffer._increaseReaderIndexUnsafe(numBytes);
     } else {
-      byte[] tmpArray = getByteArray(udf8Bytes);
-      buffer.readBytes(tmpArray, 0, udf8Bytes);
-      int readLen = StringEncodingUtils.convertUTF8ToUTF16(tmpArray, 0, udf8Bytes, bytes);
+      byte[] tmpArray = getByteArray(numBytes);
+      buffer.readBytes(tmpArray, 0, numBytes);
+      int readLen = StringEncodingUtils.convertUTF8ToUTF16(tmpArray, 0, numBytes, bytes);
       if (readLen != numBytes) {
         throw new RuntimeException("Decode UTF8 to UTF16 failed");
       }
@@ -436,28 +437,22 @@ public final class StringSerializer extends ImmutableSerializer<String> {
     return chars;
   }
 
-  public char[] readCharsUTF8(MemoryBuffer buffer, int numBytes) {
-    int udf16Chars = numBytes >> 1;
-    int udf8Bytes = buffer.readInt32();
-    char[] chars = new char[udf16Chars];
-    buffer.checkReadableBytes(udf8Bytes);
+  public String readCharsUTF8(MemoryBuffer buffer, int numBytes) {
+    char[] chars = getCharArray(numBytes);
+    int charsLen = 0;
+    buffer.checkReadableBytes(numBytes);
     byte[] srcArray = buffer.getHeapMemory();
     if (srcArray != null) {
       int srcIndex = buffer._unsafeHeapReaderIndex();
-      int readLen = StringEncodingUtils.convertUTF8ToUTF16(srcArray, srcIndex, udf8Bytes, chars);
-      if (readLen != udf16Chars) {
-        throw new RuntimeException("Decode UTF8 to UTF16 failed");
-      }
-      buffer._increaseReaderIndexUnsafe(udf8Bytes);
+      charsLen = StringEncodingUtils.convertUTF8ToUTF16(srcArray, srcIndex, numBytes, chars);
+      buffer._increaseReaderIndexUnsafe(numBytes);
     } else {
-      byte[] tmpArray = getByteArray(udf8Bytes);
-      buffer.readBytes(tmpArray, 0, udf8Bytes);
-      int readLen = StringEncodingUtils.convertUTF8ToUTF16(tmpArray, 0, udf8Bytes, chars);
-      if (readLen != udf16Chars) {
-        throw new RuntimeException("Decode UTF8 to UTF16 failed");
-      }
+      byte[] tmpArray = getByteArray(numBytes);
+      buffer.readBytes(tmpArray, 0, numBytes);
+      charsLen = StringEncodingUtils.convertUTF8ToUTF16(tmpArray, 0, numBytes, chars);
     }
-    return chars;
+
+    return new String(chars, 0, charsLen);
   }
 
   public void writeCharsLatin1(MemoryBuffer buffer, char[] chars, int numBytes) {
@@ -849,6 +844,22 @@ public final class StringSerializer extends ImmutableSerializer<String> {
     } else {
       return UTF16;
     }
+  }
+
+  private char[] getCharArray(int numElements) {
+    char[] charArray = this.charArray;
+    if (charArray.length < numElements) {
+      charArray = new char[numElements];
+      this.charArray = charArray;
+    }
+    if (charArray.length > DEFAULT_BUFFER_SIZE) {
+      smoothCharArrayLength =
+          Math.max(((int) (smoothCharArrayLength * 0.9 + numElements * 0.1)), DEFAULT_BUFFER_SIZE);
+      if (smoothByteArrayLength <= DEFAULT_BUFFER_SIZE) {
+        this.charArray = new char[DEFAULT_BUFFER_SIZE];
+      }
+    }
+    return charArray;
   }
 
   private byte[] getByteArray(int numElements) {
