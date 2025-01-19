@@ -427,12 +427,24 @@ typecode_dict = {
     "l": (8, Int64ArrayType, TypeId.INT64_ARRAY),
     "f": (4, Float32ArrayType, TypeId.FLOAT32_ARRAY),
     "d": (8, Float64ArrayType, TypeId.FLOAT64_ARRAY),
+} if os.name != "nt" else {
+    "h": (2, Int16ArrayType, TypeId.INT16_ARRAY),
+    "l": (4, Int32ArrayType, TypeId.INT32_ARRAY),
+    "q": (8, Int64ArrayType, TypeId.INT64_ARRAY),
+    "f": (4, Float32ArrayType, TypeId.FLOAT32_ARRAY),
+    "d": (8, Float64ArrayType, TypeId.FLOAT64_ARRAY),
 }
 
 typeid_code = {
     TypeId.INT16_ARRAY: "h",
     TypeId.INT32_ARRAY: "i",
     TypeId.INT64_ARRAY: "l",
+    TypeId.FLOAT32_ARRAY: "f",
+    TypeId.FLOAT64_ARRAY: "d",
+} if os.name != "nt" else {
+    TypeId.INT16_ARRAY: "h",
+    TypeId.INT32_ARRAY: "l",
+    TypeId.INT64_ARRAY: "q",
     TypeId.FLOAT32_ARRAY: "f",
     TypeId.FLOAT64_ARRAY: "d",
 }
@@ -444,6 +456,12 @@ class PyArraySerializer(CrossLanguageCompatibleSerializer):
         "h": Int16ArrayType,
         "i": Int32ArrayType,
         "l": Int64ArrayType,
+        "f": Float32ArrayType,
+        "d": Float64ArrayType,
+    } if os.name != "nt" else {
+        "h": Int16ArrayType,
+        "l": Int32ArrayType,
+        "q": Int64ArrayType,
         "f": Float32ArrayType,
         "d": Float64ArrayType,
     }
@@ -517,6 +535,13 @@ if np:
         np.dtype(np.int16): (2, "h", Int16NDArrayType, TypeId.INT16_ARRAY),
         np.dtype(np.int32): (4, "i", Int32NDArrayType, TypeId.INT32_ARRAY),
         np.dtype(np.int64): (8, "l", Int64NDArrayType, TypeId.INT64_ARRAY),
+        np.dtype(np.float32): (4, "f", Float32NDArrayType, TypeId.FLOAT32_ARRAY),
+        np.dtype(np.float64): (8, "d", Float64NDArrayType, TypeId.FLOAT64_ARRAY),
+    } if os.name != "nt" else {
+        np.dtype(np.bool_): (1, "?", BoolNDArrayType, TypeId.BOOL_ARRAY),
+        np.dtype(np.int16): (2, "h", Int16NDArrayType, TypeId.INT16_ARRAY),
+        np.dtype(np.int32): (4, "l", Int32NDArrayType, TypeId.INT32_ARRAY),
+        np.dtype(np.int64): (8, "q", Int64NDArrayType, TypeId.INT64_ARRAY),
         np.dtype(np.float32): (4, "f", Float32NDArrayType, TypeId.FLOAT32_ARRAY),
         np.dtype(np.float64): (8, "d", Float64NDArrayType, TypeId.FLOAT64_ARRAY),
     }

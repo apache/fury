@@ -29,10 +29,12 @@ from libcpp cimport bool as c_bool
 from pyfury.includes.libutil cimport(
     CBuffer, AllocateBuffer, GetBit, SetBit, ClearBit, SetBitTo, CStatus, StatusCode, utf16HasSurrogatePairs
 )
+import os
 
 cdef int32_t max_buffer_size = 2 ** 31 - 1
 cdef int UTF16_LE = -1
 
+_WINDOWS = os.name == 'nt'
 
 @cython.final
 cdef class Buffer:
@@ -686,6 +688,12 @@ cdef inline uint8_t* get_address(v):
         signed_int_data = v
         ptr = <uint8_t*>(&signed_int_data[0])
     elif dtype == "l":
+        signed_int_data = v
+        if _WINDOWS:
+            ptr = <uint8_t*>(&signed_int_data[0])
+        else:
+            ptr = <uint8_t*>(&signed_long_data[0])
+    elif dtype == "q":
         signed_long_data = v
         ptr = <uint8_t*>(&signed_long_data[0])
     elif dtype == "f":
