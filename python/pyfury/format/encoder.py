@@ -46,7 +46,7 @@ class Encoder:
             f"{self.schema_hash, peer_hash}. "
             f"Please check writer schema."
         )
-        buf = pyfury.Buffer(binary, 8, len(binary))
+        buf = pyfury.Buffer(binary, 8, len(binary) - 8)
         row = pyfury.RowData(self.schema, buf)
         return self.row_encoder.from_row(row)
 
