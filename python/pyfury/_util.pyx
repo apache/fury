@@ -688,10 +688,11 @@ cdef inline uint8_t* get_address(v):
         signed_int_data = v
         ptr = <uint8_t*>(&signed_int_data[0])
     elif dtype == "l":
-        signed_int_data = v
         if _WINDOWS:
+            signed_int_data = v
             ptr = <uint8_t*>(&signed_int_data[0])
         else:
+            signed_long_data = v
             ptr = <uint8_t*>(&signed_long_data[0])
     elif dtype == "q":
         signed_long_data = v
