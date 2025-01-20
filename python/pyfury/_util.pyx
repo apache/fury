@@ -34,7 +34,7 @@ import os
 cdef int32_t max_buffer_size = 2 ** 31 - 1
 cdef int UTF16_LE = -1
 
-_WINDOWS = os.name == 'nt'
+cdef c_bool _WINDOWS = os.name == 'nt'
 
 
 @cython.final
