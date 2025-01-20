@@ -227,11 +227,13 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install bazel
-        uses: bazel-contrib/setup-bazel@0.12.1
-        with:
-          bazelisk-cache: true
-          disk-cache: ${{ github.workflow }}
-          repository-cache: true
+        shell: bash
+        run: |
+             if [ "$RUNNER_OS" == "Windows" ]; then
+                 ./ci/run_ci.sh install_bazel_windows
+             else
+                 ./ci/run_ci.sh install_bazel
+             fi
       - name: Run Python CI
         shell: bash
         run: ./ci/run_ci.sh python
