@@ -79,7 +79,7 @@ install_bazel() {
 }
 
 install_bazel_windows() {
-  choco install bazel --version=6.3.2
+  choco install bazel --version=6.3.2 --force
   VERSION=`bazel version`
   echo "bazel version: $VERSION"
 }
