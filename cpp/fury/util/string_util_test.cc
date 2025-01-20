@@ -58,21 +58,34 @@ bool isAscii_BaseLine(const std::string &str) {
 TEST(StringUtilTest, TestisAsciiFunctions) {
   std::string testStr = generateRandomString(100000);
   auto start_time = std::chrono::high_resolution_clock::now();
-  bool result = isAscii_BaseLine(testStr);
+  bool result;
+  int c = 0;
+  for (size_t i = 0; i < 10000; i++) {
+    result = isAscii_BaseLine(testStr);
+    if (result) {
+      c++;
+    }
+  }
+
   auto end_time = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(
                       end_time - start_time)
                       .count();
   FURY_LOG(INFO) << "BaseLine Running Time: " << duration << " ns.";
-
+  FURY_LOG(DEBUG) << "Avoid compiler optimized loop " << c;
   start_time = std::chrono::high_resolution_clock::now();
-  result = isAscii(testStr);
+  for (size_t i = 0; i < 10000; i++) {
+    result = isAscii(testStr);
+    if (result) {
+      c++;
+    }
+  }
   end_time = std::chrono::high_resolution_clock::now();
   duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time -
                                                                   start_time)
                  .count();
   FURY_LOG(INFO) << "Optimized Running Time: " << duration << " ns.";
-
+  FURY_LOG(DEBUG) << "Avoid compiler optimized loop " << c;
   EXPECT_TRUE(result);
 }
 

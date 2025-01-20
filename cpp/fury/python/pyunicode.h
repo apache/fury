@@ -18,18 +18,17 @@
  */
 
 #pragma once
+#include "Python.h"
+#include "object.h"
+#include "pyport.h"
+#include <cstdint>
+#include <cstring>
+#include <string>
 
-#if defined(__x86_64__) || defined(_M_X64)
-#include <immintrin.h>
-#define FURY_HAS_IMMINTRIN
-#elif defined(__ARM_NEON) || defined(__ARM_NEON__)
-#include <arm_neon.h>
-#define FURY_HAS_NEON
-#elif defined(__riscv) && __riscv_vector
-#include <riscv_vector.h>
-#define FURY_HAS_RISCV_VECTOR
-#endif
-#if defined(__SSE2__)
-#include <emmintrin.h>
-#define FURY_HAS_SSE2
-#endif
+namespace fury {
+
+PyObject *Fury_PyUnicode_FromUCS1(const char *u, Py_ssize_t size);
+
+PyObject *Fury_PyUnicode_FromUCS2(const uint16_t *u, Py_ssize_t size);
+
+} // namespace fury

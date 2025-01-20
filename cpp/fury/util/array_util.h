@@ -18,18 +18,12 @@
  */
 
 #pragma once
+#include "fury/util/platform.h"
+#include <cstdint>
+#include <stdlib.h>
 
-#if defined(__x86_64__) || defined(_M_X64)
-#include <immintrin.h>
-#define FURY_HAS_IMMINTRIN
-#elif defined(__ARM_NEON) || defined(__ARM_NEON__)
-#include <arm_neon.h>
-#define FURY_HAS_NEON
-#elif defined(__riscv) && __riscv_vector
-#include <riscv_vector.h>
-#define FURY_HAS_RISCV_VECTOR
-#endif
-#if defined(__SSE2__)
-#include <emmintrin.h>
-#define FURY_HAS_SSE2
-#endif
+namespace fury {
+uint16_t getMaxValue(const uint16_t *arr, size_t length);
+
+void copyArray(const uint16_t *from, uint8_t *to, size_t length);
+} // namespace fury
