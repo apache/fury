@@ -249,21 +249,21 @@ def test_array_serializer(language):
         np.testing.assert_array_equal(new_arr, arr)
 
 
-def test_numpy_array_memoryview();
+def test_numpy_array_memoryview():
     _WINDOWS = os.name == "nt"
     if _WINDOWS:
-        arr = np.array(list(range(10)), dtype='int32')
-        assert arr.format == 'l'
+        arr = np.array(list(range(10)), dtype="int32")
+        assert arr.format == "l"
         assert arr.itemsize == 4
-        arr = np.array(list(range(10)), dtype='int64')
-        assert arr.format == 'q'
+        arr = np.array(list(range(10)), dtype="int64")
+        assert arr.format == "q"
         assert arr.itemsize == 8
     else:
-        arr = np.array(list(range(10)), dtype='int32')
-        assert arr.format == 'i'
+        arr = np.array(list(range(10)), dtype="int32")
+        assert arr.format == "i"
         assert arr.itemsize == 4
-        arr = np.array(list(range(10)), dtype='int64')
-        assert arr.format == 'l'
+        arr = np.array(list(range(10)), dtype="int64")
+        assert arr.format == "l"
         assert arr.itemsize == 8
 
 
