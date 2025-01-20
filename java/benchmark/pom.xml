@@ -26,7 +26,7 @@
   <parent>
     <artifactId>fury-parent</artifactId>
     <groupId>org.apache.fury</groupId>
-    <version>0.6.0-SNAPSHOT</version>
+    <version>0.10.0-SNAPSHOT</version>
   </parent>
 
   <artifactId>benchmark</artifactId>
@@ -42,7 +42,7 @@
     <uberjar.name>benchmarks</uberjar.name>
     <protostuff.version>1.7.2</protostuff.version>
     <fastjson2.version>2.0.34</fastjson2.version>
-    <protobuf.version>3.16.3</protobuf.version>
+    <protobuf.version>3.25.5</protobuf.version>
     <checkstyle.skip>true</checkstyle.skip>
     <maven.deploy.skip>true</maven.deploy.skip>
     <maven.javadoc.skip>true</maven.javadoc.skip>
@@ -132,7 +132,7 @@
     <dependency>
       <groupId>org.apache.avro</groupId>
       <artifactId>avro</artifactId>
-      <version>1.11.3</version>
+      <version>1.11.4</version>
     </dependency>
     <dependency>
       <groupId>io.timeandspace</groupId>

@@ -26,7 +26,9 @@ import org.apache.fury.memory.Platform;
 
 public class StringUtils {
   // A long mask used to clear all-higher bits of char in a super-word way.
-  private static final long MULTI_CHARS_NON_LATIN_MASK;
+  public static final long MULTI_CHARS_NON_LATIN_MASK;
+
+  public static final long MULTI_CHARS_NON_ASCII_MASK;
 
   private static final char[] BASE16_CHARS2 = {
     '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
@@ -37,10 +39,12 @@ public class StringUtils {
       // latin chars will be 0xXX,0x00;0xXX,0x00 in byte order;
       // Using 0x00,0xff(0xff00) to clear latin bits.
       MULTI_CHARS_NON_LATIN_MASK = 0xff00ff00ff00ff00L;
+      MULTI_CHARS_NON_ASCII_MASK = 0xff80ff80ff80ff80L;
     } else {
       // latin chars will be 0x00,0xXX;0x00,0xXX in byte order;
       // Using 0x00,0xff(0x00ff) to clear latin bits.
       MULTI_CHARS_NON_LATIN_MASK = 0x00ff00ff00ff00ffL;
+      MULTI_CHARS_NON_ASCII_MASK = 0x80ff80ff80ff80ffL;
     }
   }
 
@@ -267,12 +271,20 @@ public class StringUtils {
   }
 
   public static boolean isLatin(char[] chars) {
+    return isLatin(chars, 0);
+  }
+
+  public static boolean isLatin(char[] chars, int start) {
+    if (start > chars.length) {
+      return false;
+    }
+    int byteOffset = start << 1;
     int numChars = chars.length;
     int vectorizedLen = numChars >> 2;
     int vectorizedChars = vectorizedLen << 2;
     int endOffset = Platform.CHAR_ARRAY_OFFSET + (vectorizedChars << 1);
     boolean isLatin = true;
-    for (int offset = Platform.CHAR_ARRAY_OFFSET; offset < endOffset; offset += 8) {
+    for (int offset = Platform.CHAR_ARRAY_OFFSET + byteOffset; offset < endOffset; offset += 8) {
       // check 4 chars in a vectorized way, 4 times faster than scalar check loop.
       // See benchmark in CompressStringSuite.latinSuperWordCheck.
       long multiChars = Platform.getLong(chars, offset);

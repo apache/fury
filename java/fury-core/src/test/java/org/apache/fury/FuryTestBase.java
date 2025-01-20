@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -56,6 +57,28 @@ public abstract class FuryTestBase {
 
   public static FuryBuilder builder() {
     return Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false);
+  }
+
+  @DataProvider
+  public static Object[] furyCopyConfig() {
+    return new Object[][] {
+      {
+        builder()
+            .withRefCopy(true)
+            .withLanguage(Language.JAVA)
+            .withJdkClassSerializableCheck(false)
+            .withCodegen(false)
+            .build()
+      },
+      {
+        builder()
+            .withRefCopy(true)
+            .withLanguage(Language.JAVA)
+            .withJdkClassSerializableCheck(false)
+            .withCodegen(true)
+            .build()
+      },
+    };
   }
 
   @DataProvider
@@ -101,7 +124,27 @@ public abstract class FuryTestBase {
   }
 
   @DataProvider
+  public static Object[][] scopedMetaShare() {
+    return new Object[][] {{false}, {true}};
+  }
+
+  @DataProvider
+  public static Object[][] oneBoolOption() {
+    return new Object[][] {{false}, {true}};
+  }
+
+  @DataProvider
+  public static Object[][] twoBoolOptions() {
+    return new Object[][] {{false, false}, {true, false}, {false, true}, {true, true}};
+  }
+
+  @DataProvider
   public static Object[][] compressNumberAndCodeGen() {
+    return new Object[][] {{false, false}, {true, false}, {false, true}, {true, true}};
+  }
+
+  @DataProvider
+  public static Object[][] compressNumberScopedMetaShare() {
     return new Object[][] {{false, false}, {true, false}, {false, true}, {true, true}};
   }
 
@@ -160,41 +203,43 @@ public abstract class FuryTestBase {
 
   @DataProvider
   public static Object[][] javaFuryKVCompatible() {
+    Supplier<FuryBuilder> builder =
+        () ->
+            Fury.builder()
+                .withLanguage(Language.JAVA)
+                .requireClassRegistration(false)
+                .withScopedMetaShare(false);
     return new Object[][] {
       {
-        Fury.builder()
-            .withLanguage(Language.JAVA)
+        builder
+            .get()
             .withRefTracking(true)
             .withCodegen(false)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .requireClassRegistration(false)
             .build()
       },
       {
-        Fury.builder()
-            .withLanguage(Language.JAVA)
+        builder
+            .get()
             .withRefTracking(false)
             .withCodegen(false)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .requireClassRegistration(false)
             .build()
       },
       {
-        Fury.builder()
-            .withLanguage(Language.JAVA)
+        builder
+            .get()
             .withRefTracking(true)
             .withCodegen(true)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .requireClassRegistration(false)
             .build()
       },
       {
-        Fury.builder()
-            .withLanguage(Language.JAVA)
+        builder
+            .get()
             .withRefTracking(false)
             .withCodegen(true)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .requireClassRegistration(false)
             .build()
       },
     };
@@ -212,19 +257,30 @@ public abstract class FuryTestBase {
     return (T) fury.deserialize(bytes);
   }
 
-  public static Object serDe(Fury fury1, Fury fury2, Object obj) {
+  public static Object serDeObject(Fury fury1, Fury fury2, Object obj) {
     byte[] bytes = fury1.serialize(obj);
     return fury2.deserialize(bytes);
   }
 
-  public static Object serDeCheck(Fury fury1, Fury fury2, Object obj) {
-    Object o = serDe(fury1, fury2, obj);
+  public static <T> T serDe(Fury fury1, Fury fury2, T obj) {
+    byte[] bytes = fury1.serialize(obj);
+    return (T) fury2.deserialize(bytes);
+  }
+
+  public static <T> T serDeCheckTyped(Fury fury1, Fury fury2, T obj) {
+    T o = serDeTyped(fury1, fury2, obj);
     Assert.assertEquals(o, obj);
     return o;
   }
 
-  public static Object serDeCheck(Fury fury, Object obj) {
-    Object o = serDe(fury, obj);
+  public static <T> T serDeCheck(Fury fury1, Fury fury2, T obj) {
+    T o = serDe(fury1, fury2, obj);
+    Assert.assertEquals(o, obj);
+    return o;
+  }
+
+  public static <T> T serDeCheck(Fury fury, T obj) {
+    T o = serDe(fury, obj);
     Assert.assertEquals(o, obj);
     return o;
   }
@@ -249,6 +305,29 @@ public abstract class FuryTestBase {
     Object newObj = fury2.deserialize(buffer);
     Assert.assertEquals(buffer.writerIndex(), buffer.readerIndex());
     return newObj;
+  }
+
+  @SuppressWarnings("unchecked")
+  public static <T> T serDeTyped(Fury fury, T obj) {
+    byte[] bytes = fury.serialize(obj);
+    return (T) fury.deserialize(bytes, obj.getClass());
+  }
+
+  @SuppressWarnings("unchecked")
+  public static <T> T serDeTyped(Fury fury1, Fury fury2, T obj) {
+    byte[] bytes = fury1.serialize(obj);
+    return (T) fury2.deserialize(bytes, obj.getClass());
+  }
+
+  public static void copyCheck(Fury fury, Object obj) {
+    Object copy = fury.copy(obj);
+    Assert.assertEquals(obj, copy);
+    Assert.assertNotSame(obj, copy);
+  }
+
+  public static void copyCheckWithoutSame(Fury fury, Object obj) {
+    Object copy = fury.copy(obj);
+    Assert.assertEquals(obj, copy);
   }
 
   public static void roundCheck(Fury fury1, Fury fury2, Object o) {

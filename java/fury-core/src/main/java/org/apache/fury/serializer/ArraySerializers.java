@@ -20,6 +20,7 @@
 package org.apache.fury.serializer;
 
 import java.lang.reflect.Array;
+import java.util.Arrays;
 import java.util.IdentityHashMap;
 import org.apache.fury.Fury;
 import org.apache.fury.config.CompatibleMode;
@@ -31,8 +32,9 @@ import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.resolver.RefResolver;
 import org.apache.fury.serializer.collection.CollectionFlags;
 import org.apache.fury.serializer.collection.FuryArrayAsListSerializer;
-import org.apache.fury.type.Type;
+import org.apache.fury.type.GenericType;
 import org.apache.fury.type.TypeUtils;
+import org.apache.fury.type.Types;
 import org.apache.fury.util.Preconditions;
 
 /** Serializers for array types. */
@@ -45,6 +47,7 @@ public class ArraySerializers {
     private final Serializer componentTypeSerializer;
     private final ClassInfoHolder classInfoHolder;
     private final int[] stubDims;
+    private final GenericType componentGenericType;
 
     public ObjectArraySerializer(Fury fury, Class<T[]> cls) {
       super(fury, cls);
@@ -62,6 +65,7 @@ public class ArraySerializers {
       }
       this.innerType = (Class<T>) innerType;
       Class<?> componentType = cls.getComponentType();
+      componentGenericType = fury.getClassResolver().buildGenericType(componentType);
       if (fury.getClassResolver().isMonomorphic(componentType)) {
         this.componentTypeSerializer = fury.getClassResolver().getSerializer(componentType);
       } else {
@@ -70,11 +74,6 @@ public class ArraySerializers {
       }
       this.stubDims = new int[dimension];
       classInfoHolder = fury.getClassResolver().nilClassInfoHolder();
-    }
-
-    @Override
-    public short getXtypeId() {
-      return (short) -Type.LIST.getId();
     }
 
     @Override
@@ -109,6 +108,30 @@ public class ArraySerializers {
     }
 
     @Override
+    public T[] copy(T[] originArray) {
+      int length = originArray.length;
+      Object[] newArray = newArray(length);
+      if (needToCopyRef) {
+        fury.reference(originArray, newArray);
+      }
+      Serializer componentSerializer = this.componentTypeSerializer;
+      if (componentSerializer != null) {
+        if (componentSerializer.isImmutable()) {
+          System.arraycopy(originArray, 0, newArray, 0, length);
+        } else {
+          for (int i = 0; i < length; i++) {
+            newArray[i] = componentSerializer.copy(originArray[i]);
+          }
+        }
+      } else {
+        for (int i = 0; i < length; i++) {
+          newArray[i] = fury.copyObject(originArray[i]);
+        }
+      }
+      return (T[]) newArray;
+    }
+
+    @Override
     public void xwrite(MemoryBuffer buffer, T[] arr) {
       int len = arr.length;
       buffer.writeVarUint32Small7(len);
@@ -120,7 +143,6 @@ public class ArraySerializers {
 
     @Override
     public T[] read(MemoryBuffer buffer) {
-      // Some jdk8 will crash if use varint, why?
       int numElements = buffer.readVarUint32Small7();
       boolean isFinal = (numElements & 0b1) != 0;
       numElements >>>= 1;
@@ -129,9 +151,6 @@ public class ArraySerializers {
       refResolver.reference(value);
       if (isFinal) {
         final Serializer componentTypeSerializer = this.componentTypeSerializer;
-        if (componentTypeSerializer == null) {
-          System.out.println("=======");
-        }
         for (int i = 0; i < numElements; i++) {
           Object elem;
           int nextReadRefId = refResolver.tryPreserveRefId(buffer);
@@ -166,9 +185,12 @@ public class ArraySerializers {
     public T[] xread(MemoryBuffer buffer) {
       int numElements = buffer.readVarUint32Small7();
       Object[] value = newArray(numElements);
+      fury.getGenerics().pushGenericType(componentGenericType);
       for (int i = 0; i < numElements; i++) {
-        value[i] = fury.xreadRef(buffer);
+        Object x = fury.xreadRef(buffer);
+        value[i] = x;
       }
+      fury.getGenerics().popGenericType();
       return (T[]) value;
     }
 
@@ -228,7 +250,7 @@ public class ArraySerializers {
     protected final int elemSize;
 
     public PrimitiveArraySerializer(Fury fury, Class<T> cls) {
-      super(fury, cls, (short) primitiveInfo.get(TypeUtils.getArrayComponentInfo(cls).f0)[2]);
+      super(fury, cls);
       Class<?> innerType = TypeUtils.getArrayComponentInfo(cls).f0;
       this.offset = primitiveInfo.get(innerType)[0];
       this.elemSize = primitiveInfo.get(innerType)[1];
@@ -260,6 +282,11 @@ public class ArraySerializers {
         fury.writeBufferObject(
             buffer, new PrimitiveArrayBufferObject(value, offset, elemSize, value.length));
       }
+    }
+
+    @Override
+    public boolean[] copy(boolean[] originArray) {
+      return Arrays.copyOf(originArray, originArray.length);
     }
 
     @Override
@@ -299,6 +326,11 @@ public class ArraySerializers {
     }
 
     @Override
+    public byte[] copy(byte[] originArray) {
+      return Arrays.copyOf(originArray, originArray.length);
+    }
+
+    @Override
     public byte[] read(MemoryBuffer buffer) {
       if (fury.isPeerOutOfBandEnabled()) {
         MemoryBuffer buf = fury.readBufferObject(buffer);
@@ -333,6 +365,11 @@ public class ArraySerializers {
     }
 
     @Override
+    public char[] copy(char[] originArray) {
+      return Arrays.copyOf(originArray, originArray.length);
+    }
+
+    @Override
     public char[] read(MemoryBuffer buffer) {
       if (fury.isPeerOutOfBandEnabled()) {
         MemoryBuffer buf = fury.readBufferObject(buffer);
@@ -348,11 +385,6 @@ public class ArraySerializers {
         buffer.readToUnsafe(values, offset, size);
         return values;
       }
-    }
-
-    @Override
-    public short getXtypeId() {
-      return Fury.NOT_SUPPORT_CROSS_LANGUAGE;
     }
 
     @Override
@@ -381,6 +413,11 @@ public class ArraySerializers {
         fury.writeBufferObject(
             buffer, new PrimitiveArrayBufferObject(value, offset, elemSize, value.length));
       }
+    }
+
+    @Override
+    public short[] copy(short[] originArray) {
+      return Arrays.copyOf(originArray, originArray.length);
     }
 
     @Override
@@ -420,6 +457,11 @@ public class ArraySerializers {
     }
 
     @Override
+    public int[] copy(int[] originArray) {
+      return Arrays.copyOf(originArray, originArray.length);
+    }
+
+    @Override
     public int[] read(MemoryBuffer buffer) {
       if (fury.isPeerOutOfBandEnabled()) {
         MemoryBuffer buf = fury.readBufferObject(buffer);
@@ -453,6 +495,11 @@ public class ArraySerializers {
         fury.writeBufferObject(
             buffer, new PrimitiveArrayBufferObject(value, offset, elemSize, value.length));
       }
+    }
+
+    @Override
+    public long[] copy(long[] originArray) {
+      return Arrays.copyOf(originArray, originArray.length);
     }
 
     @Override
@@ -492,6 +539,11 @@ public class ArraySerializers {
     }
 
     @Override
+    public float[] copy(float[] originArray) {
+      return Arrays.copyOf(originArray, originArray.length);
+    }
+
+    @Override
     public float[] read(MemoryBuffer buffer) {
       if (fury.isPeerOutOfBandEnabled()) {
         MemoryBuffer buf = fury.readBufferObject(buffer);
@@ -528,6 +580,11 @@ public class ArraySerializers {
     }
 
     @Override
+    public double[] copy(double[] originArray) {
+      return Arrays.copyOf(originArray, originArray.length);
+    }
+
+    @Override
     public double[] read(MemoryBuffer buffer) {
       if (fury.isPeerOutOfBandEnabled()) {
         MemoryBuffer buf = fury.readBufferObject(buffer);
@@ -560,11 +617,6 @@ public class ArraySerializers {
     }
 
     @Override
-    public short getXtypeId() {
-      return (short) -Type.FURY_STRING_ARRAY.getId();
-    }
-
-    @Override
     public void write(MemoryBuffer buffer, String[] value) {
       int len = value.length;
       buffer.writeVarUint32Small7(len);
@@ -591,6 +643,13 @@ public class ArraySerializers {
           }
         }
       }
+    }
+
+    @Override
+    public String[] copy(String[] originArray) {
+      String[] newArray = new String[originArray.length];
+      System.arraycopy(originArray, 0, newArray, 0, originArray.length);
+      return newArray;
     }
 
     @Override
@@ -622,8 +681,8 @@ public class ArraySerializers {
       buffer.writeVarUint32Small7(len);
       for (String elem : value) {
         if (elem != null) {
-          buffer.writeByte(Fury.REF_VALUE_FLAG);
-          stringSerializer.writeUTF8String(buffer, elem);
+          buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
+          stringSerializer.writeString(buffer, elem);
         } else {
           buffer.writeByte(Fury.NULL_FLAG);
         }
@@ -635,8 +694,8 @@ public class ArraySerializers {
       int numElements = buffer.readVarUint32Small7();
       String[] value = new String[numElements];
       for (int i = 0; i < numElements; i++) {
-        if (buffer.readByte() == Fury.REF_VALUE_FLAG) {
-          value[i] = stringSerializer.readUTF8String(buffer);
+        if (buffer.readByte() >= Fury.NOT_NULL_VALUE_FLAG) {
+          value[i] = stringSerializer.readString(buffer);
         } else {
           value[i] = null;
         }
@@ -646,26 +705,29 @@ public class ArraySerializers {
   }
 
   public static void registerDefaultSerializers(Fury fury) {
-    fury.registerSerializer(Object[].class, new ObjectArraySerializer<>(fury, Object[].class));
-    fury.registerSerializer(Class[].class, new ObjectArraySerializer<>(fury, Class[].class));
-    fury.registerSerializer(byte[].class, new ByteArraySerializer(fury));
-    fury.registerSerializer(Byte[].class, new ObjectArraySerializer<>(fury, Byte[].class));
-    fury.registerSerializer(char[].class, new CharArraySerializer(fury));
-    fury.registerSerializer(
+    ClassResolver resolver = fury.getClassResolver();
+    resolver.registerSerializer(Object[].class, new ObjectArraySerializer<>(fury, Object[].class));
+    resolver.registerSerializer(Class[].class, new ObjectArraySerializer<>(fury, Class[].class));
+    resolver.registerSerializer(byte[].class, new ByteArraySerializer(fury));
+    resolver.registerSerializer(Byte[].class, new ObjectArraySerializer<>(fury, Byte[].class));
+    resolver.registerSerializer(char[].class, new CharArraySerializer(fury));
+    resolver.registerSerializer(
         Character[].class, new ObjectArraySerializer<>(fury, Character[].class));
-    fury.registerSerializer(short[].class, new ShortArraySerializer(fury));
-    fury.registerSerializer(Short[].class, new ObjectArraySerializer<>(fury, Short[].class));
-    fury.registerSerializer(int[].class, new IntArraySerializer(fury));
-    fury.registerSerializer(Integer[].class, new ObjectArraySerializer<>(fury, Integer[].class));
-    fury.registerSerializer(long[].class, new LongArraySerializer(fury));
-    fury.registerSerializer(Long[].class, new ObjectArraySerializer<>(fury, Long[].class));
-    fury.registerSerializer(float[].class, new FloatArraySerializer(fury));
-    fury.registerSerializer(Float[].class, new ObjectArraySerializer<>(fury, Float[].class));
-    fury.registerSerializer(double[].class, new DoubleArraySerializer(fury));
-    fury.registerSerializer(Double[].class, new ObjectArraySerializer<>(fury, Double[].class));
-    fury.registerSerializer(boolean[].class, new BooleanArraySerializer(fury));
-    fury.registerSerializer(Boolean[].class, new ObjectArraySerializer<>(fury, Boolean[].class));
-    fury.registerSerializer(String[].class, new StringArraySerializer(fury));
+    resolver.registerSerializer(short[].class, new ShortArraySerializer(fury));
+    resolver.registerSerializer(Short[].class, new ObjectArraySerializer<>(fury, Short[].class));
+    resolver.registerSerializer(int[].class, new IntArraySerializer(fury));
+    resolver.registerSerializer(
+        Integer[].class, new ObjectArraySerializer<>(fury, Integer[].class));
+    resolver.registerSerializer(long[].class, new LongArraySerializer(fury));
+    resolver.registerSerializer(Long[].class, new ObjectArraySerializer<>(fury, Long[].class));
+    resolver.registerSerializer(float[].class, new FloatArraySerializer(fury));
+    resolver.registerSerializer(Float[].class, new ObjectArraySerializer<>(fury, Float[].class));
+    resolver.registerSerializer(double[].class, new DoubleArraySerializer(fury));
+    resolver.registerSerializer(Double[].class, new ObjectArraySerializer<>(fury, Double[].class));
+    resolver.registerSerializer(boolean[].class, new BooleanArraySerializer(fury));
+    resolver.registerSerializer(
+        Boolean[].class, new ObjectArraySerializer<>(fury, Boolean[].class));
+    resolver.registerSerializer(String[].class, new StringArraySerializer(fury));
   }
 
   // ########################## utils ##########################
@@ -689,25 +751,16 @@ public class ArraySerializers {
 
   static {
     primitiveInfo.put(
-        boolean.class,
-        new int[] {Platform.BOOLEAN_ARRAY_OFFSET, 1, Type.FURY_PRIMITIVE_BOOL_ARRAY.getId()});
-    primitiveInfo.put(byte.class, new int[] {Platform.BYTE_ARRAY_OFFSET, 1, Type.BINARY.getId()});
+        boolean.class, new int[] {Platform.BOOLEAN_ARRAY_OFFSET, 1, Types.BOOL_ARRAY});
+    primitiveInfo.put(byte.class, new int[] {Platform.BYTE_ARRAY_OFFSET, 1, Types.BINARY});
     primitiveInfo.put(
-        char.class, new int[] {Platform.CHAR_ARRAY_OFFSET, 2, Fury.NOT_SUPPORT_CROSS_LANGUAGE});
+        char.class, new int[] {Platform.CHAR_ARRAY_OFFSET, 2, Fury.NOT_SUPPORT_XLANG});
+    primitiveInfo.put(short.class, new int[] {Platform.SHORT_ARRAY_OFFSET, 2, Types.INT16_ARRAY});
+    primitiveInfo.put(int.class, new int[] {Platform.INT_ARRAY_OFFSET, 4, Types.INT32_ARRAY});
+    primitiveInfo.put(long.class, new int[] {Platform.LONG_ARRAY_OFFSET, 8, Types.INT64_ARRAY});
+    primitiveInfo.put(float.class, new int[] {Platform.FLOAT_ARRAY_OFFSET, 4, Types.FLOAT32_ARRAY});
     primitiveInfo.put(
-        short.class,
-        new int[] {Platform.SHORT_ARRAY_OFFSET, 2, Type.FURY_PRIMITIVE_SHORT_ARRAY.getId()});
-    primitiveInfo.put(
-        int.class, new int[] {Platform.INT_ARRAY_OFFSET, 4, Type.FURY_PRIMITIVE_INT_ARRAY.getId()});
-    primitiveInfo.put(
-        long.class,
-        new int[] {Platform.LONG_ARRAY_OFFSET, 8, Type.FURY_PRIMITIVE_LONG_ARRAY.getId()});
-    primitiveInfo.put(
-        float.class,
-        new int[] {Platform.FLOAT_ARRAY_OFFSET, 4, Type.FURY_PRIMITIVE_FLOAT_ARRAY.getId()});
-    primitiveInfo.put(
-        double.class,
-        new int[] {Platform.DOUBLE_ARRAY_OFFSET, 8, Type.FURY_PRIMITIVE_DOUBLE_ARRAY.getId()});
+        double.class, new int[] {Platform.DOUBLE_ARRAY_OFFSET, 8, Types.FLOAT64_ARRAY});
   }
 
   public abstract static class AbstractedNonexistentArrayClassSerializer extends Serializer {

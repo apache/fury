@@ -22,6 +22,7 @@ package org.apache.fury.serializer.collection;
 import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMap.Builder;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.ImmutableSortedSet;
@@ -38,7 +39,7 @@ import java.util.function.Function;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
-import org.apache.fury.type.Type;
+import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.util.unsafe._JDKAccess;
 
 /** Serializers for common guava types. */
@@ -83,13 +84,15 @@ public class GuavaCollectionSerializers {
       return (T) list;
     }
 
-    @Override
-    public short getXtypeId() {
-      return (short) -Type.LIST.getId();
-    }
-
     public T xnewInstance(Collection collection) {
       return (T) ImmutableList.copyOf(collection);
+    }
+
+    @Override
+    public T copy(T originCollection) {
+      Object[] elements = new Object[originCollection.size()];
+      copyElements(originCollection, elements);
+      return (T) ImmutableList.copyOf(elements);
     }
   }
 
@@ -134,8 +137,10 @@ public class GuavaCollectionSerializers {
     }
 
     @Override
-    public short getXtypeId() {
-      return (short) -Type.LIST.getId();
+    public T copy(T originCollection) {
+      Object[] elements = new Object[originCollection.size()];
+      copyElements(originCollection, elements);
+      return (T) function.apply(elements);
     }
 
     @Override
@@ -165,13 +170,15 @@ public class GuavaCollectionSerializers {
     }
 
     @Override
-    public short getXtypeId() {
-      return (short) -Type.FURY_SET.getId();
+    protected T xnewInstance(Collection collection) {
+      return (T) ImmutableSet.copyOf(collection);
     }
 
     @Override
-    protected T xnewInstance(Collection collection) {
-      return (T) ImmutableSet.copyOf(collection);
+    public T copy(T originCollection) {
+      Object[] elements = new Object[originCollection.size()];
+      copyElements(originCollection, elements);
+      return (T) ImmutableSet.copyOf(elements);
     }
   }
 
@@ -203,6 +210,14 @@ public class GuavaCollectionSerializers {
       Object[] elements = data.elements;
       return (T) new ImmutableSortedSet.Builder<>(data.comparator).add(elements).build();
     }
+
+    @Override
+    public T copy(T originCollection) {
+      Comparator comparator = fury.copyObject(originCollection.comparator());
+      Object[] elements = new Object[originCollection.size()];
+      copyElements(originCollection, elements);
+      return (T) new ImmutableSortedSet.Builder<>(comparator).add(elements).build();
+    }
   }
 
   abstract static class GuavaMapSerializer<T extends Map> extends MapSerializer<T> {
@@ -222,6 +237,13 @@ public class GuavaCollectionSerializers {
     }
 
     @Override
+    public T copy(T originMap) {
+      Builder builder = makeBuilder(originMap.size());
+      copyEntry(originMap, builder);
+      return (T) builder.build();
+    }
+
+    @Override
     public T onMapRead(Map map) {
       MapContainer container = (MapContainer) map;
       int size = container.size;
@@ -232,11 +254,6 @@ public class GuavaCollectionSerializers {
         builder.put(keyArray[i], valueArray[i]);
       }
       return (T) builder.build();
-    }
-
-    @Override
-    public short getXtypeId() {
-      return (short) -Type.MAP.getId();
     }
 
     @Override
@@ -342,6 +359,14 @@ public class GuavaCollectionSerializers {
     }
 
     @Override
+    public T copy(T originMap) {
+      Comparator comparator = fury.copyObject(originMap.comparator());
+      ImmutableSortedMap.Builder builder = new ImmutableSortedMap.Builder(comparator);
+      copyEntry(originMap, builder);
+      return (T) builder.build();
+    }
+
+    @Override
     public T onMapRead(Map map) {
       SortedMapContainer mapContainer = (SortedMapContainer) map;
       ImmutableMap.Builder builder = new ImmutableSortedMap.Builder(mapContainer.comparator);
@@ -381,65 +406,66 @@ public class GuavaCollectionSerializers {
     // inconsistent if peers load different version of guava.
     // For example: guava 20 return ImmutableBiMap for ImmutableMap.of(), but guava 27 return
     // ImmutableMap.
+    ClassResolver resolver = fury.getClassResolver();
     Class cls =
         loadClass(pkg + ".RegularImmutableBiMap", ImmutableBiMap.of("k1", 1, "k2", 4).getClass());
-    fury.registerSerializer(cls, new ImmutableBiMapSerializer(fury, cls));
+    resolver.registerSerializer(cls, new ImmutableBiMapSerializer(fury, cls));
     cls = loadClass(pkg + ".SingletonImmutableBiMap", ImmutableBiMap.of(1, 2).getClass());
-    fury.registerSerializer(cls, new ImmutableBiMapSerializer(fury, cls));
+    resolver.registerSerializer(cls, new ImmutableBiMapSerializer(fury, cls));
     cls = loadClass(pkg + ".RegularImmutableMap", ImmutableMap.of("k1", 1, "k2", 2).getClass());
-    fury.registerSerializer(cls, new ImmutableMapSerializer(fury, cls));
+    resolver.registerSerializer(cls, new ImmutableMapSerializer(fury, cls));
     cls = loadClass(pkg + ".RegularImmutableList", ImmutableList.of().getClass());
-    fury.registerSerializer(cls, new RegularImmutableListSerializer(fury, cls));
+    resolver.registerSerializer(cls, new RegularImmutableListSerializer(fury, cls));
     cls = loadClass(pkg + ".SingletonImmutableList", ImmutableList.of(1).getClass());
-    fury.registerSerializer(cls, new ImmutableListSerializer(fury, cls));
+    resolver.registerSerializer(cls, new ImmutableListSerializer(fury, cls));
     cls = loadClass(pkg + ".RegularImmutableSet", ImmutableSet.of(1, 2).getClass());
-    fury.registerSerializer(cls, new ImmutableSetSerializer(fury, cls));
+    resolver.registerSerializer(cls, new ImmutableSetSerializer(fury, cls));
     cls = loadClass(pkg + ".SingletonImmutableSet", ImmutableSet.of(1).getClass());
-    fury.registerSerializer(cls, new ImmutableSetSerializer(fury, cls));
+    resolver.registerSerializer(cls, new ImmutableSetSerializer(fury, cls));
     // sorted set/map doesn't support xlang.
     cls = loadClass(pkg + ".RegularImmutableSortedSet", ImmutableSortedSet.of(1, 2).getClass());
-    fury.registerSerializer(cls, new ImmutableSortedSetSerializer<>(fury, cls));
+    resolver.registerSerializer(cls, new ImmutableSortedSetSerializer<>(fury, cls));
     cls = loadClass(pkg + ".ImmutableSortedMap", ImmutableSortedMap.of(1, 2).getClass());
-    fury.registerSerializer(cls, new ImmutableSortedMapSerializer<>(fury, cls));
+    resolver.registerSerializer(cls, new ImmutableSortedMapSerializer<>(fury, cls));
 
     // Guava version before 19.0, of() return
     // EmptyImmutableSet/EmptyImmutableBiMap/EmptyImmutableSortedMap/EmptyImmutableSortedSet
     // we register if class exist or register empty to deserialize.
     if (checkClassExist(pkg + ".EmptyImmutableSet")) {
       cls = loadClass(pkg + ".EmptyImmutableSet", ImmutableSet.of().getClass());
-      fury.registerSerializer(cls, new ImmutableSetSerializer(fury, cls));
+      resolver.registerSerializer(cls, new ImmutableSetSerializer(fury, cls));
     } else {
       class GuavaEmptySet {}
 
       cls = GuavaEmptySet.class;
-      fury.registerSerializer(cls, new ImmutableSetSerializer(fury, cls));
+      resolver.registerSerializer(cls, new ImmutableSetSerializer(fury, cls));
     }
     if (checkClassExist(pkg + ".EmptyImmutableBiMap")) {
       cls = loadClass(pkg + ".EmptyImmutableBiMap", ImmutableBiMap.of().getClass());
-      fury.registerSerializer(cls, new ImmutableMapSerializer(fury, cls));
+      resolver.registerSerializer(cls, new ImmutableMapSerializer(fury, cls));
     } else {
       class GuavaEmptyBiMap {}
 
       cls = GuavaEmptyBiMap.class;
-      fury.registerSerializer(cls, new ImmutableMapSerializer(fury, cls));
+      resolver.registerSerializer(cls, new ImmutableMapSerializer(fury, cls));
     }
     if (checkClassExist(pkg + ".EmptyImmutableSortedSet")) {
       cls = loadClass(pkg + ".EmptyImmutableSortedSet", ImmutableSortedSet.of().getClass());
-      fury.registerSerializer(cls, new ImmutableSortedSetSerializer(fury, cls));
+      resolver.registerSerializer(cls, new ImmutableSortedSetSerializer(fury, cls));
     } else {
       class GuavaEmptySortedSet {}
 
       cls = GuavaEmptySortedSet.class;
-      fury.registerSerializer(cls, new ImmutableSortedSetSerializer(fury, cls));
+      resolver.registerSerializer(cls, new ImmutableSortedSetSerializer(fury, cls));
     }
     if (checkClassExist(pkg + ".EmptyImmutableSortedMap")) {
       cls = loadClass(pkg + ".EmptyImmutableSortedMap", ImmutableSortedMap.of().getClass());
-      fury.registerSerializer(cls, new ImmutableSortedMapSerializer(fury, cls));
+      resolver.registerSerializer(cls, new ImmutableSortedMapSerializer(fury, cls));
     } else {
       class GuavaEmptySortedMap {}
 
       cls = GuavaEmptySortedMap.class;
-      fury.registerSerializer(cls, new ImmutableSortedMapSerializer(fury, cls));
+      resolver.registerSerializer(cls, new ImmutableSortedMapSerializer(fury, cls));
     }
   }
 

@@ -34,6 +34,7 @@ import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassInfoHolder;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.resolver.MetaContext;
+import org.apache.fury.resolver.MetaStringResolver;
 import org.apache.fury.resolver.RefResolver;
 import org.apache.fury.serializer.NonexistentClass.NonexistentEnum;
 import org.apache.fury.type.Descriptor;
@@ -88,16 +89,15 @@ public final class NonexistentClassSerializers {
       // then revert written class id to write class info here,
       // since it's the only place to hold class def for not found class.
       buffer.increaseWriterIndex(-2);
-      buffer.writeByte(ClassResolver.USE_CLASS_VALUE_FLAG);
       MetaContext metaContext = fury.getSerializationContext().getMetaContext();
       IdentityObjectIntMap classMap = metaContext.classMap;
       int newId = classMap.size;
       // class not exist, use class def id for identity.
       int id = classMap.putOrGet(value.classDef.getId(), newId);
       if (id >= 0) {
-        buffer.writeVarUint32(id);
+        buffer.writeVarUint32(id << 1 | 0b1);
       } else {
-        buffer.writeVarUint32(newId);
+        buffer.writeVarUint32(newId << 1 | 0b1);
         metaContext.writingClassDefs.add(value.classDef);
       }
     }
@@ -168,7 +168,7 @@ public final class NonexistentClassSerializers {
                 Tuple2<ObjectSerializer.FinalTypeField[], boolean[]>,
                 ObjectSerializer.GenericTypeField[],
                 ObjectSerializer.GenericTypeField[]>
-            tuple = ObjectSerializer.buildFieldInfos(fury, descriptorGrouper);
+            tuple = AbstractObjectSerializer.buildFieldInfos(fury, descriptorGrouper);
         int classVersionHash = 0;
         if (fury.checkClassVersion()) {
           classVersionHash = ObjectSerializer.computeVersionHash(descriptors);
@@ -227,14 +227,21 @@ public final class NonexistentClassSerializers {
 
   public static final class NonexistentEnumClassSerializer extends Serializer {
     private final NonexistentEnum[] enumConstants;
+    private final MetaStringResolver metaStringResolver;
 
     public NonexistentEnumClassSerializer(Fury fury) {
       super(fury, NonexistentEnum.class);
+      metaStringResolver = fury.getMetaStringResolver();
       enumConstants = NonexistentEnum.class.getEnumConstants();
     }
 
     @Override
     public Object read(MemoryBuffer buffer) {
+      if (fury.getConfig().serializeEnumByName()) {
+        metaStringResolver.readMetaStringBytes(buffer);
+        return NonexistentEnum.UNKNOWN;
+      }
+
       int ordinal = buffer.readVarUint32Small7();
       if (ordinal >= enumConstants.length) {
         ordinal = enumConstants.length - 1;

@@ -48,9 +48,21 @@ public class FuryPooledObjectFactory {
    */
   final Cache<ClassLoader, ClassLoaderFuryPooled> classLoaderFuryPooledCache;
 
+  private volatile ClassLoader classLoader = null;
+
   /** ThreadLocal: ClassLoader. */
   private final ThreadLocal<ClassLoader> classLoaderLocal =
-      ThreadLocal.withInitial(() -> Thread.currentThread().getContextClassLoader());
+      ThreadLocal.withInitial(
+          () -> {
+            if (classLoader != null) {
+              return classLoader;
+            }
+            ClassLoader loader = Thread.currentThread().getContextClassLoader();
+            if (loader == null) {
+              loader = Fury.class.getClassLoader();
+            }
+            return loader;
+          });
 
   /**
    * Dynamic capacity expansion and contraction The user sets the minimum number of object pools.
@@ -84,6 +96,7 @@ public class FuryPooledObjectFactory {
   public ClassLoaderFuryPooled getPooledCache() {
     try {
       ClassLoader classLoader = classLoaderLocal.get();
+      assert classLoader != null;
       ClassLoaderFuryPooled classLoaderFuryPooled =
           classLoaderFuryPooledCache.getIfPresent(classLoader);
       if (classLoaderFuryPooled == null) {
@@ -103,6 +116,7 @@ public class FuryPooledObjectFactory {
       // may be used to clear some classloader
       classLoader = Fury.class.getClassLoader();
     }
+    this.classLoader = classLoader;
     classLoaderLocal.set(classLoader);
     getOrAddCache(classLoader);
   }

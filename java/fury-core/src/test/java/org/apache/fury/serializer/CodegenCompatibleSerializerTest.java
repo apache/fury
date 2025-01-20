@@ -26,10 +26,12 @@ import com.google.common.collect.Sets;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.fury.Fury;
 import org.apache.fury.FuryTestBase;
 import org.apache.fury.config.CompatibleMode;
+import org.apache.fury.config.FuryBuilder;
 import org.apache.fury.config.Language;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.serializer.collection.UnmodifiableSerializersTest;
@@ -48,21 +50,25 @@ public class CodegenCompatibleSerializerTest extends FuryTestBase {
   public static Object[][] config() {
     return Sets.cartesianProduct(
             ImmutableSet.of(true, false), // referenceTracking
+            ImmutableSet.of(true, false), // scopedMetaShare
             ImmutableSet.of(true, false)) // enable codegen
         .stream()
         .map(List::toArray)
         .toArray(Object[][]::new);
   }
 
+  private FuryBuilder furyBuilder() {
+    return Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false);
+  }
+
   @Test(dataProvider = "config")
-  public void testWrite(boolean referenceTracking, boolean enableCodegen) {
+  public void testWrite(boolean referenceTracking, boolean scopedMetaShare, boolean enableCodegen) {
     Fury fury =
-        Fury.builder()
-            .withLanguage(Language.JAVA)
+        furyBuilder()
             .withRefTracking(referenceTracking)
             .withCodegen(enableCodegen)
+            .withScopedMetaShare(scopedMetaShare)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .requireClassRegistration(false)
             .build();
     serDeCheck(fury, Foo.create());
     serDeCheck(fury, BeanB.createBeanB(2));
@@ -70,16 +76,32 @@ public class CodegenCompatibleSerializerTest extends FuryTestBase {
   }
 
   @Test(dataProvider = "config")
-  public void testWriteCompatibleBasic(boolean referenceTracking, boolean enableCodegen)
-      throws Exception {
+  public void testCopy(boolean referenceTracking, boolean scopedMetaShare, boolean enableCodegen) {
     Fury fury =
-        Fury.builder()
-            .withLanguage(Language.JAVA)
-            .withRefTracking(referenceTracking)
+        furyBuilder()
+            .withRefCopy(referenceTracking)
             .withCodegen(enableCodegen)
+            .withScopedMetaShare(scopedMetaShare)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .requireClassRegistration(false)
             .build();
+    copyCheck(fury, Foo.create());
+    copyCheck(fury, BeanB.createBeanB(2));
+    copyCheck(fury, BeanA.createBeanA(2));
+  }
+
+  @Test(dataProvider = "config")
+  public void testWriteCompatibleBasic(
+      boolean referenceTracking, boolean scopedMetaShare, boolean enableCodegen) throws Exception {
+    Supplier<FuryBuilder> builder =
+        () ->
+            Fury.builder()
+                .withLanguage(Language.JAVA)
+                .withRefTracking(referenceTracking)
+                .withCodegen(enableCodegen)
+                .withCompatibleMode(CompatibleMode.COMPATIBLE)
+                .withScopedMetaShare(scopedMetaShare)
+                .requireClassRegistration(false);
+    Fury fury = builder.get().build();
     Object foo = Foo.create();
     for (Class<?> fooClass :
         new Class<?>[] {
@@ -87,15 +109,7 @@ public class CodegenCompatibleSerializerTest extends FuryTestBase {
         }) {
       Object newFoo = fooClass.newInstance();
       ReflectionUtils.unsafeCopy(foo, newFoo);
-      Fury newFury =
-          Fury.builder()
-              .withLanguage(Language.JAVA)
-              .withRefTracking(referenceTracking)
-              .withCodegen(enableCodegen)
-              .withCompatibleMode(CompatibleMode.COMPATIBLE)
-              .requireClassRegistration(false)
-              .withClassLoader(fooClass.getClassLoader())
-              .build();
+      Fury newFury = builder.get().withClassLoader(fooClass.getClassLoader()).build();
 
       {
         byte[] foo1Bytes = newFury.serialize(newFoo);
@@ -113,7 +127,7 @@ public class CodegenCompatibleSerializerTest extends FuryTestBase {
         Object o2 = fury.deserialize(newFury.serialize(o1));
         List<String> fields =
             Arrays.stream(fooClass.getDeclaredFields())
-                .map(f -> f.getDeclaringClass().getSimpleName() + f.getType() + f.getName())
+                .map(f -> f.getDeclaringClass().getSimpleName() + f.getName())
                 .collect(Collectors.toList());
         Assert.assertTrue(ReflectionUtils.objectFieldsEquals(new HashSet<>(fields), o2, foo));
       }
@@ -125,17 +139,52 @@ public class CodegenCompatibleSerializerTest extends FuryTestBase {
   }
 
   @Test(dataProvider = "config")
-  public void testWriteCompatibleCollectionBasic(boolean referenceTracking, boolean enableCodegen)
-      throws Exception {
+  public void testWriteCompatibleBasicCopy(
+      boolean referenceTracking, boolean scopedMetaShare, boolean enableCodegen) throws Exception {
+    Supplier<FuryBuilder> builder =
+        () ->
+            Fury.builder()
+                .withLanguage(Language.JAVA)
+                .withRefCopy(referenceTracking)
+                .withCodegen(enableCodegen)
+                .withCompatibleMode(CompatibleMode.COMPATIBLE)
+                .withScopedMetaShare(scopedMetaShare)
+                .requireClassRegistration(false);
+    Fury fury = builder.get().build();
+    Object foo = Foo.create();
+    for (Class<?> fooClass :
+        new Class<?>[] {
+          Foo.createCompatibleClass1(), Foo.createCompatibleClass2(), Foo.createCompatibleClass3(),
+        }) {
+      Object newFoo = fooClass.newInstance();
+      ReflectionUtils.unsafeCopy(foo, newFoo);
+      Fury newFury = builder.get().withClassLoader(fooClass.getClassLoader()).build();
+      {
+        Object copy = fury.copy(newFoo);
+        Assert.assertEquals(copy.getClass().getName(), Foo.class.getName());
+        Assert.assertTrue(ReflectionUtils.objectCommonFieldsEquals(copy, newFoo));
+      }
+      {
+        Object o3 = newFury.copy(foo);
+        Assert.assertTrue(ReflectionUtils.objectFieldsEquals(o3, foo));
+      }
+    }
+  }
+
+  @Test(dataProvider = "config")
+  public void testWriteCompatibleCollectionBasic(
+      boolean referenceTracking, boolean scopedMetaShare, boolean enableCodegen) throws Exception {
     BeanA beanA = BeanA.createBeanA(2);
-    Fury fury =
-        Fury.builder()
-            .withLanguage(Language.JAVA)
-            .withRefTracking(referenceTracking)
-            .withCodegen(enableCodegen)
-            .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .requireClassRegistration(false)
-            .build();
+    Supplier<FuryBuilder> builder =
+        () ->
+            Fury.builder()
+                .withLanguage(Language.JAVA)
+                .withRefTracking(referenceTracking)
+                .withCodegen(enableCodegen)
+                .withCompatibleMode(CompatibleMode.COMPATIBLE)
+                .withScopedMetaShare(scopedMetaShare)
+                .requireClassRegistration(false);
+    Fury fury = builder.get().build();
     String pkg = BeanA.class.getPackage().getName();
     String code =
         ""
@@ -154,15 +203,7 @@ public class CodegenCompatibleSerializerTest extends FuryTestBase {
             BeanA.class,
             code,
             CodegenCompatibleSerializerTest.class + "testWriteCompatibleCollectionBasic_1");
-    Fury fury1 =
-        Fury.builder()
-            .withLanguage(Language.JAVA)
-            .withRefTracking(referenceTracking)
-            .withCodegen(enableCodegen)
-            .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .requireClassRegistration(false)
-            .withClassLoader(cls1.getClassLoader())
-            .build();
+    Fury fury1 = builder.get().withClassLoader(cls1.getClassLoader()).build();
     code =
         ""
             + "package "
@@ -181,15 +222,7 @@ public class CodegenCompatibleSerializerTest extends FuryTestBase {
             CodegenCompatibleSerializerTest.class + "testWriteCompatibleCollectionBasic_2");
     Object newBeanA = cls2.newInstance();
     ReflectionUtils.unsafeCopy(beanA, newBeanA);
-    Fury fury2 =
-        Fury.builder()
-            .withLanguage(Language.JAVA)
-            .withRefTracking(referenceTracking)
-            .withCodegen(enableCodegen)
-            .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .requireClassRegistration(false)
-            .withClassLoader(cls2.getClassLoader())
-            .build();
+    Fury fury2 = builder.get().withClassLoader(cls2.getClassLoader()).build();
     byte[] newBeanABytes = fury2.serialize(newBeanA);
     Object deserialized = fury1.deserialize(newBeanABytes);
     Assert.assertTrue(ReflectionUtils.objectCommonFieldsEquals(deserialized, newBeanA));
@@ -205,30 +238,24 @@ public class CodegenCompatibleSerializerTest extends FuryTestBase {
   }
 
   @Test(dataProvider = "config")
-  public void testWriteCompatibleContainer(boolean referenceTracking, boolean enableCodegen)
-      throws Exception {
-    Fury fury =
-        Fury.builder()
-            .withLanguage(Language.JAVA)
-            .withRefTracking(referenceTracking)
-            .withCodegen(enableCodegen)
-            .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .requireClassRegistration(false)
-            .build();
+  public void testWriteCompatibleContainer(
+      boolean referenceTracking, boolean scopedMetaShare, boolean enableCodegen) throws Exception {
+    Supplier<FuryBuilder> builder =
+        () ->
+            Fury.builder()
+                .withLanguage(Language.JAVA)
+                .withRefTracking(referenceTracking)
+                .withCodegen(enableCodegen)
+                .withCompatibleMode(CompatibleMode.COMPATIBLE)
+                .withScopedMetaShare(scopedMetaShare)
+                .requireClassRegistration(false);
+    Fury fury = builder.get().build();
     BeanA beanA = BeanA.createBeanA(2);
     serDe(fury, beanA);
     Class<?> cls = ClassUtils.createCompatibleClass1();
     Object newBeanA = cls.newInstance();
     ReflectionUtils.unsafeCopy(beanA, newBeanA);
-    Fury newFury =
-        Fury.builder()
-            .withLanguage(Language.JAVA)
-            .withRefTracking(referenceTracking)
-            .withCodegen(enableCodegen)
-            .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .requireClassRegistration(false)
-            .withClassLoader(cls.getClassLoader())
-            .build();
+    Fury newFury = builder.get().withClassLoader(cls.getClassLoader()).build();
     byte[] newBeanABytes = newFury.serialize(newBeanA);
     BeanA deserialized = (BeanA) fury.deserialize(newBeanABytes);
     Assert.assertTrue(ReflectionUtils.objectCommonFieldsEquals(deserialized, newBeanA));
@@ -240,21 +267,22 @@ public class CodegenCompatibleSerializerTest extends FuryTestBase {
     byte[] objBytes = fury.serialize(beanA);
     Object obj2 = newFury.deserialize(objBytes);
     Assert.assertTrue(ReflectionUtils.objectCommonFieldsEquals(obj2, newBeanA));
-
     Assert.assertEquals(fury.deserialize(newFury.serialize(beanA)), beanA);
   }
 
   @Test(dataProvider = "config")
-  public void testWriteCompatibleCollection(boolean referenceTracking, boolean enableCodegen)
-      throws Exception {
-    Fury fury =
-        Fury.builder()
-            .withLanguage(Language.JAVA)
-            .withRefTracking(referenceTracking)
-            .withCodegen(enableCodegen)
-            .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .requireClassRegistration(false)
-            .build();
+  public void testWriteCompatibleCollection(
+      boolean referenceTracking, boolean scopedMetaShare, boolean enableCodegen) throws Exception {
+    Supplier<FuryBuilder> builder =
+        () ->
+            Fury.builder()
+                .withLanguage(Language.JAVA)
+                .withRefTracking(referenceTracking)
+                .withCodegen(enableCodegen)
+                .withCompatibleMode(CompatibleMode.COMPATIBLE)
+                .withScopedMetaShare(scopedMetaShare)
+                .requireClassRegistration(false);
+    Fury fury = builder.get().build();
     CollectionFields collectionFields = UnmodifiableSerializersTest.createCollectionFields();
     {
       Object o = serDe(fury, collectionFields);
@@ -267,15 +295,7 @@ public class CodegenCompatibleSerializerTest extends FuryTestBase {
     Class<?> cls2 = ClassUtils.createCompatibleClass2();
     Object newObj = cls2.newInstance();
     ReflectionUtils.unsafeCopy(collectionFields, newObj);
-    Fury fury2 =
-        Fury.builder()
-            .withLanguage(Language.JAVA)
-            .withRefTracking(referenceTracking)
-            .withCodegen(enableCodegen)
-            .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .requireClassRegistration(false)
-            .withClassLoader(cls2.getClassLoader())
-            .build();
+    Fury fury2 = builder.get().withClassLoader(cls2.getClassLoader()).build();
     byte[] bytes1 = fury2.serialize(newObj);
     Object deserialized = fury.deserialize(bytes1);
     Assert.assertTrue(
@@ -304,16 +324,18 @@ public class CodegenCompatibleSerializerTest extends FuryTestBase {
   }
 
   @Test(dataProvider = "config")
-  public void testWriteCompatibleMap(boolean referenceTracking, boolean enableCodegen)
-      throws Exception {
-    Fury fury =
-        Fury.builder()
-            .withLanguage(Language.JAVA)
-            .withRefTracking(referenceTracking)
-            .withCodegen(enableCodegen)
-            .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .requireClassRegistration(false)
-            .build();
+  public void testWriteCompatibleMap(
+      boolean referenceTracking, boolean scopedMetaShare, boolean enableCodegen) throws Exception {
+    Supplier<FuryBuilder> builder =
+        () ->
+            Fury.builder()
+                .withLanguage(Language.JAVA)
+                .withRefTracking(referenceTracking)
+                .withCodegen(enableCodegen)
+                .withCompatibleMode(CompatibleMode.COMPATIBLE)
+                .withScopedMetaShare(scopedMetaShare)
+                .requireClassRegistration(false);
+    Fury fury = builder.get().build();
     MapFields mapFields = UnmodifiableSerializersTest.createMapFields();
     {
       Object o = serDe(fury, mapFields);
@@ -324,14 +346,7 @@ public class CodegenCompatibleSerializerTest extends FuryTestBase {
     Class<?> cls = ClassUtils.createCompatibleClass3();
     Object newObj = cls.newInstance();
     ReflectionUtils.unsafeCopy(mapFields, newObj);
-    Fury fury2 =
-        Fury.builder()
-            .withLanguage(Language.JAVA)
-            .withRefTracking(referenceTracking)
-            .withCodegen(enableCodegen)
-            .withCompatibleMode(CompatibleMode.COMPATIBLE)
-            .requireClassRegistration(false)
-            .build();
+    Fury fury2 = builder.get().withClassLoader(cls.getClassLoader()).build();
     byte[] bytes1 = fury2.serialize(newObj);
     Object deserialized = fury.deserialize(bytes1);
     Assert.assertTrue(

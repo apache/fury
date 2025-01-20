@@ -64,6 +64,10 @@ abstract class AbstractScalaMapSerializer[K, V, T](fury: Fury, cls: Class[T])
     new MapBuilder[K, V, T](builder)
   }
 
+  override def onMapCopy(map: util.Map[_, _]): T = {
+    map.asInstanceOf[MapBuilder[K, V, T]].builder.result()
+  }
+
   override def onMapRead(map: util.Map[_, _]): T = {
     map.asInstanceOf[MapBuilder[K, V, T]].builder.result()
   }

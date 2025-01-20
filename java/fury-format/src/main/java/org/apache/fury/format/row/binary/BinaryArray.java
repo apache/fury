@@ -63,6 +63,7 @@ public class BinaryArray extends UnsafeTrait implements ArrayData {
     } else {
       this.elementSize = width;
     }
+    initializeExtData(1); // Only require at most one slot to cache the schema for array type.
   }
 
   public void pointTo(MemoryBuffer buffer, int offset, int sizeInBytes) {
@@ -135,7 +136,7 @@ public class BinaryArray extends UnsafeTrait implements ArrayData {
 
   @Override
   public BinaryRow getStruct(int ordinal) {
-    return getStruct(ordinal, field.getChildren().get(0));
+    return getStruct(ordinal, field.getChildren().get(0), 0);
   }
 
   @Override

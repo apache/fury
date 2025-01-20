@@ -20,10 +20,12 @@
 package org.apache.fury.resolver;
 
 import static org.apache.fury.meta.Encoders.GENERIC_ENCODER;
-import static org.apache.fury.meta.Encoders.PACKAGE_ENCODER;
+import static org.apache.fury.meta.Encoders.PACKAGE_DECODER;
+import static org.apache.fury.meta.Encoders.TYPE_NAME_DECODER;
 
 import org.apache.fury.collection.Tuple2;
 import org.apache.fury.config.Language;
+import org.apache.fury.meta.ClassDef;
 import org.apache.fury.meta.Encoders;
 import org.apache.fury.meta.MetaString.Encoding;
 import org.apache.fury.reflect.ReflectionUtils;
@@ -36,17 +38,18 @@ import org.apache.fury.util.function.Functions;
  * serialization.
  */
 public class ClassInfo {
-
   final Class<?> cls;
   final MetaStringBytes fullClassNameBytes;
   final MetaStringBytes packageNameBytes;
   final MetaStringBytes classNameBytes;
   final boolean isDynamicGeneratedClass;
-  final MetaStringBytes typeTagBytes;
+  int xtypeId;
   Serializer<?> serializer;
   // use primitive to avoid boxing
   // class id must be less than Integer.MAX_VALUE/2 since we use bit 0 as class id flag.
   short classId;
+  ClassDef classDef;
+  boolean needToWriteClassDef;
 
   ClassInfo(
       Class<?> cls,
@@ -54,15 +57,15 @@ public class ClassInfo {
       MetaStringBytes packageNameBytes,
       MetaStringBytes classNameBytes,
       boolean isDynamicGeneratedClass,
-      MetaStringBytes typeTagBytes,
       Serializer<?> serializer,
-      short classId) {
+      short classId,
+      short xtypeId) {
     this.cls = cls;
     this.fullClassNameBytes = fullClassNameBytes;
     this.packageNameBytes = packageNameBytes;
     this.classNameBytes = classNameBytes;
     this.isDynamicGeneratedClass = isDynamicGeneratedClass;
-    this.typeTagBytes = typeTagBytes;
+    this.xtypeId = xtypeId;
     this.serializer = serializer;
     this.classId = classId;
     if (cls != null && classId == ClassResolver.NO_CLASS_ID) {
@@ -73,11 +76,12 @@ public class ClassInfo {
   ClassInfo(
       ClassResolver classResolver,
       Class<?> cls,
-      String tag,
       Serializer<?> serializer,
-      short classId) {
+      short classId,
+      short xtypeId) {
     this.cls = cls;
     this.serializer = serializer;
+    needToWriteClassDef = serializer != null && classResolver.needToWriteClassDef(serializer);
     MetaStringResolver metaStringResolver = classResolver.getMetaStringResolver();
     if (cls != null && classResolver.getFury().getLanguage() != Language.JAVA) {
       this.fullClassNameBytes =
@@ -90,9 +94,7 @@ public class ClassInfo {
     // means only classes are serialized, not the instance. If we
     // serialize such class only, we need to write classname bytes.
     if (cls != null
-        && ((classId == ClassResolver.NO_CLASS_ID
-                && !classResolver.getFury().getConfig().isMetaShareEnabled())
-            || classId == ClassResolver.REPLACE_STUB_ID)) {
+        && (classId == ClassResolver.NO_CLASS_ID || classId == ClassResolver.REPLACE_STUB_ID)) {
       // REPLACE_STUB_ID for write replace class in `ClassSerializer`.
       Tuple2<String, String> tuple2 = Encoders.encodePkgAndClass(cls);
       this.packageNameBytes =
@@ -103,17 +105,11 @@ public class ClassInfo {
       this.packageNameBytes = null;
       this.classNameBytes = null;
     }
-    if (tag != null) {
-      this.typeTagBytes =
-          metaStringResolver.getOrCreateMetaStringBytes(
-              PACKAGE_ENCODER.encode(tag, Encoding.UTF_8));
-    } else {
-      this.typeTagBytes = null;
-    }
+    this.xtypeId = xtypeId;
     this.classId = classId;
     if (cls != null) {
       boolean isLambda = Functions.isLambda(cls);
-      boolean isProxy = ReflectionUtils.isJdkProxy(cls);
+      boolean isProxy = classId != ClassResolver.REPLACE_STUB_ID && ReflectionUtils.isJdkProxy(cls);
       this.isDynamicGeneratedClass = isLambda || isProxy;
       if (isLambda) {
         this.classId = ClassResolver.LAMBDA_STUB_ID;
@@ -134,17 +130,26 @@ public class ClassInfo {
     return classId;
   }
 
-  public MetaStringBytes getPackageNameBytes() {
-    return packageNameBytes;
-  }
-
-  public MetaStringBytes getClassNameBytes() {
-    return classNameBytes;
+  public int getXtypeId() {
+    return xtypeId;
   }
 
   @SuppressWarnings("unchecked")
   public <T> Serializer<T> getSerializer() {
     return (Serializer<T>) serializer;
+  }
+
+  void setSerializer(ClassResolver resolver, Serializer<?> serializer) {
+    this.serializer = serializer;
+    needToWriteClassDef = serializer != null && resolver.needToWriteClassDef(serializer);
+  }
+
+  public String decodeNamespace() {
+    return packageNameBytes.decode(PACKAGE_DECODER);
+  }
+
+  public String decodeTypeName() {
+    return classNameBytes.decode(TYPE_NAME_DECODER);
   }
 
   @Override

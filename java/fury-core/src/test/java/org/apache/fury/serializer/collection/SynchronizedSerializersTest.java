@@ -98,6 +98,19 @@ public class SynchronizedSerializersTest extends FuryTestBase {
 
   @Test(dataProvider = "javaFury")
   public void testCollectionFieldSerializers(Fury fury) {
+    CollectionFields obj = createCollectionFields();
+    Object newObj = serDe(fury, obj);
+    assertEquals(((CollectionFields) (newObj)).toCanEqual(), obj.toCanEqual());
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testCollectionFieldSerializersCopy(Fury fury) {
+    CollectionFields obj = createCollectionFields();
+    Object newObj = fury.copy(obj);
+    assertEquals(((CollectionFields) (newObj)).toCanEqual(), obj.toCanEqual());
+  }
+
+  public static CollectionFields createCollectionFields() {
     CollectionFields obj = new CollectionFields();
     Collection<Integer> collection = Collections.synchronizedCollection(Arrays.asList(1, 2));
     obj.collection = collection;
@@ -126,7 +139,6 @@ public class SynchronizedSerializersTest extends FuryTestBase {
         Collections.synchronizedSortedMap(new TreeMap<>(ImmutableMap.of(1, 2)));
     obj.sortedMap = sortedMap;
     obj.sortedMap2 = sortedMap;
-    Object newObj = serDe(fury, obj);
-    assertEquals(((CollectionFields) (newObj)).toCanEqual(), obj.toCanEqual());
+    return obj;
   }
 }

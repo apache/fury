@@ -20,16 +20,19 @@
 package org.apache.fury.builder;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import java.util.List;
+import lombok.Data;
 import org.apache.fury.Fury;
 import org.apache.fury.FuryTestBase;
 import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.config.Language;
 import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.resolver.MetaContext;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.test.bean.BeanA;
@@ -45,6 +48,7 @@ public class JITContextTest extends FuryTestBase {
   public static Object[][] config1() {
     return Sets.cartesianProduct(
             ImmutableSet.of(true, false), // referenceTracking
+            ImmutableSet.of(true, false), // scoped meta share
             ImmutableSet.of(CompatibleMode.COMPATIBLE, CompatibleMode.SCHEMA_CONSISTENT))
         .stream()
         .map(List::toArray)
@@ -52,13 +56,15 @@ public class JITContextTest extends FuryTestBase {
   }
 
   @Test(dataProvider = "config1", timeOut = 60_000)
-  public void testAsyncCompilation(boolean referenceTracking, CompatibleMode compatibleMode)
+  public void testAsyncCompilation(
+      boolean referenceTracking, boolean scopedMetaShare, CompatibleMode compatibleMode)
       throws InterruptedException {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(referenceTracking)
             .withCompatibleMode(compatibleMode)
+            .withScopedMetaShare(scopedMetaShare)
             .requireClassRegistration(false)
             .withAsyncCompilation(true)
             .build();
@@ -93,21 +99,25 @@ public class JITContextTest extends FuryTestBase {
 
   @Test(dataProvider = "config1", timeOut = 60_000)
   public void testAsyncCompilationMetaShared(
-      boolean referenceTracking, CompatibleMode compatibleMode) throws InterruptedException {
+      boolean referenceTracking, boolean scopedMetaShare, CompatibleMode compatibleMode)
+      throws InterruptedException {
     Fury fury =
         Fury.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(referenceTracking)
             .withCompatibleMode(compatibleMode)
+            .withScopedMetaShare(scopedMetaShare)
             .requireClassRegistration(false)
             .withAsyncCompilation(true)
             .build();
     BeanB beanB = BeanB.createBeanB(2);
     BeanA beanA = BeanA.createBeanA(2);
     MetaContext context = new MetaContext();
-    fury.getSerializationContext().setMetaContext(context);
+    if (!scopedMetaShare) {
+      fury.getSerializationContext().setMetaContext(context);
+    }
     byte[] bytes1 = fury.serialize(beanB);
-    fury.getSerializationContext().setMetaContext(context);
+    if (!scopedMetaShare) fury.getSerializationContext().setMetaContext(context);
     byte[] bytes2 = fury.serialize(beanA);
     while (!(getSerializer(fury, BeanB.class) instanceof Generated)) {
       LOG.info("Waiting {} serializer to be jit.", BeanB.class);
@@ -119,9 +129,72 @@ public class JITContextTest extends FuryTestBase {
     }
     Assert.assertTrue(getSerializer(fury, BeanB.class) instanceof Generated);
     Assert.assertTrue(getSerializer(fury, BeanA.class) instanceof Generated);
-    fury.getSerializationContext().setMetaContext(context);
+    if (!scopedMetaShare) fury.getSerializationContext().setMetaContext(context);
     assertEquals(fury.deserialize(bytes1), beanB);
-    fury.getSerializationContext().setMetaContext(context);
+    if (!scopedMetaShare) fury.getSerializationContext().setMetaContext(context);
     assertEquals(fury.deserialize(bytes2), beanA);
+  }
+
+  @Test(timeOut = 60000)
+  public void testAsyncCompilationSwitch() throws InterruptedException {
+    final Fury fury =
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(false)
+            .withRefTracking(true)
+            .withAsyncCompilation(true)
+            .build();
+
+    TestAccessLevel o = new TestAccessLevel(new PkgAccessLevel(1), new PrivateAccessLevel(2));
+    serDeCheck(fury, o);
+    Class<?>[] classes = {PkgAccessLevel.class, PrivateAccessLevel.class};
+    for (Class<?> cls : classes) {
+      while (!(fury.getClassResolver().getSerializer(cls) instanceof Generated)) {
+        Thread.sleep(1000);
+        LOG.warn("Wait async compilation finish for {}", cls);
+      }
+    }
+    while (fury.getJITContext().hasJITResult(PkgAccessLevel.class)) {
+      Thread.sleep(10); // allow serializer be switched to generated version
+    }
+    while (fury.getJITContext().hasJITResult(PrivateAccessLevel.class)) {
+      Thread.sleep(10); // allow serializer be switched to generated version
+    }
+    Serializer<TestAccessLevel> serializer =
+        fury.getClassResolver().getSerializer(TestAccessLevel.class);
+    assertTrue(ReflectionUtils.getObjectFieldValue(serializer, "serializer") instanceof Generated);
+    assertTrue(ReflectionUtils.getObjectFieldValue(serializer, "serializer1") instanceof Generated);
+    serDeCheck(fury, o);
+  }
+
+  @Data
+  public static final class TestAccessLevel {
+    PkgAccessLevel f1;
+    PrivateAccessLevel f2;
+
+    public TestAccessLevel(PkgAccessLevel f1, PrivateAccessLevel f2) {
+      this.f1 = f1;
+      this.f2 = f2;
+    }
+  }
+
+  // test pkg level class
+  @Data
+  private static final class PkgAccessLevel {
+    private final int f1;
+
+    public PkgAccessLevel(int f1) {
+      this.f1 = f1;
+    }
+  }
+
+  // test private class, class should be final for switch
+  @Data
+  private static final class PrivateAccessLevel {
+    private final int f1;
+
+    public PrivateAccessLevel(int f1) {
+      this.f1 = f1;
+    }
   }
 }

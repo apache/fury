@@ -15,18 +15,18 @@
 # specific language governing permissions and limitations
 # under the License.
 
+
 [package]
 name = "fury"
 version.workspace = true
-edition.workspace = true
 rust-version.workspace = true
+license.workspace = true
+readme.workspace = true
+repository.workspace = true
+edition.workspace = true
+keywords.workspace = true
+categories.workspace = true
 
 [dependencies]
-proc-macro2 = { default-features = false, version = "1.0" }
-syn = { default-features = false, version = "2.0", features = ["full", "fold"] }
-quote = { default-features = false, version = "1.0" }
-fury-derive = { path = "../fury-derive" }
-lazy_static = { version = "1.4" }
-byteorder = { version = "1.4" }
-chrono = "0.4"
-thiserror = { default-features = false, version = "1.0" }
+fury-core = { path = "../fury-core"}
+fury-derive = { path = "../fury-derive"}

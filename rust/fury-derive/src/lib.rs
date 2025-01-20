@@ -15,35 +15,18 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use fury_meta::{derive_deserilize, derive_fury_meta, derive_serialize};
 use fury_row::derive_row;
 use proc_macro::TokenStream;
 use syn::{parse_macro_input, DeriveInput};
 
-mod fury_meta;
 mod fury_row;
+mod object;
+mod util;
 
-#[proc_macro_derive(Fury, attributes(tag))]
-pub fn proc_macro_derive_fury_meta(input: proc_macro::TokenStream) -> TokenStream {
+#[proc_macro_derive(Fury)]
+pub fn proc_macro_derive_fury_object(input: proc_macro::TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
-    let tag = input
-        .attrs
-        .iter()
-        .find(|attr| attr.path().is_ident("tag"))
-        .expect("should have tag");
-    let expr: syn::ExprLit = tag.parse_args().expect("should tag contain string value");
-    let tag = match expr.lit {
-        syn::Lit::Str(s) => s.value(),
-        _ => {
-            panic!("tag should be string")
-        }
-    };
-    let mut token_stream = derive_fury_meta(&input, tag);
-    // append serialize impl
-    token_stream.extend(derive_serialize(&input));
-    // append deserialize impl
-    token_stream.extend(derive_deserilize(&input));
-    token_stream
+    object::derive_serializer(&input)
 }
 
 #[proc_macro_derive(FuryRow)]

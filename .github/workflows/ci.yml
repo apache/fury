@@ -21,22 +21,22 @@ on:
   push:
     branches:
       - main
-      - 'releases/**'
-      - 'deploy/**'
-      - 'test*'
+      - "releases/**"
+      - "deploy/**"
+      - "test*"
     tags:
       - v*
   pull_request:
     paths-ignore:
-      - '**/*.md'
-      - 'docs/**'
-      - 'LICENSE'
-      - '.vscode/**'
-      - '.gitignore'
-      - 'licenses/**'
-      - 'DISCLAIMER'
-      - 'NOTICE'
-    types: ['opened', 'reopened', 'synchronize']
+      - "**/*.md"
+      - "docs/**"
+      - "LICENSE"
+      - ".vscode/**"
+      - ".gitignore"
+      - "licenses/**"
+      - "DISCLAIMER"
+      - "NOTICE"
+    types: ["opened", "reopened", "synchronize"]
 
 jobs:
   java:
@@ -53,7 +53,11 @@ jobs:
         uses: actions/setup-java@v4
         with:
           java-version: ${{ matrix.java-version }}
-          distribution: 'temurin'
+          distribution: "temurin"
+      - name: Set up Python3.8
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.8
       - name: Install bazel
         run: ./ci/run_ci.sh install_bazel
       - name: Install python
@@ -77,7 +81,11 @@ jobs:
         uses: actions/setup-java@v4
         with:
           java-version: ${{ matrix.java-version }}
-          distribution: 'adopt-openj9'
+          distribution: "adopt-openj9"
+      - name: Set up Python3.8
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.8
       - name: Install bazel
         run: ./ci/run_ci.sh install_bazel
       - name: Install python
@@ -89,14 +97,21 @@ jobs:
   graalvm:
     name: GraalVM CI
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java-version: ["17", "21", "22"]
     steps:
       - uses: actions/checkout@v4
       - uses: graalvm/setup-graalvm@v1
         with:
-          java-version: '21'
-          distribution: 'graalvm'
+          java-version: ${{ matrix.java-version }}
+          distribution: "graalvm"
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          native-image-job-reports: 'true'
+          native-image-job-reports: "true"
+      - name: Set up Python3.8
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.8
       - name: Build native image and run
         run: ./ci/run_ci.sh graalvm_test
 
@@ -108,12 +123,20 @@ jobs:
       - name: Set up JDK8
         uses: actions/setup-java@v4
         with:
-          java-version: 8
-          distribution: 'temurin'
+          java-version: 11
+          distribution: "temurin"
       - name: Install fury java
         run: cd java && mvn -T10 --no-transfer-progress clean install -DskipTests && cd -
       - name: Test
         run: |
+          sudo apt-get update
+          sudo apt-get install apt-transport-https curl gnupg -yqq
+          echo "deb https://repo.scala-sbt.org/scalasbt/debian all main" | sudo tee /etc/apt/sources.list.d/sbt.list
+          echo "deb https://repo.scala-sbt.org/scalasbt/debian /" | sudo tee /etc/apt/sources.list.d/sbt_old.list
+          curl -sL "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x2EE0EA64E40A89B84B2DF73499E82A75642AC823" | sudo -H gpg --no-default-keyring --keyring gnupg-ring:/etc/apt/trusted.gpg.d/scalasbt-release.gpg --import
+          sudo chmod 644 /etc/apt/trusted.gpg.d/scalasbt-release.gpg
+          sudo apt-get update
+          sudo apt-get install sbt
           # Avoid sbt download jackson-databind error
           rm -rf /home/runner/.m2/repository/com/fasterxml/jackson/
           cd scala && sbt +test && cd -
@@ -127,7 +150,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           java-version: 8
-          distribution: 'temurin'
+          distribution: "temurin"
       - name: Run CI
         run: ./ci/run_ci.sh integration_tests
 
@@ -162,7 +185,7 @@ jobs:
     name: Rust CI
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-12, macos-14] # macos-12: x86, macos-14: arm64
+        os: [ubuntu-latest, macos-13, macos-14] # macos-13: x86, macos-14: arm64
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     steps:
@@ -178,7 +201,7 @@ jobs:
     name: C++ CI
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-12, macos-14] # macos-12: x86, macos-14: arm64
+        os: [ubuntu-latest, macos-13, macos-14, windows-2022] # macos-13: x86, macos-14: arm64
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -192,10 +215,11 @@ jobs:
     name: Python CI
     # Fix python 3.6 install issue, see
     # https://github.com/rwth-i6/returnn/commit/38ecab17d781c4b74db6a174c8097187380b4ddc
-    runs-on: ubuntu-20.04
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: [3.7, 3.12]
+        python-version: [3.8, 3.12]
+        os: [ubuntu-20.04, windows-2022]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
@@ -203,8 +227,15 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install bazel
-        run: ./ci/run_ci.sh install_bazel
+        shell: bash
+        run: |
+             if [ "$RUNNER_OS" == "Windows" ]; then
+                 ./ci/run_ci.sh install_bazel_windows
+             else
+                 ./ci/run_ci.sh install_bazel
+             fi
       - name: Run Python CI
+        shell: bash
         run: ./ci/run_ci.sh python
 
   go:
@@ -212,7 +243,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go-version: [ '1.13', '1.18' ]
+        go-version: ["1.13", "1.18"]
     steps:
       - uses: actions/checkout@v4
       - name: Setup Go ${{ matrix.go-version }}
@@ -221,6 +252,10 @@ jobs:
           go-version: ${{ matrix.go-version }}
       - name: Display Go version
         run: go version
+      - name: Set up Python3.8
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.8
       - name: Install bazel
         run: ./ci/run_ci.sh install_bazel
       - name: Install python
@@ -239,7 +274,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           java-version: 21
-          distribution: 'oracle'
+          distribution: "oracle"
       - name: Check License Header
         uses: korandoru/hawkeye@v3
       - name: Set up Python 3.8

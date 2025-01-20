@@ -38,6 +38,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -46,10 +47,12 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.apache.fury.Fury;
 import org.apache.fury.FuryTestBase;
+import org.apache.fury.collection.LazyMap;
 import org.apache.fury.collection.MapEntry;
 import org.apache.fury.config.Language;
 import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.serializer.collection.CollectionSerializersTest.TestEnum;
+import org.apache.fury.test.bean.Cyclic;
 import org.apache.fury.test.bean.MapFields;
 import org.apache.fury.type.GenericType;
 import org.testng.Assert;
@@ -70,6 +73,25 @@ public class MapSerializersTest extends FuryTestBase {
     serDeCheckSerializer(fury, new LinkedHashMap<>(data), "LinkedHashMap");
   }
 
+  @Test(dataProvider = "furyCopyConfig")
+  public void testBasicMap(Fury fury) {
+    Map<String, Object> data =
+        new HashMap<>(ImmutableMap.of("a", 1, "b", 2, "c", Cyclic.create(true)));
+    copyCheck(fury, data);
+    copyCheck(fury, new LinkedHashMap<>(data));
+    copyCheck(fury, new LazyMap<>(new ArrayList<>(data.entrySet())));
+
+    Map<Object, Object> cycMap = new HashMap<>();
+    cycMap.put(cycMap, cycMap);
+    Map<Object, Object> copy = fury.copy(cycMap);
+    copy.forEach(
+        (k, v) -> {
+          Assert.assertSame(k, copy);
+          Assert.assertSame(v, copy);
+          Assert.assertSame(k, v);
+        });
+  }
+
   @Test(dataProvider = "referenceTrackingConfig")
   public void testBasicMapNested(boolean referenceTrackingConfig) {
     Fury fury =
@@ -82,6 +104,14 @@ public class MapSerializersTest extends FuryTestBase {
     Map<String, Map<String, Integer>> data = ofHashMap("k1", data0, "k2", data0);
     serDeCheckSerializer(fury, data, "HashMap");
     serDeCheckSerializer(fury, new LinkedHashMap<>(data), "LinkedHashMap");
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testBasicMapNested(Fury fury) {
+    Map<String, Integer> data0 = new HashMap<>(ImmutableMap.of("a", 1, "b", 2));
+    Map<String, Map<String, Integer>> data = ofHashMap("k1", data0, "k2", data0);
+    copyCheck(fury, data);
+    copyCheck(fury, new LinkedHashMap<>(data));
   }
 
   @Test(dataProvider = "referenceTrackingConfig")
@@ -117,6 +147,12 @@ public class MapSerializersTest extends FuryTestBase {
     Assert.assertTrue(bytes1.length > bytes2.length);
     fury.getGenerics().popGenericType();
     Assert.assertThrows(RuntimeException.class, () -> fury.deserialize(bytes2));
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testSortedMap(Fury fury) {
+    Map<String, Integer> data = new TreeMap<>(ImmutableMap.of("a", 1, "b", 2));
+    copyCheck(fury, data);
   }
 
   @Data
@@ -156,15 +192,46 @@ public class MapSerializersTest extends FuryTestBase {
     assertEquals(beanForMap, serDe(fury, beanForMap));
   }
 
+  @Test(dataProvider = "furyCopyConfig")
+  public void testTreeMap(Fury fury) {
+    TreeMap<String, String> map =
+        new TreeMap<>(
+            (Comparator<? super String> & Serializable)
+                (s1, s2) -> {
+                  int delta = s1.length() - s2.length();
+                  if (delta == 0) {
+                    return s1.compareTo(s2);
+                  } else {
+                    return delta;
+                  }
+                });
+    map.put("str1", "1");
+    map.put("str2", "1");
+    copyCheck(fury, map);
+    BeanForMap beanForMap = new BeanForMap();
+    copyCheck(fury, beanForMap);
+  }
+
   @Test
   public void testEmptyMap() {
     serDeCheckSerializer(getJavaFury(), Collections.EMPTY_MAP, "EmptyMapSerializer");
     serDeCheckSerializer(getJavaFury(), Collections.emptySortedMap(), "EmptySortedMap");
   }
 
+  @Test(dataProvider = "furyCopyConfig")
+  public void testEmptyMap(Fury fury) {
+    copyCheckWithoutSame(fury, Collections.EMPTY_MAP);
+    copyCheckWithoutSame(fury, Collections.emptySortedMap());
+  }
+
   @Test
   public void testSingleMap() {
     serDeCheckSerializer(getJavaFury(), Collections.singletonMap("k", 1), "SingletonMap");
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testSingleMap(Fury fury) {
+    copyCheck(fury, Collections.singletonMap("k", 1));
   }
 
   @Test
@@ -174,12 +241,30 @@ public class MapSerializersTest extends FuryTestBase {
     serDeCheckSerializer(getJavaFury(), new ConcurrentSkipListMap<>(data), "ConcurrentSkipListMap");
   }
 
+  @Test(dataProvider = "furyCopyConfig")
+  public void testConcurrentMap(Fury fury) {
+    Map<String, Integer> data = new TreeMap<>(ImmutableMap.of("a", 1, "b", 2));
+    copyCheck(fury, new ConcurrentHashMap<>(data));
+    copyCheck(fury, new ConcurrentSkipListMap<>(data));
+  }
+
   @Test
   public void testEnumMap() {
     EnumMap<TestEnum, Object> enumMap = new EnumMap<>(TestEnum.class);
     enumMap.put(TestEnum.A, 1);
     enumMap.put(TestEnum.B, "str");
     serDe(getJavaFury(), enumMap);
+    Assert.assertEquals(
+        getJavaFury().getClassResolver().getSerializerClass(enumMap.getClass()),
+        MapSerializers.EnumMapSerializer.class);
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testEnumMap(Fury fury) {
+    EnumMap<TestEnum, Object> enumMap = new EnumMap<>(TestEnum.class);
+    enumMap.put(TestEnum.A, 1);
+    enumMap.put(TestEnum.B, "str");
+    copyCheck(fury, enumMap);
     Assert.assertEquals(
         getJavaFury().getClassResolver().getSerializerClass(enumMap.getClass()),
         MapSerializers.EnumMapSerializer.class);
@@ -202,6 +287,12 @@ public class MapSerializersTest extends FuryTestBase {
     serDeCheck(fury, map);
   }
 
+  @Test(dataProvider = "furyCopyConfig")
+  public void testNoArgConstructor(Fury fury) {
+    Map<String, Integer> map = newInnerMap();
+    copyCheck(fury, map);
+  }
+
   @Test
   public void testMapNoJIT() {
     Fury fury = Fury.builder().withLanguage(Language.JAVA).withCodegen(false).build();
@@ -216,10 +307,22 @@ public class MapSerializersTest extends FuryTestBase {
     Assert.assertEquals(serDe(fury, obj), obj);
   }
 
+  @Test(dataProvider = "furyCopyConfig")
+  public void testMapFieldSerializersCopy(Fury fury) {
+    MapFields obj = createMapFieldsObject();
+    copyCheck(fury, obj);
+  }
+
   @Test(dataProvider = "javaFuryKVCompatible")
   public void testMapFieldsKVCompatible(Fury fury) {
     MapFields obj = createMapFieldsObject();
     Assert.assertEquals(serDe(fury, obj), obj);
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testMapFieldsKVCompatibleCopy(Fury fury) {
+    MapFields obj = createMapFieldsObject();
+    copyCheck(fury, obj);
   }
 
   public static MapFields createMapFieldsObject() {
@@ -250,7 +353,6 @@ public class MapSerializersTest extends FuryTestBase {
     obj.emptyMap = Collections.emptyMap();
     obj.sortedEmptyMap = Collections.emptySortedMap();
     obj.singletonMap = Collections.singletonMap("k", "v");
-    obj.differentKeyAndValueTypeMap = createDifferentKeyAndValueTypeMap();
     return obj;
   }
 
@@ -309,6 +411,25 @@ public class MapSerializersTest extends FuryTestBase {
     serDeCheck(fury, map2);
   }
 
+  @Test(dataProvider = "furyCopyConfig")
+  public void testDefaultMapSerializer(Fury fury) {
+    TestClass1ForDefaultMap map = new TestClass1ForDefaultMap();
+    map.put("a", 1);
+    map.put("b", 2);
+    Assert.assertSame(
+        fury.getClassResolver().getSerializerClass(TestClass1ForDefaultMap.class),
+        MapSerializers.DefaultJavaMapSerializer.class);
+    copyCheck(fury, map);
+
+    TestClass2ForDefaultMap map2 = new TestClass2ForDefaultMap();
+    map.put("a", 1);
+    map.put("b", 2);
+    Assert.assertSame(
+        fury.getClassResolver().getSerializerClass(TestClass2ForDefaultMap.class),
+        MapSerializers.DefaultJavaMapSerializer.class);
+    copyCheck(fury, map2);
+  }
+
   @Data
   @AllArgsConstructor
   public static class GenericMapBoundTest {
@@ -365,30 +486,123 @@ public class MapSerializersTest extends FuryTestBase {
     }
   }
 
-  @Test(dataProvider = "javaFury")
-  public void testDifferentKeyAndValueType(Fury fury) {
-    Map<Object, Object> map = createDifferentKeyAndValueTypeMap();
-    Assert.assertEquals(serDe(fury, map), map);
+  @Test(dataProvider = "furyCopyConfig")
+  public void testStringKeyMapSerializer(Fury fury) {
+    fury.registerSerializer(StringKeyMap.class, MapSerializers.StringKeyMapSerializer.class);
+    {
+      StringKeyMap<List<String>> map = new StringKeyMap<>();
+      map.put("k1", ofArrayList("a", "b"));
+      copyCheck(fury, map);
+    }
+    {
+      // test nested map
+      StringKeyMap<StringKeyMap<String>> map = new StringKeyMap<>();
+      StringKeyMap<String> map2 = new StringKeyMap<>();
+      map2.put("k-k1", "v1");
+      map2.put("k-k2", "v2");
+      map.put("k1", map2);
+      copyCheck(fury, map);
+    }
   }
 
-  private static Map<Object, Object> createDifferentKeyAndValueTypeMap() {
-    Map<Object, Object> map = new HashMap<>();
-    map.put(null, "1");
-    map.put(2, "1");
-    map.put(4, "1");
-    map.put(6, "1");
-    map.put(7, "1");
-    map.put(10, "1");
-    map.put(12, "null");
-    map.put(19, "null");
-    map.put(11, null);
-    map.put(20, null);
-    map.put(21, 9);
-    map.put(22, 99);
-    map.put(291, 900);
-    map.put("292", 900);
-    map.put("293", 900);
-    map.put("23", 900);
-    return map;
+  // must be final class to test nested map value by private MapSerializer
+  private static final class PrivateMap<K, V> implements Map<K, V> {
+    private Set<Entry<K, V>> set = new HashSet<>();
+
+    @Override
+    public int size() {
+      return set.size();
+    }
+
+    @Override
+    public boolean isEmpty() {
+      return set.isEmpty();
+    }
+
+    @Override
+    public boolean containsKey(Object key) {
+      return set.stream().anyMatch(e -> e.getKey().equals(key));
+    }
+
+    @Override
+    public boolean containsValue(Object value) {
+      return set.stream().anyMatch(e -> e.getValue().equals(value));
+    }
+
+    @Override
+    public V get(Object key) {
+      for (Entry<K, V> kvEntry : set) {
+        if (kvEntry.getKey().equals(key)) {
+          return kvEntry.getValue();
+        }
+      }
+      return null;
+    }
+
+    @Override
+    public V put(K key, V value) {
+      set.add(new MapEntry<>(key, value));
+      return null;
+    }
+
+    @Override
+    public V remove(Object key) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void putAll(Map<? extends K, ? extends V> m) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void clear() {
+      set.clear();
+    }
+
+    @Override
+    public Set<K> keySet() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Collection<V> values() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Set<Entry<K, V>> entrySet() {
+      return set;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      PrivateMap<?, ?> that = (PrivateMap<?, ?>) o;
+      return Objects.equals(set, that.set);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(set);
+    }
+  }
+
+  @Data
+  @AllArgsConstructor
+  public static class LazyMapCollectionFieldStruct {
+    List<PrivateMap<String, Integer>> mapList;
+    PrivateMap<String, Integer> map;
+  }
+
+  @Test
+  public void testNestedValueByPrivateMapSerializer() {
+    Fury fury = builder().withRefTracking(false).build();
+    // test private map serializer
+    fury.registerSerializer(PrivateMap.class, new MapSerializer(fury, PrivateMap.class) {});
+    PrivateMap<String, Integer> map = new PrivateMap<>();
+    map.put("k", 1);
+    serDeCheck(fury, new LazyMapCollectionFieldStruct(ofArrayList(map), map));
   }
 }

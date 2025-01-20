@@ -26,6 +26,7 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,12 +37,12 @@ import org.apache.fury.config.Language;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
 import org.apache.fury.reflect.ReflectionUtils;
+import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.ReplaceResolveSerializer;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.serializer.Serializers;
 import org.apache.fury.serializer.StringSerializer;
-import org.apache.fury.type.Type;
 import org.apache.fury.util.Preconditions;
 
 /**
@@ -57,11 +58,6 @@ public class MapSerializers {
     }
 
     @Override
-    public short getXtypeId() {
-      return Type.MAP.getId();
-    }
-
-    @Override
     public HashMap newMap(MemoryBuffer buffer) {
       int numElements = buffer.readVarUint32Small7();
       setNumElements(numElements);
@@ -69,16 +65,16 @@ public class MapSerializers {
       fury.getRefResolver().reference(hashMap);
       return hashMap;
     }
+
+    @Override
+    public Map newMap(Map map) {
+      return new HashMap(map.size());
+    }
   }
 
   public static final class LinkedHashMapSerializer extends MapSerializer<LinkedHashMap> {
     public LinkedHashMapSerializer(Fury fury) {
       super(fury, LinkedHashMap.class, true);
-    }
-
-    @Override
-    public short getXtypeId() {
-      return Type.MAP.getId();
     }
 
     @Override
@@ -89,16 +85,16 @@ public class MapSerializers {
       fury.getRefResolver().reference(hashMap);
       return hashMap;
     }
+
+    @Override
+    public Map newMap(Map map) {
+      return new LinkedHashMap(map.size());
+    }
   }
 
   public static final class LazyMapSerializer extends MapSerializer<LazyMap> {
     public LazyMapSerializer(Fury fury) {
       super(fury, LazyMap.class, true);
-    }
-
-    @Override
-    public short getXtypeId() {
-      return Type.MAP.getId();
     }
 
     @Override
@@ -108,6 +104,11 @@ public class MapSerializers {
       LazyMap map = new LazyMap(numElements);
       fury.getRefResolver().reference(map);
       return map;
+    }
+
+    @Override
+    public Map newMap(Map map) {
+      return new LazyMap(map.size());
     }
   }
 
@@ -145,21 +146,32 @@ public class MapSerializers {
       fury.getRefResolver().reference(map);
       return map;
     }
+
+    @Override
+    public Map newMap(Map originMap) {
+      Comparator comparator = fury.copyObject(((SortedMap) originMap).comparator());
+      Map map;
+      if (type == TreeMap.class) {
+        map = new TreeMap(comparator);
+      } else {
+        try {
+          map = (Map) constructor.invoke(comparator);
+        } catch (Throwable e) {
+          throw new RuntimeException(e);
+        }
+      }
+      return map;
+    }
   }
 
   public static final class EmptyMapSerializer extends MapSerializer<Map<?, ?>> {
 
     public EmptyMapSerializer(Fury fury, Class<Map<?, ?>> cls) {
-      super(fury, cls, false);
+      super(fury, cls, false, true);
     }
 
     @Override
     public void write(MemoryBuffer buffer, Map<?, ?> value) {}
-
-    @Override
-    public short getXtypeId() {
-      return (short) -Type.MAP.getId();
-    }
 
     @Override
     public void xwrite(MemoryBuffer buffer, Map<?, ?> value) {
@@ -181,7 +193,7 @@ public class MapSerializers {
 
   public static final class EmptySortedMapSerializer extends MapSerializer<SortedMap<?, ?>> {
     public EmptySortedMapSerializer(Fury fury, Class<SortedMap<?, ?>> cls) {
-      super(fury, cls, false);
+      super(fury, cls, false, true);
     }
 
     @Override
@@ -200,15 +212,17 @@ public class MapSerializers {
     }
 
     @Override
+    public Map<?, ?> copy(Map<?, ?> originMap) {
+      Entry<?, ?> entry = originMap.entrySet().iterator().next();
+      return Collections.singletonMap(
+          fury.copyObject(entry.getKey()), fury.copyObject(entry.getValue()));
+    }
+
+    @Override
     public void write(MemoryBuffer buffer, Map<?, ?> value) {
       Map.Entry entry = value.entrySet().iterator().next();
       fury.writeRef(buffer, entry.getKey());
       fury.writeRef(buffer, entry.getValue());
-    }
-
-    @Override
-    public short getXtypeId() {
-      return (short) -Type.MAP.getId();
     }
 
     @Override
@@ -251,8 +265,8 @@ public class MapSerializers {
     }
 
     @Override
-    public short getXtypeId() {
-      return Fury.NOT_SUPPORT_CROSS_LANGUAGE;
+    public Map newMap(Map map) {
+      return new ConcurrentHashMap(map.size());
     }
   }
 
@@ -274,8 +288,9 @@ public class MapSerializers {
     }
 
     @Override
-    public short getXtypeId() {
-      return Fury.NOT_SUPPORT_CROSS_LANGUAGE;
+    public Map newMap(Map originMap) {
+      Comparator comparator = fury.copyObject(((ConcurrentSkipListMap) originMap).comparator());
+      return new ConcurrentSkipListMap(comparator);
     }
   }
 
@@ -311,6 +326,11 @@ public class MapSerializers {
       Class<?> keyType = fury.getClassResolver().readClassInfo(buffer).getCls();
       return new EnumMap(keyType);
     }
+
+    @Override
+    public EnumMap copy(EnumMap originMap) {
+      return new EnumMap(originMap);
+    }
   }
 
   public static class StringKeyMapSerializer<T> extends MapSerializer<Map<String, T>> {
@@ -339,6 +359,22 @@ public class MapSerializers {
         map.put(fury.readJavaStringRef(buffer), fury.readRef(buffer));
       }
       return (Map<String, T>) map;
+    }
+
+    @Override
+    protected <K, V> void copyEntry(Map<K, V> originMap, Map<K, V> newMap) {
+      ClassResolver classResolver = fury.getClassResolver();
+      for (Entry<K, V> entry : originMap.entrySet()) {
+        V value = entry.getValue();
+        if (value != null) {
+          ClassInfo classInfo =
+              classResolver.getClassInfo(value.getClass(), valueClassInfoWriteCache);
+          if (!classInfo.getSerializer().isImmutable()) {
+            value = fury.copyObject(value, classInfo.getClassId());
+          }
+        }
+        newMap.put(entry.getKey(), value);
+      }
     }
   }
 
@@ -371,6 +407,11 @@ public class MapSerializers {
     }
 
     @Override
+    public T onMapCopy(Map map) {
+      throw new IllegalStateException();
+    }
+
+    @Override
     public T onMapRead(Map map) {
       throw new IllegalStateException();
     }
@@ -378,6 +419,11 @@ public class MapSerializers {
     @Override
     public void write(MemoryBuffer buffer, T value) {
       dataSerializer.write(buffer, value);
+    }
+
+    @Override
+    public T copy(T value) {
+      return fury.copyObject(value, dataSerializer);
     }
 
     @Override
@@ -407,6 +453,11 @@ public class MapSerializers {
     }
 
     @Override
+    public T onMapCopy(Map map) {
+      throw new IllegalStateException();
+    }
+
+    @Override
     public T onMapRead(Map map) {
       throw new IllegalStateException();
     }
@@ -421,31 +472,37 @@ public class MapSerializers {
     public void write(MemoryBuffer buffer, T value) {
       serializer.write(buffer, value);
     }
+
+    @Override
+    public T copy(T value) {
+      return fury.copyObject(value, (Serializer<T>) serializer);
+    }
   }
 
   // TODO(chaokunyang) support ConcurrentSkipListMap.SubMap mo efficiently.
   public static void registerDefaultSerializers(Fury fury) {
-    fury.registerSerializer(HashMap.class, new HashMapSerializer(fury));
+    ClassResolver resolver = fury.getClassResolver();
+    resolver.registerSerializer(HashMap.class, new HashMapSerializer(fury));
     fury.getClassResolver()
         .registerSerializer(LinkedHashMap.class, new LinkedHashMapSerializer(fury));
-    fury.registerSerializer(TreeMap.class, new SortedMapSerializer<>(fury, TreeMap.class));
-    fury.registerSerializer(
+    resolver.registerSerializer(TreeMap.class, new SortedMapSerializer<>(fury, TreeMap.class));
+    resolver.registerSerializer(
         Collections.EMPTY_MAP.getClass(),
         new EmptyMapSerializer(fury, (Class<Map<?, ?>>) Collections.EMPTY_MAP.getClass()));
-    fury.registerSerializer(
+    resolver.registerSerializer(
         Collections.emptySortedMap().getClass(),
         new EmptySortedMapSerializer(
             fury, (Class<SortedMap<?, ?>>) Collections.emptySortedMap().getClass()));
-    fury.registerSerializer(
+    resolver.registerSerializer(
         Collections.singletonMap(null, null).getClass(),
         new SingletonMapSerializer(
             fury, (Class<Map<?, ?>>) Collections.singletonMap(null, null).getClass()));
-    fury.registerSerializer(
+    resolver.registerSerializer(
         ConcurrentHashMap.class, new ConcurrentHashMapSerializer(fury, ConcurrentHashMap.class));
-    fury.registerSerializer(
+    resolver.registerSerializer(
         ConcurrentSkipListMap.class,
         new ConcurrentSkipListMapSerializer(fury, ConcurrentSkipListMap.class));
-    fury.registerSerializer(EnumMap.class, new EnumMapSerializer(fury));
-    fury.registerSerializer(LazyMap.class, new LazyMapSerializer(fury));
+    resolver.registerSerializer(EnumMap.class, new EnumMapSerializer(fury));
+    resolver.registerSerializer(LazyMap.class, new LazyMapSerializer(fury));
   }
 }

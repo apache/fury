@@ -56,9 +56,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringJoiner;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.apache.fury.Fury;
+import org.apache.fury.codegen.Code;
 import org.apache.fury.codegen.CodeGenerator;
 import org.apache.fury.codegen.CodegenContext;
 import org.apache.fury.codegen.Expression;
@@ -126,7 +128,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
   private final Map<Class<?>, Reference> serializerMap = new HashMap<>();
   private final Map<String, Object> sharedFieldMap = new HashMap<>();
   protected final Class<?> parentSerializerClass;
-  private final Map<String, String> jitCallbackUpdateFields;
+  private final Map<String, Expression> jitCallbackUpdateFields;
   protected LinkedList<String> walkPath = new LinkedList<>();
 
   public BaseObjectCodecBuilder(TypeRef<?> beanType, Fury fury, Class<?> parentSerializerClass) {
@@ -157,6 +159,9 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     jitCallbackUpdateFields = new HashMap<>();
   }
 
+  // Must be static to be shared across the whole process life.
+  private static final Map<String, Map<String, Integer>> idGenerator = new ConcurrentHashMap<>();
+
   public String codecClassName(Class<?> beanClass) {
     String name = ReflectionUtils.getClassNameWithoutPackage(beanClass).replace("$", "_");
     StringBuilder nameBuilder = new StringBuilder(name);
@@ -167,12 +172,17 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     } else {
       nameBuilder.append("Fury");
     }
-    nameBuilder.append(codecSuffix()).append("Codec");
-    nameBuilder.append('_').append(fury.getConfig().getConfigHash());
-    String classUniqueId = CodeGenerator.getClassUniqueId(beanClass);
-    if (StringUtils.isNotBlank(classUniqueId)) {
-      nameBuilder.append('_').append(classUniqueId);
+    nameBuilder.append("Codec").append(codecSuffix());
+    Map<String, Integer> subGenerator =
+        idGenerator.computeIfAbsent(nameBuilder.toString(), k -> new ConcurrentHashMap<>());
+    String key = fury.getConfig().getConfigHash() + "_" + CodeGenerator.getClassUniqueId(beanClass);
+    Integer id = subGenerator.get(key);
+    if (id == null) {
+      synchronized (subGenerator) {
+        id = subGenerator.computeIfAbsent(key, k -> subGenerator.size());
+      }
     }
+    nameBuilder.append('_').append(id);
     return nameBuilder.toString();
   }
 
@@ -257,9 +267,13 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     // build encode/decode expr before add constructor to fill up jitCallbackUpdateFields.
     if (!jitCallbackUpdateFields.isEmpty()) {
       StringJoiner stringJoiner = new StringJoiner(", ", "registerJITNotifyCallback(this,", ");\n");
-      for (Map.Entry<String, String> entry : jitCallbackUpdateFields.entrySet()) {
+      for (Map.Entry<String, Expression> entry : jitCallbackUpdateFields.entrySet()) {
+        Code.ExprCode exprCode = entry.getValue().genCode(ctx);
+        if (StringUtils.isNotBlank(exprCode.code())) {
+          stringJoiner.add(exprCode.code());
+        }
         stringJoiner.add("\"" + entry.getKey() + "\"");
-        stringJoiner.add(entry.getValue());
+        stringJoiner.add(exprCode.value().toString());
       }
       // add this code after field serialization initialization to avoid
       // it overrides field updates by this callback.
@@ -398,8 +412,16 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     return visitFury(f -> f.getClassResolver().isCollection(TypeUtils.getRawType(typeRef)));
   }
 
+  protected boolean useCollectionSerialization(Class<?> type) {
+    return visitFury(f -> f.getClassResolver().isCollection(TypeUtils.getRawType(type)));
+  }
+
   protected boolean useMapSerialization(TypeRef<?> typeRef) {
     return visitFury(f -> f.getClassResolver().isMap(TypeUtils.getRawType(typeRef)));
+  }
+
+  protected boolean useMapSerialization(Class<?> type) {
+    return visitFury(f -> f.getClassResolver().isMap(TypeUtils.getRawType(type)));
   }
 
   /**
@@ -491,6 +513,13 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
           serializerClass = Serializer.class;
         }
       }
+      if (useCollectionSerialization(cls)
+          && !AbstractCollectionSerializer.class.isAssignableFrom(serializerClass)) {
+        serializerClass = AbstractCollectionSerializer.class;
+      } else if (useMapSerialization(cls)
+          && !AbstractMapSerializer.class.isAssignableFrom(serializerClass)) {
+        serializerClass = AbstractMapSerializer.class;
+      }
       TypeRef<? extends Serializer> serializerTypeRef = TypeRef.of(serializerClass);
       Expression fieldTypeExpr = getClassExpr(cls);
       // Don't invoke `Serializer.newSerializer` here, since it(ex. ObjectSerializer) may set itself
@@ -502,7 +531,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       // `serializerClass` is already jit generated class.
       boolean hasJITResult = fury.getJITContext().hasJITResult(cls);
       if (hasJITResult) {
-        jitCallbackUpdateFields.put(name, ctx.type(cls) + ".class");
+        jitCallbackUpdateFields.put(name, getClassExpr(cls));
         ctx.addField(
             false, ctx.type(Serializer.class), name, new Cast(newSerializerExpr, SERIALIZER_TYPE));
         serializerRef = new Reference(name, SERIALIZER_TYPE, false);
@@ -1254,18 +1283,16 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         readBuilder.add(
             readContainerElements(
                 elementType, true, elemSerializer, null, buffer, collection, size));
-        Set<Expression> cutPoint = ofHashSet(buffer, collection, size);
-        if (maybeDecl) { // For `isDeclType`
-          cutPoint.add(flags);
-        }
-        Expression sameElementClassRead =
-            invokeGenerated(ctx, cutPoint, readBuilder, "sameElementClassRead", false);
         // Same element class read end
-        action =
-            new If(
-                sameElementClass,
-                sameElementClassRead,
-                readContainerElements(elementType, true, null, null, buffer, collection, size));
+        Set<Expression> cutPoint = ofHashSet(buffer, collection, size);
+        Expression differentElemTypeRead =
+            invokeGenerated(
+                ctx,
+                cutPoint,
+                readContainerElements(elementType, true, null, null, buffer, collection, size),
+                "differentTypeElemsRead",
+                false);
+        action = new If(sameElementClass, readBuilder, differentElemTypeRead);
       } else {
         Literal hasNullFlag = Literal.ofInt(CollectionFlags.HAS_NULL);
         Expression hasNull = eq(new BitAnd(flags, hasNullFlag), hasNullFlag, "hasNull");
@@ -1275,18 +1302,16 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         readBuilder.add(
             readContainerElements(
                 elementType, false, elemSerializer, hasNull, buffer, collection, size));
-        Set<Expression> cutPoint = ofHashSet(buffer, collection, size, hasNull);
-        if (maybeDecl) { // For `isDeclType`
-          cutPoint.add(flags);
-        }
         // Same element class read end
-        Expression sameElementClassRead =
-            invokeGenerated(ctx, cutPoint, readBuilder, "sameElementClassRead", false);
-        action =
-            new If(
-                sameElementClass,
-                sameElementClassRead,
-                readContainerElements(elementType, false, null, hasNull, buffer, collection, size));
+        Set<Expression> cutPoint = ofHashSet(buffer, collection, size, hasNull);
+        Expression differentTypeElemsRead =
+            invokeGenerated(
+                ctx,
+                cutPoint,
+                readContainerElements(elementType, false, null, hasNull, buffer, collection, size),
+                "differentTypeElemsRead",
+                false);
+        action = new If(sameElementClass, readBuilder, differentTypeElemsRead);
       }
       builder.add(action);
     }

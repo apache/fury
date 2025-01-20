@@ -21,49 +21,67 @@ package org.apache.fury;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
+import org.apache.fury.annotation.Internal;
+import org.apache.fury.resolver.ClassChecker;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.serializer.SerializerFactory;
 
 public abstract class AbstractThreadSafeFury implements ThreadSafeFury {
   @Override
   public void register(Class<?> clz) {
-    processCallback(fury -> fury.register(clz));
+    registerCallback(fury -> fury.register(clz));
   }
 
   @Override
   public void register(Class<?> cls, boolean createSerializer) {
-    processCallback(fury -> fury.register(cls, createSerializer));
+    registerCallback(fury -> fury.register(cls, createSerializer));
   }
 
   @Override
-  public void register(Class<?> cls, Short id) {
-    processCallback(fury -> fury.register(cls, id));
+  public void register(Class<?> cls, int id) {
+    registerCallback(fury -> fury.register(cls, id));
   }
 
   @Override
-  public void register(Class<?> cls, Short id, boolean createSerializer) {
-    processCallback(fury -> fury.register(cls, id, createSerializer));
+  public void register(Class<?> cls, int id, boolean createSerializer) {
+    registerCallback(fury -> fury.register(cls, id, createSerializer));
+  }
+
+  @Override
+  public void register(Class<?> cls, String typeName) {
+    registerCallback(fury -> fury.register(cls, typeName));
+  }
+
+  @Override
+  public void register(Class<?> cls, String namespace, String typeName) {
+    registerCallback(fury -> fury.register(cls, namespace, typeName));
   }
 
   @Override
   public <T> void registerSerializer(Class<T> type, Class<? extends Serializer> serializerClass) {
-    processCallback(fury -> fury.registerSerializer(type, serializerClass));
+    registerCallback(fury -> fury.registerSerializer(type, serializerClass));
   }
 
   @Override
   public void registerSerializer(Class<?> type, Serializer<?> serializer) {
-    processCallback(fury -> fury.registerSerializer(type, serializer));
+    registerCallback(fury -> fury.registerSerializer(type, serializer));
   }
 
   @Override
   public void registerSerializer(Class<?> type, Function<Fury, Serializer<?>> serializerCreator) {
-    processCallback(fury -> fury.registerSerializer(type, serializerCreator.apply(fury)));
+    registerCallback(fury -> fury.registerSerializer(type, serializerCreator.apply(fury)));
   }
 
   @Override
   public void setSerializerFactory(SerializerFactory serializerFactory) {
-    processCallback(fury -> fury.setSerializerFactory(serializerFactory));
+    registerCallback(fury -> fury.setSerializerFactory(serializerFactory));
   }
 
-  protected abstract void processCallback(Consumer<Fury> callback);
+  @Override
+  public void setClassChecker(ClassChecker classChecker) {
+    registerCallback(fury -> fury.getClassResolver().setClassChecker(classChecker));
+  }
+
+  @Internal
+  public abstract void registerCallback(Consumer<Fury> callback);
 }

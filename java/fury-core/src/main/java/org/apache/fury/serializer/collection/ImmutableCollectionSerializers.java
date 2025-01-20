@@ -32,6 +32,7 @@ import java.util.Set;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
+import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.util.unsafe._JDKAccess;
 
 /** Serializers for jdk9+ java.util.ImmutableCollections. */
@@ -119,6 +120,23 @@ public class ImmutableCollectionSerializers {
     }
 
     @Override
+    public Collection copy(Collection originCollection) {
+      if (Platform.JAVA_VERSION <= 8) {
+        throw new UnsupportedOperationException(
+            String.format(
+                "Only support jdk9+ java.util.ImmutableCollections deep copy. %s",
+                originCollection.getClass()));
+      }
+      Object[] elements = new Object[originCollection.size()];
+      copyElements(originCollection, elements);
+      try {
+        return (List) listFactory.invoke(elements);
+      } catch (Throwable e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    @Override
     public Collection onCollectionRead(Collection collection) {
       if (Platform.JAVA_VERSION > 8) {
         CollectionContainer container = (CollectionContainer) collection;
@@ -147,6 +165,23 @@ public class ImmutableCollectionSerializers {
         return new CollectionContainer<>(numElements);
       } else {
         return new HashSet(numElements);
+      }
+    }
+
+    @Override
+    public Collection copy(Collection originCollection) {
+      if (Platform.JAVA_VERSION <= 8) {
+        throw new UnsupportedOperationException(
+            String.format(
+                "Only support jdk9+ java.util.ImmutableCollections deep copy. %s",
+                originCollection.getClass()));
+      }
+      Object[] elements = new Object[originCollection.size()];
+      copyElements(originCollection, elements);
+      try {
+        return (Set) setFactory.invoke(elements);
+      } catch (Throwable e) {
+        throw new RuntimeException(e);
       }
     }
 
@@ -183,6 +218,28 @@ public class ImmutableCollectionSerializers {
     }
 
     @Override
+    public Map copy(Map originMap) {
+      if (Platform.JAVA_VERSION <= 8) {
+        throw new UnsupportedOperationException(
+            String.format(
+                "Only support jdk9+ java.util.ImmutableCollections deep copy. %s",
+                originMap.getClass()));
+      }
+      int size = originMap.size();
+      Object[] elements = new Object[size * 2];
+      copyEntry(originMap, elements);
+      try {
+        if (size == 1) {
+          return (Map) map1Factory.invoke(elements[0], elements[1]);
+        } else {
+          return (Map) mapNFactory.invoke(elements);
+        }
+      } catch (Throwable e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    @Override
     public Map onMapRead(Map map) {
       if (Platform.JAVA_VERSION > 8) {
         JDKImmutableMapContainer container = (JDKImmutableMapContainer) map;
@@ -203,12 +260,13 @@ public class ImmutableCollectionSerializers {
   }
 
   public static void registerSerializers(Fury fury) {
-    fury.registerSerializer(List12, new ImmutableListSerializer(fury, List12));
-    fury.registerSerializer(ListN, new ImmutableListSerializer(fury, ListN));
-    fury.registerSerializer(SubList, new ImmutableListSerializer(fury, SubList));
-    fury.registerSerializer(Set12, new ImmutableSetSerializer(fury, Set12));
-    fury.registerSerializer(SetN, new ImmutableSetSerializer(fury, SetN));
-    fury.registerSerializer(Map1, new ImmutableMapSerializer(fury, Map1));
-    fury.registerSerializer(MapN, new ImmutableMapSerializer(fury, MapN));
+    ClassResolver resolver = fury.getClassResolver();
+    resolver.registerSerializer(List12, new ImmutableListSerializer(fury, List12));
+    resolver.registerSerializer(ListN, new ImmutableListSerializer(fury, ListN));
+    resolver.registerSerializer(SubList, new ImmutableListSerializer(fury, SubList));
+    resolver.registerSerializer(Set12, new ImmutableSetSerializer(fury, Set12));
+    resolver.registerSerializer(SetN, new ImmutableSetSerializer(fury, SetN));
+    resolver.registerSerializer(Map1, new ImmutableMapSerializer(fury, Map1));
+    resolver.registerSerializer(MapN, new ImmutableMapSerializer(fury, MapN));
   }
 }

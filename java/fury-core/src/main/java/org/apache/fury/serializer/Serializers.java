@@ -48,7 +48,6 @@ import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.resolver.ClassResolver;
-import org.apache.fury.type.Type;
 import org.apache.fury.util.ExceptionUtils;
 import org.apache.fury.util.GraalvmSupport;
 import org.apache.fury.util.StringUtils;
@@ -178,22 +177,18 @@ public class Serializers {
   }
 
   public abstract static class CrossLanguageCompatibleSerializer<T> extends Serializer<T> {
-    private final short typeId;
 
-    public CrossLanguageCompatibleSerializer(Fury fury, Class<T> cls, short typeId) {
+    public CrossLanguageCompatibleSerializer(Fury fury, Class<T> cls) {
       super(fury, cls);
-      this.typeId = typeId;
     }
 
     public CrossLanguageCompatibleSerializer(
-        Fury fury, Class<T> cls, short typeId, boolean needToWriteRef) {
-      super(fury, cls, needToWriteRef);
-      this.typeId = typeId;
+        Fury fury, Class<T> cls, boolean needToWriteRef, boolean immutable) {
+      super(fury, cls, needToWriteRef, immutable);
     }
 
-    @Override
-    public short getXtypeId() {
-      return typeId;
+    public CrossLanguageCompatibleSerializer(Fury fury, Class<T> cls, boolean needToWriteRef) {
+      super(fury, cls, needToWriteRef);
     }
 
     @Override
@@ -233,12 +228,7 @@ public class Serializers {
 
     @Override
     public void xwrite(MemoryBuffer buffer, T value) {
-      stringSerializer.writeUTF8String(buffer, value.toString());
-    }
-
-    @Override
-    public short getXtypeId() {
-      return (short) -Type.STRING.getId();
+      stringSerializer.writeString(buffer, value.toString());
     }
 
     @Override
@@ -259,7 +249,7 @@ public class Serializers {
       } else {
         char[] v = (char[]) GET_VALUE.apply(value);
         if (StringUtils.isLatin(v)) {
-          stringSerializer.writeCharsLatin(buffer, v, value.length());
+          stringSerializer.writeCharsLatin1(buffer, v, value.length());
         } else {
           stringSerializer.writeCharsUTF16(buffer, v, value.length());
         }
@@ -275,13 +265,18 @@ public class Serializers {
     }
 
     @Override
+    public StringBuilder copy(StringBuilder origin) {
+      return new StringBuilder(origin);
+    }
+
+    @Override
     public StringBuilder read(MemoryBuffer buffer) {
       return new StringBuilder(stringSerializer.readJavaString(buffer));
     }
 
     @Override
     public StringBuilder xread(MemoryBuffer buffer) {
-      return new StringBuilder(stringSerializer.readUTF8String(buffer));
+      return new StringBuilder(stringSerializer.readString(buffer));
     }
   }
 
@@ -293,17 +288,22 @@ public class Serializers {
     }
 
     @Override
+    public StringBuffer copy(StringBuffer origin) {
+      return new StringBuffer(origin);
+    }
+
+    @Override
     public StringBuffer read(MemoryBuffer buffer) {
       return new StringBuffer(stringSerializer.readJavaString(buffer));
     }
 
     @Override
     public StringBuffer xread(MemoryBuffer buffer) {
-      return new StringBuffer(stringSerializer.readUTF8String(buffer));
+      return new StringBuffer(stringSerializer.readString(buffer));
     }
   }
 
-  public static final class BigDecimalSerializer extends Serializer<BigDecimal> {
+  public static final class BigDecimalSerializer extends ImmutableSerializer<BigDecimal> {
     public BigDecimalSerializer(Fury fury) {
       super(fury, BigDecimal.class);
     }
@@ -328,7 +328,7 @@ public class Serializers {
     }
   }
 
-  public static final class BigIntegerSerializer extends Serializer<BigInteger> {
+  public static final class BigIntegerSerializer extends ImmutableSerializer<BigInteger> {
     public BigIntegerSerializer(Fury fury) {
       super(fury, BigInteger.class);
     }
@@ -360,6 +360,11 @@ public class Serializers {
     }
 
     @Override
+    public AtomicBoolean copy(AtomicBoolean origin) {
+      return new AtomicBoolean(origin.get());
+    }
+
+    @Override
     public AtomicBoolean read(MemoryBuffer buffer) {
       return new AtomicBoolean(buffer.readBoolean());
     }
@@ -374,6 +379,11 @@ public class Serializers {
     @Override
     public void write(MemoryBuffer buffer, AtomicInteger value) {
       buffer.writeInt32(value.get());
+    }
+
+    @Override
+    public AtomicInteger copy(AtomicInteger origin) {
+      return new AtomicInteger(origin.get());
     }
 
     @Override
@@ -394,6 +404,11 @@ public class Serializers {
     }
 
     @Override
+    public AtomicLong copy(AtomicLong origin) {
+      return new AtomicLong(origin.get());
+    }
+
+    @Override
     public AtomicLong read(MemoryBuffer buffer) {
       return new AtomicLong(buffer.readInt64());
     }
@@ -411,12 +426,17 @@ public class Serializers {
     }
 
     @Override
+    public AtomicReference copy(AtomicReference origin) {
+      return new AtomicReference(fury.copyObject(origin.get()));
+    }
+
+    @Override
     public AtomicReference read(MemoryBuffer buffer) {
       return new AtomicReference(fury.readRef(buffer));
     }
   }
 
-  public static final class CurrencySerializer extends Serializer<Currency> {
+  public static final class CurrencySerializer extends ImmutableSerializer<Currency> {
     public CurrencySerializer(Fury fury) {
       super(fury, Currency.class);
     }
@@ -434,7 +454,7 @@ public class Serializers {
   }
 
   /** Serializer for {@link Charset}. */
-  public static final class CharsetSerializer<T extends Charset> extends Serializer<T> {
+  public static final class CharsetSerializer<T extends Charset> extends ImmutableSerializer<T> {
     public CharsetSerializer(Fury fury, Class<T> type) {
       super(fury, type);
     }
@@ -448,7 +468,7 @@ public class Serializers {
     }
   }
 
-  public static final class URISerializer extends Serializer<java.net.URI> {
+  public static final class URISerializer extends ImmutableSerializer<java.net.URI> {
 
     public URISerializer(Fury fury) {
       super(fury, URI.class);
@@ -465,7 +485,7 @@ public class Serializers {
     }
   }
 
-  public static final class RegexSerializer extends Serializer<Pattern> {
+  public static final class RegexSerializer extends ImmutableSerializer<Pattern> {
     public RegexSerializer(Fury fury) {
       super(fury, Pattern.class);
     }
@@ -484,7 +504,7 @@ public class Serializers {
     }
   }
 
-  public static final class UUIDSerializer extends Serializer<UUID> {
+  public static final class UUIDSerializer extends ImmutableSerializer<UUID> {
 
     public UUIDSerializer(Fury fury) {
       super(fury, UUID.class);
@@ -502,7 +522,7 @@ public class Serializers {
     }
   }
 
-  public static final class ClassSerializer extends Serializer<Class> {
+  public static final class ClassSerializer extends ImmutableSerializer<Class> {
     public ClassSerializer(Fury fury) {
       super(fury, Class.class);
     }
@@ -525,7 +545,7 @@ public class Serializers {
    * serializable or class registration checks.
    */
   // Use a separate serializer to avoid codegen for emtpy object.
-  public static final class EmptyObjectSerializer extends Serializer<Object> {
+  public static final class EmptyObjectSerializer extends ImmutableSerializer<Object> {
 
     public EmptyObjectSerializer(Fury fury) {
       super(fury, Object.class);
@@ -541,19 +561,20 @@ public class Serializers {
   }
 
   public static void registerDefaultSerializers(Fury fury) {
-    fury.registerSerializer(Class.class, new ClassSerializer(fury));
-    fury.registerSerializer(StringBuilder.class, new StringBuilderSerializer(fury));
-    fury.registerSerializer(StringBuffer.class, new StringBufferSerializer(fury));
-    fury.registerSerializer(BigInteger.class, new BigIntegerSerializer(fury));
-    fury.registerSerializer(BigDecimal.class, new BigDecimalSerializer(fury));
-    fury.registerSerializer(AtomicBoolean.class, new AtomicBooleanSerializer(fury));
-    fury.registerSerializer(AtomicInteger.class, new AtomicIntegerSerializer(fury));
-    fury.registerSerializer(AtomicLong.class, new AtomicLongSerializer(fury));
-    fury.registerSerializer(AtomicReference.class, new AtomicReferenceSerializer(fury));
-    fury.registerSerializer(Currency.class, new CurrencySerializer(fury));
-    fury.registerSerializer(URI.class, new URISerializer(fury));
-    fury.registerSerializer(Pattern.class, new RegexSerializer(fury));
-    fury.registerSerializer(UUID.class, new UUIDSerializer(fury));
-    fury.registerSerializer(Object.class, new EmptyObjectSerializer(fury));
+    ClassResolver resolver = fury.getClassResolver();
+    resolver.registerSerializer(Class.class, new ClassSerializer(fury));
+    resolver.registerSerializer(StringBuilder.class, new StringBuilderSerializer(fury));
+    resolver.registerSerializer(StringBuffer.class, new StringBufferSerializer(fury));
+    resolver.registerSerializer(BigInteger.class, new BigIntegerSerializer(fury));
+    resolver.registerSerializer(BigDecimal.class, new BigDecimalSerializer(fury));
+    resolver.registerSerializer(AtomicBoolean.class, new AtomicBooleanSerializer(fury));
+    resolver.registerSerializer(AtomicInteger.class, new AtomicIntegerSerializer(fury));
+    resolver.registerSerializer(AtomicLong.class, new AtomicLongSerializer(fury));
+    resolver.registerSerializer(AtomicReference.class, new AtomicReferenceSerializer(fury));
+    resolver.registerSerializer(Currency.class, new CurrencySerializer(fury));
+    resolver.registerSerializer(URI.class, new URISerializer(fury));
+    resolver.registerSerializer(Pattern.class, new RegexSerializer(fury));
+    resolver.registerSerializer(UUID.class, new UUIDSerializer(fury));
+    resolver.registerSerializer(Object.class, new EmptyObjectSerializer(fury));
   }
 }

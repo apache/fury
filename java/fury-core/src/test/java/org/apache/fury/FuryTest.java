@@ -52,8 +52,10 @@ import java.util.WeakHashMap;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.apache.fury.annotation.Expose;
 import org.apache.fury.annotation.Ignore;
 import org.apache.fury.builder.Generated;
+import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.config.FuryBuilder;
 import org.apache.fury.config.Language;
 import org.apache.fury.exception.FuryException;
@@ -61,6 +63,7 @@ import org.apache.fury.exception.InsecureException;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.memory.Platform;
+import org.apache.fury.resolver.MetaContext;
 import org.apache.fury.serializer.ArraySerializersTest;
 import org.apache.fury.serializer.EnumSerializerTest;
 import org.apache.fury.serializer.ObjectSerializer;
@@ -102,13 +105,10 @@ public class FuryTest extends FuryTestBase {
     assertEquals(Double.MAX_VALUE, serDe(fury1, fury2, Double.MAX_VALUE));
   }
 
-  @Test(dataProvider = "crossLanguageReferenceTrackingConfig")
-  public void basicTest(boolean referenceTracking, Language language) {
+  @Test(dataProvider = "referenceTrackingConfig")
+  public void basicTest(boolean referenceTracking) {
     FuryBuilder builder =
-        Fury.builder()
-            .withLanguage(language)
-            .withRefTracking(referenceTracking)
-            .requireClassRegistration(false);
+        Fury.builder().withRefTracking(referenceTracking).requireClassRegistration(false);
     Fury fury1 = builder.build();
     Fury fury2 = builder.build();
     assertEquals("str", serDe(fury1, fury2, "str"));
@@ -190,6 +190,12 @@ public class FuryTest extends FuryTestBase {
     assertEquals(Short.MAX_VALUE, serDeCheckIndex(fury1, fury2, buffer, Short.MAX_VALUE));
     assertEquals("str", serDeCheckIndex(fury1, fury2, buffer, "str"));
     assertEquals("str", serDeCheckIndex(fury1, fury2, buffer, new StringBuilder("str")).toString());
+    if (fury1.getLanguage() != Language.JAVA) {
+      fury1.register(EnumSerializerTest.EnumFoo.class);
+      fury2.register(EnumSerializerTest.EnumFoo.class);
+      fury1.register(EnumSerializerTest.EnumSubClass.class);
+      fury2.register(EnumSerializerTest.EnumSubClass.class);
+    }
     assertEquals(
         EnumSerializerTest.EnumFoo.A,
         serDeCheckIndex(fury1, fury2, buffer, EnumSerializerTest.EnumFoo.A));
@@ -437,6 +443,43 @@ public class FuryTest extends FuryTestBase {
     assertEquals(3, o.f3);
   }
 
+  @Data
+  @AllArgsConstructor
+  private static class ExposeFields {
+    @Expose int f1;
+    @Expose long f2;
+    long f3;
+    @Expose ImmutableMap<String, Integer> map1;
+    ImmutableMap<String, Integer> map2;
+  }
+
+  @Test
+  public void testExposeFields() {
+    Fury fury = Fury.builder().requireClassRegistration(false).build();
+    ImmutableMap<String, Integer> map1 = ImmutableMap.of("1", 1);
+    ImmutableMap<String, Integer> map2 = ImmutableMap.of("2", 2);
+    ExposeFields o = serDe(fury, new ExposeFields(1, 2, 3, map1, map2));
+    assertEquals(1, o.f1);
+    assertEquals(2, o.f2);
+    assertEquals(0, o.f3);
+    assertEquals(o.map1, map1);
+    assertNull(o.map2);
+  }
+
+  @Data
+  @AllArgsConstructor
+  private static class ExposeFields2 {
+    @Expose int f1;
+    @Ignore long f2;
+    long f3;
+  }
+
+  @Test
+  public void testExposeFields2() {
+    Fury fury = Fury.builder().requireClassRegistration(false).build();
+    assertThrows(RuntimeException.class, () -> serDe(fury, new ExposeFields2(1, 2, 3)));
+  }
+
   @Test(timeOut = 60_000)
   public void testClassGC() {
     WeakHashMap<Object, Boolean> map = new WeakHashMap<>();
@@ -559,5 +602,75 @@ public class FuryTest extends FuryTestBase {
     } catch (FuryException e) {
       Assert.assertTrue(e.getMessage().contains("[a, b]"));
     }
+  }
+
+  @Test
+  public void testNullObjSerAndDe() {
+    Fury fury =
+        Fury.builder()
+            .withRefTracking(true)
+            .requireClassRegistration(false)
+            .withMetaShare(true)
+            .build();
+    MetaContext metaContext = new MetaContext();
+    fury.getSerializationContext().setMetaContext(metaContext);
+    byte[] bytes = fury.serializeJavaObjectAndClass(null);
+    fury.getSerializationContext().setMetaContext(metaContext);
+    Object obj = fury.deserializeJavaObjectAndClass(bytes);
+    assertNull(obj);
+  }
+
+  @Test
+  public void testResetBufferToSizeLimit() {
+    final int minBufferBytes = 64;
+    final int limitInBytes = 1024;
+    Fury fury = Fury.builder().withBufferSizeLimitBytes(limitInBytes).build();
+
+    final byte[] smallPayload = new byte[0];
+    final byte[] serializedSmall = fury.serialize(smallPayload);
+    assertEquals(fury.getBuffer().size(), minBufferBytes);
+
+    fury.deserialize(serializedSmall);
+    assertEquals(fury.getBuffer().size(), minBufferBytes);
+
+    final byte[] largePayload = new byte[limitInBytes * 2];
+    final byte[] serializedLarge = fury.serialize(largePayload);
+    assertEquals(fury.getBuffer().size(), limitInBytes);
+
+    fury.deserialize(serializedLarge);
+    assertEquals(fury.getBuffer().size(), limitInBytes);
+  }
+
+  static class Struct1 {
+    int f1;
+    String f2;
+
+    public Struct1(int f1, String f2) {
+      this.f1 = f1;
+      this.f2 = f2;
+    }
+  }
+
+  static class Struct2 {
+    int f1;
+    String f2;
+    double f3;
+  }
+
+  @Test
+  public void testStructMapping() {
+    ThreadSafeFury fury1 =
+        Fury.builder().withCompatibleMode(CompatibleMode.COMPATIBLE).buildThreadSafeFury();
+    ThreadSafeFury fury2 =
+        Fury.builder().withCompatibleMode(CompatibleMode.COMPATIBLE).buildThreadSafeFury();
+    fury1.register(Struct1.class);
+    fury2.register(Struct2.class);
+    Struct1 struct1 = new Struct1(10, "abc");
+    Struct2 struct2 = (Struct2) fury2.deserialize(fury1.serialize(struct1));
+    Assert.assertEquals(struct2.f1, struct1.f1);
+    Assert.assertEquals(struct2.f2, struct1.f2);
+    struct1 = (Struct1) fury1.deserialize(fury2.serialize(struct2));
+    Assert.assertEquals(struct1.f1, struct2.f1);
+    Assert.assertEquals(struct1.f2, struct2.f2);
   }
 }

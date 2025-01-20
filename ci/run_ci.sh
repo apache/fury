@@ -24,6 +24,7 @@ ROOT="$(git rev-parse --show-toplevel)"
 echo "Root path: $ROOT, home path: $HOME"
 cd "$ROOT"
 
+
 install_python() {
   wget -q https://repo.anaconda.com/miniconda/Miniconda3-py38_23.5.2-0-Linux-x86_64.sh -O Miniconda3.sh
   bash Miniconda3.sh -b -p $HOME/miniconda && rm -f miniconda.*
@@ -75,6 +76,12 @@ install_bazel() {
     echo "build --jobs="$JOBS >> ~/.bazelrc
     grep "jobs" ~/.bazelrc
   fi
+}
+
+install_bazel_windows() {
+  choco install bazel --version=6.3.2 --force
+  VERSION=`bazel version`
+  echo "bazel version: $VERSION"
 }
 
 JDKS=(

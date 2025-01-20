@@ -40,6 +40,7 @@ import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
+import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.util.ExceptionUtils;
 
@@ -100,6 +101,12 @@ public class SynchronizedSerializers {
       final Object sourceCollection = fury.readRef(buffer);
       return (Collection) factory.apply(sourceCollection);
     }
+
+    @Override
+    public Collection copy(Collection object) {
+      final Object collection = Platform.getObject(object, offset);
+      return (Collection) factory.apply(fury.copyObject(collection));
+    }
   }
 
   public static final class SynchronizedMapSerializer extends MapSerializer<Map> {
@@ -119,6 +126,12 @@ public class SynchronizedSerializers {
       synchronized (object) {
         fury.writeRef(buffer, unwrapped);
       }
+    }
+
+    @Override
+    public Map copy(Map originMap) {
+      final Object unwrappedMap = Platform.getObject(originMap, offset);
+      return (Map) factory.apply(fury.copyObject(unwrappedMap));
     }
 
     @Override
@@ -199,8 +212,9 @@ public class SynchronizedSerializers {
    */
   public static void registerSerializers(Fury fury) {
     try {
+      ClassResolver resolver = fury.getClassResolver();
       for (Tuple2<Class<?>, Function> factory : synchronizedFactories()) {
-        fury.registerSerializer(factory.f0, createSerializer(fury, factory));
+        resolver.registerSerializer(factory.f0, createSerializer(fury, factory));
       }
     } catch (Throwable e) {
       ExceptionUtils.ignore(e);

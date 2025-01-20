@@ -90,6 +90,14 @@ public class ObjectStreamSerializerTest extends FuryTestBase {
     assertEquals(buf.toString(), "abc");
   }
 
+  @Test(dataProvider = "furyCopyConfig")
+  public void testJDKCompatibleCommonCopy(Fury fury) {
+    fury.registerSerializer(
+        StringBuilder.class, new ObjectStreamSerializer(fury, StringBuilder.class));
+    StringBuilder sb = fury.copy(new StringBuilder("abc"));
+    assertEquals(sb.toString(), "abc");
+  }
+
   @Test(dataProvider = "javaFury")
   public void testDispatch(Fury fury) {
     WriteObjectTestClass o = new WriteObjectTestClass(new char[] {'a', 'b'});
@@ -174,6 +182,31 @@ public class ObjectStreamSerializerTest extends FuryTestBase {
     serDeCheck(fury, testClassObj3);
   }
 
+  @Test(dataProvider = "furyCopyConfig")
+  public void testJDKCompatiblePutFieldsCopy(Fury fury) {
+    fury.registerSerializer(
+        StringBuffer.class, new ObjectStreamSerializer(fury, StringBuffer.class));
+    StringBuffer newStringBuffer = fury.copy(new StringBuffer("abc"));
+    assertEquals(newStringBuffer.toString(), "abc");
+    BigInteger bigInteger = BigInteger.valueOf(1000);
+    fury.registerSerializer(BigInteger.class, new ObjectStreamSerializer(fury, BigInteger.class));
+    copyCheck(fury, bigInteger);
+    fury.registerSerializer(InetAddress.class, new ObjectStreamSerializer(fury, InetAddress.class));
+    fury.registerSerializer(
+        Inet4Address.class, new ObjectStreamSerializer(fury, Inet4Address.class));
+    InetAddress inetAddress = InetAddress.getLoopbackAddress();
+    copyCheck(fury, inetAddress);
+    WriteObjectTestClass2 testClassObj2 = new WriteObjectTestClass2(new char[] {'a', 'b'}, "abc");
+    fury.registerSerializer(
+        WriteObjectTestClass2.class, new ObjectStreamSerializer(fury, WriteObjectTestClass2.class));
+    copyCheck(fury, testClassObj2);
+    // test defaultReadObject compatible with putFields.
+    WriteObjectTestClass3 testClassObj3 = new WriteObjectTestClass3(new char[] {'a', 'b'}, "abc");
+    fury.registerSerializer(
+        WriteObjectTestClass3.class, new ObjectStreamSerializer(fury, WriteObjectTestClass3.class));
+    copyCheck(fury, testClassObj3);
+  }
+
   @Test(dataProvider = "javaFury")
   public void testJDKCompatibleMap(Fury fury) {
     ImmutableMap<String, Integer> mapData = ImmutableMap.of("k1", 1, "k2", 2);
@@ -207,6 +240,27 @@ public class ObjectStreamSerializerTest extends FuryTestBase {
     }
   }
 
+  @Test(dataProvider = "furyCopyConfig")
+  public void testJDKCompatibleMapCopy(Fury fury) {
+    ImmutableMap<String, Integer> mapData = ImmutableMap.of("k1", 1, "k2", 2);
+    {
+      ObjectStreamSerializer serializer = new ObjectStreamSerializer(fury, ConcurrentHashMap.class);
+      ConcurrentHashMap<String, Integer> map = new ConcurrentHashMap<>(mapData);
+      Object copy = serializer.copy(map);
+      assertEquals(copy, map);
+    }
+    {
+      fury.registerSerializer(
+          ConcurrentHashMap.class, new ObjectStreamSerializer(fury, ConcurrentHashMap.class));
+      copyCheck(fury, new ConcurrentHashMap<>(mapData));
+    }
+    {
+      Map<String, Integer> map = new HashMap<>(mapData);
+      fury.registerSerializer(map.getClass(), new ObjectStreamSerializer(fury, map.getClass()));
+      copyCheck(fury, map);
+    }
+  }
+
   @Test(dataProvider = "javaFury")
   public void testJDKCompatibleList(Fury fury) {
     fury.registerSerializer(ArrayList.class, new ObjectStreamSerializer(fury, ArrayList.class));
@@ -216,6 +270,17 @@ public class ObjectStreamSerializerTest extends FuryTestBase {
     serDeCheck(fury, new LinkedList<>(list));
     fury.registerSerializer(Vector.class, new ObjectStreamSerializer(fury, Vector.class));
     serDeCheck(fury, new Vector<>(list));
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testJDKCompatibleListCopy(Fury fury) {
+    fury.registerSerializer(ArrayList.class, new ObjectStreamSerializer(fury, ArrayList.class));
+    List<String> list = new ArrayList<>(ImmutableList.of("a", "b", "c", "d"));
+    copyCheck(fury, list);
+    fury.registerSerializer(LinkedList.class, new ObjectStreamSerializer(fury, LinkedList.class));
+    copyCheck(fury, new LinkedList<>(list));
+    fury.registerSerializer(Vector.class, new ObjectStreamSerializer(fury, Vector.class));
+    copyCheck(fury, new Vector<>(list));
   }
 
   @Test(dataProvider = "enableCodegen")
@@ -243,6 +308,24 @@ public class ObjectStreamSerializerTest extends FuryTestBase {
       ConcurrentHashMap<String, Object> newMap =
           (ConcurrentHashMap<String, Object>) serializer.read(buffer);
       assertEquals(buffer.writerIndex(), buffer.readerIndex());
+      assertSame(newMap.get("k3"), newMap);
+      assertEquals(newMap.get("k2"), map.get("k2"));
+    }
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testJDKCompatibleCircularReference(Fury fury) {
+    {
+      ObjectStreamSerializer serializer = new ObjectStreamSerializer(fury, ConcurrentHashMap.class);
+      ConcurrentHashMap<String, Object> map =
+          new ConcurrentHashMap<>(
+              ImmutableMap.of(
+                  "k1", 1,
+                  "k2", 2));
+      map.put("k3", map);
+      @SuppressWarnings("unchecked")
+      ConcurrentHashMap<String, Object> newMap =
+          (ConcurrentHashMap<String, Object>) serializer.copy(map);
       assertSame(newMap.get("k3"), newMap);
       assertEquals(newMap.get("k2"), map.get("k2"));
     }
@@ -303,6 +386,18 @@ public class ObjectStreamSerializerTest extends FuryTestBase {
     assertEquals(obj2.state, realState);
   }
 
+  @Test(dataProvider = "furyCopyConfig")
+  public void testObjectInputValidationCopy(Fury fury) {
+    fury.registerSerializer(
+        ValidationTestClass2.class, new ObjectStreamSerializer(fury, ValidationTestClass2.class));
+    int realState = 100;
+    String str = "abc";
+    ValidationTestClass2 obj = new ValidationTestClass2(str, realState);
+    ValidationTestClass2 obj2 = fury.copy(obj);
+    assertEquals(obj2.realState, realState);
+    assertEquals(obj2.str, str);
+  }
+
   @EqualsAndHashCode(callSuper = true)
   public static class WriteObjectTestClass4 extends WriteObjectTestClass {
 
@@ -328,6 +423,15 @@ public class ObjectStreamSerializerTest extends FuryTestBase {
     fury.registerSerializer(
         WriteObjectTestClass4.class, new ObjectStreamSerializer(fury, WriteObjectTestClass4.class));
     serDeCheckSerializer(fury, testClassObj4, "ObjectStreamSerializer");
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testWriteObjectReplaceCopy(Fury fury) throws MalformedURLException {
+    copyCheck(fury, new URL("http://test"));
+    WriteObjectTestClass4 testClassObj4 = new WriteObjectTestClass4(new char[] {'a', 'b'});
+    fury.registerSerializer(
+        WriteObjectTestClass4.class, new ObjectStreamSerializer(fury, WriteObjectTestClass4.class));
+    copyCheck(fury, testClassObj4);
   }
 
   // TODO(chaokunyang) add `readObjectNoData` test for class inheritance change.

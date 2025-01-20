@@ -143,6 +143,13 @@ public class UnmodifiableSerializersTest extends FuryTestBase {
     assertEquals(((CollectionFields) (newObj)).toCanEqual(), obj.toCanEqual());
   }
 
+  @Test(dataProvider = "furyCopyConfig")
+  public void testCollectionFieldSerializersCopy(Fury fury) {
+    CollectionFields obj = createCollectionFields();
+    Object newObj = fury.copy(obj);
+    assertEquals(((CollectionFields) (newObj)).toCanEqual(), obj.toCanEqual());
+  }
+
   public static MapFields createMapFields() {
     MapFields obj = new MapFields();
     Map<String, Integer> map = ImmutableMap.of("k1", 1, "k2", 2);
@@ -178,5 +185,11 @@ public class UnmodifiableSerializersTest extends FuryTestBase {
   public void testMapFieldSerializers(Fury fury) {
     MapFields obj = createMapFields();
     Assert.assertEquals(serDe(fury, obj), obj);
+  }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testMapFieldSerializersCopy(Fury fury) {
+    MapFields obj = createMapFields();
+    copyCheck(fury, obj);
   }
 }

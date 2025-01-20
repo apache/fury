@@ -61,6 +61,7 @@ public class ProtocolInteroperabilityTest extends FuryTestBase {
     return Sets.cartesianProduct(
             ImmutableSet.of(true, false), // referenceTracking
             ImmutableSet.of(true, false), // compressNumber
+            ImmutableSet.of(true, false), // scopedMetaShare
             ImmutableSet.of(CompatibleMode.SCHEMA_CONSISTENT, CompatibleMode.COMPATIBLE))
         .stream()
         .map(List::toArray)
@@ -72,7 +73,8 @@ public class ProtocolInteroperabilityTest extends FuryTestBase {
                       .withRefTracking((Boolean) c[0])
                       .withNumberCompressed((Boolean) c[1])
                       .withCodegen(false)
-                      .withCompatibleMode((CompatibleMode) c[2])
+                      .withScopedMetaShare((Boolean) c[2])
+                      .withCompatibleMode((CompatibleMode) c[3])
                       .requireClassRegistration(false)
                       .build(),
                   Fury.builder()
@@ -80,7 +82,8 @@ public class ProtocolInteroperabilityTest extends FuryTestBase {
                       .withRefTracking((Boolean) c[0])
                       .withNumberCompressed((Boolean) c[1])
                       .withCodegen(true)
-                      .withCompatibleMode((CompatibleMode) c[2])
+                      .withScopedMetaShare((Boolean) c[2])
+                      .withCompatibleMode((CompatibleMode) c[3])
                       .requireClassRegistration(false)
                       .build()
                 })
@@ -237,6 +240,7 @@ public class ProtocolInteroperabilityTest extends FuryTestBase {
                       .withLanguage(Language.JAVA)
                       .withMetaShare(true)
                       .withCompatibleMode((CompatibleMode) c[0])
+                      .withScopedMetaShare(false)
                       .withCodegen(false)
                       .requireClassRegistration(false)
                       .build(),
@@ -244,6 +248,7 @@ public class ProtocolInteroperabilityTest extends FuryTestBase {
                       .withLanguage(Language.JAVA)
                       .withMetaShare(true)
                       .withCompatibleMode((CompatibleMode) c[0])
+                      .withScopedMetaShare(false)
                       .withCodegen(true)
                       .requireClassRegistration(false)
                       .build()

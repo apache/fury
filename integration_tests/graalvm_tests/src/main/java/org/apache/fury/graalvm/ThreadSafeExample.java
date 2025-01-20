@@ -37,7 +37,11 @@ public class ThreadSafeExample {
     fury =
         new ThreadLocalFury(
             classLoader -> {
-              Fury f = Fury.builder().requireClassRegistration(true).build();
+              Fury f =
+                  Fury.builder()
+                      .withName(ThreadSafeExample.class.getName())
+                      .requireClassRegistration(true)
+                      .build();
               // register and generate serializer code.
               f.register(Foo.class, true);
               return f;

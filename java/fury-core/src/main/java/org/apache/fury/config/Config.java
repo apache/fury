@@ -33,17 +33,20 @@ import org.apache.fury.util.Preconditions;
 /** Config for fury, all {@link Fury} related config can be found here. */
 @SuppressWarnings({"rawtypes"})
 public class Config implements Serializable {
+  private final String name;
   private final Language language;
   private final boolean trackingRef;
   private final boolean basicTypesRefIgnored;
   private final boolean stringRefIgnored;
   private final boolean timeRefIgnored;
+  private final boolean copyRef;
   private final boolean codeGenEnabled;
   private final boolean checkClassVersion;
   private final CompatibleMode compatibleMode;
   private final boolean checkJdkClassSerializable;
   private final Class<? extends Serializer> defaultJDKStreamSerializerType;
   private final boolean compressString;
+  private final boolean writeNumUtf16BytesForUtf8Encoding;
   private final boolean compressInt;
   private final boolean compressLong;
   private final LongEncoding longEncoding;
@@ -56,17 +59,21 @@ public class Config implements Serializable {
   private final boolean asyncCompilationEnabled;
   private final boolean deserializeNonexistentClass;
   private final boolean scalaOptimizationEnabled;
-  private final boolean chunkSerializeMapEnabled;
   private transient int configHash;
   private final boolean deserializeNonexistentEnumValueAsNull;
+  private final boolean serializeEnumByName;
+  private final int bufferSizeLimitBytes;
 
   public Config(FuryBuilder builder) {
+    name = builder.name;
     language = builder.language;
     trackingRef = builder.trackingRef;
     basicTypesRefIgnored = !trackingRef || builder.basicTypesRefIgnored;
     stringRefIgnored = !trackingRef || builder.stringRefIgnored;
     timeRefIgnored = !trackingRef || builder.timeRefIgnored;
+    copyRef = builder.copyRef;
     compressString = builder.compressString;
+    writeNumUtf16BytesForUtf8Encoding = builder.writeNumUtf16BytesForUtf8Encoding;
     compressInt = builder.compressInt;
     longEncoding = builder.longEncoding;
     compressLong = longEncoding != LongEncoding.LE_RAW_BYTES;
@@ -90,7 +97,13 @@ public class Config implements Serializable {
     asyncCompilationEnabled = builder.asyncCompilationEnabled;
     scalaOptimizationEnabled = builder.scalaOptimizationEnabled;
     deserializeNonexistentEnumValueAsNull = builder.deserializeNonexistentEnumValueAsNull;
-    chunkSerializeMapEnabled = builder.chunkSerializeMapEnabled;
+    serializeEnumByName = builder.serializeEnumByName;
+    bufferSizeLimitBytes = builder.bufferSizeLimitBytes;
+  }
+
+  /** Returns the name for Fury serialization. */
+  public String getName() {
+    return name;
   }
 
   public Language getLanguage() {
@@ -99,6 +112,18 @@ public class Config implements Serializable {
 
   public boolean trackingRef() {
     return trackingRef;
+  }
+
+  /**
+   * Returns true if copy value by ref, and false copy by value.
+   *
+   * <p>If this option is false, shared reference will be copied into different object, and circular
+   * reference copy will raise stack overflow exception.
+   *
+   * <p>If this option is enabled, the copy performance will be slower.
+   */
+  public boolean copyRef() {
+    return copyRef;
   }
 
   public boolean isBasicTypesRefIgnored() {
@@ -112,6 +137,11 @@ public class Config implements Serializable {
   /** ignore Enum Deserialize array out of bounds return null. */
   public boolean deserializeNonexistentEnumValueAsNull() {
     return deserializeNonexistentEnumValueAsNull;
+  }
+
+  /** deserialize and serialize enum by name. */
+  public boolean serializeEnumByName() {
+    return serializeEnumByName;
   }
 
   /**
@@ -148,6 +178,10 @@ public class Config implements Serializable {
     return compressString;
   }
 
+  public boolean writeNumUtf16BytesForUtf8Encoding() {
+    return writeNumUtf16BytesForUtf8Encoding;
+  }
+
   public boolean compressInt() {
     return compressInt;
   }
@@ -159,6 +193,10 @@ public class Config implements Serializable {
   /** Returns long encoding. */
   public LongEncoding longEncoding() {
     return longEncoding;
+  }
+
+  public int bufferSizeLimitBytes() {
+    return bufferSizeLimitBytes;
   }
 
   public boolean requireClassRegistration() {
@@ -231,10 +269,6 @@ public class Config implements Serializable {
     return asyncCompilationEnabled;
   }
 
-  public boolean isChunkSerializeMapEnabled() {
-    return chunkSerializeMapEnabled;
-  }
-
   /** Whether enable scala-specific serialization optimization. */
   public boolean isScalaOptimizationEnabled() {
     return scalaOptimizationEnabled;
@@ -249,16 +283,20 @@ public class Config implements Serializable {
       return false;
     }
     Config config = (Config) o;
-    return trackingRef == config.trackingRef
+    return name == config.name
+        && trackingRef == config.trackingRef
         && basicTypesRefIgnored == config.basicTypesRefIgnored
         && stringRefIgnored == config.stringRefIgnored
         && timeRefIgnored == config.timeRefIgnored
+        && copyRef == config.copyRef
         && codeGenEnabled == config.codeGenEnabled
         && checkClassVersion == config.checkClassVersion
         && checkJdkClassSerializable == config.checkJdkClassSerializable
         && compressString == config.compressString
+        && writeNumUtf16BytesForUtf8Encoding == config.writeNumUtf16BytesForUtf8Encoding
         && compressInt == config.compressInt
         && compressLong == config.compressLong
+        && bufferSizeLimitBytes == config.bufferSizeLimitBytes
         && requireClassRegistration == config.requireClassRegistration
         && suppressClassRegistrationWarnings == config.suppressClassRegistrationWarnings
         && registerGuavaTypes == config.registerGuavaTypes
@@ -277,20 +315,24 @@ public class Config implements Serializable {
   @Override
   public int hashCode() {
     return Objects.hash(
+        name,
         language,
         trackingRef,
         basicTypesRefIgnored,
         stringRefIgnored,
         timeRefIgnored,
+        copyRef,
         codeGenEnabled,
         checkClassVersion,
         compatibleMode,
         checkJdkClassSerializable,
         defaultJDKStreamSerializerType,
         compressString,
+        writeNumUtf16BytesForUtf8Encoding,
         compressInt,
         compressLong,
         longEncoding,
+        bufferSizeLimitBytes,
         requireClassRegistration,
         suppressClassRegistrationWarnings,
         registerGuavaTypes,

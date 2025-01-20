@@ -23,7 +23,6 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.type.Type;
 
 /** Serializers for buffer related classes. */
 public class BufferSerializers {
@@ -36,12 +35,20 @@ public class BufferSerializers {
       extends Serializers.CrossLanguageCompatibleSerializer<ByteBuffer> {
 
     public ByteBufferSerializer(Fury fury, Class<ByteBuffer> cls) {
-      super(fury, cls, Type.FURY_BUFFER.getId());
+      super(fury, cls);
     }
 
     @Override
     public void write(MemoryBuffer buffer, ByteBuffer value) {
       fury.writeBufferObject(buffer, new BufferObject.ByteBufferBufferObject(value));
+    }
+
+    @Override
+    public ByteBuffer copy(ByteBuffer value) {
+      ByteBuffer dst = ByteBuffer.allocate(value.remaining());
+      dst.put(value.duplicate());
+      dst.rewind();
+      return dst;
     }
 
     @Override

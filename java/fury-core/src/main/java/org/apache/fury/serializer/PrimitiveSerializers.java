@@ -27,7 +27,7 @@ import org.apache.fury.codegen.Expression.Invoke;
 import org.apache.fury.config.LongEncoding;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
-import org.apache.fury.type.Type;
+import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.util.Preconditions;
 
 /** Serializers for java primitive types. */
@@ -36,11 +36,7 @@ public class PrimitiveSerializers {
   public static final class BooleanSerializer
       extends Serializers.CrossLanguageCompatibleSerializer<Boolean> {
     public BooleanSerializer(Fury fury, Class<?> cls) {
-      super(
-          fury,
-          (Class) cls,
-          Type.BOOL.getId(),
-          !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
+      super(fury, (Class) cls, !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()), true);
     }
 
     @Override
@@ -57,11 +53,7 @@ public class PrimitiveSerializers {
   public static final class ByteSerializer
       extends Serializers.CrossLanguageCompatibleSerializer<Byte> {
     public ByteSerializer(Fury fury, Class<?> cls) {
-      super(
-          fury,
-          (Class) cls,
-          Type.INT8.getId(),
-          !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
+      super(fury, (Class) cls, !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()), true);
     }
 
     @Override
@@ -78,11 +70,6 @@ public class PrimitiveSerializers {
   public static final class Uint8Serializer extends Serializer<Integer> {
     public Uint8Serializer(Fury fury) {
       super(fury, Integer.class);
-    }
-
-    @Override
-    public short getXtypeId() {
-      return Type.UINT8.getId();
     }
 
     @Override
@@ -104,11 +91,6 @@ public class PrimitiveSerializers {
     }
 
     @Override
-    public short getXtypeId() {
-      return Type.UINT16.getId();
-    }
-
-    @Override
     public void xwrite(MemoryBuffer buffer, Integer value) {
       Preconditions.checkArgument(value >= 0 && value <= 65535);
       buffer.writeByte(value.byteValue());
@@ -121,7 +103,7 @@ public class PrimitiveSerializers {
     }
   }
 
-  public static final class CharSerializer extends Serializer<Character> {
+  public static final class CharSerializer extends ImmutableSerializer<Character> {
     public CharSerializer(Fury fury, Class<?> cls) {
       super(fury, (Class) cls, !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
     }
@@ -140,11 +122,7 @@ public class PrimitiveSerializers {
   public static final class ShortSerializer
       extends Serializers.CrossLanguageCompatibleSerializer<Short> {
     public ShortSerializer(Fury fury, Class<?> cls) {
-      super(
-          fury,
-          (Class) cls,
-          Type.INT16.getId(),
-          !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
+      super(fury, (Class) cls, !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()), true);
     }
 
     @Override
@@ -163,11 +141,7 @@ public class PrimitiveSerializers {
     private final boolean compressNumber;
 
     public IntSerializer(Fury fury, Class<?> cls) {
-      super(
-          fury,
-          (Class) cls,
-          Type.INT32.getId(),
-          !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
+      super(fury, (Class) cls, !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()), true);
       compressNumber = fury.compressInt();
     }
 
@@ -192,12 +166,12 @@ public class PrimitiveSerializers {
     @Override
     public void xwrite(MemoryBuffer buffer, Integer value) {
       // TODO support varint in cross-language serialization
-      buffer.writeInt32(value);
+      buffer.writeVarInt32(value);
     }
 
     @Override
     public Integer xread(MemoryBuffer buffer) {
-      return buffer.readInt32();
+      return buffer.readVarInt32();
     }
   }
 
@@ -206,11 +180,7 @@ public class PrimitiveSerializers {
     private final LongEncoding longEncoding;
 
     public LongSerializer(Fury fury, Class<?> cls) {
-      super(
-          fury,
-          (Class) cls,
-          Type.INT64.getId(),
-          !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
+      super(fury, (Class) cls, !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()), true);
       longEncoding = fury.longEncoding();
     }
 
@@ -277,24 +247,20 @@ public class PrimitiveSerializers {
 
     @Override
     public void xwrite(MemoryBuffer buffer, Long value) {
-      // TODO support var long in cross-language serialization
-      buffer.writeInt64(value);
+      // TODO(chaokunyang) support var long in cross-language serialization
+      buffer.writeVarInt64(value);
     }
 
     @Override
     public Long xread(MemoryBuffer buffer) {
-      return buffer.readInt64();
+      return buffer.readVarInt64();
     }
   }
 
   public static final class FloatSerializer
       extends Serializers.CrossLanguageCompatibleSerializer<Float> {
     public FloatSerializer(Fury fury, Class<?> cls) {
-      super(
-          fury,
-          (Class) cls,
-          Type.FLOAT.getId(),
-          !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
+      super(fury, (Class) cls, !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()), true);
     }
 
     @Override
@@ -311,11 +277,7 @@ public class PrimitiveSerializers {
   public static final class DoubleSerializer
       extends Serializers.CrossLanguageCompatibleSerializer<Double> {
     public DoubleSerializer(Fury fury, Class<?> cls) {
-      super(
-          fury,
-          (Class) cls,
-          Type.DOUBLE.getId(),
-          !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()));
+      super(fury, (Class) cls, !(cls.isPrimitive() || fury.isBasicTypesRefIgnored()), true);
     }
 
     @Override
@@ -331,21 +293,22 @@ public class PrimitiveSerializers {
 
   public static void registerDefaultSerializers(Fury fury) {
     // primitive types will be boxed.
-    fury.registerSerializer(boolean.class, new BooleanSerializer(fury, boolean.class));
-    fury.registerSerializer(byte.class, new ByteSerializer(fury, byte.class));
-    fury.registerSerializer(short.class, new ShortSerializer(fury, short.class));
-    fury.registerSerializer(char.class, new CharSerializer(fury, char.class));
-    fury.registerSerializer(int.class, new IntSerializer(fury, int.class));
-    fury.registerSerializer(long.class, new LongSerializer(fury, long.class));
-    fury.registerSerializer(float.class, new FloatSerializer(fury, float.class));
-    fury.registerSerializer(double.class, new DoubleSerializer(fury, double.class));
-    fury.registerSerializer(Boolean.class, new BooleanSerializer(fury, Boolean.class));
-    fury.registerSerializer(Byte.class, new ByteSerializer(fury, Byte.class));
-    fury.registerSerializer(Short.class, new ShortSerializer(fury, Short.class));
-    fury.registerSerializer(Character.class, new CharSerializer(fury, Character.class));
-    fury.registerSerializer(Integer.class, new IntSerializer(fury, Integer.class));
-    fury.registerSerializer(Long.class, new LongSerializer(fury, Long.class));
-    fury.registerSerializer(Float.class, new FloatSerializer(fury, Float.class));
-    fury.registerSerializer(Double.class, new DoubleSerializer(fury, Double.class));
+    ClassResolver resolver = fury.getClassResolver();
+    resolver.registerSerializer(boolean.class, new BooleanSerializer(fury, boolean.class));
+    resolver.registerSerializer(byte.class, new ByteSerializer(fury, byte.class));
+    resolver.registerSerializer(short.class, new ShortSerializer(fury, short.class));
+    resolver.registerSerializer(char.class, new CharSerializer(fury, char.class));
+    resolver.registerSerializer(int.class, new IntSerializer(fury, int.class));
+    resolver.registerSerializer(long.class, new LongSerializer(fury, long.class));
+    resolver.registerSerializer(float.class, new FloatSerializer(fury, float.class));
+    resolver.registerSerializer(double.class, new DoubleSerializer(fury, double.class));
+    resolver.registerSerializer(Boolean.class, new BooleanSerializer(fury, Boolean.class));
+    resolver.registerSerializer(Byte.class, new ByteSerializer(fury, Byte.class));
+    resolver.registerSerializer(Short.class, new ShortSerializer(fury, Short.class));
+    resolver.registerSerializer(Character.class, new CharSerializer(fury, Character.class));
+    resolver.registerSerializer(Integer.class, new IntSerializer(fury, Integer.class));
+    resolver.registerSerializer(Long.class, new LongSerializer(fury, Long.class));
+    resolver.registerSerializer(Float.class, new FloatSerializer(fury, Float.class));
+    resolver.registerSerializer(Double.class, new DoubleSerializer(fury, Double.class));
   }
 }

@@ -21,15 +21,17 @@ package org.apache.fury;
 
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.util.Collections;
+import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.annotation.concurrent.ThreadSafe;
+import org.apache.fury.annotation.Internal;
 import org.apache.fury.io.FuryInputStream;
 import org.apache.fury.io.FuryReadableChannel;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
-import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.BufferCallback;
 import org.apache.fury.util.LoaderBinding;
 import org.apache.fury.util.LoaderBinding.StagingType;
@@ -46,17 +48,23 @@ public class ThreadLocalFury extends AbstractThreadSafeFury {
 
   private final ThreadLocal<LoaderBinding> bindingThreadLocal;
   private Consumer<Fury> factoryCallback;
-  private final WeakHashMap<LoaderBinding, Object> allFury;
+  private final Map<LoaderBinding, Object> allFury;
+
+  private ClassLoader classLoader;
 
   public ThreadLocalFury(Function<ClassLoader, Fury> furyFactory) {
     factoryCallback = f -> {};
-    allFury = new WeakHashMap<>();
+    allFury = Collections.synchronizedMap(new WeakHashMap<>());
     bindingThreadLocal =
         ThreadLocal.withInitial(
             () -> {
               LoaderBinding binding = new LoaderBinding(furyFactory);
               binding.setBindingCallback(factoryCallback);
-              binding.setClassLoader(Thread.currentThread().getContextClassLoader());
+              ClassLoader cl =
+                  classLoader == null
+                      ? Thread.currentThread().getContextClassLoader()
+                      : classLoader;
+              binding.setClassLoader(cl);
               allFury.put(binding, null);
               return binding;
             });
@@ -65,12 +73,11 @@ public class ThreadLocalFury extends AbstractThreadSafeFury {
     // in a process load some classes which is not cheap.
     // 2. Make fury generate code at graalvm build time.
     Fury fury = bindingThreadLocal.get().get();
-    ClassResolver._addGraalvmClassRegistry(
-        fury.getConfig().getConfigHash(), fury.getClassResolver());
   }
 
+  @Internal
   @Override
-  protected void processCallback(Consumer<Fury> callback) {
+  public void registerCallback(Consumer<Fury> callback) {
     factoryCallback = factoryCallback.andThen(callback);
     for (LoaderBinding binding : allFury.keySet()) {
       binding.visitAllFury(callback);
@@ -128,6 +135,11 @@ public class ThreadLocalFury extends AbstractThreadSafeFury {
   @Override
   public Object deserialize(byte[] bytes) {
     return bindingThreadLocal.get().get().deserialize(bytes);
+  }
+
+  @Override
+  public <T> T deserialize(byte[] bytes, Class<T> type) {
+    return bindingThreadLocal.get().get().deserialize(bytes, type);
   }
 
   @Override
@@ -246,12 +258,18 @@ public class ThreadLocalFury extends AbstractThreadSafeFury {
   }
 
   @Override
+  public <T> T copy(T obj) {
+    return bindingThreadLocal.get().get().copy(obj);
+  }
+
+  @Override
   public void setClassLoader(ClassLoader classLoader) {
     setClassLoader(classLoader, StagingType.STRONG_STAGING);
   }
 
   @Override
   public void setClassLoader(ClassLoader classLoader, StagingType stagingType) {
+    this.classLoader = classLoader;
     bindingThreadLocal.get().setClassLoader(classLoader, stagingType);
   }
 

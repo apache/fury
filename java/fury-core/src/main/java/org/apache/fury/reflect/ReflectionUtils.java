@@ -34,12 +34,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
@@ -378,6 +380,19 @@ public class ReflectionUtils {
     return fields;
   }
 
+  public static List<Field> getFieldsWithoutSuperClasses(Class<?> cls, Set<Class<?>> superClasses) {
+    Preconditions.checkNotNull(cls);
+    List<Field> fields = new ArrayList<>();
+    Class<?> clazz = cls;
+    do {
+      if (!superClasses.contains(clazz)) {
+        Collections.addAll(fields, clazz.getDeclaredFields());
+      }
+      clazz = clazz.getSuperclass();
+    } while (clazz != null);
+    return fields;
+  }
+
   /** Get fields values from provided object. */
   public static List<Object> getFieldValues(Collection<Field> fields, Object o) {
     List<Object> results = new ArrayList<>(fields.size());
@@ -565,13 +580,38 @@ public class ReflectionUtils {
    * @throws IllegalArgumentException if the canonical name of the underlying class doesn't exist.
    */
   public static String getLiteralName(Class<?> cls) {
-    String canonicalName = cls.getCanonicalName();
-    org.apache.fury.util.Preconditions.checkArgument(
-        canonicalName != null, "Class %s doesn't have canonical name", cls);
+    String canonicalName;
+    try {
+      // getCanonicalName for scala type `A$B$C` may fail
+      canonicalName = cls.getCanonicalName();
+    } catch (InternalError e) {
+      return cls.getName();
+    }
+    if (canonicalName == null) {
+      throw new NullPointerException(String.format("Class %s doesn't have canonical name", cls));
+    }
+    String clsName = cls.getName();
     if (canonicalName.endsWith(".")) {
       // qualifier name of scala object type will ends with `.`
-      String name = cls.getName();
-      canonicalName = name.substring(0, name.length() - 1).replace("$", ".") + "$";
+      canonicalName = clsName.substring(0, clsName.length() - 1).replace("$", ".") + "$";
+    } else {
+      if (!canonicalName.endsWith("$") && canonicalName.contains("$")) {
+        // nested scala object type can't be accessed in java by using canonicalName
+        // see more detailed in
+        // https://stackoverflow.com/questions/30809070/accessing-scala-nested-classes-from-java
+        int nestedLevels = 0;
+        boolean hasEnclosedObjectType = false;
+        while (cls.getEnclosingClass() != null) {
+          nestedLevels++;
+          cls = cls.getEnclosingClass();
+          if (!hasEnclosedObjectType) {
+            hasEnclosedObjectType = isScalaSingletonObject(cls);
+          }
+        }
+        if (nestedLevels >= 2 && hasEnclosedObjectType) {
+          canonicalName = clsName;
+        }
+      }
     }
     return canonicalName;
   }
@@ -696,8 +736,8 @@ public class ReflectionUtils {
       Object o2) {
 
     for (String commonField : commonFieldsInfo.f0) {
-      Field field1 = commonFieldsInfo.f1.get(commonField);
-      Field field2 = commonFieldsInfo.f2.get(commonField);
+      Field field1 = Objects.requireNonNull(commonFieldsInfo.f1.get(commonField));
+      Field field2 = Objects.requireNonNull(commonFieldsInfo.f2.get(commonField));
       FieldAccessor accessor1 = FieldAccessor.createAccessor(field1);
       FieldAccessor accessor2 = FieldAccessor.createAccessor(field2);
       Object f1 = accessor1.get(o1);
@@ -769,15 +809,13 @@ public class ReflectionUtils {
             .collect(
                 Collectors.toMap(
                     // don't use `getGenericType` since janino doesn't support generics.
-                    f -> f.getDeclaringClass().getSimpleName() + f.getType() + f.getName(),
+                    f -> f.getDeclaringClass().getSimpleName() + f.getName(),
                     f -> f));
     Map<String, Field> fieldMap2 =
         fields2.stream()
             .collect(
-                Collectors.toMap(
-                    f -> f.getDeclaringClass().getSimpleName() + f.getType() + f.getName(),
-                    f -> f));
-    Set<String> commonFields = fieldMap1.keySet();
+                Collectors.toMap(f -> f.getDeclaringClass().getSimpleName() + f.getName(), f -> f));
+    Set<String> commonFields = new HashSet<>(fieldMap1.keySet());
     commonFields.retainAll(fieldMap2.keySet());
     return Tuple3.of(commonFields, fieldMap1, fieldMap2);
   }
@@ -791,13 +829,20 @@ public class ReflectionUtils {
     return Functions.isLambda(cls) || isJdkProxy(cls);
   }
 
+  private static final WeakHashMap<Class<?>, Boolean> scalaSingletonObjectCache =
+      new WeakHashMap<>();
+
   /** Returns true if a class is a scala `object` singleton. */
   public static boolean isScalaSingletonObject(Class<?> cls) {
-    try {
-      cls.getDeclaredField("MODULE$");
-      return true;
-    } catch (NoSuchFieldException e) {
-      return false;
-    }
+    return scalaSingletonObjectCache.computeIfAbsent(
+        cls,
+        c -> {
+          try {
+            cls.getDeclaredField("MODULE$");
+            return true;
+          } catch (NoSuchFieldException e) {
+            return false;
+          }
+        });
   }
 }

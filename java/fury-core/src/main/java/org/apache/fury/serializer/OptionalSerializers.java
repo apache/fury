@@ -25,6 +25,7 @@ import java.util.OptionalInt;
 import java.util.OptionalLong;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.resolver.ClassResolver;
 
 /**
  * Serializers for {@link Optional}, {@link OptionalInt}, {@link OptionalLong} and {@link
@@ -44,12 +45,20 @@ public final class OptionalSerializers {
     }
 
     @Override
+    public Optional copy(Optional originOptional) {
+      if (originOptional.isPresent()) {
+        return Optional.ofNullable(fury.copyObject(originOptional.get()));
+      }
+      return originOptional;
+    }
+
+    @Override
     public Optional read(MemoryBuffer buffer) {
       return Optional.ofNullable(fury.readRef(buffer));
     }
   }
 
-  public static final class OptionalIntSerializer extends Serializer<OptionalInt> {
+  public static final class OptionalIntSerializer extends ImmutableSerializer<OptionalInt> {
     public OptionalIntSerializer(Fury fury) {
       super(fury, OptionalInt.class);
     }
@@ -73,7 +82,7 @@ public final class OptionalSerializers {
     }
   }
 
-  public static final class OptionalLongSerializer extends Serializer<OptionalLong> {
+  public static final class OptionalLongSerializer extends ImmutableSerializer<OptionalLong> {
     public OptionalLongSerializer(Fury fury) {
       super(fury, OptionalLong.class);
     }
@@ -97,7 +106,7 @@ public final class OptionalSerializers {
     }
   }
 
-  public static final class OptionalDoubleSerializer extends Serializer<OptionalDouble> {
+  public static final class OptionalDoubleSerializer extends ImmutableSerializer<OptionalDouble> {
     public OptionalDoubleSerializer(Fury fury) {
       super(fury, OptionalDouble.class);
     }
@@ -122,9 +131,10 @@ public final class OptionalSerializers {
   }
 
   public static void registerDefaultSerializers(Fury fury) {
-    fury.registerSerializer(Optional.class, new OptionalSerializer(fury));
-    fury.registerSerializer(OptionalInt.class, new OptionalIntSerializer(fury));
-    fury.registerSerializer(OptionalLong.class, new OptionalLongSerializer(fury));
-    fury.registerSerializer(OptionalDouble.class, new OptionalDoubleSerializer(fury));
+    ClassResolver resolver = fury.getClassResolver();
+    resolver.registerSerializer(Optional.class, new OptionalSerializer(fury));
+    resolver.registerSerializer(OptionalInt.class, new OptionalIntSerializer(fury));
+    resolver.registerSerializer(OptionalLong.class, new OptionalLongSerializer(fury));
+    resolver.registerSerializer(OptionalDouble.class, new OptionalDoubleSerializer(fury));
   }
 }

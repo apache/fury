@@ -34,10 +34,32 @@ public class MapSerializer<T extends Map> extends AbstractMapSerializer<T> {
     super(fury, cls, supportCodegenHook);
   }
 
+  public MapSerializer(Fury fury, Class<T> cls, boolean supportCodegenHook, boolean immutable) {
+    super(fury, cls, supportCodegenHook, immutable);
+  }
+
   @Override
   public Map onMapWrite(MemoryBuffer buffer, T value) {
     buffer.writeVarUint32Small7(value.size());
     return value;
+  }
+
+  @Override
+  public T copy(T originMap) {
+    if (isImmutable()) {
+      return originMap;
+    }
+    Map newMap = newMap(originMap);
+    if (needToCopyRef) {
+      fury.reference(originMap, newMap);
+    }
+    copyEntry(originMap, newMap);
+    return onMapCopy(newMap);
+  }
+
+  @Override
+  public T onMapCopy(Map map) {
+    return (T) map;
   }
 
   @Override

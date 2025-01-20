@@ -35,5 +35,6 @@ public class Slf4jLoggerTest {
     furyLogger.info("testInfo {}", "placeHolder");
     furyLogger.warn("testInfo {}", "placeHolder");
     furyLogger.error("testInfo {}", "placeHolder", new Exception("test log"));
+    furyLogger.error(null, new Exception("test log"));
   }
 }

@@ -4,7 +4,7 @@ sidebar_position: 0
 id: java_object_graph_guide
 ---
 
-# Java object graph serialization
+## Java object graph serialization
 
 When only java object serialization needed, this mode will have better performance compared to cross-language object
 graph serialization.
@@ -79,10 +79,10 @@ import org.apache.fury.config.*;
 public class Example {
   // reuse fury.
   private static final ThreadSafeFury fury = new ThreadLocalFury(classLoader -> {
-      Fury f = Fury.builder().withLanguage(Language.JAVA)
-              .withClassLoader(classLoader).build();
-      f.register(SomeClass.class);
-      return f;
+    Fury f = Fury.builder().withLanguage(Language.JAVA)
+      .withClassLoader(classLoader).build();
+    f.register(SomeClass.class);
+    return f;
   });
 
   public static void main(String[] args) {
@@ -100,21 +100,23 @@ public class Example {
 | `timeRefIgnored`                    | Whether to ignore reference tracking of all time types registered in `TimeSerializers` and subclasses of those types when ref tracking is enabled. If ignored, ref tracking of every time type can be enabled by invoking `Fury#registerSerializer(Class, Serializer)`. For example, `fury.registerSerializer(Date.class, new DateSerializer(fury, true))`. Note that enabling ref tracking should happen before serializer codegen of any types which contain time fields. Otherwise, those fields will still skip ref tracking. | `true`                                                         |
 | `compressInt`                       | Enables or disables int compression for smaller size.                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | `true`                                                         |
 | `compressLong`                      | Enables or disables long compression for smaller size.                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | `true`                                                         |
-| `compressString`                    | Enables or disables string compression for smaller size.                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | `true`                                                         |
+| `compressString`                    | Enables or disables string compression for smaller size.                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | `false`                                                        |
 | `classLoader`                       | The classloader should not be updated; Fury caches class metadata. Use `LoaderBinding` or `ThreadSafeFury` for classloader updates.                                                                                                                                                                                                                                                                                                                                                                                               | `Thread.currentThread().getContextClassLoader()`               |
-| `compatibleMode`                    | Type forward/backward compatibility config. Also Related to `checkClassVersion` config. `SCHEMA_CONSISTENT`: Class schema must be consistent between serialization peer and deserialization peer. `COMPATIBLE`: Class schema can be different between serialization peer and deserialization peer. They can add/delete fields independently.                                                                                                                                                                                      | `CompatibleMode.SCHEMA_CONSISTENT`                             |
+| `compatibleMode`                    | Type forward/backward compatibility config. Also Related to `checkClassVersion` config. `SCHEMA_CONSISTENT`: Class schema must be consistent between serialization peer and deserialization peer. `COMPATIBLE`: Class schema can be different between serialization peer and deserialization peer. They can add/delete fields independently. [See more](#class-inconsistency-and-class-version-check).                                                                                                                             | `CompatibleMode.SCHEMA_CONSISTENT`                             |
 | `checkClassVersion`                 | Determines whether to check the consistency of the class schema. If enabled, Fury checks, writes, and checks consistency using the `classVersionHash`. It will be automatically disabled when `CompatibleMode#COMPATIBLE` is enabled. Disabling is not recommended unless you can ensure the class won't evolve.                                                                                                                                                                                                                  | `false`                                                        |
 | `checkJdkClassSerializable`         | Enables or disables checking of `Serializable` interface for classes under `java.*`. If a class under `java.*` is not `Serializable`, Fury will throw an `UnsupportedOperationException`.                                                                                                                                                                                                                                                                                                                                         | `true`                                                         |
 | `registerGuavaTypes`                | Whether to pre-register Guava types such as `RegularImmutableMap`/`RegularImmutableList`. These types are not public API, but seem pretty stable.                                                                                                                                                                                                                                                                                                                                                                                 | `true`                                                         |
 | `requireClassRegistration`          | Disabling may allow unknown classes to be deserialized, potentially causing security risks.                                                                                                                                                                                                                                                                                                                                                                                                                                       | `true`                                                         |
 | `suppressClassRegistrationWarnings` | Whether to suppress class registration warnings. The warnings can be used for security audit, but may be annoying, this suppression will be enabled by default.                                                                                                                                                                                                                                                                                                                                                                   | `true`                                                         |
-| `metaShareEnabled`                  | Enables or disables meta share mode.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | `false`                                                        |
-| `scopedMetaShareEnabled`            | Scoped meta share focuses on a single serialization process. Metadata created or identified during this process is exclusive to it and is not shared with by other serializations.                                                                                                                                                                                                                                                                                                                                                | `false`                                                        |
+| `metaShareEnabled`                  | Enables or disables meta share mode.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | `true` if `CompatibleMode.Compatible` is set, otherwise false. |
+| `scopedMetaShareEnabled`            | Scoped meta share focuses on a single serialization process. Metadata created or identified during this process is exclusive to it and is not shared with by other serializations.                                                                                                                                                                                                                                                                                                                                                | `true` if `CompatibleMode.Compatible` is set, otherwise false. |
 | `metaCompressor`                    | Set a compressor for meta compression. Note that the passed MetaCompressor should be thread-safe. By default, a `Deflater` based compressor `DeflaterMetaCompressor` will be used. Users can pass other compressor such as `zstd` for better compression rate.                                                                                                                                                                                                                                                                    | `DeflaterMetaCompressor`                                       |
 | `deserializeNonexistentClass`       | Enables or disables deserialization/skipping of data for non-existent classes.                                                                                                                                                                                                                                                                                                                                                                                                                                                    | `true` if `CompatibleMode.Compatible` is set, otherwise false. |
 | `codeGenEnabled`                    | Disabling may result in faster initial serialization but slower subsequent serializations.                                                                                                                                                                                                                                                                                                                                                                                                                                        | `true`                                                         |
 | `asyncCompilationEnabled`           | If enabled, serialization uses interpreter mode first and switches to JIT serialization after async serializer JIT for a class is finished.                                                                                                                                                                                                                                                                                                                                                                                       | `false`                                                        |
 | `scalaOptimizationEnabled`          | Enables or disables Scala-specific serialization optimization.                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | `false`                                                        |
+| `copyRef`                           | When disabled, the copy performance will be better. But fury deep copy will ignore circular and shared reference. Same reference of an object graph will be copied into different objects in one `Fury#copy`.                                                                                                                                                                                                                                                                                                                     | `true`                                                         |
+| `serializeEnumByName`               | When Enabled, fury serialize enum by name instead of ordinal.                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | `false`                                                        |
 
 ## Advanced Usage
 
@@ -178,19 +180,42 @@ bit is set, then next byte will be read util first bit of next byte is unset.
 For long compression, fury support two encoding:
 
 - Fury SLI(Small long as int) Encoding (**used by default**):
-    - If long is in [-1073741824, 1073741823], encode as 4 bytes int: `| little-endian: ((int) value) << 1 |`
-    - Otherwise write as 9 bytes: `| 0b1 | little-endian 8bytes long |`
+  - If long is in `[-1073741824, 1073741823]`, encode as 4 bytes int: `| little-endian: ((int) value) << 1 |`
+  - Otherwise write as 9 bytes: `| 0b1 | little-endian 8bytes long |`
 - Fury PVL(Progressive Variable-length Long) Encoding:
-    - First bit in every byte indicate whether has next byte. if first bit is set, then next byte will be read util
-      first bit of next byte is unset.
-    - Negative number will be converted to positive number by ` (v << 1) ^ (v >> 63)` to reduce cost of small negative
-      numbers.
+  - First bit in every byte indicate whether has next byte. if first bit is set, then next byte will be read util
+  first bit of next byte is unset.
+  - Negative number will be converted to positive number by `(v << 1) ^ (v >> 63)` to reduce cost of small negative
+    numbers.
 
 If a number are `long` type, it can't be represented by smaller bytes mostly, the compression won't get good enough
 result,
 not worthy compared to performance cost. Maybe you should try to disable long compression if you find it didn't bring
 much
 space savings.
+
+### Object deep copy
+
+Deep copy example:
+
+```java
+Fury fury=Fury.builder()
+  ...
+  .withRefCopy(true).build();
+  SomeClass a=xxx;
+  SomeClass copied=fury.copy(a)
+```
+
+Make fury deep copy ignore circular and shared reference, this deep copy mode will ignore circular and shared reference.
+Same reference of an object graph will be copied into different objects in one `Fury#copy`.
+
+```java
+Fury fury=Fury.builder()
+  ...
+  .withRefCopy(false).build();
+  SomeClass a=xxx;
+  SomeClass copied=fury.copy(a)
+```
 
 ### Implement a customized serializer
 
@@ -296,7 +321,7 @@ Or implement `java.io.Externalizable` for a class.
 ```java
 import org.apache.fury.*;
 import org.apache.fury.config.*;
-import org.apache.fury.serializers.BufferObject;
+import org.apache.fury.serializer.BufferObject;
 import org.apache.fury.memory.MemoryBuffer;
 
 import java.util.*;
@@ -373,6 +398,57 @@ losing any information.
 If metadata sharing is not enabled, the new class data will be skipped and an `NonexistentSkipClass` stub object will be
 returned.
 
+### Coping/Mapping object from one type to another type
+
+Fury support mapping object from one type to another type.
+> Notes:
+>
+> 1. This mapping will execute a deep copy, all mapped fields are serialized into binary and
+deserialized from that binary to map into another type.
+> 2. All struct types must be registered with same ID, otherwise Fury can not mapping to correct struct type.
+> Be careful when you use `Fury#register(Class)`, because fury will allocate an auto-grown ID which might be
+> inconsistent if you register classes with different order between Fury instance.
+
+```java
+public class StructMappingExample {
+  static class Struct1 {
+    int f1;
+    String f2;
+
+    public Struct1(int f1, String f2) {
+      this.f1 = f1;
+      this.f2 = f2;
+    }
+  }
+
+  static class Struct2 {
+    int f1;
+    String f2;
+    double f3;
+  }
+
+  static ThreadSafeFury fury1 = Fury.builder()
+    .withCompatibleMode(CompatibleMode.COMPATIBLE).buildThreadSafeFury();
+  static ThreadSafeFury fury2 = Fury.builder()
+    .withCompatibleMode(CompatibleMode.COMPATIBLE).buildThreadSafeFury();
+
+  static {
+    fury1.register(Struct1.class);
+    fury2.register(Struct2.class);
+  }
+
+  public static void main(String[] args) {
+    Struct1 struct1 = new Struct1(10, "abc");
+    Struct2 struct2 = (Struct2) fury2.deserialize(fury1.serialize(struct1));
+    Assert.assertEquals(struct2.f1, struct1.f1);
+    Assert.assertEquals(struct2.f2, struct1.f2);
+    struct1 = (Struct1) fury1.deserialize(fury2.serialize(struct2));
+    Assert.assertEquals(struct1.f1, struct2.f1);
+    Assert.assertEquals(struct1.f2, struct2.f2);
+  }
+}
+```
+
 ## Migration
 
 ### JDK migration
@@ -441,6 +517,13 @@ fury with
 
 `CompatibleMode.COMPATIBLE` has more performance and space cost, do not set it by default if your classes are always
 consistent between serialization and deserialization.
+
+### Deserialize POJO into another type
+
+Fury allows you to serialize one POJO and deserialize it into a different POJO. To achieve this, configure Fury with
+`CompatibleMode` set to `org.apache.fury.config.CompatibleMode.COMPATIBLE`. Additionally, you only need to register the
+specific classes you want to serialize or deserialize to setup type mapping relationship; there's no need to register any nested classes within them.
+[See example here](/java/fury-core/src/test/java/org/apache/fury/serializer/compatible/DifferentPOJOCompatibleSerializerTest.java)
 
 ### Use wrong API for deserialization
 

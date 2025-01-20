@@ -119,4 +119,26 @@ public class PrimitiveSerializersTest extends FuryTestBase {
       serDeCheck(fury, struct);
     }
   }
+
+  @Test(dataProvider = "furyCopyConfig")
+  public void testPrimitiveStruct(Fury fury) {
+    PrimitiveStruct struct =
+        new PrimitiveStruct(
+            Byte.MIN_VALUE,
+            Byte.MIN_VALUE,
+            Character.MIN_VALUE,
+            Character.MIN_VALUE,
+            Short.MIN_VALUE,
+            Short.MIN_VALUE,
+            Integer.MIN_VALUE,
+            Integer.MIN_VALUE,
+            Long.MIN_VALUE,
+            Long.MIN_VALUE,
+            -3763915443215605988L, // test Long.reverseBytes in _readVarInt64OnBE
+            Float.MIN_VALUE,
+            Float.MIN_VALUE,
+            Double.MIN_VALUE,
+            Double.MIN_VALUE);
+    copyCheck(fury, struct);
+  }
 }

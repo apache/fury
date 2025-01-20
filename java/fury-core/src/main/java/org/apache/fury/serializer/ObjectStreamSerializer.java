@@ -19,6 +19,8 @@
 
 package org.apache.fury.serializer;
 
+import static org.apache.fury.resolver.ClassResolver.NO_CLASS_ID;
+
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.InvalidObjectException;
@@ -56,7 +58,6 @@ import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.resolver.ClassInfo;
-import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.resolver.FieldResolver;
 import org.apache.fury.resolver.FieldResolver.ClassField;
 import org.apache.fury.util.ExceptionUtils;
@@ -76,11 +77,10 @@ import org.apache.fury.util.unsafe._JDKAccess;
  * <p>`ObjectInputStream#setObjectInputFilter` will be ignored by this serializer.
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
-public class ObjectStreamSerializer extends Serializer {
+public class ObjectStreamSerializer extends AbstractObjectSerializer {
   private static final Logger LOG = LoggerFactory.getLogger(ObjectStreamSerializer.class);
 
   private final Constructor constructor;
-  private final ClassResolver classResolver;
   private final SlotsInfo[] slotsInfos;
 
   public ObjectStreamSerializer(Fury fury, Class<?> type) {
@@ -107,7 +107,6 @@ public class ObjectStreamSerializer extends Serializer {
       constructor =
           (Constructor) ReflectionUtils.getObjectFieldValue(ObjectStreamClass.lookup(type), "cons");
     }
-    this.classResolver = fury.getClassResolver();
     this.constructor = constructor;
     List<SlotsInfo> slotsInfoList = new ArrayList<>();
     Class<?> end = type;
@@ -130,7 +129,7 @@ public class ObjectStreamSerializer extends Serializer {
       for (SlotsInfo slotsInfo : slotsInfos) {
         // create a classinfo to avoid null class bytes when class id is a
         // replacement id.
-        classResolver.writeClass(buffer, slotsInfo.classInfo);
+        classResolver.writeClassInternal(buffer, slotsInfo.classInfo.getCls());
         StreamClassInfo streamClassInfo = slotsInfo.streamClassInfo;
         Method writeObjectMethod = streamClassInfo.writeObjectMethod;
         if (writeObjectMethod == null) {
@@ -327,7 +326,7 @@ public class ObjectStreamSerializer extends Serializer {
 
     public SlotsInfo(Fury fury, Class<?> type) {
       this.cls = type;
-      classInfo = fury.getClassResolver().newClassInfo(type, null, ClassResolver.NO_CLASS_ID);
+      classInfo = fury.getClassResolver().newClassInfo(type, null, NO_CLASS_ID);
       ObjectStreamClass objectStreamClass = ObjectStreamClass.lookup(type);
       streamClassInfo = STREAM_CLASS_INFO_CACHE.get(type);
       // `putFields/writeFields` will convert to fields value to be written by
@@ -414,6 +413,7 @@ public class ObjectStreamSerializer extends Serializer {
    */
   private static class FuryObjectOutputStream extends ObjectOutputStream {
     private final Fury fury;
+    private final boolean compressInt;
     private final SlotsInfo slotsInfo;
     private MemoryBuffer buffer;
     private Object targetObject;
@@ -423,6 +423,7 @@ public class ObjectStreamSerializer extends Serializer {
       super();
       this.slotsInfo = slotsInfo;
       this.fury = slotsInfo.slotsSerializer.fury;
+      this.compressInt = fury.compressInt();
     }
 
     @Override
@@ -629,12 +630,16 @@ public class ObjectStreamSerializer extends Serializer {
 
     @Override
     public void writeInt(int v) throws IOException {
-      buffer.writeInt32(v);
+      if (compressInt) {
+        buffer.writeVarInt32(v);
+      } else {
+        buffer.writeInt32(v);
+      }
     }
 
     @Override
     public void writeLong(long v) throws IOException {
-      buffer.writeInt64(v);
+      fury.writeInt64(buffer, v);
     }
 
     @Override
@@ -693,6 +698,7 @@ public class ObjectStreamSerializer extends Serializer {
    */
   private static class FuryObjectInputStream extends ObjectInputStream {
     private final Fury fury;
+    private final boolean compressInt;
     private final SlotsInfo slotsInfo;
     private MemoryBuffer buffer;
     private Object targetObject;
@@ -702,6 +708,7 @@ public class ObjectStreamSerializer extends Serializer {
 
     protected FuryObjectInputStream(SlotsInfo slotsInfo) throws IOException {
       this.fury = slotsInfo.slotsSerializer.fury;
+      this.compressInt = fury.compressInt();
       this.slotsInfo = slotsInfo;
     }
 
@@ -934,12 +941,12 @@ public class ObjectStreamSerializer extends Serializer {
 
     @Override
     public int readInt() throws IOException {
-      return buffer.readInt32();
+      return compressInt ? buffer.readVarInt32() : buffer.readInt32();
     }
 
     @Override
     public long readLong() throws IOException {
-      return buffer.readInt64();
+      return fury.readInt64(buffer);
     }
 
     @Override

@@ -39,9 +39,18 @@ public class ProxyExample {
   static Fury fury;
 
   static {
-    fury = Fury.builder().requireClassRegistration(true).build();
+    fury = createFury();
+  }
+
+  private static Fury createFury() {
+    Fury fury =
+        Fury.builder()
+            .withName(ProxyExample.class.getName())
+            .requireClassRegistration(true)
+            .build();
     // register and generate serializer code.
     fury.register(TestInvocationHandler.class, true);
+    return fury;
   }
 
   public static void main(String[] args) {
@@ -50,6 +59,9 @@ public class ProxyExample {
             Proxy.newProxyInstance(
                 fury.getClassLoader(), new Class[] {Function.class}, new TestInvocationHandler());
     Function deserializedFunction = (Function) fury.deserialize(fury.serialize(function));
+    Preconditions.checkArgument(deserializedFunction.apply(null).equals(1));
+    fury = createFury();
+    deserializedFunction = (Function) fury.deserialize(fury.serialize(function));
     Preconditions.checkArgument(deserializedFunction.apply(null).equals(1));
     System.out.println("Proxy tests pass");
   }

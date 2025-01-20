@@ -142,6 +142,9 @@ public class FuryLogger implements Logger {
     builder.append(":").append(lineNumber);
     builder.append(" [").append(Thread.currentThread().getName()).append(']');
     builder.append(" - ");
+    if (msg == null) {
+      msg = "null";
+    }
     int len = msg.length();
     int count = 0;
     for (int i = 0; i < len; i++) {
