@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Concurrent;
+using System.Threading;
 using Fury.Collections;
 
 namespace Fury.Buffers;
@@ -7,10 +9,10 @@ namespace Fury.Buffers;
 /// A simple object pool.
 /// </summary>
 /// <typeparam name="T"></typeparam>
-internal readonly struct ObjectPool<T>(IArrayPoolProvider poolProvider, Func<T> factory)
+internal readonly struct ObjectPool<T>(Func<T> factory)
     where T : class
 {
-    private readonly PooledList<T> _objects = new(poolProvider);
+    private readonly PooledList<T> _objects = new();
 
     public T Rent()
     {

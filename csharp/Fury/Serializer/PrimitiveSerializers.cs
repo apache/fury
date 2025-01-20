@@ -21,24 +21,55 @@ internal sealed class PrimitiveDeserializer<T> : AbstractDeserializer<T>
 {
     public static PrimitiveDeserializer<T> Instance { get; } = new();
 
+    private static DeserializationProgress<PrimitiveDeserializer<T>> InstanceNotCreated { get; } = new(Instance);
+
+    public override void CreateInstance(
+        DeserializationContext context,
+        ref DeserializationProgress? progress,
+        ref Box<T> boxedInstance
+    )
+    {
+        CreateAndFillInstance(context, ref progress, ref boxedInstance.Unbox());
+    }
+
+    public override void FillInstance(
+        DeserializationContext context,
+        DeserializationProgress progress,
+        Box<T> boxedInstance
+    ) { }
+
+    public override void CreateAndFillInstance(
+        DeserializationContext context,
+        ref DeserializationProgress? progress,
+        ref T value
+    )
+    {
+        if (!context.Reader.TryRead(out value))
+        {
+            progress = InstanceNotCreated;
+        }
+
+        progress = DeserializationProgress.Completed;
+    }
+
     public override async ValueTask<Box<T>> CreateInstanceAsync(
         DeserializationContext context,
         CancellationToken cancellationToken = default
     )
     {
-        return await ReadAndCreateAsync(context, cancellationToken);
+        return await CreateAndFillInstanceAsync(context, cancellationToken);
     }
 
-    public override ValueTask ReadAndFillAsync(
+    public override ValueTask FillInstanceAsync(
         DeserializationContext context,
-        Box<T> instance,
+        Box<T> boxedInstance,
         CancellationToken cancellationToken = default
     )
     {
-        return TaskHelper.CompletedValueTask;
+        return default;
     }
 
-    public override async ValueTask<T> ReadAndCreateAsync(
+    public override async ValueTask<T> CreateAndFillInstanceAsync(
         DeserializationContext context,
         CancellationToken cancellationToken = default
     )

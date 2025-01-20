@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 namespace Fury.Serializer;
 
 internal sealed class EnumSerializer<TEnum> : AbstractSerializer<TEnum>
-    where TEnum : Enum
+    where TEnum : struct
 {
     public override void Write(SerializationContext context, in TEnum value)
     {
@@ -17,23 +17,65 @@ internal sealed class EnumSerializer<TEnum> : AbstractSerializer<TEnum>
 }
 
 internal sealed class EnumDeserializer<TEnum> : AbstractDeserializer<TEnum>
-    where TEnum : Enum
+    where TEnum : struct
 {
-    public override ValueTask<Box<TEnum>> CreateInstanceAsync(
+    private static readonly EnumDeserializer<TEnum> Instance = new();
+
+    private static readonly DeserializationProgress<EnumDeserializer<TEnum>> InstanceNotCreated = new(Instance){Status = DeserializationStatus.InstanceNotCreated};
+
+    public override void CreateInstance(
         DeserializationContext context,
-        CancellationToken cancellationToken = default
+        ref DeserializationProgress? progress,
+        ref Box<TEnum> boxedInstance
     )
     {
-        return new ValueTask<Box<TEnum>>(new Box<TEnum>(default!));
+        CreateAndFillInstance(context, ref progress, ref boxedInstance.Unbox());
     }
 
-    public override async ValueTask ReadAndFillAsync(
+    public override void FillInstance(
         DeserializationContext context,
-        Box<TEnum> instance,
+        DeserializationProgress progress,
+        Box<TEnum> boxedInstance
+    ) { }
+
+    public override void CreateAndFillInstance(
+        DeserializationContext context,
+        ref DeserializationProgress? progress,
+        ref TEnum instance
+    )
+    {
+        if (!context.Reader.TryRead7BitEncodedUint(out var e))
+        {
+            progress = InstanceNotCreated;
+        }
+
+        progress = DeserializationProgress.Completed;
+        instance = (TEnum)Enum.ToObject(typeof(TEnum), e);
+    }
+
+    public override async ValueTask<Box<TEnum>> CreateInstanceAsync(
+        DeserializationContext context,
         CancellationToken cancellationToken = default
     )
     {
-        var v = await context.Reader.Read7BitEncodedUintAsync(cancellationToken);
-        instance.Value = (TEnum)Enum.ToObject(typeof(TEnum), v);
+        return await CreateAndFillInstanceAsync(context, cancellationToken);
+    }
+
+    public override ValueTask FillInstanceAsync(
+        DeserializationContext context,
+        Box<TEnum> boxedInstance,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return default;
+    }
+
+    public override async ValueTask<TEnum> CreateAndFillInstanceAsync(
+        DeserializationContext context,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var e = await context.Reader.Read7BitEncodedUintAsync(cancellationToken);
+        return (TEnum)Enum.ToObject(typeof(TEnum), e);
     }
 }

@@ -7,10 +7,37 @@ namespace Fury;
 
 internal static class TypeHelper<T>
 {
+    private delegate ref T UnboxDelegate(object? value);
+
     public static readonly bool IsSealed = typeof(T).IsSealed;
     public static readonly bool IsValueType = typeof(T).IsValueType;
     public static readonly int Size = Unsafe.SizeOf<T>();
     public static readonly bool IsReferenceOrContainsReferences = TypeHelper.CheckIsReferenceOrContainsReferences<T>();
+
+    private static readonly UnboxDelegate? Unbox;
+
+    static TypeHelper()
+    {
+        if (IsValueType)
+        {
+            var unsafeType = typeof(Unsafe);
+            var unbox = unsafeType.GetMethod(nameof(Unsafe.Unbox), BindingFlags.Static | BindingFlags.Public);
+            var genericUnbox = unbox!.MakeGenericMethod(typeof(T));
+            Unbox = (UnboxDelegate)genericUnbox.CreateDelegate(typeof(UnboxDelegate));
+        }
+    }
+
+    public static ref T TryUnbox(object? value, out bool success)
+    {
+        if (!IsValueType || value is not T)
+        {
+            success = false;
+            return ref Unsafe.NullRef<T>();
+        }
+
+        success = true;
+        return ref Unbox!(value);
+    }
 }
 
 internal static class TypeHelper

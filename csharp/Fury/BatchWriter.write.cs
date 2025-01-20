@@ -3,6 +3,7 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using Fury.Serializer;
 
 namespace Fury;
 
@@ -235,19 +236,19 @@ public ref partial struct BatchWriter
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal void Write(ReferenceFlag flag)
+    internal void WriteReferenceFlag(ReferenceFlag flag)
     {
         Write((sbyte)flag);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal void Write(RefId refId)
+    internal void WriteRefId(RefId refId)
     {
         Write7BitEncodedUint((uint)refId.Value);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal void Write(TypeId typeId)
+    internal void WriteTypeId(TypeId typeId)
     {
         Write7BitEncodedUint((uint)typeId.Value);
     }

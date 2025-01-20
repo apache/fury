@@ -8,7 +8,7 @@ public sealed record Config(
     ReferenceTrackingPolicy ReferenceTracking,
     IEnumerable<ISerializerProvider> SerializerProviders,
     IEnumerable<IDeserializerProvider> DeserializerProviders,
-    IArrayPoolProvider ArrayPoolProvider
+    StringSerializationConfig StringSerializationConfig
 );
 
 /// <summary>

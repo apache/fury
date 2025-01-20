@@ -3,9 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Threading;
-using System.Threading.Tasks;
-using Fury.Buffers;
 using Fury.Collections;
 using Fury.Meta;
 using Fury.Serializer;
@@ -26,13 +23,12 @@ public sealed class TypeResolver
 
     internal TypeResolver(
         IEnumerable<ISerializerProvider> serializerProviders,
-        IEnumerable<IDeserializerProvider> deserializerProviders,
-        IArrayPoolProvider poolProvider
+        IEnumerable<IDeserializerProvider> deserializerProviders
     )
     {
         _serializerProviders = serializerProviders.ToArray();
         _deserializerProviders = deserializerProviders.ToArray();
-        _types = new PooledList<Type>(poolProvider);
+        _types = new PooledList<Type>();
     }
 
     public bool TryGetOrCreateSerializer(Type type, [NotNullWhen(true)] out ISerializer? serializer)

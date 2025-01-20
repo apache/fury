@@ -21,7 +21,32 @@ public sealed class NotSupportedSerializer<TValue> : ISerializer<TValue>
 public sealed class NotSupportedDeserializer<TValue> : IDeserializer<TValue>
     where TValue : notnull
 {
-    public ValueTask<TValue> ReadAndCreateAsync(
+    public void CreateInstance(
+        DeserializationContext context,
+        ref DeserializationProgress? progress,
+        ref Box<TValue> boxedInstance
+    )
+    {
+        throw new NotSupportedException();
+    }
+
+    public void FillInstance(DeserializationContext context,
+        DeserializationProgress progress,
+        Box<TValue> boxedInstance)
+    {
+        throw new NotSupportedException();
+    }
+
+    public void CreateAndFillInstance(
+        DeserializationContext context,
+        ref DeserializationProgress? progress,
+        ref TValue? instance
+    )
+    {
+        throw new NotSupportedException();
+    }
+
+    public ValueTask<TValue> CreateAndFillInstanceAsync(
         DeserializationContext context,
         CancellationToken cancellationToken = default
     )
@@ -29,19 +54,26 @@ public sealed class NotSupportedDeserializer<TValue> : IDeserializer<TValue>
         throw new NotSupportedException();
     }
 
-    public ValueTask<Box> CreateInstanceAsync(
-        DeserializationContext context,
-        CancellationToken cancellationToken = default
-    )
+    public void CreateInstance(DeserializationContext context, ref DeserializationProgress? progress,
+        ref Box boxedInstance)
     {
         throw new NotSupportedException();
     }
 
-    public ValueTask ReadAndFillAsync(
-        DeserializationContext context,
+    public void FillInstance(DeserializationContext context, DeserializationProgress progress, Box boxedInstance)
+    {
+        throw new NotSupportedException();
+    }
+
+    public ValueTask<Box> CreateInstanceAsync(DeserializationContext context,
+        CancellationToken cancellationToken = default)
+    {
+        throw new NotSupportedException();
+    }
+
+    public ValueTask FillInstanceAsync(DeserializationContext context,
         Box instance,
-        CancellationToken cancellationToken = default
-    )
+        CancellationToken cancellationToken = default)
     {
         throw new NotSupportedException();
     }

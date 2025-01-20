@@ -16,4 +16,10 @@ internal static partial class ThrowHelper
     {
         throw new InvalidOperationException("Attempted to write to a read-only collection.");
     }
+
+    [DoesNotReturn]
+    public static void ThrowInvalidOperationException_AttemptedToWriteToReadOnlyDeserializationProgress()
+    {
+        throw new InvalidOperationException("Attempted to write to a read-only deserialization progress.");
+    }
 }

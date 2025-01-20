@@ -20,9 +20,21 @@ namespace Fury
 
         [DoesNotReturn]
         [Conditional("DEBUG")]
-        public static void ThrowUnreachableExceptionDebugOnly(string? message = null)
+        public static void ThrowUnreachableException_DebugOnly(string? message = null)
         {
             throw new UnreachableException(message);
+        }
+
+        [Conditional("DEBUG")]
+        public static void ThrowUnreachableExceptionIf_DebugOnly(
+            [DoesNotReturnIf(true)] bool condition,
+            string? message = null
+        )
+        {
+            if (condition)
+            {
+                throw new UnreachableException(message);
+            }
         }
     }
 }

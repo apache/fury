@@ -2,6 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
+using Fury.Collections;
 using Fury.Meta;
 using Fury.Serializer;
 
@@ -17,6 +18,12 @@ public sealed class DeserializationContext
     private readonly MetaStringResolver _metaStringResolver;
     private readonly TypeResolver _typeResolver;
 
+    private readonly PooledList<DeserializationProgress> _progressStack;
+
+    // ReSharper disable once UseIndexFromEndExpression
+    public DeserializationProgress? CurrentProgress =>
+        _progressStack.Count > 0 ? _progressStack[_progressStack.Count - 1] : null;
+
     internal DeserializationContext(
         Fury fury,
         BatchReader reader,
@@ -28,6 +35,17 @@ public sealed class DeserializationContext
         Reader = reader;
         _refContext = refContext;
         _metaStringResolver = metaStringResolver;
+        _progressStack = new PooledList<DeserializationProgress>();
+    }
+
+    private void PushProgress(DeserializationProgress progress)
+    {
+        _progressStack.Add(progress);
+    }
+
+    private void PopProgress()
+    {
+        _progressStack.RemoveAt(_progressStack.Count - 1);
     }
 
     public bool TryGetDeserializer<TValue>([NotNullWhen(true)] out IDeserializer? deserializer)
@@ -43,6 +61,17 @@ public sealed class DeserializationContext
         }
         return deserializer;
     }
+
+    public DeserializationStatus Read<TValue>(IDeserializer<TValue>? elementDeserializer, out TValue value) where TValue : notnull
+    {
+        throw new NotImplementedException();
+    }
+
+    public DeserializationStatus ReadNullable<TValue>(IDeserializer<TValue>? elementDeserializer, out TValue? value) where TValue : struct
+    {
+        throw new NotImplementedException();
+    }
+
 
     public async ValueTask<TValue?> ReadAsync<TValue>(
         IDeserializer? deserializer = null,
@@ -115,10 +144,10 @@ public sealed class DeserializationContext
         deserializer ??= GetPreferredDeserializer(typeInfo.Type);
         if (typeInfo.Type == declaredType && deserializer is IDeserializer<TValue> typedDeserializer)
         {
-            return await typedDeserializer.ReadAndCreateAsync(this, cancellationToken);
+            return await typedDeserializer.CreateAndFillInstanceAsync(this, cancellationToken);
         }
         var newObj = await deserializer.CreateInstanceAsync(this, cancellationToken);
-        await deserializer.ReadAndFillAsync(this, newObj, cancellationToken);
+        await deserializer.FillInstanceAsync(this, newObj, cancellationToken);
         return (TValue)newObj.Value!;
     }
 
@@ -131,7 +160,7 @@ public sealed class DeserializationContext
         deserializer ??= GetPreferredDeserializer(typeInfo.Type);
         var newObj = await deserializer.CreateInstanceAsync(this, cancellationToken);
         _refContext.PushReferenceableObject(newObj);
-        await deserializer.ReadAndFillAsync(this, newObj, cancellationToken);
+        await deserializer.FillInstanceAsync(this, newObj, cancellationToken);
         return newObj;
     }
 

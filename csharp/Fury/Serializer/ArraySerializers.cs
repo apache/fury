@@ -1,12 +1,15 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
+using Fury.Buffers;
+using JetBrains.Annotations;
 
 namespace Fury.Serializer;
 
 internal class ArraySerializer<TElement>(ISerializer<TElement>? elementSerializer) : AbstractSerializer<TElement?[]>
     where TElement : notnull
 {
-    // ReSharper disable once UnusedMember.Global
+    [UsedImplicitly]
     public ArraySerializer()
         : this(null) { }
 
@@ -24,7 +27,7 @@ internal class NullableArraySerializer<TElement>(ISerializer<TElement>? elementS
     : AbstractSerializer<TElement?[]>
     where TElement : struct
 {
-    // ReSharper disable once UnusedMember.Global
+    [UsedImplicitly]
     public NullableArraySerializer()
         : this(null) { }
 
@@ -38,56 +41,90 @@ internal class NullableArraySerializer<TElement>(ISerializer<TElement>? elementS
     }
 }
 
-internal class ArrayDeserializer<TElement>(IDeserializer<TElement>? elementDeserializer)
-    : AbstractDeserializer<TElement?[]>
-    where TElement : notnull
+internal class ArrayDeserializationProgress<TDeserializer>(
+    TDeserializer deserializer,
+    ConcurrentObjectPool<ArrayDeserializationProgress<TDeserializer>> pool
+) : DeserializationProgress<TDeserializer>(deserializer)
+    where TDeserializer : IDeserializer
 {
-    public ArrayDeserializer()
-        : this(null) { }
+    private ConcurrentObjectPool<ArrayDeserializationProgress<TDeserializer>> Pool { get; } = pool;
+    public int CurrentIndex;
 
-    public override async ValueTask<Box<TElement?[]>> CreateInstanceAsync(
-        DeserializationContext context,
-        CancellationToken cancellationToken = default
-    )
+    private void Reset()
     {
-        var length = await context.Reader.ReadCountAsync(cancellationToken);
-        return new TElement?[length];
+        CurrentIndex = 0;
+        Status = DeserializationStatus.InstanceNotCreated;
     }
 
-    public override async ValueTask ReadAndFillAsync(
-        DeserializationContext context,
-        Box<TElement?[]> box,
-        CancellationToken cancellationToken = default
-    )
+    public override void Dispose()
     {
-        var instance = box.Value!;
-        for (var i = 0; i < instance.Length; i++)
-        {
-            instance[i] = await context.ReadAsync<TElement>(elementDeserializer, cancellationToken);
-        }
-    }
-
-    public override async ValueTask<TElement?[]> ReadAndCreateAsync(
-        DeserializationContext context,
-        CancellationToken cancellationToken = default
-    )
-    {
-        var length = await context.Reader.ReadCountAsync(cancellationToken);
-        var result = new TElement?[length];
-        for (var i = 0; i < result.Length; i++)
-        {
-            result[i] = await context.ReadAsync<TElement>(elementDeserializer, cancellationToken);
-        }
-        return result;
+        Reset();
+        Pool.Return(this);
     }
 }
 
-internal class NullableArrayDeserializer<TElement>(IDeserializer<TElement>? elementDeserializer)
-    : AbstractDeserializer<TElement?[]>
-    where TElement : struct
+internal class ArrayDeserializer<TElement> : AbstractDeserializer<TElement?[]>
+    where TElement : notnull
 {
-    public NullableArrayDeserializer()
+    private readonly IDeserializer<TElement>? _elementDeserializer;
+    private readonly ConcurrentObjectPool<ArrayDeserializationProgress<ArrayDeserializer<TElement>>> _progressPool;
+
+    [UsedImplicitly]
+    public ArrayDeserializer()
         : this(null) { }
+
+    public ArrayDeserializer(IDeserializer<TElement>? elementDeserializer)
+    {
+        _elementDeserializer = elementDeserializer;
+        _progressPool = new ConcurrentObjectPool<ArrayDeserializationProgress<ArrayDeserializer<TElement>>>(
+            pool => new ArrayDeserializationProgress<ArrayDeserializer<TElement>>(this, pool)
+        );
+    }
+
+    public override void CreateInstance(
+        DeserializationContext context,
+        ref DeserializationProgress? progress,
+        ref Box<TElement?[]> boxedInstance
+    )
+    {
+        if (progress is not ArrayDeserializationProgress<ArrayDeserializer<TElement>>)
+        {
+            progress = _progressPool.Rent();
+        }
+        if (context.Reader.TryReadCount(out var length))
+        {
+            boxedInstance = new TElement?[length];
+            progress.Status = DeserializationStatus.InstanceCreated;
+        }
+        else
+        {
+            boxedInstance = Box<TElement?[]>.Empty;
+        }
+    }
+
+    public override void FillInstance(
+        DeserializationContext context,
+        DeserializationProgress progress,
+        Box<TElement?[]> boxedInstance
+    )
+    {
+        var typedProgress = (ArrayDeserializationProgress<ArrayDeserializer<TElement>>)progress;
+        var instance = boxedInstance.Value!;
+        var current = typedProgress.CurrentIndex;
+        for (; current < instance.Length; current++)
+        {
+            var status = context.Read(_elementDeserializer, out instance[current]);
+            if (status is not DeserializationStatus.Completed)
+            {
+                break;
+            }
+        }
+
+        if (current == instance.Length)
+        {
+            typedProgress.Status = DeserializationStatus.Completed;
+        }
+    }
 
     public override async ValueTask<Box<TElement?[]>> CreateInstanceAsync(
         DeserializationContext context,
@@ -98,16 +135,104 @@ internal class NullableArrayDeserializer<TElement>(IDeserializer<TElement>? elem
         return new TElement?[length];
     }
 
-    public override async ValueTask ReadAndFillAsync(
+    public override async ValueTask FillInstanceAsync(
         DeserializationContext context,
-        Box<TElement?[]> box,
+        Box<TElement?[]> boxedInstance,
         CancellationToken cancellationToken = default
     )
     {
-        var instance = box.Value!;
+        var instance = boxedInstance.Value!;
         for (var i = 0; i < instance.Length; i++)
         {
-            instance[i] = await context.ReadNullableAsync<TElement>(elementDeserializer, cancellationToken);
+            instance[i] = await context.ReadAsync<TElement>(_elementDeserializer, cancellationToken);
+        }
+    }
+}
+
+internal class NullableArrayDeserializer<TElement> : AbstractDeserializer<TElement?[]>
+    where TElement : struct
+{
+    private readonly IDeserializer<TElement>? _elementDeserializer;
+    private readonly ConcurrentObjectPool<
+        ArrayDeserializationProgress<NullableArrayDeserializer<TElement>>
+    > _progressPool;
+
+    [UsedImplicitly]
+    public NullableArrayDeserializer()
+        : this(null) { }
+
+    public NullableArrayDeserializer(IDeserializer<TElement>? elementDeserializer)
+    {
+        _elementDeserializer = elementDeserializer;
+        _progressPool = new ConcurrentObjectPool<ArrayDeserializationProgress<NullableArrayDeserializer<TElement>>>(
+            pool => new ArrayDeserializationProgress<NullableArrayDeserializer<TElement>>(this, pool)
+        );
+    }
+
+    public override void CreateInstance(
+        DeserializationContext context,
+        ref DeserializationProgress? progress,
+        ref Box<TElement?[]> boxedInstance
+    )
+    {
+        if (progress is not ArrayDeserializationProgress<NullableArrayDeserializer<TElement>>)
+        {
+            progress = _progressPool.Rent();
+        }
+        if (context.Reader.TryReadCount(out var length))
+        {
+            boxedInstance = new TElement?[length];
+            progress.Status = DeserializationStatus.InstanceCreated;
+        }
+        else
+        {
+            boxedInstance = Box<TElement?[]>.Empty;
+        }
+    }
+
+    public override void FillInstance(
+        DeserializationContext context,
+        DeserializationProgress progress,
+        Box<TElement?[]> boxedInstance
+    )
+    {
+        var typedProgress = (ArrayDeserializationProgress<NullableArrayDeserializer<TElement>>)progress;
+        var instance = boxedInstance.Value!;
+        var current = typedProgress.CurrentIndex;
+        for (; current < instance.Length; current++)
+        {
+            var status = context.ReadNullable(_elementDeserializer, out instance[current]);
+            if (status is not DeserializationStatus.Completed)
+            {
+                break;
+            }
+        }
+
+        if (current == instance.Length)
+        {
+            typedProgress.Status = DeserializationStatus.Completed;
+        }
+    }
+
+    public override async ValueTask<Box<TElement?[]>> CreateInstanceAsync(
+        DeserializationContext context,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var length = await context.Reader.ReadCountAsync(cancellationToken);
+        return new TElement?[length];
+    }
+
+    public override async ValueTask FillInstanceAsync(
+        DeserializationContext context,
+        Box<TElement?[]> boxedInstance,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var instance = boxedInstance.Value!;
+        for (var i = 0; i < instance.Length; i++)
+        {
+            instance[i] = await context.ReadNullableAsync<TElement>(_elementDeserializer, cancellationToken);
         }
     }
 }
@@ -129,13 +254,35 @@ internal sealed class PrimitiveArrayDeserializer<TElement> : ArrayDeserializer<T
 {
     public static PrimitiveArrayDeserializer<TElement> Instance { get; } = new();
 
-    public override async ValueTask ReadAndFillAsync(
+    public override void FillInstance(
         DeserializationContext context,
-        Box<TElement[]> box,
+        DeserializationProgress progress,
+        Box<TElement[]> boxedInstance
+    )
+    {
+        var typedProgress = (ArrayDeserializationProgress<ArrayDeserializer<TElement>>)progress;
+        var instance = boxedInstance.Value!;
+        var current = typedProgress.CurrentIndex;
+
+        var readCount = context.Reader.ReadMemory(instance.AsSpan(current));
+
+        if (readCount + current == instance.Length)
+        {
+            typedProgress.Status = DeserializationStatus.Completed;
+        }
+        else
+        {
+            typedProgress.CurrentIndex = readCount + current;
+        }
+    }
+
+    public override async ValueTask FillInstanceAsync(
+        DeserializationContext context,
+        Box<TElement[]> boxedInstance,
         CancellationToken cancellationToken = default
     )
     {
-        var instance = box.Value!;
+        var instance = boxedInstance.Value!;
         await context.Reader.ReadMemoryAsync<TElement>(instance, cancellationToken);
     }
 }

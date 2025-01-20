@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Buffers;
+using System.Collections.Generic;
+using System.IO.Pipelines;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -23,7 +25,7 @@ public sealed partial class BatchReader
     public async ValueTask<T> ReadAsync<T>(CancellationToken cancellationToken = default)
         where T : unmanaged
     {
-        var requiredSize = Unsafe.SizeOf<T>();
+        var requiredSize = TypeHelper<T>.Size;
         var result = await ReadAtLeastAsync(requiredSize, cancellationToken);
         var buffer = result.Buffer;
         if (buffer.Length < requiredSize)
@@ -34,6 +36,28 @@ public sealed partial class BatchReader
         var value = ReadFixedSized<T>(buffer, requiredSize);
         AdvanceTo(requiredSize);
         return value;
+    }
+
+    public bool TryRead<T>(out T value)
+        where T : unmanaged
+    {
+        var requiredSize = TypeHelper<T>.Size;
+        if (!TryRead(out var result))
+        {
+            value = default;
+            return false;
+        }
+        var buffer = result.Buffer;
+        if (buffer.Length < requiredSize)
+        {
+            value = default;
+            AdvanceTo(buffer.Start, buffer.End);
+            return false;
+        }
+
+        value = ReadFixedSized<T>(buffer, requiredSize);
+        AdvanceTo(requiredSize);
+        return true;
     }
 
     public async ValueTask<T> ReadAsAsync<T>(int size, CancellationToken cancellationToken = default)
@@ -51,22 +75,81 @@ public sealed partial class BatchReader
         return value;
     }
 
+    public bool TryReadAs<T>(int size, out T value)
+        where T : unmanaged
+    {
+        if (!TryRead(out var result))
+        {
+            value = default;
+            return false;
+        }
+        var buffer = result.Buffer;
+        if (buffer.Length < size)
+        {
+            value = default;
+            AdvanceTo(buffer.Start, buffer.End);
+            return false;
+        }
+
+        value = ReadFixedSized<T>(buffer, size);
+        AdvanceTo(size);
+        return true;
+    }
+
     public async ValueTask ReadMemoryAsync<TElement>(
         Memory<TElement> destination,
         CancellationToken cancellationToken = default
     )
         where TElement : unmanaged
     {
-        var requiredSize = destination.Length;
+        var requiredSize = destination.Length * Unsafe.SizeOf<TElement>();
         var result = await ReadAtLeastAsync(requiredSize, cancellationToken);
+        var buffer = result.Buffer;
+        if (buffer.Length < requiredSize)
+        {
+            ThrowHelper.ThrowBadDeserializationInputException_InsufficientData();
+        }
+
+        if (buffer.Length > requiredSize)
+        {
+            buffer = buffer.Slice(0, requiredSize);
+        }
+
+        buffer.CopyTo(MemoryMarshal.AsBytes(destination.Span));
+        AdvanceTo(buffer.End);
+    }
+
+    public int ReadMemory<TElement>(Span<TElement> destination)
+        where TElement : unmanaged
+    {
+        var bytesDestination = MemoryMarshal.AsBytes(destination);
+        var elementSize = Unsafe.SizeOf<TElement>();
+        var requiredSize = bytesDestination.Length;
+        if (!TryRead(out var result))
+        {
+            return 0;
+        }
         var buffer = result.Buffer;
         if (result.IsCompleted && buffer.Length < requiredSize)
         {
             ThrowHelper.ThrowBadDeserializationInputException_InsufficientData();
         }
+        var examinedPosition = buffer.End;
+        var bufferLength = (int)buffer.Length;
+        if (bufferLength > requiredSize)
+        {
+            buffer = buffer.Slice(0, requiredSize);
+            examinedPosition = buffer.End;
+        }
+        else if (bufferLength % elementSize != 0)
+        {
+            bufferLength -= bufferLength % elementSize;
+            buffer = buffer.Slice(0, bufferLength);
+        }
 
-        buffer.Slice(0, requiredSize).CopyTo(MemoryMarshal.AsBytes(destination.Span));
-        AdvanceTo(requiredSize);
+        buffer.CopyTo(bytesDestination);
+        AdvanceTo(buffer.End, examinedPosition);
+        return bufferLength;
     }
 
     public async ValueTask<string> ReadStringAsync(
@@ -87,7 +170,100 @@ public sealed partial class BatchReader
         return value;
     }
 
-    private static unsafe string DoReadString(int byteCount, ReadOnlySequence<byte> byteSequence, Encoding encoding)
+    public async ValueTask<(int charsUsed, int bytesUsed)> ReadStringAsync(
+        int byteCount,
+        Decoder decoder,
+        Memory<char> output,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var charsUsed = 0;
+        var bytesUsed = 0;
+        while (bytesUsed < byteCount)
+        {
+            var result = await ReadAsync(cancellationToken);
+            ReadStringCommon(
+                result,
+                byteCount - bytesUsed,
+                decoder,
+                output.Span.Slice(charsUsed),
+                out var currentCharsUsed,
+                out var currentBytesUsed
+            );
+            charsUsed += currentCharsUsed;
+            bytesUsed += currentBytesUsed;
+        }
+
+        return (charsUsed, bytesUsed);
+    }
+
+    public void ReadString(int byteCount, Decoder decoder, Span<char> output, out int charsUsed, out int bytesUsed)
+    {
+        if (!TryRead(out var result))
+        {
+            charsUsed = 0;
+            bytesUsed = 0;
+            return;
+        }
+
+        ReadStringCommon(result, byteCount, decoder, output, out charsUsed, out bytesUsed);
+    }
+
+    private unsafe void ReadStringCommon(
+        ReadResult result,
+        int byteCount,
+        Decoder decoder,
+        Span<char> output,
+        out int charsUsed,
+        out int bytesUsed
+    )
+    {
+        var buffer = result.Buffer;
+        var availableByteCount = buffer.Length;
+        if (availableByteCount > byteCount)
+        {
+            buffer = buffer.Slice(0, byteCount);
+        }
+
+        var flush = availableByteCount >= byteCount;
+        charsUsed = 0;
+        bytesUsed = 0;
+        var currentOutput = output;
+        var bytesEnumerator = buffer.GetEnumerator();
+        var hasNext = bytesEnumerator.MoveNext();
+        ThrowHelper.ThrowUnreachableExceptionIf_DebugOnly(!hasNext);
+        while (hasNext)
+        {
+            var byteMemory = bytesEnumerator.Current;
+            hasNext = bytesEnumerator.MoveNext();
+            var currentBytes = byteMemory.Span;
+            fixed (char* pOutput = currentOutput)
+            fixed (byte* pBytes = byteMemory.Span)
+            {
+                decoder.Convert(
+                    pBytes,
+                    currentBytes.Length,
+                    pOutput,
+                    currentOutput.Length,
+                    flush && !hasNext,
+                    out var currentBytesUsed,
+                    out var currentCharsUsed,
+                    out _
+                );
+
+                charsUsed += currentCharsUsed;
+                bytesUsed += currentBytesUsed;
+                currentOutput = currentOutput.Slice(currentCharsUsed);
+                if (charsUsed == output.Length)
+                {
+                    break;
+                }
+            }
+        }
+        AdvanceTo(buffer.GetPosition(bytesUsed));
+    }
+
+    private static unsafe string DoReadString(int byteCount, ReadOnlySequence<byte> bytes, Encoding encoding)
     {
         const int maxStackBufferSize = StaticConfigs.StackAllocLimit / sizeof(char);
         var decoder = encoding.GetDecoder();
@@ -97,13 +273,13 @@ public sealed partial class BatchReader
         {
             // Fast path
             Span<char> stringBuffer = stackalloc char[byteCount];
-            writtenChars = ReadStringCommon(decoder, byteSequence, stringBuffer);
+            writtenChars = ReadStringCommon(decoder, bytes, stringBuffer);
             result = stringBuffer.Slice(0, writtenChars).ToString();
         }
         else
         {
             var rentedBuffer = ArrayPool<char>.Shared.Rent(byteCount);
-            writtenChars = ReadStringCommon(decoder, byteSequence, rentedBuffer);
+            writtenChars = ReadStringCommon(decoder, bytes, rentedBuffer);
             result = new string(rentedBuffer, 0, writtenChars);
             ArrayPool<char>.Shared.Return(rentedBuffer);
         }
@@ -111,25 +287,21 @@ public sealed partial class BatchReader
         return result;
     }
 
-    private static unsafe int ReadStringCommon(
-        Decoder decoder,
-        ReadOnlySequence<byte> byteSequence,
-        Span<char> unwrittenBuffer
-    )
+    private static unsafe int ReadStringCommon(Decoder decoder, ReadOnlySequence<byte> bytes, Span<char> output)
     {
         var writtenChars = 0;
-        foreach (var byteMemory in byteSequence)
+        foreach (var byteMemory in bytes)
         {
             int charsUsed;
             var byteSpan = byteMemory.Span;
-            fixed (char* pUnWrittenBuffer = unwrittenBuffer)
+            fixed (char* pUnWrittenBuffer = output)
             fixed (byte* pBytes = byteMemory.Span)
             {
                 decoder.Convert(
                     pBytes,
                     byteSpan.Length,
                     pUnWrittenBuffer,
-                    unwrittenBuffer.Length,
+                    output.Length,
                     false,
                     out _,
                     out charsUsed,
@@ -137,7 +309,7 @@ public sealed partial class BatchReader
                 );
             }
 
-            unwrittenBuffer = unwrittenBuffer.Slice(charsUsed);
+            output = output.Slice(charsUsed);
             writtenChars += charsUsed;
         }
 
@@ -148,6 +320,17 @@ public sealed partial class BatchReader
     {
         var result = await Read7BitEncodedUintAsync(cancellationToken);
         return (int)BitOperations.RotateRight(result, 1);
+    }
+
+    public bool TryRead7BitEncodedInt(out int value)
+    {
+        if (!TryRead7BitEncodedUint(out var result))
+        {
+            value = default;
+            return false;
+        }
+        value = (int)BitOperations.RotateRight(result, 1);
+        return true;
     }
 
     public async ValueTask<uint> Read7BitEncodedUintAsync(CancellationToken cancellationToken = default)
@@ -166,6 +349,33 @@ public sealed partial class BatchReader
         AdvanceTo(consumed);
 
         return value;
+    }
+
+    public bool TryRead7BitEncodedUint(out uint value)
+    {
+        if (!TryRead(out var result))
+        {
+            value = default;
+            return false;
+        }
+        var buffer = result.Buffer;
+
+        // Fast path
+        value = DoRead7BitEncodedUintFast(buffer.First.Span, out var consumed);
+        if (consumed == 0)
+        {
+            // Slow path
+            value = DoRead7BitEncodedUintSlow(buffer, out consumed);
+        }
+
+        if (consumed == 0)
+        {
+            value = default;
+            return false;
+        }
+
+        AdvanceTo(consumed);
+        return true;
     }
 
     private const int MaxBytesOfVarInt32WithoutOverflow = 4;
@@ -243,6 +453,17 @@ public sealed partial class BatchReader
         return (long)BitOperations.RotateRight(result, 1);
     }
 
+    public bool TryRead7BitEncodedLong(out long value)
+    {
+        if (!TryRead7BitEncodedUlong(out var result))
+        {
+            value = 0;
+            return false;
+        }
+        value = (long)BitOperations.RotateRight(result, 1);
+        return true;
+    }
+
     public async ValueTask<ulong> Read7BitEncodedUlongAsync(CancellationToken cancellationToken = default)
     {
         var result = await ReadAtLeastAsync(MaxBytesOfVarInt64WithoutOverflow + 1, cancellationToken);
@@ -259,6 +480,33 @@ public sealed partial class BatchReader
         AdvanceTo(consumed);
 
         return value;
+    }
+
+    public bool TryRead7BitEncodedUlong(out ulong value)
+    {
+        if (!TryRead(out var result))
+        {
+            value = default;
+            return false;
+        }
+        var buffer = result.Buffer;
+
+        // Fast path
+        value = DoRead7BitEncodedUlongFast(buffer.First.Span, out var consumed);
+        if (consumed == 0)
+        {
+            // Slow path
+            value = DoRead7BitEncodedUlongSlow(buffer, out consumed);
+        }
+
+        if (consumed == 0)
+        {
+            value = default;
+            return false;
+        }
+
+        AdvanceTo(consumed);
+        return true;
     }
 
     private const int MaxBytesOfVarInt64WithoutOverflow = 8;
@@ -320,9 +568,22 @@ public sealed partial class BatchReader
         return result;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public async ValueTask<int> ReadCountAsync(CancellationToken cancellationToken)
     {
         return (int)await Read7BitEncodedUintAsync(cancellationToken);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool TryReadCount(out int value)
+    {
+        if (!TryRead7BitEncodedUint(out var result))
+        {
+            value = default;
+            return false;
+        }
+        value = (int)result;
+        return true;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -332,14 +593,50 @@ public sealed partial class BatchReader
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal bool TryReadReferenceFlag(out ReferenceFlag value)
+    {
+        if (!TryRead<sbyte>(out var result))
+        {
+            value = default;
+            return false;
+        }
+        value = (ReferenceFlag)result;
+        return true;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal async ValueTask<TypeId> ReadTypeIdAsync(CancellationToken cancellationToken = default)
     {
         return new TypeId((int)await Read7BitEncodedUintAsync(cancellationToken));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal bool TryReadTypeId(out TypeId value)
+    {
+        if (!TryRead7BitEncodedUint(out var result))
+        {
+            value = default;
+            return false;
+        }
+        value = new TypeId((int)result);
+        return true;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal async ValueTask<RefId> ReadRefIdAsync(CancellationToken cancellationToken = default)
     {
         return new RefId((int)await Read7BitEncodedUintAsync(cancellationToken));
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal bool TryReadRefId(out RefId value)
+    {
+        if (!TryRead7BitEncodedUint(out var result))
+        {
+            value = default;
+            return false;
+        }
+        value = new RefId((int)result);
+        return true;
     }
 }

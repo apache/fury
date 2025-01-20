@@ -4,19 +4,18 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Fury.Buffers;
 using Fury.Collections;
 
 namespace Fury.Meta;
 
-internal sealed class MetaStringResolver(IArrayPoolProvider poolProvider)
+internal sealed class MetaStringResolver
 {
     public const int SmallStringThreshold = sizeof(long) * 2;
 
     private readonly Dictionary<UInt128, MetaStringBytes> _smallStrings = new();
     private readonly Dictionary<long, MetaStringBytes> _bigStrings = new();
 
-    private readonly PooledList<MetaStringBytes> _readMetaStrings = new(poolProvider);
+    private readonly PooledList<MetaStringBytes> _readMetaStrings = new();
 
     public async ValueTask<MetaStringBytes> ReadMetaStringBytesAsync(
         BatchReader reader,

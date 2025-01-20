@@ -2,9 +2,12 @@
 
 namespace Fury;
 
-public readonly struct Box(object value)
+public readonly struct Box(object? value)
 {
+    public static readonly Box Empty = new(null);
+
     public object? Value { get; init; } = value;
+    public bool HasValue => Value is not null;
 
     public Box<T> AsTyped<T>()
         where T : notnull
@@ -13,10 +16,13 @@ public readonly struct Box(object value)
     }
 }
 
-public struct Box<T>(in T value)
+public struct Box<T>(in T? value)
     where T : notnull
 {
+    public static readonly Box<T> Empty = new(default);
+
     internal object? InternalValue = value;
+    public bool HasValue => InternalValue is not null;
 
     public T? Value
     {
