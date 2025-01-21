@@ -378,7 +378,6 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
                 }
             }
         } else {
-            // todo 提到外面
             if (key == null) {
                 buffer.writeByte(Fury.NULL_FLAG);
             } else {
@@ -976,7 +975,6 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
                 }
             }
         } else {
-            // todo 提到外面
             if (key == null) {
                 buffer.writeByte(Fury.NULL_FLAG);
             } else {
@@ -1155,7 +1153,6 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
             }
           }
         } else {
-          // todo 提到外面
           if (key == null) {
             buffer.writeByte(Fury.NULL_FLAG);
           } else {
@@ -1446,7 +1443,6 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
             }
           }
         } else {
-          // todo 提到外面
           if (key == null) {
             buffer.writeByte(Fury.NULL_FLAG);
           } else {
@@ -2026,7 +2022,6 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
       int size) {
     Serializer keySerializer = keyGenericType.getSerializer(fury.getClassResolver());
     Serializer valueSerializer = valueGenericType.getSerializer(fury.getClassResolver());
-    MapChunkWriter mapChunkWriter = new MapChunkWriter(fury);
     while (size > 0) {
       byte chunkSize = buffer.readByte();
       byte header = buffer.readByte();
