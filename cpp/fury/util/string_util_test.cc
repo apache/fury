@@ -286,7 +286,8 @@ TEST(UTF16ToUTF8Test, PerformanceTest) {
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(
                         end_time - start_time)
                         .count();
-    FURY_LOG(FURY_INFO) << "Standard library Running Time: " << duration << " ns";
+    FURY_LOG(FURY_INFO) << "Standard library Running Time: " << duration
+                        << " ns";
   } catch (const std::exception &e) {
     FURY_LOG(FURY_FATAL) << "Caught exception: " << e.what();
   }
@@ -523,10 +524,11 @@ TEST(UTF8ToUTF16Test, PerformanceTest) {
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(
                         end_time - start_time)
                         .count();
-    FURY_LOG(FURY_INFO) << "Standard Library Running Time: " << duration << " ns";
+    FURY_LOG(FURY_INFO) << "Standard Library Running Time: " << duration
+                        << " ns";
   } catch (const std::exception &e) {
     FURY_LOG(FURY_FATAL) << "Caught exception in standard library conversion: "
-                    << e.what();
+                         << e.what();
   }
 
   // BaseLine
@@ -541,7 +543,8 @@ TEST(UTF8ToUTF16Test, PerformanceTest) {
                         .count();
     FURY_LOG(FURY_INFO) << "BaseLine Running Time: " << duration << " ns";
   } catch (const std::exception &e) {
-    FURY_LOG(FURY_FATAL) << "Caught exception in baseline conversion: " << e.what();
+    FURY_LOG(FURY_FATAL) << "Caught exception in baseline conversion: "
+                         << e.what();
   }
 
   // Optimized (SIMD)
@@ -557,7 +560,7 @@ TEST(UTF8ToUTF16Test, PerformanceTest) {
     FURY_LOG(FURY_INFO) << "SIMD Optimized Running Time: " << duration << " ns";
   } catch (const std::exception &e) {
     FURY_LOG(FURY_FATAL) << "Caught exception in SIMD optimized conversion: "
-                    << e.what();
+                         << e.what();
   }
 }
 

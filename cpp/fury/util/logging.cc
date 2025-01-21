@@ -51,8 +51,10 @@ std::string GetCallTrace() {
 }
 
 std::unordered_map<FuryLogLevel, std::string> log_level_to_str = {
-    {FuryLogLevel::FURY_DEBUG, "DEBUG"},     {FuryLogLevel::FURY_INFO, "INFO"},
-    {FuryLogLevel::FURY_WARNING, "WARNING"}, {FuryLogLevel::FURY_ERROR, "ERROR"},
+    {FuryLogLevel::FURY_DEBUG, "DEBUG"},
+    {FuryLogLevel::FURY_INFO, "INFO"},
+    {FuryLogLevel::FURY_WARNING, "WARNING"},
+    {FuryLogLevel::FURY_ERROR, "ERROR"},
     {FuryLogLevel::FURY_FATAL, "FATAL"},
 };
 
