@@ -406,15 +406,6 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     writeHeader(buffer, chunkSize, header, startOffset);
   }
 
-  private Serializer getSerializer(Object o, ClassInfoHolder classInfoWriteCache) {
-    if (o != null) {
-      ClassResolver classResolver = fury.getClassResolver();
-      ClassInfo classInfo = classResolver.getClassInfo(o.getClass(), classInfoWriteCache);
-      return classInfo.getSerializer();
-    }
-    return null;
-  }
-
   private void javaChunkWriteWithKVSerializers(
       MemoryBuffer buffer, Map map, Serializer keySerializer, Serializer valueSerializer) {
     boolean prevKeyIsNull = false;
