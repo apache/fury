@@ -47,6 +47,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
   private static final int MAX_CHUNK_SIZE = 127;
   protected MethodHandle constructor;
   protected final boolean supportCodegenHook;
+  protected boolean useChunkSerialize;
   private Serializer keySerializer;
   private Serializer valueSerializer;
   protected final ClassInfoHolder keyClassInfoWriteCache;
@@ -112,7 +113,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
   @Override
   public void write(MemoryBuffer buffer, T value) {
     Map map = onMapWrite(buffer, value);
-    if (fury.isChunkSerializeMapEnabled()) {
+    if (useChunkSerialize) {
       chunkWriteElements(fury, buffer, map);
     } else {
       writeElements(fury, buffer, map);
