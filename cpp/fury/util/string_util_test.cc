@@ -63,7 +63,7 @@ TEST(StringUtilTest, TestisAsciiFunctions) {
   auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(
                       end_time - start_time)
                       .count();
-  FURY_LOG(INFO) << "BaseLine Running Time: " << duration << " ns.";
+  FURY_LOG(FURY_INFO) << "BaseLine Running Time: " << duration << " ns.";
 
   start_time = std::chrono::high_resolution_clock::now();
   result = isAscii(testStr);
@@ -71,7 +71,7 @@ TEST(StringUtilTest, TestisAsciiFunctions) {
   duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time -
                                                                   start_time)
                  .count();
-  FURY_LOG(INFO) << "Optimized Running Time: " << duration << " ns.";
+  FURY_LOG(FURY_INFO) << "Optimized Running Time: " << duration << " ns.";
 
   EXPECT_TRUE(result);
 }
@@ -286,9 +286,9 @@ TEST(UTF16ToUTF8Test, PerformanceTest) {
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(
                         end_time - start_time)
                         .count();
-    FURY_LOG(INFO) << "Standard library Running Time: " << duration << " ns";
+    FURY_LOG(FURY_INFO) << "Standard library Running Time: " << duration << " ns";
   } catch (const std::exception &e) {
-    FURY_LOG(FATAL) << "Caught exception: " << e.what();
+    FURY_LOG(FURY_FATAL) << "Caught exception: " << e.what();
   }
 
   // BaseLine
@@ -301,9 +301,9 @@ TEST(UTF16ToUTF8Test, PerformanceTest) {
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(
                         end_time - start_time)
                         .count();
-    FURY_LOG(INFO) << "Baseline Running Time: " << duration << " ns";
+    FURY_LOG(FURY_INFO) << "Baseline Running Time: " << duration << " ns";
   } catch (const std::exception &e) {
-    FURY_LOG(FATAL) << "Caught exception: " << e.what();
+    FURY_LOG(FURY_FATAL) << "Caught exception: " << e.what();
   }
 
   // SIMD
@@ -316,9 +316,9 @@ TEST(UTF16ToUTF8Test, PerformanceTest) {
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(
                         end_time - start_time)
                         .count();
-    FURY_LOG(INFO) << "SIMD Running Time: " << duration << " ns";
+    FURY_LOG(FURY_INFO) << "SIMD Running Time: " << duration << " ns";
   } catch (const std::exception &e) {
-    FURY_LOG(FATAL) << "Caught exception: " << e.what();
+    FURY_LOG(FURY_FATAL) << "Caught exception: " << e.what();
   }
 }
 
@@ -523,9 +523,9 @@ TEST(UTF8ToUTF16Test, PerformanceTest) {
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(
                         end_time - start_time)
                         .count();
-    FURY_LOG(INFO) << "Standard Library Running Time: " << duration << " ns";
+    FURY_LOG(FURY_INFO) << "Standard Library Running Time: " << duration << " ns";
   } catch (const std::exception &e) {
-    FURY_LOG(FATAL) << "Caught exception in standard library conversion: "
+    FURY_LOG(FURY_FATAL) << "Caught exception in standard library conversion: "
                     << e.what();
   }
 
@@ -539,9 +539,9 @@ TEST(UTF8ToUTF16Test, PerformanceTest) {
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(
                         end_time - start_time)
                         .count();
-    FURY_LOG(INFO) << "BaseLine Running Time: " << duration << " ns";
+    FURY_LOG(FURY_INFO) << "BaseLine Running Time: " << duration << " ns";
   } catch (const std::exception &e) {
-    FURY_LOG(FATAL) << "Caught exception in baseline conversion: " << e.what();
+    FURY_LOG(FURY_FATAL) << "Caught exception in baseline conversion: " << e.what();
   }
 
   // Optimized (SIMD)
@@ -554,9 +554,9 @@ TEST(UTF8ToUTF16Test, PerformanceTest) {
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(
                         end_time - start_time)
                         .count();
-    FURY_LOG(INFO) << "SIMD Optimized Running Time: " << duration << " ns";
+    FURY_LOG(FURY_INFO) << "SIMD Optimized Running Time: " << duration << " ns";
   } catch (const std::exception &e) {
-    FURY_LOG(FATAL) << "Caught exception in SIMD optimized conversion: "
+    FURY_LOG(FURY_FATAL) << "Caught exception in SIMD optimized conversion: "
                     << e.what();
   }
 }
