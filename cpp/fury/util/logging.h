@@ -51,7 +51,7 @@ enum class FuryLogLevel {
 
 #define FURY_CHECK(condition)                                                  \
   if (!(condition))                                                            \
-  FURY_LOG_INTERNAL(FATAL) << " Check failed: " #condition " "
+  FURY_LOG_INTERNAL(FURY_FATAL) << " Check failed: " #condition " "
 
 #define FURY_CHECK_OP(left, op, right)                                         \
   do {                                                                         \
