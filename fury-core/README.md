@@ -23,4 +23,4 @@ This module now includes support for compressing and decompressing type metadata
    public void processMetadata(byte[] metadata) {
        byte[] compressedMetadata = metaCompressor.compress(metadata);
        // ... use compressedMetadata ...
-   }
+   } 
