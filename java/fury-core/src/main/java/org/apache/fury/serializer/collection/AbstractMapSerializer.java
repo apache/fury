@@ -754,7 +754,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     boolean prevKeyIsNull = false;
     int header = 0;
     int chunkSize = 0;
-    int startOffset = 0;
+    int startOffset = -1;
     boolean valueIsDifferentType = false;
     Class valueClass = null;
     boolean reset = false;
@@ -823,7 +823,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     int chunkSize = 0;
     boolean prevKeyIsNull = false;
     boolean keyIsDifferentType = false;
-    int startOffset = 0;
+    int startOffset = -1;
     Class keyClass = null;
     boolean reset = false;
     Serializer valueSerializer = valueGenericType.getSerializer(fury.getClassResolver());
