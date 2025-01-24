@@ -171,17 +171,17 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     this.keySerializer = null;
     this.valueSerializer = null;
     if (keySerializer != null && valueSerializer != null) {
-      javaChunkWriteWithKVSerializers(buffer, map, keySerializer, valueSerializer);
+      javaChunkWriteWithKVSerializer(buffer, map, keySerializer, valueSerializer);
     } else if (keySerializer != null) {
-      javaChunkWriteWithKeySerializers(map, buffer, keySerializer);
+      javaChunkWriteWithKeySerializer(map, buffer, keySerializer);
     } else if (valueSerializer != null) {
-      javaChunkWriteWithValueSerializers(map, buffer, valueSerializer);
+      javaChunkWriteWithValueSerializer(map, buffer, valueSerializer);
     } else {
       genericJavaChunkWrite(fury, buffer, map);
     }
   }
 
-  private void javaChunkWriteWithKeySerializers(
+  private void javaChunkWriteWithKeySerializer(
       Map map, MemoryBuffer buffer, Serializer keySerializer) {
     boolean prevKeyIsNull = false;
     int header = 0;
@@ -362,7 +362,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     return classInfo.getSerializer();
   }
 
-  private void javaChunkWriteWithValueSerializers(
+  private void javaChunkWriteWithValueSerializer(
       Map map, MemoryBuffer buffer, Serializer valueSerializer) {
     boolean prevKeyIsNull = false;
     int header = 0;
@@ -427,7 +427,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     return startOffset;
   }
 
-  private void javaChunkWriteWithKVSerializers(
+  private void javaChunkWriteWithKVSerializer(
       MemoryBuffer buffer, Map map, Serializer keySerializer, Serializer valueSerializer) {
     boolean prevKeyIsNull = false;
     int header = 0;
