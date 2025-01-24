@@ -51,6 +51,7 @@ import org.apache.fury.collection.LazyMap;
 import org.apache.fury.collection.MapEntry;
 import org.apache.fury.config.Language;
 import org.apache.fury.reflect.TypeRef;
+import org.apache.fury.serializer.Serializer;
 import org.apache.fury.serializer.collection.CollectionSerializersTest.TestEnum;
 import org.apache.fury.test.bean.Cyclic;
 import org.apache.fury.test.bean.MapFields;
@@ -604,5 +605,87 @@ public class MapSerializersTest extends FuryTestBase {
     PrivateMap<String, Integer> map = new PrivateMap<>();
     map.put("k", 1);
     serDeCheck(fury, new LazyMapCollectionFieldStruct(ofArrayList(map), map));
+  }
+
+  @Test(dataProvider = "referenceTrackingConfig")
+  public void testObjectKeyValueChunkSerializer(boolean referenceTrackingConfig) {
+    Fury fury = Fury.builder().withRefTracking(referenceTrackingConfig).build();
+    final Map<Object, Object> differentKeyAndValueTypeMap = createDifferentKeyAndValueTypeMap();
+    final Serializer<? extends Map> serializer =
+        fury.getSerializer(differentKeyAndValueTypeMap.getClass());
+    MapSerializers.HashMapSerializer mapSerializer = (MapSerializers.HashMapSerializer) serializer;
+    mapSerializer.setUseChunkSerialize(true);
+    final byte[] serialize = fury.serialize(differentKeyAndValueTypeMap);
+    final Object deserialize = fury.deserialize(serialize);
+    assertEquals(deserialize, differentKeyAndValueTypeMap);
+  }
+
+  @Test(dataProvider = "referenceTrackingConfig")
+  public void testMapFieldsChunkSerializer(boolean referenceTrackingConfig) {
+    Fury fury =
+        Fury.builder()
+            .withRefTracking(referenceTrackingConfig)
+            .requireClassRegistration(false)
+            .build();
+    final MapFields mapFieldsObject = createMapFieldsObject();
+    // hashmap
+    final Serializer<HashMap> serializer = fury.getSerializer(HashMap.class);
+    MapSerializers.HashMapSerializer mapSerializer = (MapSerializers.HashMapSerializer) serializer;
+    mapSerializer.setUseChunkSerialize(true);
+
+    // LinkedHashMap
+    final Serializer<LinkedHashMap> serializer1 = fury.getSerializer(LinkedHashMap.class);
+    MapSerializers.LinkedHashMapSerializer linkedHashMapSerializer =
+        (MapSerializers.LinkedHashMapSerializer) serializer1;
+    linkedHashMapSerializer.setUseChunkSerialize(true);
+
+    // TreeMap
+    final Serializer<TreeMap> serializer2 = fury.getSerializer(TreeMap.class);
+    MapSerializers.SortedMapSerializer sortedMapSerializer =
+        (MapSerializers.SortedMapSerializer) serializer2;
+    sortedMapSerializer.setUseChunkSerialize(true);
+
+    // ConcurrentHashMap
+    final Serializer<ConcurrentHashMap> serializer3 = fury.getSerializer(ConcurrentHashMap.class);
+    MapSerializers.ConcurrentHashMapSerializer concurrentHashMapSerializer =
+        (MapSerializers.ConcurrentHashMapSerializer) serializer3;
+    concurrentHashMapSerializer.setUseChunkSerialize(true);
+
+    // ConcurrentSkipListMap
+    final Serializer<ConcurrentSkipListMap> serializer4 =
+        fury.getSerializer(ConcurrentSkipListMap.class);
+    MapSerializers.ConcurrentSkipListMapSerializer concurrentSkipListMapSerializer =
+        (MapSerializers.ConcurrentSkipListMapSerializer) serializer4;
+    concurrentSkipListMapSerializer.setUseChunkSerialize(true);
+
+    final Serializer<EnumMap> serializer5 = fury.getSerializer(EnumMap.class);
+    MapSerializers.EnumMapSerializer enumMapSerializer =
+        (MapSerializers.EnumMapSerializer) serializer5;
+    enumMapSerializer.setUseChunkSerialize(true);
+
+    final byte[] serialize = fury.serialize(mapFieldsObject);
+    final Object deserialize = fury.deserialize(serialize);
+    assertEquals(deserialize, mapFieldsObject);
+  }
+
+  private static Map<Object, Object> createDifferentKeyAndValueTypeMap() {
+    Map<Object, Object> map = new HashMap<>();
+    map.put(null, "1");
+    map.put(2, "1");
+    map.put(4, "1");
+    map.put(6, "1");
+    map.put(7, "1");
+    map.put(10, "1");
+    map.put(12, "null");
+    map.put(19, "null");
+    map.put(11, null);
+    map.put(20, null);
+    map.put(21, 9);
+    map.put(22, 99);
+    map.put(291, 900);
+    map.put("292", 900);
+    map.put("293", 900);
+    map.put("23", 900);
+    return map;
   }
 }

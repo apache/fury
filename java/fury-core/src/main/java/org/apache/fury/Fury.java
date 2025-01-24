@@ -919,6 +919,15 @@ public final class Fury implements BaseFury {
     }
   }
 
+  public Object readNullable(MemoryBuffer buffer, ClassInfoHolder classInfoHolder) {
+    byte headFlag = buffer.readByte();
+    if (headFlag == Fury.NULL_FLAG) {
+      return null;
+    } else {
+      return readNonRef(buffer, classInfoHolder);
+    }
+  }
+
   /** Class should be read already. */
   public Object readData(MemoryBuffer buffer, ClassInfo classInfo) {
     depth++;
