@@ -78,6 +78,12 @@ install_bazel() {
   fi
 }
 
+install_bazel_windows() {
+  choco install bazel --version=6.3.2 --force
+  VERSION=`bazel version`
+  echo "bazel version: $VERSION"
+}
+
 JDKS=(
 "zulu21.28.85-ca-jdk21.0.0-linux_x64"
 "zulu17.44.17-ca-crac-jdk17.0.8-linux_x64"

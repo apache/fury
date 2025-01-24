@@ -32,11 +32,11 @@ std::string GetCallTrace();
 // Simple logging implementation to avoid introduce glog dependency.
 
 enum class FuryLogLevel {
-  DEBUG = -1,
-  INFO = 0,
-  WARNING = 1,
-  ERROR = 2,
-  FATAL = 3
+  FURY_DEBUG = -1,
+  FURY_INFO = 0,
+  FURY_WARNING = 1,
+  FURY_ERROR = 2,
+  FURY_FATAL = 3
 };
 
 #define FURY_LOG_INTERNAL(level)                                               \
@@ -51,7 +51,7 @@ enum class FuryLogLevel {
 
 #define FURY_CHECK(condition)                                                  \
   if (!(condition))                                                            \
-  FURY_LOG_INTERNAL(FATAL) << " Check failed: " #condition " "
+  FURY_LOG_INTERNAL(FURY_FATAL) << " Check failed: " #condition " "
 
 #define FURY_CHECK_OP(left, op, right)                                         \
   do {                                                                         \
