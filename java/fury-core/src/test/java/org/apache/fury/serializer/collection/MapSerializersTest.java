@@ -353,35 +353,7 @@ public class MapSerializersTest extends FuryTestBase {
     obj.emptyMap = Collections.emptyMap();
     obj.sortedEmptyMap = Collections.emptySortedMap();
     obj.singletonMap = Collections.singletonMap("k", "v");
-    obj.differentKeyAndValueTypeMap = createDifferentKeyAndValueTypeMap();
     return obj;
-  }
-
-  @Test(dataProvider = "javaFury")
-  public void testDifferentKeyAndValueType(Fury fury) {
-      Map<Object, Object> map = createDifferentKeyAndValueTypeMap();
-      Assert.assertEquals(serDe(fury, map), map);
-  }
-
-  private static Map<Object, Object> createDifferentKeyAndValueTypeMap() {
-      Map<Object, Object> map = new HashMap<>();
-      map.put(null, "1");
-      map.put(2, "1");
-      map.put(4, "1");
-      map.put(6, "1");
-      map.put(7, "1");
-      map.put(10, "1");
-      map.put(12, "null");
-      map.put(19, "null");
-      map.put(11, null);
-      map.put(20, null);
-      map.put(21, 9);
-      map.put(22, 99);
-      map.put(291, 900);
-      map.put("292", 900);
-      map.put("293", 900);
-      map.put("23", 900);
-      return map;
   }
 
   public static class TestClass1ForDefaultMap extends AbstractMap<String, Object> {

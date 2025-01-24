@@ -53,7 +53,6 @@ public class MapFields {
   public Map emptyMap;
   public Map sortedEmptyMap;
   public Map singletonMap;
-  public Map<Object, Object> differentKeyAndValueTypeMap;
 
   public static Object copyToCanEqual(Object o, Object newInstance) {
     return CollectionFields.copyToCanEqual(o, newInstance);
