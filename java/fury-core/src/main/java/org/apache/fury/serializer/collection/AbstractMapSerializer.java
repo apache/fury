@@ -240,10 +240,10 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
 
   /**
    * user preserve 2 bytes to mark whether class info have been written avoid to use a variable to
-   * mark these 2 bytes will be overwritten when we finish the chunk
+   * mark these 2 bytes will be overwritten when we finish the chunk.
    *
-   * @param buffer
-   * @param offset
+   * @param buffer buffer to write.
+   * @param offset offset to mark.
    */
   private void markHasWriteClassInfo(MemoryBuffer buffer, int offset) {
     int writeIndex = buffer.writerIndex();
@@ -662,14 +662,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
   }
 
   /**
-   * kv final write do not need to predict , since key and value is almost same type unless null
-   *
-   * @param fury
-   * @param buffer
-   * @param map
-   * @param keyGenericType
-   * @param valueGenericType
-   * @param generics
+   * kv final write do not need to predict , since key and value is almost same type unless null.
    */
   private void javaKVTypesFinalChunkWrite(
       Fury fury,
