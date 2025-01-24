@@ -2295,6 +2295,14 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     return supportCodegenHook;
   }
 
+  public boolean isUseChunkSerialize() {
+    return useChunkSerialize;
+  }
+
+  public void setUseChunkSerialize(boolean useChunkSerialize) {
+    this.useChunkSerialize = useChunkSerialize;
+  }
+
   /**
    * Write data except size and elements.
    *
