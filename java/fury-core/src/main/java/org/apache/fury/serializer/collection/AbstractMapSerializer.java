@@ -757,9 +757,6 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
       Object value = entry.getValue();
       if (key == null) {
         prevKeyIsNull = true;
-        if (chunkSize > 0) {
-          reset = true;
-        }
       }
       if (!valueIsDifferentType) {
         if (value != null) {
@@ -828,9 +825,6 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
       Object value = entry.getValue();
       if (key == null) {
         prevKeyIsNull = true;
-        if (chunkSize > 0) {
-          reset = true;
-        }
       }
       if (!keyIsDifferentType) {
         if (key != null) {
@@ -903,9 +897,6 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
       if (!markChunkWriteFinish) {
         if (key == null) {
           prevKeyIsNull = true;
-          if (chunkSize > 0) {
-            reset = true;
-          }
         }
         if (!keyIsDifferentType) {
           if (key != null) {
@@ -915,11 +906,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
             keyIsDifferentType = keyClass != key.getClass();
           }
           if (keyIsDifferentType) {
-            if (valueIsDifferentType) {
-              needMarkFinish = true;
-            } else {
-              reset = true;
-            }
+            reset = true;
           }
         }
         if (!valueIsDifferentType) {
@@ -930,12 +917,11 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
             valueIsDifferentType = valueClass != value.getClass();
           }
           if (valueIsDifferentType) {
-            if (keyIsDifferentType) {
-              needMarkFinish = true;
-            } else {
-              reset = true;
-            }
+            reset = true;
           }
+        }
+        if (keyIsDifferentType && valueIsDifferentType) {
+          needMarkFinish = true;
         }
         if (needMarkFinish) {
           writeHeader(buffer, chunkSize, header, startOffset);
@@ -1120,9 +1106,6 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
       if (!markChunkWriteFinish) {
         if (key == null) {
           prevKeyIsNull = true;
-          if (chunkSize > 0) {
-            reset = true;
-          }
         }
         if (!keyIsDifferentType) {
           if (key != null) {
@@ -1132,11 +1115,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
             keyIsDifferentType = keyClass != key.getClass();
           }
           if (keyIsDifferentType) {
-            if (valueIsDifferentType) {
-              needMarkFinish = true;
-            } else {
-              reset = true;
-            }
+            reset = true;
           }
         }
         if (!valueIsDifferentType) {
@@ -1147,12 +1126,11 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
             valueIsDifferentType = valueClass != value.getClass();
           }
           if (valueIsDifferentType) {
-            if (keyIsDifferentType) {
-              needMarkFinish = true;
-            } else {
-              reset = true;
-            }
+            reset = true;
           }
+        }
+        if (valueIsDifferentType && keyIsDifferentType) {
+          needMarkFinish = true;
         }
         if (needMarkFinish) {
           writeHeader(buffer, chunkSize, header, startOffset);
