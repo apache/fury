@@ -133,6 +133,28 @@ TEST(StringUtilTest, TestisLatin1) {
   }
 }
 
+// Generate random UTF-16 string ensuring valid surrogate pairs
+std::u16string generateRandomUTF16String(size_t length) {
+  std::u16string str;
+  std::mt19937 generator(std::random_device{}());
+  std::uniform_int_distribution<uint32_t> distribution(0, 0x10FFFF);
+
+  while (str.size() < length) {
+    uint32_t code_point = distribution(generator);
+
+    if (code_point <= 0xD7FF ||
+        (code_point >= 0xE000 && code_point <= 0xFFFF)) {
+      str.push_back(static_cast<char16_t>(code_point));
+    } else if (code_point >= 0x10000 && code_point <= 0x10FFFF) {
+      code_point -= 0x10000;
+      str.push_back(static_cast<char16_t>((code_point >> 10) + 0xD800));
+      str.push_back(static_cast<char16_t>((code_point & 0x3FF) + 0xDC00));
+    }
+  }
+
+  return str;
+}
+
 TEST(StringUtilTest, TestUtf16HasSurrogatePairs) {
   EXPECT_FALSE(utf16HasSurrogatePairs(std::u16string({0x99, 0x100})));
   std::u16string utf16 = {0xD83D, 0xDE00}; // 😀 emoji
