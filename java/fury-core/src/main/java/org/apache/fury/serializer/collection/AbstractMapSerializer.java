@@ -48,7 +48,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
   private static final byte MARK_HAS_WRITE_CLASS_INFO = -1;
   protected MethodHandle constructor;
   protected final boolean supportCodegenHook;
-  protected boolean useChunkSerialize = true;
+  protected boolean useChunkSerialize;
   private Serializer keySerializer;
   private Serializer valueSerializer;
   protected final ClassInfoHolder keyClassInfoWriteCache;
