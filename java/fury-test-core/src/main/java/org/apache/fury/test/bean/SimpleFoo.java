@@ -27,8 +27,12 @@ public class SimpleFoo {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     SimpleFoo foo = (SimpleFoo) o;
     return f1 == foo.f1 && Objects.equals(f2, foo.f2);
   }
