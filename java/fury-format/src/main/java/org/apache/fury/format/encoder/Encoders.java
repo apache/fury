@@ -19,10 +19,12 @@
 
 package org.apache.fury.format.encoder;
 
+import static org.apache.fury.type.TypeUtils.OBJECT_TYPE;
 import static org.apache.fury.type.TypeUtils.getRawType;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import org.apache.arrow.util.Preconditions;
@@ -398,7 +400,7 @@ public class Encoders {
    * @return
    */
   public static <T extends Map> MapEncoder<T> mapEncoder(TypeRef<T> token) {
-    return mapEncoder(token, (Fury) null);
+    return mapEncoder(token, null);
   }
 
   /**
@@ -417,16 +419,11 @@ public class Encoders {
 
   public static <T extends Map> MapEncoder<T> mapEncoder(TypeRef<T> token, Fury fury) {
     Preconditions.checkNotNull(token);
-
     Tuple2<TypeRef<?>, TypeRef<?>> tuple2 = TypeUtils.getMapKeyValueType(token);
 
     Set<TypeRef<?>> set1 = beanSet(tuple2.f0);
     Set<TypeRef<?>> set2 = beanSet(tuple2.f1);
     LOG.info("Find beans to load: {}, {}", set1, set2);
-
-    if (set1.isEmpty() && set2.isEmpty()) {
-      throw new IllegalArgumentException("can not find bean class.");
-    }
 
     TypeRef<?> keyToken = token4BeanLoad(set1, tuple2.f0);
     TypeRef<?> valToken = token4BeanLoad(set2, tuple2.f1);
@@ -457,7 +454,7 @@ public class Encoders {
     Field keyField = DataTypes.keyArrayFieldForMap(field);
     Field valField = DataTypes.itemArrayFieldForMap(field);
     BinaryArrayWriter keyWriter = new BinaryArrayWriter(keyField);
-    BinaryArrayWriter valWriter = new BinaryArrayWriter(valField);
+    BinaryArrayWriter valWriter = new BinaryArrayWriter(valField, keyWriter.getBuffer());
     try {
       Class<?> rowCodecClass = loadOrGenMapCodecClass(mapToken, keyToken, valToken);
       Object references = new Object[] {keyField, valField, keyWriter, valWriter, fury, field};
@@ -510,7 +507,7 @@ public class Encoders {
         @Override
         public byte[] encode(T obj) {
           BinaryMap map = toMap(obj);
-          return map.getBuf().readBytes(map.getBuf().size());
+          return map.getBuf().getBytes(map.getBaseOffset(), map.getSizeInBytes());
         }
 
         @Override
@@ -602,8 +599,13 @@ public class Encoders {
   }
 
   private static void findBeanToken(TypeRef<?> typeRef, java.util.Set<TypeRef<?>> set) {
+    Set<TypeRef<?>> visited = new LinkedHashSet<>();
     while (TypeUtils.ITERABLE_TYPE.isSupertypeOf(typeRef)
         || TypeUtils.MAP_TYPE.isSupertypeOf(typeRef)) {
+      if (visited.contains(typeRef)) {
+        return;
+      }
+      visited.add(typeRef);
       if (TypeUtils.ITERABLE_TYPE.isSupertypeOf(typeRef)) {
         typeRef = TypeUtils.getElementType(typeRef);
         if (TypeUtils.isBean(typeRef)) {
@@ -677,7 +679,8 @@ public class Encoders {
       cls = getRawType(valueToken);
       beanToken = valueToken;
     } else {
-      throw new IllegalArgumentException("not find bean class.");
+      cls = Object.class;
+      beanToken = OBJECT_TYPE;
     }
     // class name prefix
     String prefix = TypeInference.inferTypeName(mapCls);

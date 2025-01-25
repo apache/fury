@@ -19,16 +19,19 @@
 
 package org.apache.fury.format.encoder;
 
-import static org.testng.AssertJUnit.assertEquals;
+import static org.apache.fury.format.encoder.CodecBuilderTest.testStreamingEncode;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.fury.format.row.binary.BinaryMap;
-import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.reflect.TypeRef;
+import org.apache.fury.test.bean.Foo;
+import org.apache.fury.test.bean.SimpleFoo;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -48,7 +51,6 @@ public class MapEncoderTest {
         Encoders.mapEncoder(bars.getClass(), String.class, RowEncoderTest.Bar.class);
     BinaryMap array = encoder.toMap(bars);
     Map<String, RowEncoderTest.Bar> newBars = encoder.fromMap(array);
-
     Assert.assertEquals(bars, newBars);
 
     byte[] bytes = encoder.encode(bars);
@@ -87,6 +89,78 @@ public class MapEncoderTest {
   }
 
   @Test
+  public void testSimpleNestArrayWithMapEncoder1() {
+    Map<String, List<Integer>> map = new HashMap<>();
+    map.put("k1", ImmutableList.of(1, 2));
+
+    MapEncoder<Map<String, List<Integer>>> encoder =
+        Encoders.mapEncoder(new TypeRef<Map<String, List<Integer>>>() {});
+
+    testStreamingEncode(encoder, map);
+  }
+
+  @Test
+  public void testSimpleNestArrayWithMapEncoder2() {
+    Map<String, List<List<Integer>>> map = new HashMap<>();
+    map.put("k1", ImmutableList.of(ImmutableList.of(1, 2), ImmutableList.of(1, 2)));
+
+    MapEncoder<Map<String, List<List<Integer>>>> encoder =
+        Encoders.mapEncoder(new TypeRef<Map<String, List<List<Integer>>>>() {});
+
+    testStreamingEncode(encoder, map);
+  }
+
+  @Test
+  public void testSimpleStructWithMapEncoder2() {
+    Map<String, Foo> map = new HashMap<>();
+    map.put("k1", Foo.create());
+
+    MapEncoder<Map<String, Foo>> encoder = Encoders.mapEncoder(new TypeRef<Map<String, Foo>>() {});
+
+    testStreamingEncode(encoder, map);
+  }
+
+  @Test
+  public void testSimpleNestStructWithMapEncoder() {
+    Map<String, List<Foo>> map = new HashMap<>();
+    map.put("k1", ImmutableList.of(Foo.create()));
+
+    MapEncoder<Map<String, List<Foo>>> encoder =
+        Encoders.mapEncoder(new TypeRef<Map<String, List<Foo>>>() {});
+
+    testStreamingEncode(encoder, map);
+  }
+
+  @Test
+  public void testKVStructMap() {
+    Map<SimpleFoo, SimpleFoo> map = ImmutableMap.of(SimpleFoo.create(), SimpleFoo.create());
+    MapEncoder encoder = Encoders.mapEncoder(new TypeRef<Map<SimpleFoo, SimpleFoo>>() {});
+    testStreamingEncode(encoder, map);
+    MapEncoder encoder1 = Encoders.mapEncoder(new TypeRef<Map<Foo, Foo>>() {});
+    testStreamingEncode(encoder1, ImmutableMap.of(Foo.create(), Foo.create()));
+  }
+
+  @Test
+  public void testSimpleNestKVStructMapArray() {
+    ArrayEncoder<List<Map<SimpleFoo, SimpleFoo>>> encoder =
+        Encoders.arrayEncoder(new TypeRef<List<Map<SimpleFoo, SimpleFoo>>>() {});
+
+    testStreamingEncode(
+        encoder, ImmutableList.of(ImmutableMap.of(SimpleFoo.create(), SimpleFoo.create())));
+  }
+
+  @Test
+  public void testSimpleNestKVStruct() {
+    Map<String, List<Map<Foo, Foo>>> map = new HashMap<>();
+    map.put("k1", ImmutableList.of(ImmutableMap.of(Foo.create(), Foo.create())));
+
+    MapEncoder<Map<String, List<Map<Foo, Foo>>>> encoder =
+        Encoders.mapEncoder(new TypeRef<Map<String, List<Map<Foo, Foo>>>>() {});
+
+    testStreamingEncode(encoder, map);
+  }
+
+  @Test
   public void testNestArrayWithMapEncoder() {
     Map<String, List<Map<RowEncoderTest.Foo, List<RowEncoderTest.Bar>>>> lmap = new HashMap<>();
     for (int i = 0; i < 10; i++) {
@@ -116,20 +190,6 @@ public class MapEncoderTest {
         encoder.decode(bytes);
     Assert.assertEquals(decodeMap.size(), 10);
 
-    MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(32);
-    for (int i = 0; i < 32; i++) {
-      buffer.writerIndex(0);
-      buffer.readerIndex(0);
-      for (int j = 0; j < i; j++) {
-        buffer.writerIndex(0);
-        buffer.readerIndex(0);
-        buffer.writeByte(-1);
-        buffer.readByte();
-        encoder.encode(buffer, lmap);
-        encoder.encode(buffer, lmap);
-        assertEquals(encoder.decode(buffer), lmap);
-        assertEquals(encoder.decode(buffer), lmap);
-      }
-    }
+    testStreamingEncode(encoder, lmap);
   }
 }

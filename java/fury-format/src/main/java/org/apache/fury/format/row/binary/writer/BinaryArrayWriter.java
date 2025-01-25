@@ -72,7 +72,7 @@ public class BinaryArrayWriter extends BinaryWriter {
     // there's no need to set `super.startIndex = writer.writerIndex();`
   }
 
-  private BinaryArrayWriter(Field field, MemoryBuffer buffer) {
+  public BinaryArrayWriter(Field field, MemoryBuffer buffer) {
     super(buffer, 8);
     this.field = field;
     int width = DataTypes.getTypeWidth(field.getChildren().get(0).getType());

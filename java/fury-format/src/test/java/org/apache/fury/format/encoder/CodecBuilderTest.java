@@ -20,8 +20,10 @@
 package org.apache.fury.format.encoder;
 
 import static org.testng.Assert.assertTrue;
+import static org.testng.AssertJUnit.assertEquals;
 
 import java.util.concurrent.atomic.AtomicLong;
+import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.test.bean.BeanA;
 import org.apache.fury.test.bean.BeanB;
 import org.apache.fury.test.bean.Foo;
@@ -44,5 +46,23 @@ public class CodecBuilderTest {
     assertTrue(
         GeneratedRowEncoder.class.isAssignableFrom(
             Encoders.loadOrGenRowCodecClass(AtomicLong.class)));
+  }
+
+  static void testStreamingEncode(Encoder encoder, Object object) {
+    MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(32);
+    for (int i = 0; i < 1; i++) {
+      buffer.writerIndex(0);
+      buffer.readerIndex(0);
+      for (int j = 0; j <= i; j++) {
+        buffer.writerIndex(0);
+        buffer.readerIndex(0);
+        buffer.writeByte(-1);
+        buffer.readByte();
+        encoder.encode(buffer, object);
+        encoder.encode(buffer, object);
+        assertEquals(object, encoder.decode(buffer));
+        assertEquals(object, encoder.decode(buffer));
+      }
+    }
   }
 }

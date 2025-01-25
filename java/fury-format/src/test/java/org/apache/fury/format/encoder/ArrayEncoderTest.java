@@ -19,7 +19,7 @@
 
 package org.apache.fury.format.encoder;
 
-import static org.testng.AssertJUnit.assertEquals;
+import static org.apache.fury.format.encoder.CodecBuilderTest.testStreamingEncode;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,7 +27,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.fury.format.row.binary.BinaryArray;
-import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.reflect.TypeRef;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -57,21 +56,7 @@ public class ArrayEncoderTest {
     Assert.assertEquals(bs.length, 224);
     Assert.assertEquals(bars, bbars);
 
-    MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(32);
-    for (int i = 0; i < 32; i++) {
-      buffer.writerIndex(0);
-      buffer.readerIndex(0);
-      for (int j = 0; j < i; j++) {
-        buffer.writerIndex(0);
-        buffer.readerIndex(0);
-        buffer.writeByte(-1);
-        buffer.readByte();
-        encoder.encode(buffer, bars);
-        encoder.encode(buffer, bars);
-        assertEquals(encoder.decode(buffer), bars);
-        assertEquals(encoder.decode(buffer), bars);
-      }
-    }
+    testStreamingEncode(encoder, bars);
   }
 
   @Test
@@ -105,21 +90,7 @@ public class ArrayEncoderTest {
     Assert.assertEquals(bs.length, 1576);
     Assert.assertEquals(bars, bbars);
 
-    MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(32);
-    for (int i = 0; i < 32; i++) {
-      buffer.writerIndex(0);
-      buffer.readerIndex(0);
-      for (int j = 0; j < i; j++) {
-        buffer.writerIndex(0);
-        buffer.readerIndex(0);
-        buffer.writeByte(-1);
-        buffer.readByte();
-        encoder.encode(buffer, bars);
-        encoder.encode(buffer, bars);
-        assertEquals(encoder.decode(buffer), bars);
-        assertEquals(encoder.decode(buffer), bars);
-      }
-    }
+    testStreamingEncode(encoder, bars);
   }
 
   @Test
@@ -153,20 +124,6 @@ public class ArrayEncoderTest {
     Assert.assertEquals(bs.length, 10824);
     Assert.assertEquals(lmap, blmap);
 
-    MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(32);
-    for (int i = 0; i < 32; i++) {
-      buffer.writerIndex(0);
-      buffer.readerIndex(0);
-      for (int j = 0; j < i; j++) {
-        buffer.writerIndex(0);
-        buffer.readerIndex(0);
-        buffer.writeByte(-1);
-        buffer.readByte();
-        encoder.encode(buffer, lmap);
-        encoder.encode(buffer, lmap);
-        assertEquals(encoder.decode(buffer), lmap);
-        assertEquals(encoder.decode(buffer), lmap);
-      }
-    }
+    testStreamingEncode(encoder, lmap);
   }
 }

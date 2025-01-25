@@ -19,7 +19,7 @@
 
 package org.apache.fury.format.encoder;
 
-import static org.testng.AssertJUnit.assertEquals;
+import static org.apache.fury.format.encoder.CodecBuilderTest.testStreamingEncode;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Arrays;
@@ -49,21 +49,7 @@ public class RowEncoderTest {
         BeanA newBean = encoder.fromRow(row);
         Assert.assertEquals(beanA, newBean);
       }
-      MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(32);
-      for (int i = 0; i < 1; i++) {
-        buffer.writerIndex(0);
-        buffer.readerIndex(0);
-        for (int j = 0; j <= i; j++) {
-          buffer.writerIndex(0);
-          buffer.readerIndex(0);
-          buffer.writeByte(-1);
-          buffer.readByte();
-          encoder.encode(buffer, beanA);
-          encoder.encode(buffer, beanA);
-          assertEquals(encoder.decode(buffer), beanA);
-          assertEquals(encoder.decode(buffer), beanA);
-        }
-      }
+      testStreamingEncode(encoder, beanA);
     }
     {
       RowEncoder<BeanB> encoder = Encoders.bean(BeanB.class);
@@ -73,21 +59,7 @@ public class RowEncoderTest {
         BeanB newBean = encoder.fromRow(row);
         Assert.assertEquals(beanB, newBean);
       }
-      MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(32);
-      for (int i = 0; i < 32; i++) {
-        buffer.writerIndex(0);
-        buffer.readerIndex(0);
-        for (int j = 0; j <= i; j++) {
-          buffer.writerIndex(0);
-          buffer.readerIndex(0);
-          buffer.writeByte(-1);
-          buffer.readByte();
-          encoder.encode(buffer, beanB);
-          encoder.encode(buffer, beanB);
-          assertEquals(encoder.decode(buffer), beanB);
-          assertEquals(encoder.decode(buffer), beanB);
-        }
-      }
+      testStreamingEncode(encoder, beanB);
     }
   }
 

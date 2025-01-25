@@ -240,6 +240,14 @@ public abstract class BinaryWriter {
     buffer.putInt64(offset, value);
   }
 
+  public final void writeInt32Directly(int value) {
+    buffer.writeInt32(value);
+  }
+
+  public final void writeInt32Directly(int offset, int value) {
+    buffer.putInt32(offset, value);
+  }
+
   public final void copyTo(BinaryWriter writer, int ordinal) {
     writer.writeAlignedBytes(ordinal, buffer, startIndex, buffer.writerIndex());
   }
