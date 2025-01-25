@@ -19,6 +19,8 @@
 
 package org.apache.fury.format.encoder;
 
+import static org.testng.AssertJUnit.assertEquals;
+
 import com.google.common.collect.ImmutableMap;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -41,20 +43,50 @@ public class RowEncoderTest {
     Encoders.bean(AtomicLong.class);
     {
       RowEncoder<BeanA> encoder = Encoders.bean(BeanA.class);
+      BeanA beanA = BeanA.createBeanA(2);
       for (int i = 0; i < 3; i++) {
-        BeanA beanA = BeanA.createBeanA(2);
         BinaryRow row = encoder.toRow(beanA);
         BeanA newBean = encoder.fromRow(row);
         Assert.assertEquals(beanA, newBean);
       }
+      MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(32);
+      for (int i = 0; i < 1; i++) {
+        buffer.writerIndex(0);
+        buffer.readerIndex(0);
+        for (int j = 0; j <= i; j++) {
+          buffer.writerIndex(0);
+          buffer.readerIndex(0);
+          buffer.writeByte(-1);
+          buffer.readByte();
+          encoder.encode(buffer, beanA);
+          encoder.encode(buffer, beanA);
+          assertEquals(encoder.decode(buffer), beanA);
+          assertEquals(encoder.decode(buffer), beanA);
+        }
+      }
     }
     {
       RowEncoder<BeanB> encoder = Encoders.bean(BeanB.class);
+      BeanB beanB = BeanB.createBeanB(2);
       for (int i = 0; i < 3; i++) {
-        BeanB beanB = BeanB.createBeanB(2);
         BinaryRow row = encoder.toRow(beanB);
         BeanB newBean = encoder.fromRow(row);
         Assert.assertEquals(beanB, newBean);
+      }
+      MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(32);
+      for (int i = 0; i < 32; i++) {
+        buffer.writerIndex(0);
+        buffer.readerIndex(0);
+        for (int j = 0; j <= i; j++) {
+          buffer.writerIndex(0);
+          buffer.readerIndex(0);
+          buffer.writeByte(-1);
+          buffer.readByte();
+          encoder.encode(buffer, beanB);
+          encoder.encode(buffer, beanB);
+          assertEquals(encoder.decode(buffer), beanB);
+          assertEquals(encoder.decode(buffer), beanB);
+        }
       }
     }
   }
