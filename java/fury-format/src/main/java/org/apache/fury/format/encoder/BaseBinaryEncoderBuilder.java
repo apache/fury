@@ -222,22 +222,14 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
     }
   }
 
-  /**
-   * Returns an expression to write iterable <code>inputObject</code> of type <code>typeToken</code>
-   * as {@link BinaryArray} using given <code>writer</code>.
-   */
   protected Expression serializeForArray(
       Expression inputObject, Expression writer, TypeRef<?> typeRef, Expression arrowField) {
-    return serializeForArray(inputObject, writer, typeRef, arrowField, false);
+    Reference arrayWriter = getOrCreateArrayWriter(typeRef, arrowField, writer);
+    return serializeForArrayByWriter(inputObject, arrayWriter, typeRef, arrowField);
   }
 
-  protected Expression serializeForArray(
-      Expression inputObject,
-      Expression writer,
-      TypeRef<?> typeRef,
-      Expression arrowField,
-      boolean reuse) {
-    Reference arrayWriter = getOrCreateArrayWriter(typeRef, arrowField, writer, reuse);
+  protected Expression serializeForArrayByWriter(
+      Expression inputObject, Expression arrayWriter, TypeRef<?> typeRef, Expression arrowField) {
     StaticInvoke arrayElementField =
         new StaticInvoke(
             DataTypes.class, "arrayElementField", "elemField", ARROW_FIELD_TYPE, false, arrowField);
@@ -285,21 +277,8 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
     }
   }
 
-  /**
-   * Get or create an ArrayWriter for given <code>type</code> and use <code>writer</code> as parent
-   * writer.
-   */
   protected Reference getOrCreateArrayWriter(
       TypeRef<?> typeRef, Expression arrayDataType, Expression writer) {
-    return getOrCreateArrayWriter(typeRef, arrayDataType, writer, false);
-  }
-
-  protected Reference getOrCreateArrayWriter(
-      TypeRef<?> typeRef, Expression arrayDataType, Expression writer, boolean reuse) {
-    if (reuse) {
-      return (Reference) writer;
-    }
-
     return arrayWriterMap.computeIfAbsent(
         typeRef,
         t -> {

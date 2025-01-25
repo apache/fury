@@ -208,9 +208,7 @@ public class BinaryArrayWriter extends BinaryWriter {
   public BinaryArray toArray() {
     BinaryArray array = new BinaryArray(field);
     int size = size();
-    MemoryBuffer buffer = MemoryUtils.buffer(size);
-    this.buffer.copyTo(startIndex, buffer, 0, size);
-    array.pointTo(buffer, 0, size);
+    array.pointTo(buffer, startIndex, size);
     return array;
   }
 

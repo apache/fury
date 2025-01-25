@@ -219,11 +219,11 @@ public class MapEncoderBuilder extends BaseBinaryEncoderBuilder {
 
     Expression.Invoke keySet = new Expression.Invoke(map, "keySet", keySetType);
     Expression keySerializationExpr =
-        serializeForArray(keySet, keyArrayWriter, keySetType, keyFieldExpr, true);
+        serializeForArray(keySet, keyArrayWriter, keySetType, keyFieldExpr);
 
     Expression.Invoke values = new Expression.Invoke(map, "values", valuesType);
     Expression valueSerializationExpr =
-        serializeForArray(values, valArrayWriter, valuesType, valFieldExpr, true);
+        serializeForArray(values, valArrayWriter, valuesType, valFieldExpr);
 
     return new Expression.ListExpression(keySerializationExpr, valueSerializationExpr);
   }

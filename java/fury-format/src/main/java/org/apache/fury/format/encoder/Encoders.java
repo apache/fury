@@ -91,6 +91,11 @@ public class Encoders {
       }
 
       @Override
+      public T decode(MemoryBuffer buffer) {
+        return encoder.decode(buffer);
+      }
+
+      @Override
       public T decode(byte[] bytes) {
         return encoder.decode(bytes);
       }
@@ -98,6 +103,11 @@ public class Encoders {
       @Override
       public byte[] encode(T obj) {
         return encoder.encode(obj);
+      }
+
+      @Override
+      public void encode(MemoryBuffer buffer, T obj) {
+        encoder.encode(buffer, obj);
       }
     };
   }
@@ -150,8 +160,11 @@ public class Encoders {
         }
 
         @Override
-        public T decode(byte[] bytes) {
-          MemoryBuffer buffer = MemoryUtils.wrap(bytes);
+        public T decode(MemoryBuffer buffer) {
+          return decode(buffer, buffer.readInt32());
+        }
+
+        public T decode(MemoryBuffer buffer, int size) {
           long peerSchemaHash = buffer.readInt64();
           if (peerSchemaHash != schemaHash) {
             throw new ClassNotCompatibleException(
@@ -162,8 +175,14 @@ public class Encoders {
                     schema, schemaHash, peerSchemaHash));
           }
           BinaryRow row = new BinaryRow(schema);
-          row.pointTo(buffer, buffer.readerIndex(), buffer.size());
+          row.pointTo(buffer, buffer.readerIndex(), size);
+          buffer.increaseReaderIndex(size - 8);
           return fromRow(row);
+        }
+
+        @Override
+        public T decode(byte[] bytes) {
+          return decode(MemoryUtils.wrap(bytes), bytes.length);
         }
 
         @Override
@@ -174,6 +193,21 @@ public class Encoders {
           writer.reset();
           BinaryRow row = toRow(obj);
           return buffer.getBytes(0, 8 + row.getSizeInBytes());
+        }
+
+        @Override
+        public void encode(MemoryBuffer buffer, T obj) {
+          int writerIndex = buffer.writerIndex();
+          buffer.writeInt32(-1);
+          try {
+            buffer.writeInt64(schemaHash);
+            writer.setBuffer(buffer);
+            writer.reset();
+            toRow(obj);
+            buffer.putInt32(writerIndex, buffer.writerIndex() - writerIndex - 4);
+          } finally {
+            writer.setBuffer(this.buffer);
+          }
         }
       };
     } catch (Exception e) {
@@ -192,7 +226,7 @@ public class Encoders {
    * @return
    */
   public static <T extends Collection> ArrayEncoder<T> arrayEncoder(TypeRef<T> token) {
-    return arrayEncoder(token, (Fury) null);
+    return arrayEncoder(token, null);
   }
 
   public static <T extends Collection> ArrayEncoder<T> arrayEncoder(TypeRef<T> token, Fury fury) {
@@ -230,6 +264,11 @@ public class Encoders {
       }
 
       @Override
+      public T decode(MemoryBuffer buffer) {
+        return encoder.decode(buffer);
+      }
+
+      @Override
       public T decode(byte[] bytes) {
         return encoder.decode(bytes);
       }
@@ -237,6 +276,11 @@ public class Encoders {
       @Override
       public byte[] encode(T obj) {
         return encoder.encode(obj);
+      }
+
+      @Override
+      public void encode(MemoryBuffer buffer, T obj) {
+        encoder.encode(buffer, obj);
       }
     };
   }
@@ -299,18 +343,43 @@ public class Encoders {
         }
 
         @Override
-        public T decode(byte[] bytes) {
-          MemoryBuffer buffer = MemoryUtils.wrap(bytes);
+        public T decode(MemoryBuffer buffer) {
+          return decode(buffer, buffer.readInt32());
+        }
+
+        public T decode(MemoryBuffer buffer, int size) {
           BinaryArray array = new BinaryArray(field);
-          array.pointTo(buffer, buffer.readerIndex(), buffer.size());
+          int readerIndex = buffer.readerIndex();
+          array.pointTo(buffer, readerIndex, size);
+          buffer.readerIndex(readerIndex + size);
           return fromArray(array);
         }
 
         @Override
+        public T decode(byte[] bytes) {
+          return decode(MemoryUtils.wrap(bytes), bytes.length);
+        }
+
+        @Override
         public byte[] encode(T obj) {
-          writer.reset(obj.size());
           BinaryArray array = toArray(obj);
           return writer.getBuffer().getBytes(0, 8 + array.getSizeInBytes());
+        }
+
+        @Override
+        public void encode(MemoryBuffer buffer, T obj) {
+          MemoryBuffer prevBuffer = writer.getBuffer();
+          int writerIndex = buffer.writerIndex();
+          buffer.writeInt32(-1);
+          try {
+            writer.setBuffer(buffer);
+            BinaryArray array = toArray(obj);
+            int size = buffer.writerIndex() - writerIndex - 4;
+            assert size == array.getSizeInBytes();
+            buffer.putInt32(writerIndex, size);
+          } finally {
+            writer.setBuffer(prevBuffer);
+          }
         }
       };
     } catch (Exception e) {
@@ -421,17 +490,43 @@ public class Encoders {
         }
 
         @Override
-        public T decode(byte[] bytes) {
-          MemoryBuffer buffer = MemoryUtils.wrap(bytes);
+        public T decode(MemoryBuffer buffer) {
+          return decode(buffer, buffer.readInt32());
+        }
+
+        public T decode(MemoryBuffer buffer, int size) {
           BinaryMap map = new BinaryMap(field);
-          map.pointTo(buffer, 0, buffer.size());
+          int readerIndex = buffer.readerIndex();
+          map.pointTo(buffer, readerIndex, size);
+          buffer.readerIndex(readerIndex + size);
           return fromMap(map);
+        }
+
+        @Override
+        public T decode(byte[] bytes) {
+          return decode(MemoryUtils.wrap(bytes), bytes.length);
         }
 
         @Override
         public byte[] encode(T obj) {
           BinaryMap map = toMap(obj);
           return map.getBuf().readBytes(map.getBuf().size());
+        }
+
+        @Override
+        public void encode(MemoryBuffer buffer, T obj) {
+          MemoryBuffer prevBuffer = keyWriter.getBuffer();
+          int writerIndex = buffer.writerIndex();
+          buffer.writeInt32(-1);
+          try {
+            keyWriter.setBuffer(buffer);
+            valWriter.setBuffer(buffer);
+            toMap(obj);
+            buffer.putInt32(writerIndex, buffer.writerIndex() - writerIndex - 4);
+          } finally {
+            keyWriter.setBuffer(prevBuffer);
+            valWriter.setBuffer(prevBuffer);
+          }
         }
       };
     } catch (Exception e) {
@@ -485,6 +580,11 @@ public class Encoders {
       }
 
       @Override
+      public T decode(MemoryBuffer buffer) {
+        return encoder.decode(buffer);
+      }
+
+      @Override
       public T decode(byte[] bytes) {
         return encoder.decode(bytes);
       }
@@ -492,6 +592,11 @@ public class Encoders {
       @Override
       public byte[] encode(T obj) {
         return encoder.encode(obj);
+      }
+
+      @Override
+      public void encode(MemoryBuffer buffer, T obj) {
+        encoder.encode(buffer, obj);
       }
     };
   }

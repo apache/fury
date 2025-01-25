@@ -19,6 +19,8 @@
 
 package org.apache.fury.format.encoder;
 
+import org.apache.fury.memory.MemoryBuffer;
+
 /**
  * The encoding interface for encode/decode object to/from binary. The implementation class must
  * have a constructor with signature {@code Object[] references}, so we can pass any params to
@@ -28,7 +30,11 @@ package org.apache.fury.format.encoder;
  */
 public interface Encoder<T> {
 
+  T decode(MemoryBuffer buffer);
+
   T decode(byte[] bytes);
 
   byte[] encode(T obj);
+
+  void encode(MemoryBuffer buffer, T obj);
 }

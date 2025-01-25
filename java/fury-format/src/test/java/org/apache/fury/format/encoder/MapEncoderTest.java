@@ -19,12 +19,15 @@
 
 package org.apache.fury.format.encoder;
 
+import static org.testng.AssertJUnit.assertEquals;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.fury.format.row.binary.BinaryMap;
+import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.reflect.TypeRef;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -112,5 +115,21 @@ public class MapEncoderTest {
     Map<String, List<Map<RowEncoderTest.Foo, List<RowEncoderTest.Bar>>>> decodeMap =
         encoder.decode(bytes);
     Assert.assertEquals(decodeMap.size(), 10);
+
+    MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(32);
+    for (int i = 0; i < 32; i++) {
+      buffer.writerIndex(0);
+      buffer.readerIndex(0);
+      for (int j = 0; j < i; j++) {
+        buffer.writerIndex(0);
+        buffer.readerIndex(0);
+        buffer.writeByte(-1);
+        buffer.readByte();
+        encoder.encode(buffer, lmap);
+        encoder.encode(buffer, lmap);
+        assertEquals(encoder.decode(buffer), lmap);
+        assertEquals(encoder.decode(buffer), lmap);
+      }
+    }
   }
 }
