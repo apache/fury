@@ -326,8 +326,8 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
     ListExpression expressions = new ListExpression();
 
     Invoke offset = new Invoke(writer, "writerIndex", "writerIndex", TypeUtils.PRIMITIVE_INT_TYPE);
-    // preserve 4 bytes to write the key array numBytes later
-    Invoke preserve = new Invoke(writer, "writeInt32Directly", Literal.ofInt(-1));
+    // preserve 8 bytes to write the key array numBytes later
+    Invoke preserve = new Invoke(writer, "writeDirectly", Literal.ofInt(-1));
     expressions.add(offset, preserve);
 
     Invoke keySet = new Invoke(inputObject, "keySet", keySetType);
@@ -337,7 +337,7 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
     expressions.add(
         new Expression.Invoke(
             writer,
-            "writeInt32Directly",
+            "writeDirectly",
             offset,
             Expression.Invoke.inlineInvoke(keySerializationExpr, "size", PRIMITIVE_INT_TYPE)));
 

@@ -54,9 +54,9 @@ public class BinaryMap implements MapData {
     this.values = values;
     this.field = field;
     this.buf = keys.getBuffer();
-    this.baseOffset = keys.getBaseOffset() - 4;
+    this.baseOffset = keys.getBaseOffset() - 8;
     // memory of keys and values must be continuous.
-    this.sizeInBytes = keys.getSizeInBytes() + values.getSizeInBytes() + 4;
+    this.sizeInBytes = keys.getSizeInBytes() + values.getSizeInBytes() + 8;
   }
 
   public void pointTo(MemoryBuffer buf, int offset, int sizeInBytes) {
@@ -66,10 +66,10 @@ public class BinaryMap implements MapData {
     // Read the numBytes of key array from the aligned first 8 bytes as int.
     final int keyArrayBytes = buf.getInt32(offset);
     assert keyArrayBytes >= 0 : "keyArrayBytes (" + keyArrayBytes + ") should >= 0";
-    keys.pointTo(buf, offset + 4, keyArrayBytes);
-    final int valueArrayBytes = sizeInBytes - keyArrayBytes - 4;
+    keys.pointTo(buf, offset + 8, keyArrayBytes);
+    final int valueArrayBytes = sizeInBytes - keyArrayBytes - 8;
     assert valueArrayBytes >= 0 : "valueArraySize (" + valueArrayBytes + ") should >= 0";
-    values.pointTo(buf, offset + 4 + keyArrayBytes, valueArrayBytes);
+    values.pointTo(buf, offset + 8 + keyArrayBytes, valueArrayBytes);
     if (keys.numElements() != values.numElements()) {
       throw new UnsupportedOperationException();
     }

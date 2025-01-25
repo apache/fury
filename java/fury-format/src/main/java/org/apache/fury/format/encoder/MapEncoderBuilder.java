@@ -178,7 +178,7 @@ public class MapEncoderBuilder extends BaseBinaryEncoderBuilder {
         new Expression.Invoke(keyArrayWriter, "writerIndex", PRIMITIVE_INT_TYPE);
     expressions.add(writerIndex);
     expressions.add(
-        new Expression.Invoke(keyArrayWriter, "writeInt32Directly", Expression.Literal.ofInt(-1)));
+        new Expression.Invoke(keyArrayWriter, "writeDirectly", Expression.Literal.ofInt(-1)));
     Expression keySerializationExpr =
         serializeForArrayByWriter(keySet, keyArrayWriter, keySetType, keyFieldExpr);
     Expression.Invoke keyArray =
@@ -189,7 +189,7 @@ public class MapEncoderBuilder extends BaseBinaryEncoderBuilder {
     expressions.add(
         new Expression.Invoke(
             keyArrayWriter,
-            "writeInt32Directly",
+            "writeDirectly",
             writerIndex,
             Expression.Invoke.inlineInvoke(keyArray, "getSizeInBytes", PRIMITIVE_INT_TYPE)));
 

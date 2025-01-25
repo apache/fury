@@ -121,7 +121,7 @@ public class ArrayEncoderTest {
     byte[] bs = encoder.encode(lmap);
     List<List<Map<RowEncoderTest.Foo, List<RowEncoderTest.Bar>>>> blmap = encoder.decode(bs);
 
-    Assert.assertEquals(bs.length, 10584);
+    Assert.assertEquals(bs.length, 10824);
     Assert.assertEquals(lmap, blmap);
 
     testStreamingEncode(encoder, lmap);
