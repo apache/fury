@@ -140,7 +140,7 @@ public class BinaryRowWriter extends BinaryWriter {
     int size = size();
     MemoryBuffer buffer = MemoryUtils.buffer(size);
     this.buffer.copyTo(startIndex, buffer, 0, size);
-    row.pointTo(buffer, 0, size);
+    row.pointTo(buffer, startIndex, size);
     return row;
   }
 }

@@ -19,6 +19,8 @@
 
 package org.apache.fury.format.encoder;
 
+import static org.apache.fury.format.encoder.CodecBuilderTest.testStreamingEncode;
+
 import com.google.common.collect.ImmutableMap;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -41,21 +43,23 @@ public class RowEncoderTest {
     Encoders.bean(AtomicLong.class);
     {
       RowEncoder<BeanA> encoder = Encoders.bean(BeanA.class);
+      BeanA beanA = BeanA.createBeanA(2);
       for (int i = 0; i < 3; i++) {
-        BeanA beanA = BeanA.createBeanA(2);
         BinaryRow row = encoder.toRow(beanA);
         BeanA newBean = encoder.fromRow(row);
         Assert.assertEquals(beanA, newBean);
       }
+      testStreamingEncode(encoder, beanA);
     }
     {
       RowEncoder<BeanB> encoder = Encoders.bean(BeanB.class);
+      BeanB beanB = BeanB.createBeanB(2);
       for (int i = 0; i < 3; i++) {
-        BeanB beanB = BeanB.createBeanB(2);
         BinaryRow row = encoder.toRow(beanB);
         BeanB newBean = encoder.fromRow(row);
         Assert.assertEquals(beanB, newBean);
       }
+      testStreamingEncode(encoder, beanB);
     }
   }
 
