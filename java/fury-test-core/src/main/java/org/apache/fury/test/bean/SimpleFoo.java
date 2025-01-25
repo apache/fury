@@ -17,24 +17,40 @@
  * under the License.
  */
 
-package org.apache.fury.format.encoder;
+package org.apache.fury.test.bean;
 
-import org.apache.fury.memory.MemoryBuffer;
+import java.util.Objects;
 
-/**
- * The encoding interface for encode/decode object to/from binary. The implementation class must
- * have a constructor with signature {@code Object[] references}, so we can pass any params to
- * codec.
- *
- * @param <T> type of value
- */
-public interface Encoder<T> {
+public class SimpleFoo {
+  public int f1;
+  public String f2;
 
-  T decode(MemoryBuffer buffer);
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    SimpleFoo foo = (SimpleFoo) o;
+    return f1 == foo.f1 && Objects.equals(f2, foo.f2);
+  }
 
-  T decode(byte[] bytes);
+  @Override
+  public int hashCode() {
+    return Objects.hash(f1, f2);
+  }
 
-  byte[] encode(T obj);
+  @Override
+  public String toString() {
+    return "SimpleFoo{" + "f1=" + f1 + ", f2='" + f2 + '\'' + '}';
+  }
 
-  void encode(MemoryBuffer buffer, T obj);
+  public static SimpleFoo create() {
+    SimpleFoo foo = new SimpleFoo();
+    foo.f1 = 10;
+    foo.f2 = "str";
+    return foo;
+  }
 }

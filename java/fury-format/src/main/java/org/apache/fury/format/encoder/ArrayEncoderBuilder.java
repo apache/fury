@@ -127,7 +127,8 @@ public class ArrayEncoderBuilder extends BaseBinaryEncoderBuilder {
     expressions.add(array);
 
     Expression.Reference fieldExpr = new Expression.Reference(FIELD_NAME, ARROW_FIELD_TYPE, false);
-    Expression listExpression = serializeForArray(array, arrayWriter, arrayToken, fieldExpr);
+    Expression listExpression =
+        serializeForArrayByWriter(array, arrayWriter, arrayToken, fieldExpr);
 
     expressions.add(listExpression);
 
