@@ -2,7 +2,7 @@ load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
 
 cc_library(
     name = "fury_util",
-    srcs = glob(["*.cc", "*.cpp"], exclude=["*test.cc", "benchmark.cc"]),
+    srcs = glob(["*.cc"], exclude=["*test.cc", "benchmark.cc"]),
     hdrs = glob(["*.h"]),
     copts = ["-mavx2"],  # Enable AVX2 support
     linkopts = ["-mavx2"],  # Ensure linker also knows about AVX2
