@@ -174,44 +174,6 @@ TEST(StringUtilTest, TestUtf16HasSurrogatePairs) {
       utf16HasSurrogatePairs(generateRandomUTF16String(300) + u"性能好"));
 }
 
-std::string utf16ToUtf8BaseLine(const std::u16string &utf16,
-                                bool is_little_endian) {
-  std::string utf8;
-  utf8.reserve(utf16.size() *
-               3); // Reserve enough space to avoid frequent reallocations
-
-  size_t i = 0;
-  size_t n = utf16.size();
-  char buffer[4]; // Buffer to hold temporary UTF-8 bytes
-  char *output = buffer;
-
-  while (i < n) {
-    uint16_t code_unit = utf16[i];
-    if (!is_little_endian) {
-      code_unit = swapBytes(code_unit);
-    }
-    if (i + 1 < n && code_unit >= 0xD800 && code_unit <= 0xDBFF &&
-        utf16[i + 1] >= 0xDC00 && utf16[i + 1] <= 0xDFFF) {
-      // Surrogate pair
-      uint16_t high = code_unit;
-      uint16_t low = utf16[i + 1];
-      if (!is_little_endian) {
-        low = swapBytes(low);
-      }
-      utf16SurrogatePairToUtf8(high, low, output);
-      utf8.append(buffer, output - buffer);
-      output = buffer;
-      ++i;
-    } else {
-      utf16ToUtf8(code_unit, output);
-      utf8.append(buffer, output - buffer);
-      output = buffer;
-    }
-    ++i;
-  }
-  return utf8;
-}
-
 // Testing Basic Logic
 TEST(UTF16ToUTF8Test, BasicConversion) {
   std::u16string utf16 = u"Hello, 世界!";
@@ -260,67 +222,6 @@ TEST(UTF16ToUTF8Test, BigEndian) {
   std::u16string utf16 = {0xFFFE, 0xFFFE};
   std::string utf8 = fury::utf16ToUtf8(utf16, false);
   ASSERT_EQ(utf8, "\xEF\xBF\xBE\xEF\xBF\xBE");
-}
-
-// Testing Performance
-TEST(UTF16ToUTF8Test, PerformanceTest) {
-  const size_t num_tests = 1000;
-  const size_t string_length = 1000;
-  // Default little_endian
-  bool is_little_endian = true;
-
-  // Random UTF-16
-  std::vector<std::u16string> test_strings;
-  for (size_t i = 0; i < num_tests; ++i) {
-    test_strings.push_back(generateRandomUTF16String(string_length));
-  }
-
-  // Lib
-  try {
-    auto start_time = std::chrono::high_resolution_clock::now();
-    for (const auto &str : test_strings) {
-      std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
-      std::string utf8 = convert.to_bytes(str);
-    }
-    auto end_time = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(
-                        end_time - start_time)
-                        .count();
-    FURY_LOG(FURY_INFO) << "Standard library Running Time: " << duration
-                        << " ns";
-  } catch (const std::exception &e) {
-    FURY_LOG(FURY_FATAL) << "Caught exception: " << e.what();
-  }
-
-  // BaseLine
-  try {
-    auto start_time = std::chrono::high_resolution_clock::now();
-    for (const auto &str : test_strings) {
-      std::string utf8 = utf16ToUtf8BaseLine(str, is_little_endian);
-    }
-    auto end_time = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(
-                        end_time - start_time)
-                        .count();
-    FURY_LOG(FURY_INFO) << "Baseline Running Time: " << duration << " ns";
-  } catch (const std::exception &e) {
-    FURY_LOG(FURY_FATAL) << "Caught exception: " << e.what();
-  }
-
-  // SIMD
-  try {
-    auto start_time = std::chrono::high_resolution_clock::now();
-    for (const auto &str : test_strings) {
-      std::string utf8 = fury::utf16ToUtf8(str, is_little_endian);
-    }
-    auto end_time = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(
-                        end_time - start_time)
-                        .count();
-    FURY_LOG(FURY_INFO) << "SIMD Running Time: " << duration << " ns";
-  } catch (const std::exception &e) {
-    FURY_LOG(FURY_FATAL) << "Caught exception: " << e.what();
-  }
 }
 
 // Generate random UTF-8 string
