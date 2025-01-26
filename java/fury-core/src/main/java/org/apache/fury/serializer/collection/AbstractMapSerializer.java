@@ -51,6 +51,7 @@ import org.apache.fury.serializer.Serializer;
 import org.apache.fury.type.GenericType;
 import org.apache.fury.type.Generics;
 import org.apache.fury.type.TypeUtils;
+import org.apache.fury.util.Preconditions;
 
 /** Serializer for all map-like objects. */
 @SuppressWarnings({"unchecked", "rawtypes"})
@@ -326,7 +327,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
         valueSerializer.write(buffer, value);
       }
       // noinspection Duplicates
-      if (chunkSize++ > MAX_CHUNK_SIZE) {
+      if (++chunkSize == MAX_CHUNK_SIZE) {
         break;
       }
       if (iterator.hasNext()) {
@@ -436,7 +437,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
         }
         generics.popGenericType();
         // noinspection Duplicates
-        if (chunkSize++ > MAX_CHUNK_SIZE) {
+        if (++chunkSize == MAX_CHUNK_SIZE) {
           break;
         }
         if (iterator.hasNext()) {
@@ -904,7 +905,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     boolean trackValueRef = (chunkHeader & TRACKING_VALUE_REF) != 0;
     boolean keyIsDeclaredType = (chunkHeader & KEY_DECL_TYPE) != 0;
     boolean valueIsDeclaredType = (chunkHeader & VALUE_DECL_TYPE) != 0;
-    int chunkSize = buffer.readByte();
+    int chunkSize = buffer.readUnsignedByte();
     if (!keyIsDeclaredType) {
       keySerializer = classResolver.readClassInfo(buffer, keyClassInfoReadCache).getSerializer();
     }
@@ -947,7 +948,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
       boolean trackValueRef = (chunkHeader & TRACKING_VALUE_REF) != 0;
       boolean keyIsDeclaredType = (chunkHeader & KEY_DECL_TYPE) != 0;
       boolean valueIsDeclaredType = (chunkHeader & VALUE_DECL_TYPE) != 0;
-      int chunkSize = buffer.readByte();
+      int chunkSize = buffer.readUnsignedByte();
       Serializer keySerializer, valueSerializer;
       if (!keyIsDeclaredType) {
         keySerializer = classResolver.readClassInfo(buffer, keyClassInfoReadCache).getSerializer();
