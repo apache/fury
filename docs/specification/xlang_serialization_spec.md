@@ -567,7 +567,7 @@ Fury will serialize the map chunk by chunk, every chunk has 255 pairs at most.
 ```
 |    1 byte      |     1 byte     | variable bytes  |
 +----------------+----------------+-----------------+
-| chunk size: N  |    KV header   |   N*2 objects   |
+|    KV header   | chunk size: N  |   N*2 objects   |
 ```
 
 KV header:
@@ -575,13 +575,13 @@ KV header:
 - If track key ref, use the first bit `0b1` of the header to flag it.
 - If the key has null, use the second bit `0b10` of the header to flag it. If ref tracking is enabled for this
   key type, this flag is invalid.
-- If the key types of map are different, use the 3rd bit `0b100` of the header to flag it.
-- If the actual key type of the map is not the declared key type, use the 4rd bit `0b1000` of the header to flag it.
-- If track value ref, use the 5th bit `0b10000` of the header to flag it.
-- If the value has null, use the 6th bit `0b100000` of the header to flag it. If ref tracking is enabled for this
+- If the actual key type of map is not the declared key type, use the 3rd bit `0b100` of the header to flag it.
+- If track value ref, use the 4th bit `0b1000` of the header to flag it.
+- If the value has null, use the 5th bit `0b10000` of the header to flag it. If ref tracking is enabled for this
   value type, this flag is invalid.
-- If the value types of the map are different, use the 7rd bit `0b1000000` header to flag it.
-- If the value type of map is not the declared value type, use the 8rd bit `0b10000000` of the header to flag it.
+- If the value type of map is not the declared value type, use the 6rd bit `0b100000` of the header to flag it.
+- If key or value is null, that key and value will be written as a separate chunk, and chunk size writing will be
+  skipped too.
 
 If streaming write is enabled, which means Fury can't update written `chunk size`. In such cases, map key-value data
 format will be:
