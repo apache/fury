@@ -42,7 +42,7 @@ public class MapSerializationSuite {
   public static void main(String[] args) throws IOException {
     if (args.length == 0) {
       String commandLine =
-          "org.apache.fury.*MapSerializationSuite.* -f 1 -wi 3 -i 3 -t 1 -w 2s -r 2s -rf csv";
+          "org.apache.fury.*MapSerializationSuite.* -f 3 -wi 3 -i 3 -t 1 -w 2s -r 2s -rf csv";
       System.out.println(commandLine);
       args = commandLine.split(" ");
     }
@@ -79,7 +79,7 @@ public class MapSerializationSuite {
     }
   }
 
-  @Benchmark
+  // @Benchmark
   public Object serializeStringMap(MapState state) {
     return state.fury.serialize(state.stringMap);
   }
@@ -89,7 +89,7 @@ public class MapSerializationSuite {
     return state.fury.serialize(state.integerMap);
   }
 
-  @Benchmark
+  // @Benchmark
   public Object deserializeStringMap(MapState state) {
     return state.fury.deserialize(state.stringMapBytes);
   }

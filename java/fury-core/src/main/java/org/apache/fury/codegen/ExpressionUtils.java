@@ -34,6 +34,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.apache.fury.codegen.Expression.Cast;
+import org.apache.fury.codegen.Expression.LogicalAnd;
+import org.apache.fury.codegen.Expression.LogicalOr;
 import org.apache.fury.codegen.Expression.Null;
 import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.util.Preconditions;
@@ -41,11 +43,14 @@ import org.apache.fury.util.StringUtils;
 import org.apache.fury.util.function.Functions;
 
 /** Expression utils to create expression and code in a more convenient way. */
-@SuppressWarnings("UnstableApiUsage")
 public class ExpressionUtils {
 
   public static Expression newObjectArray(Expression... expressions) {
     return new NewArray(TypeRef.of(Object[].class), expressions);
+  }
+
+  public static Expression ofInt(String name, int v) {
+    return subtract(Literal.ofInt(v), Literal.ofInt(0), name);
   }
 
   public static Expression valueOf(TypeRef<?> type, Expression value) {
@@ -56,13 +61,25 @@ public class ExpressionUtils {
     return new IsNull(target);
   }
 
-  public static Expression notNull(Expression target) {
+  public static Expression.Inlineable notNull(Expression target) {
     return new Not(new IsNull(target));
   }
 
   public static Expression eqNull(Expression target) {
     Preconditions.checkArgument(!target.type().isPrimitive());
     return eq(target, new Null(target.type()));
+  }
+
+  public static LogicalAnd and(Expression left, Expression right, String name) {
+    return new LogicalAnd(false, left, right);
+  }
+
+  public static LogicalOr or(Expression left, Expression right, Expression... expressions) {
+    LogicalOr logicalOr = new LogicalOr(left, right);
+    for (Expression expression : expressions) {
+      logicalOr = new LogicalOr(left, expression);
+    }
+    return logicalOr;
   }
 
   public static Not not(Expression target) {

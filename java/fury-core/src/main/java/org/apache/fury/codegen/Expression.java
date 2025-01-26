@@ -37,6 +37,7 @@ import static org.apache.fury.type.TypeUtils.PRIMITIVE_LONG_TYPE;
 import static org.apache.fury.type.TypeUtils.PRIMITIVE_SHORT_TYPE;
 import static org.apache.fury.type.TypeUtils.PRIMITIVE_VOID_TYPE;
 import static org.apache.fury.type.TypeUtils.STRING_TYPE;
+import static org.apache.fury.type.TypeUtils.VOID_TYPE;
 import static org.apache.fury.type.TypeUtils.boxedType;
 import static org.apache.fury.type.TypeUtils.defaultValue;
 import static org.apache.fury.type.TypeUtils.getArrayType;
@@ -239,7 +240,7 @@ public interface Expression {
     }
   }
 
-  class Literal implements Expression {
+  class Literal extends Inlineable {
     public static final Literal True = new Literal(true, PRIMITIVE_BOOLEAN_TYPE);
     public static final Literal False = new Literal(false, PRIMITIVE_BOOLEAN_TYPE);
 
@@ -254,6 +255,10 @@ public interface Expression {
     public Literal(Object value, TypeRef<?> type) {
       this.value = value;
       this.type = type;
+    }
+
+    public static Literal ofBoolean(boolean v) {
+      return new Literal(v, PRIMITIVE_BOOLEAN_TYPE);
     }
 
     public static Literal ofByte(short v) {
@@ -1789,13 +1794,14 @@ public interface Expression {
     }
   }
 
-  class Not implements Expression {
+  class Not extends Inlineable {
     private Expression target;
 
     public Not(Expression target) {
       this.target = target;
       Preconditions.checkArgument(
           target.type() == PRIMITIVE_BOOLEAN_TYPE || target.type() == BOOLEAN_TYPE);
+      this.inlineCall = true;
     }
 
     @Override
@@ -2002,7 +2008,17 @@ public interface Expression {
     }
 
     public LogicalAnd(boolean inline, Expression left, Expression right) {
-      super(inline, "&", left, right);
+      super(inline, "&&", left, right);
+    }
+  }
+
+  class LogicalOr extends LogicalOperator {
+    public LogicalOr(Expression left, Expression right) {
+      super(true, "||", left, right);
+    }
+
+    public LogicalOr(boolean inline, Expression left, Expression right) {
+      super(inline, "||", left, right);
     }
   }
 
@@ -2018,7 +2034,7 @@ public interface Expression {
    * </pre>
    */
   class While implements Expression {
-    private final BinaryOperator predicate;
+    private final Inlineable predicate;
     private Expression action;
     private Expression[] cutPoints;
 
@@ -2027,11 +2043,11 @@ public interface Expression {
      *
      * @param predicate predicate must be inline.
      */
-    public While(BinaryOperator predicate, Expression action) {
+    public While(Inlineable predicate, Expression action) {
       this(predicate, action, new Expression[0]);
     }
 
-    public While(BinaryOperator predicate, SerializableSupplier<Expression> action) {
+    public While(Inlineable predicate, SerializableSupplier<Expression> action) {
       this(
           predicate,
           action.get(),
@@ -2039,7 +2055,7 @@ public interface Expression {
               .toArray(new Expression[0]));
     }
 
-    public While(BinaryOperator predicate, Expression action, Expression[] cutPoints) {
+    public While(Inlineable predicate, Expression action, Expression[] cutPoints) {
       this.predicate = predicate;
       this.action = action;
       this.cutPoints = cutPoints;
@@ -2485,17 +2501,22 @@ public interface Expression {
   class Return implements Expression {
     private Expression expression;
 
+    public Return() {}
+
     public Return(Expression expression) {
       this.expression = expression;
     }
 
     @Override
     public TypeRef<?> type() {
-      return expression.type();
+      return expression == null ? VOID_TYPE : expression.type();
     }
 
     @Override
     public ExprCode doGenCode(CodegenContext ctx) {
+      if (expression == null) {
+        return new ExprCode("return;", null, null);
+      }
       StringBuilder codeBuilder = new StringBuilder();
       ExprCode targetExprCode = expression.genCode(ctx);
       if (StringUtils.isNotBlank(targetExprCode.code())) {
@@ -2507,7 +2528,25 @@ public interface Expression {
 
     @Override
     public String toString() {
-      return String.format("return %s", expression);
+      return expression != null ? String.format("return %s", expression) : "return;";
+    }
+  }
+
+  class Break implements Expression {
+
+    @Override
+    public TypeRef<?> type() {
+      return PRIMITIVE_VOID_TYPE;
+    }
+
+    @Override
+    public ExprCode doGenCode(CodegenContext ctx) {
+      return new ExprCode("break;", null, null);
+    }
+
+    @Override
+    public String toString() {
+      return "break;";
     }
   }
 

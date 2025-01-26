@@ -745,4 +745,21 @@ public class MapSerializersTest extends FuryTestBase {
     map.put("23", 900);
     return map;
   }
+
+  @Data
+  public static class SimpleMapFieldStruct {
+    public Map<String, String> map;
+  }
+
+  @Test(dataProvider = "referenceTrackingConfig")
+  public void testSimpleMapFieldStructCodegen(boolean referenceTrackingConfig) {
+    Fury fury =
+        Fury.builder()
+            .withRefTracking(referenceTrackingConfig)
+            .withCodegen(true)
+            .requireClassRegistration(false)
+            .build();
+
+    serDeCheck(fury, new SimpleMapFieldStruct());
+  }
 }

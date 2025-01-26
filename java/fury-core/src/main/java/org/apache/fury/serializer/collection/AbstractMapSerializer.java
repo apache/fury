@@ -55,7 +55,7 @@ import org.apache.fury.type.TypeUtils;
 /** Serializer for all map-like objects. */
 @SuppressWarnings({"unchecked", "rawtypes"})
 public abstract class AbstractMapSerializer<T> extends Serializer<T> {
-  private static final int MAX_CHUNK_SIZE = 255;
+  public static final int MAX_CHUNK_SIZE = 255;
 
   protected MethodHandle constructor;
   protected final boolean supportCodegenHook;
