@@ -320,10 +320,10 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
           || (value.getClass() != valueType)) {
         break;
       }
-      if (!keyWriteRef || refResolver.writeRefOrNull(buffer, key)) {
+      if (!keyWriteRef || !refResolver.writeRefOrNull(buffer, key)) {
         keySerializer.write(buffer, key);
       }
-      if (!valueWriteRef || refResolver.writeRefOrNull(buffer, value)) {
+      if (!valueWriteRef || !refResolver.writeRefOrNull(buffer, value)) {
         valueSerializer.write(buffer, value);
       }
       // noinspection Duplicates
@@ -427,12 +427,12 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
           break;
         }
         generics.pushGenericType(keyGenericType);
-        if (!keyWriteRef || refResolver.writeRefOrNull(buffer, key)) {
+        if (!keyWriteRef || !refResolver.writeRefOrNull(buffer, key)) {
           keySerializer.write(buffer, key);
         }
         generics.popGenericType();
         generics.pushGenericType(valueGenericType);
-        if (!valueWriteRef || refResolver.writeRefOrNull(buffer, value)) {
+        if (!valueWriteRef || !refResolver.writeRefOrNull(buffer, value)) {
           valueSerializer.write(buffer, value);
         }
         generics.popGenericType();
@@ -914,6 +914,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
           classResolver.readClassInfo(buffer, valueClassInfoReadCache).getSerializer();
     }
     for (int i = 0; i < chunkSize; i++) {
+      Preconditions.checkNotNull(keySerializer);
       Object key = trackKeyRef ? fury.readRef(buffer, keySerializer) : keySerializer.read(buffer);
       Object value =
           trackValueRef ? fury.readRef(buffer, valueSerializer) : valueSerializer.read(buffer);

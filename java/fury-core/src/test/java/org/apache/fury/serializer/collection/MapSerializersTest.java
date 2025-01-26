@@ -326,9 +326,20 @@ public class MapSerializersTest extends FuryTestBase {
     copyCheck(fury, obj);
   }
 
+  public static MapFields createBigMapFieldsObject() {
+    Map<String, Integer> map = new HashMap<>();
+    for (int i = 0; i < 1000; i++) {
+      map.put("k" + i, i);
+    }
+    return createMapFieldsObject(map);
+  }
+
   public static MapFields createMapFieldsObject() {
+    return createMapFieldsObject(ImmutableMap.of("k1", 1, "k2", 2));
+  }
+
+  public static MapFields createMapFieldsObject(Map<String, Integer> map) {
     MapFields obj = new MapFields();
-    Map<String, Integer> map = ImmutableMap.of("k1", 1, "k2", 2);
     obj.map = map;
     obj.map2 = new HashMap<>(map);
     obj.map3 = new HashMap<>(map);
@@ -608,16 +619,63 @@ public class MapSerializersTest extends FuryTestBase {
   }
 
   @Test(dataProvider = "referenceTrackingConfig")
-  public void testObjectKeyValueChunkSerializer(boolean referenceTrackingConfig) {
+  public void testObjectKeyValueChunk(boolean referenceTrackingConfig) {
     Fury fury = Fury.builder().withRefTracking(referenceTrackingConfig).build();
     final Map<Object, Object> differentKeyAndValueTypeMap = createDifferentKeyAndValueTypeMap();
     final Serializer<? extends Map> serializer =
         fury.getSerializer(differentKeyAndValueTypeMap.getClass());
     MapSerializers.HashMapSerializer mapSerializer = (MapSerializers.HashMapSerializer) serializer;
     mapSerializer.setUseChunkSerialize(true);
-    final byte[] serialize = fury.serialize(differentKeyAndValueTypeMap);
-    final Object deserialize = fury.deserialize(serialize);
-    assertEquals(deserialize, differentKeyAndValueTypeMap);
+    serDeCheck(fury, differentKeyAndValueTypeMap);
+  }
+
+  @Test(dataProvider = "referenceTrackingConfig")
+  public void testObjectKeyValueBigChunk(boolean referenceTrackingConfig) {
+    Fury fury = Fury.builder().withRefTracking(referenceTrackingConfig).build();
+    final Map<Object, Object> differentKeyAndValueTypeMap = createDifferentKeyAndValueTypeMap();
+    for (int i = 0; i < 3000; i++) {
+      differentKeyAndValueTypeMap.put("k" + i, i);
+    }
+    final Serializer<? extends Map> serializer =
+        fury.getSerializer(differentKeyAndValueTypeMap.getClass());
+    MapSerializers.HashMapSerializer mapSerializer = (MapSerializers.HashMapSerializer) serializer;
+    mapSerializer.setUseChunkSerialize(true);
+    serDeCheck(fury, differentKeyAndValueTypeMap);
+  }
+
+  @Test
+  public void testMapChunkRefTracking() {
+    Fury fury =
+        Fury.builder()
+            .withRefTracking(true)
+            .withCodegen(false)
+            .requireClassRegistration(false)
+            .build();
+    Map<String, Integer> map = new HashMap<>();
+    for (int i = 0; i < 1; i++) {
+      map.put("k" + i, i);
+    }
+    Object v = ofArrayList(map, ofHashMap("k1", map, "k2", new HashMap<>(map), "k3", map));
+    serDeCheck(fury, v);
+  }
+
+  @Test
+  public void testMapChunkRefTrackingGenerics() {
+    Fury fury =
+        Fury.builder()
+            .withRefTracking(true)
+            .withCodegen(false)
+            .requireClassRegistration(false)
+            .build();
+
+    MapFields obj = new MapFields();
+    Map<String, Integer> map = new HashMap<>();
+    for (int i = 0; i < 1; i++) {
+      map.put("k" + i, i);
+    }
+    obj.map = map;
+    obj.mapKeyFinal = ofHashMap("k1", map);
+    serDeCheck(fury, obj);
   }
 
   @Test(dataProvider = "referenceTrackingConfig")
@@ -625,9 +683,10 @@ public class MapSerializersTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withRefTracking(referenceTrackingConfig)
+            .withCodegen(false)
             .requireClassRegistration(false)
             .build();
-    final MapFields mapFieldsObject = createMapFieldsObject();
+    final MapFields mapFieldsObject = createBigMapFieldsObject();
     // hashmap
     final Serializer<HashMap> serializer = fury.getSerializer(HashMap.class);
     MapSerializers.HashMapSerializer mapSerializer = (MapSerializers.HashMapSerializer) serializer;
@@ -663,9 +722,7 @@ public class MapSerializersTest extends FuryTestBase {
         (MapSerializers.EnumMapSerializer) serializer5;
     enumMapSerializer.setUseChunkSerialize(true);
 
-    final byte[] serialize = fury.serialize(mapFieldsObject);
-    final Object deserialize = fury.deserialize(serialize);
-    assertEquals(deserialize, mapFieldsObject);
+    serDeCheck(fury, mapFieldsObject);
   }
 
   private static Map<Object, Object> createDifferentKeyAndValueTypeMap() {
