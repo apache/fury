@@ -278,6 +278,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     }
   }
 
+  // Make byte code of this method smaller than 325 for better jit inline
   private Entry writeJavaChunk(
       ClassResolver classResolver,
       MemoryBuffer buffer,
@@ -296,16 +297,12 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     if (keySerializer != null) {
       chunkHeader |= VALUE_DECL_TYPE;
     } else {
-      ClassInfo keyClassInfo = classResolver.getClassInfo(keyType, keyClassInfoWriteCache);
-      classResolver.writeClass(buffer, keyClassInfo);
-      keySerializer = keyClassInfo.getSerializer();
+      keySerializer = writeKeyClassInfo(classResolver, keyType, buffer);
     }
     if (valueSerializer != null) {
       chunkHeader |= VALUE_DECL_TYPE;
     } else {
-      ClassInfo valueClassInfo = classResolver.getClassInfo(valueType, valueClassInfoWriteCache);
-      classResolver.writeClass(buffer, valueClassInfo);
-      valueSerializer = valueClassInfo.getSerializer();
+      valueSerializer = writeValueClassInfo(classResolver, valueType, buffer);
     }
     // noinspection Duplicates
     boolean keyWriteRef = keySerializer.needToWriteRef();
@@ -348,6 +345,20 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     }
     buffer.putByte(chunkSizeOffset, (byte) chunkSize);
     return entry;
+  }
+
+  private Serializer writeKeyClassInfo(
+      ClassResolver classResolver, Class keyType, MemoryBuffer buffer) {
+    ClassInfo classInfo = classResolver.getClassInfo(keyType, keyClassInfoWriteCache);
+    classResolver.writeClass(buffer, classInfo);
+    return classInfo.getSerializer();
+  }
+
+  private Serializer writeValueClassInfo(
+      ClassResolver classResolver, Class valueType, MemoryBuffer buffer) {
+    ClassInfo classInfo = classResolver.getClassInfo(valueType, valueClassInfoWriteCache);
+    classResolver.writeClass(buffer, classInfo);
+    return classInfo.getSerializer();
   }
 
   private Entry writeJavaChunkGeneric(
@@ -397,17 +408,13 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
       chunkHeader |= KEY_DECL_TYPE;
       keySerializer = keyGenericType.getSerializer(classResolver);
     } else {
-      ClassInfo keyClassInfo = classResolver.getClassInfo(keyType, keyClassInfoWriteCache);
-      classResolver.writeClass(buffer, keyClassInfo);
-      keySerializer = keyClassInfo.getSerializer();
+      keySerializer = writeKeyClassInfo(classResolver, keyType, buffer);
     }
     if (valueGenericTypeFinal) {
       chunkHeader |= VALUE_DECL_TYPE;
       valueSerializer = valueGenericType.getSerializer(classResolver);
     } else {
-      ClassInfo valueClassInfo = classResolver.getClassInfo(valueType, valueClassInfoWriteCache);
-      classResolver.writeClass(buffer, valueClassInfo);
-      valueSerializer = valueClassInfo.getSerializer();
+      valueSerializer = writeValueClassInfo(classResolver, valueType, buffer);
     }
     boolean keyWriteRef = keySerializer.needToWriteRef();
     if (keyWriteRef) {
