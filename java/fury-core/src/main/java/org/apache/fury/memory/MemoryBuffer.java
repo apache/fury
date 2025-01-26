@@ -1318,6 +1318,17 @@ public final class MemoryBuffer {
     return UNSAFE.getByte(heapMemory, address + readerIdx) != 0;
   }
 
+  public int readUnsignedByte() {
+    int readerIdx = readerIndex;
+    if (readerIdx > size - 1) {
+      streamReader.fillBuffer(1);
+    }
+    readerIndex = readerIdx + 1;
+    int v = UNSAFE.getByte(heapMemory, address + readerIdx);
+    v &= 0b11111111;
+    return v;
+  }
+
   public byte readByte() {
     int readerIdx = readerIndex;
     if (readerIdx > size - 1) {
