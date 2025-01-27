@@ -266,25 +266,28 @@ public interface Expression {
       if (StringUtils.isNotBlank(targetExprCode.code())) {
         codeBuilder.append(targetExprCode.code()).append('\n');
       }
+      String name = ctx.newName(namePrefix);
       String decl =
-        StringUtils.format(
-          "${type} ${name} = ${from};",
-          "type",
-          ctx.type(type()),
-          "name",
-          ctx.newName(namePrefix),
-          "from",
-          targetExprCode.value());
+          StringUtils.format(
+              "${type} ${name} = ${from};",
+              "type",
+              ctx.type(type()),
+              "name",
+              name,
+              "from",
+              targetExprCode.value());
       codeBuilder.append(decl);
-      return new ExprCode(codeBuilder.toString(), null, null);
+      return new ExprCode(
+          codeBuilder.toString(),
+          targetExprCode.isNull(),
+          Code.variable(type().getRawType(), name));
     }
 
     @Override
     public String toString() {
-      return String.format("%s %s = %s", type(), namePrefix, from);
+      return String.format("%s %s = %s;", type(), namePrefix, from);
     }
   }
-
 
   class Literal implements Expression {
     public static final Literal True = new Literal(true, PRIMITIVE_BOOLEAN_TYPE);
@@ -2595,12 +2598,12 @@ public interface Expression {
   }
 
   class Assign implements Expression {
-    private Expression from;
     private Expression to;
+    private Expression from;
 
-    public Assign(Expression from, Expression to) {
-      this.from = from;
+    public Assign(Expression to, Expression from) {
       this.to = to;
+      this.from = from;
     }
 
     @Override
@@ -2622,7 +2625,7 @@ public interface Expression {
               });
       String assign =
           StringUtils.format(
-              "${from} = ${to};", "from", fromExprCode.value(), "to", toExprCode.value());
+              "${to} = ${from};", "from", fromExprCode.value(), "to", toExprCode.value());
       codeBuilder.append(assign);
       return new ExprCode(codeBuilder.toString(), null, null);
     }

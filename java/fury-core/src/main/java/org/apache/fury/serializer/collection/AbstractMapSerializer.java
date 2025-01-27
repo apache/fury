@@ -38,6 +38,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import org.apache.fury.Fury;
+import org.apache.fury.annotation.CodegenInvoke;
 import org.apache.fury.collection.IdentityMap;
 import org.apache.fury.collection.Tuple2;
 import org.apache.fury.memory.MemoryBuffer;
@@ -212,7 +213,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     }
   }
 
-  public Entry writeJavaNullChunk(
+  public final Entry writeJavaNullChunk(
       MemoryBuffer buffer,
       Entry entry,
       Iterator<Entry<Object, Object>> iterator,
@@ -275,6 +276,33 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
       }
     } else {
       buffer.writeByte(KV_NULL);
+    }
+  }
+
+  @CodegenInvoke
+  public final Entry writeNullChunkKVNoRef(
+      MemoryBuffer buffer,
+      Entry entry,
+      Iterator<Entry<Object, Object>> iterator,
+      Serializer keySerializer,
+      Serializer valueSerializer) {
+    while (true) {
+      Object key = entry.getKey();
+      Object value = entry.getValue();
+      if (key != null) {
+        if (value != null) {
+          return entry;
+        }
+        buffer.writeByte(NULL_VALUE_KEY_DECL_TYPE);
+        keySerializer.write(buffer, key);
+      } else {
+        writeNullKeyChunk(buffer, valueSerializer, value);
+      }
+      if (iterator.hasNext()) {
+        entry = iterator.next();
+      } else {
+        return null;
+      }
     }
   }
 

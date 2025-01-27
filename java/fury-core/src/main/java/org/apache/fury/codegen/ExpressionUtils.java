@@ -34,6 +34,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.apache.fury.codegen.Expression.Cast;
+import org.apache.fury.codegen.Expression.ListExpression;
 import org.apache.fury.codegen.Expression.LogicalAnd;
 import org.apache.fury.codegen.Expression.LogicalOr;
 import org.apache.fury.codegen.Expression.Null;
@@ -45,6 +46,9 @@ import org.apache.fury.util.function.Functions;
 
 /** Expression utils to create expression and code in a more convenient way. */
 public class ExpressionUtils {
+  public static ListExpression list(Expression... expressions) {
+    return new ListExpression(expressions);
+  }
 
   public static Expression newObjectArray(Expression... expressions) {
     return new NewArray(TypeRef.of(Object[].class), expressions);
@@ -69,6 +73,11 @@ public class ExpressionUtils {
   public static Expression eqNull(Expression target) {
     Preconditions.checkArgument(!target.type().isPrimitive());
     return eq(target, new Null(target.type()));
+  }
+
+  public static Expression neqNull(Expression target) {
+    Preconditions.checkArgument(!target.type().isPrimitive());
+    return neq(target, new Null(target.type()));
   }
 
   public static LogicalAnd and(Expression left, Expression right, String name) {
@@ -153,7 +162,7 @@ public class ExpressionUtils {
   }
 
   public static Arithmetic subtract(Expression left, Expression right, String valuePrefix) {
-    Arithmetic arithmetic = new Arithmetic(true, "-", left, right);
+    Arithmetic arithmetic = new Arithmetic(false, "-", left, right);
     arithmetic.valuePrefix = valuePrefix;
     return arithmetic;
   }
