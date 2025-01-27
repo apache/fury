@@ -92,6 +92,20 @@ public class ExpressionVisitor {
       return new ExprHolder(k1, v1, k2, v2, k3, v3, k4, v4);
     }
 
+    public static ExprHolder of(
+        String k1,
+        Expression v1,
+        String k2,
+        Expression v2,
+        String k3,
+        Expression v3,
+        String k4,
+        Expression v4,
+        String k5,
+        Expression v5) {
+      return new ExprHolder(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5);
+    }
+
     public Expression get(String key) {
       return expressionsMap.get(key);
     }

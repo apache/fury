@@ -450,7 +450,7 @@ public interface Expression {
 
   /** A Reference is a variable/field that can be accessed in the expression's CodegenContext. */
   class Reference implements Expression {
-    private final String name;
+    private String name;
     private final TypeRef<?> type;
     private final boolean nullable;
     private final boolean fieldRef;
@@ -476,6 +476,10 @@ public interface Expression {
 
     public static Reference fieldRef(String name, TypeRef<?> type) {
       return new Reference(name, type, false, true);
+    }
+
+    public void setName(String name) {
+      this.name = name;
     }
 
     @Override
@@ -2095,6 +2099,10 @@ public interface Expression {
       this(predicate, action, new Expression[0]);
     }
 
+    /**
+     * Use lambda to create a new context, and by capturing variables, we can make the codegen of
+     * thoese variable expressions happen before while loop.
+     */
     public While(Expression predicate, SerializableSupplier<Expression> action) {
       this(
           predicate,
@@ -2150,8 +2158,7 @@ public interface Expression {
   class ForEach implements Expression {
     private Expression inputObject;
 
-    @ClosureVisitable
-    private final SerializableBiFunction<Expression, Expression, Expression> action;
+    @ClosureVisitable final SerializableBiFunction<Expression, Expression, Expression> action;
 
     private final TypeRef<?> elementType;
 
@@ -2415,8 +2422,9 @@ public interface Expression {
     public Expression start;
     public Expression end;
     public Expression step;
-
-    @ClosureVisitable public final SerializableFunction<Expression, Expression> action;
+    private final Class<?> maxType;
+    private final Reference iref;
+    public Expression loopAction;
 
     public ForLoop(
         Expression start,
@@ -2426,7 +2434,11 @@ public interface Expression {
       this.start = start;
       this.end = end;
       this.step = step;
-      this.action = action;
+      this.maxType = maxType(getRawType(start.type()), getRawType(end.type()));
+      Preconditions.checkArgument(maxType.isPrimitive());
+      iref = new Reference(String.valueOf(System.identityHashCode(this)), TypeRef.of(maxType));
+      this.loopAction = action.apply(iref);
+      ;
     }
 
     @Override
@@ -2436,12 +2448,9 @@ public interface Expression {
 
     @Override
     public ExprCode doGenCode(CodegenContext ctx) {
-      Class<?> maxType = maxType(getRawType(start.type()), getRawType(end.type()));
-      Preconditions.checkArgument(maxType.isPrimitive());
       StringBuilder codeBuilder = new StringBuilder();
       String i = ctx.newName("i");
-      Reference iref = new Reference(i, TypeRef.of(maxType));
-      Expression loopAction = action.apply(iref);
+      iref.setName(i);
       ExprCode startExprCode = start.genCode(ctx);
       ExprCode endExprCode = end.genCode(ctx);
       ExprCode stepExprCode = step.genCode(ctx);

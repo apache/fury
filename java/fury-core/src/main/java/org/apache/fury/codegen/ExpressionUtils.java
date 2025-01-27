@@ -33,6 +33,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import org.apache.fury.codegen.Expression.BitAnd;
+import org.apache.fury.codegen.Expression.BitOr;
+import org.apache.fury.codegen.Expression.BitShift;
 import org.apache.fury.codegen.Expression.Cast;
 import org.apache.fury.codegen.Expression.ListExpression;
 import org.apache.fury.codegen.Expression.LogicalAnd;
@@ -84,12 +87,24 @@ public class ExpressionUtils {
     return new LogicalAnd(false, left, right);
   }
 
+  public static LogicalAnd and(Expression left, Expression right) {
+    return new LogicalAnd(true, left, right);
+  }
+
   public static LogicalOr or(Expression left, Expression right, Expression... expressions) {
     LogicalOr logicalOr = new LogicalOr(left, right);
     for (Expression expression : expressions) {
       logicalOr = new LogicalOr(left, expression);
     }
     return logicalOr;
+  }
+
+  public static BitOr bitor(Expression left, Expression right) {
+    return new BitOr(left, right);
+  }
+
+  public static BitAnd bitand(Expression left, Expression right) {
+    return new BitAnd(left, right);
   }
 
   public static Not not(Expression target) {
@@ -165,6 +180,22 @@ public class ExpressionUtils {
     Arithmetic arithmetic = new Arithmetic(false, "-", left, right);
     arithmetic.valuePrefix = valuePrefix;
     return arithmetic;
+  }
+
+  public static BitShift shift(String op, Expression target, int numBits) {
+    return new BitShift(op, target, numBits);
+  }
+
+  public static BitShift leftShift(Expression target, int numBits) {
+    return new BitShift("<<", target, numBits);
+  }
+
+  public static BitShift arithRightShift(Expression target, int numBits) {
+    return new BitShift(">>", target, numBits);
+  }
+
+  public static BitShift logicalRightShift(Expression target, int numBits) {
+    return new BitShift(">>", target, numBits);
   }
 
   public static Cast cast(Expression value, TypeRef<?> typeRef) {
