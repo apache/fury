@@ -833,8 +833,9 @@ public class MapSerializersTest extends FuryTestBase {
     struct1.map1 = ofHashMap(1, ofHashMap("k1", "v1", "k2", "v2"));
     struct1.map2 = ofHashMap("k1", ofHashMap("k1", 1, "k2", 2));
     struct1.map3 = ofHashMap(1, ofHashMap("k1", beanB, "k2", beanB, "k3", BeanB.createBeanB(1)));
-    struct1.map4 = ofHashMap(2, ofHashMap(true,
-      ofHashMap("k1", beanB, "k2", beanB, "k3", BeanB.createBeanB(1))));
+    struct1.map4 =
+        ofHashMap(
+            2, ofHashMap(true, ofHashMap("k1", beanB, "k2", beanB, "k3", BeanB.createBeanB(1))));
     serDeCheck(fury, struct1);
   }
 }
