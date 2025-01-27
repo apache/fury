@@ -811,4 +811,30 @@ public class MapSerializersTest extends FuryTestBase {
     struct1.map3 = ofHashMap(1, beanB, 2, beanB, 3, BeanB.createBeanB(2));
     serDeCheck(fury, struct1);
   }
+
+  @Data
+  public static class NestedMapFieldStruct1 {
+    public Map<Object, Map<String, String>> map1;
+    public Map<String, Map<String, Integer>> map2;
+    public Map<Integer, Map<String, BeanB>> map3;
+    public Map<Object, Map<Object, Map<String, BeanB>>> map4;
+  }
+
+  @Test(dataProvider = "referenceTrackingConfig")
+  public void testNestedMapFieldStructCodegen(boolean referenceTrackingConfig) {
+    Fury fury =
+        Fury.builder()
+            .withRefTracking(referenceTrackingConfig)
+            .withCodegen(true)
+            .requireClassRegistration(false)
+            .build();
+    NestedMapFieldStruct1 struct1 = new NestedMapFieldStruct1();
+    BeanB beanB = BeanB.createBeanB(2);
+    struct1.map1 = ofHashMap(1, ofHashMap("k1", "v1", "k2", "v2"));
+    struct1.map2 = ofHashMap("k1", ofHashMap("k1", 1, "k2", 2));
+    struct1.map3 = ofHashMap(1, ofHashMap("k1", beanB, "k2", beanB, "k3", BeanB.createBeanB(1)));
+    struct1.map4 = ofHashMap(2, ofHashMap(true,
+      ofHashMap("k1", beanB, "k2", beanB, "k3", BeanB.createBeanB(1))));
+    serDeCheck(fury, struct1);
+  }
 }

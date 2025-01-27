@@ -274,7 +274,9 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     }
 
     public InvokeHint add(Expression cutPoint) {
-      cutPoints.add(cutPoint);
+      if (cutPoint != null) {
+        cutPoints.add(cutPoint);
+      }
       return this;
     }
 
@@ -367,7 +369,8 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
 
   protected Expression serializeForNotNull(
       Expression inputObject, Expression buffer, TypeRef<?> typeRef) {
-    return serializeForNotNull(inputObject, buffer, typeRef, null, false);
+    boolean genNewMethod = useCollectionSerialization(typeRef) || useMapSerialization(typeRef);
+    return serializeForNotNull(inputObject, buffer, typeRef, null, genNewMethod);
   }
 
   /**
@@ -377,6 +380,12 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
   private Expression serializeForNotNull(
       Expression inputObject, Expression buffer, TypeRef<?> typeRef, boolean generateNewMethod) {
     return serializeForNotNull(inputObject, buffer, typeRef, null, generateNewMethod);
+  }
+
+  private Expression serializeForNotNull(
+      Expression inputObject, Expression buffer, TypeRef<?> typeRef, Expression serializer) {
+    boolean genNewMethod = useCollectionSerialization(typeRef) || useMapSerialization(typeRef);
+    return serializeForNotNull(inputObject, buffer, typeRef, serializer, genNewMethod);
   }
 
   private Expression serializeForNotNull(
@@ -681,10 +690,13 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
   }
 
   protected TypeRef<?> getSerializerType(TypeRef<?> objType) {
-    Class<?> rawType = getRawType(objType);
-    if (classResolver.isCollection(rawType)) {
+    return getSerializerType(objType.getRawType());
+  }
+
+  protected TypeRef<?> getSerializerType(Class<?> objType) {
+    if (classResolver.isCollection(objType)) {
       return COLLECTION_SERIALIZER_TYPE;
-    } else if (classResolver.isMap(rawType)) {
+    } else if (classResolver.isMap(objType)) {
       return MAP_SERIALIZER_TYPE;
     }
     return SERIALIZER_TYPE;
@@ -1282,7 +1294,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
                         neq(inlineInvoke(key, "getClass", CLASS_TYPE), keyTypeExpr),
                         neq(inlineInvoke(value, "getClass", CLASS_TYPE), valueTypeExpr));
               }
-              Expression writeKey = new Invoke(keySerializer, "write", buffer, key);
+              Expression writeKey = serializeForNotNull(key, buffer, keyType, keySerializer);
               if (trackingKeyRef) {
                 writeKey =
                     new If(
@@ -1297,7 +1309,8 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
                                     key))),
                         writeKey);
               }
-              Expression writeValue = new Invoke(valueSerializer, "write", buffer, value);
+              Expression writeValue =
+                  serializeForNotNull(value, buffer, valueType, valueSerializer);
               if (trackingValueRef) {
                 writeValue =
                     new If(
@@ -1533,6 +1546,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
             false);
     if (invokeHint != null && invokeHint.genNewMethod) {
       invokeHint.add(buffer);
+      invokeHint.add(serializer);
       return invokeGenerated(
           ctx,
           invokeHint.cutPoints,
@@ -1745,8 +1759,11 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     Expression newMap = new Invoke(serializer, "newMap", MAP_TYPE, buffer);
     Expression size = new Invoke(serializer, "getAndClearNumElements", "size", PRIMITIVE_INT_TYPE);
     Expression chunkHeader =
-        new Invoke(buffer, "readUnsignedByte", "chunkHeader", PRIMITIVE_INT_TYPE);
-    expressions.add(newMap, size, new If(eq(size, ofInt(0)), new Return()), chunkHeader);
+        new If(
+            eq(size, ofInt(0)),
+            ofInt(0),
+            inlineInvoke(buffer, "readUnsignedByte", PRIMITIVE_INT_TYPE));
+    expressions.add(newMap, size, chunkHeader);
     boolean keyMonomorphic = isMonomorphic(keyType);
     boolean valueMonomorphic = isMonomorphic(valueType);
     boolean inline = keyMonomorphic && valueMonomorphic;
@@ -1795,6 +1812,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         new If(supportHook, map, new Invoke(serializer, "read", OBJECT_TYPE, buffer), false);
     if (invokeHint != null && invokeHint.genNewMethod) {
       invokeHint.add(buffer);
+      invokeHint.add(serializer);
       return invokeGenerated(
           ctx,
           invokeHint.cutPoints,
@@ -1821,7 +1839,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         visitFury(fury -> fury.getClassResolver().needToWriteRef(keyTypeRawType));
     boolean trackingValueRef =
         visitFury(fury -> fury.getClassResolver().needToWriteRef(valueTypeRawType));
-    ListExpression expressions = new ListExpression();
+    ListExpression expressions = new ListExpression(buffer);
     Expression trackKeyRef = neq(bitand(chunkHeader, ofInt(TRACKING_KEY_REF)), ofInt(0));
     Expression trackValueRef = neq(bitand(chunkHeader, ofInt(TRACKING_VALUE_REF)), ofInt(0));
     Expression keyIsDeclaredType = neq(bitand(chunkHeader, ofInt(KEY_DECL_TYPE)), ofInt(0));
@@ -1829,37 +1847,21 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     Expression chunkSize = new Invoke(buffer, "readUnsignedByte", "chunkSize", PRIMITIVE_INT_TYPE);
     expressions.add(chunkSize);
 
-    Expression keySerializer = getOrCreateSerializer(keyType.getRawType());
-    Expression valueSerializer = getOrCreateSerializer(valueType.getRawType());
+    Expression keySerializer, valueSerializer;
     if (!keyMonomorphic && !valueMonomorphic) {
-      keySerializer =
-          new If(
-              keyIsDeclaredType,
-              keySerializer,
-              inlineInvoke(readClassInfo(keyTypeRawType, buffer), "getSerializer", SERIALIZER_TYPE),
-              false);
+      keySerializer = readOrGetSerializerForDeclaredType(buffer, keyTypeRawType, keyIsDeclaredType);
       valueSerializer =
-          new If(
-              valueIsDeclaredType,
-              valueSerializer,
-              inlineInvoke(
-                  readClassInfo(valueTypeRawType, buffer), "getSerializer", SERIALIZER_TYPE),
-              false);
+          readOrGetSerializerForDeclaredType(buffer, valueTypeRawType, valueIsDeclaredType);
     } else if (!keyMonomorphic) {
-      keySerializer =
-          new If(
-              keyIsDeclaredType,
-              keySerializer,
-              inlineInvoke(readClassInfo(keyTypeRawType, buffer), "getSerializer", SERIALIZER_TYPE),
-              false);
+      keySerializer = readOrGetSerializerForDeclaredType(buffer, keyTypeRawType, keyIsDeclaredType);
+      valueSerializer = getOrCreateSerializer(valueTypeRawType);
     } else if (!valueMonomorphic) {
+      keySerializer = getOrCreateSerializer(keyTypeRawType);
       valueSerializer =
-          new If(
-              valueIsDeclaredType,
-              valueSerializer,
-              inlineInvoke(
-                  readClassInfo(valueTypeRawType, buffer), "getSerializer", SERIALIZER_TYPE),
-              false);
+          readOrGetSerializerForDeclaredType(buffer, valueTypeRawType, valueIsDeclaredType);
+    } else {
+      keySerializer = getOrCreateSerializer(keyTypeRawType);
+      valueSerializer = getOrCreateSerializer(valueTypeRawType);
     }
     Expression keySerializerExpr = uninline(keySerializer);
     Expression valueSerializerExpr = uninline(valueSerializer);
@@ -1944,6 +1946,31 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       //  )
       Set<Expression> params = ofHashSet(buffer, size, chunkHeader, map);
       return invokeGenerated(ctx, params, expressions, "readChunk", false);
+    }
+  }
+
+  private Expression readOrGetSerializerForDeclaredType(
+      Expression buffer, Class<?> type, Expression isDeclaredType) {
+    if (isMonomorphic(type)) {
+      return getOrCreateSerializer(type);
+    }
+    TypeRef<?> serializerType = getSerializerType(type);
+    if (ReflectionUtils.isAbstract(type) || type.isInterface()) {
+      Invoke serializer =
+          new Invoke(readClassInfo(type, buffer), "getSerializer", SERIALIZER_TYPE, false);
+      if (!serializerType.equals(SERIALIZER_TYPE)) {
+        return new Cast(serializer.inline(), serializerType, "serializer");
+      } else {
+        return serializer;
+      }
+    } else {
+      return new If(
+          isDeclaredType,
+          getOrCreateSerializer(type),
+          new Cast(
+              inlineInvoke(readClassInfo(type, buffer), "getSerializer", SERIALIZER_TYPE),
+              serializerType),
+          false);
     }
   }
 
