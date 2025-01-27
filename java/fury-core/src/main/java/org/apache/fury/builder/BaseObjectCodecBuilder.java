@@ -1816,7 +1816,8 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
                   readClassInfo(keyTypeRawType, buffer),
                   "getSerializer",
                   "keySerializer",
-                  SERIALIZER_TYPE));
+                  SERIALIZER_TYPE),
+              false);
       valueSerializer =
           new If(
               valueIsDeclaredType,
@@ -1825,7 +1826,8 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
                   readClassInfo(valueTypeRawType, buffer),
                   "getSerializer",
                   "valueSerializer",
-                  SERIALIZER_TYPE));
+                  SERIALIZER_TYPE),
+              false);
     } else if (!keyMonomorphic) {
       keySerializer =
           new If(
@@ -1835,7 +1837,8 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
                   readClassInfo(keyTypeRawType, buffer),
                   "getSerializer",
                   "keySerializer",
-                  SERIALIZER_TYPE));
+                  SERIALIZER_TYPE),
+              false);
     } else if (!valueMonomorphic) {
       valueSerializer =
           new If(
@@ -1845,7 +1848,8 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
                   readClassInfo(valueTypeRawType, buffer),
                   "getSerializer",
                   "valueSerializer",
-                  SERIALIZER_TYPE));
+                  SERIALIZER_TYPE),
+              false);
     }
     Expression keySerializerExpr = uninline(keySerializer);
     Expression valueSerializerExpr = uninline(valueSerializer);
