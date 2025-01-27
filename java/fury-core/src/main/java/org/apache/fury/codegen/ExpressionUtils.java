@@ -37,6 +37,7 @@ import org.apache.fury.codegen.Expression.Cast;
 import org.apache.fury.codegen.Expression.LogicalAnd;
 import org.apache.fury.codegen.Expression.LogicalOr;
 import org.apache.fury.codegen.Expression.Null;
+import org.apache.fury.codegen.Expression.Variable;
 import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.StringUtils;
@@ -50,7 +51,7 @@ public class ExpressionUtils {
   }
 
   public static Expression ofInt(String name, int v) {
-    return subtract(Literal.ofInt(v), Literal.ofInt(0), name);
+    return new Variable(name, Literal.ofInt(v));
   }
 
   public static Expression valueOf(TypeRef<?> type, Expression value) {

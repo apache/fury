@@ -240,6 +240,52 @@ public interface Expression {
     }
   }
 
+  class Variable implements Expression {
+    private final String namePrefix;
+    private Expression from;
+
+    public Variable(String namePrefix, Expression from) {
+      this.namePrefix = namePrefix;
+      this.from = from;
+    }
+
+    @Override
+    public TypeRef<?> type() {
+      return from.type();
+    }
+
+    @Override
+    public boolean nullable() {
+      return from.nullable();
+    }
+
+    @Override
+    public ExprCode doGenCode(CodegenContext ctx) {
+      StringBuilder codeBuilder = new StringBuilder();
+      ExprCode targetExprCode = from.genCode(ctx);
+      if (StringUtils.isNotBlank(targetExprCode.code())) {
+        codeBuilder.append(targetExprCode.code()).append('\n');
+      }
+      String decl =
+        StringUtils.format(
+          "${type} ${name} = ${from};",
+          "type",
+          ctx.type(type()),
+          "name",
+          ctx.newName(namePrefix),
+          "from",
+          targetExprCode.value());
+      codeBuilder.append(decl);
+      return new ExprCode(codeBuilder.toString(), null, null);
+    }
+
+    @Override
+    public String toString() {
+      return String.format("%s %s = %s", type(), namePrefix, from);
+    }
+  }
+
+
   class Literal extends Inlineable {
     public static final Literal True = new Literal(true, PRIMITIVE_BOOLEAN_TYPE);
     public static final Literal False = new Literal(false, PRIMITIVE_BOOLEAN_TYPE);
