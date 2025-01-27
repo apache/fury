@@ -17,7 +17,6 @@
  * under the License.
  */
 
-#include <chrono>
 #include <codecvt>
 #include <iostream>
 #include <locale>
@@ -30,8 +29,8 @@
 
 namespace fury {
 
-// Function to generate a random string
-std::string generateRandomString(size_t length) {
+// Generate ASCII string
+std::string generateAscii(size_t length) {
   const char charset[] =
       "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   std::default_random_engine rng(std::random_device{}());
@@ -42,57 +41,26 @@ std::string generateRandomString(size_t length) {
   for (size_t i = 0; i < length; ++i) {
     result += charset[dist(rng)];
   }
-
   return result;
 }
 
-bool isAscii_BaseLine(const std::string &str) {
-  for (char c : str) {
-    if (static_cast<unsigned char>(c) >= 128) {
-      return false;
-    }
-  }
-  return true;
-}
-
-TEST(StringUtilTest, TestisAsciiFunctions) {
-  std::string testStr = generateRandomString(100000);
-  auto start_time = std::chrono::high_resolution_clock::now();
-  bool result = isAscii_BaseLine(testStr);
-  auto end_time = std::chrono::high_resolution_clock::now();
-  auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(
-                      end_time - start_time)
-                      .count();
-  FURY_LOG(FURY_INFO) << "BaseLine Running Time: " << duration << " ns.";
-
-  start_time = std::chrono::high_resolution_clock::now();
-  result = isAscii(testStr);
-  end_time = std::chrono::high_resolution_clock::now();
-  duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time -
-                                                                  start_time)
-                 .count();
-  FURY_LOG(FURY_INFO) << "Optimized Running Time: " << duration << " ns.";
-
-  EXPECT_TRUE(result);
-}
-
 TEST(StringUtilTest, TestisAsciiLogic) {
-  // Test strings with only Latin characters
+  // Test strings with only Ascii characters
   EXPECT_TRUE(isAscii("Fury"));
-  EXPECT_TRUE(isAscii(generateRandomString(80)));
+  EXPECT_TRUE(isAscii(generateAscii(80)));
 
-  // Test unaligned strings with only Latin characters
-  EXPECT_TRUE(isAscii(generateRandomString(80) + "1"));
-  EXPECT_TRUE(isAscii(generateRandomString(80) + "12"));
-  EXPECT_TRUE(isAscii(generateRandomString(80) + "123"));
+  // Test unaligned strings with only Ascii characters
+  EXPECT_TRUE(isAscii(generateAscii(80) + "1"));
+  EXPECT_TRUE(isAscii(generateAscii(80) + "12"));
+  EXPECT_TRUE(isAscii(generateAscii(80) + "123"));
 
-  // Test strings with non-Latin characters
+  // Test strings with non-Ascii characters
   EXPECT_FALSE(isAscii("你好, Fury"));
-  EXPECT_FALSE(isAscii(generateRandomString(80) + "你好"));
-  EXPECT_FALSE(isAscii(generateRandomString(80) + "1你好"));
-  EXPECT_FALSE(isAscii(generateRandomString(11) + "你"));
-  EXPECT_FALSE(isAscii(generateRandomString(10) + "你好"));
-  EXPECT_FALSE(isAscii(generateRandomString(9) + "性能好"));
+  EXPECT_FALSE(isAscii(generateAscii(80) + "你好"));
+  EXPECT_FALSE(isAscii(generateAscii(80) + "1你好"));
+  EXPECT_FALSE(isAscii(generateAscii(11) + "你"));
+  EXPECT_FALSE(isAscii(generateAscii(10) + "你好"));
+  EXPECT_FALSE(isAscii(generateAscii(9) + "性能好"));
   EXPECT_FALSE(isAscii("\u1234"));
   EXPECT_FALSE(isAscii("a\u1234"));
   EXPECT_FALSE(isAscii("ab\u1234"));
@@ -249,7 +217,7 @@ std::string generateRandomUTF8String(size_t length) {
       str.push_back(0xE0 | (code_point >> 12));
       str.push_back(0x80 | ((code_point >> 6) & 0x3F));
       str.push_back(0x80 | (code_point & 0x3F));
-    } else if (code_point <= 0x10FFFF) {
+    } else {
       str.push_back(0xF0 | (code_point >> 18));
       str.push_back(0x80 | ((code_point >> 12) & 0x3F));
       str.push_back(0x80 | ((code_point >> 6) & 0x3F));
@@ -258,78 +226,6 @@ std::string generateRandomUTF8String(size_t length) {
   }
 
   return str;
-}
-
-std::u16string utf8ToUtf16BaseLine(const std::string &utf8,
-                                   bool is_little_endian) {
-  std::u16string utf16;   // Resulting UTF-16 string
-  size_t i = 0;           // Index for traversing the UTF-8 string
-  size_t n = utf8.size(); // Total length of the UTF-8 string
-
-  // Loop through each byte of the UTF-8 string
-  while (i < n) {
-    uint32_t code_point = 0;   // The Unicode code point
-    unsigned char c = utf8[i]; // Current byte of the UTF-8 string
-
-    // Determine the number of bytes for this character based on its first byte
-    if ((c & 0x80) == 0) {
-      // 1-byte character (ASCII)
-      code_point = c;
-      ++i;
-    } else if ((c & 0xE0) == 0xC0) {
-      // 2-byte character
-      code_point = c & 0x1F;
-      code_point = (code_point << 6) | (utf8[i + 1] & 0x3F);
-      i += 2;
-    } else if ((c & 0xF0) == 0xE0) {
-      // 3-byte character
-      code_point = c & 0x0F;
-      code_point = (code_point << 6) | (utf8[i + 1] & 0x3F);
-      code_point = (code_point << 6) | (utf8[i + 2] & 0x3F);
-      i += 3;
-    } else if ((c & 0xF8) == 0xF0) {
-      // 4-byte character
-      code_point = c & 0x07;
-      code_point = (code_point << 6) | (utf8[i + 1] & 0x3F);
-      code_point = (code_point << 6) | (utf8[i + 2] & 0x3F);
-      code_point = (code_point << 6) | (utf8[i + 3] & 0x3F);
-      i += 4;
-    } else {
-      // Invalid UTF-8 byte sequence
-      throw std::invalid_argument("Invalid UTF-8 encoding.");
-    }
-
-    // If the code point is beyond the BMP range, use surrogate pairs
-    if (code_point >= 0x10000) {
-      code_point -= 0x10000; // Subtract 0x10000 to get the surrogate pair
-      uint16_t high_surrogate = 0xD800 + (code_point >> 10);  // High surrogate
-      uint16_t low_surrogate = 0xDC00 + (code_point & 0x3FF); // Low surrogate
-
-      // If not little-endian, swap bytes of the surrogates
-      if (!is_little_endian) {
-        high_surrogate = (high_surrogate >> 8) | (high_surrogate << 8);
-        low_surrogate = (low_surrogate >> 8) | (low_surrogate << 8);
-      }
-
-      // Add both high and low surrogates to the UTF-16 string
-      utf16.push_back(high_surrogate);
-      utf16.push_back(low_surrogate);
-    } else {
-      // For code points within the BMP range, directly store as a 16-bit value
-      uint16_t utf16_char = static_cast<uint16_t>(code_point);
-
-      // If not little-endian, swap the bytes of the 16-bit character
-      if (!is_little_endian) {
-        utf16_char = (utf16_char >> 8) | (utf16_char << 8);
-      }
-
-      // Add the UTF-16 character to the string
-      utf16.push_back(utf16_char);
-    }
-  }
-
-  // Return the resulting UTF-16 string
-  return utf16;
 }
 
 // Testing Basic Logic
@@ -394,75 +290,6 @@ TEST(UTF8ToUTF16Test, RoundTripConversion) {
   std::u16string utf16 = fury::utf8ToUtf16(original_utf8, true);
   std::string utf8_converted_back = fury::utf16ToUtf8(utf16, true);
   ASSERT_EQ(original_utf8, utf8_converted_back);
-}
-
-// Testing Performance
-TEST(UTF8ToUTF16Test, PerformanceTest) {
-  const size_t num_tests = 1000;
-  const size_t string_length = 1000;
-  // Default little_endian
-  bool is_little_endian = true;
-
-  // Random UTF-8
-  std::vector<std::string> test_strings;
-  for (size_t i = 0; i < num_tests; ++i) {
-    test_strings.push_back(generateRandomUTF8String(string_length));
-  }
-
-  // Standard Library
-  try {
-    auto start_time = std::chrono::high_resolution_clock::now();
-    std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> convert;
-    // Loop through test strings and convert each UTF-8 string to UTF-16
-    for (const auto &str : test_strings) {
-      std::wstring wide_str = convert.from_bytes(str);
-      std::u16string utf16;
-      for (wchar_t wc : wide_str) {
-        utf16.push_back(static_cast<char16_t>(wc));
-      }
-    }
-    auto end_time = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(
-                        end_time - start_time)
-                        .count();
-    FURY_LOG(FURY_INFO) << "Standard Library Running Time: " << duration
-                        << " ns";
-  } catch (const std::exception &e) {
-    FURY_LOG(FURY_FATAL) << "Caught exception in standard library conversion: "
-                         << e.what();
-  }
-
-  // BaseLine
-  try {
-    auto start_time = std::chrono::high_resolution_clock::now();
-    for (const auto &str : test_strings) {
-      std::u16string utf16 = utf8ToUtf16BaseLine(str, is_little_endian);
-    }
-    auto end_time = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(
-                        end_time - start_time)
-                        .count();
-    FURY_LOG(FURY_INFO) << "BaseLine Running Time: " << duration << " ns";
-  } catch (const std::exception &e) {
-    FURY_LOG(FURY_FATAL) << "Caught exception in baseline conversion: "
-                         << e.what();
-  }
-
-  // Optimized (SIMD)
-  try {
-    auto start_time = std::chrono::high_resolution_clock::now();
-    for (const auto &str : test_strings) {
-      std::u16string utf16 = fury::utf8ToUtf16(str, is_little_endian);
-    }
-    auto end_time = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(
-                        end_time - start_time)
-                        .count();
-    FURY_LOG(FURY_INFO) << "SIMD Optimized Running Time: " << duration << " ns";
-  } catch (const std::exception &e) {
-    FURY_LOG(FURY_FATAL) << "Caught exception in SIMD optimized conversion: "
-                         << e.what();
-  }
 }
 
 } // namespace fury
