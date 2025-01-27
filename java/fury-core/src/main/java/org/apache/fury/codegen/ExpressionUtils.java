@@ -103,6 +103,12 @@ public class ExpressionUtils {
     return new BitOr(left, right);
   }
 
+  public static BitAnd bitand(Expression left, Expression right, String name) {
+    BitAnd bitAnd = new BitAnd(left, right);
+    bitAnd.inline(false);
+    return bitAnd;
+  }
+
   public static BitAnd bitand(Expression left, Expression right) {
     return new BitAnd(left, right);
   }

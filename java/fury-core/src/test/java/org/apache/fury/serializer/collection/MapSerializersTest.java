@@ -53,6 +53,7 @@ import org.apache.fury.config.Language;
 import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.serializer.collection.CollectionSerializersTest.TestEnum;
+import org.apache.fury.test.bean.BeanB;
 import org.apache.fury.test.bean.Cyclic;
 import org.apache.fury.test.bean.MapFields;
 import org.apache.fury.type.GenericType;
@@ -785,6 +786,29 @@ public class MapSerializersTest extends FuryTestBase {
     struct1.map1 = ofHashMap(1, false, 2, true);
     struct1.map2 = ofHashMap("k1", "v1", "k2", "v2");
     struct1.map3 = ofHashMap(1, "v1", 2, "v2");
+    serDeCheck(fury, struct1);
+  }
+
+  @Data
+  public static class MapFieldStruct3 {
+    public Map<Object, Object> map1;
+    public Map<BeanB, Object> map2;
+    public Map<Object, BeanB> map3;
+  }
+
+  @Test(dataProvider = "referenceTrackingConfig")
+  public void testMapFieldStructCodegen3(boolean referenceTrackingConfig) {
+    Fury fury =
+        Fury.builder()
+            .withRefTracking(referenceTrackingConfig)
+            .withCodegen(true)
+            .requireClassRegistration(false)
+            .build();
+    MapFieldStruct3 struct1 = new MapFieldStruct3();
+    BeanB beanB = BeanB.createBeanB(2);
+    struct1.map1 = ofHashMap(BeanB.createBeanB(2), BeanB.createBeanB(2));
+    struct1.map2 = ofHashMap(BeanB.createBeanB(2), 1, beanB, beanB);
+    struct1.map3 = ofHashMap(1, beanB, 2, beanB, 3, BeanB.createBeanB(2));
     serDeCheck(fury, struct1);
   }
 }

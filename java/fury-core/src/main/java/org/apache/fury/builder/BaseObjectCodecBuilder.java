@@ -25,7 +25,6 @@ import static org.apache.fury.codegen.Expression.Literal.ofInt;
 import static org.apache.fury.codegen.Expression.Reference.fieldRef;
 import static org.apache.fury.codegen.ExpressionOptimizer.invokeGenerated;
 import static org.apache.fury.codegen.ExpressionUtils.add;
-import static org.apache.fury.codegen.ExpressionUtils.and;
 import static org.apache.fury.codegen.ExpressionUtils.bitand;
 import static org.apache.fury.codegen.ExpressionUtils.bitor;
 import static org.apache.fury.codegen.ExpressionUtils.cast;
@@ -506,7 +505,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     Expression classInfo = classInfoRef.f0;
     writeClassAction.add(
         new If(
-            neq(new Invoke(classInfo, "getCls", CLASS_TYPE), clsExpr),
+            neq(inlineInvoke(classInfo, "getCls", CLASS_TYPE), clsExpr),
             new Assign(
                 classInfo,
                 inlineInvoke(classResolverRef, "getClassInfo", classInfoTypeRef, clsExpr))));
@@ -1149,10 +1148,18 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     Expression chunkSizeOffset =
         subtract(
             inlineInvoke(buffer, "writerIndex", PRIMITIVE_INT_TYPE), ofInt(1), "chunkSizeOffset");
+    expressions.add(
+        key,
+        value,
+        keyTypeExpr,
+        valueTypeExpr,
+        writePlaceHolder,
+        chunkSizeOffset,
+        writePlaceHolder,
+        chunkSizeOffset);
 
     Expression chunkHeader;
     Expression keySerializer, valueSerializer;
-
     boolean trackingKeyRef =
         visitFury(fury -> fury.getClassResolver().needToWriteRef(keyTypeRawType));
     boolean trackingValueRef =
@@ -1171,60 +1178,75 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         header |= TRACKING_VALUE_REF;
       }
       chunkHeader = ofInt(header);
+      expressions.add(chunkHeader);
     } else if (keyMonomorphic) {
       int header = KEY_DECL_TYPE;
       if (trackingKeyRef) {
         header |= TRACKING_KEY_REF;
       }
       keySerializer = getOrCreateSerializer(keyTypeRawType);
+      walkPath.add("value:" + valueType);
       valueSerializer = writeClassInfo(buffer, valueTypeExpr, valueTypeRawType, true);
-      chunkHeader = ofInt(header);
+      walkPath.removeLast();
+      chunkHeader = ExpressionUtils.ofInt("chunkHeader", header);
+      expressions.add(chunkHeader);
       if (trackingValueRef) {
         // value type may be subclass and not track ref.
         valueWriteRef =
-            new Invoke(valueSerializer, "needToWriteRef", PRIMITIVE_BOOLEAN_TYPE, valueTypeExpr);
-        chunkHeader = and(chunkHeader, valueWriteRef, "chunkHeader");
+            new Invoke(valueSerializer, "needToWriteRef", "valueWriteRef", PRIMITIVE_BOOLEAN_TYPE);
+        expressions.add(
+            new If(
+                valueWriteRef,
+                new Assign(chunkHeader, bitor(chunkHeader, ofInt(TRACKING_VALUE_REF)))));
       }
     } else if (valueMonomorphic) {
+      walkPath.add("key:" + keyType);
       keySerializer = writeClassInfo(buffer, keyTypeExpr, keyTypeRawType, true);
+      walkPath.removeLast();
       valueSerializer = getOrCreateSerializer(valueTypeRawType);
       int header = VALUE_DECL_TYPE;
       if (trackingValueRef) {
         header |= TRACKING_VALUE_REF;
       }
-      chunkHeader = ofInt(header);
+      chunkHeader = ExpressionUtils.ofInt("chunkHeader", header);
+      expressions.add(chunkHeader);
       if (trackingKeyRef) {
         // key type may be subclass and not track ref.
         keyWriteRef =
-            new Invoke(keySerializer, "needToWriteRef", PRIMITIVE_BOOLEAN_TYPE, keyTypeExpr);
-        chunkHeader = and(chunkHeader, keyWriteRef, "chunkHeader");
+            new Invoke(keySerializer, "needToWriteRef", "keyWriteRef", PRIMITIVE_BOOLEAN_TYPE);
+        expressions.add(
+            new If(
+                keyWriteRef, new Assign(chunkHeader, bitor(chunkHeader, ofInt(TRACKING_KEY_REF)))));
       }
     } else {
+      walkPath.add("key:" + keyType);
       keySerializer = writeClassInfo(buffer, keyTypeExpr, keyTypeRawType, true);
+      walkPath.removeLast();
+      walkPath.add("value:" + valueType);
       valueSerializer = writeClassInfo(buffer, valueTypeExpr, valueTypeRawType, true);
-      chunkHeader = ofInt(0);
+      walkPath.removeLast();
+      chunkHeader = ExpressionUtils.ofInt("chunkHeader", 0);
+      expressions.add(chunkHeader);
       if (trackingKeyRef) {
         // key type may be subclass and not track ref.
-        valueWriteRef =
-            new Invoke(valueSerializer, "needToWriteRef", PRIMITIVE_BOOLEAN_TYPE, valueTypeExpr);
-        chunkHeader = and(chunkHeader, valueWriteRef, "chunkHeader");
+        keyWriteRef =
+            new Invoke(keySerializer, "needToWriteRef", "keyWriteRef", PRIMITIVE_BOOLEAN_TYPE);
+        expressions.add(
+            new If(
+                keyWriteRef, new Assign(chunkHeader, bitor(chunkHeader, ofInt(TRACKING_KEY_REF)))));
       }
       if (trackingValueRef) {
         // key type may be subclass and not track ref.
-        keyWriteRef =
-            new Invoke(keySerializer, "needToWriteRef", PRIMITIVE_BOOLEAN_TYPE, keyTypeExpr);
-        chunkHeader = and(chunkHeader, keyWriteRef, "chunkHeader");
+        valueWriteRef =
+            new Invoke(valueSerializer, "needToWriteRef", "valueWriteRef", PRIMITIVE_BOOLEAN_TYPE);
+        expressions.add(
+            new If(
+                valueWriteRef,
+                new Assign(chunkHeader, bitor(chunkHeader, ofInt(TRACKING_VALUE_REF)))));
       }
     }
     Expression chunkSize = ExpressionUtils.ofInt("chunkSize", 0);
     expressions.add(
-        key,
-        value,
-        keyTypeExpr,
-        valueTypeExpr,
-        writePlaceHolder,
-        chunkSizeOffset,
-        chunkHeader,
         keySerializer,
         valueSerializer,
         keyWriteRef,
@@ -1447,8 +1469,10 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       } else if (useMapSerialization(typeRef)) {
         obj = deserializeForMap(buffer, typeRef, serializer, invokeHint);
       } else {
+        if (serializer != null) {
+          return new Invoke(serializer, "read", OBJECT_TYPE, buffer);
+        }
         if (isMonomorphic(cls)) {
-          Preconditions.checkState(serializer == null);
           serializer = getOrCreateSerializer(cls);
           Class<?> returnType =
               ReflectionUtils.getReturnType(getRawType(serializer.type()), "read");
@@ -1812,43 +1836,29 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
           new If(
               keyIsDeclaredType,
               keySerializer,
-              new Invoke(
-                  readClassInfo(keyTypeRawType, buffer),
-                  "getSerializer",
-                  "keySerializer",
-                  SERIALIZER_TYPE),
+              inlineInvoke(readClassInfo(keyTypeRawType, buffer), "getSerializer", SERIALIZER_TYPE),
               false);
       valueSerializer =
           new If(
               valueIsDeclaredType,
               valueSerializer,
-              new Invoke(
-                  readClassInfo(valueTypeRawType, buffer),
-                  "getSerializer",
-                  "valueSerializer",
-                  SERIALIZER_TYPE),
+              inlineInvoke(
+                  readClassInfo(valueTypeRawType, buffer), "getSerializer", SERIALIZER_TYPE),
               false);
     } else if (!keyMonomorphic) {
       keySerializer =
           new If(
               keyIsDeclaredType,
               keySerializer,
-              new Invoke(
-                  readClassInfo(keyTypeRawType, buffer),
-                  "getSerializer",
-                  "keySerializer",
-                  SERIALIZER_TYPE),
+              inlineInvoke(readClassInfo(keyTypeRawType, buffer), "getSerializer", SERIALIZER_TYPE),
               false);
     } else if (!valueMonomorphic) {
       valueSerializer =
           new If(
               valueIsDeclaredType,
               valueSerializer,
-              new Invoke(
-                  readClassInfo(valueTypeRawType, buffer),
-                  "getSerializer",
-                  "valueSerializer",
-                  SERIALIZER_TYPE),
+              inlineInvoke(
+                  readClassInfo(valueTypeRawType, buffer), "getSerializer", SERIALIZER_TYPE),
               false);
     }
     Expression keySerializerExpr = uninline(keySerializer);
@@ -1877,7 +1887,8 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
                             expr -> expr,
                             () ->
                                 deserializeForNotNull(buffer, keyType, keySerializerExpr, keyHint)),
-                        deserializeForNotNull(buffer, keyType, keySerializerExpr, keyHint));
+                        deserializeForNotNull(buffer, keyType, keySerializerExpr, keyHint),
+                        false);
               } else {
                 keyAction = deserializeForNotNull(buffer, keyType, keySerializerExpr, keyHint);
               }
@@ -1893,7 +1904,8 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
                             () ->
                                 deserializeForNotNull(
                                     buffer, valueType, valueSerializerExpr, valueHint)),
-                        deserializeForNotNull(buffer, valueType, valueSerializerExpr, valueHint));
+                        deserializeForNotNull(buffer, valueType, valueSerializerExpr, valueHint),
+                        false);
               } else {
                 valueAction =
                     deserializeForNotNull(buffer, valueType, valueSerializerExpr, valueHint);
@@ -1913,14 +1925,15 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
                   chunkHeader, inlineInvoke(buffer, "readUnsignedByte", PRIMITIVE_INT_TYPE))));
       return expressions;
     } else {
-      Expression sizeAndHeader =
+      Expression returnSizeAndHeader =
           new If(
               gt(size, ofInt(0)),
-              (bitor(
-                  shift("<<", size, 8),
-                  inlineInvoke(buffer, "readUnsignedByte", PRIMITIVE_INT_TYPE))),
-              ofInt(0));
-      expressions.add(new Return(sizeAndHeader));
+              new Return(
+                  (bitor(
+                      shift("<<", size, 8),
+                      inlineInvoke(buffer, "readUnsignedByte", PRIMITIVE_INT_TYPE)))),
+              new Return(ofInt(0)));
+      expressions.add(returnSizeAndHeader);
       // method too big, spilt it into a new method.
       // Generate similar signature as `AbstractMapSerializer.writeJavaChunk`(
       //   MemoryBuffer buffer,

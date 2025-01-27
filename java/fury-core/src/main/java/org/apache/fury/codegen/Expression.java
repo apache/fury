@@ -2438,7 +2438,6 @@ public interface Expression {
       Preconditions.checkArgument(maxType.isPrimitive());
       iref = new Reference(String.valueOf(System.identityHashCode(this)), TypeRef.of(maxType));
       this.loopAction = action.apply(iref);
-      ;
     }
 
     @Override
