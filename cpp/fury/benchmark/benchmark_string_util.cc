@@ -38,7 +38,7 @@ std::string generateRandom(size_t length) {
   result.reserve(length);
 
   std::mt19937 generator(std::random_device{}());
-  std::uniform_int_distribution<uint8_t> distribution(0x00, 0xFF);
+  std::uniform_int_distribution<unsigned short> distribution(0x00, 0xFF);
 
   for (size_t i = 0; i < length; ++i) {
     result.push_back(static_cast<char>(distribution(generator)));
