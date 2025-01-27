@@ -1126,9 +1126,9 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       TypeRef<?> keyType,
       TypeRef<?> valueType) {
     ListExpression expressions = new ListExpression();
-    Expression key = tryCastIfPublic(inlineInvoke(entry, "getKey", OBJECT_TYPE), keyType, "key");
+    Expression key = tryCastIfPublic(new Invoke(entry, "getKey", OBJECT_TYPE), keyType, "key");
     Expression value =
-        tryCastIfPublic(inlineInvoke(entry, "getValue", OBJECT_TYPE), valueType, "value");
+        tryCastIfPublic(new Invoke(entry, "getValue", OBJECT_TYPE), valueType, "value");
     boolean keyMonomorphic = isMonomorphic(keyType);
     boolean valueMonomorphic = isMonomorphic(valueType);
     Class<?> keyTypeRawType = keyType.getRawType();
@@ -1794,10 +1794,10 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     boolean trackingValueRef =
         visitFury(fury -> fury.getClassResolver().needToWriteRef(valueTypeRawType));
     ListExpression expressions = new ListExpression();
-    Expression trackKeyRef = neq(and(chunkHeader, ofInt(TRACKING_KEY_REF)), ofInt(0));
-    Expression trackValueRef = neq(and(chunkHeader, ofInt(TRACKING_VALUE_REF)), ofInt(0));
-    Expression keyIsDeclaredType = neq(and(chunkHeader, ofInt(KEY_DECL_TYPE)), ofInt(0));
-    Expression valueIsDeclaredType = neq(and(chunkHeader, ofInt(VALUE_DECL_TYPE)), ofInt(0));
+    Expression trackKeyRef = neq(bitand(chunkHeader, ofInt(TRACKING_KEY_REF)), ofInt(0));
+    Expression trackValueRef = neq(bitand(chunkHeader, ofInt(TRACKING_VALUE_REF)), ofInt(0));
+    Expression keyIsDeclaredType = neq(bitand(chunkHeader, ofInt(KEY_DECL_TYPE)), ofInt(0));
+    Expression valueIsDeclaredType = neq(bitand(chunkHeader, ofInt(VALUE_DECL_TYPE)), ofInt(0));
     Expression chunkSize = new Invoke(buffer, "readUnsignedByte", "chunkSize", PRIMITIVE_INT_TYPE);
     expressions.add(chunkSize);
 
@@ -1843,10 +1843,9 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
                   "valueSerializer",
                   SERIALIZER_TYPE));
     }
-    expressions.add(keySerializer, valueSerializer);
-    ExprHolder exprHolder =
-        ExprHolder.of("keySerializer", keySerializer, "valueSerializer", valueSerializer);
-
+    Expression keySerializerExpr = uninline(keySerializer);
+    Expression valueSerializerExpr = uninline(valueSerializer);
+    expressions.add(valueSerializerExpr, keySerializerExpr);
     ForLoop readKeyValues =
         new ForLoop(
             ofInt(0),
@@ -1861,7 +1860,6 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
               Expression keyAction, valueAction;
               InvokeHint keyHint = new InvokeHint(genKeyMethod);
               InvokeHint valueHint = new InvokeHint(genValueMethod);
-              Expression keySerializerExpr = exprHolder.get("keySerializer");
               if (trackingKeyRef) {
                 keyAction =
                     new If(
@@ -1877,7 +1875,6 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
               }
               walkPath.removeLast();
               walkPath.add("value:" + valueType);
-              Expression valueSerializerExpr = exprHolder.get("valueSerializer");
               if (trackingValueRef) {
                 valueAction =
                     new If(
@@ -1906,17 +1903,26 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
               gt(size, ofInt(0)),
               new Assign(
                   chunkHeader, inlineInvoke(buffer, "readUnsignedByte", PRIMITIVE_INT_TYPE))));
+      return expressions;
     } else {
-      expressions.add(
-          new Return(
-              new If(
-                  gt(size, ofInt(0)),
-                  (bitor(
-                      shift("<<", size, 8),
-                      inlineInvoke(buffer, "readUnsignedByte", PRIMITIVE_INT_TYPE))),
-                  ofInt(0))));
+      Expression sizeAndHeader = new If(
+        gt(size, ofInt(0)),
+        (bitor(
+          shift("<<", size, 8),
+          inlineInvoke(buffer, "readUnsignedByte", PRIMITIVE_INT_TYPE))),
+        ofInt(0));
+      expressions.add(new Return(sizeAndHeader));
+      // method too big, spilt it into a new method.
+      // Generate similar signature as `AbstractMapSerializer.writeJavaChunk`(
+      //   MemoryBuffer buffer,
+      //   long size,
+      //   int chunkHeader,
+      //   Serializer keySerializer,
+      //   Serializer valueSerializer
+      //  )
+      Set<Expression> params = ofHashSet(buffer, size, chunkHeader, map);
+      return invokeGenerated(ctx, params, expressions, "readChunk", false);
     }
-    return expressions;
   }
 
   @Override
