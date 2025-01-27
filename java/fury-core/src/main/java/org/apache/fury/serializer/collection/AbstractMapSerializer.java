@@ -295,7 +295,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     int chunkSizeOffset = buffer.writerIndex() - 1;
     int chunkHeader = 0;
     if (keySerializer != null) {
-      chunkHeader |= VALUE_DECL_TYPE;
+      chunkHeader |= KEY_DECL_TYPE;
     } else {
       keySerializer = writeKeyClassInfo(classResolver, keyType, buffer);
     }
