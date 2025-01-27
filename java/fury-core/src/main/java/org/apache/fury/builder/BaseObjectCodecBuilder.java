@@ -1546,7 +1546,6 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
             false);
     if (invokeHint != null && invokeHint.genNewMethod) {
       invokeHint.add(buffer);
-      invokeHint.add(serializer);
       return invokeGenerated(
           ctx,
           invokeHint.cutPoints,
@@ -1880,6 +1879,12 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
               Expression keyAction, valueAction;
               InvokeHint keyHint = new InvokeHint(genKeyMethod);
               InvokeHint valueHint = new InvokeHint(genValueMethod);
+              if (genKeyMethod) {
+                keyHint.add(keySerializerExpr);
+              }
+              if (genValueMethod) {
+                valueHint.add(valueSerializer);
+              }
               if (trackingKeyRef) {
                 keyAction =
                     new If(
