@@ -747,19 +747,44 @@ public class MapSerializersTest extends FuryTestBase {
   }
 
   @Data
-  public static class SimpleMapFieldStruct {
-    public Map<String, String> map;
+  public static class MapFieldStruct1 {
+    public Map<Integer, Boolean> map1;
+    public Map<String, String> map2;
   }
 
   @Test(dataProvider = "referenceTrackingConfig")
-  public void testSimpleMapFieldStructCodegen(boolean referenceTrackingConfig) {
+  public void testMapFieldStructCodegen1(boolean referenceTrackingConfig) {
     Fury fury =
         Fury.builder()
             .withRefTracking(referenceTrackingConfig)
             .withCodegen(true)
             .requireClassRegistration(false)
             .build();
+    MapFieldStruct1 struct1 = new MapFieldStruct1();
+    struct1.map1 = ofHashMap(1, false, 2, true);
+    struct1.map2 = ofHashMap("k1", "v1", "k2", "v2");
+    serDeCheck(fury, struct1);
+  }
 
-    serDeCheck(fury, new SimpleMapFieldStruct());
+  @Data
+  public static class MapFieldStruct2 {
+    public Map<Object, Object> map1;
+    public Map<String, Object> map2;
+    public Map<Object, String> map3;
+  }
+
+  @Test(dataProvider = "referenceTrackingConfig")
+  public void testMapFieldStructCodegen2(boolean referenceTrackingConfig) {
+    Fury fury =
+        Fury.builder()
+            .withRefTracking(referenceTrackingConfig)
+            .withCodegen(true)
+            .requireClassRegistration(false)
+            .build();
+    MapFieldStruct2 struct1 = new MapFieldStruct2();
+    struct1.map1 = ofHashMap(1, false, 2, true);
+    struct1.map2 = ofHashMap("k1", "v1", "k2", "v2");
+    struct1.map3 = ofHashMap(1, "v1", 2, "v2");
+    serDeCheck(fury, struct1);
   }
 }

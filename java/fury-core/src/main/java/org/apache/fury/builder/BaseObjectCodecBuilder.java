@@ -1061,6 +1061,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         new Cast(inlineInvoke(iterator, "next", OBJECT_TYPE), MAP_ENTRY_TYPE, "entry");
     boolean keyMonomorphic = isMonomorphic(keyType);
     boolean valueMonomorphic = isMonomorphic(valueType);
+    boolean inline = keyMonomorphic && valueMonomorphic;
     Class<?> keyTypeRawType = keyType.getRawType();
     Class<?> valueTypeRawType = valueType.getRawType();
     boolean trackingKeyRef =
@@ -1081,6 +1082,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
                   method = "writeNullChunkKVNoRef";
                 }
               }
+              Expression writeChunk = writeChunk(buffer, entry, iterator, keyType, valueType);
               return new ListExpression(
                   new Assign(
                       entry,
@@ -1093,7 +1095,8 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
                           iterator,
                           keySerializer,
                           valueSerializer)),
-                  new If(neqNull(entry), writeChunk(buffer, entry, iterator, keyType, valueType)));
+                  new If(
+                      neqNull(entry), inline ? writeChunk : new Assign(entry, inline(writeChunk))));
             });
 
     return new If(not(inlineInvoke(map, "isEmpty", PRIMITIVE_BOOLEAN_TYPE)), whileAction);
@@ -1126,9 +1129,10 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       TypeRef<?> keyType,
       TypeRef<?> valueType) {
     ListExpression expressions = new ListExpression();
-    Expression key = tryCastIfPublic(new Invoke(entry, "getKey", OBJECT_TYPE), keyType, "key");
+    Expression key =
+        tryCastIfPublic(new Invoke(entry, "getKey", "key", OBJECT_TYPE), keyType, "key");
     Expression value =
-        tryCastIfPublic(new Invoke(entry, "getValue", OBJECT_TYPE), valueType, "value");
+        tryCastIfPublic(new Invoke(entry, "getValue", "value", OBJECT_TYPE), valueType, "value");
     boolean keyMonomorphic = isMonomorphic(keyType);
     boolean valueMonomorphic = isMonomorphic(valueType);
     Class<?> keyTypeRawType = keyType.getRawType();
@@ -1845,7 +1849,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     }
     Expression keySerializerExpr = uninline(keySerializer);
     Expression valueSerializerExpr = uninline(valueSerializer);
-    expressions.add(valueSerializerExpr, keySerializerExpr);
+    expressions.add(keySerializerExpr, valueSerializerExpr);
     ForLoop readKeyValues =
         new ForLoop(
             ofInt(0),
@@ -1905,12 +1909,13 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
                   chunkHeader, inlineInvoke(buffer, "readUnsignedByte", PRIMITIVE_INT_TYPE))));
       return expressions;
     } else {
-      Expression sizeAndHeader = new If(
-        gt(size, ofInt(0)),
-        (bitor(
-          shift("<<", size, 8),
-          inlineInvoke(buffer, "readUnsignedByte", PRIMITIVE_INT_TYPE))),
-        ofInt(0));
+      Expression sizeAndHeader =
+          new If(
+              gt(size, ofInt(0)),
+              (bitor(
+                  shift("<<", size, 8),
+                  inlineInvoke(buffer, "readUnsignedByte", PRIMITIVE_INT_TYPE))),
+              ofInt(0));
       expressions.add(new Return(sizeAndHeader));
       // method too big, spilt it into a new method.
       // Generate similar signature as `AbstractMapSerializer.writeJavaChunk`(

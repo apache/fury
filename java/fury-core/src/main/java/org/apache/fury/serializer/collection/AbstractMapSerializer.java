@@ -846,6 +846,9 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
           readJavaNullChunk(buffer, map, chunkHeader, size, keySerializer, valueSerializer);
       chunkHeader = (int) (sizeAndHeader & 0xff);
       size = (int) (sizeAndHeader >>> 8);
+      if (size == 0) {
+        return;
+      }
       if (keySerializer != null || valueSerializer != null) {
         sizeAndHeader =
             readJavaChunk(fury, buffer, map, size, chunkHeader, keySerializer, valueSerializer);
