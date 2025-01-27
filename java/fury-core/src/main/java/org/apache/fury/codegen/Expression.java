@@ -286,7 +286,7 @@ public interface Expression {
   }
 
 
-  class Literal extends Inlineable {
+  class Literal implements Expression {
     public static final Literal True = new Literal(true, PRIMITIVE_BOOLEAN_TYPE);
     public static final Literal False = new Literal(false, PRIMITIVE_BOOLEAN_TYPE);
 
@@ -304,7 +304,7 @@ public interface Expression {
     }
 
     public static Literal ofBoolean(boolean v) {
-      return new Literal(v, PRIMITIVE_BOOLEAN_TYPE);
+      return v ? True : False;
     }
 
     public static Literal ofByte(short v) {
@@ -1840,14 +1840,13 @@ public interface Expression {
     }
   }
 
-  class Not extends Inlineable {
+  class Not implements Expression {
     private Expression target;
 
     public Not(Expression target) {
       this.target = target;
       Preconditions.checkArgument(
           target.type() == PRIMITIVE_BOOLEAN_TYPE || target.type() == BOOLEAN_TYPE);
-      this.inlineCall = true;
     }
 
     @Override
@@ -2080,7 +2079,7 @@ public interface Expression {
    * </pre>
    */
   class While implements Expression {
-    private final Inlineable predicate;
+    private final Expression predicate;
     private Expression action;
     private Expression[] cutPoints;
 
@@ -2089,11 +2088,11 @@ public interface Expression {
      *
      * @param predicate predicate must be inline.
      */
-    public While(Inlineable predicate, Expression action) {
+    public While(Expression predicate, Expression action) {
       this(predicate, action, new Expression[0]);
     }
 
-    public While(Inlineable predicate, SerializableSupplier<Expression> action) {
+    public While(Expression predicate, SerializableSupplier<Expression> action) {
       this(
           predicate,
           action.get(),
@@ -2101,11 +2100,10 @@ public interface Expression {
               .toArray(new Expression[0]));
     }
 
-    public While(Inlineable predicate, Expression action, Expression[] cutPoints) {
+    public While(Expression predicate, Expression action, Expression[] cutPoints) {
       this.predicate = predicate;
       this.action = action;
       this.cutPoints = cutPoints;
-      Preconditions.checkArgument(predicate.inlineCall, predicate);
     }
 
     @Override

@@ -62,7 +62,7 @@ public class ExpressionUtils {
     return new IsNull(target);
   }
 
-  public static Expression.Inlineable notNull(Expression target) {
+  public static Expression notNull(Expression target) {
     return new Not(new IsNull(target));
   }
 
