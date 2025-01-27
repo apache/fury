@@ -1,6 +1,6 @@
 # Apache Fury™ C++
 
-## Build Fury Python
+## Build Fury C++
 
 ```bash
 bazel build //:all
