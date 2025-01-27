@@ -152,7 +152,7 @@ const size_t string_length = 1000;
  *  TEST Strings
  */
 // Generate a vector of Ascii strings for testing
-std::vector<std::string> generateAsciiString(ssize_t num_tests,
+std::vector<std::string> generateAsciiString(size_t num_tests,
                                              size_t string_length) {
   std::vector<std::string> test_strings;
   for (size_t i = 0; i < string_length; ++i) {
