@@ -25,12 +25,21 @@ load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
 load("@com_github_grpc_grpc//third_party/py:python_configure.bzl", "python_configure")
 load("//bazel/arrow:pyarrow_configure.bzl", "pyarrow_configure")
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")  
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 # Add Benchmark
 git_repository(
     name = "com_google_benchmark",
     remote = "https://github.com/google/benchmark.git",
     tag = "v1.9.1",
+)
+
+# Add SIMDUTF
+http_archive(
+    name = "simdutf",
+    urls = ["https://github.com/simdutf/simdutf/releases/download/v6.1.2/singleheader.zip"],
+    sha256 = "0e5ba4bc981633bb024ee066833f733b7d3422bc6250f6a6b5bbc09121b782af",
+    build_file = "//cpp/fury/thirdparty:simdutf.BUILD",
 )
 
 bazel_skylib_workspace()
