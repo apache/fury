@@ -56,15 +56,20 @@ public class Generics {
     int size = genericTypesSize++;
     GenericType[] genericTypes = this.genericTypes;
     if (size == genericTypes.length) {
-      genericTypes = new GenericType[genericTypes.length << 1];
-      System.arraycopy(this.genericTypes, 0, genericTypes, 0, size);
-      this.genericTypes = genericTypes;
-      int[] depthsNew = new int[depths.length << 1];
-      System.arraycopy(depths, 0, depthsNew, 0, size);
-      depths = depthsNew;
+      genericTypes = allocateGenericTypes(genericTypes, size);
     }
     genericTypes[size] = fieldType;
     depths[size] = fury.getDepth();
+  }
+
+  private GenericType[] allocateGenericTypes(GenericType[] genericTypes, int size) {
+    genericTypes = new GenericType[genericTypes.length << 1];
+    System.arraycopy(this.genericTypes, 0, genericTypes, 0, size);
+    this.genericTypes = genericTypes;
+    int[] depthsNew = new int[depths.length << 1];
+    System.arraycopy(depths, 0, depthsNew, 0, size);
+    depths = depthsNew;
+    return genericTypes;
   }
 
   /**

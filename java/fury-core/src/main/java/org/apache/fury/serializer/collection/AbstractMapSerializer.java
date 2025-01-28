@@ -129,16 +129,6 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
   @Override
   public void write(MemoryBuffer buffer, T value) {
     Map map = onMapWrite(buffer, value);
-    chunkWriteElements(fury, buffer, map);
-  }
-
-  @Override
-  public void xwrite(MemoryBuffer buffer, T value) {
-    Map map = onMapWrite(buffer, value);
-    xwriteElements(fury, buffer, map);
-  }
-
-  protected final void chunkWriteElements(Fury fury, MemoryBuffer buffer, Map<Object, Object> map) {
     Serializer keySerializer = this.keySerializer;
     Serializer valueSerializer = this.valueSerializer;
     // clear the elemSerializer to avoid conflict if the nested
@@ -157,8 +147,8 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
       if (entry != null) {
         if (keySerializer != null || valueSerializer != null) {
           entry =
-              writeJavaChunk(
-                  classResolver, buffer, entry, iterator, keySerializer, valueSerializer);
+            writeJavaChunk(
+              classResolver, buffer, entry, iterator, keySerializer, valueSerializer);
         } else {
           Generics generics = fury.getGenerics();
           GenericType genericType = generics.nextGenericType();
@@ -166,12 +156,18 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
             entry = writeJavaChunk(classResolver, buffer, entry, iterator, null, null);
           } else {
             entry =
-                writeJavaChunkGeneric(
-                    classResolver, generics, genericType, buffer, entry, iterator);
+              writeJavaChunkGeneric(
+                classResolver, generics, genericType, buffer, entry, iterator);
           }
         }
       }
     }
+  }
+
+  @Override
+  public void xwrite(MemoryBuffer buffer, T value) {
+    Map map = onMapWrite(buffer, value);
+    xwriteElements(fury, buffer, map);
   }
 
   public final Entry writeJavaNullChunk(
@@ -426,12 +422,16 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
       }
       generics.pushGenericType(keyGenericType);
       if (!keyWriteRef || !refResolver.writeRefOrNull(buffer, key)) {
+        fury.incDepth(1);
         keySerializer.write(buffer, key);
+        fury.incDepth(-1);
       }
       generics.popGenericType();
       generics.pushGenericType(valueGenericType);
       if (!valueWriteRef || !refResolver.writeRefOrNull(buffer, value)) {
+        fury.incDepth(1);
         valueSerializer.write(buffer, value);
+        fury.incDepth(-1);
       }
       generics.popGenericType();
       // noinspection Duplicates
@@ -602,7 +602,10 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     }
   }
 
-  protected final void chunkReadElements(MemoryBuffer buffer, int size, Map map) {
+  @Override
+  public T read(MemoryBuffer buffer) {
+    Map map = newMap(buffer);
+    int size = getAndClearNumElements();
     Serializer keySerializer = this.keySerializer;
     Serializer valueSerializer = this.valueSerializer;
     // clear the elemSerializer to avoid conflict if the nested
@@ -610,22 +613,21 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     // TODO use generics for compatible serializer.
     this.keySerializer = null;
     this.valueSerializer = null;
-    if (size == 0) {
-      return;
+    int chunkHeader = 0;
+    if (size != 0) {
+      chunkHeader = buffer.readUnsignedByte();
     }
-
-    int chunkHeader = buffer.readUnsignedByte();
     while (size > 0) {
       long sizeAndHeader =
-          readJavaNullChunk(buffer, map, chunkHeader, size, keySerializer, valueSerializer);
+        readJavaNullChunk(buffer, map, chunkHeader, size, keySerializer, valueSerializer);
       chunkHeader = (int) (sizeAndHeader & 0xff);
       size = (int) (sizeAndHeader >>> 8);
       if (size == 0) {
-        return;
+        break;
       }
       if (keySerializer != null || valueSerializer != null) {
         sizeAndHeader =
-            readJavaChunk(fury, buffer, map, size, chunkHeader, keySerializer, valueSerializer);
+          readJavaChunk(fury, buffer, map, size, chunkHeader, keySerializer, valueSerializer);
       } else {
         Generics generics = fury.getGenerics();
         GenericType genericType = generics.nextGenericType();
@@ -633,12 +635,13 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
           sizeAndHeader = readJavaChunk(fury, buffer, map, size, chunkHeader, null, null);
         } else {
           sizeAndHeader =
-              readJavaChunkGeneric(fury, generics, genericType, buffer, map, size, chunkHeader);
+            readJavaChunkGeneric(fury, generics, genericType, buffer, map, size, chunkHeader);
         }
       }
       chunkHeader = (int) (sizeAndHeader & 0xff);
       size = (int) (sizeAndHeader >>> 8);
     }
+    return onMapRead(map);
   }
 
   public long readJavaNullChunk(
@@ -775,11 +778,15 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     }
     for (int i = 0; i < chunkSize; i++) {
       generics.pushGenericType(keyGenericType);
+      fury.incDepth(1);
       Object key = trackKeyRef ? fury.readRef(buffer, keySerializer) : keySerializer.read(buffer);
+      fury.incDepth(-1);
       generics.popGenericType();
       generics.pushGenericType(valueGenericType);
+      fury.incDepth(1);
       Object value =
           trackValueRef ? fury.readRef(buffer, valueSerializer) : valueSerializer.read(buffer);
+      fury.incDepth(-1);
       generics.popGenericType();
       map.put(key, value);
       size--;
@@ -875,9 +882,6 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
    * </ol>
    */
   public abstract Map onMapWrite(MemoryBuffer buffer, T value);
-
-  @Override
-  public abstract T read(MemoryBuffer buffer);
 
   /**
    * Read data except size and elements, return empty map to be filled.
