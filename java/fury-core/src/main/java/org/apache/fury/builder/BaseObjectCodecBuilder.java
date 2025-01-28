@@ -224,6 +224,10 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     return fury.getJITContext().asyncVisitFury(function);
   }
 
+  private boolean needWriteRef(Class<?> cls) {
+    return visitFury(fury -> fury.getClassResolver().needToWriteRef(cls));
+  }
+
   @Override
   public String genCode() {
     ctx.setPackage(getPackage(beanClass));
@@ -350,7 +354,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       boolean generateNewMethod) {
     // access rawType without jit lock to reduce lock competition.
     Class<?> rawType = getRawType(typeRef);
-    if (visitFury(fury -> fury.getClassResolver().needToWriteRef(rawType))) {
+    if (needWriteRef(rawType)) {
       return new If(
           not(writeRefOrNull(buffer, inputObject)),
           serializeForNotNull(inputObject, buffer, typeRef, serializer, generateNewMethod));
@@ -787,7 +791,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     walkPath.add(elementType.toString());
     ListExpression builder = new ListExpression();
     Class<?> elemClass = TypeUtils.getRawType(elementType);
-    boolean trackingRef = visitFury(fury -> fury.getClassResolver().needToWriteRef(elemClass));
+    boolean trackingRef = needWriteRef(elemClass);
     Tuple2<Expression, Invoke> writeElementsHeader =
         writeElementsHeader(elemClass, trackingRef, serializer, buffer, collection);
     Expression flags = writeElementsHeader.f0;
@@ -1762,11 +1766,15 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
             ofInt(0),
             inlineInvoke(buffer, "readUnsignedByte", PRIMITIVE_INT_TYPE));
     expressions.add(newMap, size, chunkHeader);
+    Class<?> keyCls = keyType.getRawType();
+    Class<?> valueCls = valueType.getRawType();
     boolean keyMonomorphic = isMonomorphic(keyType);
     boolean valueMonomorphic = isMonomorphic(valueType);
-    boolean inline = keyMonomorphic && valueMonomorphic;
-    Tuple2<Expression, Expression> mapKVSerializer =
-        getMapKVSerializer(keyType.getRawType(), valueType.getRawType());
+    boolean inline =
+        keyMonomorphic
+            && valueMonomorphic
+            && (!needWriteRef(keyCls) || !needWriteRef(valueCls));
+    Tuple2<Expression, Expression> mapKVSerializer = getMapKVSerializer(keyCls, valueCls);
     Expression keySerializer = mapKVSerializer.f0;
     Expression valueSerializer = mapKVSerializer.f1;
     While chunksLoop =
@@ -1832,11 +1840,11 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     boolean valueMonomorphic = isMonomorphic(valueType);
     Class<?> keyTypeRawType = keyType.getRawType();
     Class<?> valueTypeRawType = valueType.getRawType();
-    boolean inline = keyMonomorphic && valueMonomorphic;
     boolean trackingKeyRef =
         visitFury(fury -> fury.getClassResolver().needToWriteRef(keyTypeRawType));
     boolean trackingValueRef =
         visitFury(fury -> fury.getClassResolver().needToWriteRef(valueTypeRawType));
+    boolean inline = keyMonomorphic && valueMonomorphic && (!trackingKeyRef || !trackingValueRef);
     ListExpression expressions = new ListExpression(buffer);
     Expression trackKeyRef = neq(bitand(chunkHeader, ofInt(TRACKING_KEY_REF)), ofInt(0));
     Expression trackValueRef = neq(bitand(chunkHeader, ofInt(TRACKING_VALUE_REF)), ofInt(0));
