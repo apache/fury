@@ -208,8 +208,15 @@ public class ExpressionUtils {
     return new BitShift(">>", target, numBits);
   }
 
-  public static Cast cast(Expression value, TypeRef<?> typeRef) {
+  public static Expression cast(Expression value, TypeRef<?> typeRef) {
+    if ((value.type().equals(typeRef) || value.type().isSubtypeOf(typeRef))) {
+      return value;
+    }
     return new Cast(value, typeRef);
+  }
+
+  public static Expression cast(Expression value, TypeRef<?> typeRef, String namePrefix) {
+    return new Cast(value, typeRef, namePrefix);
   }
 
   public static Expression invokeInline(
