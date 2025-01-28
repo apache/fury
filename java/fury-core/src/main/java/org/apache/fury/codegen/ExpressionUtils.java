@@ -19,8 +19,8 @@
 
 package org.apache.fury.codegen;
 
-import static org.apache.fury.codegen.CodeGenerator.getSourcePkgLevelAccessibleParentClass;
-import static org.apache.fury.codegen.CodeGenerator.sourcePkgLevelAccessible;
+import static org.apache.fury.codegen.CodeGenerator.getSourcePublicAccessibleParentClass;
+import static org.apache.fury.codegen.CodeGenerator.sourcePublicAccessible;
 import static org.apache.fury.codegen.Expression.Arithmetic;
 import static org.apache.fury.codegen.Expression.Comparator;
 import static org.apache.fury.codegen.Expression.IsNull;
@@ -227,15 +227,15 @@ public class ExpressionUtils {
   public static Expression invoke(
       Expression targetObject, String functionName, String returnNamePrefix, TypeRef type) {
     Class<?> rawType = type.getRawType();
-    if (!sourcePkgLevelAccessible(rawType)) {
-      rawType = getSourcePkgLevelAccessibleParentClass(rawType);
+    if (!sourcePublicAccessible(rawType)) {
+      rawType = getSourcePublicAccessibleParentClass(rawType);
       type = type.getSupertype(rawType);
     }
     Class<?> returnType =
         ReflectionUtils.getReturnType(getRawType(targetObject.type()), functionName);
     if (!rawType.isAssignableFrom(returnType)) {
-      if (!sourcePkgLevelAccessible(returnType)) {
-        returnType = getSourcePkgLevelAccessibleParentClass(returnType);
+      if (!sourcePublicAccessible(returnType)) {
+        returnType = getSourcePublicAccessibleParentClass(returnType);
       }
       return new Cast(
           new Invoke(targetObject, functionName, TypeRef.of(returnType)).inline(),

@@ -838,4 +838,46 @@ public class MapSerializersTest extends FuryTestBase {
             2, ofHashMap(true, ofHashMap("k1", beanB, "k2", beanB, "k3", BeanB.createBeanB(1))));
     serDeCheck(fury, struct1);
   }
+
+  @Data
+  static class Wildcard<T> {
+    public int c = 9;
+    public T t;
+  }
+
+  @Data
+  private static class Wildcard1<T> {
+    public int c = 10;
+    public T t;
+  }
+
+  @Data
+  public static class MapWildcardFieldStruct1 {
+    protected Map<String, ?> f0;
+    protected Map<String, Wildcard<String>> f1;
+    protected Map<String, Wildcard<?>> f2;
+    protected Map<?, Wildcard<?>> f3;
+    protected Map<?, Wildcard1<?>> f4;
+    protected Map<Wildcard1<String>, Wildcard<?>> f5;
+    protected Map<String, Wildcard1<?>> f6;
+  }
+
+  @Test(dataProvider = "referenceTrackingConfig")
+  public void testWildcard(boolean referenceTrackingConfig) {
+    Fury fury =
+        Fury.builder()
+            .withRefTracking(referenceTrackingConfig)
+            .withCodegen(true)
+            .requireClassRegistration(false)
+            .build();
+    MapWildcardFieldStruct1 struct = new MapWildcardFieldStruct1();
+    struct.f0 = ofHashMap("k", 1);
+    struct.f1 = ofHashMap("k1", new Wildcard<>());
+    struct.f2 = ofHashMap("k2", new Wildcard<>());
+    struct.f3 = ofHashMap(new Wildcard<>(), new Wildcard<>());
+    struct.f4 = ofHashMap(new Wildcard1<>(), new Wildcard1<>());
+    struct.f5 = ofHashMap(new Wildcard1<>(), new Wildcard<>());
+    struct.f5 = ofHashMap("k5", new Wildcard1<>());
+    serDeCheck(fury, struct);
+  }
 }

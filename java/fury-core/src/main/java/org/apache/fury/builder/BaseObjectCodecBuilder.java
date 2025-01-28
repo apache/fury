@@ -1337,10 +1337,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
                           new Assign(
                               key,
                               tryInlineCast(inlineInvoke(entry, "getKey", OBJECT_TYPE), keyType)),
-                          new Assign(
-                              value,
-                              tryInlineCast(
-                                  inlineInvoke(entry, "getValue", OBJECT_TYPE), valueType))),
+                          new Assign(value, invokeInline(entry, "getValue", valueType))),
                       list(new Assign(entry, new Literal(null, MAP_ENTRY_TYPE)), new Break())));
             });
     expressions.add(writeLoop, new Invoke(buffer, "putByte", chunkSizeOffset, chunkSize));
