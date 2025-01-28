@@ -605,6 +605,11 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
   public T read(MemoryBuffer buffer) {
     Map map = newMap(buffer);
     int size = getAndClearNumElements();
+    readElements(buffer, size, map);
+    return onMapRead(map);
+  }
+
+  public void readElements(MemoryBuffer buffer, int size, Map map) {
     Serializer keySerializer = this.keySerializer;
     Serializer valueSerializer = this.valueSerializer;
     // clear the elemSerializer to avoid conflict if the nested
@@ -640,7 +645,6 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
       chunkHeader = (int) (sizeAndHeader & 0xff);
       size = (int) (sizeAndHeader >>> 8);
     }
-    return onMapRead(map);
   }
 
   public long readJavaNullChunk(
