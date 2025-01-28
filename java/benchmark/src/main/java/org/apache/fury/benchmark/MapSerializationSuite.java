@@ -23,8 +23,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.fury.Fury;
-import org.apache.fury.serializer.Serializer;
-import org.apache.fury.serializer.collection.AbstractMapSerializer;
 import org.openjdk.jmh.Main;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -49,53 +47,70 @@ public class MapSerializationSuite {
     Main.main(args);
   }
 
+  public static class StringKVMapStruct {
+    Map<String, String> map;
+  }
+
+  public static class IntKVMapStruct {
+    Map<Integer, Integer> map;
+  }
+
   @State(Scope.Thread)
   public static class MapState {
-    @Param({"5", "20", "50", "100", "200"})
+    @Param({"50"})
     public int mapSize;
 
     @Param({"false", "true"})
-    public boolean enableChunkEncoding;
+    public boolean struct;
 
-    private Map<String, String> stringMap;
-    private Map<Integer, Integer> integerMap;
-    private byte[] stringMapBytes;
-    private byte[] integerMapBytes;
+    @Param({"int", "string"})
+    public String datatype;
+
+    private Object object;
+    private byte[] bytes;
     private Fury fury;
 
     @Setup(Level.Trial)
     public void setup() {
       fury = Fury.builder().build();
-      Serializer<HashMap> serializer = fury.getSerializer(HashMap.class);
-      ((AbstractMapSerializer) serializer).setUseChunkSerialize(enableChunkEncoding);
-      stringMap = new HashMap<>(mapSize);
-      integerMap = new HashMap<>(mapSize);
+      fury.register(StringKVMapStruct.class);
+      fury.register(IntKVMapStruct.class);
+      Map<String, String> stringMap = new HashMap<>(mapSize);
+      Map<Integer, Integer> intMap = new HashMap<>(mapSize);
       for (int i = 0; i < mapSize; i++) {
         stringMap.put("k" + i, "v" + i);
-        integerMap.put(i, i * 2);
+        intMap.put(i, i * 2);
       }
-      stringMapBytes = fury.serialize(stringMap);
-      integerMapBytes = fury.serialize(integerMap);
+      StringKVMapStruct stringKVMapStruct = new StringKVMapStruct();
+      stringKVMapStruct.map = stringMap;
+      IntKVMapStruct intKVMapStruct = new IntKVMapStruct();
+      intKVMapStruct.map = intMap;
+      byte[] stringMapBytes = fury.serialize(stringMap);
+      byte[] intMapBytes = fury.serialize(intMap);
+      byte[] stringKVStructBytes = fury.serialize(stringKVMapStruct);
+      byte[] intKVStructBytes = fury.serialize(intKVMapStruct);
+      switch (datatype) {
+        case "int":
+          object = struct ? intKVMapStruct : intMap;
+          bytes = struct ? intKVStructBytes : intMapBytes;
+          break;
+        case "string":
+          object = struct ? stringKVMapStruct : stringMap;
+          bytes = struct ? stringKVStructBytes : stringMapBytes;
+          break;
+        default:
+          throw new UnsupportedOperationException();
+      }
     }
   }
 
   @Benchmark
-  public Object serializeStringMap(MapState state) {
-    return state.fury.serialize(state.stringMap);
+  public Object serialize(MapState state) {
+    return state.fury.serialize(state.object);
   }
 
   @Benchmark
-  public Object serializeIntMap(MapState state) {
-    return state.fury.serialize(state.integerMap);
-  }
-
-  @Benchmark
-  public Object deserializeStringMap(MapState state) {
-    return state.fury.deserialize(state.stringMapBytes);
-  }
-
-  @Benchmark
-  public Object deserializeIntMap(MapState state) {
-    return state.fury.deserialize(state.integerMapBytes);
+  public Object deserialize(MapState state) {
+    return state.fury.deserialize(state.bytes);
   }
 }

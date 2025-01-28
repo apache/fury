@@ -53,6 +53,7 @@ import org.apache.fury.config.Language;
 import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.serializer.collection.CollectionSerializersTest.TestEnum;
+import org.apache.fury.test.bean.BeanB;
 import org.apache.fury.test.bean.Cyclic;
 import org.apache.fury.test.bean.MapFields;
 import org.apache.fury.type.GenericType;
@@ -625,7 +626,6 @@ public class MapSerializersTest extends FuryTestBase {
     final Serializer<? extends Map> serializer =
         fury.getSerializer(differentKeyAndValueTypeMap.getClass());
     MapSerializers.HashMapSerializer mapSerializer = (MapSerializers.HashMapSerializer) serializer;
-    mapSerializer.setUseChunkSerialize(true);
     serDeCheck(fury, differentKeyAndValueTypeMap);
   }
 
@@ -639,7 +639,6 @@ public class MapSerializersTest extends FuryTestBase {
     final Serializer<? extends Map> serializer =
         fury.getSerializer(differentKeyAndValueTypeMap.getClass());
     MapSerializers.HashMapSerializer mapSerializer = (MapSerializers.HashMapSerializer) serializer;
-    mapSerializer.setUseChunkSerialize(true);
     serDeCheck(fury, differentKeyAndValueTypeMap);
   }
 
@@ -687,41 +686,6 @@ public class MapSerializersTest extends FuryTestBase {
             .requireClassRegistration(false)
             .build();
     final MapFields mapFieldsObject = createBigMapFieldsObject();
-    // hashmap
-    final Serializer<HashMap> serializer = fury.getSerializer(HashMap.class);
-    MapSerializers.HashMapSerializer mapSerializer = (MapSerializers.HashMapSerializer) serializer;
-    mapSerializer.setUseChunkSerialize(true);
-
-    // LinkedHashMap
-    final Serializer<LinkedHashMap> serializer1 = fury.getSerializer(LinkedHashMap.class);
-    MapSerializers.LinkedHashMapSerializer linkedHashMapSerializer =
-        (MapSerializers.LinkedHashMapSerializer) serializer1;
-    linkedHashMapSerializer.setUseChunkSerialize(true);
-
-    // TreeMap
-    final Serializer<TreeMap> serializer2 = fury.getSerializer(TreeMap.class);
-    MapSerializers.SortedMapSerializer sortedMapSerializer =
-        (MapSerializers.SortedMapSerializer) serializer2;
-    sortedMapSerializer.setUseChunkSerialize(true);
-
-    // ConcurrentHashMap
-    final Serializer<ConcurrentHashMap> serializer3 = fury.getSerializer(ConcurrentHashMap.class);
-    MapSerializers.ConcurrentHashMapSerializer concurrentHashMapSerializer =
-        (MapSerializers.ConcurrentHashMapSerializer) serializer3;
-    concurrentHashMapSerializer.setUseChunkSerialize(true);
-
-    // ConcurrentSkipListMap
-    final Serializer<ConcurrentSkipListMap> serializer4 =
-        fury.getSerializer(ConcurrentSkipListMap.class);
-    MapSerializers.ConcurrentSkipListMapSerializer concurrentSkipListMapSerializer =
-        (MapSerializers.ConcurrentSkipListMapSerializer) serializer4;
-    concurrentSkipListMapSerializer.setUseChunkSerialize(true);
-
-    final Serializer<EnumMap> serializer5 = fury.getSerializer(EnumMap.class);
-    MapSerializers.EnumMapSerializer enumMapSerializer =
-        (MapSerializers.EnumMapSerializer) serializer5;
-    enumMapSerializer.setUseChunkSerialize(true);
-
     serDeCheck(fury, mapFieldsObject);
   }
 
@@ -744,5 +708,157 @@ public class MapSerializersTest extends FuryTestBase {
     map.put("293", 900);
     map.put("23", 900);
     return map;
+  }
+
+  @Data
+  public static class MapFieldStruct1 {
+    public Map<Integer, Boolean> map1;
+    public Map<String, String> map2;
+  }
+
+  @Test(dataProvider = "referenceTrackingConfig")
+  public void testMapFieldStructCodegen1(boolean referenceTrackingConfig) {
+    Fury fury =
+        Fury.builder()
+            .withRefTracking(referenceTrackingConfig)
+            .withCodegen(true)
+            .requireClassRegistration(false)
+            .build();
+    MapFieldStruct1 struct1 = new MapFieldStruct1();
+    struct1.map1 = ofHashMap(1, false, 2, true);
+    struct1.map2 = ofHashMap("k1", "v1", "k2", "v2");
+    serDeCheck(fury, struct1);
+  }
+
+  @Data
+  public static class MapFieldStruct2 {
+    public Map<Object, Object> map1;
+    public Map<String, Object> map2;
+    public Map<Object, String> map3;
+  }
+
+  @Test(dataProvider = "referenceTrackingConfig")
+  public void testMapFieldStructCodegen2(boolean referenceTrackingConfig) {
+    Fury fury =
+        Fury.builder()
+            .withRefTracking(referenceTrackingConfig)
+            .withCodegen(true)
+            .requireClassRegistration(false)
+            .build();
+    MapFieldStruct2 struct1 = new MapFieldStruct2();
+    struct1.map1 = ofHashMap(1, false, 2, true);
+    struct1.map2 = ofHashMap("k1", "v1", "k2", "v2");
+    struct1.map3 = ofHashMap(1, "v1", 2, "v2");
+    serDeCheck(fury, struct1);
+  }
+
+  @Data
+  public static class MapFieldStruct3 {
+    public Map<Object, Object> map1;
+    public Map<BeanB, Object> map2;
+    public Map<Object, BeanB> map3;
+  }
+
+  @Test(dataProvider = "referenceTrackingConfig")
+  public void testMapFieldStructCodegen3(boolean referenceTrackingConfig) {
+    Fury fury =
+        Fury.builder()
+            .withRefTracking(referenceTrackingConfig)
+            .withCodegen(true)
+            .requireClassRegistration(false)
+            .build();
+    MapFieldStruct3 struct1 = new MapFieldStruct3();
+    BeanB beanB = BeanB.createBeanB(2);
+    struct1.map1 = ofHashMap(BeanB.createBeanB(2), BeanB.createBeanB(2));
+    struct1.map2 = ofHashMap(BeanB.createBeanB(2), 1, beanB, beanB);
+    struct1.map3 = ofHashMap(1, beanB, 2, beanB, 3, BeanB.createBeanB(2));
+    serDeCheck(fury, struct1);
+  }
+
+  @Data
+  public static class NestedMapFieldStruct1 {
+    public Map<Object, Map<String, String>> map1;
+    public Map<String, Map<String, Integer>> map2;
+    public Map<Integer, Map<String, BeanB>> map3;
+    public Map<Object, Map<Object, Map<String, BeanB>>> map4;
+  }
+
+  @Test(dataProvider = "referenceTrackingConfig")
+  public void testNestedMapFieldStructCodegen(boolean referenceTrackingConfig) {
+    Fury fury =
+        Fury.builder()
+            .withRefTracking(referenceTrackingConfig)
+            .withCodegen(true)
+            .requireClassRegistration(false)
+            .build();
+    NestedMapFieldStruct1 struct1 = new NestedMapFieldStruct1();
+    BeanB beanB = BeanB.createBeanB(2);
+    struct1.map1 = ofHashMap(1, ofHashMap("k1", "v1", "k2", "v2"));
+    struct1.map2 = ofHashMap("k1", ofHashMap("k1", 1, "k2", 2));
+    struct1.map3 = ofHashMap(1, ofHashMap("k1", beanB, "k2", beanB, "k3", BeanB.createBeanB(1)));
+    struct1.map4 =
+        ofHashMap(
+            2, ofHashMap(true, ofHashMap("k1", beanB, "k2", beanB, "k3", BeanB.createBeanB(1))));
+    serDeCheck(fury, struct1);
+  }
+
+  @Data
+  static class Wildcard<T> {
+    public int c = 9;
+    public T t;
+  }
+
+  @Data
+  private static class Wildcard1<T> {
+    public int c = 10;
+    public T t;
+  }
+
+  @Data
+  public static class MapWildcardFieldStruct1 {
+    protected Map<String, ?> f0;
+    protected Map<String, Wildcard<String>> f1;
+    protected Map<String, Wildcard<?>> f2;
+    protected Map<?, Wildcard<?>> f3;
+    protected Map<?, Wildcard1<?>> f4;
+    protected Map<Wildcard1<String>, Wildcard<?>> f5;
+    protected Map<String, Wildcard1<?>> f6;
+  }
+
+  @Test(dataProvider = "referenceTrackingConfig")
+  public void testWildcard(boolean referenceTrackingConfig) {
+    Fury fury =
+        Fury.builder()
+            .withRefTracking(referenceTrackingConfig)
+            .requireClassRegistration(false)
+            .build();
+    MapWildcardFieldStruct1 struct = new MapWildcardFieldStruct1();
+    struct.f0 = ofHashMap("k", 1);
+    struct.f1 = ofHashMap("k1", new Wildcard<>());
+    struct.f2 = ofHashMap("k2", new Wildcard<>());
+    struct.f3 = ofHashMap(new Wildcard<>(), new Wildcard<>());
+    struct.f4 = ofHashMap(new Wildcard1<>(), new Wildcard1<>());
+    struct.f5 = ofHashMap(new Wildcard1<>(), new Wildcard<>());
+    struct.f5 = ofHashMap("k5", new Wildcard1<>());
+    serDeCheck(fury, struct);
+  }
+
+  @Data
+  public static class NestedListMap {
+    public List<Map<String, String>> map1;
+    public List<HashMap<String, String>> map2;
+  }
+
+  @Test(dataProvider = "referenceTrackingConfig")
+  public void testNestedListMap(boolean referenceTrackingConfig) {
+    Fury fury =
+        Fury.builder()
+            .withRefTracking(referenceTrackingConfig)
+            .requireClassRegistration(false)
+            .build();
+    NestedListMap o = new NestedListMap();
+    o.map1 = ofArrayList(ofHashMap("k1", "v"));
+    o.map2 = ofArrayList(ofHashMap("k2", "2"));
+    serDeCheck(fury, o);
   }
 }

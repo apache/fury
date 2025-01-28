@@ -19,8 +19,10 @@
 
 package org.apache.fury.codegen;
 
+import static org.apache.fury.type.TypeUtils.LIST_TYPE;
 import static org.testng.Assert.assertEquals;
 
+import com.google.common.collect.ImmutableList;
 import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -42,18 +44,15 @@ public class ExpressionVisitorTest {
     Expression.Reference ref =
         new Expression.Reference("a", TypeRef.of(ExpressionVisitorTest.class));
     Expression e1 = new Expression.Invoke(ref, "testTraverseExpression");
-    Literal start = Literal.ofInt(0);
-    Literal end = Literal.ofInt(10);
-    Literal step = Literal.ofInt(1);
+    Literal literal1 = Literal.ofInt(1);
+    Expression list = new Expression.StaticInvoke(ImmutableList.class, "of", LIST_TYPE, literal1);
     ExpressionVisitor.ExprHolder holder =
         ExpressionVisitor.ExprHolder.of("e1", e1, "e2", new Expression.ListExpression());
     // FIXME ListExpression#add in lambda don't get executed, so ListExpression is the last expr.
-    Expression.ForLoop forLoop =
-        new Expression.ForLoop(
-            start,
-            end,
-            step,
-            expr -> ((Expression.ListExpression) (holder.get("e2"))).add(holder.get("e1")));
+    Expression.ForEach forLoop =
+        new Expression.ForEach(
+            list,
+            (i, expr) -> ((Expression.ListExpression) (holder.get("e2"))).add(holder.get("e1")));
     List<Expression> expressions = new ArrayList<>();
     new ExpressionVisitor()
         .traverseExpression(forLoop, exprSite -> expressions.add(exprSite.current));
@@ -69,7 +68,7 @@ public class ExpressionVisitorTest {
     // Traversal relies on getDeclaredFields(), nondeterministic order.
     Set<Expression> expressionsSet = new HashSet<>(expressions);
     Set<Expression> expressionsSet2 =
-        new HashSet<>(Arrays.asList(forLoop, e1, ref, exprHolder.get("e2"), end, start, step));
+        new HashSet<>(Arrays.asList(forLoop, e1, ref, exprHolder.get("e2"), list, literal1));
     assertEquals(expressionsSet, expressionsSet2);
   }
 }
