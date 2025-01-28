@@ -241,7 +241,7 @@ public class ExpressionVisitor {
       Expression childExpr = expressions.get(i);
       int index = i;
       if (func.apply(
-        new ExprSite(expr, childExpr, newChildExpr -> expressions.set(index, newChildExpr)))) {
+          new ExprSite(expr, childExpr, newChildExpr -> expressions.set(index, newChildExpr)))) {
         traverseChildren(childExpr, func);
       }
     }

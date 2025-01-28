@@ -99,7 +99,6 @@ public class Collections {
     return list;
   }
 
-
   public static <T> ArrayList<T> ofArrayList(T e1, T e2, T... items) {
     ArrayList<T> list = new ArrayList(2 + items.length);
     list.add(e1);

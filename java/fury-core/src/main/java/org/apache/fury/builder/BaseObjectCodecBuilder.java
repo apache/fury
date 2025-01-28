@@ -1038,7 +1038,8 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
                     inlineInvoke(classResolverRef, "getClassInfo", classInfoTypeRef, clsExpr))));
         // Note: writeClassExpr is thread safe.
         writeClassAction.add(classResolver.writeClassExpr(classResolverRef, buffer, classInfo));
-        writeClassAction.add(new Return(invokeInline(classInfo, "getSerializer", MAP_SERIALIZER_TYPE)));
+        writeClassAction.add(
+            new Return(invokeInline(classInfo, "getSerializer", MAP_SERIALIZER_TYPE)));
         // Spit this into a separate method to avoid method too big to inline.
         serializer =
             invokeGenerated(
@@ -1516,7 +1517,8 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         serializer = getOrCreateSerializer(cls);
       } else {
         Expression classInfo = readClassInfo(cls, buffer);
-        serializer = invoke(classInfo, "getSerializer", "collectionSerializer", COLLECTION_SERIALIZER_TYPE);
+        serializer =
+            invoke(classInfo, "getSerializer", "collectionSerializer", COLLECTION_SERIALIZER_TYPE);
       }
     } else {
       checkArgument(

@@ -147,8 +147,8 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
       if (entry != null) {
         if (keySerializer != null || valueSerializer != null) {
           entry =
-            writeJavaChunk(
-              classResolver, buffer, entry, iterator, keySerializer, valueSerializer);
+              writeJavaChunk(
+                  classResolver, buffer, entry, iterator, keySerializer, valueSerializer);
         } else {
           Generics generics = fury.getGenerics();
           GenericType genericType = generics.nextGenericType();
@@ -156,8 +156,8 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
             entry = writeJavaChunk(classResolver, buffer, entry, iterator, null, null);
           } else {
             entry =
-              writeJavaChunkGeneric(
-                classResolver, generics, genericType, buffer, entry, iterator);
+                writeJavaChunkGeneric(
+                    classResolver, generics, genericType, buffer, entry, iterator);
           }
         }
       }
@@ -619,7 +619,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     }
     while (size > 0) {
       long sizeAndHeader =
-        readJavaNullChunk(buffer, map, chunkHeader, size, keySerializer, valueSerializer);
+          readJavaNullChunk(buffer, map, chunkHeader, size, keySerializer, valueSerializer);
       chunkHeader = (int) (sizeAndHeader & 0xff);
       size = (int) (sizeAndHeader >>> 8);
       if (size == 0) {
@@ -627,7 +627,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
       }
       if (keySerializer != null || valueSerializer != null) {
         sizeAndHeader =
-          readJavaChunk(fury, buffer, map, size, chunkHeader, keySerializer, valueSerializer);
+            readJavaChunk(fury, buffer, map, size, chunkHeader, keySerializer, valueSerializer);
       } else {
         Generics generics = fury.getGenerics();
         GenericType genericType = generics.nextGenericType();
@@ -635,7 +635,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
           sizeAndHeader = readJavaChunk(fury, buffer, map, size, chunkHeader, null, null);
         } else {
           sizeAndHeader =
-            readJavaChunkGeneric(fury, generics, genericType, buffer, map, size, chunkHeader);
+              readJavaChunkGeneric(fury, generics, genericType, buffer, map, size, chunkHeader);
         }
       }
       chunkHeader = (int) (sizeAndHeader & 0xff);

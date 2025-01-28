@@ -213,26 +213,27 @@ public class ExpressionUtils {
   }
 
   public static Expression invokeInline(
-    Expression targetObject, String functionName, TypeRef type) {
+      Expression targetObject, String functionName, TypeRef type) {
     return inline(invoke(targetObject, functionName, null, type));
   }
 
   public static Expression invoke(
-    Expression targetObject, String functionName,
-    String returnNamePrefix, TypeRef type) {
+      Expression targetObject, String functionName, String returnNamePrefix, TypeRef type) {
     Class<?> rawType = type.getRawType();
     if (!sourcePkgLevelAccessible(rawType)) {
       rawType = getSourcePkgLevelAccessibleParentClass(rawType);
       type = type.getSupertype(rawType);
     }
     Class<?> returnType =
-      ReflectionUtils.getReturnType(getRawType(targetObject.type()), functionName);
+        ReflectionUtils.getReturnType(getRawType(targetObject.type()), functionName);
     if (!rawType.isAssignableFrom(returnType)) {
       if (!sourcePkgLevelAccessible(returnType)) {
         returnType = getSourcePkgLevelAccessibleParentClass(returnType);
       }
-      return new Cast(new Invoke(targetObject, functionName, TypeRef.of(returnType)).inline(),
-        type, returnNamePrefix);
+      return new Cast(
+          new Invoke(targetObject, functionName, TypeRef.of(returnType)).inline(),
+          type,
+          returnNamePrefix);
     } else {
       return new Invoke(targetObject, functionName, returnNamePrefix, type);
     }

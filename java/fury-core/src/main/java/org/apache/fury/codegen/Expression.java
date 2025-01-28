@@ -58,8 +58,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import com.google.common.collect.ImmutableList;
 import org.apache.fury.memory.Platform;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeRef;
@@ -136,7 +134,7 @@ public interface Expression {
   // ###########################################################
 
   abstract class AbstractExpression implements Expression {
-    protected transient final List<Expression> inputs;
+    protected final transient List<Expression> inputs;
 
     protected AbstractExpression(Expression input) {
       this.inputs = Collections.singletonList(input);
