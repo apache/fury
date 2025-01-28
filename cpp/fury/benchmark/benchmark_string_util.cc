@@ -232,6 +232,7 @@ static void BM_IsAscii_BaseLine(benchmark::State &state) {
     }
   }
 }
+
 BENCHMARK(BM_IsAscii_BaseLine);
 
 // Benchmark function for SIMDUTF ASCII check
@@ -343,11 +344,12 @@ static void BM_Utf16HasSurrogatePairs_BaseLine(benchmark::State &state) {
     }
   }
 }
+
 BENCHMARK(BM_Utf16HasSurrogatePairs_BaseLine);
 
 // Benchmark function for checking if a UTF-16 string contains surrogate pairs
 // with SIMD
-static void BM_Utf16HasSurrogatePairs_SIMD(benchmark::State &state) {
+static void BM_Utf16HasSurrogatePairs_FURY(benchmark::State &state) {
   for (auto _ : state) {
     for (const auto &str : test_utf16_strings) {
       bool result = fury::utf16HasSurrogatePairs(str);
@@ -356,7 +358,7 @@ static void BM_Utf16HasSurrogatePairs_SIMD(benchmark::State &state) {
   }
 }
 
-BENCHMARK(BM_Utf16HasSurrogatePairs_SIMD);
+BENCHMARK(BM_Utf16HasSurrogatePairs_FURY);
 
 /*
  * TEST Utf16ToUtf8
@@ -423,6 +425,7 @@ static void BM_Utf16ToUtf8_StandardLibrary(benchmark::State &state) {
     }
   }
 }
+
 BENCHMARK(BM_Utf16ToUtf8_StandardLibrary);
 
 // Benchmark function for Baseline UTF-16 to UTF-8 conversion
@@ -601,6 +604,7 @@ static void BM_Utf8ToUtf16_SIMDUTF(benchmark::State &state) {
     }
   }
 }
+
 BENCHMARK(BM_Utf8ToUtf16_SIMDUTF);
 
 // Benchmark function for SIMD-based UTF-8 to UTF-16 conversion
