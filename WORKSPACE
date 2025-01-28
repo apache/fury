@@ -39,7 +39,7 @@ http_archive(
     name = "simdutf",
     urls = ["https://github.com/simdutf/simdutf/releases/download/v6.1.2/singleheader.zip"],
     sha256 = "41bb25074fe1e917e96e539c7a87c502e530d88746d7c25d06fb55a28b884340",
-    build_file = "//cpp/fury/thirdparty:simdutf.BUILD",
+    build_file = "//cpp/fury/thirdparty:BUILD",
 )
 
 bazel_skylib_workspace()
