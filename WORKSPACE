@@ -38,7 +38,7 @@ git_repository(
 http_archive(
     name = "simdutf",
     urls = ["https://github.com/simdutf/simdutf/releases/download/v6.1.2/singleheader.zip"],
-    sha256 = "0e5ba4bc981633bb024ee066833f733b7d3422bc6250f6a6b5bbc09121b782af",
+    sha256 = "41bb25074fe1e917e96e539c7a87c502e530d88746d7c25d06fb55a28b884340",
     build_file = "//cpp/fury/thirdparty:simdutf.BUILD",
 )
 
