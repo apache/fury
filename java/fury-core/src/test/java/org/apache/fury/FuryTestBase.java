@@ -247,18 +247,18 @@ public abstract class FuryTestBase {
 
   @DataProvider
   public static Object[][] basicMultiConfigFury() {
-      // trackingRef, codeGen, scopedMetaShare, CompatibleMode,
+    // trackingRef, codeGen, scopedMetaShare, CompatibleMode,
     return new Object[][] {
-      {true, true,  true,  CompatibleMode.SCHEMA_CONSISTENT},
-      {true, true,  true,  CompatibleMode.COMPATIBLE},
-      {true, true,  false, CompatibleMode.SCHEMA_CONSISTENT},
-      {true, true,  false, CompatibleMode.COMPATIBLE},
-      {true, false, true,  CompatibleMode.SCHEMA_CONSISTENT},
-      {true, false, true,  CompatibleMode.COMPATIBLE},
+      {true, true, true, CompatibleMode.SCHEMA_CONSISTENT},
+      {true, true, true, CompatibleMode.COMPATIBLE},
+      {true, true, false, CompatibleMode.SCHEMA_CONSISTENT},
+      {true, true, false, CompatibleMode.COMPATIBLE},
+      {true, false, true, CompatibleMode.SCHEMA_CONSISTENT},
+      {true, false, true, CompatibleMode.COMPATIBLE},
       {true, false, false, CompatibleMode.SCHEMA_CONSISTENT},
       {true, false, false, CompatibleMode.COMPATIBLE},
-      {false, true, true,  CompatibleMode.SCHEMA_CONSISTENT},
-      {false, true, true,  CompatibleMode.COMPATIBLE},
+      {false, true, true, CompatibleMode.SCHEMA_CONSISTENT},
+      {false, true, true, CompatibleMode.COMPATIBLE},
       {false, true, false, CompatibleMode.SCHEMA_CONSISTENT},
       {false, true, false, CompatibleMode.COMPATIBLE},
       {false, false, true, CompatibleMode.SCHEMA_CONSISTENT},
