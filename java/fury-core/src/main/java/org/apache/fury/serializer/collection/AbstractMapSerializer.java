@@ -236,7 +236,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
   }
 
   @CodegenInvoke
-  public final Entry writeNullChunkKVNoRef(
+  public final Entry writeNullChunkKVFinalNoRef(
       MemoryBuffer buffer,
       Entry entry,
       Iterator<Entry<Object, Object>> iterator,
@@ -711,6 +711,35 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
       map.put(null, value);
     } else {
       map.put(null, null);
+    }
+  }
+
+  @CodegenInvoke
+  public long readNullChunkKVFinalNoRef(
+      MemoryBuffer buffer,
+      Map map,
+      int chunkHeader,
+      long size,
+      Serializer keySerializer,
+      Serializer valueSerializer) {
+    while (true) {
+      boolean keyHasNull = (chunkHeader & KEY_HAS_NULL) != 0;
+      boolean valueHasNull = (chunkHeader & VALUE_HAS_NULL) != 0;
+      if (!keyHasNull) {
+        if (!valueHasNull) {
+          return (size << 8) | chunkHeader;
+        } else {
+          Object key = keySerializer.read(buffer);
+          map.put(key, null);
+        }
+      } else {
+        readNullKeyChunk(buffer, map, chunkHeader, valueSerializer, valueHasNull);
+      }
+      if (size-- == 0) {
+        return 0;
+      } else {
+        chunkHeader = buffer.readUnsignedByte();
+      }
     }
   }
 

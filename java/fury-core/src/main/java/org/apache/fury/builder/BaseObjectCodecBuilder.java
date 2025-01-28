@@ -1099,7 +1099,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
               String method = "writeJavaNullChunk";
               if (keyMonomorphic && valueMonomorphic) {
                 if (!trackingKeyRef && !trackingValueRef) {
-                  method = "writeNullChunkKVNoRef";
+                  method = "writeNullChunkKVFinalNoRef";
                 }
               }
               Expression writeChunk = writeChunk(buffer, entry, iterator, keyType, valueType);
@@ -1768,12 +1768,11 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     expressions.add(newMap, size, chunkHeader);
     Class<?> keyCls = keyType.getRawType();
     Class<?> valueCls = valueType.getRawType();
-    boolean keyMonomorphic = isMonomorphic(keyType);
-    boolean valueMonomorphic = isMonomorphic(valueType);
-    boolean inline =
-        keyMonomorphic
-            && valueMonomorphic
-            && (!needWriteRef(keyCls) || !needWriteRef(valueCls));
+    boolean keyMonomorphic = isMonomorphic(keyCls);
+    boolean valueMonomorphic = isMonomorphic(valueCls);
+    boolean refKey = needWriteRef(keyCls);
+    boolean refValue = needWriteRef(valueCls);
+    boolean inline = keyMonomorphic && valueMonomorphic && (!refKey || !refValue);
     Tuple2<Expression, Expression> mapKVSerializer = getMapKVSerializer(keyCls, valueCls);
     Expression keySerializer = mapKVSerializer.f0;
     Expression valueSerializer = mapKVSerializer.f1;
@@ -1782,10 +1781,16 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
             gt(size, ofInt(0)),
             () -> {
               ListExpression exprs = new ListExpression();
+              String method = "readJavaNullChunk";
+              if (keyMonomorphic && valueMonomorphic) {
+                if (!refKey && !refValue) {
+                  method = "readNullChunkKVFinalNoRef";
+                }
+              }
               Expression sizeAndHeader =
                   new Invoke(
                       mapSerializer,
-                      "readJavaNullChunk",
+                      method,
                       "sizeAndHeader",
                       PRIMITIVE_LONG_TYPE,
                       false,
@@ -1840,10 +1845,8 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     boolean valueMonomorphic = isMonomorphic(valueType);
     Class<?> keyTypeRawType = keyType.getRawType();
     Class<?> valueTypeRawType = valueType.getRawType();
-    boolean trackingKeyRef =
-        visitFury(fury -> fury.getClassResolver().needToWriteRef(keyTypeRawType));
-    boolean trackingValueRef =
-        visitFury(fury -> fury.getClassResolver().needToWriteRef(valueTypeRawType));
+    boolean trackingKeyRef = needWriteRef(keyTypeRawType);
+    boolean trackingValueRef = needWriteRef(valueTypeRawType);
     boolean inline = keyMonomorphic && valueMonomorphic && (!trackingKeyRef || !trackingValueRef);
     ListExpression expressions = new ListExpression(buffer);
     Expression trackKeyRef = neq(bitand(chunkHeader, ofInt(TRACKING_KEY_REF)), ofInt(0));
