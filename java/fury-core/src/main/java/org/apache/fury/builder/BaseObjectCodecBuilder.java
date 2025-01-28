@@ -282,6 +282,12 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       return this;
     }
 
+    public InvokeHint copy() {
+      InvokeHint invokeHint = new InvokeHint(genNewMethod);
+      invokeHint.cutPoints = new HashSet<>(cutPoints);
+      return invokeHint;
+    }
+
     @Override
     public String toString() {
       return "InvokeHint{" + "genNewMethod=" + genNewMethod + ", cutPoints=" + cutPoints + '}';
@@ -1691,8 +1697,8 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         read =
             new If(
                 hasNull,
-                deserializeFor(buffer, elementType, callback, invokeHint),
-                callback.apply(deserializeForNotNull(buffer, elementType, invokeHint)));
+                deserializeFor(buffer, elementType, callback, invokeHint.copy()),
+                callback.apply(deserializeForNotNull(buffer, elementType, invokeHint.copy())));
       }
     } else {
       invokeHint.add(elemSerializer);
@@ -1712,9 +1718,11 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
                     buffer,
                     elementType,
                     callback,
-                    () -> deserializeForNotNull(buffer, elementType, elemSerializer, invokeHint)),
+                    () ->
+                        deserializeForNotNull(
+                            buffer, elementType, elemSerializer, invokeHint.copy())),
                 callback.apply(
-                    deserializeForNotNull(buffer, elementType, elemSerializer, invokeHint)));
+                    deserializeForNotNull(buffer, elementType, elemSerializer, invokeHint.copy())));
       }
     }
     return read;

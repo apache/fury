@@ -830,7 +830,6 @@ public class MapSerializersTest extends FuryTestBase {
     Fury fury =
         Fury.builder()
             .withRefTracking(referenceTrackingConfig)
-            .withCodegen(true)
             .requireClassRegistration(false)
             .build();
     MapWildcardFieldStruct1 struct = new MapWildcardFieldStruct1();
@@ -842,5 +841,24 @@ public class MapSerializersTest extends FuryTestBase {
     struct.f5 = ofHashMap(new Wildcard1<>(), new Wildcard<>());
     struct.f5 = ofHashMap("k5", new Wildcard1<>());
     serDeCheck(fury, struct);
+  }
+
+  @Data
+  public static class NestedListMap {
+    public List<Map<String, String>> map1;
+    public List<HashMap<String, String>> map2;
+  }
+
+  @Test(dataProvider = "referenceTrackingConfig")
+  public void testNestedListMap(boolean referenceTrackingConfig) {
+    Fury fury =
+        Fury.builder()
+            .withRefTracking(referenceTrackingConfig)
+            .requireClassRegistration(false)
+            .build();
+    NestedListMap o = new NestedListMap();
+    o.map1 = ofArrayList(ofHashMap("k1", "v"));
+    o.map2 = ofArrayList(ofHashMap("k2", "2"));
+    serDeCheck(fury, o);
   }
 }
