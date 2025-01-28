@@ -20,10 +20,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Load the CSV data
-no_chunk_file = (
-    "/Users/chaokunyang/Desktop/chaokun/fury_open_source/nochunk-jmh-result.csv"
-)
-chunk_file = "/Users/chaokunyang/Desktop/chaokun/fury_open_source/chunk-jmh-result.csv"
+no_chunk_file = "nochunk-jmh-result.csv"
+chunk_file = "chunk-jmh-result.csv"
 # Read the CSV files
 no_chunk_df = pd.read_csv(no_chunk_file)
 chunk_df = pd.read_csv(chunk_file)
