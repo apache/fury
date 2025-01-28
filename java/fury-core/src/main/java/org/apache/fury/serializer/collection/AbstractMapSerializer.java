@@ -59,7 +59,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
 
   protected MethodHandle constructor;
   protected final boolean supportCodegenHook;
-  protected boolean useChunkSerialize;
+  protected boolean useChunkSerialize = true;
   private Serializer keySerializer;
   private Serializer valueSerializer;
   protected final ClassInfoHolder keyClassInfoWriteCache;
