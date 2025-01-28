@@ -89,12 +89,15 @@ public class TypeUtils {
   public static final TypeRef<?> INSTANT_TYPE = TypeRef.of(Instant.class);
   public static final TypeRef<?> BINARY_TYPE = TypeRef.of(byte[].class);
   public static final TypeRef<?> ITERABLE_TYPE = TypeRef.of(Iterable.class);
+
+  public static final TypeRef<?> ITERATOR_TYPE = TypeRef.of(Iterator.class);
   public static final TypeRef<?> COLLECTION_TYPE = TypeRef.of(Collection.class);
   public static final TypeRef<?> LIST_TYPE = TypeRef.of(List.class);
   public static final TypeRef<?> ARRAYLIST_TYPE = TypeRef.of(ArrayList.class);
   public static final TypeRef<?> SET_TYPE = TypeRef.of(Set.class);
   public static final TypeRef<?> HASHSET_TYPE = TypeRef.of(HashSet.class);
   public static final TypeRef<?> MAP_TYPE = TypeRef.of(Map.class);
+  public static final TypeRef<?> MAP_ENTRY_TYPE = TypeRef.of(Map.Entry.class);
   public static final TypeRef<?> HASHMAP_TYPE = TypeRef.of(HashMap.class);
   public static final TypeRef<?> OBJECT_TYPE = TypeRef.of(Object.class);
 

@@ -399,6 +399,12 @@ public final class MemoryBuffer {
     return UNSAFE.getByte(heapMemory, pos);
   }
 
+  public void putByte(int index, int b) {
+    final long pos = address + index;
+    checkPosition(index, pos, 1);
+    UNSAFE.putByte(heapMemory, pos, (byte) b);
+  }
+
   public void putByte(int index, byte b) {
     final long pos = address + index;
     checkPosition(index, pos, 1);

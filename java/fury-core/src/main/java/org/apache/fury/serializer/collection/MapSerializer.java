@@ -63,17 +63,6 @@ public class MapSerializer<T extends Map> extends AbstractMapSerializer<T> {
   }
 
   @Override
-  public T read(MemoryBuffer buffer) {
-    Map map = newMap(buffer);
-    if (useChunkSerialize) {
-      chunkReadElements(buffer, getAndClearNumElements(), map);
-    } else {
-      readElements(buffer, getAndClearNumElements(), map);
-    }
-    return onMapRead(map);
-  }
-
-  @Override
   public T onMapRead(Map map) {
     return (T) map;
   }
