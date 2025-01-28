@@ -60,7 +60,6 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
 
   protected MethodHandle constructor;
   protected final boolean supportCodegenHook;
-  protected boolean useChunkSerialize;
   private Serializer keySerializer;
   private Serializer valueSerializer;
   protected final ClassInfoHolder keyClassInfoWriteCache;
@@ -864,10 +863,6 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
    */
   public final boolean supportCodegenHook() {
     return supportCodegenHook;
-  }
-
-  public void setUseChunkSerialize(boolean useChunkSerialize) {
-    this.useChunkSerialize = useChunkSerialize;
   }
 
   /**

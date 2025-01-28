@@ -626,7 +626,6 @@ public class MapSerializersTest extends FuryTestBase {
     final Serializer<? extends Map> serializer =
         fury.getSerializer(differentKeyAndValueTypeMap.getClass());
     MapSerializers.HashMapSerializer mapSerializer = (MapSerializers.HashMapSerializer) serializer;
-    mapSerializer.setUseChunkSerialize(true);
     serDeCheck(fury, differentKeyAndValueTypeMap);
   }
 
@@ -640,7 +639,6 @@ public class MapSerializersTest extends FuryTestBase {
     final Serializer<? extends Map> serializer =
         fury.getSerializer(differentKeyAndValueTypeMap.getClass());
     MapSerializers.HashMapSerializer mapSerializer = (MapSerializers.HashMapSerializer) serializer;
-    mapSerializer.setUseChunkSerialize(true);
     serDeCheck(fury, differentKeyAndValueTypeMap);
   }
 
@@ -688,41 +686,6 @@ public class MapSerializersTest extends FuryTestBase {
             .requireClassRegistration(false)
             .build();
     final MapFields mapFieldsObject = createBigMapFieldsObject();
-    // hashmap
-    final Serializer<HashMap> serializer = fury.getSerializer(HashMap.class);
-    MapSerializers.HashMapSerializer mapSerializer = (MapSerializers.HashMapSerializer) serializer;
-    mapSerializer.setUseChunkSerialize(true);
-
-    // LinkedHashMap
-    final Serializer<LinkedHashMap> serializer1 = fury.getSerializer(LinkedHashMap.class);
-    MapSerializers.LinkedHashMapSerializer linkedHashMapSerializer =
-        (MapSerializers.LinkedHashMapSerializer) serializer1;
-    linkedHashMapSerializer.setUseChunkSerialize(true);
-
-    // TreeMap
-    final Serializer<TreeMap> serializer2 = fury.getSerializer(TreeMap.class);
-    MapSerializers.SortedMapSerializer sortedMapSerializer =
-        (MapSerializers.SortedMapSerializer) serializer2;
-    sortedMapSerializer.setUseChunkSerialize(true);
-
-    // ConcurrentHashMap
-    final Serializer<ConcurrentHashMap> serializer3 = fury.getSerializer(ConcurrentHashMap.class);
-    MapSerializers.ConcurrentHashMapSerializer concurrentHashMapSerializer =
-        (MapSerializers.ConcurrentHashMapSerializer) serializer3;
-    concurrentHashMapSerializer.setUseChunkSerialize(true);
-
-    // ConcurrentSkipListMap
-    final Serializer<ConcurrentSkipListMap> serializer4 =
-        fury.getSerializer(ConcurrentSkipListMap.class);
-    MapSerializers.ConcurrentSkipListMapSerializer concurrentSkipListMapSerializer =
-        (MapSerializers.ConcurrentSkipListMapSerializer) serializer4;
-    concurrentSkipListMapSerializer.setUseChunkSerialize(true);
-
-    final Serializer<EnumMap> serializer5 = fury.getSerializer(EnumMap.class);
-    MapSerializers.EnumMapSerializer enumMapSerializer =
-        (MapSerializers.EnumMapSerializer) serializer5;
-    enumMapSerializer.setUseChunkSerialize(true);
-
     serDeCheck(fury, mapFieldsObject);
   }
 

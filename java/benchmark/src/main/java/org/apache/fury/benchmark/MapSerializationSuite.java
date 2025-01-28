@@ -67,7 +67,6 @@ public class MapSerializationSuite {
     public void setup() {
       fury = Fury.builder().build();
       Serializer<HashMap> serializer = fury.getSerializer(HashMap.class);
-      ((AbstractMapSerializer) serializer).setUseChunkSerialize(enableChunkEncoding);
       stringMap = new HashMap<>(mapSize);
       integerMap = new HashMap<>(mapSize);
       for (int i = 0; i < mapSize; i++) {
