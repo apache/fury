@@ -735,7 +735,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
                     classInfo,
                     inlineInvoke(classResolverRef, "getClassInfo", classInfoTypeRef, clsExpr))));
         writeClassAction.add(classResolver.writeClassExpr(classResolverRef, buffer, classInfo));
-        writeClassAction.add(new Return(invokeInline(classInfo, "getSerializer", SERIALIZER_TYPE)));
+        writeClassAction.add(new Return(invokeInline(classInfo, "getSerializer", getSerializerType(typeRef))));
         // Spit this into a separate method to avoid method too big to inline.
         serializer =
             invokeGenerated(
