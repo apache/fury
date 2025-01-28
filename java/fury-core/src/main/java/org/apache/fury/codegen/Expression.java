@@ -26,6 +26,7 @@ import static org.apache.fury.codegen.Code.LiteralValue.TrueLiteral;
 import static org.apache.fury.codegen.CodeGenerator.alignIndent;
 import static org.apache.fury.codegen.CodeGenerator.appendNewlineIfNeeded;
 import static org.apache.fury.codegen.CodeGenerator.indent;
+import static org.apache.fury.collection.Collections.ofArrayList;
 import static org.apache.fury.type.TypeUtils.BOOLEAN_TYPE;
 import static org.apache.fury.type.TypeUtils.CLASS_TYPE;
 import static org.apache.fury.type.TypeUtils.ITERABLE_TYPE;
@@ -53,9 +54,12 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import com.google.common.collect.ImmutableList;
 import org.apache.fury.memory.Platform;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeRef;
@@ -80,7 +84,6 @@ import org.apache.fury.util.function.SerializableTriFunction;
  * tree into subtrees, we can replace dependent expression fields in subtree root nodes with {@link
  * Reference}.
  */
-@SuppressWarnings("UnstableApiUsage")
 public interface Expression {
 
   /**
@@ -132,8 +135,36 @@ public interface Expression {
   // ####################### Expressions #######################
   // ###########################################################
 
-  abstract class Inlineable implements Expression {
+  abstract class AbstractExpression implements Expression {
+    protected transient final List<Expression> inputs;
+
+    protected AbstractExpression(Expression input) {
+      this.inputs = Collections.singletonList(input);
+    }
+
+    protected AbstractExpression(Expression[] inputs) {
+      this.inputs = Arrays.asList(inputs);
+    }
+
+    protected AbstractExpression(List<Expression> inputs) {
+      this.inputs = inputs;
+    }
+  }
+
+  abstract class Inlineable extends AbstractExpression {
     protected boolean inlineCall = false;
+
+    protected Inlineable(Expression input) {
+      super(input);
+    }
+
+    protected Inlineable(Expression[] inputs) {
+      super(inputs);
+    }
+
+    protected Inlineable(List<Expression> inputs) {
+      super(inputs);
+    }
 
     public Inlineable inline() {
       return inline(true);
@@ -150,6 +181,10 @@ public interface Expression {
     // set to others to get a more context-dependent variable name.
     public String valuePrefix = "value";
 
+    protected ValueExpression(Expression[] inputs) {
+      super(inputs);
+    }
+
     public String isNullPrefix() {
       return "is" + StringUtils.capitalize(valuePrefix) + "Null";
     }
@@ -159,7 +194,7 @@ public interface Expression {
    * A ListExpression is a list of expressions. Use last expression's type/nullable/value/IsNull to
    * represent ListExpression's type/nullable/value/IsNull.
    */
-  class ListExpression implements Expression {
+  class ListExpression extends AbstractExpression {
     private final List<Expression> expressions;
     private Expression last;
 
@@ -168,6 +203,7 @@ public interface Expression {
     }
 
     public ListExpression(List<Expression> expressions) {
+      super(expressions);
       this.expressions = expressions;
       if (!this.expressions.isEmpty()) {
         this.last = this.expressions.get(this.expressions.size() - 1);
@@ -240,11 +276,12 @@ public interface Expression {
     }
   }
 
-  class Variable implements Expression {
+  class Variable extends AbstractExpression {
     private final String namePrefix;
     private Expression from;
 
     public Variable(String namePrefix, Expression from) {
+      super(from);
       this.namePrefix = namePrefix;
       this.from = from;
     }
@@ -289,7 +326,7 @@ public interface Expression {
     }
   }
 
-  class Literal implements Expression {
+  class Literal extends AbstractExpression {
     public static final Literal True = new Literal(true, PRIMITIVE_BOOLEAN_TYPE);
     public static final Literal False = new Literal(false, PRIMITIVE_BOOLEAN_TYPE);
 
@@ -297,11 +334,13 @@ public interface Expression {
     private final TypeRef<?> type;
 
     public Literal(String value) {
+      super(new Expression[0]);
       this.value = value;
       this.type = STRING_TYPE;
     }
 
     public Literal(Object value, TypeRef<?> type) {
+      super(new Expression[0]);
       this.value = value;
       this.type = type;
     }
@@ -416,7 +455,7 @@ public interface Expression {
     }
   }
 
-  class Null implements Expression {
+  class Null extends AbstractExpression {
     private TypeRef<?> type;
     private final boolean typedNull;
 
@@ -425,6 +464,7 @@ public interface Expression {
     }
 
     public Null(TypeRef<?> type, boolean typedNull) {
+      super(new Expression[0]);
       this.type = type;
       this.typedNull = typedNull;
     }
@@ -449,7 +489,7 @@ public interface Expression {
   }
 
   /** A Reference is a variable/field that can be accessed in the expression's CodegenContext. */
-  class Reference implements Expression {
+  class Reference extends AbstractExpression {
     private String name;
     private final TypeRef<?> type;
     private final boolean nullable;
@@ -468,6 +508,7 @@ public interface Expression {
     }
 
     public Reference(String name, TypeRef<?> type, boolean nullable, boolean fieldRef) {
+      super(new Expression[0]);
       this.name = name;
       this.type = type;
       this.nullable = nullable;
@@ -520,7 +561,11 @@ public interface Expression {
     }
   }
 
-  class Empty implements Expression {
+  class Empty extends AbstractExpression {
+
+    public Empty() {
+      super(new Expression[0]);
+    }
 
     @Override
     public TypeRef<?> type() {
@@ -533,10 +578,11 @@ public interface Expression {
     }
   }
 
-  class Block implements Expression {
+  class Block extends AbstractExpression {
     private final String code;
 
     public Block(String code) {
+      super(new Expression[0]);
       this.code = code;
     }
 
@@ -551,10 +597,11 @@ public interface Expression {
     }
   }
 
-  class ForceEvaluate implements Expression {
+  class ForceEvaluate extends AbstractExpression {
     private Expression expression;
 
     public ForceEvaluate(Expression expression) {
+      super(expression);
       this.expression = expression;
     }
 
@@ -595,6 +642,7 @@ public interface Expression {
         TypeRef<?> type,
         boolean fieldNullable,
         boolean inline) {
+      super(targetObject);
       Preconditions.checkArgument(type != null);
       this.targetObject = targetObject;
       this.fieldName = fieldName;
@@ -686,12 +734,13 @@ public interface Expression {
     }
   }
 
-  class SetField implements Expression {
+  class SetField extends AbstractExpression {
     private Expression targetObject;
     private final String fieldName;
     private Expression fieldValue;
 
     public SetField(Expression targetObject, String fieldName, Expression fieldValue) {
+      super(targetObject);
       this.targetObject = targetObject;
       this.fieldName = fieldName;
       this.fieldValue = fieldValue;
@@ -737,12 +786,15 @@ public interface Expression {
    * An expression to set up a stub in expression tree, so later tree building can replace it with
    * other expression.
    */
-  class ReplaceStub implements Expression {
+  class ReplaceStub extends AbstractExpression {
     private Expression targetObject;
 
-    public ReplaceStub() {}
+    public ReplaceStub() {
+      super(new Expression[0]);
+    }
 
     public ReplaceStub(Expression targetObject) {
+      super(targetObject);
       this.targetObject = targetObject;
     }
 
@@ -786,6 +838,7 @@ public interface Expression {
         String castedValueNamePrefix,
         boolean inline,
         boolean ignoreUpcast) {
+      super(targetObject);
       this.targetObject = targetObject;
       this.type = type;
       this.castedValueNamePrefix = castedValueNamePrefix;
@@ -849,13 +902,14 @@ public interface Expression {
     }
 
     @Override
-    public Inlineable inline(boolean inlineCall) {
+    public Cast inline(boolean inlineCall) {
       if (!inlineCall) {
-        if (targetObject instanceof Inlineable) {
+        AbstractExpression expr = (AbstractExpression) targetObject;
+        if (expr instanceof Inlineable && expr.inputs.size() > 1) {
           ((Inlineable) targetObject).inlineCall = false;
         }
       }
-      return super.inline(inlineCall);
+      return (Cast) super.inline(inlineCall);
     }
 
     @Override
@@ -885,6 +939,7 @@ public interface Expression {
         boolean returnNullable,
         boolean inline,
         boolean needTryCatch) {
+      super(arguments);
       this.functionName = functionName;
       this.type = type;
       this.arguments = arguments;
@@ -1243,7 +1298,7 @@ public interface Expression {
     }
   }
 
-  class NewInstance implements Expression {
+  class NewInstance extends AbstractExpression {
     private TypeRef<?> type;
     private final Class<?> rawType;
     private String unknownClassName;
@@ -1270,6 +1325,7 @@ public interface Expression {
     }
 
     private NewInstance(TypeRef<?> type, List<Expression> arguments, Expression outerPointer) {
+      super(ofArrayList(outerPointer, arguments));
       this.type = type;
       rawType = getRawType(type);
       this.outerPointer = outerPointer;
@@ -1391,7 +1447,7 @@ public interface Expression {
     }
   }
 
-  class NewArray implements Expression {
+  class NewArray extends AbstractExpression {
     private TypeRef<?> type;
     private Expression[] elements;
 
@@ -1403,6 +1459,7 @@ public interface Expression {
     private Expression dims;
 
     public NewArray(Class<?> elemType, Expression dim) {
+      super(dim);
       this.numDimensions = 1;
       this.elemType = elemType;
       this.dim = dim;
@@ -1417,6 +1474,7 @@ public interface Expression {
      * @param dims an int[] represent dims
      */
     public NewArray(Class<?> elemType, int numDimensions, Expression dims) {
+      super(dims);
       this.numDimensions = numDimensions;
       this.elemType = elemType;
       this.dims = dims;
@@ -1429,6 +1487,7 @@ public interface Expression {
     }
 
     public NewArray(TypeRef<?> type, Expression... elements) {
+      super(elements);
       this.type = type;
       this.elements = elements;
       this.numDimensions = 1;
@@ -1540,12 +1599,13 @@ public interface Expression {
     }
   }
 
-  class AssignArrayElem implements Expression {
+  class AssignArrayElem extends AbstractExpression {
     private Expression targetArray;
     private Expression value;
     private Expression[] indexes;
 
     public AssignArrayElem(Expression targetArray, Expression value, Expression... indexes) {
+      super(ofArrayList(targetArray, value, indexes));
       this.targetArray = targetArray;
       this.value = value;
       this.indexes = indexes;
@@ -1587,7 +1647,7 @@ public interface Expression {
     }
   }
 
-  class If implements Expression {
+  class If extends AbstractExpression {
     private Expression predicate;
     private Expression trueExpr;
     private Expression falseExpr;
@@ -1595,6 +1655,7 @@ public interface Expression {
     private boolean nullable;
 
     public If(Expression predicate, Expression trueExpr) {
+      super(new Expression[] {predicate, trueExpr});
       this.predicate = predicate;
       this.trueExpr = trueExpr;
       this.nullable = false;
@@ -1607,6 +1668,7 @@ public interface Expression {
         Expression falseExpr,
         boolean nullable,
         TypeRef<?> type) {
+      super(new Expression[] {predicate, trueExpr, falseExpr});
       this.predicate = predicate;
       this.trueExpr = trueExpr;
       this.falseExpr = falseExpr;
@@ -1621,6 +1683,7 @@ public interface Expression {
 
     /** if predicate eval to null, take predicate as false. */
     public If(Expression predicate, Expression trueExpr, Expression falseExpr) {
+      super(new Expression[] {predicate, trueExpr, falseExpr});
       this.predicate = predicate;
       this.trueExpr = trueExpr;
       this.falseExpr = falseExpr;
@@ -1691,7 +1754,6 @@ public interface Expression {
       }
       if (!PRIMITIVE_VOID_TYPE.equals(type.unwrap())) {
         ExprCode falseEval = falseExpr.doGenCode(ctx);
-        Preconditions.checkArgument(trueEval.isNull() != null || falseEval.isNull() != null);
         Preconditions.checkNotNull(trueEval.value());
         Preconditions.checkNotNull(falseEval.value());
         Class<?> rawType = getRawType(type);
@@ -1701,6 +1763,7 @@ public interface Expression {
         codeBuilder.append(String.format("%s %s;\n", ctx.type(type), value));
         String ifCode;
         if (nullable) {
+          Preconditions.checkArgument(trueEval.isNull() != null || falseEval.isNull() != null);
           codeBuilder.append(String.format("boolean %s = false;\n", isNull));
           String trueEvalIsNull;
           if (trueEval.isNull() == null) {
@@ -1817,10 +1880,11 @@ public interface Expression {
     }
   }
 
-  class IsNull implements Expression {
+  class IsNull extends AbstractExpression {
     private Expression expr;
 
     public IsNull(Expression expr) {
+      super(expr);
       this.expr = expr;
     }
 
@@ -1847,10 +1911,11 @@ public interface Expression {
     }
   }
 
-  class Not implements Expression {
+  class Not extends AbstractExpression {
     private Expression target;
 
     public Not(Expression target) {
+      super(target);
       this.target = target;
       Preconditions.checkArgument(
           target.type() == PRIMITIVE_BOOLEAN_TYPE || target.type() == BOOLEAN_TYPE);
@@ -1897,6 +1962,7 @@ public interface Expression {
 
     protected BinaryOperator(
         boolean inline, String operator, Expression left, Expression right, TypeRef<?> t) {
+      super(new Expression[] {left, right});
       this.inlineCall = inline;
       this.operator = operator;
       this.left = left;
@@ -2085,7 +2151,7 @@ public interface Expression {
    *     return val
    * </pre>
    */
-  class While implements Expression {
+  class While extends AbstractExpression {
     private final Expression predicate;
     private Expression action;
     private Expression[] cutPoints;
@@ -2112,6 +2178,7 @@ public interface Expression {
     }
 
     public While(Expression predicate, Expression action, Expression[] cutPoints) {
+      super(ofArrayList(predicate, action, cutPoints));
       this.predicate = predicate;
       this.action = action;
       this.cutPoints = cutPoints;
@@ -2155,7 +2222,7 @@ public interface Expression {
     }
   }
 
-  class ForEach implements Expression {
+  class ForEach extends AbstractExpression {
     private Expression inputObject;
 
     @ClosureVisitable final SerializableBiFunction<Expression, Expression, Expression> action;
@@ -2168,6 +2235,7 @@ public interface Expression {
      */
     public ForEach(
         Expression inputObject, SerializableBiFunction<Expression, Expression, Expression> action) {
+      super(inputObject);
       this.inputObject = inputObject;
       this.action = action;
       TypeRef elementType;
@@ -2183,6 +2251,7 @@ public interface Expression {
         Expression inputObject,
         TypeRef<?> beanType,
         SerializableBiFunction<Expression, Expression, Expression> action) {
+      super(inputObject);
       this.inputObject = inputObject;
       this.action = action;
       this.elementType = beanType;
@@ -2278,7 +2347,7 @@ public interface Expression {
     }
   }
 
-  class ZipForEach implements Expression {
+  class ZipForEach extends AbstractExpression {
     private Expression left;
     private Expression right;
 
@@ -2289,6 +2358,7 @@ public interface Expression {
         Expression left,
         Expression right,
         SerializableTriFunction<Expression, Expression, Expression, Expression> action) {
+      super(new Expression[] {left, right});
       this.left = left;
       this.right = right;
       this.action = action;
@@ -2418,7 +2488,7 @@ public interface Expression {
     }
   }
 
-  class ForLoop implements Expression {
+  class ForLoop extends AbstractExpression {
     public Expression start;
     public Expression end;
     public Expression step;
@@ -2431,6 +2501,7 @@ public interface Expression {
         Expression end,
         Expression step,
         SerializableFunction<Expression, Expression> action) {
+      super(new Expression[] {start, end, step});
       this.start = start;
       this.end = end;
       this.step = step;
@@ -2491,12 +2562,13 @@ public interface Expression {
    * <p>Since value is declared to be {@code List<elementType>}, no need to cast in other expression
    * that need List
    */
-  class ListFromIterable implements Expression {
+  class ListFromIterable extends AbstractExpression {
     private final TypeRef elementType;
     private Expression inputObject;
     private final TypeRef<?> type;
 
     public ListFromIterable(Expression inputObject) {
+      super(inputObject);
       this.inputObject = inputObject;
       Preconditions.checkArgument(
           getRawType(inputObject.type()) == Iterable.class,
@@ -2553,12 +2625,15 @@ public interface Expression {
     }
   }
 
-  class Return implements Expression {
+  class Return extends AbstractExpression {
     private Expression expression;
 
-    public Return() {}
+    public Return() {
+      super(new Expression[0]);
+    }
 
     public Return(Expression expression) {
+      super(expression);
       this.expression = expression;
     }
 
@@ -2587,7 +2662,10 @@ public interface Expression {
     }
   }
 
-  class Break implements Expression {
+  class Break extends AbstractExpression {
+    public Break() {
+      super(new Expression[0]);
+    }
 
     @Override
     public TypeRef<?> type() {
@@ -2605,11 +2683,12 @@ public interface Expression {
     }
   }
 
-  class Assign implements Expression {
+  class Assign extends AbstractExpression {
     private Expression to;
     private Expression from;
 
     public Assign(Expression to, Expression from) {
+      super(new Expression[] {to, from});
       this.to = to;
       this.from = from;
     }
