@@ -170,7 +170,8 @@ public class ExpressionVisitor {
       traverseList(expr, ((ListExpression) expr).expressions(), func);
     } else {
       for (Field field : ReflectionUtils.getFields(Objects.requireNonNull(expr).getClass(), true)) {
-        if (!Modifier.isStatic(field.getModifiers())) {
+        int modifiers = field.getModifiers();
+        if (!Modifier.isStatic(modifiers) && !Modifier.isTransient(modifiers)) {
           try {
             if (Expression.class.isAssignableFrom(field.getType())) {
               traverseField(expr, field, func);
@@ -240,7 +241,7 @@ public class ExpressionVisitor {
       Expression childExpr = expressions.get(i);
       int index = i;
       if (func.apply(
-          new ExprSite(expr, childExpr, newChildExpr -> expressions.set(index, newChildExpr)))) {
+        new ExprSite(expr, childExpr, newChildExpr -> expressions.set(index, newChildExpr)))) {
         traverseChildren(childExpr, func);
       }
     }

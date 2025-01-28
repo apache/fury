@@ -19,6 +19,8 @@
 
 package org.apache.fury.codegen;
 
+import static org.apache.fury.codegen.CodeGenerator.getSourcePkgLevelAccessibleParentClass;
+import static org.apache.fury.codegen.CodeGenerator.sourcePkgLevelAccessible;
 import static org.apache.fury.codegen.Expression.Arithmetic;
 import static org.apache.fury.codegen.Expression.Comparator;
 import static org.apache.fury.codegen.Expression.IsNull;
@@ -37,11 +39,13 @@ import org.apache.fury.codegen.Expression.BitAnd;
 import org.apache.fury.codegen.Expression.BitOr;
 import org.apache.fury.codegen.Expression.BitShift;
 import org.apache.fury.codegen.Expression.Cast;
+import org.apache.fury.codegen.Expression.Invoke;
 import org.apache.fury.codegen.Expression.ListExpression;
 import org.apache.fury.codegen.Expression.LogicalAnd;
 import org.apache.fury.codegen.Expression.LogicalOr;
 import org.apache.fury.codegen.Expression.Null;
 import org.apache.fury.codegen.Expression.Variable;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.StringUtils;
@@ -206,6 +210,32 @@ public class ExpressionUtils {
 
   public static Cast cast(Expression value, TypeRef<?> typeRef) {
     return new Cast(value, typeRef);
+  }
+
+  public static Expression invokeInline(
+    Expression targetObject, String functionName, TypeRef type) {
+    return inline(invoke(targetObject, functionName, null, type));
+  }
+
+  public static Expression invoke(
+    Expression targetObject, String functionName,
+    String returnNamePrefix, TypeRef type) {
+    Class<?> rawType = type.getRawType();
+    if (!sourcePkgLevelAccessible(rawType)) {
+      rawType = getSourcePkgLevelAccessibleParentClass(rawType);
+      type = type.getSupertype(rawType);
+    }
+    Class<?> returnType =
+      ReflectionUtils.getReturnType(getRawType(targetObject.type()), functionName);
+    if (!rawType.isAssignableFrom(returnType)) {
+      if (!sourcePkgLevelAccessible(returnType)) {
+        returnType = getSourcePkgLevelAccessibleParentClass(returnType);
+      }
+      return new Cast(new Invoke(targetObject, functionName, TypeRef.of(returnType)).inline(),
+        type, returnNamePrefix);
+    } else {
+      return new Invoke(targetObject, functionName, returnNamePrefix, type);
+    }
   }
 
   public static Expression inline(Expression expression) {

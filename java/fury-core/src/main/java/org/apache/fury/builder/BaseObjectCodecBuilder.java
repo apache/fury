@@ -32,6 +32,8 @@ import static org.apache.fury.codegen.ExpressionUtils.eq;
 import static org.apache.fury.codegen.ExpressionUtils.eqNull;
 import static org.apache.fury.codegen.ExpressionUtils.gt;
 import static org.apache.fury.codegen.ExpressionUtils.inline;
+import static org.apache.fury.codegen.ExpressionUtils.invoke;
+import static org.apache.fury.codegen.ExpressionUtils.invokeInline;
 import static org.apache.fury.codegen.ExpressionUtils.list;
 import static org.apache.fury.codegen.ExpressionUtils.neq;
 import static org.apache.fury.codegen.ExpressionUtils.neqNull;
@@ -498,7 +500,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     writeClassAndObject.add(classResolver.writeClassExpr(classResolverRef, buffer, classInfo));
     writeClassAndObject.add(
         new Invoke(
-            inlineInvoke(classInfo, "getSerializer", SERIALIZER_TYPE),
+            invokeInline(classInfo, "getSerializer", getSerializerType(clz)),
             "write",
             PRIMITIVE_VOID_TYPE,
             buffer,
@@ -521,7 +523,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     writeClassAction.add(classResolver.writeClassExpr(classResolverRef, buffer, classInfo));
     if (returnSerializer) {
       writeClassAction.add(
-          new Invoke(classInfo, "getSerializer", "serializer", SERIALIZER_TYPE, false));
+          invoke(classInfo, "getSerializer", "serializer", getSerializerType(declaredClass)));
     }
     return writeClassAction;
   }
@@ -733,9 +735,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
                     classInfo,
                     inlineInvoke(classResolverRef, "getClassInfo", classInfoTypeRef, clsExpr))));
         writeClassAction.add(classResolver.writeClassExpr(classResolverRef, buffer, classInfo));
-        serializer = new Invoke(classInfo, "getSerializer", "serializer", SERIALIZER_TYPE, false);
-        serializer = new Cast(serializer, TypeRef.of(AbstractCollectionSerializer.class));
-        writeClassAction.add(serializer, new Return(serializer));
+        writeClassAction.add(new Return(invokeInline(classInfo, "getSerializer", SERIALIZER_TYPE)));
         // Spit this into a separate method to avoid method too big to inline.
         serializer =
             invokeGenerated(
@@ -1038,9 +1038,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
                     inlineInvoke(classResolverRef, "getClassInfo", classInfoTypeRef, clsExpr))));
         // Note: writeClassExpr is thread safe.
         writeClassAction.add(classResolver.writeClassExpr(classResolverRef, buffer, classInfo));
-        serializer = new Invoke(classInfo, "getSerializer", "serializer", SERIALIZER_TYPE, false);
-        serializer = new Cast(serializer, TypeRef.of(AbstractMapSerializer.class));
-        writeClassAction.add(serializer, new Return(serializer));
+        writeClassAction.add(new Return(invokeInline(classInfo, "getSerializer", MAP_SERIALIZER_TYPE)));
         // Spit this into a separate method to avoid method too big to inline.
         serializer =
             invokeGenerated(
@@ -1140,10 +1138,8 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       TypeRef<?> keyType,
       TypeRef<?> valueType) {
     ListExpression expressions = new ListExpression();
-    Expression key =
-        tryCastIfPublic(new Invoke(entry, "getKey", "key", OBJECT_TYPE), keyType, "key");
-    Expression value =
-        tryCastIfPublic(new Invoke(entry, "getValue", "value", OBJECT_TYPE), valueType, "value");
+    Expression key = invoke(entry, "getKey", "key", keyType);
+    Expression value = invoke(entry, "getValue", "value", valueType);
     boolean keyMonomorphic = isMonomorphic(keyType);
     boolean valueMonomorphic = isMonomorphic(valueType);
     Class<?> keyTypeRawType = keyType.getRawType();
@@ -1520,10 +1516,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         serializer = getOrCreateSerializer(cls);
       } else {
         Expression classInfo = readClassInfo(cls, buffer);
-        serializer = new Invoke(classInfo, "getSerializer", "serializer", SERIALIZER_TYPE, false);
-        serializer =
-            new Cast(
-                serializer, TypeRef.of(AbstractCollectionSerializer.class), "collectionSerializer");
+        serializer = invoke(classInfo, "getSerializer", "collectionSerializer", COLLECTION_SERIALIZER_TYPE);
       }
     } else {
       checkArgument(
@@ -1961,20 +1954,12 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     }
     TypeRef<?> serializerType = getSerializerType(type);
     if (ReflectionUtils.isAbstract(type) || type.isInterface()) {
-      Invoke serializer =
-          new Invoke(readClassInfo(type, buffer), "getSerializer", SERIALIZER_TYPE, false);
-      if (!serializerType.equals(SERIALIZER_TYPE)) {
-        return new Cast(serializer.inline(), serializerType, "serializer");
-      } else {
-        return serializer;
-      }
+      return invoke(readClassInfo(type, buffer), "getSerializer", "serializer", serializerType);
     } else {
       return new If(
           isDeclaredType,
           getOrCreateSerializer(type),
-          new Cast(
-              inlineInvoke(readClassInfo(type, buffer), "getSerializer", SERIALIZER_TYPE),
-              serializerType),
+          invokeInline(readClassInfo(type, buffer), "getSerializer", serializerType),
           false);
     }
   }

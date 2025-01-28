@@ -491,8 +491,21 @@ public class CodeGenerator {
     return sourcePkgLevelAccessible(clz);
   }
 
+  private static final WeakHashMap<Class<?>, Boolean> sourcePkgLevelAccessible = new WeakHashMap<>();
+
+  public static Class<?> getSourcePkgLevelAccessibleParentClass(Class<?> clz) {
+    while (!sourcePkgLevelAccessible(clz)) {
+      clz = clz.getSuperclass();
+    }
+    return clz;
+  }
+
   /** Returns true if class is package level accessible from source. */
   public static boolean sourcePkgLevelAccessible(Class<?> clz) {
+    return sourcePkgLevelAccessible.computeIfAbsent(clz, CodeGenerator::classSourcePkgLevelAccessible);
+  }
+
+  private static boolean classSourcePkgLevelAccessible(Class<?> clz) {
     if (clz.isPrimitive()) {
       return true;
     }
