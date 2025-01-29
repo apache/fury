@@ -19,6 +19,8 @@
 
 package org.apache.fury.codegen;
 
+import static org.apache.fury.codegen.CodeGenerator.getSourcePublicAccessibleParentClass;
+import static org.apache.fury.codegen.CodeGenerator.sourcePublicAccessible;
 import static org.apache.fury.codegen.Expression.Arithmetic;
 import static org.apache.fury.codegen.Expression.Comparator;
 import static org.apache.fury.codegen.Expression.IsNull;
@@ -33,19 +35,34 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import org.apache.fury.codegen.Expression.BitAnd;
+import org.apache.fury.codegen.Expression.BitOr;
+import org.apache.fury.codegen.Expression.BitShift;
 import org.apache.fury.codegen.Expression.Cast;
+import org.apache.fury.codegen.Expression.Invoke;
+import org.apache.fury.codegen.Expression.ListExpression;
+import org.apache.fury.codegen.Expression.LogicalAnd;
+import org.apache.fury.codegen.Expression.LogicalOr;
 import org.apache.fury.codegen.Expression.Null;
+import org.apache.fury.codegen.Expression.Variable;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.StringUtils;
 import org.apache.fury.util.function.Functions;
 
 /** Expression utils to create expression and code in a more convenient way. */
-@SuppressWarnings("UnstableApiUsage")
 public class ExpressionUtils {
+  public static ListExpression list(Expression... expressions) {
+    return new ListExpression(expressions);
+  }
 
   public static Expression newObjectArray(Expression... expressions) {
     return new NewArray(TypeRef.of(Object[].class), expressions);
+  }
+
+  public static Expression ofInt(String name, int v) {
+    return new Variable(name, Literal.ofInt(v));
   }
 
   public static Expression valueOf(TypeRef<?> type, Expression value) {
@@ -63,6 +80,41 @@ public class ExpressionUtils {
   public static Expression eqNull(Expression target) {
     Preconditions.checkArgument(!target.type().isPrimitive());
     return eq(target, new Null(target.type()));
+  }
+
+  public static Expression neqNull(Expression target) {
+    Preconditions.checkArgument(!target.type().isPrimitive());
+    return neq(target, new Null(target.type()));
+  }
+
+  public static LogicalAnd and(Expression left, Expression right, String name) {
+    return new LogicalAnd(false, left, right);
+  }
+
+  public static LogicalAnd and(Expression left, Expression right) {
+    return new LogicalAnd(true, left, right);
+  }
+
+  public static LogicalOr or(Expression left, Expression right, Expression... expressions) {
+    LogicalOr logicalOr = new LogicalOr(left, right);
+    for (Expression expression : expressions) {
+      logicalOr = new LogicalOr(left, expression);
+    }
+    return logicalOr;
+  }
+
+  public static BitOr bitor(Expression left, Expression right) {
+    return new BitOr(left, right);
+  }
+
+  public static BitAnd bitand(Expression left, Expression right, String name) {
+    BitAnd bitAnd = new BitAnd(left, right);
+    bitAnd.inline(false);
+    return bitAnd;
+  }
+
+  public static BitAnd bitand(Expression left, Expression right) {
+    return new BitAnd(left, right);
   }
 
   public static Not not(Expression target) {
@@ -135,13 +187,63 @@ public class ExpressionUtils {
   }
 
   public static Arithmetic subtract(Expression left, Expression right, String valuePrefix) {
-    Arithmetic arithmetic = new Arithmetic(true, "-", left, right);
+    Arithmetic arithmetic = new Arithmetic(false, "-", left, right);
     arithmetic.valuePrefix = valuePrefix;
     return arithmetic;
   }
 
-  public static Cast cast(Expression value, TypeRef<?> typeRef) {
+  public static BitShift shift(String op, Expression target, int numBits) {
+    return new BitShift(op, target, numBits);
+  }
+
+  public static BitShift leftShift(Expression target, int numBits) {
+    return new BitShift("<<", target, numBits);
+  }
+
+  public static BitShift arithRightShift(Expression target, int numBits) {
+    return new BitShift(">>", target, numBits);
+  }
+
+  public static BitShift logicalRightShift(Expression target, int numBits) {
+    return new BitShift(">>", target, numBits);
+  }
+
+  public static Expression cast(Expression value, TypeRef<?> typeRef) {
+    if ((value.type().equals(typeRef) || value.type().isSubtypeOf(typeRef))) {
+      return value;
+    }
     return new Cast(value, typeRef);
+  }
+
+  public static Expression cast(Expression value, TypeRef<?> typeRef, String namePrefix) {
+    return new Cast(value, typeRef, namePrefix);
+  }
+
+  public static Expression invokeInline(
+      Expression targetObject, String functionName, TypeRef type) {
+    return inline(invoke(targetObject, functionName, null, type));
+  }
+
+  public static Expression invoke(
+      Expression targetObject, String functionName, String returnNamePrefix, TypeRef type) {
+    Class<?> rawType = type.getRawType();
+    if (!sourcePublicAccessible(rawType)) {
+      rawType = getSourcePublicAccessibleParentClass(rawType);
+      type = type.getSupertype(rawType);
+    }
+    Class<?> returnType =
+        ReflectionUtils.getReturnType(getRawType(targetObject.type()), functionName);
+    if (!rawType.isAssignableFrom(returnType)) {
+      if (!sourcePublicAccessible(returnType)) {
+        returnType = getSourcePublicAccessibleParentClass(returnType);
+      }
+      return new Cast(
+          new Invoke(targetObject, functionName, TypeRef.of(returnType)).inline(),
+          type,
+          returnNamePrefix);
+    } else {
+      return new Invoke(targetObject, functionName, returnNamePrefix, type);
+    }
   }
 
   public static Expression inline(Expression expression) {

@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -81,6 +82,28 @@ public class Collections {
     list.add(e3);
     list.add(e4);
     list.add(e5);
+    return list;
+  }
+
+  public static <T> ArrayList<T> ofArrayList(T e1, List<T> items) {
+    ArrayList<T> list = new ArrayList(1 + items.size());
+    list.add(e1);
+    list.addAll(items);
+    return list;
+  }
+
+  public static <T> ArrayList<T> ofArrayList(T e1, T... items) {
+    ArrayList<T> list = new ArrayList(1 + items.length);
+    list.add(e1);
+    java.util.Collections.addAll(list, items);
+    return list;
+  }
+
+  public static <T> ArrayList<T> ofArrayList(T e1, T e2, T... items) {
+    ArrayList<T> list = new ArrayList(2 + items.length);
+    list.add(e1);
+    list.add(e2);
+    java.util.Collections.addAll(list, items);
     return list;
   }
 
