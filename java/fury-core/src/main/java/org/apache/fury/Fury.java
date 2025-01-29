@@ -1122,7 +1122,7 @@ public final class Fury implements BaseFury {
       if (nextReadRefId >= NOT_NULL_VALUE_FLAG) {
         ClassInfo classInfo;
         if (shareMeta) {
-          classInfo = classResolver.readClassInfo(buffer);
+          classInfo = classResolver.readClassInfo(buffer, cls);
         } else {
           classInfo = classResolver.getClassInfo(cls);
         }

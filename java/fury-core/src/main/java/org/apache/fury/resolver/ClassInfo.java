@@ -48,7 +48,7 @@ public class ClassInfo {
   // use primitive to avoid boxing
   // class id must be less than Integer.MAX_VALUE/2 since we use bit 0 as class id flag.
   short classId;
-  ClassDef classDef;
+  public ClassDef classDef;
   boolean needToWriteClassDef;
 
   ClassInfo(

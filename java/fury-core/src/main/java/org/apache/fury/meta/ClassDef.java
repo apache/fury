@@ -48,6 +48,7 @@ import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeRef;
+import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.CompatibleSerializer;
 import org.apache.fury.serializer.NonexistentClass;
@@ -786,5 +787,13 @@ public class ClassDef implements Serializable {
   public static ClassDef buildClassDef(
       ClassResolver classResolver, Class<?> type, List<Field> fields, boolean isObjectType) {
     return ClassDefEncoder.buildClassDef(classResolver, type, fields, isObjectType);
+  }
+
+  public static ClassDef replaceRootClassTo(
+      ClassResolver classResolver,
+      ClassInfo targetCls
+  ) {
+    return ClassDefEncoder.buildClassDefWithFieldInfos(
+        classResolver, targetCls.getCls(), targetCls.classDef.getFieldsInfo(), targetCls.classDef.isObjectType);
   }
 }
