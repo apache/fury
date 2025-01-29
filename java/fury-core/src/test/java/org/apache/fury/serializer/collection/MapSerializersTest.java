@@ -49,6 +49,7 @@ import org.apache.fury.Fury;
 import org.apache.fury.FuryTestBase;
 import org.apache.fury.collection.LazyMap;
 import org.apache.fury.collection.MapEntry;
+import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.config.Language;
 import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.serializer.Serializer;
@@ -61,6 +62,134 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class MapSerializersTest extends FuryTestBase {
+
+  @Test(dataProvider = "basicMultiConfigFury")
+  public void basicTestCaseWithMultiConfig(
+      boolean trackingRef,
+      boolean codeGen,
+      boolean scopedMetaShare,
+      CompatibleMode compatibleMode) {
+    Fury fury =
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withRefTracking(trackingRef)
+            .requireClassRegistration(false)
+            .withCodegen(codeGen)
+            .withCompatibleMode(compatibleMode)
+            .withScopedMetaShare(scopedMetaShare)
+            .build();
+
+    // testBasicMap
+    Map<String, Integer> data = new HashMap<>(ImmutableMap.of("a", 1, "b", 2));
+    serDeCheckSerializer(fury, data, "HashMap");
+    serDeCheckSerializer(fury, new LinkedHashMap<>(data), "LinkedHashMap");
+
+    // testBasicMapNested
+    Map<String, Integer> data0 = new HashMap<>(ImmutableMap.of("a", 1, "b", 2));
+    Map<String, Map<String, Integer>> nestedMap = ofHashMap("k1", data0, "k2", data0);
+    serDeCheckSerializer(fury, nestedMap, "HashMap");
+    serDeCheckSerializer(fury, new LinkedHashMap<>(nestedMap), "LinkedHashMap");
+
+    // testMapGenerics
+    byte[] bytes1 = fury.serialize(data);
+    fury.getGenerics().pushGenericType(GenericType.build(new TypeRef<Map<String, Integer>>() {}));
+    byte[] bytes2 = fury.serialize(data);
+    Assert.assertTrue(bytes1.length > bytes2.length);
+    fury.getGenerics().popGenericType();
+    Assert.assertThrows(RuntimeException.class, () -> fury.deserialize(bytes2));
+
+    // testSortedMap
+    Map<String, Integer> treeMap = new TreeMap<>(ImmutableMap.of("a", 1, "b", 2));
+    serDeCheckSerializer(fury, treeMap, "SortedMap");
+    byte[] sortMapBytes1 = fury.serialize(treeMap);
+    fury.getGenerics().pushGenericType(GenericType.build(new TypeRef<Map<String, Integer>>() {}));
+    byte[] sortMapBytes2 = fury.serialize(treeMap);
+    Assert.assertTrue(sortMapBytes1.length > sortMapBytes2.length);
+    fury.getGenerics().popGenericType();
+    Assert.assertThrows(RuntimeException.class, () -> fury.deserialize(sortMapBytes2));
+
+    // testTreeMap
+    TreeMap<String, String> map =
+        new TreeMap<>(
+            (Comparator<? super String> & Serializable)
+                (s1, s2) -> {
+                  int delta = s1.length() - s2.length();
+                  if (delta == 0) {
+                    return s1.compareTo(s2);
+                  } else {
+                    return delta;
+                  }
+                });
+    map.put("str1", "1");
+    map.put("str2", "1");
+    assertEquals(map, serDe(fury, map));
+    BeanForMap beanForMap = new BeanForMap();
+    assertEquals(beanForMap, serDe(fury, beanForMap));
+
+    // testEmptyMap
+    serDeCheckSerializer(fury, Collections.EMPTY_MAP, "EmptyMapSerializer");
+    serDeCheckSerializer(fury, Collections.emptySortedMap(), "EmptySortedMap");
+
+    // testSingletonMap
+    serDeCheckSerializer(fury, Collections.singletonMap("k", 1), "SingletonMap");
+
+    // testConcurrentMap
+    serDeCheckSerializer(fury, new ConcurrentHashMap<>(data), "ConcurrentHashMap");
+    serDeCheckSerializer(fury, new ConcurrentSkipListMap<>(data), "ConcurrentSkipListMap");
+
+    // testEnumMap
+    EnumMap<TestEnum, Object> enumMap = new EnumMap<>(TestEnum.class);
+    enumMap.put(TestEnum.A, 1);
+    enumMap.put(TestEnum.B, "str");
+    serDe(fury, enumMap);
+    Assert.assertEquals(
+        fury.getClassResolver().getSerializerClass(enumMap.getClass()),
+        MapSerializers.EnumMapSerializer.class);
+
+    // testNoArgConstructor
+    Map<String, Integer> map1 = newInnerMap();
+    Assert.assertEquals(jdkDeserialize(jdkSerialize(map1)), map1);
+    serDeCheck(fury, map1);
+
+    // testMapFieldSerializers
+    MapFields obj = createMapFieldsObject();
+    Assert.assertEquals(serDe(fury, obj), obj);
+
+    // testBigMapFieldSerializers
+    final MapFields mapFieldsObject = createBigMapFieldsObject();
+    serDeCheck(fury, mapFieldsObject);
+
+    // testObjectKeyValueChunk
+    final Map<Object, Object> differentKeyAndValueTypeMap = createDifferentKeyAndValueTypeMap();
+    final Serializer<? extends Map> serializer =
+        fury.getSerializer(differentKeyAndValueTypeMap.getClass());
+    MapSerializers.HashMapSerializer mapSerializer = (MapSerializers.HashMapSerializer) serializer;
+    serDeCheck(fury, differentKeyAndValueTypeMap);
+
+    // testObjectKeyValueBigChunk
+    for (int i = 0; i < 3000; i++) {
+      differentKeyAndValueTypeMap.put("k" + i, i);
+    }
+    serDeCheck(fury, differentKeyAndValueTypeMap);
+
+    // testMapChunkRefTracking
+    Map<String, Integer> map2 = new HashMap<>();
+    for (int i = 0; i < 1; i++) {
+      map2.put("k" + i, i);
+    }
+    Object v = ofArrayList(map2, ofHashMap("k1", map2, "k2", new HashMap<>(map2), "k3", map2));
+    serDeCheck(fury, v);
+
+    // testMapChunkRefTrackingGenerics
+    MapFields obj1 = new MapFields();
+    Map<String, Integer> map3 = new HashMap<>();
+    for (int i = 0; i < 1; i++) {
+      map3.put("k" + i, i);
+    }
+    obj.map = map3;
+    obj.mapKeyFinal = ofHashMap("k1", map3);
+    serDeCheck(fury, obj1);
+  }
 
   @Test(dataProvider = "referenceTrackingConfig")
   public void testBasicMap(boolean referenceTrackingConfig) {
