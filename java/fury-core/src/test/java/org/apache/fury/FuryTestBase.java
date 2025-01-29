@@ -19,6 +19,8 @@
 
 package org.apache.fury;
 
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -247,25 +249,15 @@ public abstract class FuryTestBase {
 
   @DataProvider
   public static Object[][] basicMultiConfigFury() {
-    // trackingRef, codeGen, scopedMetaShare, CompatibleMode,
-    return new Object[][] {
-      {true, true, true, CompatibleMode.SCHEMA_CONSISTENT},
-      {true, true, true, CompatibleMode.COMPATIBLE},
-      {true, true, false, CompatibleMode.SCHEMA_CONSISTENT},
-      {true, true, false, CompatibleMode.COMPATIBLE},
-      {true, false, true, CompatibleMode.SCHEMA_CONSISTENT},
-      {true, false, true, CompatibleMode.COMPATIBLE},
-      {true, false, false, CompatibleMode.SCHEMA_CONSISTENT},
-      {true, false, false, CompatibleMode.COMPATIBLE},
-      {false, true, true, CompatibleMode.SCHEMA_CONSISTENT},
-      {false, true, true, CompatibleMode.COMPATIBLE},
-      {false, true, false, CompatibleMode.SCHEMA_CONSISTENT},
-      {false, true, false, CompatibleMode.COMPATIBLE},
-      {false, false, true, CompatibleMode.SCHEMA_CONSISTENT},
-      {false, false, true, CompatibleMode.COMPATIBLE},
-      {false, false, false, CompatibleMode.SCHEMA_CONSISTENT},
-      {false, false, false, CompatibleMode.COMPATIBLE},
-    };
+    return Sets.cartesianProduct(
+            ImmutableSet.of(true, false), // trackingRef
+            ImmutableSet.of(true, false), // codeGen
+            ImmutableSet.of(true, false), // scoped meta share
+            ImmutableSet.of(
+                CompatibleMode.COMPATIBLE, CompatibleMode.SCHEMA_CONSISTENT)) // CompatibleMode
+        .stream()
+        .map(List::toArray)
+        .toArray(Object[][]::new);
   }
 
   public static void serDeCheckSerializerAndEqual(Fury fury, Object obj, String classRegex) {
