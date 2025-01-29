@@ -164,7 +164,6 @@ public class MapSerializersTest extends FuryTestBase {
     final Serializer<? extends Map> serializer =
         fury.getSerializer(differentKeyAndValueTypeMap.getClass());
     MapSerializers.HashMapSerializer mapSerializer = (MapSerializers.HashMapSerializer) serializer;
-    mapSerializer.setUseChunkSerialize(true);
     serDeCheck(fury, differentKeyAndValueTypeMap);
 
     // testObjectKeyValueBigChunk
