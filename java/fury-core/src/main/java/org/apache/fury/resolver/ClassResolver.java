@@ -247,6 +247,8 @@ public class ClassResolver {
     private final Map<Class<?>, FieldResolver> fieldResolverMap = new HashMap<>();
     private final LongMap<Tuple2<ClassDef, ClassInfo>> classIdToDef = new LongMap<>();
     private final Map<Class<?>, ClassDef> currentLayerClassDef = new HashMap<>();
+    // Tuple2<Class, Class>: Tuple2<From Class, To Class>
+    private final Map<Tuple2<Class<?>, Class<?>>, ClassInfo> transformedClassInfo = new HashMap<>();
     // TODO(chaokunyang) Better to  use soft reference, see ObjectStreamClass.
     private final ConcurrentHashMap<Tuple2<Class<?>, Boolean>, SortedMap<Field, Descriptor>>
         descriptorsCache = new ConcurrentHashMap<>();
@@ -1411,6 +1413,27 @@ public class ClassResolver {
     return classInfo;
   }
 
+  public ClassInfo readClassInfoWithMetaShare(MemoryBuffer buffer, Class<?> targetClass) {
+    assert metaContextShareEnabled;
+    ClassInfo classInfo =
+        readClassInfoWithMetaShare(buffer, fury.getSerializationContext().getMetaContext());
+    Class<?> readClass = classInfo.getCls();
+    // replace target class if needed
+    if (targetClass != readClass) {
+      Tuple2<Class<?>, Class<?>> key = Tuple2.of(readClass, targetClass);
+      ClassInfo newClassInfo = extRegistry.transformedClassInfo.get(key);
+      if (newClassInfo == null) {
+        // similar to create serializer for `NonexistentMetaShared`
+        newClassInfo =
+            getMetaSharedClassInfo(
+                classInfo.classDef.replaceRootClassTo(this, targetClass), targetClass);
+        extRegistry.transformedClassInfo.put(key, newClassInfo);
+      }
+      return newClassInfo;
+    }
+    return classInfo;
+  }
+
   private ClassInfo buildMetaSharedClassInfo(
       Tuple2<ClassDef, ClassInfo> classDefTuple, ClassDef classDef) {
     ClassInfo classInfo;
@@ -1439,6 +1462,7 @@ public class ClassResolver {
     Short classId = extRegistry.registeredClassIdMap.get(cls);
     ClassInfo classInfo =
         new ClassInfo(this, cls, null, classId == null ? NO_CLASS_ID : classId, NOT_SUPPORT_XLANG);
+    classInfo.classDef = classDef;
     if (NonexistentClass.class.isAssignableFrom(TypeUtils.getComponentIfArray(cls))) {
       if (cls == NonexistentMetaShared.class) {
         classInfo.setSerializer(this, new NonexistentClassSerializer(fury, classDef));
@@ -1662,33 +1686,6 @@ public class ClassResolver {
     if (metaContextShareEnabled) {
       return readClassInfoWithMetaShare(buffer, fury.getSerializationContext().getMetaContext());
     }
-    int header = buffer.readVarUint32Small14();
-    ClassInfo classInfo;
-    if ((header & 0b1) != 0) {
-      classInfo = readClassInfoFromBytes(buffer, classInfoCache, header);
-      classInfoCache = classInfo;
-    } else {
-      classInfo = getOrUpdateClassInfo((short) (header >> 1));
-    }
-    currentReadClass = classInfo.cls;
-    return classInfo;
-  }
-
-  public ClassInfo readClassInfo(MemoryBuffer buffer, Class<?> targetClass) {
-    if (metaContextShareEnabled) {
-      ClassInfo classInfo = readClassInfoWithMetaShare(buffer, fury.getSerializationContext().getMetaContext());
-
-      // replace target class if needed
-      if (!targetClass.getName().equals(classInfo.getCls().getName())) {
-        ClassInfo targetClassInfo = getClassInfo(targetClass);
-        buildClassDef(targetClassInfo);
-        classInfo.classDef = ClassDef.replaceRootClassTo(this, targetClassInfo);
-        classInfo.serializer = createSerializer(targetClass);
-      }
-
-      return classInfo;
-    }
-
     int header = buffer.readVarUint32Small14();
     ClassInfo classInfo;
     if ((header & 0b1) != 0) {

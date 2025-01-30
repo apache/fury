@@ -76,8 +76,7 @@ public class DifferentPOJOCompatibleSerializerTest extends Assert {
     byte[] serialized = getFury().serializeJavaObject(classMissingField);
 
     ClassCompleteField classCompleteField =
-        getFury()
-            .deserializeJavaObject(serialized, ClassCompleteField.class);
+        getFury().deserializeJavaObject(serialized, ClassCompleteField.class);
 
     assertEq(classCompleteField, classMissingField);
   }

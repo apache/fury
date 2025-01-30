@@ -22,7 +22,7 @@ package org.apache.fury.meta;
 import org.apache.fury.type.TypeUtils;
 
 public class ClassSpec {
-  public String entireClassName;
+  public final String entireClassName;
 
   /** Whether current class is enum of component is enum if current class is array. */
   public final boolean isEnum;

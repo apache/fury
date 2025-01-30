@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.SortedMap;
+import java.util.stream.Collectors;
 import org.apache.fury.Fury;
 import org.apache.fury.builder.MetaSharedCodecBuilder;
 import org.apache.fury.collection.Tuple2;
@@ -48,7 +49,6 @@ import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeRef;
-import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.serializer.CompatibleSerializer;
 import org.apache.fury.serializer.NonexistentClass;
@@ -789,11 +789,20 @@ public class ClassDef implements Serializable {
     return ClassDefEncoder.buildClassDef(classResolver, type, fields, isObjectType);
   }
 
-  public static ClassDef replaceRootClassTo(
-      ClassResolver classResolver,
-      ClassInfo targetCls
-  ) {
+  public ClassDef replaceRootClassTo(ClassResolver classResolver, Class<?> targetCls) {
+    String name = targetCls.getName();
+    List<FieldInfo> fieldInfos =
+        fieldsInfo.stream()
+            .map(
+                fieldInfo -> {
+                  if (fieldInfo.definedClass.equals(classSpec.entireClassName)) {
+                    return new FieldInfo(name, fieldInfo.fieldName, fieldInfo.fieldType);
+                  } else {
+                    return fieldInfo;
+                  }
+                })
+            .collect(Collectors.toList());
     return ClassDefEncoder.buildClassDefWithFieldInfos(
-        classResolver, targetCls.getCls(), targetCls.classDef.getFieldsInfo(), targetCls.classDef.isObjectType);
+        classResolver, targetCls, fieldInfos, isObjectType);
   }
 }
