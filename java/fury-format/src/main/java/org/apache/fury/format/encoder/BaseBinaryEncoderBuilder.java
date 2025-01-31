@@ -19,6 +19,7 @@
 
 package org.apache.fury.format.encoder;
 
+import static org.apache.fury.type.TypeUtils.PRIMITIVE_INT_TYPE;
 import static org.apache.fury.type.TypeUtils.getRawType;
 
 import java.math.BigDecimal;
@@ -70,7 +71,6 @@ import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.StringUtils;
 
 /** Base encoder builder for {@link Row}, {@link ArrayData} and {@link MapData}. */
-@SuppressWarnings("UnstableApiUsage")
 public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
   protected static final String REFERENCES_NAME = "references";
   protected static final TypeRef<Schema> SCHEMA_TYPE = TypeRef.of(Schema.class);
@@ -222,22 +222,14 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
     }
   }
 
-  /**
-   * Returns an expression to write iterable <code>inputObject</code> of type <code>typeToken</code>
-   * as {@link BinaryArray} using given <code>writer</code>.
-   */
   protected Expression serializeForArray(
       Expression inputObject, Expression writer, TypeRef<?> typeRef, Expression arrowField) {
-    return serializeForArray(inputObject, writer, typeRef, arrowField, false);
+    Reference arrayWriter = getOrCreateArrayWriter(typeRef, arrowField, writer);
+    return serializeForArrayByWriter(inputObject, arrayWriter, typeRef, arrowField);
   }
 
-  protected Expression serializeForArray(
-      Expression inputObject,
-      Expression writer,
-      TypeRef<?> typeRef,
-      Expression arrowField,
-      boolean reuse) {
-    Reference arrayWriter = getOrCreateArrayWriter(typeRef, arrowField, writer, reuse);
+  protected Expression serializeForArrayByWriter(
+      Expression inputObject, Expression arrayWriter, TypeRef<?> typeRef, Expression arrowField) {
     StaticInvoke arrayElementField =
         new StaticInvoke(
             DataTypes.class, "arrayElementField", "elemField", ARROW_FIELD_TYPE, false, arrowField);
@@ -285,21 +277,8 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
     }
   }
 
-  /**
-   * Get or create an ArrayWriter for given <code>type</code> and use <code>writer</code> as parent
-   * writer.
-   */
   protected Reference getOrCreateArrayWriter(
       TypeRef<?> typeRef, Expression arrayDataType, Expression writer) {
-    return getOrCreateArrayWriter(typeRef, arrayDataType, writer, false);
-  }
-
-  protected Reference getOrCreateArrayWriter(
-      TypeRef<?> typeRef, Expression arrayDataType, Expression writer, boolean reuse) {
-    if (reuse) {
-      return (Reference) writer;
-    }
-
     return arrayWriterMap.computeIfAbsent(
         typeRef,
         t -> {
@@ -344,39 +323,37 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
     TypeRef<?> keySetType = supertype.resolveType(TypeUtils.KEY_SET_RETURN_TYPE);
     TypeRef<?> valuesType = supertype.resolveType(TypeUtils.VALUES_RETURN_TYPE);
 
+    ListExpression expressions = new ListExpression();
+
+    Invoke offset = new Invoke(writer, "writerIndex", "writerIndex", TypeUtils.PRIMITIVE_INT_TYPE);
+    // preserve 8 bytes to write the key array numBytes later
+    Invoke preserve = new Invoke(writer, "writeDirectly", Literal.ofInt(-1));
+    expressions.add(offset, preserve);
+
     Invoke keySet = new Invoke(inputObject, "keySet", keySetType);
     Expression keySerializationExpr = serializeForArray(keySet, writer, keySetType, keyArrayField);
+    expressions.add(keySet, keySerializationExpr);
+
+    expressions.add(
+        new Expression.Invoke(
+            writer,
+            "writeDirectly",
+            offset,
+            Expression.Invoke.inlineInvoke(keySerializationExpr, "size", PRIMITIVE_INT_TYPE)));
 
     Invoke values = new Invoke(inputObject, "values", valuesType);
     Expression valueSerializationExpr =
         serializeForArray(values, writer, valuesType, valueArrayField);
+    expressions.add(values, valueSerializationExpr);
 
-    Invoke offset = new Invoke(writer, "writerIndex", "writerIndex", TypeUtils.PRIMITIVE_INT_TYPE);
-    // preserve 8 bytes to write the key array numBytes later
-    Invoke preserve =
-        new Invoke(writer, "writeDirectly", new Literal(-1, TypeUtils.PRIMITIVE_INT_TYPE));
-    Invoke writeKeyArrayNumBytes =
-        new Invoke(
-            writer,
-            "writeDirectly",
-            offset,
-            new Invoke(keySerializationExpr, "size", TypeUtils.PRIMITIVE_INT_TYPE));
     Arithmetic size =
         ExpressionUtils.subtract(
-            new Invoke(writer, "writerIndex", "writerIndex", TypeUtils.PRIMITIVE_INT_TYPE), offset);
+            new Invoke(writer, "writerIndex", "writerIndex", PRIMITIVE_INT_TYPE), offset);
     Invoke setOffsetAndSize = new Invoke(writer, "setOffsetAndSize", ordinal, offset, size);
-
-    ListExpression expression =
-        new ListExpression(
-            offset,
-            preserve,
-            keySerializationExpr,
-            writeKeyArrayNumBytes,
-            valueSerializationExpr,
-            setOffsetAndSize);
+    expressions.add(setOffsetAndSize);
 
     return new If(
-        ExpressionUtils.eqNull(inputObject), new Invoke(writer, "setNullAt", ordinal), expression);
+        ExpressionUtils.eqNull(inputObject), new Invoke(writer, "setNullAt", ordinal), expressions);
   }
 
   /**

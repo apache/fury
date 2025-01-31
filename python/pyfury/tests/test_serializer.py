@@ -19,6 +19,7 @@ import array
 import datetime
 import gc
 import io
+import os
 import pickle
 import weakref
 from enum import Enum
@@ -52,7 +53,7 @@ def test_float():
     assert ser_de(fury, -1.0) == -1.0
     assert ser_de(fury, 1 / 3) == 1 / 3
     serializer = fury.class_resolver.get_serializer(float)
-    assert type(serializer) is pyfury.DoubleSerializer
+    assert type(serializer) is pyfury.Float64Serializer
 
 
 def test_tuple():
@@ -247,6 +248,28 @@ def test_array_serializer(language):
         new_arr = ser_de(fury, arr)
         assert np.array_equal(new_arr, arr)
         np.testing.assert_array_equal(new_arr, arr)
+
+
+def test_numpy_array_memoryview():
+    _WINDOWS = os.name == "nt"
+    if _WINDOWS:
+        arr = np.array(list(range(10)), dtype="int32")
+        view = memoryview(arr)
+        assert view.format == "l"
+        assert view.itemsize == 4
+        arr = np.array(list(range(10)), dtype="int64")
+        view = memoryview(arr)
+        assert view.format == "q"
+        assert view.itemsize == 8
+    else:
+        arr = np.array(list(range(10)), dtype="int32")
+        view = memoryview(arr)
+        assert view.format == "i"
+        assert view.itemsize == 4
+        arr = np.array(list(range(10)), dtype="int64")
+        view = memoryview(arr)
+        assert view.format == "l"
+        assert view.itemsize == 8
 
 
 def ser_de(fury, obj):

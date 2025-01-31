@@ -19,6 +19,8 @@
 
 package org.apache.fury;
 
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -129,6 +131,16 @@ public abstract class FuryTestBase {
   }
 
   @DataProvider
+  public static Object[][] oneBoolOption() {
+    return new Object[][] {{false}, {true}};
+  }
+
+  @DataProvider
+  public static Object[][] twoBoolOptions() {
+    return new Object[][] {{false, false}, {true, false}, {false, true}, {true, true}};
+  }
+
+  @DataProvider
   public static Object[][] compressNumberAndCodeGen() {
     return new Object[][] {{false, false}, {true, false}, {false, true}, {true, true}};
   }
@@ -233,6 +245,19 @@ public abstract class FuryTestBase {
             .build()
       },
     };
+  }
+
+  @DataProvider
+  public static Object[][] basicMultiConfigFury() {
+    return Sets.cartesianProduct(
+            ImmutableSet.of(true, false), // trackingRef
+            ImmutableSet.of(true, false), // codeGen
+            ImmutableSet.of(true, false), // scoped meta share
+            ImmutableSet.of(
+                CompatibleMode.COMPATIBLE, CompatibleMode.SCHEMA_CONSISTENT)) // CompatibleMode
+        .stream()
+        .map(List::toArray)
+        .toArray(Object[][]::new);
   }
 
   public static void serDeCheckSerializerAndEqual(Fury fury, Object obj, String classRegex) {

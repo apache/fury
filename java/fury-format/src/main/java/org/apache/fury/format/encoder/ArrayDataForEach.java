@@ -27,6 +27,7 @@ import org.apache.fury.codegen.Code;
 import org.apache.fury.codegen.CodeGenerator;
 import org.apache.fury.codegen.CodegenContext;
 import org.apache.fury.codegen.Expression;
+import org.apache.fury.codegen.Expression.AbstractExpression;
 import org.apache.fury.format.row.binary.BinaryArray;
 import org.apache.fury.format.row.binary.BinaryUtils;
 import org.apache.fury.reflect.TypeRef;
@@ -41,7 +42,7 @@ import org.apache.fury.util.function.SerializableFunction;
  * element action expression and null element action expression.
  */
 @Internal
-public class ArrayDataForEach implements Expression {
+public class ArrayDataForEach extends AbstractExpression {
   private final Expression inputArrayData;
   private final String accessMethod;
   private final TypeRef<?> elemType;
@@ -71,6 +72,7 @@ public class ArrayDataForEach implements Expression {
       TypeRef<?> elemType,
       SerializableBiFunction<Expression, Expression, Expression> notNullAction,
       SerializableFunction<Expression, Expression> nullAction) {
+    super(inputArrayData);
     Preconditions.checkArgument(getRawType(inputArrayData.type()) == BinaryArray.class);
     this.inputArrayData = inputArrayData;
     this.accessMethod = BinaryUtils.getElemAccessMethodName(elemType);

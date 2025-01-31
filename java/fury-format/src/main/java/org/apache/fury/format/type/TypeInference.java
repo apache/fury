@@ -45,7 +45,6 @@ import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.StringUtils;
 
 /** Arrow related type inference. */
-@SuppressWarnings("UnstableApiUsage")
 public class TypeInference {
 
   public static Schema inferSchema(java.lang.reflect.Type type) {
@@ -240,24 +239,16 @@ public class TypeInference {
 
   public static String inferTypeName(TypeRef<?> token) {
     StringBuilder sb = new StringBuilder();
-    TypeRef<?> arrayToken = token;
-    while (TypeUtils.ITERABLE_TYPE.isSupertypeOf(arrayToken)
-        || TypeUtils.MAP_TYPE.isSupertypeOf(arrayToken)) {
-      if (TypeUtils.ITERABLE_TYPE.isSupertypeOf(arrayToken)) {
-        sb.append(getRawType(arrayToken).getSimpleName());
-        arrayToken = TypeUtils.getElementType(arrayToken);
-      } else {
-        Tuple2<TypeRef<?>, TypeRef<?>> tuple2 = TypeUtils.getMapKeyValueType(arrayToken);
-        sb.append("Map");
-
-        if (!TypeUtils.isBean(tuple2.f0)) {
-          arrayToken = tuple2.f0;
-        }
-
-        if (!TypeUtils.isBean(tuple2.f1)) {
-          arrayToken = tuple2.f1;
-        }
-      }
+    if (TypeUtils.ITERABLE_TYPE.isSupertypeOf(token)) {
+      sb.append("Array_");
+      sb.append(inferTypeName(TypeUtils.getElementType(token)));
+    } else if (TypeUtils.MAP_TYPE.isSupertypeOf(token)) {
+      sb.append("Map_");
+      Tuple2<TypeRef<?>, TypeRef<?>> mapKeyValueType = TypeUtils.getMapKeyValueType(token);
+      sb.append(inferTypeName(mapKeyValueType.f0));
+      sb.append("_").append(inferTypeName(mapKeyValueType.f1));
+    } else {
+      sb.append(token.getRawType().getSimpleName());
     }
     return sb.toString();
   }
