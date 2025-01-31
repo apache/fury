@@ -30,6 +30,7 @@ from pyfury.resolver import (
     NOT_NULL_VALUE_FLAG,
 )
 from pyfury.util import is_little_endian, set_bit, get_bit, clear_bit
+from pyfury.type import TypeId
 
 try:
     import numpy as np
@@ -44,24 +45,21 @@ logger = logging.getLogger(__name__)
 
 
 MAGIC_NUMBER = 0x62D4
-DEFAULT_DYNAMIC_WRITE_STRING_ID = -1
+DEFAULT_DYNAMIC_WRITE_META_STR_ID = -1
 DYNAMIC_TYPE_ID = -1
 USE_CLASSNAME = 0
 USE_CLASS_ID = 1
 # preserve 0 as flag for class id not set in ClassInfo`
 NO_CLASS_ID = 0
-PYINT_CLASS_ID = 1
-PYFLOAT_CLASS_ID = 2
-PYBOOL_CLASS_ID = 3
-STRING_CLASS_ID = 4
-PICKLE_CLASS_ID = 5
-PICKLE_STRONG_CACHE_CLASS_ID = 6
-PICKLE_CACHE_CLASS_ID = 7
+INT64_CLASS_ID = TypeId.INT64
+FLOAT64_CLASS_ID = TypeId.FLOAT64
+BOOL_CLASS_ID = TypeId.BOOL
+STRING_CLASS_ID = TypeId.STRING
 # `NOT_NULL_VALUE_FLAG` + `CLASS_ID << 1` in little-endian order
-NOT_NULL_PYINT_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (PYINT_CLASS_ID << 9)
-NOT_NULL_PYFLOAT_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (PYFLOAT_CLASS_ID << 9)
-NOT_NULL_PYBOOL_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (PYBOOL_CLASS_ID << 9)
-NOT_NULL_STRING_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (STRING_CLASS_ID << 9)
+NOT_NULL_INT64_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (INT64_CLASS_ID << 8)
+NOT_NULL_FLOAT64_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (FLOAT64_CLASS_ID << 8)
+NOT_NULL_BOOL_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (BOOL_CLASS_ID << 8)
+NOT_NULL_STRING_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (STRING_CLASS_ID << 8)
 SMALL_STRING_THRESHOLD = 16
 
 
@@ -156,7 +154,7 @@ class Fury:
                 stacklevel=2,
             )
             self.pickler = Pickler(self.buffer)
-            self.unpickler = Unpickler(self.buffer)
+            self.unpickler = None
         else:
             self.pickler = _PicklerStub()
             self.unpickler = _UnpicklerStub()
@@ -263,32 +261,32 @@ class Fury:
             buffer.write_string(obj)
             return
         elif cls is int:
-            buffer.write_int16(NOT_NULL_PYINT_FLAG)
+            buffer.write_int16(NOT_NULL_INT64_FLAG)
             buffer.write_varint64(obj)
             return
         elif cls is bool:
-            buffer.write_int16(NOT_NULL_PYBOOL_FLAG)
+            buffer.write_int16(NOT_NULL_BOOL_FLAG)
             buffer.write_bool(obj)
             return
         if self.ref_resolver.write_ref_or_null(buffer, obj):
             return
         if classinfo is None:
             classinfo = self.class_resolver.get_classinfo(cls)
-        self.class_resolver.write_classinfo(buffer, classinfo)
+        self.class_resolver.write_typeinfo(buffer, classinfo)
         classinfo.serializer.write(buffer, obj)
 
     def serialize_nonref(self, buffer, obj):
         cls = type(obj)
         if cls is str:
-            buffer.write_varuint32(STRING_CLASS_ID << 1)
+            buffer.write_varuint32(STRING_CLASS_ID)
             buffer.write_string(obj)
             return
         elif cls is int:
-            buffer.write_varuint32(PYINT_CLASS_ID << 1)
+            buffer.write_varuint32(INT64_CLASS_ID)
             buffer.write_varint64(obj)
             return
         elif cls is bool:
-            buffer.write_varuint32(PYBOOL_CLASS_ID << 1)
+            buffer.write_varuint32(BOOL_CLASS_ID)
             buffer.write_bool(obj)
             return
         else:
@@ -380,7 +378,7 @@ class Fury:
         ref_id = ref_resolver.try_preserve_ref_id(buffer)
         # indicates that the object is first read.
         if ref_id >= NOT_NULL_VALUE_FLAG:
-            classinfo = self.class_resolver.read_classinfo(buffer)
+            classinfo = self.class_resolver.read_typeinfo(buffer)
             o = classinfo.serializer.read(buffer)
             ref_resolver.set_read_object(ref_id, o)
             return o
@@ -389,7 +387,7 @@ class Fury:
 
     def deserialize_nonref(self, buffer):
         """Deserialize not-null and non-reference object from buffer."""
-        classinfo = self.class_resolver.read_classinfo(buffer)
+        classinfo = self.class_resolver.read_typeinfo(buffer)
         return classinfo.serializer.read(buffer)
 
     def xdeserialize_ref(self, buffer, serializer=None):
@@ -448,7 +446,10 @@ class Fury:
     def handle_unsupported_read(self, buffer):
         in_band = buffer.read_bool()
         if in_band:
-            return self.unpickler.load()
+            unpickler = self.unpickler
+            if unpickler is None:
+                self.unpickler = unpickler = Unpickler(buffer)
+            return unpickler.load()
         else:
             assert self._unsupported_objects is not None
             return next(self._unsupported_objects)
