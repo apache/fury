@@ -53,7 +53,7 @@ def test_float():
     assert ser_de(fury, -1.0) == -1.0
     assert ser_de(fury, 1 / 3) == 1 / 3
     serializer = fury.class_resolver.get_serializer(float)
-    assert type(serializer) is pyfury.DoubleSerializer
+    assert type(serializer) is pyfury.Float64Serializer
 
 
 def test_tuple():
