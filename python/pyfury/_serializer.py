@@ -26,10 +26,7 @@ from pyfury._fury import (
     NOT_NULL_BOOL_FLAG,
 )
 from pyfury.resolver import NOT_NULL_VALUE_FLAG, NULL_FLAG
-from pyfury.type import (
-    TypeId,
-    is_primitive_type,
-)
+from pyfury.type import is_primitive_type
 
 try:
     import numpy as np

@@ -61,7 +61,6 @@ from pyfury.serializer import (
     DataClassSerializer,
 )
 from pyfury._struct import ComplexObjectSerializer
-from pyfury.buffer import Buffer
 from pyfury.meta.metastring import MetaStringEncoder, MetaStringDecoder
 from pyfury.type import (
     TypeId,
