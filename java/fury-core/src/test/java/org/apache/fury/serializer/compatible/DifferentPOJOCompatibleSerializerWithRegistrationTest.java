@@ -29,7 +29,7 @@ import org.testng.annotations.Test;
 
 /**
  * Test COMPATIBILITY mode that supports - same field type and name can be deserialized to other
- * class with different name generic class
+ * also test generic class
  */
 public class DifferentPOJOCompatibleSerializerWithRegistrationTest extends Assert {
 
