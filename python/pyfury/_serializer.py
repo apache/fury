@@ -24,6 +24,8 @@ from pyfury._fury import (
     NOT_NULL_STRING_FLAG,
     NOT_NULL_INT64_FLAG,
     NOT_NULL_BOOL_FLAG,
+    KEY_HAS_NULL,
+    VALUE_HAS_NULL,
 )
 from pyfury.resolver import NOT_NULL_VALUE_FLAG, NULL_FLAG
 from pyfury.type import is_primitive_type
@@ -285,6 +287,7 @@ class MapSerializer(Serializer):
         "ref_resolver",
         "key_serializer",
         "value_serializer",
+        "use_chunk_serialize",
     )
 
     def __init__(self, fury, type_, key_serializer=None, value_serializer=None):
@@ -293,40 +296,107 @@ class MapSerializer(Serializer):
         self.ref_resolver = fury.ref_resolver
         self.key_serializer = key_serializer
         self.value_serializer = value_serializer
+        self.use_chunk_serialize = False
 
     def write(self, buffer, value: Dict):
+        if self.use_chunk_serialize:
+            self.chunk_write_elements(buffer, value)
+        else:
+            buffer.write_varuint32(len(value))
+            for k, v in value.items():
+                self.serialize_key_value(buffer, k, v)
+
+    def chunk_write_elements(self, buffer, value: Dict):
         buffer.write_varuint32(len(value))
+
+        chunk_size = 0
+        max_chunk_size = 128
+
         for k, v in value.items():
-            key_cls = type(k)
-            if key_cls is str:
-                buffer.write_int16(NOT_NULL_STRING_FLAG)
-                buffer.write_string(k)
-            else:
-                if not self.ref_resolver.write_ref_or_null(buffer, k):
-                    classinfo = self.class_resolver.get_classinfo(key_cls)
-                    self.class_resolver.write_typeinfo(buffer, classinfo)
-                    classinfo.serializer.write(buffer, k)
-            value_cls = type(v)
-            if value_cls is str:
-                buffer.write_int16(NOT_NULL_STRING_FLAG)
-                buffer.write_string(v)
-            elif value_cls is int:
-                buffer.write_int16(NOT_NULL_INT64_FLAG)
-                buffer.write_varint64(v)
-            else:
-                if not self.ref_resolver.write_ref_or_null(buffer, v):
-                    classinfo = self.class_resolver.get_classinfo(value_cls)
-                    self.class_resolver.write_typeinfo(buffer, classinfo)
-                    classinfo.serializer.write(buffer, v)
+            if chunk_size >= max_chunk_size:
+                break
+
+            self.serialize_key_value(buffer, k, v)
+            chunk_size += 1
+
+    def serialize_key_value(self, buffer, key, value):
+
+        key_cls = type(key)
+        if key_cls is str:
+            buffer.write_int16(NOT_NULL_STRING_FLAG)
+            buffer.write_string(key)
+        else:
+            if not self.ref_resolver.write_ref_or_null(buffer, key):
+                classinfo = self.class_resolver.get_classinfo(key_cls)
+                self.class_resolver.write_classinfo(buffer, classinfo)
+                classinfo.serializer.write(buffer, key)
+
+        value_cls = type(value)
+        if value_cls is str:
+            buffer.write_int16(NOT_NULL_STRING_FLAG)
+            buffer.write_string(value)
+        elif value_cls is int:
+            buffer.write_int16(NOT_NULL_INT64_FLAG)
+            buffer.write_varint64(value)
+        else:
+            if not self.ref_resolver.write_ref_or_null(buffer, value):
+                classinfo = self.class_resolver.get_classinfo(value_cls)
+                self.class_resolver.write_classinfo(buffer, classinfo)
+                classinfo.serializer.write(buffer, value)
 
     def read(self, buffer):
-        len_ = buffer.read_varuint32()
+        if self.use_chunk_serialize:
+            return self.chunk_read_elements(buffer)
+        else:
+            return self.read_elements(buffer)
+
+    def chunk_read_elements(self, buffer):
+        size = buffer.read_varuint32()
         map_ = self.type_()
-        self.fury.ref_resolver.reference(map_)
-        for i in range(len_):
-            k = self.fury.deserialize_ref(buffer)
-            v = self.fury.deserialize_ref(buffer)
-            map_[k] = v
+
+        while size > 0:
+            chunk_header = buffer.read_unsigned_byte()
+            size_and_header = self.read_chunk(buffer, map_, chunk_header, size)
+            size = (size_and_header >> 8)
+            chunk_header = (size_and_header & 0xff)
+        return map_
+
+    def read_chunk(self, buffer, map_, chunk_header, size):
+
+        chunk_size = buffer.read_unsigned_byte()
+
+        for i in range(chunk_size):
+            key = self.read_key(buffer, chunk_header)
+            value = self.read_value(buffer, chunk_header)
+            map_[key] = value
+            size -= 1
+
+        return (size << 8) | buffer.read_unsigned_byte()
+
+    def read_key(self, buffer, chunk_header):
+        key_has_null = (chunk_header & KEY_HAS_NULL) != 0
+        if key_has_null:
+            return None
+        return self.read_ref(buffer)
+
+    def read_value(self, buffer, chunk_header):
+        value_has_null = (chunk_header & VALUE_HAS_NULL) != 0
+        if value_has_null:
+            return None
+        return self.read_ref(buffer)
+
+    def read_ref(self, buffer):
+
+        return self.fury.deserialize_ref(buffer)
+
+    def read_elements(self, buffer):
+
+        size = buffer.read_varuint32()
+        map_ = self.type_()
+        for i in range(size):
+            key = self.read_ref(buffer)
+            value = self.read_ref(buffer)
+            map_[key] = value
         return map_
 
     def xwrite(self, buffer, value: Dict):
