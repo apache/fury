@@ -300,7 +300,7 @@ class MapSerializer(Serializer):
 
     def write(self, buffer, value: Dict):
         if self.use_chunk_serialize:
-            self.chunk_write_elements(buffer, value)
+            pass
         else:
             self.write_elements(buffer, value)
 
@@ -368,7 +368,7 @@ class MapSerializer(Serializer):
 
     def read(self, buffer):
         if self.use_chunk_serialize:
-            return self.chunk_read_elements(buffer)
+            pass
         else:
             return self.read_elements(buffer)
 
