@@ -302,29 +302,32 @@ class MapSerializer(Serializer):
         if self.use_chunk_serialize:
             self.chunk_write_elements(buffer, value)
         else:
-            buffer.write_varuint32(len(value))
-            for k, v in value.items():
-                key_cls = type(k)
-                if key_cls is str:
-                    buffer.write_int16(NOT_NULL_STRING_FLAG)
-                    buffer.write_string(k)
-                else:
-                    if not self.ref_resolver.write_ref_or_null(buffer, k):
-                        classinfo = self.class_resolver.get_classinfo(key_cls)
-                        self.class_resolver.write_typeinfo(buffer, classinfo)
-                        classinfo.serializer.write(buffer, k)
-                value_cls = type(v)
-                if value_cls is str:
-                    buffer.write_int16(NOT_NULL_STRING_FLAG)
-                    buffer.write_string(v)
-                elif value_cls is int:
-                    buffer.write_int16(NOT_NULL_INT64_FLAG)
-                    buffer.write_varint64(v)
-                else:
-                    if not self.ref_resolver.write_ref_or_null(buffer, v):
-                        classinfo = self.class_resolver.get_classinfo(value_cls)
-                        self.class_resolver.write_typeinfo(buffer, classinfo)
-                        classinfo.serializer.write(buffer, v)
+            self.write_elements(buffer,value)
+
+    def write_elements(self, buffer, value: Dict):
+        buffer.write_varuint32(len(value))
+        for k, v in value.items():
+            key_cls = type(k)
+            if key_cls is str:
+                buffer.write_int16(NOT_NULL_STRING_FLAG)
+                buffer.write_string(k)
+            else:
+                if not self.ref_resolver.write_ref_or_null(buffer, k):
+                    classinfo = self.class_resolver.get_classinfo(key_cls)
+                    self.class_resolver.write_typeinfo(buffer, classinfo)
+                    classinfo.serializer.write(buffer, k)
+            value_cls = type(v)
+            if value_cls is str:
+                buffer.write_int16(NOT_NULL_STRING_FLAG)
+                buffer.write_string(v)
+            elif value_cls is int:
+                buffer.write_int16(NOT_NULL_INT64_FLAG)
+                buffer.write_varint64(v)
+            else:
+                if not self.ref_resolver.write_ref_or_null(buffer, v):
+                    classinfo = self.class_resolver.get_classinfo(value_cls)
+                    self.class_resolver.write_typeinfo(buffer, classinfo)
+                    classinfo.serializer.write(buffer, v)
 
     def chunk_write_elements(self, buffer, value: Dict):
         buffer.write_varuint32(len(value))
