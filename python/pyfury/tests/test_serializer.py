@@ -110,12 +110,12 @@ def test_basic_serializer(language):
     assert ser_de(fury, True) is True
     assert ser_de(fury, False) is False
     assert ser_de(fury, -1) == -1
-    assert ser_de(fury, 2 ** 7 - 1) == 2 ** 7 - 1
-    assert ser_de(fury, 2 ** 15 - 1) == 2 ** 15 - 1
-    assert ser_de(fury, -(2 ** 15)) == -(2 ** 15)
-    assert ser_de(fury, 2 ** 31 - 1) == 2 ** 31 - 1
-    assert ser_de(fury, 2 ** 63 - 1) == 2 ** 63 - 1
-    assert ser_de(fury, -(2 ** 63)) == -(2 ** 63)
+    assert ser_de(fury, 2**7 - 1) == 2**7 - 1
+    assert ser_de(fury, 2**15 - 1) == 2**15 - 1
+    assert ser_de(fury, -(2**15)) == -(2**15)
+    assert ser_de(fury, 2**31 - 1) == 2**31 - 1
+    assert ser_de(fury, 2**63 - 1) == 2**63 - 1
+    assert ser_de(fury, -(2**63)) == -(2**63)
     assert ser_de(fury, 1.0) == 1.0
     assert ser_de(fury, -1.0) == -1.0
     assert ser_de(fury, "str") == "str"
