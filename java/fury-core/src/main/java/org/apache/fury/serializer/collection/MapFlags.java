@@ -21,7 +21,7 @@ package org.apache.fury.serializer.collection;
 
 public class MapFlags {
   /** Whether track key ref. */
-  public static int TRACKING_KEY_REF = 0b0;
+  public static int TRACKING_KEY_REF = 0b1;
 
   /** Whether key has null. */
   public static int KEY_HAS_NULL = 0b10;
