@@ -390,13 +390,13 @@ class MapSerializer(Serializer):
         return self.fury.deserialize_ref(buffer)
 
     def read_elements(self, buffer):
-
-        size = buffer.read_varuint32()
+        len_ = buffer.read_varuint32()
         map_ = self.type_()
-        for i in range(size):
-            key = self.read_ref(buffer)
-            value = self.read_ref(buffer)
-            map_[key] = value
+        self.fury.ref_resolver.reference(map_)
+        for i in range(len_):
+            k = self.fury.deserialize_ref(buffer)
+            v = self.fury.deserialize_ref(buffer)
+            map_[k] = v
         return map_
 
     def xwrite(self, buffer, value: Dict):
