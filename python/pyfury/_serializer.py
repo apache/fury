@@ -302,7 +302,7 @@ class MapSerializer(Serializer):
         if self.use_chunk_serialize:
             self.chunk_write_elements(buffer, value)
         else:
-            self.write_elements(buffer,value)
+            self.write_elements(buffer, value)
 
     def write_elements(self, buffer, value: Dict):
         buffer.write_varuint32(len(value))
@@ -333,7 +333,7 @@ class MapSerializer(Serializer):
         buffer.write_varuint32(len(value))
 
         chunk_size = 0
-        max_chunk_size = 128
+        max_chunk_size = 128  # Define maximum chunk size
 
         for k, v in value.items():
             if chunk_size >= max_chunk_size:
@@ -343,7 +343,6 @@ class MapSerializer(Serializer):
             chunk_size += 1
 
     def serialize_key_value(self, buffer, key, value):
-
         key_cls = type(key)
         if key_cls is str:
             buffer.write_int16(NOT_NULL_STRING_FLAG)
@@ -385,7 +384,6 @@ class MapSerializer(Serializer):
         return map_
 
     def read_chunk(self, buffer, map_, chunk_header, size):
-
         chunk_size = buffer.read_unsigned_byte()
 
         for i in range(chunk_size):
@@ -409,7 +407,6 @@ class MapSerializer(Serializer):
         return self.read_ref(buffer)
 
     def read_ref(self, buffer):
-
         return self.fury.deserialize_ref(buffer)
 
     def read_elements(self, buffer):
