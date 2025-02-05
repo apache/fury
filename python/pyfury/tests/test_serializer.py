@@ -110,12 +110,12 @@ def test_basic_serializer(language):
     assert ser_de(fury, True) is True
     assert ser_de(fury, False) is False
     assert ser_de(fury, -1) == -1
-    assert ser_de(fury, 2**7 - 1) == 2**7 - 1
-    assert ser_de(fury, 2**15 - 1) == 2**15 - 1
-    assert ser_de(fury, -(2**15)) == -(2**15)
-    assert ser_de(fury, 2**31 - 1) == 2**31 - 1
-    assert ser_de(fury, 2**63 - 1) == 2**63 - 1
-    assert ser_de(fury, -(2**63)) == -(2**63)
+    assert ser_de(fury, 2 ** 7 - 1) == 2 ** 7 - 1
+    assert ser_de(fury, 2 ** 15 - 1) == 2 ** 15 - 1
+    assert ser_de(fury, -(2 ** 15)) == -(2 ** 15)
+    assert ser_de(fury, 2 ** 31 - 1) == 2 ** 31 - 1
+    assert ser_de(fury, 2 ** 63 - 1) == 2 ** 63 - 1
+    assert ser_de(fury, -(2 ** 63)) == -(2 ** 63)
     assert ser_de(fury, 1.0) == 1.0
     assert ser_de(fury, -1.0) == -1.0
     assert ser_de(fury, "str") == "str"
@@ -576,6 +576,36 @@ def test_function():
     df = pd.DataFrame({"a": list(range(10))})
     df_sum = fury.deserialize(fury.serialize(df.sum))
     assert df_sum().equals(df.sum())
+
+
+@dataclass(unsafe_hash=True)
+class MapFields:
+    simple_dict: dict = None
+    empty_dict: dict = None
+    large_dict: dict = None
+
+
+def test_map_fields_chunk_serializer():
+    fury = Fury(
+        language=Language.PYTHON, ref_tracking=True, require_class_registration=False
+    )
+
+    simple_dict = {"a": 1, "b": 2, "c": 3}
+    empty_dict = {}
+    large_dict = {f"key{i}": i for i in range(1000)}
+
+    #
+    map_fields_object = MapFields(
+        simple_dict=simple_dict,
+        empty_dict=empty_dict,
+        large_dict=large_dict
+    )
+
+    serialized = fury.serialize(map_fields_object)
+    deserialized = fury.deserialize(serialized)
+    assert map_fields_object.simple_dict == deserialized.simple_dict
+    assert map_fields_object.empty_dict == deserialized.empty_dict
+    assert map_fields_object.large_dict == deserialized.large_dict
 
 
 if __name__ == "__main__":
