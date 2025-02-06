@@ -43,10 +43,8 @@ from pyfury.serializer import (
     Int16Serializer,
     Int32Serializer,
     Int64Serializer,
-    DynamicIntSerializer,
-    FloatSerializer,
-    DoubleSerializer,
-    DynamicFloatSerializer,
+    Float32Serializer,
+    Float64Serializer,
     StringSerializer,
     DateSerializer,
     TimestampSerializer,
@@ -60,9 +58,9 @@ from pyfury.serializer import (
     PickleCacheSerializer,
     PickleStrongCacheSerializer,
     PickleSerializer,
+    DataClassSerializer,
 )
 from pyfury._struct import ComplexObjectSerializer
-from pyfury.buffer import Buffer
 from pyfury.meta.metastring import MetaStringEncoder, MetaStringDecoder
 from pyfury.type import (
     TypeId,
@@ -78,13 +76,6 @@ from pyfury._fury import (
     DYNAMIC_TYPE_ID,
     # preserve 0 as flag for class id not set in ClassInfo`
     NO_CLASS_ID,
-    PYINT_CLASS_ID,
-    PYFLOAT_CLASS_ID,
-    PYBOOL_CLASS_ID,
-    STRING_CLASS_ID,
-    PICKLE_CLASS_ID,
-    PICKLE_STRONG_CACHE_CLASS_ID,
-    PICKLE_CACHE_CLASS_ID,
 )
 
 try:
@@ -168,7 +159,7 @@ class ClassResolver:
         self._hash_to_classinfo = dict()
         self._dynamic_written_metastr = []
         self._type_id_to_classinfo = dict()
-        self._type_id_counter = PICKLE_CACHE_CLASS_ID + 1
+        self._type_id_counter = 64
         self._dynamic_write_string_id = 0
         # hold objects to avoid gc, since `flat_hash_map/vector` doesn't
         # hold python reference.
@@ -181,60 +172,30 @@ class ClassResolver:
         self.typename_decoder = MetaStringDecoder("$", "_")
 
     def initialize(self):
+        self._initialize_xlang()
         if self.fury.language == Language.PYTHON:
             self._initialize_py()
-        else:
-            self._initialize_xlang()
 
     def _initialize_py(self):
         register = functools.partial(self._register_type, internal=True)
-        register(int, type_id=PYINT_CLASS_ID, serializer=Int64Serializer)
-        register(float, type_id=PYFLOAT_CLASS_ID, serializer=DoubleSerializer)
-        register(bool, type_id=PYBOOL_CLASS_ID, serializer=BooleanSerializer)
-        register(str, type_id=STRING_CLASS_ID, serializer=StringSerializer)
-        register(_PickleStub, type_id=PICKLE_CLASS_ID, serializer=PickleSerializer)
+        register(
+            _PickleStub,
+            type_id=PickleSerializer.PICKLE_CLASS_ID,
+            serializer=PickleSerializer,
+        )
         register(
             PickleStrongCacheStub,
-            type_id=PICKLE_STRONG_CACHE_CLASS_ID,
+            type_id=97,
             serializer=PickleStrongCacheSerializer(self.fury),
         )
         register(
             PickleCacheStub,
-            type_id=PICKLE_CACHE_CLASS_ID,
+            type_id=98,
             serializer=PickleCacheSerializer(self.fury),
         )
         register(type(None), serializer=NoneSerializer)
-        register(Int8Type, serializer=ByteSerializer)
-        register(Int16Type, serializer=Int16Serializer)
-        register(Int32Type, serializer=Int32Serializer)
-        register(Int64Type, serializer=Int64Serializer)
-        register(Float32Type, serializer=FloatSerializer)
-        register(Float64Type, serializer=DoubleSerializer)
-        register(datetime.date, serializer=DateSerializer)
-        register(datetime.datetime, serializer=TimestampSerializer)
-        register(bytes, serializer=BytesSerializer)
-        register(list, serializer=ListSerializer)
         register(tuple, serializer=TupleSerializer)
-        register(dict, serializer=MapSerializer)
-        register(set, serializer=SetSerializer)
-        register(enum.Enum, serializer=EnumSerializer)
         register(slice, serializer=SliceSerializer)
-        try:
-            import pyarrow as pa
-            from pyfury.format.serializer import (
-                ArrowRecordBatchSerializer,
-                ArrowTableSerializer,
-            )
-
-            register(pa.RecordBatch, serializer=ArrowRecordBatchSerializer)
-            register(pa.Table, serializer=ArrowTableSerializer)
-        except Exception:
-            pass
-        for size, ftype, type_id in PyArraySerializer.typecode_dict.values():
-            register(ftype, serializer=PyArraySerializer(self.fury, ftype, type_id))
-        register(array.array, serializer=DynamicPyArraySerializer)
-        if np:
-            register(np.ndarray, serializer=NDArraySerializer)
 
     def _initialize_xlang(self):
         register = functools.partial(self._register_type, internal=True)
@@ -243,18 +204,18 @@ class ClassResolver:
         register(Int16Type, type_id=TypeId.INT16, serializer=Int16Serializer)
         register(Int32Type, type_id=TypeId.INT32, serializer=Int32Serializer)
         register(Int64Type, type_id=TypeId.INT64, serializer=Int64Serializer)
-        register(int, type_id=DYNAMIC_TYPE_ID, serializer=DynamicIntSerializer)
+        register(int, type_id=TypeId.INT64, serializer=Int64Serializer)
         register(
             Float32Type,
             type_id=TypeId.FLOAT32,
-            serializer=FloatSerializer,
+            serializer=Float32Serializer,
         )
         register(
             Float64Type,
             type_id=TypeId.FLOAT64,
-            serializer=DoubleSerializer,
+            serializer=Float64Serializer,
         )
-        register(float, type_id=DYNAMIC_TYPE_ID, serializer=DynamicFloatSerializer)
+        register(float, type_id=TypeId.FLOAT64, serializer=Float64Serializer)
         register(str, type_id=TypeId.STRING, serializer=StringSerializer)
         # TODO(chaokunyang) DURATION DECIMAL
         register(
@@ -512,9 +473,19 @@ class ClassResolver:
             raise TypeUnregisteredError(f"{cls} not registered")
         logger.info("Class %s not registered", cls)
         serializer = self._create_serializer(cls)
-        type_id = (
-            NO_CLASS_ID if type(serializer) is not PickleSerializer else PICKLE_CLASS_ID
-        )
+        type_id = None
+        if self.language == Language.PYTHON:
+            if isinstance(serializer, EnumSerializer):
+                type_id = TypeId.NAMED_ENUM
+            elif type(serializer) is PickleSerializer:
+                type_id = PickleSerializer.PICKLE_CLASS_ID
+            if not self.require_registration:
+                if isinstance(serializer, DataClassSerializer):
+                    type_id = TypeId.NAMED_STRUCT
+        if type_id is None:
+            raise TypeUnregisteredError(
+                f"{cls} must be registered using `fury.register_type` API"
+            )
         return self.__register_type(
             cls,
             type_id=type_id,
@@ -544,33 +515,6 @@ class ClassResolver:
                 serializer = PickleSerializer(self.fury, cls)
         return serializer
 
-    def write_classinfo(self, buffer: Buffer, classinfo):
-        if classinfo.dynamic_type:
-            return
-        type_id = classinfo.type_id
-        if type_id != NO_CLASS_ID:
-            buffer.write_varuint32(type_id << 1)
-            return
-        buffer.write_varuint32(1)
-        self.metastring_resolver.write_meta_string_bytes(
-            buffer, classinfo.namespace_bytes
-        )
-        self.metastring_resolver.write_meta_string_bytes(
-            buffer, classinfo.typename_bytes
-        )
-
-    def read_classinfo(self, buffer):
-        header = buffer.read_varuint32()
-        if header & 0b1 == 0:
-            type_id = header >> 1
-            classinfo = self._type_id_to_classinfo[type_id]
-            if classinfo.serializer is None:
-                classinfo.serializer = self._create_serializer(classinfo.cls)
-            return classinfo
-        ns_metabytes = self.metastring_resolver.read_meta_string_bytes(buffer)
-        type_metabytes = self.metastring_resolver.read_meta_string_bytes(buffer)
-        return self._load_metabytes_to_classinfo(ns_metabytes, type_metabytes)
-
     def _load_metabytes_to_classinfo(self, ns_metabytes, type_metabytes):
         typeinfo = self._ns_type_to_classinfo.get((ns_metabytes, type_metabytes))
         if typeinfo is not None:
@@ -588,6 +532,8 @@ class ClassResolver:
         return classinfo
 
     def write_typeinfo(self, buffer, classinfo):
+        if classinfo.dynamic_type:
+            return
         type_id = classinfo.type_id
         internal_type_id = type_id & 0xFF
         buffer.write_varuint32(type_id)

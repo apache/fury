@@ -36,7 +36,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.Data;
 import org.apache.arrow.memory.BufferAllocator;
@@ -68,6 +67,7 @@ import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.serializer.BufferObject;
+import org.apache.fury.test.TestUtils;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -339,27 +339,8 @@ public class CrossLanguageTest {
    * @return Whether the command succeeded.
    */
   private boolean executeCommand(List<String> command, int waitTimeoutSeconds) {
-    return executeCommand(
+    return TestUtils.executeCommand(
         command, waitTimeoutSeconds, ImmutableMap.of("ENABLE_CROSS_LANGUAGE_TESTS", "true"));
-  }
-
-  private boolean executeCommand(
-      List<String> command, int waitTimeoutSeconds, Map<String, String> env) {
-    try {
-      LOG.info("Executing command: {}", String.join(" ", command));
-      ProcessBuilder processBuilder =
-          new ProcessBuilder(command)
-              .redirectOutput(ProcessBuilder.Redirect.INHERIT)
-              .redirectError(ProcessBuilder.Redirect.INHERIT);
-      for (Map.Entry<String, String> entry : env.entrySet()) {
-        processBuilder.environment().put(entry.getKey(), entry.getValue());
-      }
-      Process process = processBuilder.start();
-      process.waitFor(waitTimeoutSeconds, TimeUnit.SECONDS);
-      return process.exitValue() == 0;
-    } catch (Exception e) {
-      throw new RuntimeException("Error executing command " + String.join(" ", command), e);
-    }
   }
 
   @Test

@@ -103,10 +103,19 @@ genrule(
         set -e
         set -x
         WORK_DIR=$$(pwd)
-        cp -f $(location python/pyfury/_util.so) "$$WORK_DIR/python/pyfury"
-        cp -f $(location python/pyfury/lib/mmh3/mmh3.so) "$$WORK_DIR/python/pyfury/lib/mmh3"
-        cp -f $(location python/pyfury/format/_format.so) "$$WORK_DIR/python/pyfury/format"
-        cp -f $(location python/pyfury/_serialization.so) "$$WORK_DIR/python/pyfury"
+        u_name=`uname -s`
+        if [ "$${u_name: 0: 4}" == "MING" ] || [ "$${u_name: 0: 4}" == "MSYS" ]
+        then
+            cp -f $(location python/pyfury/_util.so) "$$WORK_DIR/python/pyfury/_util.pyd"
+            cp -f $(location python/pyfury/lib/mmh3/mmh3.so) "$$WORK_DIR/python/pyfury/lib/mmh3/mmh3.pyd"
+            cp -f $(location python/pyfury/format/_format.so) "$$WORK_DIR/python/pyfury/format/_format.pyd"
+            cp -f $(location python/pyfury/_serialization.so) "$$WORK_DIR/python/pyfury/_serialization.pyd"
+        else
+            cp -f $(location python/pyfury/_util.so) "$$WORK_DIR/python/pyfury"
+            cp -f $(location python/pyfury/lib/mmh3/mmh3.so) "$$WORK_DIR/python/pyfury/lib/mmh3"
+            cp -f $(location python/pyfury/format/_format.so) "$$WORK_DIR/python/pyfury/format"
+            cp -f $(location python/pyfury/_serialization.so) "$$WORK_DIR/python/pyfury"
+        fi
         echo $$(date) > $@
     """,
     local = 1,

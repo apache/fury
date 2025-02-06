@@ -17,46 +17,13 @@
  * under the License.
  */
 
-#include "string_util.h"
-
-#if defined(__x86_64__) || defined(_M_X64)
-#include <immintrin.h>
-#elif defined(__ARM_NEON) || defined(__ARM_NEON__)
-#include <arm_neon.h>
-#elif defined(__riscv) && __riscv_vector
-#include <riscv_vector.h>
-#endif
-
 #include <chrono>
 #include <string>
 
+#include "platform.h"
+#include "string_util.h"
+
 namespace fury {
-
-// Swap bytes to convert from big endian to little endian
-inline uint16_t swapBytes(uint16_t value) {
-  return (value >> 8) | (value << 8);
-}
-
-inline void utf16ToUtf8(uint16_t code_unit, char *&output) {
-  if (code_unit < 0x80) {
-    *output++ = static_cast<char>(code_unit);
-  } else if (code_unit < 0x800) {
-    *output++ = static_cast<char>(0xC0 | (code_unit >> 6));
-    *output++ = static_cast<char>(0x80 | (code_unit & 0x3F));
-  } else {
-    *output++ = static_cast<char>(0xE0 | (code_unit >> 12));
-    *output++ = static_cast<char>(0x80 | ((code_unit >> 6) & 0x3F));
-    *output++ = static_cast<char>(0x80 | (code_unit & 0x3F));
-  }
-}
-
-inline void utf16SurrogatePairToUtf8(uint16_t high, uint16_t low, char *&utf8) {
-  uint32_t code_point = 0x10000 + ((high - 0xD800) << 10) + (low - 0xDC00);
-  *utf8++ = static_cast<char>((code_point >> 18) | 0xF0);
-  *utf8++ = static_cast<char>(((code_point >> 12) & 0x3F) | 0x80);
-  *utf8++ = static_cast<char>(((code_point >> 6) & 0x3F) | 0x80);
-  *utf8++ = static_cast<char>((code_point & 0x3F) | 0x80);
-}
 
 std::u16string utf8ToUtf16SIMD(const std::string &utf8, bool is_little_endian) {
   std::u16string utf16;
@@ -181,31 +148,7 @@ std::u16string utf8ToUtf16SIMD(const std::string &utf8, bool is_little_endian) {
   return utf16;
 }
 
-#if defined(__x86_64__) || defined(_M_X64)
-
-bool isLatin(const std::string &str) {
-  const char *data = str.data();
-  size_t len = str.size();
-
-  size_t i = 0;
-  __m256i latin_mask = _mm256_set1_epi8(0x80);
-  for (; i + 32 <= len; i += 32) {
-    __m256i chars =
-        _mm256_loadu_si256(reinterpret_cast<const __m256i *>(data + i));
-    __m256i result = _mm256_and_si256(chars, latin_mask);
-    if (!_mm256_testz_si256(result, result)) {
-      return false;
-    }
-  }
-
-  for (; i < len; ++i) {
-    if (static_cast<unsigned char>(data[i]) >= 128) {
-      return false;
-    }
-  }
-
-  return true;
-}
+#if defined(FURY_HAS_IMMINTRIN)
 
 std::string utf16ToUtf8(const std::u16string &utf16, bool is_little_endian) {
   std::string utf8;
@@ -295,30 +238,7 @@ std::u16string utf8ToUtf16(const std::string &utf8, bool is_little_endian) {
   return utf8ToUtf16SIMD(utf8, is_little_endian);
 }
 
-#elif defined(__ARM_NEON) || defined(__ARM_NEON__)
-
-bool isLatin(const std::string &str) {
-  const char *data = str.data();
-  size_t len = str.size();
-
-  size_t i = 0;
-  uint8x16_t latin_mask = vdupq_n_u8(0x80);
-  for (; i + 16 <= len; i += 16) {
-    uint8x16_t chars = vld1q_u8(reinterpret_cast<const uint8_t *>(data + i));
-    uint8x16_t result = vandq_u8(chars, latin_mask);
-    if (vmaxvq_u8(result) != 0) {
-      return false;
-    }
-  }
-
-  for (; i < len; ++i) {
-    if (static_cast<unsigned char>(data[i]) >= 128) {
-      return false;
-    }
-  }
-
-  return true;
-}
+#elif defined(FURY_HAS_NEON)
 
 std::string utf16ToUtf8(const std::u16string &utf16, bool is_little_endian) {
   std::string utf8;
@@ -395,30 +315,7 @@ std::u16string utf8ToUtf16(const std::string &utf8, bool is_little_endian) {
   return utf8ToUtf16SIMD(utf8, is_little_endian);
 }
 
-#elif defined(__riscv) && __riscv_vector
-
-bool isLatin(const std::string &str) {
-  const char *data = str.data();
-  size_t len = str.size();
-
-  size_t i = 0;
-  auto latin_mask = vmv_v_x_u8m1(0x80, 16);
-  for (; i + 16 <= len; i += 16) {
-    auto chars = vle8_v_u8m1(reinterpret_cast<const uint8_t *>(data + i), 16);
-    auto result = vand_vv_u8m1(chars, latin_mask, 16);
-    if (vfirst_m_b8(vmsne_vx_u8m1_b8(result, 0, 16))) {
-      return false;
-    }
-  }
-
-  for (; i < len; ++i) {
-    if (static_cast<unsigned char>(data[i]) >= 128) {
-      return false;
-    }
-  }
-
-  return true;
-}
+#elif defined(FURY_HAS_RISCV_VECTOR)
 
 std::string utf16ToUtf8(const std::u16string &utf16, bool is_little_endian) {
   std::string utf8;
@@ -501,15 +398,6 @@ std::u16string utf8ToUtf16(const std::string &utf8, bool is_little_endian) {
 }
 
 #else
-
-bool isLatin(const std::string &str) {
-  for (char c : str) {
-    if (static_cast<unsigned char>(c) >= 128) {
-      return false;
-    }
-  }
-  return true;
-}
 
 // Fallback implementation without SIMD acceleration
 std::string utf16ToUtf8(const std::u16string &utf16, bool is_little_endian) {

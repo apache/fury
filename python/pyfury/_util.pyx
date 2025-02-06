@@ -29,22 +29,26 @@ from libcpp cimport bool as c_bool
 from pyfury.includes.libutil cimport(
     CBuffer, AllocateBuffer, GetBit, SetBit, ClearBit, SetBitTo, CStatus, StatusCode, utf16HasSurrogatePairs
 )
+import os
 
 cdef int32_t max_buffer_size = 2 ** 31 - 1
 cdef int UTF16_LE = -1
 
+cdef c_bool _WINDOWS = os.name == 'nt'
+
 
 @cython.final
 cdef class Buffer:
-    def __init__(self,  data not None, int offset=0, length=None):
+    def __init__(self,  data not None, int32_t offset=0, length=None):
         self.data = data
-        assert 0 <= offset <= len(data), f'offset {offset} length {len(data)}'
+        cdef int32_t buffer_len = len(data)
         cdef int length_
         if length is None:
-            length_ = len(data) - offset
+            length_ = buffer_len - offset
         else:
             length_ = length
-        assert length_ >= 0, f'length should be >= 0 but got {length}'
+        if offset < 0 or offset + length_ > buffer_len:
+            raise ValueError(f'Wrong offset {offset} or length {length} for buffer with size {buffer_len}')
         if length_ > 0:
             self._c_address = get_address(data) + offset
         else:
@@ -300,6 +304,12 @@ cdef class Buffer:
         self.check_bound(offset, <int32_t>1)
         self.reader_index += <int32_t>1
         return (<c_bool *>(self._c_address + offset))[0]
+
+    cpdef inline uint8_t read_uint8(self):
+        cdef int32_t offset = self.reader_index
+        self.check_bound(offset, <int32_t>1)
+        self.reader_index += <int32_t>1
+        return (<uint8_t *>(self._c_address + offset))[0]
 
     cpdef inline int8_t read_int8(self):
         cdef int32_t offset = self.reader_index
@@ -659,6 +669,8 @@ cdef class Buffer:
 
 
 cdef inline uint8_t* get_address(v):
+    if type(v) is bytes:
+        return <uint8_t*>(PyBytes_AsString(v))
     view = memoryview(v)
     cdef str dtype = view.format
     cdef:
@@ -683,6 +695,13 @@ cdef inline uint8_t* get_address(v):
         signed_int_data = v
         ptr = <uint8_t*>(&signed_int_data[0])
     elif dtype == "l":
+        if _WINDOWS:
+            signed_int_data = v
+            ptr = <uint8_t*>(&signed_int_data[0])
+        else:
+            signed_long_data = v
+            ptr = <uint8_t*>(&signed_long_data[0])
+    elif dtype == "q":
         signed_long_data = v
         ptr = <uint8_t*>(&signed_long_data[0])
     elif dtype == "f":

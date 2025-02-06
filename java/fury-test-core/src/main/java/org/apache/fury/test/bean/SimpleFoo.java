@@ -19,21 +19,38 @@
 
 package org.apache.fury.test.bean;
 
-import java.util.Random;
+import java.util.Objects;
 
-public class TestUtils {
-  public static String random(int size, int rand) {
-    return random(size, new Random(rand));
+public class SimpleFoo {
+  public int f1;
+  public String f2;
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    SimpleFoo foo = (SimpleFoo) o;
+    return f1 == foo.f1 && Objects.equals(f2, foo.f2);
   }
 
-  public static String random(int size, Random random) {
-    char[] chars = new char[size];
-    char start = ' ';
-    char end = 'z' + 1;
-    int gap = end - start;
-    for (int i = 0; i < size; i++) {
-      chars[i] = (char) (start + random.nextInt(gap));
-    }
-    return new String(chars);
+  @Override
+  public int hashCode() {
+    return Objects.hash(f1, f2);
+  }
+
+  @Override
+  public String toString() {
+    return "SimpleFoo{" + "f1=" + f1 + ", f2='" + f2 + '\'' + '}';
+  }
+
+  public static SimpleFoo create() {
+    SimpleFoo foo = new SimpleFoo();
+    foo.f1 = 10;
+    foo.f2 = "str";
+    return foo;
   }
 }

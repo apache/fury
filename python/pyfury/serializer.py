@@ -39,9 +39,11 @@ except ImportError:
     np = None
 
 from pyfury._fury import (
-    NOT_NULL_PYINT_FLAG,
+    NOT_NULL_INT64_FLAG,
     BufferObject,
 )
+
+_WINDOWS = os.name == "nt"
 
 from pyfury._serialization import ENABLE_FURY_CYTHON_SERIALIZATION
 
@@ -54,10 +56,8 @@ if ENABLE_FURY_CYTHON_SERIALIZATION:
         Int16Serializer,
         Int32Serializer,
         Int64Serializer,
-        DynamicIntSerializer,
-        FloatSerializer,
-        DoubleSerializer,
-        DynamicFloatSerializer,
+        Float32Serializer,
+        Float64Serializer,
         StringSerializer,
         DateSerializer,
         TimestampSerializer,
@@ -80,8 +80,8 @@ else:
         Int16Serializer,
         Int32Serializer,
         Int64Serializer,
-        FloatSerializer,
-        DoubleSerializer,
+        Float32Serializer,
+        Float64Serializer,
         StringSerializer,
         DateSerializer,
         TimestampSerializer,
@@ -94,8 +94,6 @@ else:
         SubMapSerializer,
         EnumSerializer,
         SliceSerializer,
-        DynamicIntSerializer,
-        DynamicFloatSerializer,
     )
 
 from pyfury.type import (
@@ -220,7 +218,7 @@ class PandasRangeIndexSerializer(Serializer):
         stop = value.stop
         step = value.step
         if type(start) is int:
-            buffer.write_int16(NOT_NULL_PYINT_FLAG)
+            buffer.write_int16(NOT_NULL_INT64_FLAG)
             buffer.write_varint64(start)
         else:
             if start is None:
@@ -229,7 +227,7 @@ class PandasRangeIndexSerializer(Serializer):
                 buffer.write_int8(NOT_NULL_VALUE_FLAG)
                 fury.serialize_nonref(buffer, start)
         if type(stop) is int:
-            buffer.write_int16(NOT_NULL_PYINT_FLAG)
+            buffer.write_int16(NOT_NULL_INT64_FLAG)
             buffer.write_varint64(stop)
         else:
             if stop is None:
@@ -238,7 +236,7 @@ class PandasRangeIndexSerializer(Serializer):
                 buffer.write_int8(NOT_NULL_VALUE_FLAG)
                 fury.serialize_nonref(buffer, stop)
         if type(step) is int:
-            buffer.write_int16(NOT_NULL_PYINT_FLAG)
+            buffer.write_int16(NOT_NULL_INT64_FLAG)
             buffer.write_varint64(step)
         else:
             if step is None:
@@ -288,6 +286,7 @@ class DataClassSerializer(Serializer):
         # This will get superclass type hints too.
         self._type_hints = typing.get_type_hints(clz)
         self._field_names = sorted(self._type_hints.keys())
+        self._has_slots = hasattr(clz, "__slots__")
         # TODO compute hash
         self._hash = len(self._field_names)
         self._generated_write_method = self._gen_write_method()
@@ -300,16 +299,21 @@ class DataClassSerializer(Serializer):
     def _gen_write_method(self):
         context = {}
         counter = itertools.count(0)
-        buffer, fury, value = "buffer", "fury", "value"
+        buffer, fury, value, value_dict = "buffer", "fury", "value", "value_dict"
         context[fury] = self.fury
         stmts = [
             f'"""write method for {self.type_}"""',
             f"{buffer}.write_int32({self._hash})",
         ]
+        if not self._has_slots:
+            stmts.append(f"{value_dict} = {value}.__dict__")
         for field_name in self._field_names:
             field_type = self._type_hints[field_name]
             field_value = f"field_value{next(counter)}"
-            stmts.append(f"{field_value} = {value}.{field_name}")
+            if not self._has_slots:
+                stmts.append(f"{field_value} = {value_dict}['{field_name}']")
+            else:
+                stmts.append(f"{field_value} = {value}.{field_name}")
             if field_type is bool:
                 stmts.extend(gen_write_nullable_basic_stmts(buffer, field_value, bool))
             elif field_type == int:
@@ -332,7 +336,13 @@ class DataClassSerializer(Serializer):
 
     def _gen_read_method(self):
         context = dict(_jit_context)
-        buffer, fury, obj_class, obj = "buffer", "fury", "obj_class", "obj"
+        buffer, fury, obj_class, obj, obj_dict = (
+            "buffer",
+            "fury",
+            "obj_class",
+            "obj",
+            "obj_dict",
+        )
         ref_resolver = "ref_resolver"
         context[fury] = self.fury
         context[obj_class] = self.type_
@@ -346,9 +356,14 @@ class DataClassSerializer(Serializer):
             f"""   raise ClassNotCompatibleError(
             "Hash read_hash is not consistent with {self._hash} for {self.type_}")""",
         ]
+        if not self._has_slots:
+            stmts.append(f"{obj_dict} = {obj}.__dict__")
 
         def set_action(value: str):
-            return f"{obj}.{field_name} = {value}"
+            if not self._has_slots:
+                return f"{obj_dict}['{field_name}'] = {value}"
+            else:
+                return f"{obj}.{field_name} = {value}"
 
         for field_name in self._field_names:
             field_type = self._type_hints[field_name]
@@ -403,33 +418,63 @@ class DataClassSerializer(Serializer):
 
 
 # Use numpy array or python array module.
-typecode_dict = {
-    # use bytes serializer for byte array.
-    "h": (2, Int16ArrayType, TypeId.INT16_ARRAY),
-    "i": (4, Int32ArrayType, TypeId.INT32_ARRAY),
-    "l": (8, Int64ArrayType, TypeId.INT64_ARRAY),
-    "f": (4, Float32ArrayType, TypeId.FLOAT32_ARRAY),
-    "d": (8, Float64ArrayType, TypeId.FLOAT64_ARRAY),
-}
+typecode_dict = (
+    {
+        # use bytes serializer for byte array.
+        "h": (2, Int16ArrayType, TypeId.INT16_ARRAY),
+        "i": (4, Int32ArrayType, TypeId.INT32_ARRAY),
+        "l": (8, Int64ArrayType, TypeId.INT64_ARRAY),
+        "f": (4, Float32ArrayType, TypeId.FLOAT32_ARRAY),
+        "d": (8, Float64ArrayType, TypeId.FLOAT64_ARRAY),
+    }
+    if not _WINDOWS
+    else {
+        "h": (2, Int16ArrayType, TypeId.INT16_ARRAY),
+        "l": (4, Int32ArrayType, TypeId.INT32_ARRAY),
+        "q": (8, Int64ArrayType, TypeId.INT64_ARRAY),
+        "f": (4, Float32ArrayType, TypeId.FLOAT32_ARRAY),
+        "d": (8, Float64ArrayType, TypeId.FLOAT64_ARRAY),
+    }
+)
 
-typeid_code = {
-    TypeId.INT16_ARRAY: "h",
-    TypeId.INT32_ARRAY: "i",
-    TypeId.INT64_ARRAY: "l",
-    TypeId.FLOAT32_ARRAY: "f",
-    TypeId.FLOAT64_ARRAY: "d",
-}
+typeid_code = (
+    {
+        TypeId.INT16_ARRAY: "h",
+        TypeId.INT32_ARRAY: "i",
+        TypeId.INT64_ARRAY: "l",
+        TypeId.FLOAT32_ARRAY: "f",
+        TypeId.FLOAT64_ARRAY: "d",
+    }
+    if not _WINDOWS
+    else {
+        TypeId.INT16_ARRAY: "h",
+        TypeId.INT32_ARRAY: "l",
+        TypeId.INT64_ARRAY: "q",
+        TypeId.FLOAT32_ARRAY: "f",
+        TypeId.FLOAT64_ARRAY: "d",
+    }
+)
 
 
 class PyArraySerializer(CrossLanguageCompatibleSerializer):
     typecode_dict = typecode_dict
-    typecodearray_type = {
-        "h": Int16ArrayType,
-        "i": Int32ArrayType,
-        "l": Int64ArrayType,
-        "f": Float32ArrayType,
-        "d": Float64ArrayType,
-    }
+    typecodearray_type = (
+        {
+            "h": Int16ArrayType,
+            "i": Int32ArrayType,
+            "l": Int64ArrayType,
+            "f": Float32ArrayType,
+            "d": Float64ArrayType,
+        }
+        if not _WINDOWS
+        else {
+            "h": Int16ArrayType,
+            "l": Int32ArrayType,
+            "q": Int64ArrayType,
+            "f": Float32ArrayType,
+            "d": Float64ArrayType,
+        }
+    )
 
     def __init__(self, fury, ftype, type_id: str):
         super().__init__(fury, ftype)
@@ -487,6 +532,7 @@ class DynamicPyArraySerializer(Serializer):
         return arr
 
     def write(self, buffer, value):
+        buffer.write_varuint32(PickleSerializer.PICKLE_CLASS_ID)
         self.fury.handle_unsupported_write(buffer, value)
 
     def read(self, buffer):
@@ -494,15 +540,26 @@ class DynamicPyArraySerializer(Serializer):
 
 
 if np:
-    _np_dtypes_dict = {
-        # use bytes serializer for byte array.
-        np.dtype(np.bool_): (1, "?", BoolNDArrayType, TypeId.BOOL_ARRAY),
-        np.dtype(np.int16): (2, "h", Int16NDArrayType, TypeId.INT16_ARRAY),
-        np.dtype(np.int32): (4, "i", Int32NDArrayType, TypeId.INT32_ARRAY),
-        np.dtype(np.int64): (8, "l", Int64NDArrayType, TypeId.INT64_ARRAY),
-        np.dtype(np.float32): (4, "f", Float32NDArrayType, TypeId.FLOAT32_ARRAY),
-        np.dtype(np.float64): (8, "d", Float64NDArrayType, TypeId.FLOAT64_ARRAY),
-    }
+    _np_dtypes_dict = (
+        {
+            # use bytes serializer for byte array.
+            np.dtype(np.bool_): (1, "?", BoolNDArrayType, TypeId.BOOL_ARRAY),
+            np.dtype(np.int16): (2, "h", Int16NDArrayType, TypeId.INT16_ARRAY),
+            np.dtype(np.int32): (4, "i", Int32NDArrayType, TypeId.INT32_ARRAY),
+            np.dtype(np.int64): (8, "l", Int64NDArrayType, TypeId.INT64_ARRAY),
+            np.dtype(np.float32): (4, "f", Float32NDArrayType, TypeId.FLOAT32_ARRAY),
+            np.dtype(np.float64): (8, "d", Float64NDArrayType, TypeId.FLOAT64_ARRAY),
+        }
+        if not _WINDOWS
+        else {
+            np.dtype(np.bool_): (1, "?", BoolNDArrayType, TypeId.BOOL_ARRAY),
+            np.dtype(np.int16): (2, "h", Int16NDArrayType, TypeId.INT16_ARRAY),
+            np.dtype(np.int32): (4, "l", Int32NDArrayType, TypeId.INT32_ARRAY),
+            np.dtype(np.int64): (8, "q", Int64NDArrayType, TypeId.INT64_ARRAY),
+            np.dtype(np.float32): (4, "f", Float32NDArrayType, TypeId.FLOAT32_ARRAY),
+            np.dtype(np.float64): (8, "d", Float64NDArrayType, TypeId.FLOAT64_ARRAY),
+        }
+    )
 else:
     _np_dtypes_dict = {}
 
@@ -537,6 +594,7 @@ class Numpy1DArraySerializer(Serializer):
         return np.frombuffer(data, dtype=self.dtype)
 
     def write(self, buffer, value):
+        buffer.write_int8(PickleSerializer.PICKLE_CLASS_ID)
         self.fury.handle_unsupported_write(buffer, value)
 
     def read(self, buffer):
@@ -559,6 +617,7 @@ class NDArraySerializer(Serializer):
         raise NotImplementedError("Multi-dimensional array not supported currently")
 
     def write(self, buffer, value):
+        buffer.write_int8(PickleSerializer.PICKLE_CLASS_ID)
         self.fury.handle_unsupported_write(buffer, value)
 
     def read(self, buffer):
@@ -591,6 +650,8 @@ class BytesBufferObject(BufferObject):
 
 
 class PickleSerializer(Serializer):
+    PICKLE_CLASS_ID = 96
+
     def xwrite(self, buffer, value):
         raise NotImplementedError
 
