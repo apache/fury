@@ -37,24 +37,22 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-
       - name: Install bazel
-        if: matrix.os != 'windows-2022'
         shell: bash
-        run: ci/run_ci.sh install_bazel
-
-      - name: Install bazel on Windows
-        if: matrix.os == 'windows-2022'
-        run: ci/run_ci.sh install_bazel_windows
-
+        run: |
+          if [ "$RUNNER_OS" == "Windows" ]; then
+              ./ci/run_ci.sh install_bazel_windows
+          else
+              ./ci/run_ci.sh install_bazel
+          fi
       - name: Update version in setup.py
+        shell: bash
         run: ci/deploy.sh bump_py_version
-
       - name: Build a binary wheel
+        shell: bash
         run: |
           ci/deploy.sh build_pyfury
           ci/deploy.sh rename_linux_wheels dist
-
       - name: Upload Wheel Artifact
         uses: actions/upload-artifact@v4
         with:
