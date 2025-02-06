@@ -38,10 +38,10 @@ install_pyfury() {
   pip install Cython wheel "numpy<2.0.0" pytest
   pushd "$ROOT/python"
   pip list
-  export PATH=~/bin:$PATH
   echo "Install pyfury"
   # Fix strange installed deps not found
-  pip install setuptools
+  pip install setuptools -U
+  bazel build //:cp_fury_so
   pip install -v -e .
   popd
 }
