@@ -1337,7 +1337,6 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
                   writeKey,
                   writeValue,
                   new Assign(chunkSize, add(chunkSize, ofInt(1))),
-                  new If(eq(chunkSize, ofInt(MAX_CHUNK_SIZE)), new Break()),
                   new If(
                       inlineInvoke(iterator, "hasNext", PRIMITIVE_BOOLEAN_TYPE),
                       new ListExpression(
@@ -1348,7 +1347,8 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
                               key,
                               tryInlineCast(inlineInvoke(entry, "getKey", OBJECT_TYPE), keyType)),
                           new Assign(value, invokeInline(entry, "getValue", valueType))),
-                      list(new Assign(entry, new Literal(null, MAP_ENTRY_TYPE)), new Break())));
+                      list(new Assign(entry, new Literal(null, MAP_ENTRY_TYPE)), new Break())),
+                  new If(eq(chunkSize, ofInt(MAX_CHUNK_SIZE)), new Break()));
             });
     expressions.add(writeLoop, new Invoke(buffer, "putByte", chunkSizeOffset, chunkSize));
     if (!inline) {
