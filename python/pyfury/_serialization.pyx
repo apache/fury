@@ -1450,23 +1450,23 @@ cdef inline get_next_elenment(
 
 cdef int32_t MAX_CHUNK_SIZE = 255
 # Whether track key ref.
-cdef int32_t TRACKING_KEY_REF = 0b1;
+cdef int32_t TRACKING_KEY_REF = 0b1
 # Whether key has null.
-cdef int32_t KEY_HAS_NULL = 0b10;
+cdef int32_t KEY_HAS_NULL = 0b10
 # Whether key is not declare type.
-cdef int32_t KEY_DECL_TYPE = 0b100;
+cdef int32_t KEY_DECL_TYPE = 0b100
 # Whether track value ref.
-cdef int32_t TRACKING_VALUE_REF = 0b1000;
+cdef int32_t TRACKING_VALUE_REF = 0b1000
 # Whether value has null.
-cdef int32_t VALUE_HAS_NULL = 0b10000;
+cdef int32_t VALUE_HAS_NULL = 0b10000
 # Whether value is not declare type.
-cdef int32_t VALUE_DECL_TYPE = 0b100000;
+cdef int32_t VALUE_DECL_TYPE = 0b100000
 # When key or value is null that entry will be serialized as a new chunk with size 1.
 # In such cases, chunk size will be skipped writing.
 # Both key and value are null.
-cdef int32_t KV_NULL = KEY_HAS_NULL | VALUE_HAS_NULL;
+cdef int32_t KV_NULL = KEY_HAS_NULL | VALUE_HAS_NULL
 # Key is null, value type is declared type, and ref tracking for value is disabled.
-cdef int32_t NULL_KEY_VALUE_DECL_TYPE = KEY_HAS_NULL | VALUE_DECL_TYPE;
+cdef int32_t NULL_KEY_VALUE_DECL_TYPE = KEY_HAS_NULL | VALUE_DECL_TYPE
 # Key is null, value type is declared type, and ref tracking for value is enabled.
 cdef int32_t NULL_KEY_VALUE_DECL_TYPE_TRACKING_REF =KEY_HAS_NULL | VALUE_DECL_TYPE | TRACKING_VALUE_REF
 # Value is null, key type is declared type, and ref tracking for key is disabled.
@@ -1646,7 +1646,7 @@ cdef class MapSerializer(Serializer):
                             buffer.write_int8(NULL_VALUE_KEY_DECL_TYPE)
                             key_serializer.write(buffer, key)
                     else:
-                        buffer.write_int8(VALUE_HAS_NULL | TRACKING_KEY_REF);
+                        buffer.write_int8(VALUE_HAS_NULL | TRACKING_KEY_REF)
                         fury.serialize_ref(buffer, key)
                 else:
                     if value is not None:
@@ -1658,8 +1658,8 @@ cdef class MapSerializer(Serializer):
                                 if not self.ref_resolver.write_ref_or_null(buffer, value):
                                     value_serializer.write(buffer, value)
                             else:
-                                buffer.write_int8(NULL_KEY_VALUE_DECL_TYPE);
-                                value_serializer.write(buffer, value);
+                                buffer.write_int8(NULL_KEY_VALUE_DECL_TYPE)
+                                value_serializer.write(buffer, value)
                         else:
                             buffer.write_int8(KEY_HAS_NULL | TRACKING_VALUE_REF)
                             fury.serialize_ref(buffer, value)
@@ -1706,12 +1706,12 @@ cdef class MapSerializer(Serializer):
                 if not key_write_ref or not ref_resolver.write_ref_or_null(buffer, key):
                     if key_cls is str:
                         buffer.write_string(key)
-                    elif key_serializer_type is Int32Serializer:
-                        buffer.write_varint32(key)
                     elif key_serializer_type is Int64Serializer:
                         buffer.write_varint64(key)
                     elif key_serializer_type is Float64Serializer:
                         buffer.write_double(key)
+                    elif key_serializer_type is Int32Serializer:
+                        buffer.write_varint32(key)
                     elif key_serializer_type is Float32Serializer:
                         buffer.write_float(key)
                     else:
@@ -1719,12 +1719,12 @@ cdef class MapSerializer(Serializer):
                 if not value_write_ref or not ref_resolver.write_ref_or_null(buffer, value):
                     if value_cls is str:
                         buffer.write_string(value)
-                    elif value_serializer_type is Int32Serializer:
-                        buffer.write_varint32(value)
                     elif value_serializer_type is Int64Serializer:
                         buffer.write_varint64(value)
                     elif value_serializer_type is Float64Serializer:
                         buffer.write_double(value)
+                    elif value_serializer_type is Int32Serializer:
+                        buffer.write_varint32(value)
                     elif value_serializer_type is Float32Serializer:
                         buffer.write_float(value)
                     elif value_serializer_type is BooleanSerializer:
@@ -1827,12 +1827,12 @@ cdef class MapSerializer(Serializer):
                 else:
                     if key_serializer_type is StringSerializer:
                         key = buffer.read_string()
-                    elif key_serializer_type is Int32Serializer:
-                        key = buffer.read_varint32()
                     elif key_serializer_type is Int64Serializer:
                         key = buffer.read_varint64()
                     elif key_serializer_type is Float64Serializer:
                         key = buffer.read_double()
+                    elif key_serializer_type is Int32Serializer:
+                        key = buffer.read_varint32()
                     elif key_serializer_type is Float32Serializer:
                         key = buffer.read_float()
                     else:
@@ -1847,12 +1847,12 @@ cdef class MapSerializer(Serializer):
                 else:
                     if value_serializer_type is StringSerializer:
                         value = buffer.read_string()
-                    elif value_serializer_type is Int32Serializer:
-                        value = buffer.read_varint32()
                     elif value_serializer_type is Int64Serializer:
                         value = buffer.read_varint64()
                     elif value_serializer_type is Float64Serializer:
                         value = buffer.read_double()
+                    elif value_serializer_type is Int32Serializer:
+                        value = buffer.read_varint32()
                     elif value_serializer_type is Float32Serializer:
                         value = buffer.read_float()
                     elif value_serializer_type is BooleanSerializer:
