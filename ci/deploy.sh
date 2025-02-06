@@ -55,12 +55,19 @@ create_py_envs() {
   conda env list
 }
 
-rename_linux_wheels() {
+rename_wheels() {
   for path in "$1"/*.whl; do
     if [ -f "${path}" ]; then
+      # Rename linux to manylinux1
       new_path="${path//linux/manylinux1}"
       if [ "${path}" != "${new_path}" ]; then
         mv "${path}" "${new_path}"
+      fi
+
+      # Copy macosx_14_0_x86_64 to macosx_10_12_x86_64
+      if [[ "${path}" == *macosx_14_0_x86_64.whl ]]; then
+        copy_path="${path//macosx_14_0_x86_64/macosx_10_12_x86_64}"
+        cp "${path}" "${copy_path}"
       fi
     fi
   done
@@ -145,7 +152,7 @@ deploy_python() {
     mv dist/pyfury*.whl "$WHEEL_DIR"
   done
   if [[ "$OSTYPE" == "linux"* ]]; then
-    rename_linux_wheels "$WHEEL_DIR"
+    rename_wheels "$WHEEL_DIR"
   fi
   twine check "$WHEEL_DIR"/pyfury*.whl
   twine upload -r pypi "$WHEEL_DIR"/pyfury*.whl
