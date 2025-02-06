@@ -22,7 +22,7 @@ package org.apache.fury.meta;
 import com.github.luben.zstd.Zstd;
 import com.github.luben.zstd.ZstdException;
 
-public class ZstdMetaCompressor implements MetaCompressor{
+public class ZstdMetaCompressor implements MetaCompressor {
 
   @Override
   public byte[] compress(byte[] data, int offset, int size) {
@@ -34,8 +34,12 @@ public class ZstdMetaCompressor implements MetaCompressor{
 
     byte[] compressedData = new byte[(int) maxCompressedSize];
     Zstd.compressByteArray(
-        compressedData, 0, (int)maxCompressedSize,
-        data, offset, size,
+        compressedData,
+        0,
+        (int) maxCompressedSize,
+        data,
+        offset,
+        size,
         Zstd.defaultCompressionLevel());
 
     return compressedData;
@@ -61,5 +65,4 @@ public class ZstdMetaCompressor implements MetaCompressor{
     }
     return o != null && getClass() == o.getClass();
   }
-
 }
