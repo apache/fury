@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.SortedMap;
+import java.util.stream.Collectors;
 import org.apache.fury.Fury;
 import org.apache.fury.builder.MetaSharedCodecBuilder;
 import org.apache.fury.collection.Tuple2;
@@ -786,5 +787,22 @@ public class ClassDef implements Serializable {
   public static ClassDef buildClassDef(
       ClassResolver classResolver, Class<?> type, List<Field> fields, boolean isObjectType) {
     return ClassDefEncoder.buildClassDef(classResolver, type, fields, isObjectType);
+  }
+
+  public ClassDef replaceRootClassTo(ClassResolver classResolver, Class<?> targetCls) {
+    String name = targetCls.getName();
+    List<FieldInfo> fieldInfos =
+        fieldsInfo.stream()
+            .map(
+                fieldInfo -> {
+                  if (fieldInfo.definedClass.equals(classSpec.entireClassName)) {
+                    return new FieldInfo(name, fieldInfo.fieldName, fieldInfo.fieldType);
+                  } else {
+                    return fieldInfo;
+                  }
+                })
+            .collect(Collectors.toList());
+    return ClassDefEncoder.buildClassDefWithFieldInfos(
+        classResolver, targetCls, fieldInfos, isObjectType);
   }
 }

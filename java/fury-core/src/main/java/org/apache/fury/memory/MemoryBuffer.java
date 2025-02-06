@@ -399,6 +399,12 @@ public final class MemoryBuffer {
     return UNSAFE.getByte(heapMemory, pos);
   }
 
+  public void putByte(int index, int b) {
+    final long pos = address + index;
+    checkPosition(index, pos, 1);
+    UNSAFE.putByte(heapMemory, pos, (byte) b);
+  }
+
   public void putByte(int index, byte b) {
     final long pos = address + index;
     checkPosition(index, pos, 1);
@@ -1316,6 +1322,17 @@ public final class MemoryBuffer {
     }
     readerIndex = readerIdx + 1;
     return UNSAFE.getByte(heapMemory, address + readerIdx) != 0;
+  }
+
+  public int readUnsignedByte() {
+    int readerIdx = readerIndex;
+    if (readerIdx > size - 1) {
+      streamReader.fillBuffer(1);
+    }
+    readerIndex = readerIdx + 1;
+    int v = UNSAFE.getByte(heapMemory, address + readerIdx);
+    v &= 0b11111111;
+    return v;
   }
 
   public byte readByte() {

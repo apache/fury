@@ -28,8 +28,8 @@
 namespace fury {
 
 TEST(PrintLogTest, BasicLog) {
-  FURY_LOG(INFO) << "test info";
-  ASSERT_DEATH(FURY_LOG(FATAL) << "test fatal",
+  FURY_LOG(FURY_INFO) << "test info";
+  ASSERT_DEATH(FURY_LOG(FURY_FATAL) << "test fatal",
                "\\[.*\\] FATAL cpp/fury/util/logging_test.cc:.*: test fatal");
 }
 
@@ -70,7 +70,7 @@ std::string TestFunctionLevel2() { return TestFunctionLevel1(); }
 #ifndef _WIN32
 TEST(PrintLogTest, CallstackTraceTest) {
   auto ret = TestFunctionLevel2();
-  FURY_LOG(INFO) << "stack trace:\n" << ret;
+  FURY_LOG(FURY_INFO) << "stack trace:\n" << ret;
   // work for linux
   // EXPECT_TRUE(ret.find("TestFunctionLevel0") != std::string::npos);
   // work for mac

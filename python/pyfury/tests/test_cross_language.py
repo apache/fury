@@ -17,6 +17,7 @@
 
 import array
 import datetime
+import logging
 import math
 import os
 import typing
@@ -611,9 +612,14 @@ def test_oob_buffer(in_band_file_path, out_of_band_file_path):
 if __name__ == "__main__":
     import sys
 
-    args = sys.argv[1:]
-    assert len(args) > 0
-    func = getattr(sys.modules[__name__], args[0])
-    if not func:
-        raise Exception("Unknown args {}".format(args))
-    func(*args[1:])
+    print(f"Execute {sys.argv}")
+    try:
+        args = sys.argv[1:]
+        assert len(args) > 0
+        func = getattr(sys.modules[__name__], args[0])
+        if not func:
+            raise Exception("Unknown args {}".format(args))
+        func(*args[1:])
+    except BaseException as e:
+        logging.exception("Execute %s failed with %s", args, e)
+        raise

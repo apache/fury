@@ -17,24 +17,16 @@
  * under the License.
  */
 
-package org.apache.fury.format.encoder;
-
-import org.apache.fury.memory.MemoryBuffer;
-
-/**
- * The encoding interface for encode/decode object to/from binary. The implementation class must
- * have a constructor with signature {@code Object[] references}, so we can pass any params to
- * codec.
- *
- * @param <T> type of value
- */
-public interface Encoder<T> {
-
-  T decode(MemoryBuffer buffer);
-
-  T decode(byte[] bytes);
-
-  byte[] encode(T obj);
-
-  void encode(MemoryBuffer buffer, T obj);
-}
+#if defined(__x86_64__) || defined(_M_X64)
+#include <immintrin.h>
+#define FURY_HAS_IMMINTRIN
+#elif defined(__ARM_NEON) || defined(__ARM_NEON__)
+#include <arm_neon.h>
+#define FURY_HAS_NEON
+#elif defined(__SSE2__)
+#include <emmintrin.h>
+#define FURY_HAS_SSE2
+#elif defined(__riscv) && __riscv_vector
+#include <riscv_vector.h>
+#define FURY_HAS_RISCV_VECTOR
+#endif
