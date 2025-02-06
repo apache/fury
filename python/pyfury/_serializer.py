@@ -23,18 +23,6 @@ from typing import Dict, Iterable, Any
 from pyfury._fury import (
     NOT_NULL_INT64_FLAG,
     NOT_NULL_BOOL_FLAG,
-    KEY_HAS_NULL,
-    VALUE_HAS_NULL,
-    TRACKING_KEY_REF,
-    TRACKING_VALUE_REF,
-    KEY_DECL_TYPE,
-    VALUE_DECL_TYPE,
-    MAX_CHUNK_SIZE,
-    KV_NULL,
-    NULL_KEY_VALUE_DECL_TYPE,
-    NULL_KEY_VALUE_DECL_TYPE_TRACKING_REF,
-    NULL_VALUE_KEY_DECL_TYPE,
-    NULL_VALUE_KEY_DECL_TYPE_TRACKING_REF,
 )
 from pyfury.resolver import NOT_NULL_VALUE_FLAG, NULL_FLAG
 from pyfury.type import is_primitive_type
@@ -45,6 +33,36 @@ except ImportError:
     np = None
 
 logger = logging.getLogger(__name__)
+
+MAX_CHUNK_SIZE = 255
+# Whether track key ref.
+TRACKING_KEY_REF = 0b1
+# Whether key has null.
+KEY_HAS_NULL = 0b10
+# Whether key is not declare type.
+KEY_DECL_TYPE = 0b100
+# Whether track value ref.
+TRACKING_VALUE_REF = 0b1000
+# Whether value has null.
+VALUE_HAS_NULL = 0b10000
+# Whether value is not declare type.
+VALUE_DECL_TYPE = 0b100000
+# When key or value is null that entry will be serialized as a new chunk with size 1.
+# In such cases, chunk size will be skipped writing.
+# Both key and value are null.
+KV_NULL = KEY_HAS_NULL | VALUE_HAS_NULL
+# Key is null, value type is declared type, and ref tracking for value is disabled.
+NULL_KEY_VALUE_DECL_TYPE = KEY_HAS_NULL | VALUE_DECL_TYPE
+# Key is null, value type is declared type, and ref tracking for value is enabled.
+NULL_KEY_VALUE_DECL_TYPE_TRACKING_REF = (
+    KEY_HAS_NULL | VALUE_DECL_TYPE | TRACKING_VALUE_REF
+)
+# Value is null, key type is declared type, and ref tracking for key is disabled.
+NULL_VALUE_KEY_DECL_TYPE = VALUE_HAS_NULL | KEY_DECL_TYPE
+# Value is null, key type is declared type, and ref tracking for key is enabled.
+NULL_VALUE_KEY_DECL_TYPE_TRACKING_REF = (
+    VALUE_HAS_NULL | KEY_DECL_TYPE | TRACKING_VALUE_REF
+)
 
 
 class Serializer(ABC):
