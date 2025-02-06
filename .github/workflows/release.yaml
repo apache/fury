@@ -52,9 +52,7 @@ jobs:
         shell: bash
         run: |
           ci/deploy.sh build_pyfury
-          if [[ "$OSTYPE" == "linux"* ]]; then
-            ci/deploy.sh rename_wheels dist
-          fi
+          ci/deploy.sh rename_wheels dist
       - name: Upload Wheel Artifact
         uses: actions/upload-artifact@v4
         with:

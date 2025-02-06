@@ -67,7 +67,7 @@ rename_wheels() {
       # Copy macosx_14_0_x86_64 to macosx_10_12_x86_64
       if [[ "${path}" == *macosx_14_0_x86_64.whl ]]; then
         copy_path="${path//macosx_14_0_x86_64/macosx_10_12_x86_64}"
-        cp "${path}" "${copy_path}"
+        mv "${path}" "${copy_path}"
       fi
     fi
   done
@@ -151,9 +151,7 @@ deploy_python() {
     python setup.py bdist_wheel
     mv dist/pyfury*.whl "$WHEEL_DIR"
   done
-  if [[ "$OSTYPE" == "linux"* ]]; then
-    rename_wheels "$WHEEL_DIR"
-  fi
+  rename_wheels "$WHEEL_DIR"
   twine check "$WHEEL_DIR"/pyfury*.whl
   twine upload -r pypi "$WHEEL_DIR"/pyfury*.whl
 }
