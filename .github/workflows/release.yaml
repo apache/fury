@@ -50,7 +50,7 @@ jobs:
       - name: Build a binary wheel
         run: ci/deploy.sh build_pyfury
       - name: Upload wheel
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: wheels
           path: dist/*.whl
@@ -61,7 +61,7 @@ jobs:
     needs: build-wheels
     steps:
       - name: Download wheels from all platforms
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: wheels
           path: dist
