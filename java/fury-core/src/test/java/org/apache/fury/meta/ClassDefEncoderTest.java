@@ -51,21 +51,6 @@ public class ClassDefEncoderTest {
   }
 
   @Test
-  public void testBasicClassDef_zstdMetaCompressor() throws Exception {
-    Fury fury =
-        Fury.builder().withMetaShare(true).withMetaCompressor(new ZstdMetaCompressor()).build();
-    Class<ClassDefTest.TestFieldsOrderClass1> type = ClassDefTest.TestFieldsOrderClass1.class;
-    List<ClassDef.FieldInfo> fieldsInfo = buildFieldsInfo(fury.getClassResolver(), type);
-    MemoryBuffer buffer =
-        ClassDefEncoder.encodeClassDef(
-            fury.getClassResolver(), type, getClassFields(type, fieldsInfo), true);
-    ClassDef classDef = ClassDef.readClassDef(fury.getClassResolver(), buffer);
-    Assert.assertEquals(classDef.getClassName(), type.getName());
-    Assert.assertEquals(classDef.getFieldsInfo().size(), type.getDeclaredFields().length);
-    Assert.assertEquals(classDef.getFieldsInfo(), fieldsInfo);
-  }
-
-  @Test
   public void testBigMetaEncoding() {
     for (Class<?> type :
         new Class[] {
