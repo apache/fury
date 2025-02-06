@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import lombok.Data;
+import org.apache.fury.test.TestUtils;
 
 @Data
 public class BeanA implements Serializable {

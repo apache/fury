@@ -20,6 +20,7 @@
 package org.apache.fury.format.encoder;
 
 import static org.apache.fury.type.TypeUtils.CLASS_TYPE;
+import static org.apache.fury.type.TypeUtils.PRIMITIVE_INT_TYPE;
 import static org.apache.fury.type.TypeUtils.getRawType;
 
 import java.util.Map;
@@ -40,7 +41,6 @@ import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.StringUtils;
 
 /** Expression builder for building jit map encoder class. */
-@SuppressWarnings("UnstableApiUsage")
 public class MapEncoderBuilder extends BaseBinaryEncoderBuilder {
   private static final Logger LOG = LoggerFactory.getLogger(MapEncoderBuilder.class);
   private static final String FIELD_NAME = "field";
@@ -168,17 +168,38 @@ public class MapEncoderBuilder extends BaseBinaryEncoderBuilder {
     Expression.Reference valFieldExpr =
         new Expression.Reference(VALUE_FIELD_NAME, ARROW_FIELD_TYPE, false);
 
-    Expression listExpression =
-        directlySerializeMap(map, keyArrayWriter, valArrayWriter, keyFieldExpr, valFieldExpr);
+    @SuppressWarnings("unchecked")
+    TypeRef<?> supertype = ((TypeRef<? extends Map<?, ?>>) mapToken).getSupertype(Map.class);
+    TypeRef<?> keySetType = supertype.resolveType(TypeUtils.KEY_SET_RETURN_TYPE);
+    TypeRef<?> valuesType = supertype.resolveType(TypeUtils.VALUES_RETURN_TYPE);
 
+    Expression.Invoke keySet = new Expression.Invoke(map, "keySet", keySetType);
+    Expression writerIndex =
+        new Expression.Invoke(keyArrayWriter, "writerIndex", PRIMITIVE_INT_TYPE);
+    expressions.add(writerIndex);
+    expressions.add(
+        new Expression.Invoke(keyArrayWriter, "writeDirectly", Expression.Literal.ofInt(-1)));
+    Expression keySerializationExpr =
+        serializeForArrayByWriter(keySet, keyArrayWriter, keySetType, keyFieldExpr);
     Expression.Invoke keyArray =
         new Expression.Invoke(keyArrayWriter, "toArray", TypeRef.of(BinaryArray.class));
+    expressions.add(map);
+    expressions.add(keySerializationExpr);
+    expressions.add(keyArray);
+    expressions.add(
+        new Expression.Invoke(
+            keyArrayWriter,
+            "writeDirectly",
+            writerIndex,
+            Expression.Invoke.inlineInvoke(keyArray, "getSizeInBytes", PRIMITIVE_INT_TYPE)));
+
+    Expression.Invoke values = new Expression.Invoke(map, "values", valuesType);
+    Expression valueSerializationExpr =
+        serializeForArrayByWriter(values, valArrayWriter, valuesType, valFieldExpr);
     Expression.Invoke valArray =
         new Expression.Invoke(valArrayWriter, "toArray", TypeRef.of(BinaryArray.class));
 
-    expressions.add(map);
-    expressions.add(listExpression);
-    expressions.add(keyArray);
+    expressions.add(valueSerializationExpr);
     expressions.add(valArray);
     expressions.add(
         new Expression.Return(
@@ -204,28 +225,6 @@ public class MapEncoderBuilder extends BaseBinaryEncoderBuilder {
 
     expressions.add(new Expression.Return(map));
     return expressions;
-  }
-
-  private Expression directlySerializeMap(
-      Expression map,
-      Expression keyArrayWriter,
-      Expression valArrayWriter,
-      Expression keyFieldExpr,
-      Expression valFieldExpr) {
-    @SuppressWarnings("unchecked")
-    TypeRef<?> supertype = ((TypeRef<? extends Map<?, ?>>) mapToken).getSupertype(Map.class);
-    TypeRef<?> keySetType = supertype.resolveType(TypeUtils.KEY_SET_RETURN_TYPE);
-    TypeRef<?> valuesType = supertype.resolveType(TypeUtils.VALUES_RETURN_TYPE);
-
-    Expression.Invoke keySet = new Expression.Invoke(map, "keySet", keySetType);
-    Expression keySerializationExpr =
-        serializeForArray(keySet, keyArrayWriter, keySetType, keyFieldExpr, true);
-
-    Expression.Invoke values = new Expression.Invoke(map, "values", valuesType);
-    Expression valueSerializationExpr =
-        serializeForArray(values, valArrayWriter, valuesType, valFieldExpr, true);
-
-    return new Expression.ListExpression(keySerializationExpr, valueSerializationExpr);
   }
 
   private Expression directlyDeserializeMap(

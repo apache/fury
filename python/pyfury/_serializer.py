@@ -22,14 +22,11 @@ from typing import Dict, Iterable, Any
 
 from pyfury._fury import (
     NOT_NULL_STRING_FLAG,
-    NOT_NULL_PYINT_FLAG,
-    NOT_NULL_PYBOOL_FLAG,
+    NOT_NULL_INT64_FLAG,
+    NOT_NULL_BOOL_FLAG,
 )
 from pyfury.resolver import NOT_NULL_VALUE_FLAG, NULL_FLAG
-from pyfury.type import (
-    TypeId,
-    is_primitive_type,
-)
+from pyfury.type import is_primitive_type
 
 try:
     import numpy as np
@@ -123,19 +120,7 @@ class Int64Serializer(Serializer):
         return buffer.read_varint64()
 
 
-class DynamicIntSerializer(CrossLanguageCompatibleSerializer):
-    def xwrite(self, buffer, value):
-        # TODO(chaokunyang) check value range and write type and value
-        buffer.write_varuint32(TypeId.INT64)
-        buffer.write_varint64(value)
-
-    def xread(self, buffer):
-        type_id = buffer.read_varuint32()
-        assert type_id == TypeId.INT64, type_id
-        return buffer.read_varint64()
-
-
-class FloatSerializer(CrossLanguageCompatibleSerializer):
+class Float32Serializer(CrossLanguageCompatibleSerializer):
     def write(self, buffer, value):
         buffer.write_float(value)
 
@@ -143,23 +128,11 @@ class FloatSerializer(CrossLanguageCompatibleSerializer):
         return buffer.read_float()
 
 
-class DoubleSerializer(CrossLanguageCompatibleSerializer):
+class Float64Serializer(CrossLanguageCompatibleSerializer):
     def write(self, buffer, value):
         buffer.write_double(value)
 
     def read(self, buffer):
-        return buffer.read_double()
-
-
-class DynamicFloatSerializer(CrossLanguageCompatibleSerializer):
-    def xwrite(self, buffer, value):
-        # TODO(chaokunyang) check value range and write type and value
-        buffer.write_varuint32(TypeId.FLOAT64)
-        buffer.write_double(value)
-
-    def xread(self, buffer):
-        type_id = buffer.read_varuint32()
-        assert type_id == TypeId.FLOAT64, type_id
         return buffer.read_double()
 
 
@@ -223,15 +196,15 @@ class CollectionSerializer(Serializer):
                 buffer.write_int16()
                 buffer.write_string(s)
             elif cls is int:
-                buffer.write_int16(NOT_NULL_PYINT_FLAG)
+                buffer.write_int16(NOT_NULL_INT64_FLAG)
                 buffer.write_varint64(s)
             elif cls is bool:
-                buffer.write_int16(NOT_NULL_PYBOOL_FLAG)
+                buffer.write_int16(NOT_NULL_BOOL_FLAG)
                 buffer.write_bool(s)
             else:
                 if not self.ref_resolver.write_ref_or_null(buffer, s):
                     classinfo = self.class_resolver.get_classinfo(cls)
-                    self.class_resolver.write_classinfo(buffer, classinfo)
+                    self.class_resolver.write_typeinfo(buffer, classinfo)
                     classinfo.serializer.write(buffer, s)
 
     def read(self, buffer):
@@ -331,19 +304,19 @@ class MapSerializer(Serializer):
             else:
                 if not self.ref_resolver.write_ref_or_null(buffer, k):
                     classinfo = self.class_resolver.get_classinfo(key_cls)
-                    self.class_resolver.write_classinfo(buffer, classinfo)
+                    self.class_resolver.write_typeinfo(buffer, classinfo)
                     classinfo.serializer.write(buffer, k)
             value_cls = type(v)
             if value_cls is str:
                 buffer.write_int16(NOT_NULL_STRING_FLAG)
                 buffer.write_string(v)
             elif value_cls is int:
-                buffer.write_int16(NOT_NULL_PYINT_FLAG)
+                buffer.write_int16(NOT_NULL_INT64_FLAG)
                 buffer.write_varint64(v)
             else:
                 if not self.ref_resolver.write_ref_or_null(buffer, v):
                     classinfo = self.class_resolver.get_classinfo(value_cls)
-                    self.class_resolver.write_classinfo(buffer, classinfo)
+                    self.class_resolver.write_typeinfo(buffer, classinfo)
                     classinfo.serializer.write(buffer, v)
 
     def read(self, buffer):
@@ -400,7 +373,7 @@ class SliceSerializer(Serializer):
         start, stop, step = value.start, value.stop, value.step
         if type(start) is int:
             # TODO support varint128
-            buffer.write_int16(NOT_NULL_PYINT_FLAG)
+            buffer.write_int16(NOT_NULL_INT64_FLAG)
             buffer.write_varint64(start)
         else:
             if start is None:
@@ -410,7 +383,7 @@ class SliceSerializer(Serializer):
                 self.fury.serialize_nonref(buffer, start)
         if type(stop) is int:
             # TODO support varint128
-            buffer.write_int16(NOT_NULL_PYINT_FLAG)
+            buffer.write_int16(NOT_NULL_INT64_FLAG)
             buffer.write_varint64(stop)
         else:
             if stop is None:
@@ -420,7 +393,7 @@ class SliceSerializer(Serializer):
                 self.fury.serialize_nonref(buffer, stop)
         if type(step) is int:
             # TODO support varint128
-            buffer.write_int16(NOT_NULL_PYINT_FLAG)
+            buffer.write_int16(NOT_NULL_INT64_FLAG)
             buffer.write_varint64(step)
         else:
             if step is None:

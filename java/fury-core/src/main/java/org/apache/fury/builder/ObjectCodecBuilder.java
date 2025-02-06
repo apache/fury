@@ -510,8 +510,12 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     return new NewInstance(beanType, params);
   }
 
-  private class FieldsCollector implements Expression {
+  private class FieldsCollector extends Expression.AbstractExpression {
     private final TreeMap<Integer, Expression> recordValuesMap = new TreeMap<>();
+
+    protected FieldsCollector() {
+      super(new Expression[0]);
+    }
 
     @Override
     public TypeRef<?> type() {

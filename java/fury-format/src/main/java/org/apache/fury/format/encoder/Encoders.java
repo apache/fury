@@ -19,10 +19,12 @@
 
 package org.apache.fury.format.encoder;
 
+import static org.apache.fury.type.TypeUtils.OBJECT_TYPE;
 import static org.apache.fury.type.TypeUtils.getRawType;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import org.apache.arrow.util.Preconditions;
@@ -91,6 +93,11 @@ public class Encoders {
       }
 
       @Override
+      public T decode(MemoryBuffer buffer) {
+        return encoder.decode(buffer);
+      }
+
+      @Override
       public T decode(byte[] bytes) {
         return encoder.decode(bytes);
       }
@@ -98,6 +105,11 @@ public class Encoders {
       @Override
       public byte[] encode(T obj) {
         return encoder.encode(obj);
+      }
+
+      @Override
+      public void encode(MemoryBuffer buffer, T obj) {
+        encoder.encode(buffer, obj);
       }
     };
   }
@@ -150,8 +162,11 @@ public class Encoders {
         }
 
         @Override
-        public T decode(byte[] bytes) {
-          MemoryBuffer buffer = MemoryUtils.wrap(bytes);
+        public T decode(MemoryBuffer buffer) {
+          return decode(buffer, buffer.readInt32());
+        }
+
+        public T decode(MemoryBuffer buffer, int size) {
           long peerSchemaHash = buffer.readInt64();
           if (peerSchemaHash != schemaHash) {
             throw new ClassNotCompatibleException(
@@ -162,8 +177,14 @@ public class Encoders {
                     schema, schemaHash, peerSchemaHash));
           }
           BinaryRow row = new BinaryRow(schema);
-          row.pointTo(buffer, buffer.readerIndex(), buffer.size());
+          row.pointTo(buffer, buffer.readerIndex(), size);
+          buffer.increaseReaderIndex(size - 8);
           return fromRow(row);
+        }
+
+        @Override
+        public T decode(byte[] bytes) {
+          return decode(MemoryUtils.wrap(bytes), bytes.length);
         }
 
         @Override
@@ -174,6 +195,21 @@ public class Encoders {
           writer.reset();
           BinaryRow row = toRow(obj);
           return buffer.getBytes(0, 8 + row.getSizeInBytes());
+        }
+
+        @Override
+        public void encode(MemoryBuffer buffer, T obj) {
+          int writerIndex = buffer.writerIndex();
+          buffer.writeInt32(-1);
+          try {
+            buffer.writeInt64(schemaHash);
+            writer.setBuffer(buffer);
+            writer.reset();
+            toRow(obj);
+            buffer.putInt32(writerIndex, buffer.writerIndex() - writerIndex - 4);
+          } finally {
+            writer.setBuffer(this.buffer);
+          }
         }
       };
     } catch (Exception e) {
@@ -192,7 +228,7 @@ public class Encoders {
    * @return
    */
   public static <T extends Collection> ArrayEncoder<T> arrayEncoder(TypeRef<T> token) {
-    return arrayEncoder(token, (Fury) null);
+    return arrayEncoder(token, null);
   }
 
   public static <T extends Collection> ArrayEncoder<T> arrayEncoder(TypeRef<T> token, Fury fury) {
@@ -230,6 +266,11 @@ public class Encoders {
       }
 
       @Override
+      public T decode(MemoryBuffer buffer) {
+        return encoder.decode(buffer);
+      }
+
+      @Override
       public T decode(byte[] bytes) {
         return encoder.decode(bytes);
       }
@@ -237,6 +278,11 @@ public class Encoders {
       @Override
       public byte[] encode(T obj) {
         return encoder.encode(obj);
+      }
+
+      @Override
+      public void encode(MemoryBuffer buffer, T obj) {
+        encoder.encode(buffer, obj);
       }
     };
   }
@@ -299,18 +345,43 @@ public class Encoders {
         }
 
         @Override
-        public T decode(byte[] bytes) {
-          MemoryBuffer buffer = MemoryUtils.wrap(bytes);
+        public T decode(MemoryBuffer buffer) {
+          return decode(buffer, buffer.readInt32());
+        }
+
+        public T decode(MemoryBuffer buffer, int size) {
           BinaryArray array = new BinaryArray(field);
-          array.pointTo(buffer, buffer.readerIndex(), buffer.size());
+          int readerIndex = buffer.readerIndex();
+          array.pointTo(buffer, readerIndex, size);
+          buffer.readerIndex(readerIndex + size);
           return fromArray(array);
         }
 
         @Override
+        public T decode(byte[] bytes) {
+          return decode(MemoryUtils.wrap(bytes), bytes.length);
+        }
+
+        @Override
         public byte[] encode(T obj) {
-          writer.reset(obj.size());
           BinaryArray array = toArray(obj);
           return writer.getBuffer().getBytes(0, 8 + array.getSizeInBytes());
+        }
+
+        @Override
+        public void encode(MemoryBuffer buffer, T obj) {
+          MemoryBuffer prevBuffer = writer.getBuffer();
+          int writerIndex = buffer.writerIndex();
+          buffer.writeInt32(-1);
+          try {
+            writer.setBuffer(buffer);
+            BinaryArray array = toArray(obj);
+            int size = buffer.writerIndex() - writerIndex - 4;
+            assert size == array.getSizeInBytes();
+            buffer.putInt32(writerIndex, size);
+          } finally {
+            writer.setBuffer(prevBuffer);
+          }
         }
       };
     } catch (Exception e) {
@@ -329,7 +400,7 @@ public class Encoders {
    * @return
    */
   public static <T extends Map> MapEncoder<T> mapEncoder(TypeRef<T> token) {
-    return mapEncoder(token, (Fury) null);
+    return mapEncoder(token, null);
   }
 
   /**
@@ -348,16 +419,11 @@ public class Encoders {
 
   public static <T extends Map> MapEncoder<T> mapEncoder(TypeRef<T> token, Fury fury) {
     Preconditions.checkNotNull(token);
-
     Tuple2<TypeRef<?>, TypeRef<?>> tuple2 = TypeUtils.getMapKeyValueType(token);
 
     Set<TypeRef<?>> set1 = beanSet(tuple2.f0);
     Set<TypeRef<?>> set2 = beanSet(tuple2.f1);
     LOG.info("Find beans to load: {}, {}", set1, set2);
-
-    if (set1.isEmpty() && set2.isEmpty()) {
-      throw new IllegalArgumentException("can not find bean class.");
-    }
 
     TypeRef<?> keyToken = token4BeanLoad(set1, tuple2.f0);
     TypeRef<?> valToken = token4BeanLoad(set2, tuple2.f1);
@@ -388,7 +454,7 @@ public class Encoders {
     Field keyField = DataTypes.keyArrayFieldForMap(field);
     Field valField = DataTypes.itemArrayFieldForMap(field);
     BinaryArrayWriter keyWriter = new BinaryArrayWriter(keyField);
-    BinaryArrayWriter valWriter = new BinaryArrayWriter(valField);
+    BinaryArrayWriter valWriter = new BinaryArrayWriter(valField, keyWriter.getBuffer());
     try {
       Class<?> rowCodecClass = loadOrGenMapCodecClass(mapToken, keyToken, valToken);
       Object references = new Object[] {keyField, valField, keyWriter, valWriter, fury, field};
@@ -421,17 +487,43 @@ public class Encoders {
         }
 
         @Override
-        public T decode(byte[] bytes) {
-          MemoryBuffer buffer = MemoryUtils.wrap(bytes);
+        public T decode(MemoryBuffer buffer) {
+          return decode(buffer, buffer.readInt32());
+        }
+
+        public T decode(MemoryBuffer buffer, int size) {
           BinaryMap map = new BinaryMap(field);
-          map.pointTo(buffer, 0, buffer.size());
+          int readerIndex = buffer.readerIndex();
+          map.pointTo(buffer, readerIndex, size);
+          buffer.readerIndex(readerIndex + size);
           return fromMap(map);
+        }
+
+        @Override
+        public T decode(byte[] bytes) {
+          return decode(MemoryUtils.wrap(bytes), bytes.length);
         }
 
         @Override
         public byte[] encode(T obj) {
           BinaryMap map = toMap(obj);
-          return map.getBuf().readBytes(map.getBuf().size());
+          return map.getBuf().getBytes(map.getBaseOffset(), map.getSizeInBytes());
+        }
+
+        @Override
+        public void encode(MemoryBuffer buffer, T obj) {
+          MemoryBuffer prevBuffer = keyWriter.getBuffer();
+          int writerIndex = buffer.writerIndex();
+          buffer.writeInt32(-1);
+          try {
+            keyWriter.setBuffer(buffer);
+            valWriter.setBuffer(buffer);
+            toMap(obj);
+            buffer.putInt32(writerIndex, buffer.writerIndex() - writerIndex - 4);
+          } finally {
+            keyWriter.setBuffer(prevBuffer);
+            valWriter.setBuffer(prevBuffer);
+          }
         }
       };
     } catch (Exception e) {
@@ -485,6 +577,11 @@ public class Encoders {
       }
 
       @Override
+      public T decode(MemoryBuffer buffer) {
+        return encoder.decode(buffer);
+      }
+
+      @Override
       public T decode(byte[] bytes) {
         return encoder.decode(bytes);
       }
@@ -493,12 +590,22 @@ public class Encoders {
       public byte[] encode(T obj) {
         return encoder.encode(obj);
       }
+
+      @Override
+      public void encode(MemoryBuffer buffer, T obj) {
+        encoder.encode(buffer, obj);
+      }
     };
   }
 
   private static void findBeanToken(TypeRef<?> typeRef, java.util.Set<TypeRef<?>> set) {
+    Set<TypeRef<?>> visited = new LinkedHashSet<>();
     while (TypeUtils.ITERABLE_TYPE.isSupertypeOf(typeRef)
         || TypeUtils.MAP_TYPE.isSupertypeOf(typeRef)) {
+      if (visited.contains(typeRef)) {
+        return;
+      }
+      visited.add(typeRef);
       if (TypeUtils.ITERABLE_TYPE.isSupertypeOf(typeRef)) {
         typeRef = TypeUtils.getElementType(typeRef);
         if (TypeUtils.isBean(typeRef)) {
@@ -572,7 +679,8 @@ public class Encoders {
       cls = getRawType(valueToken);
       beanToken = valueToken;
     } else {
-      throw new IllegalArgumentException("not find bean class.");
+      cls = Object.class;
+      beanToken = OBJECT_TYPE;
     }
     // class name prefix
     String prefix = TypeInference.inferTypeName(mapCls);

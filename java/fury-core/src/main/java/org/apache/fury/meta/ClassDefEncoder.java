@@ -105,7 +105,15 @@ class ClassDefEncoder {
   /** Build class definition from fields of class. */
   static ClassDef buildClassDef(
       ClassResolver classResolver, Class<?> type, List<Field> fields, boolean isObjectType) {
-    List<FieldInfo> fieldInfos = buildFieldsInfo(classResolver, fields);
+    return buildClassDefWithFieldInfos(
+        classResolver, type, buildFieldsInfo(classResolver, fields), isObjectType);
+  }
+
+  static ClassDef buildClassDefWithFieldInfos(
+      ClassResolver classResolver,
+      Class<?> type,
+      List<ClassDef.FieldInfo> fieldInfos,
+      boolean isObjectType) {
     Map<String, List<FieldInfo>> classLayers = getClassFields(type, fieldInfos);
     fieldInfos = new ArrayList<>(fieldInfos.size());
     classLayers.values().forEach(fieldInfos::addAll);
