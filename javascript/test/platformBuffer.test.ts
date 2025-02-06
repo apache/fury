@@ -40,46 +40,26 @@ describe('platformBuffer', () => {
 
     test('should latin1Write work', () => {
         const bb = BrowserBuffer.alloc(100);
-        bb.latin1Write("hello, world", 0);
+        bb.write("hello, world", 0, "latin1");
 
-        const str = bb.latin1Slice(0, 12);
+        const str = bb.toString("latin1", 0, 12);
         expect(str).toBe("hello, world");
-
-        const str2 = bb.toString('latin1', 0, 12);
-        expect(str2).toBe("hello, world");
-    });
-
-    test('should write latin1 work', () => {
-        const bb = BrowserBuffer.alloc(100);
-        bb.write("hello, world", 0, 'latin1');
-
-        const str = bb.latin1Slice(0, 12);
-        expect(str).toBe("hello, world");
-
-        const str2 = bb.toString('latin1', 0, 12);
-        expect(str2).toBe("hello, world");
     });
 
 
     test('should utf8Write work', () => {
         const rawStr = "我是Fury, 你好！😁א";
         const bb = BrowserBuffer.alloc(100);
-        bb.utf8Write(rawStr, 0);
+        bb.write(rawStr, 0);
 
-        const str = bb.utf8Slice(0, 27);
+        const str = bb.toString("utf8", 0, 27);
         expect(str).toBe(rawStr);
-
-        const str2 = bb.toString('utf8', 0, 27);
-        expect(str2).toBe(rawStr);
     });
 
     test('should utf8 work', () => {
         const rawStr = "我是Fury, 你好！😁א";
         const bb = BrowserBuffer.alloc(100);
         bb.write(rawStr, 0, 'utf8');
-
-        const str = bb.utf8Slice(0, 27);
-        expect(str).toBe(rawStr);
 
         const str2 = bb.toString('utf8', 0, 27);
         expect(str2).toBe(rawStr);
@@ -93,7 +73,7 @@ describe('platformBuffer', () => {
 
     test('should copy work', () => {
         const bb = BrowserBuffer.alloc(100);
-        bb.latin1Write("hello", 0);
+        bb.write("hello", 0, 'latin1');
         const target = new Uint8Array(5);
         bb.copy(target, 0, 0, 5);
         expect([...target]).toEqual([ 104, 101, 108, 108, 111 ])

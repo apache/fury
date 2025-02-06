@@ -20,13 +20,15 @@
 const hps: Hps = require("bindings")("hps.node");
 
 interface Hps {
-  isLatin1: (str: string) => boolean;
-  stringCopy: (str: string, dist: Uint8Array, offset: number) => void;
+  serializeString: (dist: Uint8Array, str: string, offset: number, maxLength: number) => number;
 }
 
-const { isLatin1, stringCopy } = hps;
+const { serializeString: _serializeString } = hps;
 
-export {
-  isLatin1,
-  stringCopy,
+export const serializeString = (v: string, dist: Uint8Array, offset: number) => {
+  if (typeof v !== "string") {
+    throw new Error(`isLatin1 requires string but got ${typeof v}`);
+  }
+  // todo boundary check
+  return _serializeString(dist, v, offset, 0);
 };
