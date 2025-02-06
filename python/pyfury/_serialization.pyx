@@ -1733,7 +1733,7 @@ cdef class MapSerializer(Serializer):
                         value_serializer.write(buffer, value)
                 chunk_size += 1
                 has_next = PyDict_Next(obj, &pos, <PyObject **>&key_addr, <PyObject **>&value_addr)
-                if has_next == 0 :
+                if has_next == 0:
                     break
                 if chunk_size == MAX_CHUNK_SIZE:
                     break
