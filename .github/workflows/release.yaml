@@ -44,8 +44,7 @@ jobs:
         run: ./ci/run_ci.sh install_bazel
       - name: Update version in setup.py
         run: |
-          echo "GITHUB_REF: $GITHUB_REF"
-          tag=$(echo $GITHUB_REF | cut -d / -f 3)
+          tag=$(git describe --tags --exact-match 2>/dev/null)
           echo "tag: $tag"
           version=${tag:1}
           echo "version $version"
