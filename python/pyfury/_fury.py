@@ -291,7 +291,7 @@ class Fury:
             return
         else:
             classinfo = self.class_resolver.get_classinfo(cls)
-            self.class_resolver.write_classinfo(buffer, classinfo)
+            self.class_resolver.write_typeinfo(buffer, classinfo)
             classinfo.serializer.write(buffer, obj)
 
     def xserialize_ref(self, buffer, obj, serializer=None):
@@ -459,7 +459,7 @@ class Fury:
             return
         if classinfo is None:
             classinfo = self.class_resolver.get_classinfo(type(value))
-        self.class_resolver.write_classinfo(buffer, classinfo)
+        self.class_resolver.write_typeinfo(buffer, classinfo)
         classinfo.serializer.write(buffer, value)
 
     def read_ref_pyobject(self, buffer):
