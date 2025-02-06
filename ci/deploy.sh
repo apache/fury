@@ -126,14 +126,7 @@ deploy_python() {
 }
 
 install_pyarrow() {
-  pyversion=$(python -V | cut -d' ' -f2)
-  if [[ $pyversion  ==  3.7* ]]; then
-    pyarrow_version=12.0.0
-    sed -i -E "s/pyarrow_version = .*/pyarrow_version = \"12.0.0\"/" "$ROOT"/python/setup.py
-  else
-    pyarrow_version=14.0.0
-  fi
-  pip install pyarrow==$pyarrow_version
+  pip install pyarrow==14.0.0
 }
 
 deploy_scala() {

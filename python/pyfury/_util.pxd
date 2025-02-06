@@ -110,6 +110,8 @@ cdef class Buffer:
 
     cpdef inline c_bool read_bool(self)
 
+    cpdef inline uint8_t read_uint8(self)
+
     cpdef inline int8_t read_int8(self)
 
     cpdef inline int16_t read_int16(self)

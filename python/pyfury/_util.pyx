@@ -305,6 +305,12 @@ cdef class Buffer:
         self.reader_index += <int32_t>1
         return (<c_bool *>(self._c_address + offset))[0]
 
+    cpdef inline uint8_t read_uint8(self):
+        cdef int32_t offset = self.reader_index
+        self.check_bound(offset, <int32_t>1)
+        self.reader_index += <int32_t>1
+        return (<uint8_t *>(self._c_address + offset))[0]
+
     cpdef inline int8_t read_int8(self):
         cdef int32_t offset = self.reader_index
         self.check_bound(offset, <int32_t>1)
