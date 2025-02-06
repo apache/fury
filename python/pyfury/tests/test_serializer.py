@@ -71,8 +71,9 @@ def test_string():
     assert ser_de(fury, "hello，😀" * 10) == "hello，😀" * 10
 
 
-def test_dict():
-    fury = Fury(language=Language.PYTHON, ref_tracking=True)
+@pytest.mark.parametrize("track_ref", [False, True])
+def test_dict(track_ref):
+    fury = Fury(language=Language.PYTHON, ref_tracking=track_ref)
     assert ser_de(fury, {1: 2}) == {1: 2}
     assert ser_de(fury, {1 / 3: 2.0}) == {1 / 3: 2.0}
     assert ser_de(fury, {1 / 3: 2}) == {1 / 3: 2}
@@ -90,6 +91,40 @@ def test_dict():
         2: {-1.0: -1.0, 10: -1.0},
     }
     assert ser_de(fury, dict3) == dict3
+
+
+@pytest.mark.parametrize("track_ref", [False, True])
+def test_multi_chunk_simple_dict(track_ref):
+    fury = Fury(language=Language.PYTHON, ref_tracking=track_ref)
+    dict0 = {
+        1: 2.0,
+        2: 3,
+        4.0: True,
+    }
+    assert ser_de(fury, dict0) == dict0
+
+
+@pytest.mark.parametrize("track_ref", [False, True])
+def test_multi_chunk_complex_dict(track_ref):
+    fury = Fury(language=Language.PYTHON, ref_tracking=track_ref)
+    now = datetime.datetime.now()
+    day = datetime.date(2021, 11, 23)
+    dict0 = {"a": "a", 1: 1, -1.0: -1.0, True: True, now: now, day: day}
+    assert ser_de(fury, dict0) == dict0
+
+
+@pytest.mark.parametrize("track_ref", [False, True])
+def test_big_chunk_dict(track_ref):
+    fury = Fury(language=Language.PYTHON, ref_tracking=track_ref)
+    now = datetime.datetime.now()
+    day = datetime.date(2021, 11, 23)
+    dict0 = {}
+    values = ["a", 1, -1.0, True, False, now, day]
+    for i in range(1000):
+        dict0[i] = values[i % len(values)]
+        dict0[f"key{i}"] = values[i % len(values)]
+        dict0[float(i)] = values[i % len(values)]
+    assert ser_de(fury, dict0) == dict0
 
 
 @pytest.mark.parametrize("language", [Language.XLANG, Language.PYTHON])
