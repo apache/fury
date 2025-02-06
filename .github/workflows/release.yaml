@@ -44,9 +44,9 @@ jobs:
         shell: bash
         run: |
           if [ "$RUNNER_OS" == "Windows" ]; then
-              ../ci/run_ci.sh install_bazel_windows
+              ci/run_ci.sh install_bazel_windows
           else
-              ../ci/run_ci.sh install_bazel
+              ci/run_ci.sh install_bazel
           fi
       - name: Update version in setup.py
         run: ci/deploy.sh bump_py_version
