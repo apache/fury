@@ -71,24 +71,27 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: |
-            pyfury-wheels-ubuntu-latest-3.8
-            pyfury-wheels-ubuntu-latest-3.9
-            pyfury-wheels-ubuntu-latest-3.11
-            pyfury-wheels-ubuntu-latest-3.12
-            pyfury-wheels-macos-13-3.8
-            pyfury-wheels-macos-13-3.9
-            pyfury-wheels-macos-13-3.11
-            pyfury-wheels-macos-13-3.12
-            pyfury-wheels-macos-14-3.8
-            pyfury-wheels-macos-14-3.9
-            pyfury-wheels-macos-14-3.11
-            pyfury-wheels-macos-14-3.12
-            pyfury-wheels-windows-2022-3.8
-            pyfury-wheels-windows-2022-3.9
-            pyfury-wheels-windows-2022-3.11
-            pyfury-wheels-windows-2022-3.12
+            pyfury-wheels-ubuntu-latest-3.8.zip
+            pyfury-wheels-ubuntu-latest-3.9.zip
+            pyfury-wheels-ubuntu-latest-3.10.zip
+            pyfury-wheels-ubuntu-latest-3.11.zip
+            pyfury-wheels-ubuntu-latest-3.12.zip
+            pyfury-wheels-macos-13-3.8.zip
+            pyfury-wheels-macos-13-3.9.zip
+            pyfury-wheels-macos-13-3.10.zip
+            pyfury-wheels-macos-13-3.11.zip
+            pyfury-wheels-macos-13-3.12.zip
+            pyfury-wheels-macos-14-3.8.zip
+            pyfury-wheels-macos-14-3.9.zip
+            pyfury-wheels-macos-14-3.10.zip
+            pyfury-wheels-macos-14-3.11.zip
+            pyfury-wheels-macos-14-3.12.zip
+            pyfury-wheels-windows-2022-3.8.zip
+            pyfury-wheels-windows-2022-3.9.zip
+            pyfury-wheels-windows-2022-3.10.zip
+            pyfury-wheels-windows-2022-3.11.zip
+            pyfury-wheels-windows-2022-3.12.zip
           path: downloaded_wheels/
-
       - name: Publish Wheels to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
