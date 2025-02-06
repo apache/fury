@@ -348,7 +348,7 @@ def test_serialize_arrow():
     record_batch = create_record_batch(10000)
     table = pa.Table.from_batches([record_batch, record_batch])
     fury = Fury(language=Language.XLANG, ref_tracking=True)
-    serialized_data = Buffer.allocate(32)
+    serialized_data = Buffer.allocate(120160)
     fury.serialize(record_batch, buffer=serialized_data)
     fury.serialize(table, buffer=serialized_data)
     new_batch = fury.deserialize(serialized_data)
