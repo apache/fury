@@ -596,9 +596,7 @@ def test_map_fields_chunk_serializer():
 
     #
     map_fields_object = MapFields(
-        simple_dict=simple_dict,
-        empty_dict=empty_dict,
-        large_dict=large_dict
+        simple_dict=simple_dict, empty_dict=empty_dict, large_dict=large_dict
     )
 
     serialized = fury.serialize(map_fields_object)

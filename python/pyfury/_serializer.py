@@ -24,8 +24,16 @@ from pyfury._fury import (
     NOT_NULL_INT64_FLAG,
     NOT_NULL_BOOL_FLAG,
     KEY_HAS_NULL,
-    VALUE_HAS_NULL, TRACKING_KEY_REF, TRACKING_VALUE_REF, KEY_DECL_TYPE, VALUE_DECL_TYPE, MAX_CHUNK_SIZE, KV_NULL,
-    NULL_KEY_VALUE_DECL_TYPE, NULL_KEY_VALUE_DECL_TYPE_TRACKING_REF, NULL_VALUE_KEY_DECL_TYPE,
+    VALUE_HAS_NULL,
+    TRACKING_KEY_REF,
+    TRACKING_VALUE_REF,
+    KEY_DECL_TYPE,
+    VALUE_DECL_TYPE,
+    MAX_CHUNK_SIZE,
+    KV_NULL,
+    NULL_KEY_VALUE_DECL_TYPE,
+    NULL_KEY_VALUE_DECL_TYPE_TRACKING_REF,
+    NULL_VALUE_KEY_DECL_TYPE,
     NULL_VALUE_KEY_DECL_TYPE_TRACKING_REF,
 )
 from pyfury.resolver import NOT_NULL_VALUE_FLAG, NULL_FLAG
@@ -367,8 +375,12 @@ class MapSerializer(Serializer):
             value_serializer_type = type(value_serializer)
             chunk_size = 0
             while True:
-                if (key is None or value is None or
-                        type(key) is not key_cls or type(value) is not value_cls):
+                if (
+                    key is None
+                    or value is None
+                    or type(key) is not key_cls
+                    or type(value) is not value_cls
+                ):
                     break
                 if not key_write_ref or not ref_resolver.write_ref_or_null(buffer, key):
                     if key_cls is str:
@@ -383,7 +395,9 @@ class MapSerializer(Serializer):
                         buffer.write_float(key)
                     else:
                         key_serializer.write(buffer, key)
-                if not value_write_ref or not ref_resolver.write_ref_or_null(buffer, value):
+                if not value_write_ref or not ref_resolver.write_ref_or_null(
+                    buffer, value
+                ):
                     if value_cls is str:
                         buffer.write_string(value)
                     elif value_serializer_type is Int64Serializer:

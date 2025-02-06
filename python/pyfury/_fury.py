@@ -82,11 +82,15 @@ KV_NULL = KEY_HAS_NULL | VALUE_HAS_NULL
 # Key is null, value type is declared type, and ref tracking for value is disabled.
 NULL_KEY_VALUE_DECL_TYPE = KEY_HAS_NULL | VALUE_DECL_TYPE
 # Key is null, value type is declared type, and ref tracking for value is enabled.
-NULL_KEY_VALUE_DECL_TYPE_TRACKING_REF = KEY_HAS_NULL | VALUE_DECL_TYPE | TRACKING_VALUE_REF
+NULL_KEY_VALUE_DECL_TYPE_TRACKING_REF = (
+    KEY_HAS_NULL | VALUE_DECL_TYPE | TRACKING_VALUE_REF
+)
 # Value is null, key type is declared type, and ref tracking for key is disabled.
 NULL_VALUE_KEY_DECL_TYPE = VALUE_HAS_NULL | KEY_DECL_TYPE
 # Value is null, key type is declared type, and ref tracking for key is enabled.
-NULL_VALUE_KEY_DECL_TYPE_TRACKING_REF = VALUE_HAS_NULL | KEY_DECL_TYPE | TRACKING_VALUE_REF
+NULL_VALUE_KEY_DECL_TYPE_TRACKING_REF = (
+    VALUE_HAS_NULL | KEY_DECL_TYPE | TRACKING_VALUE_REF
+)
 
 
 class Language(enum.Enum):
