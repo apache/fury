@@ -52,15 +52,8 @@ jobs:
         run: ci/deploy.sh bump_py_version
       - name: Build a binary wheel
         run: |
-          ci/deploy.sh install_pyarrow
-          pip install setuptools wheel Cython numpy pytest
-          cd python
-          pip list
-          export PATH=~/bin:$PATH
-          echo "Build pyfury"
-          bazel build //:cp_fury_so
-          python setup.py bdist_wheel --dist-dir=../dist
-          ../ci/deploy.sh rename_linux_wheels $PWD/../dist
+          ci/deploy.sh build_pyfury
+          ci/deploy.sh rename_linux_wheels dist
       - name: Publish wheel to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:

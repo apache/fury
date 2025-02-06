@@ -101,6 +101,20 @@ deploy_jars() {
   mvn -T10 clean deploy --no-transfer-progress -DskipTests -Prelease
 }
 
+build_pyfury() {
+  echo "Python version $(python -V), path $(which python)"
+  install_pyarrow
+  pip install Cython wheel "numpy<2.0.0" pytest
+  pushd "$ROOT/python"
+  pip list
+  echo "Install pyfury"
+  # Fix strange installed deps not found
+  pip install setuptools -U
+  bazel build //:cp_fury_so
+  python setup.py bdist_wheel --dist-dir=../dist
+  popd
+}
+
 deploy_python() {
   source $(conda info --base)/etc/profile.d/conda.sh
   if command -v pyenv; then
