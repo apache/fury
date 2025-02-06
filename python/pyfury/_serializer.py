@@ -22,7 +22,7 @@ from typing import Dict, Iterable, Any
 
 from pyfury._fury import (
     NOT_NULL_INT64_FLAG,
-    NOT_NULL_BOOL_FLAG,
+    NOT_NULL_BOOL_FLAG, NOT_NULL_STRING_FLAG,
 )
 from pyfury.resolver import NOT_NULL_VALUE_FLAG, NULL_FLAG
 from pyfury.type import is_primitive_type
@@ -222,7 +222,7 @@ class CollectionSerializer(Serializer):
         for s in value:
             cls = type(s)
             if cls is str:
-                buffer.write_int16()
+                buffer.write_int16(NOT_NULL_STRING_FLAG)
                 buffer.write_string(s)
             elif cls is int:
                 buffer.write_int16(NOT_NULL_INT64_FLAG)
