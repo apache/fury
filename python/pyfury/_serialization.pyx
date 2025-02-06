@@ -1623,11 +1623,11 @@ cdef class MapSerializer(Serializer):
         cdef MapRefResolver ref_resolver = fury.ref_resolver
         cdef Serializer key_serializer = self.key_serializer
         cdef Serializer value_serializer = self.value_serializer
-        cdef int has_next = PyDict_Next(obj, &pos, <PyObject **>&key_addr, <PyObject **>&value_addr)
         cdef type key_cls, value_cls, key_serializer_type, value_serializer_type
         cdef ClassInfo key_classinfo, value_classinfo
         cdef int32_t chunk_size_offset, chunk_header, chunk_size
         cdef c_bool key_write_ref, value_write_ref
+        cdef int has_next = PyDict_Next(obj, &pos, <PyObject **>&key_addr, <PyObject **>&value_addr)
         while has_next != 0:
             key = int2obj(key_addr)
             Py_INCREF(key)
@@ -1666,6 +1666,10 @@ cdef class MapSerializer(Serializer):
                     else:
                         buffer.write_int8(KV_NULL)
                 has_next = PyDict_Next(obj, &pos, <PyObject **>&key_addr, <PyObject **>&value_addr)
+                key = int2obj(key_addr)
+                Py_INCREF(key)
+                value = int2obj(value_addr)
+                Py_INCREF(value)
             if has_next == 0:
                 break
             key_cls = type(key)
@@ -1703,7 +1707,9 @@ cdef class MapSerializer(Serializer):
                     if key_cls is str:
                         buffer.write_string(key)
                     elif key_serializer_type is Int32Serializer:
-                        buffer.write_int32(key)
+                        buffer.write_varint32(key)
+                    elif key_serializer_type is Int64Serializer:
+                        buffer.write_varint64(key)
                     elif key_serializer_type is Float64Serializer:
                         buffer.write_double(key)
                     elif key_serializer_type is Float32Serializer:
@@ -1714,7 +1720,9 @@ cdef class MapSerializer(Serializer):
                     if value_cls is str:
                         buffer.write_string(value)
                     elif value_serializer_type is Int32Serializer:
-                        buffer.write_int32(value)
+                        buffer.write_varint32(value)
+                    elif value_serializer_type is Int64Serializer:
+                        buffer.write_varint64(value)
                     elif value_serializer_type is Float64Serializer:
                         buffer.write_double(value)
                     elif value_serializer_type is Float32Serializer:
@@ -1725,8 +1733,16 @@ cdef class MapSerializer(Serializer):
                         value_serializer.write(buffer, value)
                 chunk_size += 1
                 has_next = PyDict_Next(obj, &pos, <PyObject **>&key_addr, <PyObject **>&value_addr)
-                if has_next == 0 or chunk_size == MAX_CHUNK_SIZE:
+                if has_next == 0 :
                     break
+                if chunk_size == MAX_CHUNK_SIZE:
+                    break
+                key = int2obj(key_addr)
+                Py_INCREF(key)
+                value = int2obj(value_addr)
+                Py_INCREF(value)
+            key_serializer = self.key_serializer
+            value_serializer = self.value_serializer
             buffer.put_int8(chunk_size_offset, chunk_size)
 
     cpdef inline read(self, Buffer buffer):
@@ -1762,6 +1778,7 @@ cdef class MapSerializer(Serializer):
                                     key = ref_resolver.get_read_object()
                                 else:
                                     key = key_serializer.read(buffer)
+                                    ref_resolver.set_read_object(ref_id, key)
                             else:
                                 key = key_serializer.read(buffer)
                         else:
@@ -1777,6 +1794,7 @@ cdef class MapSerializer(Serializer):
                                     value = ref_resolver.get_read_object()
                                 else:
                                     value = value_serializer.read(buffer)
+                                    ref_resolver.set_read_object(ref_id, value)
                         else:
                             value = fury.deserialize_ref(buffer)
                         map_[None] = value
@@ -1784,7 +1802,7 @@ cdef class MapSerializer(Serializer):
                         map_[None] = None
                 size -= 1
                 if size == 0:
-                    break
+                    return map_
                 else:
                     chunk_header = buffer.read_uint8()
             track_key_ref = (chunk_header & TRACKING_KEY_REF) != 0
@@ -1805,14 +1823,17 @@ cdef class MapSerializer(Serializer):
                         key = ref_resolver.get_read_object()
                     else:
                         key = key_serializer.read(buffer)
+                        ref_resolver.set_read_object(ref_id, key)
                 else:
                     if key_serializer_type is StringSerializer:
                         key = buffer.read_string()
                     elif key_serializer_type is Int32Serializer:
                         key = buffer.read_varint32()
+                    elif key_serializer_type is Int64Serializer:
+                        key = buffer.read_varint64()
                     elif key_serializer_type is Float64Serializer:
                         key = buffer.read_double()
-                    elif key_serializer_type is Float64Serializer:
+                    elif key_serializer_type is Float32Serializer:
                         key = buffer.read_float()
                     else:
                         key = key_serializer.read(buffer)
@@ -1822,11 +1843,14 @@ cdef class MapSerializer(Serializer):
                         value = ref_resolver.get_read_object()
                     else:
                         value = value_serializer.read(buffer)
+                        ref_resolver.set_read_object(ref_id, value)
                 else:
                     if value_serializer_type is StringSerializer:
                         value = buffer.read_string()
                     elif value_serializer_type is Int32Serializer:
                         value = buffer.read_varint32()
+                    elif value_serializer_type is Int64Serializer:
+                        value = buffer.read_varint64()
                     elif value_serializer_type is Float64Serializer:
                         value = buffer.read_double()
                     elif value_serializer_type is Float32Serializer:
@@ -1837,6 +1861,8 @@ cdef class MapSerializer(Serializer):
                         value = value_serializer.read(buffer)
                 map_[key] = value
                 size -= 1
+            if size != 0:
+                chunk_header = buffer.read_uint8()
         return map_
 
     cpdef inline xwrite(self, Buffer buffer, o):
