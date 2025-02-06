@@ -339,34 +339,32 @@ class MapSerializer(Serializer):
                         break
                     if key_serializer is not None:
                         if key_serializer.need_to_write_ref:
-                            buffer.write_int32(NULL_VALUE_KEY_DECL_TYPE_TRACKING_REF)
+                            buffer.write_int8(NULL_VALUE_KEY_DECL_TYPE_TRACKING_REF)
                             if not ref_resolver.write_ref_or_null(buffer, key):
                                 key_serializer.write(buffer, key)
                         else:
-                            buffer.write_int32(NULL_VALUE_KEY_DECL_TYPE)
+                            buffer.write_int8(NULL_VALUE_KEY_DECL_TYPE)
                             key_serializer.write(buffer, key)
                     else:
-                        buffer.write_int32(VALUE_HAS_NULL | TRACKING_KEY_REF)
+                        buffer.write_int8(VALUE_HAS_NULL | TRACKING_KEY_REF)
                         fury.serialize_ref(buffer, key)
                 else:
                     if value is not None:
                         if value_serializer is not None:
                             if value_serializer.need_to_write_ref:
-                                buffer.write_int32(
-                                    NULL_KEY_VALUE_DECL_TYPE_TRACKING_REF
-                                )
+                                buffer.write_int8(NULL_KEY_VALUE_DECL_TYPE_TRACKING_REF)
                                 if not ref_resolver.write_ref_or_null(buffer, key):
                                     value_serializer.write(buffer, key)
                                 if not ref_resolver.write_ref_or_null(buffer, value):
                                     value_serializer.write(buffer, value)
                             else:
-                                buffer.write_int32(NULL_KEY_VALUE_DECL_TYPE)
+                                buffer.write_int8(NULL_KEY_VALUE_DECL_TYPE)
                                 value_serializer.write(buffer, value)
                         else:
-                            buffer.write_int32(KEY_HAS_NULL | TRACKING_VALUE_REF)
+                            buffer.write_int8(KEY_HAS_NULL | TRACKING_VALUE_REF)
                             fury.serialize_ref(buffer, value)
                     else:
-                        buffer.write_int32(KV_NULL)
+                        buffer.write_int8(KV_NULL)
                 has_next = next((True for _ in obj), False)
                 if not has_next:
                     break
