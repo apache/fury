@@ -28,7 +28,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: [3.8, 3.9, 3.11, 3.12]
+        python-version: [3.8, 3.9, 3.10, 3.11, 3.12]
         os: [ubuntu-latest, macos-13, macos-14, windows-2022] # macos-13: x86, macos-14: arm64
 
     steps:
@@ -52,7 +52,9 @@ jobs:
         shell: bash
         run: |
           ci/deploy.sh build_pyfury
-          ci/deploy.sh rename_linux_wheels dist
+          if [[ "$OSTYPE" == "linux"* ]]; then
+            ci/deploy.sh rename_linux_wheels dist
+          fi
       - name: Upload Wheel Artifact
         uses: actions/upload-artifact@v4
         with:

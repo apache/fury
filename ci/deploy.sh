@@ -58,7 +58,10 @@ create_py_envs() {
 rename_linux_wheels() {
   for path in "$1"/*.whl; do
     if [ -f "${path}" ]; then
-      mv "${path}" "${path//linux/manylinux1}"
+      new_path="${path//linux/manylinux1}"
+      if [ "${path}" != "${new_path}" ]; then
+        mv "${path}" "${new_path}"
+      fi
     fi
   done
 }
