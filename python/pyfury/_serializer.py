@@ -334,7 +334,59 @@ class MapSerializer(Serializer):
             pos += 1
             if key is not None:
                 if value is not None:
-                    break
+                    pos -= 1
+                    key_cls = type(key)
+                    value_cls = type(value)
+                    buffer.write_int16(-1)
+                    chunk_size_offset = buffer.writer_index - 1
+                    chunk_header = 0
+                    if key_serializer is not None:
+                        chunk_header |= KEY_DECL_TYPE
+                    else:
+                        key_classinfo = self.class_resolver.get_classinfo(key_cls)
+                        class_resolver.write_typeinfo(buffer, key_classinfo)
+                        key_serializer = key_classinfo.serializer
+                    if value_serializer is not None:
+                        chunk_header |= VALUE_DECL_TYPE
+                    else:
+                        value_classinfo = self.class_resolver.get_classinfo(value_cls)
+                        class_resolver.write_typeinfo(buffer, value_classinfo)
+                        value_serializer = value_classinfo.serializer
+                    key_write_ref = key_serializer.need_to_write_ref
+                    value_write_ref = value_serializer.need_to_write_ref
+                    if key_write_ref:
+                        chunk_header |= TRACKING_KEY_REF
+                    if value_write_ref:
+                        chunk_header |= TRACKING_VALUE_REF
+                    buffer.put_int8(chunk_size_offset - 1, chunk_header)
+                    key_serializer_type = type(key_serializer)
+                    value_serializer_type = type(value_serializer)
+                    chunk_size = 0
+                    while True:
+                        if (
+                            key is None
+                            or value is None
+                            or type(key) is not key_cls
+                            or type(value) is not value_cls
+                        ):
+                            break
+                        if not key_write_ref or not ref_resolver.write_ref_or_null(
+                            buffer, key
+                        ):
+                            key_serializer.write(buffer, key)
+                        if not value_write_ref or not ref_resolver.write_ref_or_null(
+                            buffer, value
+                        ):
+                            value_serializer.write(buffer, value)
+                        chunk_size += 1
+                        if pos >= len(items) or chunk_size == MAX_CHUNK_SIZE:
+                            break
+                        key, value = items[pos]
+                        pos += 1
+                    key_serializer = self.key_serializer
+                    value_serializer = self.value_serializer
+                    buffer.put_int8(chunk_size_offset, chunk_size)
+                    continue
                 if key_serializer is not None:
                     if key_serializer.need_to_write_ref:
                         buffer.write_int8(NULL_VALUE_KEY_DECL_TYPE_TRACKING_REF)
@@ -363,57 +415,6 @@ class MapSerializer(Serializer):
                         fury.serialize_ref(buffer, value)
                 else:
                     buffer.write_int8(KV_NULL)
-            if pos >= len(items):
-                break
-            key_cls = type(key)
-            value_cls = type(value)
-            buffer.write_int16(-1)
-            chunk_size_offset = buffer.writer_index - 1
-            chunk_header = 0
-            if key_serializer is not None:
-                chunk_header |= KEY_DECL_TYPE
-            else:
-                key_classinfo = self.class_resolver.get_classinfo(key_cls)
-                class_resolver.write_typeinfo(buffer, key_classinfo)
-                key_serializer = key_classinfo.serializer
-            if value_serializer is not None:
-                chunk_header |= VALUE_DECL_TYPE
-            else:
-                value_classinfo = self.class_resolver.get_classinfo(value_cls)
-                class_resolver.write_typeinfo(buffer, value_classinfo)
-                value_serializer = value_classinfo.serializer
-            key_write_ref = key_serializer.need_to_write_ref
-            value_write_ref = value_serializer.need_to_write_ref
-            if key_write_ref:
-                chunk_header |= TRACKING_KEY_REF
-            if value_write_ref:
-                chunk_header |= TRACKING_VALUE_REF
-            buffer.put_int8(chunk_size_offset - 1, chunk_header)
-            key_serializer_type = type(key_serializer)
-            value_serializer_type = type(value_serializer)
-            chunk_size = 0
-            while True:
-                if (
-                    key is None
-                    or value is None
-                    or type(key) is not key_cls
-                    or type(value) is not value_cls
-                ):
-                    break
-                if not key_write_ref or not ref_resolver.write_ref_or_null(buffer, key):
-                    key_serializer.write(buffer, key)
-                if not value_write_ref or not ref_resolver.write_ref_or_null(
-                    buffer, value
-                ):
-                    value_serializer.write(buffer, value)
-                chunk_size += 1
-                if pos >= len(items) or chunk_size == MAX_CHUNK_SIZE:
-                    break
-                key, value = items[pos]
-                pos += 1
-            key_serializer = self.key_serializer
-            value_serializer = self.value_serializer
-            buffer.put_int8(chunk_size_offset, chunk_size)
 
     def read(self, buffer):
         fury = self.fury
