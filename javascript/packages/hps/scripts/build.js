@@ -38,4 +38,4 @@ if (versionValid) {
   const gyp = spawn("npx", ["node-gyp", "rebuild"], { stdio: 'inherit' });
   watchError(gyp);
 }
-watchError(spawn("tsc", { stdio: 'inherit' }));
+watchError(spawn("npx", ["tsc"], { stdio: 'inherit' }));
