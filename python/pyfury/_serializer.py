@@ -328,18 +328,52 @@ class MapSerializer(Serializer):
         ref_resolver = fury.ref_resolver
         key_serializer = self.key_serializer
         value_serializer = self.value_serializer
-        items = list(obj.items())
-        pos = 0
 
-        while pos < len(items):
-            key, value = items[pos]
-            pos += 1
+        has_next = next((True for _ in obj), False)
+        while has_next:
 
-            buffer.write_int16(-1)
-            chunk_size_offset = buffer.writer_index - 1
+            key = next(iter(obj))
+            value = obj[key]
+            while has_next:
+                if key is not None:
+                    if value is not None:
+                        break
+                    if key_serializer is not None:
+                        if key_serializer.need_to_write_ref:
+                            buffer.write_int8(NULL_VALUE_KEY_DECL_TYPE_TRACKING_REF)
+                            if not ref_resolver.write_ref_or_null(buffer, key):
+                                key_serializer.write(buffer, key)
+                        else:
+                            buffer.write_int8(NULL_VALUE_KEY_DECL_TYPE)
+                            key_serializer.write(buffer, key)
+                    else:
+                        buffer.write_int8(VALUE_HAS_NULL | TRACKING_KEY_REF)
+                        fury.serialize_ref(buffer, key)
+                else:
+                    if value is not None:
+                        if value_serializer is not None:
+                            if value_serializer.need_to_write_ref:
+                                buffer.write_int8(NULL_KEY_VALUE_DECL_TYPE_TRACKING_REF)
+                                if not ref_resolver.write_ref_or_null(buffer, key):
+                                    value_serializer.write(buffer, key)
+                                if not ref_resolver.write_ref_or_null(buffer, value):
+                                    value_serializer.write(buffer, value)
+                            else:
+                                buffer.write_int8(NULL_KEY_VALUE_DECL_TYPE)
+                                value_serializer.write(buffer, value)
+                        else:
+                            buffer.write_int8(KEY_HAS_NULL | TRACKING_VALUE_REF)
+                            fury.serialize_ref(buffer, value)
+                    else:
+                        buffer.write_int8(KV_NULL)
+                has_next = next((True for _ in obj), False)
+                if not has_next:
+                    break
 
             key_cls = type(key)
             value_cls = type(value)
+            buffer.write_int16(-1)
+            chunk_size_offset = buffer.writer_index - 1
             chunk_header = 0
             if key_serializer is not None:
                 chunk_header |= KEY_DECL_TYPE
@@ -360,6 +394,8 @@ class MapSerializer(Serializer):
             if value_write_ref:
                 chunk_header |= TRACKING_VALUE_REF
             buffer.put_uint8(chunk_size_offset - 1, chunk_header)
+            key_serializer_type = type(key_serializer)
+            value_serializer_type = type(value_serializer)
             chunk_size = 0
 
             while True:
@@ -371,17 +407,46 @@ class MapSerializer(Serializer):
                 ):
                     break
                 if not key_write_ref or not ref_resolver.write_ref_or_null(buffer, key):
-                    key_serializer.write(buffer, key)
+                    if key_cls is str:
+                        buffer.write_string(key)
+                    elif key_serializer_type is Int64Serializer:
+                        buffer.write_varint64(key)
+                    elif key_serializer_type is Float64Serializer:
+                        buffer.write_double(key)
+                    elif key_serializer_type is Int32Serializer:
+                        buffer.write_varint32(key)
+                    elif key_serializer_type is Float32Serializer:
+                        buffer.write_float(key)
+                    else:
+                        key_serializer.write(buffer, key)
                 if not value_write_ref or not ref_resolver.write_ref_or_null(
                     buffer, value
                 ):
-                    value_serializer.write(buffer, value)
+                    if value_cls is str:
+                        buffer.write_string(value)
+                    elif value_serializer_type is Int64Serializer:
+                        buffer.write_varint64(value)
+                    elif value_serializer_type is Float64Serializer:
+                        buffer.write_double(value)
+                    elif value_serializer_type is Int32Serializer:
+                        buffer.write_varint32(value)
+                    elif value_serializer_type is Float32Serializer:
+                        buffer.write_float(value)
+                    elif value_serializer_type is BooleanSerializer:
+                        buffer.write_bool(value)
+                    else:
+                        value_serializer.write(buffer, value)
                 chunk_size += 1
-                if pos >= len(items) or chunk_size == MAX_CHUNK_SIZE:
+                has_next = next((True for _ in obj), False)
+                if not has_next:
                     break
-                key, value = items[pos]
-                pos += 1
+                if chunk_size == MAX_CHUNK_SIZE:
+                    break
+                key = next(iter(obj))
+                value = obj[key]
 
+            key_serializer = self.key_serializer
+            value_serializer = self.value_serializer
             buffer.put_uint8(chunk_size_offset, chunk_size)
 
     def read(self, buffer):
@@ -449,7 +514,8 @@ class MapSerializer(Serializer):
                 key_serializer = class_resolver.read_typeinfo(buffer).serializer
             if not value_is_declared_type:
                 value_serializer = class_resolver.read_typeinfo(buffer).serializer
-
+            key_serializer_type = type(key_serializer)
+            value_serializer_type = type(value_serializer)
             for i in range(chunk_size):
                 if track_key_ref:
                     ref_id = ref_resolver.try_preserve_ref_id(buffer)
@@ -459,7 +525,18 @@ class MapSerializer(Serializer):
                         key = key_serializer.read(buffer)
                         ref_resolver.set_read_object(ref_id, key)
                 else:
-                    key = key_serializer.read(buffer)
+                    if key_serializer_type is StringSerializer:
+                        key = buffer.read_string()
+                    elif key_serializer_type is Int64Serializer:
+                        key = buffer.read_varint64()
+                    elif key_serializer_type is Float64Serializer:
+                        key = buffer.read_double()
+                    elif key_serializer_type is Int32Serializer:
+                        key = buffer.read_varint32()
+                    elif key_serializer_type is Float32Serializer:
+                        key = buffer.read_float()
+                    else:
+                        key = key_serializer.read(buffer)
                 if track_value_ref:
                     ref_id = ref_resolver.try_preserve_ref_id(buffer)
                     if ref_id < NOT_NULL_VALUE_FLAG:
@@ -468,11 +545,25 @@ class MapSerializer(Serializer):
                         value = value_serializer.read(buffer)
                         ref_resolver.set_read_object(ref_id, value)
                 else:
-                    value = value_serializer.read(buffer)
+                    if value_serializer_type is StringSerializer:
+                        value = buffer.read_string()
+                    elif value_serializer_type is Int64Serializer:
+                        value = buffer.read_varint64()
+                    elif value_serializer_type is Float64Serializer:
+                        value = buffer.read_double()
+                    elif value_serializer_type is Int32Serializer:
+                        value = buffer.read_varint32()
+                    elif value_serializer_type is Float32Serializer:
+                        value = buffer.read_float()
+                    elif value_serializer_type is BooleanSerializer:
+                        value = buffer.read_bool()
+                    else:
+                        value = value_serializer.read(buffer)
                 map_[key] = value
                 size -= 1
             if size != 0:
                 chunk_header = buffer.read_uint8()
+
         return map_
 
     def xwrite(self, buffer, value: Dict):
