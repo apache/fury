@@ -188,22 +188,8 @@ export class BinaryWriter {
   }
 
   stringOfVarUInt32Fast(v: string) {
-    const { isLatin1: detectIsLatin1, stringCopy } = this.config.hps!;
-    const isLatin1 = detectIsLatin1(v);
-    const len = isLatin1 ? v.length : strByteLength(v);
-    this.dataView.setUint8(this.cursor++, isLatin1 ? LATIN1 : UTF8);
-    this.varUInt32(len);
-    this.reserve(len);
-    if (isLatin1) {
-      stringCopy(v, this.platformBuffer, this.cursor);
-    } else {
-      if (len < 40) {
-        this.fastWriteStringUtf8(v, this.platformBuffer, this.cursor);
-      } else {
-        this.platformBuffer.write(v, this.cursor, "utf8");
-      }
-    }
-    this.cursor += len;
+    const { serializeString } = this.config.hps!;
+    this.cursor = serializeString(v, this.platformBuffer, this.cursor);
   }
 
   stringOfVarUInt32Slow(v: string) {
