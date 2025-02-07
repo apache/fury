@@ -392,7 +392,7 @@ class MapSerializer(Serializer):
                 chunk_header |= TRACKING_KEY_REF
             if value_write_ref:
                 chunk_header |= TRACKING_VALUE_REF
-            buffer.put_uint8(chunk_size_offset - 1, chunk_header)
+            buffer.put_int8(chunk_size_offset - 1, chunk_header)
             chunk_size = 0
 
             while True:
