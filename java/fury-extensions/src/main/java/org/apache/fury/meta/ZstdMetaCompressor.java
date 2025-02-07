@@ -52,7 +52,7 @@ public class ZstdMetaCompressor implements MetaCompressor {
     byte[] decompressedBytes = new byte[decompressedSize];
     long originalSize =
         Zstd.decompressByteArray(decompressedBytes, 0, decompressedSize, data, offset, size);
-    return Arrays.copyOf(compressedData, (int) originalSize);
+    return Arrays.copyOf(decompressedBytes, (int) originalSize);
   }
 
   @Override
