@@ -208,6 +208,11 @@ public final class Fury implements BaseFury {
     return classResolver.getSerializerFactory();
   }
 
+  public <T> Serializer<T> getSerializer(Class<T> cls) {
+    Preconditions.checkNotNull(cls);
+    return classResolver.getSerializer(cls);
+  }
+
   @Override
   public MemoryBuffer serialize(Object obj, long address, int size) {
     MemoryBuffer buffer = MemoryUtils.buffer(address, size);
