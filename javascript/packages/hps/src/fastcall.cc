@@ -110,7 +110,7 @@ static void serializeString(
   if (is_one_byte && str->IsExternalOneByte()) {
     dst_data[offset++] = Encoding::LATIN1; // encoding
     offset += writeVarUint32(dst_data, offset, str->Length()); // length
-    const auto src = str->GetExternalOneByteStringResource();
+    const auto src = str->GetExternalOneByteStringResource()->data();
     memcpy(dst_data + offset, src, str->Length());
     offset += str->Length();
   } else {
@@ -166,7 +166,7 @@ void Init(v8::Local<v8::Object> exports) {
   exports->Set(context, Nan::New("serializeString").ToLocalChecked(),
                FastFunction(isolate, serializeString, &fast_serialize_string)
                    ->GetFunction(context)
-                   .ToLocalChecked());
+                   .ToLocalChecked()).Check();
 }
 
 NODE_MODULE(fury_util, Init)

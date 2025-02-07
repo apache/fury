@@ -21,6 +21,9 @@ const { spawn } = require("node:child_process");
 const path = require("node:path");
 const version = process.version;
 const fs = require('fs-extra');
+const semver = require("semver");
+const { engines } = require("../package.json");
+const versionValid = semver.satisfies(process.version, engines.node);
 
 async function downloadDeps(urls) {
     await Promise.all(urls.map(({url, dist}) => {
@@ -48,4 +51,6 @@ async function main() {
     ]);
 }
 
-main();
+if (versionValid) {
+    main();
+}

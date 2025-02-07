@@ -19,7 +19,7 @@
 
 const Fury = require("@furyjs/fury");
 const utils = require("@furyjs/fury/dist/lib/util");
-const hps = require('@furyjs/hps');
+const hps = require('@furyjs/hps').default;
 const fury = new Fury.default({ hps, refTracking: false, useSliceString: true });
 const Benchmark = require("benchmark");
 const protobuf = require("protobufjs");

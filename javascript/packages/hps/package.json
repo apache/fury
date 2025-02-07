@@ -6,12 +6,13 @@
   "files": [
     "dist",
     "src",
+    "scripts/preinstall.js",
     "binding.gyp"
   ],
   "gypfile": false,
   "scripts": {
     "preinstall": "node ./scripts/preinstall.js",
-    "build": "npx node-gyp rebuild && tsc",
+    "build": "node ./scripts/build.js",
     "prepublishOnly": "npm run build"
   },
   "license": "Apache-2.0",

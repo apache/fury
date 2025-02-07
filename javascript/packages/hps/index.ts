@@ -17,18 +17,27 @@
  * under the License.
  */
 
-const hps: Hps = require("bindings")("hps.node");
-
 interface Hps {
   serializeString: (dist: Uint8Array, str: string, offset: number, maxLength: number) => number;
 }
 
-const { serializeString: _serializeString } = hps;
+const build = () => {
+  try {
+    const hps: Hps = require("bindings")("hps.node");
+    const { serializeString: _serializeString } = hps;
 
-export const serializeString = (v: string, dist: Uint8Array, offset: number) => {
-  if (typeof v !== "string") {
-    throw new Error(`isLatin1 requires string but got ${typeof v}`);
+    return {
+      serializeString: (v: string, dist: Uint8Array, offset: number) => {
+        if (typeof v !== "string") {
+          throw new Error(`isLatin1 requires string but got ${typeof v}`);
+        }
+        // todo boundary check
+        return _serializeString(dist, v, offset, 0);
+      },
+    };
+  } catch (error) {
+    return null;
   }
-  // todo boundary check
-  return _serializeString(dist, v, offset, 0);
 };
+
+export default build();
