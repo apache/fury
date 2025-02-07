@@ -94,10 +94,9 @@ export const HalfMinInt32 = MinInt32 / 2;
 
 export const LATIN1 = 0;
 export const UTF8 = 1;
-
+export const UTF16 = 2;
 export interface Hps {
-  isLatin1: (str: string) => boolean;
-  stringCopy: (str: string, dist: Uint8Array, offset: number) => void;
+  serializeString: (str: string, dist: Uint8Array, offset: number) => number;
 }
 
 export enum Mode {

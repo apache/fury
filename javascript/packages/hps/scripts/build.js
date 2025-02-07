@@ -17,35 +17,25 @@
  * under the License.
  */
 
-/** @type {import('ts-jest').JestConfigWithTsJest} */
+const { spawn } = require("node:child_process");
+const semver = require("semver");
+const { engines } = require("../package.json");
+const versionValid = semver.satisfies(process.version, engines.node);
 
-module.exports = {
-  collectCoverage: true,
-  preset: 'ts-jest',
-  testEnvironment: 'node',
-  collectCoverageFrom: [
-    "**/*.ts",
-    "!**/dist/**",
-    "!**/build/**",
-    "!packages/fury/lib/murmurHash3.ts"
-  ],
-  transform: {
-    '\\.ts$': ['ts-jest', {
-      tsconfig: {
-        target: "ES2021"
-      },
-      diagnostics: {
-        ignoreCodes: [151001]
+function watchError(child) {
+    child.on("error", (error) => {
+      console.error(error);
+      process.exit(1);
+    });
+    child.on("exit", (code, signal) => {
+      if (code !== 0) {
+        process.exit(code);
       }
-    }],
-  },
-  // todo: JavaScript codebase is iterating rapidly, remove this restriction temporary 
-  // coverageThreshold: {
-  //   global: {
-  //     branches: 91,
-  //     functions: 99,
-  //     lines: 98,
-  //     statements: 98
-  //   }
-  // }
-};
+    });
+}
+
+if (versionValid) {
+  const gyp = spawn("npx", ["node-gyp", "rebuild"], { stdio: 'inherit', shell: true });
+  watchError(gyp);
+}
+watchError(spawn("npx", ["tsc"], { stdio: 'inherit', shell: true }));
