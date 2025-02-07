@@ -17,8 +17,7 @@
  * under the License.
  */
 
-import { ObjectTypeDescription, Type, TypeDescription } from "./description";
-import { InternalSerializerType } from "./type";
+import { Type, TypeDescription } from "./description";
 
 export const isNodeEnv: boolean
   = typeof process !== "undefined"
@@ -107,7 +106,7 @@ export const data2Description = (
           .map(([key, value]) => {
             return [key, data2Description(value, `${tag}.${key}`)];
           })
-          .filter(([_, v]) => Boolean(v)),
+          .filter(([, v]) => Boolean(v)),
       ),
     );
   }
