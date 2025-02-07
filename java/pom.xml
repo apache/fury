@@ -82,7 +82,6 @@
     <maven.compiler.target>1.8</maven.compiler.target>
     <guava.version>32.1.2-jre</guava.version>
     <janino.version>3.1.10</janino.version>
-    <zstd.version>1.5.6-9</zstd.version>
     <commons_codec.version>1.13</commons_codec.version>
     <fury.java.rootdir>${basedir}</fury.java.rootdir>
     <maven-spotless-plugin.version>2.41.1</maven-spotless-plugin.version>
@@ -106,11 +105,6 @@
         <groupId>org.codehaus.janino</groupId>
         <artifactId>janino</artifactId>
         <version>${janino.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.github.luben</groupId>
-        <artifactId>zstd-jni</artifactId>
-        <version>${zstd.version}</version>
       </dependency>
       <!-- Cxeb68d52e-5509 -->
       <dependency>
