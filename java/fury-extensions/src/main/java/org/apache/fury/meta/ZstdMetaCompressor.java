@@ -19,9 +19,9 @@
 
 package org.apache.fury.meta;
 
-import java.util.Arrays;
 import com.github.luben.zstd.Zstd;
 import com.github.luben.zstd.ZstdException;
+import java.util.Arrays;
 
 public class ZstdMetaCompressor implements MetaCompressor {
 
