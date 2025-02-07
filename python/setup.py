@@ -114,6 +114,7 @@ _pkg_files = [
     "*.so",
     "*.dylib",
     "*.dll",
+    "*.pyd",
 ]
 
 
