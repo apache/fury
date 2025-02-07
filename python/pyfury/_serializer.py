@@ -393,7 +393,8 @@ class MapSerializer(Serializer):
                 chunk_header |= TRACKING_VALUE_REF
             buffer.put_uint8(chunk_size_offset - 1, chunk_header)
             chunk_size = 0
-
+            key_serializer_type = type(key_serializer)
+            value_serializer_type = type(value_serializer)
             while True:
                 if (
                     key is None
@@ -403,11 +404,35 @@ class MapSerializer(Serializer):
                 ):
                     break
                 if not key_write_ref or not ref_resolver.write_ref_or_null(buffer, key):
-                    key_serializer.write(buffer, key)
+                    if key_cls is str:
+                        buffer.write_string(key)
+                    elif key_serializer_type is Int64Serializer:
+                        buffer.write_varint64(key)
+                    elif key_serializer_type is Float64Serializer:
+                        buffer.write_double(key)
+                    elif key_serializer_type is Int32Serializer:
+                        buffer.write_varint32(key)
+                    elif key_serializer_type is Float32Serializer:
+                        buffer.write_float(key)
+                    else:
+                        key_serializer.write(buffer, key)
                 if not value_write_ref or not ref_resolver.write_ref_or_null(
                     buffer, value
                 ):
-                    value_serializer.write(buffer, value)
+                    if value_cls is str:
+                        buffer.write_string(value)
+                    elif value_serializer_type is Int64Serializer:
+                        buffer.write_varint64(value)
+                    elif value_serializer_type is Float64Serializer:
+                        buffer.write_double(value)
+                    elif value_serializer_type is Int32Serializer:
+                        buffer.write_varint32(value)
+                    elif value_serializer_type is Float32Serializer:
+                        buffer.write_float(value)
+                    elif value_serializer_type is BooleanSerializer:
+                        buffer.write_bool(value)
+                    else:
+                        value_serializer.write(buffer, value)
                 chunk_size += 1
                 try:
                     key = next(it)
