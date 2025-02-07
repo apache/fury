@@ -38,14 +38,16 @@ PYTHONS=("cp37-cp37m"
          "cp39-cp39"
          "cp310-cp310"
          "cp310-cp311"
-         "cp312-cp312")
+         "cp312-cp312"
+         "cp313-cp313")
 
 VERSIONS=("3.7"
           "3.8"
           "3.9"
           "3.10"
           "3.11"
-          "3.12")
+          "3.12"
+          "3.13")
 
 create_py_envs() {
   source $(conda info --base)/etc/profile.d/conda.sh
@@ -157,7 +159,13 @@ deploy_python() {
 }
 
 install_pyarrow() {
-  pip install pyarrow==14.0.0
+  pyversion=$(python -V | cut -d' ' -f2)
+  if [[ $pyversion  ==  3.13* ]]; then
+    pyarrow_version=18.0.0
+  else
+    pyarrow_version=14.0.0
+  fi
+  pip install pyarrow==$pyarrow_version
 }
 
 deploy_scala() {
