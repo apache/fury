@@ -19,6 +19,7 @@
 
 package org.apache.fury.meta;
 
+import java.util.Arrays;
 import com.github.luben.zstd.Zstd;
 import com.github.luben.zstd.ZstdException;
 
@@ -26,12 +27,10 @@ public class ZstdMetaCompressor implements MetaCompressor {
 
   @Override
   public byte[] compress(byte[] data, int offset, int size) {
-
     long maxCompressedSize = Zstd.compressBound(size);
     if (maxCompressedSize > Integer.MAX_VALUE) {
       throw new ZstdException(Zstd.errGeneric(), "Max output size is greater than MAX_INT");
     }
-
     byte[] compressedData = new byte[(int) maxCompressedSize];
     long originalSize =
         Zstd.compressByteArray(
