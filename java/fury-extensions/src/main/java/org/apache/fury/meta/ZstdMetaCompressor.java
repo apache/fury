@@ -33,24 +33,26 @@ public class ZstdMetaCompressor implements MetaCompressor {
     }
 
     byte[] compressedData = new byte[(int) maxCompressedSize];
-    Zstd.compressByteArray(
-        compressedData,
-        0,
-        (int) maxCompressedSize,
-        data,
-        offset,
-        size,
-        Zstd.defaultCompressionLevel());
+    long originalSize =
+        Zstd.compressByteArray(
+            compressedData,
+            0,
+            (int) maxCompressedSize,
+            data,
+            offset,
+            size,
+            Zstd.defaultCompressionLevel());
 
-    return compressedData;
+    return Arrays.copyOf(compressedData, (int) originalSize);
   }
 
   @Override
   public byte[] decompress(byte[] data, int offset, int size) {
     int decompressedSize = (int) Zstd.getFrameContentSize(data, offset, size, false);
     byte[] decompressedBytes = new byte[decompressedSize];
-    Zstd.decompressByteArray(decompressedBytes, 0, decompressedSize, data, offset, size);
-    return decompressedBytes;
+    long originalSize =
+        Zstd.decompressByteArray(decompressedBytes, 0, decompressedSize, data, offset, size);
+    return Arrays.copyOf(compressedData, (int) originalSize);
   }
 
   @Override
