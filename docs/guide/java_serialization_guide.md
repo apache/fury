@@ -552,7 +552,7 @@ consistent between serialization and deserialization.
 
 ### Deserialize POJO into another type
 
-Fury allows you to serialize one POJO and deserialize it into a different POJO. To achieve this, configure Fury with
+Fury allows you to serialize one POJO and deserialize it into a different POJO. The different POJO means the schema inconsistency. Users must to configure Fury with
 `CompatibleMode` set to `org.apache.fury.config.CompatibleMode.COMPATIBLE`.
 
 ```java
