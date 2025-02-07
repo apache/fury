@@ -329,45 +329,38 @@ class MapSerializer(Serializer):
         key_serializer = self.key_serializer
         value_serializer = self.value_serializer
 
-        has_next = next((True for _ in obj), False)
-        while has_next:
-            key = next(iter(obj))
-            value = obj[key]
-            while has_next:
-                if key is not None:
-                    if value is not None:
-                        break
-                    if key_serializer is not None:
-                        if key_serializer.need_to_write_ref:
-                            buffer.write_int8(NULL_VALUE_KEY_DECL_TYPE_TRACKING_REF)
-                            if not ref_resolver.write_ref_or_null(buffer, key):
-                                key_serializer.write(buffer, key)
-                        else:
-                            buffer.write_int8(NULL_VALUE_KEY_DECL_TYPE)
+        for key, value in obj.items():
+            if key is not None:
+                if value is not None:
+                    pass
+                if key_serializer is not None:
+                    if key_serializer.need_to_write_ref:
+                        buffer.write_int8(NULL_VALUE_KEY_DECL_TYPE_TRACKING_REF)
+                        if not ref_resolver.write_ref_or_null(buffer, key):
                             key_serializer.write(buffer, key)
                     else:
-                        buffer.write_int8(VALUE_HAS_NULL | TRACKING_KEY_REF)
-                        fury.serialize_ref(buffer, key)
+                        buffer.write_int8(NULL_VALUE_KEY_DECL_TYPE)
+                        key_serializer.write(buffer, key)
                 else:
-                    if value is not None:
-                        if value_serializer is not None:
-                            if value_serializer.need_to_write_ref:
-                                buffer.write_int8(NULL_KEY_VALUE_DECL_TYPE_TRACKING_REF)
-                                if not ref_resolver.write_ref_or_null(buffer, key):
-                                    value_serializer.write(buffer, key)
-                                if not ref_resolver.write_ref_or_null(buffer, value):
-                                    value_serializer.write(buffer, value)
-                            else:
-                                buffer.write_int8(NULL_KEY_VALUE_DECL_TYPE)
+                    buffer.write_int8(VALUE_HAS_NULL | TRACKING_KEY_REF)
+                    fury.serialize_ref(buffer, key)
+            else:
+                if value is not None:
+                    if value_serializer is not None:
+                        if value_serializer.need_to_write_ref:
+                            buffer.write_int8(NULL_KEY_VALUE_DECL_TYPE_TRACKING_REF)
+                            if not ref_resolver.write_ref_or_null(buffer, key):
+                                value_serializer.write(buffer, key)
+                            if not ref_resolver.write_ref_or_null(buffer, value):
                                 value_serializer.write(buffer, value)
                         else:
-                            buffer.write_int8(KEY_HAS_NULL | TRACKING_VALUE_REF)
-                            fury.serialize_ref(buffer, value)
+                            buffer.write_int8(NULL_KEY_VALUE_DECL_TYPE)
+                            value_serializer.write(buffer, value)
                     else:
-                        buffer.write_int8(KV_NULL)
-                has_next = next((True for _ in obj), False)
-                if not has_next:
-                    break
+                        buffer.write_int8(KEY_HAS_NULL | TRACKING_VALUE_REF)
+                        fury.serialize_ref(buffer, value)
+                else:
+                    buffer.write_int8(KV_NULL)
 
             key_cls = type(key)
             value_cls = type(value)
@@ -410,13 +403,11 @@ class MapSerializer(Serializer):
                 ):
                     value_serializer.write(buffer, value)
                 chunk_size += 1
-                has_next = next((True for _ in obj), False)
-                if not has_next:
-                    break
                 if chunk_size == MAX_CHUNK_SIZE:
                     break
-                key = next(iter(obj))
-                value = obj[key]
+                if not next(iter(obj.items()), None):
+                    break
+                key, value = next(iter(obj.items()))
 
             key_serializer = self.key_serializer
             value_serializer = self.value_serializer
@@ -435,82 +426,80 @@ class MapSerializer(Serializer):
         key_serializer, value_serializer = None, None
 
         while size > 0:
-            while True:
-                key_has_null = (chunk_header & KEY_HAS_NULL) != 0
-                value_has_null = (chunk_header & VALUE_HAS_NULL) != 0
-                if not key_has_null:
-                    if not value_has_null:
-                        break
-                    else:
-                        track_key_ref = (chunk_header & TRACKING_KEY_REF) != 0
-                        if (chunk_header & KEY_DECL_TYPE) != 0:
-                            if track_key_ref:
-                                ref_id = ref_resolver.try_preserve_ref_id(buffer)
-                                if ref_id < NOT_NULL_VALUE_FLAG:
-                                    key = ref_resolver.get_read_object()
-                                else:
-                                    key = key_serializer.read(buffer)
-                                    ref_resolver.set_read_object(ref_id, key)
+            key_has_null = (chunk_header & KEY_HAS_NULL) != 0
+            value_has_null = (chunk_header & VALUE_HAS_NULL) != 0
+            if not key_has_null:
+                if not value_has_null:
+                    pass
+                else:
+                    track_key_ref = (chunk_header & TRACKING_KEY_REF) != 0
+                    if (chunk_header & KEY_DECL_TYPE) != 0:
+                        if track_key_ref:
+                            ref_id = ref_resolver.try_preserve_ref_id(buffer)
+                            if ref_id < NOT_NULL_VALUE_FLAG:
+                                key = ref_resolver.get_read_object()
                             else:
                                 key = key_serializer.read(buffer)
+                                ref_resolver.set_read_object(ref_id, key)
                         else:
-                            key = fury.deserialize_ref(buffer)
-                        map_[key] = None
-                else:
-                    if not value_has_null:
-                        track_value_ref = (chunk_header & TRACKING_VALUE_REF) != 0
-                        if (chunk_header & VALUE_DECL_TYPE) != 0:
-                            if track_value_ref:
-                                ref_id = ref_resolver.try_preserve_ref_id(buffer)
-                                if ref_id < NOT_NULL_VALUE_FLAG:
-                                    value = ref_resolver.get_read_object()
-                                else:
-                                    value = value_serializer.read(buffer)
-                                    ref_resolver.set_read_object(ref_id, value)
-                        else:
-                            value = fury.deserialize_ref(buffer)
-                        map_[None] = value
+                            key = key_serializer.read(buffer)
                     else:
-                        map_[None] = None
-                size -= 1
-                if size == 0:
-                    return map_
+                        key = fury.deserialize_ref(buffer)
+                    map_[key] = None
+            else:
+                if not value_has_null:
+                    track_value_ref = (chunk_header & TRACKING_VALUE_REF) != 0
+                    if (chunk_header & VALUE_DECL_TYPE) != 0:
+                        if track_value_ref:
+                            ref_id = ref_resolver.try_preserve_ref_id(buffer)
+                            if ref_id < NOT_NULL_VALUE_FLAG:
+                                value = ref_resolver.get_read_object()
+                            else:
+                                value = value_serializer.read(buffer)
+                                ref_resolver.set_read_object(ref_id, value)
+                    else:
+                        value = fury.deserialize_ref(buffer)
+                    map_[None] = value
                 else:
-                    chunk_header = buffer.read_uint8()
+                    map_[None] = None
+            size -= 1
 
-            track_key_ref = (chunk_header & TRACKING_KEY_REF) != 0
-            track_value_ref = (chunk_header & TRACKING_VALUE_REF) != 0
-            key_is_declared_type = (chunk_header & KEY_DECL_TYPE) != 0
-            value_is_declared_type = (chunk_header & VALUE_DECL_TYPE) != 0
-            chunk_size = buffer.read_uint8()
-            if not key_is_declared_type:
-                key_serializer = class_resolver.read_typeinfo(buffer).serializer
-            if not value_is_declared_type:
-                value_serializer = class_resolver.read_typeinfo(buffer).serializer
+            if size > 0:
+                chunk_header = buffer.read_uint8()
+                track_key_ref = (chunk_header & TRACKING_KEY_REF) != 0
+                track_value_ref = (chunk_header & TRACKING_VALUE_REF) != 0
+                key_is_declared_type = (chunk_header & KEY_DECL_TYPE) != 0
+                value_is_declared_type = (chunk_header & VALUE_DECL_TYPE) != 0
+                chunk_size = buffer.read_uint8()
+                if not key_is_declared_type:
+                    key_serializer = class_resolver.read_typeinfo(buffer).serializer
+                if not value_is_declared_type:
+                    value_serializer = class_resolver.read_typeinfo(buffer).serializer
 
-            for i in range(chunk_size):
-                if track_key_ref:
-                    ref_id = ref_resolver.try_preserve_ref_id(buffer)
-                    if ref_id < NOT_NULL_VALUE_FLAG:
-                        key = ref_resolver.get_read_object()
+                for i in range(chunk_size):
+                    if track_key_ref:
+                        ref_id = ref_resolver.try_preserve_ref_id(buffer)
+                        if ref_id < NOT_NULL_VALUE_FLAG:
+                            key = ref_resolver.get_read_object()
+                        else:
+                            key = key_serializer.read(buffer)
+                            ref_resolver.set_read_object(ref_id, key)
                     else:
                         key = key_serializer.read(buffer)
-                        ref_resolver.set_read_object(ref_id, key)
-                else:
-                    key = key_serializer.read(buffer)
-                if track_value_ref:
-                    ref_id = ref_resolver.try_preserve_ref_id(buffer)
-                    if ref_id < NOT_NULL_VALUE_FLAG:
-                        value = ref_resolver.get_read_object()
+                    if track_value_ref:
+                        ref_id = ref_resolver.try_preserve_ref_id(buffer)
+                        if ref_id < NOT_NULL_VALUE_FLAG:
+                            value = ref_resolver.get_read_object()
+                        else:
+                            value = value_serializer.read(buffer)
+                            ref_resolver.set_read_object(ref_id, value)
                     else:
                         value = value_serializer.read(buffer)
-                        ref_resolver.set_read_object(ref_id, value)
-                else:
-                    value = value_serializer.read(buffer)
-                map_[key] = value
-                size -= 1
-            if size != 0:
-                chunk_header = buffer.read_uint8()
+                    map_[key] = value
+                    size -= 1
+                    if size == 0:
+                        break
+
         return map_
 
     def xwrite(self, buffer, value: Dict):
