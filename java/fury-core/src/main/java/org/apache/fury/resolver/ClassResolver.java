@@ -1410,11 +1410,10 @@ public class ClassResolver {
     return classInfo;
   }
 
-
   public ClassInfo readClassInfoWithMetaShare(MemoryBuffer buffer, Class<?> targetClass) {
     assert metaContextShareEnabled;
     ClassInfo classInfo =
-      readClassInfoWithMetaShare(buffer, fury.getSerializationContext().getMetaContext());
+        readClassInfoWithMetaShare(buffer, fury.getSerializationContext().getMetaContext());
     Class<?> readClass = classInfo.getCls();
     // replace target class if needed
     if (targetClass != readClass) {
@@ -1423,8 +1422,8 @@ public class ClassResolver {
       if (newClassInfo == null) {
         // similar to create serializer for `NonexistentMetaShared`
         newClassInfo =
-          getMetaSharedClassInfo(
-            classInfo.classDef.replaceRootClassTo(this, targetClass), targetClass);
+            getMetaSharedClassInfo(
+                classInfo.classDef.replaceRootClassTo(this, targetClass), targetClass);
         extRegistry.transformedClassInfo.put(key, newClassInfo);
       }
       return newClassInfo;
