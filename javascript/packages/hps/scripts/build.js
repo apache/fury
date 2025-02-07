@@ -24,6 +24,7 @@ const versionValid = semver.satisfies(process.version, engines.node);
 
 function watchError(child) {
     child.on("error", (error) => {
+      console.error(error);
       process.exit(1);
     });
     child.on("exit", (code, signal) => {
