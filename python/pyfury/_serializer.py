@@ -309,145 +309,135 @@ class SetSerializer(CollectionSerializer):
         set_.add(elem)
 
 
-class MapSerializer(Serializer):
-    def __init__(self, fury, type_, key_serializer=None, value_serializer=None):
-        super().__init__(fury, type_)
-        self.class_resolver = fury.class_resolver
-        self.ref_resolver = fury.ref_resolver
-        self.key_serializer = key_serializer
-        self.value_serializer = value_serializer
+def write(self, buffer, o):
+    obj = o
+    length = len(obj)
+    buffer.write_varuint32(length)
+    if length == 0:
+        return
+    fury = self.fury
+    class_resolver = fury.class_resolver
+    ref_resolver = fury.ref_resolver
+    key_serializer = self.key_serializer
+    value_serializer = self.value_serializer
 
-    def write(self, buffer, o):
-        obj = o
-        length = len(obj)
-        buffer.write_varuint32(length)
-        if length == 0:
-            return
-        fury = self.fury
-        class_resolver = fury.class_resolver
-        ref_resolver = fury.ref_resolver
-        key_serializer = self.key_serializer
-        value_serializer = self.value_serializer
-
-        has_next = next((True for _ in obj), False)
-        while has_next:
-
-            key = next(iter(obj))
+    iter_obj = iter(obj)
+    while True:
+        try:
+            key = next(iter_obj)
             value = obj[key]
-            while has_next:
-                if key is not None:
-                    if value is not None:
-                        break
-                    if key_serializer is not None:
-                        if key_serializer.need_to_write_ref:
-                            buffer.write_int8(NULL_VALUE_KEY_DECL_TYPE_TRACKING_REF)
-                            if not ref_resolver.write_ref_or_null(buffer, key):
-                                key_serializer.write(buffer, key)
-                        else:
-                            buffer.write_int8(NULL_VALUE_KEY_DECL_TYPE)
+        except StopIteration:
+            break
+
+        while True:
+            if key is not None:
+                if value is not None:
+                    break
+                if key_serializer is not None:
+                    if key_serializer.need_to_write_ref:
+                        buffer.write_int8(NULL_VALUE_KEY_DECL_TYPE_TRACKING_REF)
+                        if not ref_resolver.write_ref_or_null(buffer, key):
                             key_serializer.write(buffer, key)
                     else:
-                        buffer.write_int8(VALUE_HAS_NULL | TRACKING_KEY_REF)
-                        fury.serialize_ref(buffer, key)
+                        buffer.write_int8(NULL_VALUE_KEY_DECL_TYPE)
+                        key_serializer.write(buffer, key)
                 else:
-                    if value is not None:
-                        if value_serializer is not None:
-                            if value_serializer.need_to_write_ref:
-                                buffer.write_int8(NULL_KEY_VALUE_DECL_TYPE_TRACKING_REF)
-                                if not ref_resolver.write_ref_or_null(buffer, key):
-                                    value_serializer.write(buffer, key)
-                                if not ref_resolver.write_ref_or_null(buffer, value):
-                                    value_serializer.write(buffer, value)
-                            else:
-                                buffer.write_int8(NULL_KEY_VALUE_DECL_TYPE)
+                    buffer.write_int8(VALUE_HAS_NULL | TRACKING_KEY_REF)
+                    fury.serialize_ref(buffer, key)
+            else:
+                if value is not None:
+                    if value_serializer is not None:
+                        if value_serializer.need_to_write_ref:
+                            buffer.write_int8(NULL_KEY_VALUE_DECL_TYPE_TRACKING_REF)
+                            if not ref_resolver.write_ref_or_null(buffer, key):
+                                value_serializer.write(buffer, key)
+                            if not ref_resolver.write_ref_or_null(buffer, value):
                                 value_serializer.write(buffer, value)
                         else:
-                            buffer.write_int8(KEY_HAS_NULL | TRACKING_VALUE_REF)
-                            fury.serialize_ref(buffer, value)
+                            buffer.write_int8(NULL_KEY_VALUE_DECL_TYPE)
+                            value_serializer.write(buffer, value)
                     else:
-                        buffer.write_int8(KV_NULL)
-                has_next = next((True for _ in obj), False)
-                if not has_next:
-                    break
+                        buffer.write_int8(KEY_HAS_NULL | TRACKING_VALUE_REF)
+                        fury.serialize_ref(buffer, value)
+                else:
+                    buffer.write_int8(KV_NULL)
 
-            key_cls = type(key)
-            value_cls = type(value)
-            buffer.write_int16(-1)
-            chunk_size_offset = buffer.writer_index - 1
-            chunk_header = 0
-            if key_serializer is not None:
-                chunk_header |= KEY_DECL_TYPE
-            else:
-                key_classinfo = self.class_resolver.get_classinfo(key_cls)
-                class_resolver.write_typeinfo(buffer, key_classinfo)
-                key_serializer = key_classinfo.serializer
-            if value_serializer is not None:
-                chunk_header |= VALUE_DECL_TYPE
-            else:
-                value_classinfo = self.class_resolver.get_classinfo(value_cls)
-                class_resolver.write_typeinfo(buffer, value_classinfo)
-                value_serializer = value_classinfo.serializer
-            key_write_ref = key_serializer.need_to_write_ref
-            value_write_ref = value_serializer.need_to_write_ref
-            if key_write_ref:
-                chunk_header |= TRACKING_KEY_REF
-            if value_write_ref:
-                chunk_header |= TRACKING_VALUE_REF
-            buffer.put_uint8(chunk_size_offset - 1, chunk_header)
-            key_serializer_type = type(key_serializer)
-            value_serializer_type = type(value_serializer)
-            chunk_size = 0
+        key_cls = type(key)
+        value_cls = type(value)
+        buffer.write_int16(-1)
+        chunk_size_offset = buffer.writer_index - 1
+        chunk_header = 0
+        if key_serializer is not None:
+            chunk_header |= KEY_DECL_TYPE
+        else:
+            key_classinfo = self.class_resolver.get_classinfo(key_cls)
+            class_resolver.write_typeinfo(buffer, key_classinfo)
+            key_serializer = key_classinfo.serializer
+        if value_serializer is not None:
+            chunk_header |= VALUE_DECL_TYPE
+        else:
+            value_classinfo = self.class_resolver.get_classinfo(value_cls)
+            class_resolver.write_typeinfo(buffer, value_classinfo)
+            value_serializer = value_classinfo.serializer
+        key_write_ref = key_serializer.need_to_write_ref
+        value_write_ref = value_serializer.need_to_write_ref
+        if key_write_ref:
+            chunk_header |= TRACKING_KEY_REF
+        if value_write_ref:
+            chunk_header |= TRACKING_VALUE_REF
+        buffer.put_uint8(chunk_size_offset - 1, chunk_header)
+        key_serializer_type = type(key_serializer)
+        value_serializer_type = type(value_serializer)
+        chunk_size = 0
 
-            while True:
-                if (
-                    key is None
-                    or value is None
-                    or type(key) is not key_cls
-                    or type(value) is not value_cls
-                ):
-                    break
-                if not key_write_ref or not ref_resolver.write_ref_or_null(buffer, key):
-                    if key_cls is str:
-                        buffer.write_string(key)
-                    elif key_serializer_type is Int64Serializer:
-                        buffer.write_varint64(key)
-                    elif key_serializer_type is Float64Serializer:
-                        buffer.write_double(key)
-                    elif key_serializer_type is Int32Serializer:
-                        buffer.write_varint32(key)
-                    elif key_serializer_type is Float32Serializer:
-                        buffer.write_float(key)
-                    else:
-                        key_serializer.write(buffer, key)
-                if not value_write_ref or not ref_resolver.write_ref_or_null(
-                    buffer, value
-                ):
-                    if value_cls is str:
-                        buffer.write_string(value)
-                    elif value_serializer_type is Int64Serializer:
-                        buffer.write_varint64(value)
-                    elif value_serializer_type is Float64Serializer:
-                        buffer.write_double(value)
-                    elif value_serializer_type is Int32Serializer:
-                        buffer.write_varint32(value)
-                    elif value_serializer_type is Float32Serializer:
-                        buffer.write_float(value)
-                    elif value_serializer_type is BooleanSerializer:
-                        buffer.write_bool(value)
-                    else:
-                        value_serializer.write(buffer, value)
-                chunk_size += 1
-                has_next = next((True for _ in obj), False)
-                if not has_next:
-                    break
-                if chunk_size == MAX_CHUNK_SIZE:
-                    break
-                key = next(iter(obj))
+        while True:
+            if (
+                key is None
+                or value is None
+                or type(key) is not key_cls
+                or type(value) is not value_cls
+            ):
+                break
+            if not key_write_ref or not ref_resolver.write_ref_or_null(buffer, key):
+                if key_cls is str:
+                    buffer.write_string(key)
+                elif key_serializer_type is Int64Serializer:
+                    buffer.write_varint64(key)
+                elif key_serializer_type is Float64Serializer:
+                    buffer.write_double(key)
+                elif key_serializer_type is Int32Serializer:
+                    buffer.write_varint32(key)
+                elif key_serializer_type is Float32Serializer:
+                    buffer.write_float(key)
+                else:
+                    key_serializer.write(buffer, key)
+            if not value_write_ref or not ref_resolver.write_ref_or_null(buffer, value):
+                if value_cls is str:
+                    buffer.write_string(value)
+                elif value_serializer_type is Int64Serializer:
+                    buffer.write_varint64(value)
+                elif value_serializer_type is Float64Serializer:
+                    buffer.write_double(value)
+                elif value_serializer_type is Int32Serializer:
+                    buffer.write_varint32(value)
+                elif value_serializer_type is Float32Serializer:
+                    buffer.write_float(value)
+                elif value_serializer_type is BooleanSerializer:
+                    buffer.write_bool(value)
+                else:
+                    value_serializer.write(buffer, value)
+            chunk_size += 1
+            try:
+                key = next(iter_obj)
                 value = obj[key]
+            except StopIteration:
+                break
+            if chunk_size == MAX_CHUNK_SIZE:
+                break
 
-            key_serializer = self.key_serializer
-            value_serializer = self.value_serializer
-            buffer.put_uint8(chunk_size_offset, chunk_size)
+        key_serializer = self.key_serializer
+        value_serializer = self.value_serializer
+        buffer.put_uint8(chunk_size_offset, chunk_size)
 
     def read(self, buffer):
         fury = self.fury
