@@ -21,25 +21,25 @@ import { BinaryReader } from '@furyjs/fury/dist/lib/reader';
 import hps from '../packages/hps/index';
 import { describe, expect, test } from '@jest/globals';
 
-describe('hps', () => {
-    if (!hps) {
-        return;
-    }
-    const { serializeString } = hps;
-    test('should isLatin1 work', () => {
-        for (let index = 0; index < 10000; index++) {
-            const bf = Buffer.alloc(100);
-            serializeString("hello", bf, 0);
-            var reader = new BinaryReader({});
-            reader.reset(bf);
-            expect(reader.stringOfVarUInt32()).toBe("hello")
-
-            serializeString("😁", bf, 0);
-            var reader = new BinaryReader({});
-            reader.reset(bf);
-            expect(reader.stringOfVarUInt32()).toBe("😁")
-        }
+if (hps) {
+    describe('hps', () => {
+        const { serializeString } = hps!;
+        test('should isLatin1 work', () => {
+            for (let index = 0; index < 10000; index++) {
+                const bf = Buffer.alloc(100);
+                serializeString("hello", bf, 0);
+                var reader = new BinaryReader({});
+                reader.reset(bf);
+                expect(reader.stringOfVarUInt32()).toBe("hello")
+    
+                serializeString("😁", bf, 0);
+                var reader = new BinaryReader({});
+                reader.reset(bf);
+                expect(reader.stringOfVarUInt32()).toBe("😁")
+            }
+        });
     });
-});
+}
+
 
 
