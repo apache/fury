@@ -164,35 +164,40 @@ byte[] bytes = fury.serialize(object);
 System.out.println(fury.deserialize(bytes));
 ```
 
-### Schema Forward/Backward Compatibilities
+### Handling Class Schema Evolution in Serialization
 
-For many systems, the schema of class of object for serialization may change from time to time. For example, the fields
-of a class may be added or removed.If the deserialization and deserialization have different version of jars, the
-deserialization may have different schema for class to be deserialized.
+In many systems, the schema of a class used for serialization may change over time. For instance, fields within a class
+may be added or removed. When serialization and deserialization processes use different versions of jars, the schema of
+the class being deserialized may differ from the one used during serialization.
 
-Fury serialize object using `CompatibleMode.SCHEMA_CONSISTENT` mode by default to minimize payload overhead. This mode
-assumes
-the deserialization has same schema for class. If the schema has inconsistency, the deserialization will fail.
+By default, Fury serializes objects using the `CompatibleMode.SCHEMA_CONSISTENT` mode. This mode assumes that the
+deserialization process uses the same class schema as the serialization process, minimizing payload overhead.
+However, if there is a schema inconsistency, deserialization will fail.
 
-If the schema is subject to change, user must set `CompatibleMode.COMPATIBLE` when creating Fury by
-`FuryBuilder#withCompatibleMode(CompatibleMode.COMPATIBLE)`. With this mode, the deserialization can have different
-schema for same class, and the deserialization will
-still succeed in cases such as the deserialization have missing/extra fields compared to serialization.
+If the schema is expected to change, to make deserialization succeed, i.e. schema forward/backward compatibility.
+Users must configure Fury to use `CompatibleMode.COMPATIBLE`. This can be done using the
+`FuryBuilder#withCompatibleMode(CompatibleMode.COMPATIBLE)` method.
+In this compatible mode, deserialization can handle schema changes such as missing or extra fields, allowing it to
+succeed even when the serialization and deserialization processes have different class schemas.
 
-Here is an example for creating Fury to support schema evolution:
+Here is an example of creating Fury to support schema evolution:
 
 ```java
 Fury fury = Fury.builder()
   .withCompatibleMode(CompatibleMode.COMPATIBLE)
   .build();
+
 byte[] bytes = fury.serialize(object);
 System.out.println(fury.deserialize(bytes));
 ```
 
-Note that this mode will serialize the class meta into the serialized result, although fury take many sophisticated
-compression techniques to minimize the overhead for class meta, it still introduce space cost. Fury introduce a class
-meta share mechanism which can seed meta to deserialization only once to reduce meta cost further, please
-see [Meta Sharing](#MetaSharing) for more details.
+This compatible mode involves serializing class metadata into the serialized output. Despite Fury's use of
+sophisticated compression techniques to minimize overhead, there is still some additional space cost associated with
+class metadata.
+
+To further reduce metadata costs, Fury introduces a class metadata sharing mechanism, which allows the metadata to be
+sent to the deserialization process only once. For more details, please refer to the [Meta Sharing](#MetaSharing)
+section.
 
 ### Smaller size
 
