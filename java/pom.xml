@@ -72,6 +72,7 @@
   <modules>
     <module>fury-format</module>
     <module>fury-core</module>
+    <module>fury-extensions</module>
     <module>fury-test-core</module>
     <module>fury-testsuite</module>
   </modules>
