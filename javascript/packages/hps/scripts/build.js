@@ -35,7 +35,7 @@ function watchError(child) {
 }
 
 if (versionValid) {
-  const gyp = spawn("npx", ["node-gyp", "rebuild"], { stdio: 'inherit' });
+  const gyp = spawn("npx", ["node-gyp", "rebuild"], { stdio: 'inherit', shell: true });
   watchError(gyp);
 }
-watchError(spawn("tsc", { stdio: 'inherit' }));
+watchError(spawn("npx", ["tsc"], { stdio: 'inherit', shell: true }));
