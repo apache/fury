@@ -392,9 +392,7 @@ class MapSerializer(Serializer):
                 chunk_header |= TRACKING_KEY_REF
             if value_write_ref:
                 chunk_header |= TRACKING_VALUE_REF
-            buffer.put_int8(chunk_size_offset - 1, chunk_header)
-            key_serializer_type = type(key_serializer)
-            value_serializer_type = type(value_serializer)
+            buffer.put_uint8(chunk_size_offset - 1, chunk_header)
             chunk_size = 0
 
             while True:
@@ -422,7 +420,7 @@ class MapSerializer(Serializer):
 
             key_serializer = self.key_serializer
             value_serializer = self.value_serializer
-            buffer.put_int8(chunk_size_offset, chunk_size)
+            buffer.put_uint8(chunk_size_offset, chunk_size)
 
     def read(self, buffer):
         fury = self.fury
@@ -489,8 +487,7 @@ class MapSerializer(Serializer):
                 key_serializer = class_resolver.read_typeinfo(buffer).serializer
             if not value_is_declared_type:
                 value_serializer = class_resolver.read_typeinfo(buffer).serializer
-            key_serializer_type = type(key_serializer)
-            value_serializer_type = type(value_serializer)
+
             for i in range(chunk_size):
                 if track_key_ref:
                     ref_id = ref_resolver.try_preserve_ref_id(buffer)
