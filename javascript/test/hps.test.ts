@@ -17,28 +17,27 @@
  * under the License.
  */
 
-import { isLatin1, stringCopy } from '../packages/hps/index';
+import { BinaryReader } from '@furyjs/fury/dist/lib/reader';
+import hps from '../packages/hps/index';
 import { describe, expect, test } from '@jest/globals';
 
-describe('hps', () => {
-    test('should isLatin1 work', () => {
+
+const skipableDescribe = (hps ? describe : describe.skip);
+
+skipableDescribe('hps', () => {
+    test.only('should isLatin1 work', () => {
+        const { serializeString } = hps!;
         for (let index = 0; index < 10000; index++) {
-            var is = isLatin1("hello");
-            expect(is).toBe(true)
+            const bf = Buffer.alloc(100);
+            serializeString("hello", bf, 0);
+            var reader = new BinaryReader({});
+            reader.reset(bf);
+            expect(reader.stringOfVarUInt32()).toBe("hello")
 
-            var is = isLatin1("😁");
-            expect(is).toBe(false)
-        }
-
-    });
-
-    test('should stringCopy work', () => {
-        for (let index = 0; index < 10000; index++) {
-            const dist = new Uint8Array(5);
-            stringCopy("hello", dist, 0);
-            expect([...dist]).toEqual([104, 101, 108, 108, 111])
+            serializeString("😁", bf, 0);
+            var reader = new BinaryReader({});
+            reader.reset(bf);
+            expect(reader.stringOfVarUInt32()).toBe("😁")
         }
     });
 });
-
-
