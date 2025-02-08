@@ -116,7 +116,7 @@ deploy_jars() {
 build_pyfury() {
   echo "Python version $(python -V), path $(which python)"
   install_pyarrow
-  pip install Cython wheel "numpy<2.0.0" pytest
+  pip install Cython wheel pytest
   pushd "$ROOT/python"
   pip list
   echo "Install pyfury"
@@ -161,11 +161,11 @@ deploy_python() {
 install_pyarrow() {
   pyversion=$(python -V | cut -d' ' -f2)
   if [[ $pyversion  ==  3.13* ]]; then
-    pyarrow_version=18.0.0
+    pip install pyarrow==18.0.0
   else
-    pyarrow_version=14.0.0
+    pip install pyarrow==14.0.0
+    pip install "numpy<2.0.0"
   fi
-  pip install pyarrow==$pyarrow_version
 }
 
 deploy_scala() {
