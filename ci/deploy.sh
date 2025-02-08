@@ -162,6 +162,7 @@ install_pyarrow() {
   pyversion=$(python -V | cut -d' ' -f2)
   if [[ $pyversion  ==  3.13* ]]; then
     pip install pyarrow==18.0.0
+    pip install numpy
   else
     pip install pyarrow==14.0.0
     pip install "numpy<2.0.0"
