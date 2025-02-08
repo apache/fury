@@ -19,46 +19,124 @@
 
 #include "v8-fast-api-calls.h"
 #include <nan.h>
+using v8::Local;
+using v8::String;
+using v8::Value;
 
-void IsLatin1Slow(const v8::FunctionCallbackInfo<v8::Value> &info) {
-  v8::Local<v8::String> input = info[0].As<v8::String>();
-  info.GetReturnValue().Set(Nan::New(input->IsOneByte()));
+template <typename T> constexpr T RoundUp(T a, T b) {
+  return a % b != 0 ? a + b - (a % b) : a;
 }
 
-bool IsLatin1Fast(v8::Local<v8::Value> receiver,
-                  const v8::FastOneByteString &source) {
-  return true;
+template <typename T, typename U> constexpr T *AlignUp(T *ptr, U alignment) {
+  return reinterpret_cast<T *>(
+      RoundUp(reinterpret_cast<uintptr_t>(ptr), alignment));
 }
 
-static v8::CFunction fast_is_latin1(v8::CFunction::Make(IsLatin1Fast));
-
-void StringCopySlow(const v8::FunctionCallbackInfo<v8::Value> &info) {
-  v8::Isolate *isolate = info.GetIsolate();
-  v8::Local<v8::String> source = info[0].As<v8::String>();
-  char *type_array =
-      (char *)info[1].As<v8::Uint8Array>()->Buffer()->GetBackingStore()->Data();
-  int32_t offset =
-      info[2]->Int32Value(info.GetIsolate()->GetCurrentContext()).FromJust();
-
-  v8::String::Utf8Value source_value(isolate, source);
-
-  for (size_t i = 0; i < source_value.length(); i++) {
-    *(type_array + (offset++)) = *((*source_value) + i);
+uint32_t writeVarUint32(uint8_t *dst, uint32_t offset, int32_t value) {
+  if (value >> 7 == 0) {
+    dst[offset] = (uint8_t)value;
+    return 1;
   }
-  info.GetReturnValue().Set(Nan::New(100));
+  if (value >> 14 == 0) {
+    dst[offset++] = (uint8_t)((value & 0x7F) | 0x80);
+    dst[offset++] = (uint8_t)(value >> 7);
+    return 2;
+  }
+  if (value >> 21 == 0) {
+    dst[offset++] = (uint8_t)((value & 0x7F) | 0x80);
+    dst[offset++] = (uint8_t)(value >> 7 | 0x80);
+    dst[offset++] = (uint8_t)(value >> 14);
+    return 3;
+  }
+  if (value >> 28 == 0) {
+    dst[offset++] = (uint8_t)((value & 0x7F) | 0x80);
+    dst[offset++] = (uint8_t)(value >> 7 | 0x80);
+    dst[offset++] = (uint8_t)(value >> 14 | 0x80);
+    dst[offset++] = (uint8_t)(value >> 21);
+    return 4;
+  }
+  dst[offset++] = (uint8_t)((value & 0x7F) | 0x80);
+  dst[offset++] = (uint8_t)(value >> 7 | 0x80);
+  dst[offset++] = (uint8_t)(value >> 14 | 0x80);
+  dst[offset++] = (uint8_t)(value >> 21 | 0x80);
+  dst[offset++] = (uint8_t)(value >> 28);
+  return 5;
 }
 
-void StringCopyFast(v8::Local<v8::Value> receiver,
-                    const v8::FastOneByteString &source,
-                    const v8::FastApiTypedArray<u_int8_t> &ab,
-                    u_int32_t offset) {
-  uint8_t *ptr;
-  ab.getStorageIfAligned(&ptr);
-  int32_t i = 0;
-  memcpy(ptr + offset, source.data, source.length);
+enum Encoding { LATIN1, UTF8, UTF16 };
+
+uint32_t writeUCS2(v8::Isolate *isolate, uint8_t *buf, Local<String> str,
+                   int flags) {
+  uint16_t *const dst = reinterpret_cast<uint16_t *>(buf);
+
+  uint16_t *const aligned_dst = AlignUp(dst, sizeof(*dst));
+  size_t nchars;
+  if (aligned_dst == dst) {
+    nchars = str->Write(isolate, dst, 0, -1, flags);
+    return nchars * sizeof(*dst);
+  }
+
+  nchars = str->Write(isolate, aligned_dst, 0, str->Length() - 1, flags);
+
+  memmove(dst, aligned_dst, nchars * sizeof(*dst));
+
+  uint16_t last;
+  str->Write(isolate, &last, nchars, 1, flags);
+  memcpy(buf + nchars * sizeof(*dst), &last, sizeof(last));
+  nchars++;
+
+  return nchars * sizeof(*dst);
 }
 
-static v8::CFunction string_copy_fast(v8::CFunction::Make(StringCopyFast));
+static void serializeString(const v8::FunctionCallbackInfo<v8::Value> &args) {
+  auto isolate = args.GetIsolate();
+  auto context = isolate->GetCurrentContext();
+  v8::Local<v8::Uint8Array> dst = args[0].As<v8::Uint8Array>();
+  v8::Local<v8::String> str = args[1].As<v8::String>();
+  uint32_t offset = args[2].As<v8::Number>()->Uint32Value(context).ToChecked();
+
+  bool is_one_byte = str->IsOneByte();
+  uint8_t *dst_data =
+      reinterpret_cast<uint8_t *>(dst->Buffer()->GetBackingStore()->Data());
+
+  if (is_one_byte && str->IsExternalOneByte()) {
+    dst_data[offset++] = Encoding::LATIN1;                     // encoding
+    offset += writeVarUint32(dst_data, offset, str->Length()); // length
+    const auto src = str->GetExternalOneByteStringResource()->data();
+    memcpy(dst_data + offset, src, str->Length());
+    offset += str->Length();
+  } else {
+    v8::HandleScope scope(isolate);
+    int flags = String::HINT_MANY_WRITES_EXPECTED |
+                String::NO_NULL_TERMINATION | String::REPLACE_INVALID_UTF8;
+    if (is_one_byte) {
+      dst_data[offset++] = Encoding::LATIN1;                     // encoding
+      offset += writeVarUint32(dst_data, offset, str->Length()); // length
+      offset += str->WriteOneByte(isolate, dst_data + offset, 0, str->Length(),
+                                  flags);
+    } else {
+      dst_data[offset++] = Encoding::UTF16;                          // encoding
+      offset += writeVarUint32(dst_data, offset, str->Length() * 2); // length
+      offset += writeUCS2(isolate, dst_data + offset, str, flags);
+    }
+  }
+
+  args.GetReturnValue().Set(offset);
+}
+
+static uint32_t serializeStringFast(Local<Value> receiver,
+                                    const v8::FastApiTypedArray<uint8_t> &dst,
+                                    const v8::FastOneByteString &src,
+                                    uint32_t offset, uint32_t max_length) {
+  uint8_t *dst_data;
+  dst.getStorageIfAligned(&dst_data);
+  dst_data[offset++] = Encoding::LATIN1;                  // encoding
+  offset += writeVarUint32(dst_data, src.length, offset); // length
+  memcpy(dst_data + offset, src.data, src.length);
+  return offset + src.length;
+}
+
+v8::CFunction fast_serialize_string(v8::CFunction::Make(serializeStringFast));
 
 v8::Local<v8::FunctionTemplate> FastFunction(v8::Isolate *isolate,
                                              v8::FunctionCallback callback,
@@ -72,14 +150,12 @@ v8::Local<v8::FunctionTemplate> FastFunction(v8::Isolate *isolate,
 void Init(v8::Local<v8::Object> exports) {
   v8::Local<v8::Context> context = exports->GetCreationContextChecked();
   v8::Isolate *isolate = context->GetIsolate();
-  exports->Set(context, Nan::New("isLatin1").ToLocalChecked(),
-               FastFunction(isolate, IsLatin1Slow, &fast_is_latin1)
-                   ->GetFunction(context)
-                   .ToLocalChecked());
-  exports->Set(context, Nan::New("stringCopy").ToLocalChecked(),
-               FastFunction(isolate, StringCopySlow, &string_copy_fast)
-                   ->GetFunction(context)
-                   .ToLocalChecked());
+  exports
+      ->Set(context, Nan::New("serializeString").ToLocalChecked(),
+            FastFunction(isolate, serializeString, &fast_serialize_string)
+                ->GetFunction(context)
+                .ToLocalChecked())
+      .Check();
 }
 
 NODE_MODULE(fury_util, Init)
