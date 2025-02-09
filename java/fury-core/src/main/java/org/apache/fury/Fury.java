@@ -988,9 +988,15 @@ public final class Fury implements BaseFury {
       case ClassResolver.STRING_CLASS_ID:
         return stringSerializer.readJavaString(buffer);
       case ClassResolver.ARRAYLIST_CLASS_ID:
-        return arrayListSerializer.read(buffer);
+        depth++;
+        Object list = arrayListSerializer.read(buffer);
+        depth--;
+        return list;
       case ClassResolver.HASHMAP_CLASS_ID:
-        return hashMapSerializer.read(buffer);
+        depth++;
+        Object map = hashMapSerializer.read(buffer);
+        depth--;
+        return map;
         // TODO(add fastpath for other types)
       default:
         depth++;
