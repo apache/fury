@@ -381,7 +381,7 @@ class MapSerializer(Serializer):
             key_cls = type(key)
             value_cls = type(value)
             buffer.write_int16(-1)
-            chunk_size_offset = buffer.writer_index - 1
+
             chunk_header = 0
 
             if key_serializer is not None:
@@ -409,14 +409,17 @@ class MapSerializer(Serializer):
             if value_write_ref:
                 chunk_header |= TRACKING_VALUE_REF
 
-            buffer.put_uint8(chunk_size_offset - 1, chunk_header)
+            header_offset = buffer.writer_index
+            buffer.write_int8(0)
+            buffer.write_int8(0)
+            buffer.put_uint8(header_offset, chunk_header)
+            chunk_size_offset = header_offset + 1
 
             key_serializer_type = type(key_serializer)
             value_serializer_type = type(value_serializer)
             chunk_size = 0
 
             while chunk_size < MAX_CHUNK_SIZE:
-
                 if (
                     key is None
                     or value is None
