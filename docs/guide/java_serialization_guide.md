@@ -354,6 +354,9 @@ fury.register(Foo.class, "demo", "Foo");
 
 If there are no duplicate name for type, `namespace` can be left as empty to reduce serialized size.
 
+**Do not use this API to register class since it will increase serialized size a lot compared to register
+class by id**
+
 ### Serializer Registration
 
 You can also register a custom serializer for a class by `Fury#registerSerializer` API.
