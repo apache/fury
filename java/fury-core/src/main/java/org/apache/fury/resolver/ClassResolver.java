@@ -441,7 +441,7 @@ public class ClassResolver {
     // class id must be less than Integer.MAX_VALUE/2 since we use bit 0 as class id flag.
     Preconditions.checkArgument(classId >= 0 && classId < Short.MAX_VALUE);
     short id = (short) classId;
-    checkClassRegistration(cls, id, cls.getName());
+    checkRegistration(cls, id, cls.getName());
     extRegistry.registeredClassIdMap.put(cls, id);
     if (registeredId2ClassInfo.length <= id) {
       ClassInfo[] tmp = new ClassInfo[(id + 1) * 2];
@@ -461,30 +461,6 @@ public class ClassResolver {
     registeredId2ClassInfo[id] = classInfo;
     extRegistry.registeredClasses.put(cls.getName(), cls);
     extRegistry.classIdGenerator++;
-  }
-
-  private void checkClassRegistration(Class<?> cls, short classId, String name) {
-    if (extRegistry.registeredClassIdMap.containsKey(cls)) {
-      throw new IllegalArgumentException(
-          String.format(
-              "Class %s already registered with id %s.",
-              cls, extRegistry.registeredClassIdMap.get(cls)));
-    }
-    if (classId > 0
-        && classId < registeredId2ClassInfo.length
-        && registeredId2ClassInfo[classId] != null) {
-      throw new IllegalArgumentException(
-          String.format(
-              "Class %s with id %s has been registered, registering class %s with same id are not allowed.",
-              registeredId2ClassInfo[classId].getCls(), classId, cls.getName()));
-    }
-    if (extRegistry.registeredClasses.containsKey(name)
-        || extRegistry.registeredClasses.inverse().containsKey(cls)) {
-      throw new IllegalArgumentException(
-          String.format(
-              "Class %s with name %s has been registered, registering class %s with same name are not allowed.",
-              extRegistry.registeredClasses.get(name), name, cls));
-    }
   }
 
   public void register(String className, int classId) {
@@ -515,7 +491,7 @@ public class ClassResolver {
     if (!StringUtils.isBlank(namespace)) {
       fullname = namespace + "." + name;
     }
-    checkClassRegistration(cls, (short) -1, fullname);
+    checkRegistration(cls, (short) -1, fullname);
     MetaStringBytes fullNameBytes =
         metaStringResolver.getOrCreateMetaStringBytes(
             GENERIC_ENCODER.encode(fullname, MetaString.Encoding.UTF_8));
@@ -528,6 +504,30 @@ public class ClassResolver {
     compositeNameBytes2ClassInfo.put(
         new TypeNameBytes(nsBytes.hashCode, nameBytes.hashCode), classInfo);
     extRegistry.registeredClasses.put(fullname, cls);
+  }
+
+  private void checkRegistration(Class<?> cls, short classId, String name) {
+    if (extRegistry.registeredClassIdMap.containsKey(cls)) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Class %s already registered with id %s.",
+              cls, extRegistry.registeredClassIdMap.get(cls)));
+    }
+    if (classId > 0
+        && classId < registeredId2ClassInfo.length
+        && registeredId2ClassInfo[classId] != null) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Class %s with id %s has been registered, registering class %s with same id are not allowed.",
+              registeredId2ClassInfo[classId].getCls(), classId, cls.getName()));
+    }
+    if (extRegistry.registeredClasses.containsKey(name)
+        || extRegistry.registeredClasses.inverse().containsKey(cls)) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Class %s with name %s has been registered, registering class %s with same name are not allowed.",
+              extRegistry.registeredClasses.get(name), name, cls));
+    }
   }
 
   public boolean isRegisteredById(Class<?> cls) {
