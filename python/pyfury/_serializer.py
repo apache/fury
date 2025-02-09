@@ -380,23 +380,22 @@ class MapSerializer(Serializer):
 
             key_cls = type(key)
             value_cls = type(value)
-            buffer.write_int16(-1)
 
-            chunk_header = 0
-
-            if key_serializer is not None:
-                chunk_header |= KEY_DECL_TYPE
-            else:
+            if key_serializer is None:
                 key_classinfo = self.class_resolver.get_classinfo(key_cls)
                 class_resolver.write_typeinfo(buffer, key_classinfo)
                 key_serializer = key_classinfo.serializer
-
-            if value_serializer is not None:
-                chunk_header |= VALUE_DECL_TYPE
-            else:
+            if value_serializer is None:
                 value_classinfo = self.class_resolver.get_classinfo(value_cls)
                 class_resolver.write_typeinfo(buffer, value_classinfo)
                 value_serializer = value_classinfo.serializer
+
+            buffer.write_int16(-1)
+            chunk_size_offset = buffer.writer_index - 1
+            chunk_header = 0
+
+            chunk_header |= KEY_DECL_TYPE
+            chunk_header |= VALUE_DECL_TYPE
 
             key_write_ref = (
                 key_serializer.need_to_write_ref if key_serializer else False
@@ -409,11 +408,7 @@ class MapSerializer(Serializer):
             if value_write_ref:
                 chunk_header |= TRACKING_VALUE_REF
 
-            header_offset = buffer.writer_index
-            buffer.write_int8(0)
-            buffer.write_int8(0)
-            buffer.put_uint8(header_offset, chunk_header)
-            chunk_size_offset = header_offset + 1
+            buffer.put_uint8(chunk_size_offset - 1, chunk_header)
 
             key_serializer_type = type(key_serializer)
             value_serializer_type = type(value_serializer)
