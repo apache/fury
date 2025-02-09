@@ -488,6 +488,9 @@ public class ClassResolver {
     Preconditions.checkArgument(!ReflectionUtils.isJdkProxy(cls));
     Preconditions.checkArgument(!cls.isArray());
     String fullname = name;
+    if (namespace == null) {
+      namespace = "";
+    }
     if (!StringUtils.isBlank(namespace)) {
       fullname = namespace + "." + name;
     }

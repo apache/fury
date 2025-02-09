@@ -312,7 +312,7 @@ should have same registration order.
 ```java
 Fury fury = xxx;
 fury.register(SomeClass.class);
-fury.register(SomeClass1.class,200);
+fury.register(SomeClass1.class, 200);
 ```
 
 If you invoke `FuryBuilder#requireClassRegistration(false)` to disable class registration check,
@@ -341,6 +341,18 @@ Fury also provided a `org.apache.fury.resolver.AllowListChecker` which is allowe
 simplify
 the customization of class check mechanism. You can use this checker or implement more sophisticated checker by
 yourself.
+
+### Register class by name
+
+Register class by id will have better performance and smaller space overhead. But in some cases, management for a bunch
+of type id is complex. In such cases, registering class by name using API
+`register(Class<?> cls, String namespace, String typeName)` is recommended.
+
+```java
+fury.register(Foo.class, "demo", "Foo");
+```
+
+If there are no duplicate name for type, `namespace` can be left as empty to reduce serialized size.
 
 ### Serializer Registration
 
