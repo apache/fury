@@ -73,42 +73,20 @@ public class Types {
    */
   public static final int STRUCT = 15;
 
-  /**
-   * a type which is polymorphic(not final). i.e. it has subclasses. Suppose we're deserializing
-   * {@code List<SomeClass>}`, we must dispatch serializer dynamically since `SomeClass` is
-   * polymorphic(non-final).
-   */
-  public static final int POLYMORPHIC_STRUCT = 16;
-
   /** a morphic(final) type serialized by Fury compatible Struct serializer. */
   public static final int COMPATIBLE_STRUCT = 17;
-
-  /** a non-morphic(non-final) type serialized by Fury compatible Struct serializer. */
-  public static final int POLYMORPHIC_COMPATIBLE_STRUCT = 18;
 
   /** a `struct` whose type mapping will be encoded as a name. */
   public static final int NAMED_STRUCT = 19;
 
-  /** a `polymorphic_struct` whose type mapping will be encoded as a name. */
-  public static final int NAMED_POLYMORPHIC_STRUCT = 20;
-
   /** a `compatible_struct` whose type mapping will be encoded as a name. */
   public static final int NAMED_COMPATIBLE_STRUCT = 21;
-
-  /** a `polymorphic_compatible_struct` whose type mapping will be encoded as a name. */
-  public static final int NAMED_POLYMORPHIC_COMPATIBLE_STRUCT = 22;
 
   /** a type which will be serialized by a customized serializer. */
   public static final int EXT = 23;
 
-  /** an `ext` type which is not morphic(not final). */
-  public static final int POLYMORPHIC_EXT = 24;
-
   /** an `ext` type whose type mapping will be encoded as a name. */
   public static final int NAMED_EXT = 25;
-
-  /** an `polymorphic_ext` type whose type mapping will be encoded as a name. */
-  public static final int NAMED_POLYMORPHIC_EXT = 26;
 
   /** a sequence of objects. */
   public static final int LIST = 27;
@@ -187,12 +165,16 @@ public class Types {
 
   public static boolean isStructType(int value) {
     return value == STRUCT
-        || value == POLYMORPHIC_STRUCT
         || value == COMPATIBLE_STRUCT
-        || value == POLYMORPHIC_COMPATIBLE_STRUCT
         || value == NAMED_STRUCT
-        || value == NAMED_POLYMORPHIC_STRUCT
-        || value == NAMED_COMPATIBLE_STRUCT
-        || value == NAMED_POLYMORPHIC_COMPATIBLE_STRUCT;
+        || value == NAMED_COMPATIBLE_STRUCT;
+  }
+
+  public static boolean isExtType(int value) {
+    return value == EXT || value == NAMED_EXT;
+  }
+
+  public static boolean isEnumType(int value) {
+    return value == ENUM || value == NAMED_ENUM;
   }
 }

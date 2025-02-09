@@ -138,95 +138,85 @@ class TypeId:
     INT16 = 3
     # a 32-bit signed integer.
     INT32 = 4
-    # a 32-bit signed integer which use fury var_int32 encoding.
+    # a 32-bit signed integer which uses fury var_int32 encoding.
     VAR_INT32 = 5
     # a 64-bit signed integer.
     INT64 = 6
-    # a 64-bit signed integer which use fury PVL encoding.
+    # a 64-bit signed integer which uses fury PVL encoding.
     VAR_INT64 = 7
-    # a 64-bit signed integer which use fury SLI encoding.
+    # a 64-bit signed integer which uses fury SLI encoding.
     SLI_INT64 = 8
     # a 16-bit floating point number.
     FLOAT16 = 9
-    #  a 32-bit floating point number.
+    # a 32-bit floating point number.
     FLOAT32 = 10
     # a 64-bit floating point number including NaN and Infinity.
     FLOAT64 = 11
     # a text string encoded using Latin1/UTF16/UTF-8 encoding.
     STRING = 12
     # a data type consisting of a set of named values. Rust enum with non-predefined field values are not supported as
-    # an enum
+    # an enum.
     ENUM = 13
     # an enum whose value will be serialized as the registered name.
     NAMED_ENUM = 14
-    # a morphic(final) type serialized by Fury Struct serializer. i.e. it doesn't have subclasses. Suppose we're
+    # a morphic(final) type serialized by Fury Struct serializer. i.e., it doesn't have subclasses. Suppose we're
     # deserializing `List[SomeClass]`, we can save dynamic serializer dispatch since `SomeClass` is morphic(final).
     STRUCT = 15
-    # a type which is not morphic(not final). i.e. it have subclasses. Suppose we're deserializing
-    # `List[SomeClass]`, we must dispatch serializer dynamically since `SomeClass` is polymorphic(non-final).
-    POLYMORPHIC_STRUCT = 16
     # a morphic(final) type serialized by Fury compatible Struct serializer.
-    COMPATIBLE_STRUCT = 17
-    # a non-morphic(non-final) type serialized by Fury compatible Struct serializer.
-    POLYMORPHIC_COMPATIBLE_STRUCT = 18
+    COMPATIBLE_STRUCT = 16
     # a `struct` whose type mapping will be encoded as a name.
-    NAMED_STRUCT = 19
-    # a `polymorphic_struct` whose type mapping will be encoded as a name.
-    NAMED_POLYMORPHIC_STRUCT = 20
+    NAMED_STRUCT = 17
     # a `compatible_struct` whose type mapping will be encoded as a name.
-    NAMED_COMPATIBLE_STRUCT = 21
-    # a `polymorphic_compatible_struct` whose type mapping will be encoded as a name.
-    NAMED_POLYMORPHIC_COMPATIBLE_STRUCT = 22
+    NAMED_COMPATIBLE_STRUCT = 18
     # a type which will be serialized by a customized serializer.
-    EXT = 23
-    # an `ext` type which is not morphic(not final).
-    POLYMORPHIC_EXT = 24
+    EXT = 19
     # an `ext` type whose type mapping will be encoded as a name.
-    NAMED_EXT = 25
-    # an `polymorphic_ext` type whose type mapping will be encoded as a name.
-    NAMED_POLYMORPHIC_EXT = 26
+    NAMED_EXT = 20
     # a sequence of objects.
-    LIST = 27
+    LIST = 21
     # an unordered set of unique elements.
-    SET = 28
+    SET = 22
     # a map of key-value pairs. Mutable types such as `list/map/set/array/tensor/arrow` are not allowed as key of map.
-    MAP = 29
+    MAP = 23
     # an absolute length of time, independent of any calendar/timezone, as a count of nanoseconds.
-    DURATION = 30
+    DURATION = 24
     # a point in time, independent of any calendar/timezone, as a count of nanoseconds. The count is relative
     # to an epoch at UTC midnight on January 1, 1970.
-    TIMESTAMP = 31
+    TIMESTAMP = 25
     # a naive date without timezone. The count is days relative to an epoch at UTC midnight on Jan 1, 1970.
-    LOCAL_DATE = 32
+    LOCAL_DATE = 26
     # exact decimal value represented as an integer value in two's complement.
-    DECIMAL = 33
-    # an variable-length array of bytes.
-    BINARY = 34
-    # a multidimensional array which every sub-array can have different sizes but all have same type.
+    DECIMAL = 27
+    # a variable-length array of bytes.
+    BINARY = 28
+    # a multidimensional array which every sub-array can have different sizes but all have the same type.
     # only allow numeric components. Other arrays will be taken as List. The implementation should support the
     # interoperability between array and list.
-    ARRAY = 35
+    ARRAY = 29
     # one dimensional bool array.
-    BOOL_ARRAY = 36
+    BOOL_ARRAY = 30
+    # one dimensional int8 array.
+    INT8_ARRAY = 31
     # one dimensional int16 array.
-    INT8_ARRAY = 37
-    # one dimensional int16 array.
-    INT16_ARRAY = 38
+    INT16_ARRAY = 32
     # one dimensional int32 array.
-    INT32_ARRAY = 39
+    INT32_ARRAY = 33
     # one dimensional int64 array.
-    INT64_ARRAY = 40
+    INT64_ARRAY = 34
     # one dimensional half_float_16 array.
-    FLOAT16_ARRAY = 41
+    FLOAT16_ARRAY = 35
     # one dimensional float32 array.
-    FLOAT32_ARRAY = 42
+    FLOAT32_ARRAY = 36
     # one dimensional float64 array.
-    FLOAT64_ARRAY = 43
+    FLOAT64_ARRAY = 37
     # an arrow [record batch](https://arrow.apache.org/docs/cpp/tables.html#record-batches) object.
-    ARROW_RECORD_BATCH = 44
+    ARROW_RECORD_BATCH = 38
     # an arrow [table](https://arrow.apache.org/docs/cpp/tables.html#tables) object.
-    ARROW_TABLE = 45
+    ARROW_TABLE = 39
+
+    # BOUND id remains at 64
     BOUND = 64
+
 
     @staticmethod
     def is_namespaced_type(type_id: int) -> bool:
@@ -235,12 +225,9 @@ class TypeId:
 
 __NAMESPACED_TYPES__ = {
     TypeId.NAMED_EXT,
-    TypeId.NAMED_POLYMORPHIC_EXT,
     TypeId.NAMED_ENUM,
     TypeId.NAMED_STRUCT,
-    TypeId.NAMED_POLYMORPHIC_STRUCT,
     TypeId.NAMED_COMPATIBLE_STRUCT,
-    TypeId.NAMED_POLYMORPHIC_COMPATIBLE_STRUCT,
 }
 Int8Type = TypeVar("Int8Type", bound=int)
 Int16Type = TypeVar("Int16Type", bound=int)
