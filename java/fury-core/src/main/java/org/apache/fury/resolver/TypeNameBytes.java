@@ -19,11 +19,11 @@
 
 package org.apache.fury.resolver;
 
-class ClassNameBytes {
+class TypeNameBytes {
   private final long packageHash;
   private final long classNameHash;
 
-  ClassNameBytes(long packageHash, long classNameHash) {
+  TypeNameBytes(long packageHash, long classNameHash) {
     this.packageHash = packageHash;
     this.classNameHash = classNameHash;
   }
@@ -31,7 +31,7 @@ class ClassNameBytes {
   @Override
   public boolean equals(Object o) {
     // ClassNameBytes is used internally, skip
-    ClassNameBytes that = (ClassNameBytes) o;
+    TypeNameBytes that = (TypeNameBytes) o;
     return packageHash == that.packageHash && classNameHash == that.classNameHash;
   }
 

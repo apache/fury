@@ -39,9 +39,9 @@ import org.apache.fury.util.function.Functions;
  */
 public class ClassInfo {
   final Class<?> cls;
-  final MetaStringBytes fullClassNameBytes;
-  final MetaStringBytes packageNameBytes;
-  final MetaStringBytes classNameBytes;
+  final MetaStringBytes fullNameBytes;
+  final MetaStringBytes namespaceBytes;
+  final MetaStringBytes typeNameBytes;
   final boolean isDynamicGeneratedClass;
   int xtypeId;
   Serializer<?> serializer;
@@ -53,23 +53,23 @@ public class ClassInfo {
 
   ClassInfo(
       Class<?> cls,
-      MetaStringBytes fullClassNameBytes,
-      MetaStringBytes packageNameBytes,
-      MetaStringBytes classNameBytes,
+      MetaStringBytes fullNameBytes,
+      MetaStringBytes namespaceBytes,
+      MetaStringBytes typeNameBytes,
       boolean isDynamicGeneratedClass,
       Serializer<?> serializer,
       short classId,
       short xtypeId) {
     this.cls = cls;
-    this.fullClassNameBytes = fullClassNameBytes;
-    this.packageNameBytes = packageNameBytes;
-    this.classNameBytes = classNameBytes;
+    this.fullNameBytes = fullNameBytes;
+    this.namespaceBytes = namespaceBytes;
+    this.typeNameBytes = typeNameBytes;
     this.isDynamicGeneratedClass = isDynamicGeneratedClass;
     this.xtypeId = xtypeId;
     this.serializer = serializer;
     this.classId = classId;
     if (cls != null && classId == ClassResolver.NO_CLASS_ID) {
-      Preconditions.checkArgument(classNameBytes != null);
+      Preconditions.checkArgument(typeNameBytes != null);
     }
   }
 
@@ -84,11 +84,11 @@ public class ClassInfo {
     needToWriteClassDef = serializer != null && classResolver.needToWriteClassDef(serializer);
     MetaStringResolver metaStringResolver = classResolver.getMetaStringResolver();
     if (cls != null && classResolver.getFury().getLanguage() != Language.JAVA) {
-      this.fullClassNameBytes =
+      this.fullNameBytes =
           metaStringResolver.getOrCreateMetaStringBytes(
               GENERIC_ENCODER.encode(cls.getName(), Encoding.UTF_8));
     } else {
-      this.fullClassNameBytes = null;
+      this.fullNameBytes = null;
     }
     // When `classId == ClassResolver.REPLACE_STUB_ID` was established,
     // means only classes are serialized, not the instance. If we
@@ -97,13 +97,13 @@ public class ClassInfo {
         && (classId == ClassResolver.NO_CLASS_ID || classId == ClassResolver.REPLACE_STUB_ID)) {
       // REPLACE_STUB_ID for write replace class in `ClassSerializer`.
       Tuple2<String, String> tuple2 = Encoders.encodePkgAndClass(cls);
-      this.packageNameBytes =
+      this.namespaceBytes =
           metaStringResolver.getOrCreateMetaStringBytes(Encoders.encodePackage(tuple2.f0));
-      this.classNameBytes =
+      this.typeNameBytes =
           metaStringResolver.getOrCreateMetaStringBytes(Encoders.encodeTypeName(tuple2.f1));
     } else {
-      this.packageNameBytes = null;
-      this.classNameBytes = null;
+      this.namespaceBytes = null;
+      this.typeNameBytes = null;
     }
     this.xtypeId = xtypeId;
     this.classId = classId;
@@ -145,11 +145,11 @@ public class ClassInfo {
   }
 
   public String decodeNamespace() {
-    return packageNameBytes.decode(PACKAGE_DECODER);
+    return namespaceBytes.decode(PACKAGE_DECODER);
   }
 
   public String decodeTypeName() {
-    return classNameBytes.decode(TYPE_NAME_DECODER);
+    return typeNameBytes.decode(TYPE_NAME_DECODER);
   }
 
   @Override
@@ -158,7 +158,7 @@ public class ClassInfo {
         + "cls="
         + cls
         + ", fullClassNameBytes="
-        + fullClassNameBytes
+        + fullNameBytes
         + ", isDynamicGeneratedClass="
         + isDynamicGeneratedClass
         + ", serializer="

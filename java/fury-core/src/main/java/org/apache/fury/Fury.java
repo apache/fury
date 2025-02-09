@@ -210,8 +210,11 @@ public final class Fury implements BaseFury {
   }
 
   public void register(Class<?> cls, String namespace, String typeName) {
-    Preconditions.checkArgument(language != Language.JAVA);
-    xtypeResolver.register(cls, namespace, typeName);
+    if (language == Language.JAVA) {
+      classResolver.register(cls, namespace, typeName);
+    } else {
+      xtypeResolver.register(cls, namespace, typeName);
+    }
   }
 
   @Override
