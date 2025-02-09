@@ -111,11 +111,8 @@ inline bool IsNamespacedType(int32_t type_id) {
   switch (static_cast<TypeId>(type_id)) {
   case TypeId::NAMED_ENUM:
   case TypeId::NAMED_STRUCT:
-  case TypeId::NAMED_POLYMORPHIC_STRUCT:
   case TypeId::NAMED_COMPATIBLE_STRUCT:
-  case TypeId::NAMED_POLYMORPHIC_COMPATIBLE_STRUCT:
   case TypeId::NAMED_EXT:
-  case TypeId::NAMED_POLYMORPHIC_EXT:
     return true;
   default:
     return false;
