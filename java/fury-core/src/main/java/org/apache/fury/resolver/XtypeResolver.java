@@ -361,10 +361,7 @@ public class XtypeResolver {
       case Types.NAMED_ENUM:
       case Types.NAMED_STRUCT:
       case Types.NAMED_COMPATIBLE_STRUCT:
-      case Types.NAMED_POLYMORPHIC_STRUCT:
-      case Types.NAMED_POLYMORPHIC_COMPATIBLE_STRUCT:
       case Types.NAMED_EXT:
-      case Types.NAMED_POLYMORPHIC_EXT:
         assert classInfo.namespaceBytes != null;
         metaStringResolver.writeMetaStringBytes(buffer, classInfo.namespaceBytes);
         assert classInfo.typeNameBytes != null;
@@ -383,10 +380,7 @@ public class XtypeResolver {
       case Types.NAMED_ENUM:
       case Types.NAMED_STRUCT:
       case Types.NAMED_COMPATIBLE_STRUCT:
-      case Types.NAMED_POLYMORPHIC_STRUCT:
-      case Types.NAMED_POLYMORPHIC_COMPATIBLE_STRUCT:
       case Types.NAMED_EXT:
-      case Types.NAMED_POLYMORPHIC_EXT:
         MetaStringBytes packageBytes = metaStringResolver.readMetaStringBytes(buffer);
         MetaStringBytes simpleClassNameBytes = metaStringResolver.readMetaStringBytes(buffer);
         return loadBytesToClassInfo(internalTypeId, packageBytes, simpleClassNameBytes);
@@ -453,8 +447,6 @@ public class XtypeResolver {
           case Types.NAMED_ENUM:
           case Types.NAMED_STRUCT:
           case Types.NAMED_COMPATIBLE_STRUCT:
-          case Types.NAMED_POLYMORPHIC_STRUCT:
-          case Types.NAMED_POLYMORPHIC_COMPATIBLE_STRUCT:
             type =
                 NonexistentClass.getNonexistentClass(
                     qualifiedName, isEnum(typeId), 0, config.isMetaShareEnabled());
