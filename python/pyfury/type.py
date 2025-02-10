@@ -217,7 +217,6 @@ class TypeId:
     # BOUND id remains at 64
     BOUND = 64
 
-
     @staticmethod
     def is_namespaced_type(type_id: int) -> bool:
         return type_id in __NAMESPACED_TYPES__
