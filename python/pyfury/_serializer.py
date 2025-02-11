@@ -330,12 +330,9 @@ class MapSerializer(Serializer):
         value_serializer = self.value_serializer
 
         items_iter = iter(obj.items())
+        key, value = next(items_iter)
         has_next = True
         while has_next:
-            try:
-                key, value = next(items_iter)
-            except StopIteration:
-                break
 
             while True:
                 if key is not None:
