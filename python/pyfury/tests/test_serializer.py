@@ -629,7 +629,7 @@ def test_map_fields_chunk_serializer():
     empty_dict = {}
     large_dict = {f"key{i}": i for i in range(1000)}
 
-    #
+    # MapSerializer test
     map_fields_object = MapFields(
         simple_dict=simple_dict, empty_dict=empty_dict, large_dict=large_dict
     )
