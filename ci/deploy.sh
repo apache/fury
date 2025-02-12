@@ -131,7 +131,7 @@ install_pyarrow() {
     pyarrow_version=12.0.0
     sed -i -E "s/pyarrow_version = .*/pyarrow_version = \"12.0.0\"/" "$ROOT"/python/setup.py
   else
-    pyarrow_version=14.0.0
+    pyarrow_version=15.0.0
   fi
   pip install pyarrow==$pyarrow_version
 }

@@ -27,7 +27,7 @@ import importlib
 
 BAZEL_VERSION = "6.3.2"
 
-PYARROW_VERSION = "14.0.0"
+PYARROW_VERSION = "15.0.0"
 
 NUMPY_VERSION = "1.26.4"
 
