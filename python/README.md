@@ -6,8 +6,10 @@ Fury is a blazingly-fast multi-language serialization framework powered by just-
 
 ```bash
 cd python
-# numpy2 is not currently supported
+# For Python versions less than 3.13, numpy 2 is not currently supported.
 pip install pyarrow==14.0.0 Cython wheel 'numpy<2' pytest
+# For Python 3.13, pyarrow 18.0.0 is available and requires numpy version greater than 2.
+#pip install pyarrow==18.0.0 Cython wheel 'numpy>2' pytest
 pip install -v -e .
 ```
 
