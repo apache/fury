@@ -6,10 +6,10 @@ Fury is a blazingly-fast multi-language serialization framework powered by just-
 
 ```bash
 cd python
-# For Python versions less than 3.13, numpy 2 is not currently supported.
 # Uninstall numpy first so that when we install pyarrow, it will install the correct numpy version automatically.
 pip uninstall -y numpy
-pip install pyarrow==14.0.0 Cython wheel pytest
+# For Python versions less than 3.13, numpy 2 is not currently supported.
+pip install pyarrow==15.0.0 Cython wheel pytest
 # For Python 3.13+, pyarrow 18.0.0 is available and requires numpy version greater than 2.
 # pip install pyarrow==18.0.0 Cython wheel pytest
 pip install -v -e .
