@@ -17,35 +17,28 @@
  * under the License.
  */
 
-/** @type {import('ts-jest').JestConfigWithTsJest} */
+package org.apache.fury.resolver;
 
-module.exports = {
-  collectCoverage: true,
-  preset: 'ts-jest',
-  testEnvironment: 'node',
-  collectCoverageFrom: [
-    "**/*.ts",
-    "!**/dist/**",
-    "!**/build/**",
-    "!packages/fury/lib/murmurHash3.ts"
-  ],
-  transform: {
-    '\\.ts$': ['ts-jest', {
-      tsconfig: {
-        target: "ES2021"
-      },
-      diagnostics: {
-        ignoreCodes: [151001]
-      }
-    }],
-  },
-  // todo: JavaScript codebase is iterating rapidly, remove this restriction temporary 
-  // coverageThreshold: {
-  //   global: {
-  //     branches: 91,
-  //     functions: 99,
-  //     lines: 98,
-  //     statements: 98
-  //   }
-  // }
-};
+class TypeNameBytes {
+  private final long packageHash;
+  private final long classNameHash;
+
+  TypeNameBytes(long packageHash, long classNameHash) {
+    this.packageHash = packageHash;
+    this.classNameHash = classNameHash;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    // ClassNameBytes is used internally, skip
+    TypeNameBytes that = (TypeNameBytes) o;
+    return packageHash == that.packageHash && classNameHash == that.classNameHash;
+  }
+
+  @Override
+  public int hashCode() {
+    int result = 31 + (int) (packageHash ^ (packageHash >>> 32));
+    result = result * 31 + (int) (classNameHash ^ (classNameHash >>> 32));
+    return result;
+  }
+}

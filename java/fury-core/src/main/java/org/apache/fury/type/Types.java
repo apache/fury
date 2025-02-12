@@ -33,16 +33,16 @@ public class Types {
   /** int32: a 32-bit signed integer. */
   public static final int INT32 = 4;
 
-  /** var_int32: a 32-bit signed integer which use fury var_int32 encoding. */
+  /** var_int32: a 32-bit signed integer which uses fury var_int32 encoding. */
   public static final int VAR_INT32 = 5;
 
   /** int64: a 64-bit signed integer. */
   public static final int INT64 = 6;
 
-  /** var_int64: a 64-bit signed integer which use fury PVL encoding. */
+  /** var_int64: a 64-bit signed integer which uses fury PVL encoding. */
   public static final int VAR_INT64 = 7;
 
-  /** sli_int64: a 64-bit signed integer which use fury SLI encoding. */
+  /** sli_int64: a 64-bit signed integer which uses fury SLI encoding. */
   public static final int SLI_INT64 = 8;
 
   /** float16: a 16-bit floating point number. */
@@ -57,142 +57,119 @@ public class Types {
   /** string: a text string encoded using Latin1/UTF16/UTF-8 encoding. */
   public static final int STRING = 12;
 
-  /**
-   * enum: a data type consisting of a set of named values. Rust enum with non-predefined field
-   * values are not \ supported as an enum.
-   */
+  /** enum: a data type consisting of a set of named values. */
   public static final int ENUM = 13;
 
   /** named_enum: an enum whose value will be serialized as the registered name. */
   public static final int NAMED_ENUM = 14;
 
   /**
-   * a morphic(final) type serialized by Fury Struct serializer. i.e. it doesn't have subclasses.
-   * Suppose we're deserializing {@code List<SomeClass>}`, we can save dynamic serializer dispatch
+   * A morphic(final) type serialized by Fury Struct serializer. i.e. it doesn't have subclasses.
+   * Suppose we're deserializing {@code List<SomeClass>}, we can save dynamic serializer dispatch
    * since `SomeClass` is morphic(final).
    */
   public static final int STRUCT = 15;
 
-  /**
-   * a type which is polymorphic(not final). i.e. it has subclasses. Suppose we're deserializing
-   * {@code List<SomeClass>}`, we must dispatch serializer dynamically since `SomeClass` is
-   * polymorphic(non-final).
-   */
-  public static final int POLYMORPHIC_STRUCT = 16;
+  /** A morphic(final) type serialized by Fury compatible Struct serializer. */
+  public static final int COMPATIBLE_STRUCT = 16;
 
-  /** a morphic(final) type serialized by Fury compatible Struct serializer. */
-  public static final int COMPATIBLE_STRUCT = 17;
+  /** A `struct` whose type mapping will be encoded as a name. */
+  public static final int NAMED_STRUCT = 17;
 
-  /** a non-morphic(non-final) type serialized by Fury compatible Struct serializer. */
-  public static final int POLYMORPHIC_COMPATIBLE_STRUCT = 18;
+  /** A `compatible_struct` whose type mapping will be encoded as a name. */
+  public static final int NAMED_COMPATIBLE_STRUCT = 18;
 
-  /** a `struct` whose type mapping will be encoded as a name. */
-  public static final int NAMED_STRUCT = 19;
+  /** A type which will be serialized by a customized serializer. */
+  public static final int EXT = 19;
 
-  /** a `polymorphic_struct` whose type mapping will be encoded as a name. */
-  public static final int NAMED_POLYMORPHIC_STRUCT = 20;
+  /** An `ext` type whose type mapping will be encoded as a name. */
+  public static final int NAMED_EXT = 20;
 
-  /** a `compatible_struct` whose type mapping will be encoded as a name. */
-  public static final int NAMED_COMPATIBLE_STRUCT = 21;
+  /** A sequence of objects. */
+  public static final int LIST = 21;
 
-  /** a `polymorphic_compatible_struct` whose type mapping will be encoded as a name. */
-  public static final int NAMED_POLYMORPHIC_COMPATIBLE_STRUCT = 22;
-
-  /** a type which will be serialized by a customized serializer. */
-  public static final int EXT = 23;
-
-  /** an `ext` type which is not morphic(not final). */
-  public static final int POLYMORPHIC_EXT = 24;
-
-  /** an `ext` type whose type mapping will be encoded as a name. */
-  public static final int NAMED_EXT = 25;
-
-  /** an `polymorphic_ext` type whose type mapping will be encoded as a name. */
-  public static final int NAMED_POLYMORPHIC_EXT = 26;
-
-  /** a sequence of objects. */
-  public static final int LIST = 27;
-
-  /** an unordered set of unique elements. */
-  public static final int SET = 28;
+  /** An unordered set of unique elements. */
+  public static final int SET = 22;
 
   /**
-   * a map of key-value pairs. Mutable types such as `list/map/set/array/tensor/arrow` are not
+   * A map of key-value pairs. Mutable types such as `list/map/set/array/tensor/arrow` are not
    * allowed as key of map.
    */
-  public static final int MAP = 29;
+  public static final int MAP = 23;
 
   /**
-   * an absolute length of time, independent of any calendar/timezone, as a count of nanoseconds.
+   * An absolute length of time, independent of any calendar/timezone, as a count of nanoseconds.
    */
-  public static final int DURATION = 30;
+  public static final int DURATION = 24;
 
   /**
-   * timestamp: a point in time, independent of any calendar/timezone, as a count of nanoseconds.
-   * The count is relative to an epoch at UTC midnight on January 1, 1970.
+   * A point in time, independent of any calendar/timezone, as a count of nanoseconds. The count is
+   * relative to an epoch at UTC midnight on January 1, 1970.
    */
-  public static final int TIMESTAMP = 31;
+  public static final int TIMESTAMP = 25;
 
   /**
-   * a naive date without timezone. The count is days relative to an epoch at UTC midnight on Jan 1,
+   * A naive date without timezone. The count is days relative to an epoch at UTC midnight on Jan 1,
    * 1970.
    */
-  public static final int LOCAL_DATE = 32;
+  public static final int LOCAL_DATE = 26;
 
-  /** exact decimal value represented as an integer value in two's complement. */
-  public static final int DECIMAL = 33;
+  /** Exact decimal value represented as an integer value in two's complement. */
+  public static final int DECIMAL = 27;
 
-  /** an variable-length array of bytes. */
-  public static final int BINARY = 34;
-
-  /**
-   * a multidimensional array which every sub-array can have different sizes but all have same type.
-   * only allow numeric components. Other arrays will be taken as List. The implementation should
-   * support the interoperability between array and list.
-   */
-  public static final int ARRAY = 35;
-
-  /** one dimensional int16 array. */
-  public static final int BOOL_ARRAY = 36;
-
-  /** one dimensional int8 array. */
-  public static final int INT8_ARRAY = 37;
-
-  /** one dimensional int16 array. */
-  public static final int INT16_ARRAY = 38;
-
-  /** one dimensional int32 array. */
-  public static final int INT32_ARRAY = 39;
-
-  /** one dimensional int64 array. */
-  public static final int INT64_ARRAY = 40;
-
-  /** one dimensional half_float_16 array. */
-  public static final int FLOAT16_ARRAY = 41;
-
-  /** one dimensional float32 array. */
-  public static final int FLOAT32_ARRAY = 42;
-
-  /** one dimensional float64 array. */
-  public static final int FLOAT64_ARRAY = 43;
+  /** A variable-length array of bytes. */
+  public static final int BINARY = 28;
 
   /**
-   * an (<a href="https://arrow.apache.org/docs/cpp/tables.html#record-batches">arrow record
-   * batch</a>) object.
+   * A multidimensional array where every sub-array can have different sizes but all have the same
+   * type. Only numeric components allowed. Other arrays will be taken as List. The implementation
+   * should support interoperability between array and list.
    */
-  public static final int ARROW_RECORD_BATCH = 44;
+  public static final int ARRAY = 29;
 
-  /** an (<a href="https://arrow.apache.org/docs/cpp/tables.html#tables">arrow table</a>) object. */
-  public static final int ARROW_TABLE = 45;
+  /** One dimensional bool array. */
+  public static final int BOOL_ARRAY = 30;
 
+  /** One dimensional int8 array. */
+  public static final int INT8_ARRAY = 31;
+
+  /** One dimensional int16 array. */
+  public static final int INT16_ARRAY = 32;
+
+  /** One dimensional int32 array. */
+  public static final int INT32_ARRAY = 33;
+
+  /** One dimensional int64 array. */
+  public static final int INT64_ARRAY = 34;
+
+  /** One dimensional half_float_16 array. */
+  public static final int FLOAT16_ARRAY = 35;
+
+  /** One dimensional float32 array. */
+  public static final int FLOAT32_ARRAY = 36;
+
+  /** One dimensional float64 array. */
+  public static final int FLOAT64_ARRAY = 37;
+
+  /** An (arrow record batch) object. */
+  public static final int ARROW_RECORD_BATCH = 38;
+
+  /** An (arrow table) object. */
+  public static final int ARROW_TABLE = 39;
+
+  // Helper methods
   public static boolean isStructType(int value) {
     return value == STRUCT
-        || value == POLYMORPHIC_STRUCT
         || value == COMPATIBLE_STRUCT
-        || value == POLYMORPHIC_COMPATIBLE_STRUCT
         || value == NAMED_STRUCT
-        || value == NAMED_POLYMORPHIC_STRUCT
-        || value == NAMED_COMPATIBLE_STRUCT
-        || value == NAMED_POLYMORPHIC_COMPATIBLE_STRUCT;
+        || value == NAMED_COMPATIBLE_STRUCT;
+  }
+
+  public static boolean isExtType(int value) {
+    return value == EXT || value == NAMED_EXT;
+  }
+
+  public static boolean isEnumType(int value) {
+    return value == ENUM || value == NAMED_ENUM;
   }
 }

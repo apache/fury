@@ -315,15 +315,16 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
         valueSerializer.write(buffer, value);
       }
       // noinspection Duplicates
-      if (++chunkSize == MAX_CHUNK_SIZE) {
-        break;
-      }
+      ++chunkSize;
       if (iterator.hasNext()) {
         entry = iterator.next();
         key = entry.getKey();
         value = entry.getValue();
       } else {
         entry = null;
+        break;
+      }
+      if (chunkSize == MAX_CHUNK_SIZE) {
         break;
       }
     }
@@ -433,16 +434,17 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
         fury.incDepth(-1);
       }
       generics.popGenericType();
+      ++chunkSize;
       // noinspection Duplicates
-      if (++chunkSize == MAX_CHUNK_SIZE) {
-        break;
-      }
       if (iterator.hasNext()) {
         entry = iterator.next();
         key = entry.getKey();
         value = entry.getValue();
       } else {
         entry = null;
+        break;
+      }
+      if (chunkSize == MAX_CHUNK_SIZE) {
         break;
       }
     }

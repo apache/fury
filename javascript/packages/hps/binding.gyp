@@ -20,11 +20,11 @@
     {
       "target_name": "hps",
       "sources": [
-        "src/fastcall.cc",
-        "src/v8-fast-api-calls.h"
+        "src/fastcall.cc"
       ],
       "include_dirs"  : [
-            "<!(node -e \"require('nan')\")"
+          "<!(node -e \"require('nan')\")",
+          "includes"
       ],
       "cflags": ["-g"]
     }

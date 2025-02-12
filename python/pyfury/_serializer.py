@@ -193,7 +193,7 @@ class CollectionSerializer(Serializer):
         for s in value:
             cls = type(s)
             if cls is str:
-                buffer.write_int16()
+                buffer.write_int16(NOT_NULL_STRING_FLAG)
                 buffer.write_string(s)
             elif cls is int:
                 buffer.write_int16(NOT_NULL_INT64_FLAG)

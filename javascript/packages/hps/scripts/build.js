@@ -17,28 +17,25 @@
  * under the License.
  */
 
-package org.apache.fury.resolver;
+const { spawn } = require("node:child_process");
+const semver = require("semver");
+const { engines } = require("../package.json");
+const versionValid = semver.satisfies(process.version, engines.node);
 
-class ClassNameBytes {
-  private final long packageHash;
-  private final long classNameHash;
-
-  ClassNameBytes(long packageHash, long classNameHash) {
-    this.packageHash = packageHash;
-    this.classNameHash = classNameHash;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    // ClassNameBytes is used internally, skip
-    ClassNameBytes that = (ClassNameBytes) o;
-    return packageHash == that.packageHash && classNameHash == that.classNameHash;
-  }
-
-  @Override
-  public int hashCode() {
-    int result = 31 + (int) (packageHash ^ (packageHash >>> 32));
-    result = result * 31 + (int) (classNameHash ^ (classNameHash >>> 32));
-    return result;
-  }
+function watchError(child) {
+    child.on("error", (error) => {
+      console.error(error);
+      process.exit(1);
+    });
+    child.on("exit", (code, signal) => {
+      if (code !== 0) {
+        process.exit(code);
+      }
+    });
 }
+
+if (versionValid) {
+  const gyp = spawn("npx", ["node-gyp", "rebuild"], { stdio: 'inherit', shell: true });
+  watchError(gyp);
+}
+watchError(spawn("npx", ["tsc"], { stdio: 'inherit', shell: true }));

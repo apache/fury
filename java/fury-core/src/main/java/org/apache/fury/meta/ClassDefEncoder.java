@@ -141,7 +141,7 @@ class ClassDefEncoder {
       // | num fields + register flag | header + package name | header + class name
       // | header + type id + field name | next field info | ... |
       int currentClassHeader = (fields.size() << 1);
-      if (classResolver.isRegistered(type)) {
+      if (classResolver.isRegisteredById(type)) {
         currentClassHeader |= 1;
         classDefBuf.writeVarUint32Small7(currentClassHeader);
         classDefBuf.writeVarUint32Small7(classResolver.getRegisteredClassId(type));
