@@ -38,14 +38,16 @@ PYTHONS=("cp37-cp37m"
          "cp39-cp39"
          "cp310-cp310"
          "cp310-cp311"
-         "cp312-cp312")
+         "cp312-cp312"
+         "cp313-cp313")
 
 VERSIONS=("3.7"
           "3.8"
           "3.9"
           "3.10"
           "3.11"
-          "3.12")
+          "3.12"
+          "3.13")
 
 create_py_envs() {
   source $(conda info --base)/etc/profile.d/conda.sh
@@ -55,10 +57,20 @@ create_py_envs() {
   conda env list
 }
 
-rename_linux_wheels() {
+rename_wheels() {
   for path in "$1"/*.whl; do
     if [ -f "${path}" ]; then
-      mv "${path}" "${path//linux/manylinux1}"
+      # Rename linux to manylinux1
+      new_path="${path//linux/manylinux1}"
+      if [ "${path}" != "${new_path}" ]; then
+        mv "${path}" "${new_path}"
+      fi
+
+      # Copy macosx_14_0_x86_64 to macosx_10_12_x86_64
+      if [[ "${path}" == *macosx_14_0_x86_64.whl ]]; then
+        copy_path="${path//macosx_14_0_x86_64/macosx_10_12_x86_64}"
+        mv "${path}" "${copy_path}"
+      fi
     fi
   done
 }
@@ -80,7 +92,16 @@ bump_java_version() {
 }
 
 bump_py_version() {
-  python "$ROOT/ci/release.py" bump_version -l python -version "$1"
+  local version="$1"
+  if [ -z "$version" ]; then
+    # Get the latest tag from the current Git repository
+    version=$(git describe --tags --abbrev=0)
+    # Check if the tag starts with 'v' and strip it
+    if [[ $version == v* ]]; then
+      version="${version:1}"
+    fi
+  fi
+  python "$ROOT/ci/release.py" bump_version -l python -version "$version"
 }
 
 bump_javascript_version() {
@@ -90,6 +111,20 @@ bump_javascript_version() {
 deploy_jars() {
   cd "$ROOT/java"
   mvn -T10 clean deploy --no-transfer-progress -DskipTests -Prelease
+}
+
+build_pyfury() {
+  echo "Python version $(python -V), path $(which python)"
+  install_pyarrow
+  pip install Cython wheel pytest
+  pushd "$ROOT/python"
+  pip list
+  echo "Install pyfury"
+  # Fix strange installed deps not found
+  pip install setuptools -U
+  bazel build //:cp_fury_so
+  python setup.py bdist_wheel --dist-dir=../dist
+  popd
 }
 
 deploy_python() {
@@ -118,22 +153,20 @@ deploy_python() {
     python setup.py bdist_wheel
     mv dist/pyfury*.whl "$WHEEL_DIR"
   done
-  if [[ "$OSTYPE" == "linux"* ]]; then
-    rename_linux_wheels "$WHEEL_DIR"
-  fi
+  rename_wheels "$WHEEL_DIR"
   twine check "$WHEEL_DIR"/pyfury*.whl
   twine upload -r pypi "$WHEEL_DIR"/pyfury*.whl
 }
 
 install_pyarrow() {
   pyversion=$(python -V | cut -d' ' -f2)
-  if [[ $pyversion  ==  3.7* ]]; then
-    pyarrow_version=12.0.0
-    sed -i -E "s/pyarrow_version = .*/pyarrow_version = \"12.0.0\"/" "$ROOT"/python/setup.py
+  if [[ $pyversion  ==  3.13* ]]; then
+    pip install pyarrow==18.0.0
+    pip install numpy
   else
-    pyarrow_version=15.0.0
+    pip install pyarrow==15.0.0
+    pip install "numpy<2.0.0"
   fi
-  pip install pyarrow==$pyarrow_version
 }
 
 deploy_scala() {
