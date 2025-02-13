@@ -188,6 +188,12 @@ sudo stackcollapse.pl out.stack > out.folded
 sudo flamegraph.pl out.folded > out.svg
 ```
 
+## Extracts compile_commands.json
+
+```bash
+bazel run :refresh_compile_commands
+```
+
 ## Website
 
 Fury's website consists of static pages hosted at https://github.com/apache/fury-site.
