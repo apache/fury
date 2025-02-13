@@ -131,7 +131,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
    * type.
    */
   private void tryFastSerialize(Serializer serializer, MemoryBuffer buffer, Object value) {
-    if (serializer instanceof StringSerializer) {
+    if (serializer.getClass() == StringSerializer.class) {
       StringSerializer stringSerializer = (StringSerializer) serializer;
       stringSerializer.write(buffer, (String) value);
     } else {
@@ -144,7 +144,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
    * type.
    */
   private Object tryFastDeserialize(Serializer serializer, MemoryBuffer buffer) {
-    if (serializer instanceof StringSerializer) {
+    if (serializer.getClass() == StringSerializer.class) {
       StringSerializer stringSerializer = (StringSerializer) serializer;
       return stringSerializer.read(buffer);
     } else {
