@@ -127,7 +127,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
   }
 
   /**
-   * this method try to eliminate the virtual function call and help JIT inline for java String type
+   * this method try to eliminate the virtual function call and help JIT inline for java String type.
    */
   private void tryFastSerialize(Serializer serializer, MemoryBuffer buffer, Object value) {
     if (serializer instanceof StringSerializer) {
@@ -139,15 +139,15 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
   }
 
   /**
-   * this method try to eliminate the virtual function call and help JIT inline for java String type
+   * this method try to eliminate the virtual function call and help JIT inline for java String type.
    */
   private Object tryFastDeserialize(Serializer serializer, MemoryBuffer buffer) {
-      if (serializer instanceof StringSerializer) {
-          StringSerializer stringSerializer = (StringSerializer) serializer;
-          return stringSerializer.read(buffer);
-      } else {
-          return serializer.read(buffer);
-      }
+    if (serializer instanceof StringSerializer) {
+      StringSerializer stringSerializer = (StringSerializer) serializer;
+      return stringSerializer.read(buffer);
+    } else {
+      return serializer.read(buffer);
+    }
   }
 
   @Override
