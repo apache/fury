@@ -59,7 +59,7 @@ export const generate = (fury: Fury, description: TypeDescription) => {
   return new Function(funcString);
 };
 
-function regDependencies(fury: Fury, description: TypeDescription) {
+function regDependencies(fury: Fury, description: TypeDescription, regOptions: { [key: string]: any } = {}) {
   if (description.type === InternalSerializerType.OBJECT) {
     const options = (<ObjectTypeDescription>description).options;
     if (options.props) {
@@ -68,7 +68,7 @@ function regDependencies(fury: Fury, description: TypeDescription) {
         regDependencies(fury, x);
       });
       const func = generate(fury, description);
-      fury.classResolver.registerSerializerByTag(options.tag, func()(fury, external));
+      fury.classResolver.registerSerializerByTag(options.tag, func()(fury, external, regOptions));
     }
   }
   if (description.type === InternalSerializerType.ARRAY) {
@@ -96,11 +96,11 @@ function regDependencies(fury: Fury, description: TypeDescription) {
   }
 }
 
-export const generateSerializer = (fury: Fury, description: TypeDescription) => {
-  regDependencies(fury, description);
+export const generateSerializer = (fury: Fury, description: TypeDescription, options: { [key: string]: any } = {}) => {
+  regDependencies(fury, description, options);
   if (description.type === InternalSerializerType.OBJECT) {
     return fury.classResolver.getSerializerByTag((<ObjectTypeDescription>description).options.tag);
   }
   const func = generate(fury, description);
-  return func()(fury, external);
+  return func()(fury, external, options);
 };

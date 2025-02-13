@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import { InternalSerializerType } from "./type";
+import { FuryClsInfoSymbol, InternalSerializerType, ObjectFuryClsInfo } from "./type";
 
 export interface TypeDescription {
   type: InternalSerializerType;
@@ -28,6 +28,7 @@ export interface ObjectTypeDescription extends TypeDescription {
   options: {
     props: { [key: string]: TypeDescription };
     tag: string;
+    withConstructor?: false;
   };
 }
 
@@ -342,12 +343,13 @@ export const Type = {
       type: InternalSerializerType.BOOL as const,
     };
   },
-  object<T extends { [key: string]: TypeDescription }>(tag: string, props?: T) {
+  object<T extends { [key: string]: TypeDescription }>(tag: string, props?: T, withConstructor = false) {
     return {
       type: InternalSerializerType.OBJECT as const,
       options: {
         tag,
         props,
+        withConstructor,
       },
     };
   },
@@ -450,5 +452,141 @@ export const Type = {
     return {
       type: InternalSerializerType.FLOAT64_ARRAY as const,
     };
+  },
+};
+
+const tryInitMeta = (target: new () => any, tag?: string) => {
+  if (!target.prototype) {
+    target.prototype = {};
+  }
+  if (!target.prototype[FuryClsInfoSymbol]) {
+    target.prototype[FuryClsInfoSymbol] = {
+      fields: {},
+      tag,
+      toObjectDescription() {
+        return Type.object(target.prototype[FuryClsInfoSymbol].tag, target.prototype[FuryClsInfoSymbol].fields, true);
+      },
+      constructor: target,
+    } as ObjectFuryClsInfo;
+  } else {
+    target.prototype[FuryClsInfoSymbol].tag = tag;
+  }
+};
+
+const addField = (target: new () => any, key: string | { name: string }, des: TypeDescription) => {
+  tryInitMeta(target);
+  target.prototype[FuryClsInfoSymbol].fields[typeof key === "string" ? key : key.name] = des;
+};
+
+const normalizeTypeDescription = (inner: new () => any | TypeDescription): TypeDescription => {
+  if (typeof inner === "function") {
+    if (FuryClsInfoSymbol in inner && inner[FuryClsInfoSymbol] !== null) {
+      return (inner[FuryClsInfoSymbol] as any).toObjectDescription();
+    } else {
+      throw new Error(`constroctor ${inner} not includes fury object description`);
+    }
+  }
+  return inner as TypeDescription;
+};
+
+export const Decoration = {
+  object(tag: string) {
+    return (target: new () => any) => {
+      tryInitMeta(target, tag);
+    };
+  },
+  any(target: any, key: string | { name: string }) {
+    addField(target.constructor, key, Type.any());
+  },
+  enum(options: { [key: string]: number }) {
+    return (target: any, key: string | { name: string }) => {
+      addField(target.constructor, key, Type.enum(options));
+    };
+  },
+  string(target: any, key: string | { name: string }) {
+    addField(target.constructor, key, Type.string());
+  },
+  array(inner: new () => any | TypeDescription) {
+    return (target: any, key: string | { name: string }) => {
+      addField(target.constructor, key, Type.array(normalizeTypeDescription(inner)));
+    };
+  },
+  tuple(...inner: (new () => any | TypeDescription)[]) {
+    return (target: any, key: string | { name: string }) => {
+      addField(target.constructor, key, Type.tuple(inner.map(x => normalizeTypeDescription(x))));
+    };
+  },
+  map(keyDes: (new () => any | TypeDescription), value: (new () => any | TypeDescription)) {
+    return (target: any, key: string | { name: string }) => {
+      addField(target.constructor, key, Type.map(normalizeTypeDescription(keyDes), normalizeTypeDescription(value)));
+    };
+  },
+  set(keyDes: (new () => any | TypeDescription)) {
+    return (target: any, key: string | { name: string }) => {
+      addField(target.constructor, key, Type.set(normalizeTypeDescription(keyDes)));
+    };
+  },
+  bool(target: any, key: string | { name: string }) {
+    addField(target.constructor, key, Type.bool());
+  },
+  int8(target: any, key: string | { name: string }) {
+    addField(target.constructor, key, Type.int8());
+  },
+  int16(target: any, key: string | { name: string }) {
+    addField(target.constructor, key, Type.int16());
+  },
+  int32(target: any, key: string | { name: string }) {
+    addField(target.constructor, key, Type.int32());
+  },
+  varInt32(target: any, key: string | { name: string }) {
+    addField(target.constructor, key, Type.varInt32());
+  },
+  int64(target: any, key: string | { name: string }) {
+    addField(target.constructor, key, Type.int64());
+  },
+  sliInt64(target: any, key: string | { name: string }) {
+    addField(target.constructor, key, Type.sliInt64());
+  },
+  float16(target: any, key: string | { name: string }) {
+    addField(target.constructor, key, Type.float16());
+  },
+  float32(target: any, key: string | { name: string }) {
+    addField(target.constructor, key, Type.float32());
+  },
+  float64(target: any, key: string | { name: string }) {
+    addField(target.constructor, key, Type.float64());
+  },
+  binary(target: any, key: string | { name: string }) {
+    addField(target.constructor, key, Type.binary());
+  },
+  duration(target: any, key: string | { name: string }) {
+    addField(target.constructor, key, Type.duration());
+  },
+  timestamp(target: any, key: string | { name: string }) {
+    addField(target.constructor, key, Type.timestamp());
+  },
+  boolArray(target: any, key: string | { name: string }) {
+    addField(target.constructor, key, Type.boolArray());
+  },
+  int8Array(target: any, key: string | { name: string }) {
+    addField(target.constructor, key, Type.int8Array());
+  },
+  int16Array(target: any, key: string | { name: string }) {
+    addField(target.constructor, key, Type.int16Array());
+  },
+  int32Array(target: any, key: string | { name: string }) {
+    addField(target.constructor, key, Type.int32Array());
+  },
+  int64Array(target: any, key: string | { name: string }) {
+    addField(target.constructor, key, Type.int64Array());
+  },
+  float16Array(target: any, key: string | { name: string }) {
+    addField(target.constructor, key, Type.float16Array());
+  },
+  float32Array(target: any, key: string | { name: string }) {
+    addField(target.constructor, key, Type.float32Array());
+  },
+  float64Array(target: any, key: string | { name: string }) {
+    addField(target.constructor, key, Type.float64Array());
   },
 };

@@ -22,6 +22,7 @@ import {
   TypeDescription,
   ArrayTypeDescription,
   Type,
+  Decoration,
 } from "./lib/description";
 import { Serializer, InternalSerializerType } from "./lib/type";
 import Fury from "./lib/fury";
@@ -33,6 +34,7 @@ export {
   ArrayTypeDescription,
   ObjectTypeDescription,
   Type,
+  Decoration,
 };
 
 export default Fury;

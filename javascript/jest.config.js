@@ -32,7 +32,8 @@ module.exports = {
   transform: {
     '\\.ts$': ['ts-jest', {
       tsconfig: {
-        target: "ES2021"
+        target: "ES2021",
+        experimentalDecorators: true
       },
       diagnostics: {
         ignoreCodes: [151001]
