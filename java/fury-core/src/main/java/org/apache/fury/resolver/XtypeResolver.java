@@ -89,7 +89,7 @@ public class XtypeResolver {
   // IdentityMap has better lookup performance, when loadFactor is 0.05f, performance is better
   private final IdentityMap<Class<?>, ClassInfo> classInfoMap = new IdentityMap<>(64, loadFactor);
   // Every deserialization for unregistered class will query it, performance is important.
-  private final ObjectMap<ClassNameBytes, ClassInfo> compositeClassNameBytes2ClassInfo =
+  private final ObjectMap<TypeNameBytes, ClassInfo> compositeClassNameBytes2ClassInfo =
       new ObjectMap<>(16, loadFactor);
   private final ObjectMap<String, ClassInfo> qualifiedType2ClassInfo =
       new ObjectMap<>(16, loadFactor);
@@ -168,7 +168,7 @@ public class XtypeResolver {
     Serializer<?> serializer = null;
     if (classInfo != null) {
       serializer = classInfo.serializer;
-      if (classInfo.classNameBytes != null) {
+      if (classInfo.typeNameBytes != null) {
         String prevNamespace = classInfo.decodeNamespace();
         String prevTypeName = classInfo.decodeTypeName();
         if (!namespace.equals(prevNamespace) || typeName.equals(prevTypeName)) {
@@ -361,14 +361,11 @@ public class XtypeResolver {
       case Types.NAMED_ENUM:
       case Types.NAMED_STRUCT:
       case Types.NAMED_COMPATIBLE_STRUCT:
-      case Types.NAMED_POLYMORPHIC_STRUCT:
-      case Types.NAMED_POLYMORPHIC_COMPATIBLE_STRUCT:
       case Types.NAMED_EXT:
-      case Types.NAMED_POLYMORPHIC_EXT:
-        assert classInfo.packageNameBytes != null;
-        metaStringResolver.writeMetaStringBytes(buffer, classInfo.packageNameBytes);
-        assert classInfo.classNameBytes != null;
-        metaStringResolver.writeMetaStringBytes(buffer, classInfo.classNameBytes);
+        assert classInfo.namespaceBytes != null;
+        metaStringResolver.writeMetaStringBytes(buffer, classInfo.namespaceBytes);
+        assert classInfo.typeNameBytes != null;
+        metaStringResolver.writeMetaStringBytes(buffer, classInfo.typeNameBytes);
         break;
       default:
         break;
@@ -383,10 +380,7 @@ public class XtypeResolver {
       case Types.NAMED_ENUM:
       case Types.NAMED_STRUCT:
       case Types.NAMED_COMPATIBLE_STRUCT:
-      case Types.NAMED_POLYMORPHIC_STRUCT:
-      case Types.NAMED_POLYMORPHIC_COMPATIBLE_STRUCT:
       case Types.NAMED_EXT:
-      case Types.NAMED_POLYMORPHIC_EXT:
         MetaStringBytes packageBytes = metaStringResolver.readMetaStringBytes(buffer);
         MetaStringBytes simpleClassNameBytes = metaStringResolver.readMetaStringBytes(buffer);
         return loadBytesToClassInfo(internalTypeId, packageBytes, simpleClassNameBytes);
@@ -424,20 +418,20 @@ public class XtypeResolver {
 
   private ClassInfo loadBytesToClassInfo(
       int internalTypeId, MetaStringBytes packageBytes, MetaStringBytes simpleClassNameBytes) {
-    ClassNameBytes classNameBytes =
-        new ClassNameBytes(packageBytes.hashCode, simpleClassNameBytes.hashCode);
-    ClassInfo classInfo = compositeClassNameBytes2ClassInfo.get(classNameBytes);
+    TypeNameBytes typeNameBytes =
+        new TypeNameBytes(packageBytes.hashCode, simpleClassNameBytes.hashCode);
+    ClassInfo classInfo = compositeClassNameBytes2ClassInfo.get(typeNameBytes);
     if (classInfo == null) {
       classInfo =
           populateBytesToClassInfo(
-              internalTypeId, classNameBytes, packageBytes, simpleClassNameBytes);
+              internalTypeId, typeNameBytes, packageBytes, simpleClassNameBytes);
     }
     return classInfo;
   }
 
   private ClassInfo populateBytesToClassInfo(
       int typeId,
-      ClassNameBytes classNameBytes,
+      TypeNameBytes typeNameBytes,
       MetaStringBytes packageBytes,
       MetaStringBytes simpleClassNameBytes) {
     String namespace = packageBytes.decode(PACKAGE_DECODER);
@@ -453,8 +447,6 @@ public class XtypeResolver {
           case Types.NAMED_ENUM:
           case Types.NAMED_STRUCT:
           case Types.NAMED_COMPATIBLE_STRUCT:
-          case Types.NAMED_POLYMORPHIC_STRUCT:
-          case Types.NAMED_POLYMORPHIC_COMPATIBLE_STRUCT:
             type =
                 NonexistentClass.getNonexistentClass(
                     qualifiedName, isEnum(typeId), 0, config.isMetaShareEnabled());
@@ -484,7 +476,7 @@ public class XtypeResolver {
         classInfo.serializer = NonexistentClassSerializers.getSerializer(fury, qualifiedName, type);
       }
     }
-    compositeClassNameBytes2ClassInfo.put(classNameBytes, classInfo);
+    compositeClassNameBytes2ClassInfo.put(typeNameBytes, classInfo);
     return classInfo;
   }
 

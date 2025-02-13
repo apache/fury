@@ -21,15 +21,20 @@ package org.apache.fury.resolver;
 
 import static org.apache.fury.Fury.NOT_SUPPORT_XLANG;
 import static org.apache.fury.meta.ClassDef.SIZE_TWO_BYTES_FLAG;
+import static org.apache.fury.meta.Encoders.GENERIC_ENCODER;
 import static org.apache.fury.meta.Encoders.PACKAGE_DECODER;
 import static org.apache.fury.meta.Encoders.PACKAGE_ENCODER;
 import static org.apache.fury.meta.Encoders.TYPE_NAME_DECODER;
+import static org.apache.fury.meta.Encoders.encodePackage;
+import static org.apache.fury.meta.Encoders.encodeTypeName;
 import static org.apache.fury.serializer.CodegenSerializer.loadCodegenSerializer;
 import static org.apache.fury.serializer.CodegenSerializer.loadCompatibleCodegenSerializer;
 import static org.apache.fury.serializer.CodegenSerializer.supportCodegenForJavaSerialization;
 import static org.apache.fury.type.TypeUtils.OBJECT_TYPE;
 import static org.apache.fury.type.TypeUtils.getRawType;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.Serializable;
@@ -131,7 +136,6 @@ import org.apache.fury.serializer.Serializer;
 import org.apache.fury.serializer.SerializerFactory;
 import org.apache.fury.serializer.Serializers;
 import org.apache.fury.serializer.StringSerializer;
-import org.apache.fury.serializer.StructSerializer;
 import org.apache.fury.serializer.TimeSerializers;
 import org.apache.fury.serializer.collection.ChildContainerSerializers;
 import org.apache.fury.serializer.collection.CollectionSerializer;
@@ -153,6 +157,7 @@ import org.apache.fury.type.ScalaTypes;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.GraalvmSupport;
 import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.StringUtils;
 import org.apache.fury.util.function.Functions;
 
 /**
@@ -222,7 +227,7 @@ public class ClassResolver {
       new IdentityMap<>(estimatedNumRegistered, furyMapLoadFactor);
   private ClassInfo classInfoCache;
   // Every deserialization for unregistered class will query it, performance is important.
-  private final ObjectMap<ClassNameBytes, ClassInfo> compositeClassNameBytes2ClassInfo =
+  private final ObjectMap<TypeNameBytes, ClassInfo> compositeNameBytes2ClassInfo =
       new ObjectMap<>(16, furyMapLoadFactor);
   private final MetaStringResolver metaStringResolver;
   private final boolean metaContextShareEnabled;
@@ -240,7 +245,8 @@ public class ClassResolver {
     private SerializerFactory serializerFactory;
     private final IdentityMap<Class<?>, Short> registeredClassIdMap =
         new IdentityMap<>(estimatedNumRegistered);
-    private final Map<String, Class<?>> registeredClasses = new HashMap<>(estimatedNumRegistered);
+    private final BiMap<String, Class<?>> registeredClasses =
+        HashBiMap.create(estimatedNumRegistered);
     // avoid potential recursive call for seq codec generation.
     // ex. A->field1: B, B.field1: A
     private final Set<Class<?>> getClassCtx = new HashSet<>();
@@ -427,17 +433,6 @@ public class ClassResolver {
     }
   }
 
-  /** register class with given type tag which will be used for cross-language serialization. */
-  public void register(Class<?> cls, String typeTag) {
-    if (fury.getLanguage() == Language.JAVA) {
-      throw new IllegalArgumentException(
-          "Java serialization should register class by "
-              + "Fury#register(Class) or Fury.register(Class<?>, Short)");
-    }
-    register(cls);
-    addSerializer(cls, new StructSerializer<>(fury, cls));
-  }
-
   /**
    * Register class with specified id. Currently class id must be `classId >= 0 && classId < 32767`.
    * In the future this limitation may be relaxed.
@@ -445,25 +440,8 @@ public class ClassResolver {
   public void register(Class<?> cls, int classId) {
     // class id must be less than Integer.MAX_VALUE/2 since we use bit 0 as class id flag.
     Preconditions.checkArgument(classId >= 0 && classId < Short.MAX_VALUE);
-    if (extRegistry.registeredClassIdMap.containsKey(cls)) {
-      throw new IllegalArgumentException(
-          String.format(
-              "Class %s already registered with id %s.",
-              cls, extRegistry.registeredClassIdMap.get(cls)));
-    }
-    if (extRegistry.registeredClasses.containsKey(cls.getName())) {
-      throw new IllegalArgumentException(
-          String.format(
-              "Class %s with name %s has been registered, registering class with same name are not allowed.",
-              extRegistry.registeredClasses.get(cls.getName()), cls.getName()));
-    }
     short id = (short) classId;
-    if (id < registeredId2ClassInfo.length && registeredId2ClassInfo[id] != null) {
-      throw new IllegalArgumentException(
-          String.format(
-              "Class %s with id %s has been registered, registering class %s with same id are not allowed.",
-              registeredId2ClassInfo[id].getCls(), id, cls.getName()));
-    }
+    checkRegistration(cls, id, cls.getName());
     extRegistry.registeredClassIdMap.put(cls, id);
     if (registeredId2ClassInfo.length <= id) {
       ClassInfo[] tmp = new ClassInfo[(id + 1) * 2];
@@ -500,7 +478,62 @@ public class ClassResolver {
     register(loadClass(className, false, 0, false), classId, createSerializer);
   }
 
-  public boolean isRegistered(Class<?> cls) {
+  /**
+   * Register class with specified namespace and name. If a simpler namespace or type name is
+   * registered, the serialized class will have smaller payload size. In many cases, it type name
+   * has no conflict, namespace can be left as empty.
+   */
+  public void register(Class<?> cls, String namespace, String name) {
+    Preconditions.checkArgument(!Functions.isLambda(cls));
+    Preconditions.checkArgument(!ReflectionUtils.isJdkProxy(cls));
+    Preconditions.checkArgument(!cls.isArray());
+    String fullname = name;
+    if (namespace == null) {
+      namespace = "";
+    }
+    if (!StringUtils.isBlank(namespace)) {
+      fullname = namespace + "." + name;
+    }
+    checkRegistration(cls, (short) -1, fullname);
+    MetaStringBytes fullNameBytes =
+        metaStringResolver.getOrCreateMetaStringBytes(
+            GENERIC_ENCODER.encode(fullname, MetaString.Encoding.UTF_8));
+    MetaStringBytes nsBytes =
+        metaStringResolver.getOrCreateMetaStringBytes(encodePackage(namespace));
+    MetaStringBytes nameBytes = metaStringResolver.getOrCreateMetaStringBytes(encodeTypeName(name));
+    ClassInfo classInfo =
+        new ClassInfo(cls, fullNameBytes, nsBytes, nameBytes, false, null, NO_CLASS_ID, (short) -1);
+    classInfoMap.put(cls, classInfo);
+    compositeNameBytes2ClassInfo.put(
+        new TypeNameBytes(nsBytes.hashCode, nameBytes.hashCode), classInfo);
+    extRegistry.registeredClasses.put(fullname, cls);
+  }
+
+  private void checkRegistration(Class<?> cls, short classId, String name) {
+    if (extRegistry.registeredClassIdMap.containsKey(cls)) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Class %s already registered with id %s.",
+              cls, extRegistry.registeredClassIdMap.get(cls)));
+    }
+    if (classId > 0
+        && classId < registeredId2ClassInfo.length
+        && registeredId2ClassInfo[classId] != null) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Class %s with id %s has been registered, registering class %s with same id are not allowed.",
+              registeredId2ClassInfo[classId].getCls(), classId, cls.getName()));
+    }
+    if (extRegistry.registeredClasses.containsKey(name)
+        || extRegistry.registeredClasses.inverse().containsKey(cls)) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Class %s with name %s has been registered, registering class %s with same name are not allowed.",
+              extRegistry.registeredClasses.get(name), name, cls));
+    }
+  }
+
+  public boolean isRegisteredById(Class<?> cls) {
     return extRegistry.registeredClassIdMap.get(cls) != null;
   }
 
@@ -1267,7 +1300,7 @@ public class ClassResolver {
   }
 
   private boolean isSecure(Class<?> cls) {
-    if (extRegistry.registeredClassIdMap.containsKey(cls) || shimDispatcher.contains(cls)) {
+    if (extRegistry.registeredClasses.inverse().containsKey(cls) || shimDispatcher.contains(cls)) {
       return true;
     }
     if (cls.isArray()) {
@@ -1326,10 +1359,10 @@ public class ClassResolver {
       if (classInfo.classId == NO_CLASS_ID) { // no class id provided.
         // use classname
         // if it's null, it's a bug.
-        assert classInfo.packageNameBytes != null;
-        metaStringResolver.writeMetaStringBytesWithFlag(buffer, classInfo.packageNameBytes);
-        assert classInfo.classNameBytes != null;
-        metaStringResolver.writeMetaStringBytes(buffer, classInfo.classNameBytes);
+        assert classInfo.namespaceBytes != null;
+        metaStringResolver.writeMetaStringBytesWithFlag(buffer, classInfo.namespaceBytes);
+        assert classInfo.typeNameBytes != null;
+        metaStringResolver.writeMetaStringBytes(buffer, classInfo.typeNameBytes);
       } else {
         // use classId
         buffer.writeVarUint32(classInfo.classId << 1);
@@ -1650,8 +1683,8 @@ public class ClassResolver {
     } else {
       // let the lowermost bit of next byte be set, so the deserialization can know
       // whether need to read class by name in advance
-      metaStringResolver.writeMetaStringBytesWithFlag(buffer, classInfo.packageNameBytes);
-      metaStringResolver.writeMetaStringBytes(buffer, classInfo.classNameBytes);
+      metaStringResolver.writeMetaStringBytesWithFlag(buffer, classInfo.namespaceBytes);
+      metaStringResolver.writeMetaStringBytes(buffer, classInfo.typeNameBytes);
     }
     classInfo.classId = classId;
   }
@@ -1749,25 +1782,24 @@ public class ClassResolver {
 
   private ClassInfo readClassInfoFromBytes(
       MemoryBuffer buffer, ClassInfo classInfoCache, int header) {
-    MetaStringBytes simpleClassNameBytesCache = classInfoCache.classNameBytes;
-    MetaStringBytes packageBytes;
+    MetaStringBytes typeNameBytesCache = classInfoCache.typeNameBytes;
+    MetaStringBytes namespaceBytes;
     MetaStringBytes simpleClassNameBytes;
-    if (simpleClassNameBytesCache != null) {
-      MetaStringBytes packageNameBytesCache = classInfoCache.packageNameBytes;
-      packageBytes =
+    if (typeNameBytesCache != null) {
+      MetaStringBytes packageNameBytesCache = classInfoCache.namespaceBytes;
+      namespaceBytes =
           metaStringResolver.readMetaStringBytesWithFlag(buffer, packageNameBytesCache, header);
       assert packageNameBytesCache != null;
-      simpleClassNameBytes =
-          metaStringResolver.readMetaStringBytes(buffer, simpleClassNameBytesCache);
-      if (simpleClassNameBytesCache.hashCode == simpleClassNameBytes.hashCode
-          && packageNameBytesCache.hashCode == packageBytes.hashCode) {
+      simpleClassNameBytes = metaStringResolver.readMetaStringBytes(buffer, typeNameBytesCache);
+      if (typeNameBytesCache.hashCode == simpleClassNameBytes.hashCode
+          && packageNameBytesCache.hashCode == namespaceBytes.hashCode) {
         return classInfoCache;
       }
     } else {
-      packageBytes = metaStringResolver.readMetaStringBytesWithFlag(buffer, header);
+      namespaceBytes = metaStringResolver.readMetaStringBytesWithFlag(buffer, header);
       simpleClassNameBytes = metaStringResolver.readMetaStringBytes(buffer);
     }
-    ClassInfo classInfo = loadBytesToClassInfo(packageBytes, simpleClassNameBytes);
+    ClassInfo classInfo = loadBytesToClassInfo(namespaceBytes, simpleClassNameBytes);
     if (classInfo.serializer == null) {
       return getClassInfo(classInfo.cls);
     }
@@ -1776,17 +1808,17 @@ public class ClassResolver {
 
   ClassInfo loadBytesToClassInfo(
       MetaStringBytes packageBytes, MetaStringBytes simpleClassNameBytes) {
-    ClassNameBytes classNameBytes =
-        new ClassNameBytes(packageBytes.hashCode, simpleClassNameBytes.hashCode);
-    ClassInfo classInfo = compositeClassNameBytes2ClassInfo.get(classNameBytes);
+    TypeNameBytes typeNameBytes =
+        new TypeNameBytes(packageBytes.hashCode, simpleClassNameBytes.hashCode);
+    ClassInfo classInfo = compositeNameBytes2ClassInfo.get(typeNameBytes);
     if (classInfo == null) {
-      classInfo = populateBytesToClassInfo(classNameBytes, packageBytes, simpleClassNameBytes);
+      classInfo = populateBytesToClassInfo(typeNameBytes, packageBytes, simpleClassNameBytes);
     }
     return classInfo;
   }
 
   private ClassInfo populateBytesToClassInfo(
-      ClassNameBytes classNameBytes,
+      TypeNameBytes typeNameBytes,
       MetaStringBytes packageBytes,
       MetaStringBytes simpleClassNameBytes) {
     String packageName = packageBytes.decode(PACKAGE_DECODER);
@@ -1816,7 +1848,7 @@ public class ClassResolver {
         classInfoMap.put(cls, classInfo);
       }
     }
-    compositeClassNameBytes2ClassInfo.put(classNameBytes, classInfo);
+    compositeNameBytes2ClassInfo.put(typeNameBytes, classInfo);
     return classInfo;
   }
 

@@ -30,7 +30,7 @@ public class ClassInfoTest {
   public void testEncodePackageNameAndTypeName() {
     Fury fury1 = Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
     ClassInfo info1 = fury1.getClassResolver().getClassInfo(org.apache.fury.test.bean.Foo.class);
-    assertNotNull(info1.packageNameBytes);
-    assertNotNull(info1.classNameBytes);
+    assertNotNull(info1.namespaceBytes);
+    assertNotNull(info1.typeNameBytes);
   }
 }

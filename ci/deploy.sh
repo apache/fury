@@ -164,8 +164,8 @@ install_pyarrow() {
     pip install pyarrow==18.0.0
     pip install numpy
   else
-    pip install pyarrow==14.0.0
-    pip install "numpy<2.0.0"
+    pip install pyarrow==15.0.0
+    # Automatically install numpy
   fi
 }
 

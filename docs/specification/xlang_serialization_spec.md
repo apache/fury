@@ -42,18 +42,11 @@ also introduce more complexities compared to static serialization frameworks. So
 - named_enum: an enum whose value will be serialized as the registered name.
 - struct: a morphic(final) type serialized by Fury Struct serializer. i.e. it doesn't have subclasses. Suppose we're
   deserializing `List<SomeClass>`, we can save dynamic serializer dispatch since `SomeClass` is morphic(final).
-- polymorphic_struct: a type which is not morphic(not final). i.e. it has subclasses. Suppose we're deserializing
-  `List<SomeClass>`, we must dispatch serializer dynamically since `SomeClass` is morphic(final).
 - compatible_struct: a morphic(final) type serialized by Fury compatible Struct serializer.
-- polymorphic_compatible_struct: a non-morphic(non-final) type serialized by Fury compatible Struct serializer.
 - named_struct: a `struct` whose type mapping will be encoded as a name.
-- named_polymorphic_struct: a `polymorphic_struct` whose type mapping will be encoded as a name.
 - named_compatible_struct: a `compatible_struct` whose type mapping will be encoded as a name.
-- named_polymorphic_compatible_struct: a `polymorphic_compatible_struct` whose type mapping will be encoded as a name.
 - ext: a type which will be serialized by a customized serializer.
-- polymorphic_ext: an `ext` type which is not morphic(not final).
 - named_ext: an `ext` type whose type mapping will be encoded as a name.
-- named_polymorphic_ext: an `polymorphic_ext` type whose type mapping will be encoded as a name.
 - list: a sequence of objects.
 - set: an unordered set of unique elements.
 - map: a map of key-value pairs. Mutable types such as `list/map/set/array/tensor/arrow` are not allowed as key of map.
@@ -118,14 +111,13 @@ Users can also provide meta hints for fields of a type, or the type whole. Here 
 annotation to provide such information.
 
 ```java
-
-@TypeInfo(fieldsNullable = false, trackingRef = false, polymorphic = false)
+@FuryObject(fieldsNullable = false, trackingRef = false)
 class Foo {
-  @FieldInfo(trackingRef = false)
+  @FuryField(trackingRef = false)
   int[] intArray;
-  @FieldInfo(polymorphic = true)
+  @FuryField(polymorphic = true)
   Object object;
-  @FieldInfo(tagId = 1, nullable = true)
+  @FuryField(tagId = 1, nullable = true)
   List<Object> objectList;
 }
 ```
@@ -334,10 +326,15 @@ Meta header is a 64 bits number value encoded in little endian order.
   - field name: If tag id is set, tag id will be used instead. Otherwise meta string encoding `[length]` and data will
       be written instead.
   - type id:
+    - Format: `id << 1 | polymorphic flag`. If field type is polymorphic, this flag is set to `0b1`, otherwise it's
+      `0b0`
     - For registered type-consistent classes, it will be the registered type id.
-    - Otherwise it will be encoded as `OBJECT_ID` if it isn't `final` and `FINAL_OBJECT_ID` if it's `final`. The
-          meta for such types is written separately instead of inlining here is to reduce meta space cost if object of
-          this type is serialized in current object graph multiple times, and the field value may be null too.
+    - For struct type it will be written as `STRUCT`.
+    - The meta for struct type is written separately instead of inlining here is to reduce meta space cost if object of
+      this type is serialized in current object graph multiple times, and the field value may be null too.
+    - For enum type, it will be written as `ENUM`.
+    - For collection type, it will be written as `COLLECTION`, then write element type recursively.
+    - For map type, it will be written as `MAP`, then write key and value type recursively.
 
 Field order are left as implementation details, which is not exposed to specification, the deserialization need to
 resort fields based on Fury field comparator. In this way, fury can compute statistics for field names or types and
