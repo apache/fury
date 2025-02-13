@@ -49,6 +49,7 @@ import org.apache.fury.resolver.ClassInfoHolder;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.resolver.RefResolver;
 import org.apache.fury.serializer.Serializer;
+import org.apache.fury.serializer.StringSerializer;
 import org.apache.fury.type.GenericType;
 import org.apache.fury.type.Generics;
 import org.apache.fury.type.TypeUtils;
@@ -123,6 +124,30 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
    */
   public void setValueSerializer(Serializer valueSerializer) {
     this.valueSerializer = valueSerializer;
+  }
+
+  /**
+   * this method try to eliminate the virtual function call and help JIT inline for java String type
+   */
+  private void tryFastSerialize(Serializer serializer, MemoryBuffer buffer, Object value) {
+    if (serializer instanceof StringSerializer) {
+      StringSerializer stringSerializer = (StringSerializer) serializer;
+      stringSerializer.write(buffer, (String) value);
+    } else {
+      serializer.write(buffer, value);
+    }
+  }
+
+  /**
+   * this method try to eliminate the virtual function call and help JIT inline for java String type
+   */
+  private Object tryFastDeserialize(Serializer serializer, MemoryBuffer buffer) {
+      if (serializer instanceof StringSerializer) {
+          StringSerializer stringSerializer = (StringSerializer) serializer;
+          return stringSerializer.read(buffer);
+      } else {
+          return serializer.read(buffer);
+      }
   }
 
   @Override
@@ -202,7 +227,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
         fury.writeRef(buffer, key, keySerializer);
       } else {
         buffer.writeByte(NULL_VALUE_KEY_DECL_TYPE);
-        keySerializer.write(buffer, key);
+        tryFastSerialize(keySerializer, buffer, key);
       }
     } else {
       buffer.writeByte(VALUE_HAS_NULL | TRACKING_KEY_REF);
@@ -224,7 +249,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
           fury.writeRef(buffer, value, valueSerializer);
         } else {
           buffer.writeByte(NULL_KEY_VALUE_DECL_TYPE);
-          valueSerializer.write(buffer, value);
+          tryFastSerialize(valueSerializer, buffer, value);
         }
       } else {
         buffer.writeByte(KEY_HAS_NULL | TRACKING_VALUE_REF);
@@ -250,7 +275,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
           return entry;
         }
         buffer.writeByte(NULL_VALUE_KEY_DECL_TYPE);
-        keySerializer.write(buffer, key);
+        tryFastSerialize(keySerializer, buffer, key);
       } else {
         writeNullKeyChunk(buffer, valueSerializer, value);
       }
@@ -309,10 +334,10 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
         break;
       }
       if (!keyWriteRef || !refResolver.writeRefOrNull(buffer, key)) {
-        keySerializer.write(buffer, key);
+        tryFastSerialize(keySerializer, buffer, key);
       }
       if (!valueWriteRef || !refResolver.writeRefOrNull(buffer, value)) {
-        valueSerializer.write(buffer, value);
+        tryFastSerialize(valueSerializer, buffer, value);
       }
       // noinspection Duplicates
       if (++chunkSize == MAX_CHUNK_SIZE) {
@@ -422,14 +447,14 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
       generics.pushGenericType(keyGenericType);
       if (!keyWriteRef || !refResolver.writeRefOrNull(buffer, key)) {
         fury.incDepth(1);
-        keySerializer.write(buffer, key);
+        tryFastSerialize(keySerializer, buffer, key);
         fury.incDepth(-1);
       }
       generics.popGenericType();
       generics.pushGenericType(valueGenericType);
       if (!valueWriteRef || !refResolver.writeRefOrNull(buffer, value)) {
         fury.incDepth(1);
-        valueSerializer.write(buffer, value);
+        tryFastSerialize(valueSerializer, buffer, value);
         fury.incDepth(-1);
       }
       generics.popGenericType();
@@ -667,7 +692,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
             if (trackKeyRef) {
               key = fury.readRef(buffer, keySerializer);
             } else {
-              key = keySerializer.read(buffer);
+              key = tryFastDeserialize(keySerializer, buffer);
             }
           } else {
             key = fury.readRef(buffer, keyClassInfoReadCache);
@@ -703,7 +728,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
         if (trackValueRef) {
           value = fury.readRef(buffer, valueSerializer);
         } else {
-          value = valueSerializer.read(buffer);
+          value = tryFastDeserialize(valueSerializer, buffer);
         }
       } else {
         value = fury.readRef(buffer, valueClassInfoReadCache);
@@ -729,7 +754,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
         if (!valueHasNull) {
           return (size << 8) | chunkHeader;
         } else {
-          Object key = keySerializer.read(buffer);
+          Object key = tryFastDeserialize(keySerializer, buffer);
           map.put(key, null);
         }
       } else {
@@ -765,9 +790,9 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
           classResolver.readClassInfo(buffer, valueClassInfoReadCache).getSerializer();
     }
     for (int i = 0; i < chunkSize; i++) {
-      Object key = trackKeyRef ? fury.readRef(buffer, keySerializer) : keySerializer.read(buffer);
+      Object key = trackKeyRef ? fury.readRef(buffer, keySerializer) : tryFastDeserialize(keySerializer, buffer);
       Object value =
-          trackValueRef ? fury.readRef(buffer, valueSerializer) : valueSerializer.read(buffer);
+          trackValueRef ? fury.readRef(buffer, valueSerializer) : tryFastDeserialize(valueSerializer, buffer);
       map.put(key, value);
       size--;
     }
@@ -811,13 +836,13 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     for (int i = 0; i < chunkSize; i++) {
       generics.pushGenericType(keyGenericType);
       fury.incDepth(1);
-      Object key = trackKeyRef ? fury.readRef(buffer, keySerializer) : keySerializer.read(buffer);
+      Object key = trackKeyRef ? fury.readRef(buffer, keySerializer) : tryFastDeserialize(keySerializer, buffer);
       fury.incDepth(-1);
       generics.popGenericType();
       generics.pushGenericType(valueGenericType);
       fury.incDepth(1);
       Object value =
-          trackValueRef ? fury.readRef(buffer, valueSerializer) : valueSerializer.read(buffer);
+          trackValueRef ? fury.readRef(buffer, valueSerializer) : tryFastDeserialize(valueSerializer, buffer);
       fury.incDepth(-1);
       generics.popGenericType();
       map.put(key, value);
