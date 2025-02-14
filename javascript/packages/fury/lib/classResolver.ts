@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import { InternalSerializerType, Serializer } from "./type";
+import { FuryClsInfoSymbol, InternalSerializerType, ObjectFuryClsInfo, Serializer } from "./type";
 import { fromString } from "./platformBuffer";
 import { x64hash128 } from "./murmurHash3";
 import { BinaryWriter } from "./writer";
@@ -78,9 +78,7 @@ const uninitSerialize = {
 
 export default class SerializerResolver {
   private internalSerializer: Serializer[] = new Array(300);
-  private customSerializer: { [key: string]: Serializer } = {
-  };
-
+  private customSerializer: Map<string | (new () => any), Serializer> = new Map();
   private readStringPool: LazyString[] = [];
   private writeStringCount = 0;
   private writeStringIndex: number[] = [];
@@ -161,17 +159,25 @@ export default class SerializerResolver {
     return this.internalSerializer[id];
   }
 
-  registerSerializerByTag(tag: string, serializer: Serializer = uninitSerialize) {
-    if (this.customSerializer[tag]) {
-      Object.assign(this.customSerializer[tag], serializer);
+  private registerCustomSerializer(tagOrConstructor: string | (new () => any), serializer: Serializer = uninitSerialize) {
+    if (this.customSerializer.has(tagOrConstructor)) {
+      Object.assign(this.customSerializer.get(tagOrConstructor)!, serializer);
     } else {
-      this.customSerializer[tag] = { ...serializer };
+      this.customSerializer.set(tagOrConstructor, { ...serializer });
     }
-    return this.customSerializer[tag];
+    return this.customSerializer.get(tagOrConstructor);
+  }
+
+  registerSerializerByTag(tag: string, serializer: Serializer = uninitSerialize) {
+    this.registerCustomSerializer(tag, serializer);
+  }
+
+  registerSerializerByConstructor(constructor: new () => any, serializer: Serializer = uninitSerialize) {
+    this.registerCustomSerializer(constructor, serializer);
   }
 
   getSerializerByTag(tag: string) {
-    return this.customSerializer[tag];
+    return this.customSerializer.get(tag)!;
   }
 
   static tagBuffer(tag: string) {
@@ -232,6 +238,7 @@ export default class SerializerResolver {
   }
 
   getSerializerByData(v: any) {
+    // internal types
     if (typeof v === "number") {
       return this.numberSerializer;
     }
@@ -263,6 +270,12 @@ export default class SerializerResolver {
     if (v instanceof Set) {
       return this.setSerializer;
     }
+
+    // custome types
+    if (typeof v === "object" && v !== null && FuryClsInfoSymbol in v) {
+      return this.customSerializer.get((v[FuryClsInfoSymbol] as ObjectFuryClsInfo).constructor)!;
+    }
+
     throw new Error(`Failed to detect the Fury type from JavaScript type: ${typeof v}`);
   }
 

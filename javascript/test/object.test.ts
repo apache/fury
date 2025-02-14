@@ -21,6 +21,43 @@ import Fury, { TypeDescription, InternalSerializerType, Type } from '../packages
 import { describe, expect, test } from '@jest/globals';
 
 describe('object', () => {
+  test('should descoration work', () => {
+    @Type.object("example.foo")
+    class Foo {
+      @Type.int32()
+      a: number;
+    }
+    const fury = new Fury({ refTracking: true });
+    const { serialize, deserialize } = fury.registerSerializer(Foo);
+    const foo = new Foo();
+    foo.a = 123;
+    const input = serialize(foo);
+    const result = deserialize(
+      input
+    );
+
+    expect(result instanceof Foo);
+    
+    expect(result).toEqual({ a: 123 })
+  });
+
+  test('should descoration work2', () => {
+    @Type.object("example.foo")
+    class Foo {
+      @Type.int32()
+      a: number;
+    }
+    const fury = new Fury({ refTracking: true });
+    fury.registerSerializer(Foo);
+
+    const foo = new Foo();
+    foo.a = 123;
+    const input = fury.serialize(foo)
+    const result = fury.deserialize(input);
+    expect(result instanceof Foo);
+    expect(result).toEqual({ a: 123 })
+  });
+
   test('should object work', () => {
     const description = {
       type: InternalSerializerType.OBJECT as const,
