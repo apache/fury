@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import { ObjectTypeDescription, TypeDescription } from "./description";
+import { ObjectTypeDescription } from "./description";
 import { Meta } from "./meta";
 
 export enum InternalSerializerType {
@@ -128,8 +128,6 @@ export enum Language {
 export const MAGIC_NUMBER = 0x62D4;
 
 export interface ObjectFuryClsInfo {
-  fields: { [key: string]: TypeDescription };
-  tag?: string;
   constructor: new () => any;
   toObjectDescription(): ObjectTypeDescription;
 }

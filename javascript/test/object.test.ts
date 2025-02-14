@@ -17,14 +17,14 @@
  * under the License.
  */
 
-import Fury, { TypeDescription, InternalSerializerType, Type, Decoration } from '../packages/fury/index';
+import Fury, { TypeDescription, InternalSerializerType, Type } from '../packages/fury/index';
 import { describe, expect, test } from '@jest/globals';
 
 describe('object', () => {
   test('should descoration work', () => {
-    @Decoration.object("example.foo")
+    @Type.object("example.foo")
     class Foo {
-      @Decoration.int32
+      @Type.int32()
       a: number;
     }
     const fury = new Fury({ refTracking: true });
@@ -42,9 +42,9 @@ describe('object', () => {
   });
 
   test('should descoration work2', () => {
-    @Decoration.object("example.foo")
+    @Type.object("example.foo")
     class Foo {
-      @Decoration.int32
+      @Type.int32()
       a: number;
     }
     const fury = new Fury({ refTracking: true });

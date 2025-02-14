@@ -70,7 +70,7 @@ export default class {
   };
   registerSerializer(description: any) {
     let serializer: Serializer;
-    if (typeof description === "function") {
+    if (description.prototype?.[FuryClsInfoSymbol]) {
       serializer = generateSerializer(this, description.prototype[FuryClsInfoSymbol].toObjectDescription(), { constructor: description });
       this.classResolver.registerSerializerByConstructor(description, serializer);
     } else {
