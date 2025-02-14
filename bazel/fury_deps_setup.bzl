@@ -161,3 +161,8 @@ def setup_deps():
             "https://github.com/abseil/abseil-cpp/archive/20230125.3.tar.gz",
         ],
     )
+    http_archive(
+        name = "compile_commands_extractor",
+        url = "https://github.com/hedronvision/bazel-compile-commands-extractor/archive/80ac7efb33a65f0cc627635e5b958ea3eb03231d.tar.gz",
+        strip_prefix = "bazel-compile-commands-extractor-80ac7efb33a65f0cc627635e5b958ea3eb03231d",
+    )
