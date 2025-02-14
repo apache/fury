@@ -44,7 +44,7 @@ export class AnySerializer {
 
   detectSerializer() {
     const typeId = this.fury.binaryReader.int16();
-    let serializer: Serializer;
+    let serializer: Serializer | undefined;
     if (typeId === SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.OBJECT)) {
       const tag = this.fury.classResolver.readTag(this.fury.binaryReader)();
       serializer = this.fury.classResolver.getSerializerByTag(tag);
@@ -138,7 +138,7 @@ class AnySerializerGenerator extends BaseSerializerGenerator {
       };
     `;
     return `
-        return function (fury, external) {
+        return function (fury, external, options) {
             ${this.scope.generate()}
             ${declare}
             return {

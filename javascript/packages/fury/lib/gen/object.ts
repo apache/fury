@@ -106,11 +106,20 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
       if (${this.builder.reader.int32()} !== ${expectHash}) {
           throw new Error("got ${this.builder.reader.int32()} validate hash failed: ${this.safeTag()}. expect ${expectHash}");
       }
-      const ${result} = {
-        ${Object.entries(options.props).sort().map(([key]) => {
-          return `${CodecBuilder.safePropName(key)}: null`;
-        }).join(",\n")}
-      };
+      ${
+        this.description.options.withConstructor
+? `
+          const ${result} = new ${this.builder.getOptions("constructor")}();
+        `
+: `
+          const ${result} = {
+            ${Object.entries(options.props).sort().map(([key]) => {
+              return `${CodecBuilder.safePropName(key)}: null`;
+            }).join(",\n")}
+          };
+        `
+      }
+      
 
       ${this.maybeReference(result, refState)}
       ${

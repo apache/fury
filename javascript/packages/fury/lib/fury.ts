@@ -21,11 +21,12 @@ import ClassResolver from "./classResolver";
 import { BinaryWriter } from "./writer";
 import { BinaryReader } from "./reader";
 import { ReferenceResolver } from "./referenceResolver";
-import { ConfigFlags, Serializer, Config, Language, MAGIC_NUMBER, Mode } from "./type";
+import { ConfigFlags, Serializer, Config, Language, MAGIC_NUMBER, Mode, FuryClsInfoSymbol } from "./type";
 import { OwnershipError } from "./error";
 import { InputType, ResultType, TypeDescription } from "./description";
 import { generateSerializer, AnySerializer } from "./gen";
 import { TypeMeta } from "./meta/TypeMeta";
+import { PlatformBuffer } from "./platformBuffer";
 
 export default class {
   binaryReader: BinaryReader;
@@ -49,18 +50,42 @@ export default class {
     this.anySerializer = new AnySerializer(this);
   }
 
-  registerSerializer<T extends TypeDescription>(description: T) {
-    const serializer = generateSerializer(this, description);
+  registerSerializer<T extends new () => any>(description: T): {
+    serializer: Serializer;
+    serialize(data: Partial<InstanceType<T>> | null): PlatformBuffer;
+    serializeVolatile(data: Partial<InstanceType<T>>): {
+      get: () => Uint8Array;
+      dispose: () => void;
+    };
+    deserialize(bytes: Uint8Array): InstanceType<T> | null;
+  };
+  registerSerializer<T extends TypeDescription>(description: T): {
+    serializer: Serializer;
+    serialize(data: InputType<T> | null): PlatformBuffer;
+    serializeVolatile(data: InputType<T>): {
+      get: () => Uint8Array;
+      dispose: () => void;
+    };
+    deserialize(bytes: Uint8Array): ResultType<T>;
+  };
+  registerSerializer(description: any) {
+    let serializer: Serializer;
+    if (description.prototype?.[FuryClsInfoSymbol]) {
+      serializer = generateSerializer(this, description.prototype[FuryClsInfoSymbol].toObjectDescription(), { constructor: description });
+      this.classResolver.registerSerializerByConstructor(description, serializer);
+    } else {
+      serializer = generateSerializer(this, description);
+    }
     return {
       serializer,
-      serialize: (data: InputType<T>) => {
+      serialize: (data: any) => {
         return this.serialize(data, serializer);
       },
-      serializeVolatile: (data: InputType<T>) => {
+      serializeVolatile: (data: any) => {
         return this.serializeVolatile(data, serializer);
       },
       deserialize: (bytes: Uint8Array) => {
-        return this.deserialize(bytes, serializer) as ResultType<T>;
+        return this.deserialize(bytes, serializer);
       },
     };
   }

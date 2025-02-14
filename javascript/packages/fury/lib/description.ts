@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import { InternalSerializerType } from "./type";
+import { FuryClsInfoSymbol, InternalSerializerType, ObjectFuryClsInfo } from "./type";
 
 export interface TypeDescription {
   type: InternalSerializerType;
@@ -28,6 +28,7 @@ export interface ObjectTypeDescription extends TypeDescription {
   options: {
     props: { [key: string]: TypeDescription };
     tag: string;
+    withConstructor?: false;
   };
 }
 
@@ -274,181 +275,234 @@ export type ResultType<T> = T extends {
                               type: InternalSerializerType.ONEOF;
                             } ? OneofResult<T> : unknown;
 
+type DecorationWithDescription<T> = ((target: any, key?: string | { name?: string }) => void) & T;
+
+const makeDescriptionWithDecoration = <T extends TypeDescription>(description: T): DecorationWithDescription<T> => {
+  function decoration(target: any, key?: string | { name?: string }) {
+    if (key === undefined) {
+      initMeta(target, description as unknown as ObjectTypeDescription);
+    } else {
+      const keyString = typeof key === "string" ? key : key?.name;
+      if (!keyString) {
+        throw new Error("Decorators can only be placed on classes and fields");
+      }
+      addField(target.constructor, keyString, description);
+    }
+  }
+  decoration.toJSON = function () {
+    return JSON.stringify(description);
+  };
+  Object.entries(description).map(([key, value]: any) => {
+    Object.defineProperty(decoration, key, {
+      enumerable: true,
+      get() {
+        return value;
+      },
+    });
+  });
+  return decoration as unknown as DecorationWithDescription<T>;
+};
+
 export const Type = {
   any() {
-    return {
+    return makeDescriptionWithDecoration({
       type: InternalSerializerType.ANY as const,
-    };
+    });
   },
   enum<T1 extends { [key: string]: any }>(t1: T1) {
-    return {
+    return makeDescriptionWithDecoration({
       type: InternalSerializerType.ENUM as const,
       options: {
         inner: t1,
       },
-    };
+    });
   },
   oneof<T extends { [key: string]: TypeDescription }>(inner?: T) {
-    return {
+    return makeDescriptionWithDecoration({
       type: InternalSerializerType.ONEOF as const,
       options: {
         inner,
       },
-    };
+    });
   },
   string() {
-    return {
+    return makeDescriptionWithDecoration({
       type: InternalSerializerType.STRING as const,
-    };
+    });
   },
   array<T extends TypeDescription>(def: T) {
-    return {
+    return makeDescriptionWithDecoration({
       type: InternalSerializerType.ARRAY as const,
       options: {
         inner: def,
       },
-    };
+    });
   },
   tuple<T1 extends readonly [...readonly TypeDescription[]]>(t1: T1) {
-    return {
+    return makeDescriptionWithDecoration({
       type: InternalSerializerType.TUPLE as const,
       options: {
         inner: t1,
       },
-    };
+    });
   },
   map<T1 extends TypeDescription, T2 extends TypeDescription>(
     key: T1,
     value: T2
   ) {
-    return {
+    return makeDescriptionWithDecoration({
       type: InternalSerializerType.MAP as const,
       options: {
         key,
         value,
       },
-    };
+    });
   },
   set<T extends TypeDescription>(key: T) {
-    return {
+    return makeDescriptionWithDecoration({
       type: InternalSerializerType.SET as const,
       options: {
         key,
       },
-    };
+    });
   },
   bool() {
-    return {
+    return makeDescriptionWithDecoration({
       type: InternalSerializerType.BOOL as const,
-    };
+    });
   },
-  object<T extends { [key: string]: TypeDescription }>(tag: string, props?: T) {
-    return {
+  object<T extends { [key: string]: TypeDescription }>(tag: string, props?: T, withConstructor = false) {
+    return makeDescriptionWithDecoration({
       type: InternalSerializerType.OBJECT as const,
       options: {
         tag,
         props,
+        withConstructor,
       },
-    };
+    });
   },
   int8() {
-    return {
+    return makeDescriptionWithDecoration({
       type: InternalSerializerType.INT8 as const,
-    };
+    });
   },
   int16() {
-    return {
+    return makeDescriptionWithDecoration({
       type: InternalSerializerType.INT16 as const,
-    };
+    });
   },
   int32() {
-    return {
+    return makeDescriptionWithDecoration({
       type: InternalSerializerType.INT32 as const,
-    };
+    });
   },
   varInt32() {
-    return {
+    return makeDescriptionWithDecoration({
       type: InternalSerializerType.VAR_INT32 as const,
-    };
+    });
   },
   int64() {
-    return {
+    return makeDescriptionWithDecoration({
       type: InternalSerializerType.INT64 as const,
-    };
+    });
   },
   sliInt64() {
-    return {
+    return makeDescriptionWithDecoration({
       type: InternalSerializerType.SLI_INT64 as const,
-    };
+    });
   },
   float16() {
-    return {
+    return makeDescriptionWithDecoration({
       type: InternalSerializerType.FLOAT16 as const,
-    };
+    });
   },
   float32() {
-    return {
+    return makeDescriptionWithDecoration({
       type: InternalSerializerType.FLOAT32 as const,
-    };
+    });
   },
   float64() {
-    return {
+    return makeDescriptionWithDecoration({
       type: InternalSerializerType.FLOAT64 as const,
-    };
+    });
   },
   binary() {
-    return {
+    return makeDescriptionWithDecoration({
       type: InternalSerializerType.BINARY as const,
-    };
+    });
   },
   duration() {
-    return {
+    return makeDescriptionWithDecoration({
       type: InternalSerializerType.DURATION as const,
-    };
+    });
   },
   timestamp() {
-    return {
+    return makeDescriptionWithDecoration({
       type: InternalSerializerType.TIMESTAMP as const,
-    };
+    });
   },
   boolArray() {
-    return {
+    return makeDescriptionWithDecoration({
       type: InternalSerializerType.BOOL_ARRAY as const,
-    };
+    });
   },
   int8Array() {
-    return {
+    return makeDescriptionWithDecoration({
       type: InternalSerializerType.INT8_ARRAY as const,
-    };
+    });
   },
   int16Array() {
-    return {
+    return makeDescriptionWithDecoration({
       type: InternalSerializerType.INT16_ARRAY as const,
-    };
+    });
   },
   int32Array() {
-    return {
+    return makeDescriptionWithDecoration({
       type: InternalSerializerType.INT32_ARRAY as const,
-    };
+    });
   },
   int64Array() {
-    return {
+    return makeDescriptionWithDecoration({
       type: InternalSerializerType.INT64_ARRAY as const,
-    };
+    });
   },
   float16Array() {
-    return {
+    return makeDescriptionWithDecoration({
       type: InternalSerializerType.FLOAT16_ARRAY as const,
-    };
+    });
   },
   float32Array() {
-    return {
+    return makeDescriptionWithDecoration({
       type: InternalSerializerType.FLOAT32_ARRAY as const,
-    };
+    });
   },
   float64Array() {
-    return {
+    return makeDescriptionWithDecoration({
       type: InternalSerializerType.FLOAT64_ARRAY as const,
-    };
+    });
   },
+};
+
+const initMeta = (target: new () => any, description: ObjectTypeDescription) => {
+  if (!target.prototype) {
+    target.prototype = {};
+  }
+  target.prototype[FuryClsInfoSymbol] = {
+    toObjectDescription() {
+      if (targetFields.has(target)) {
+        return Type.object(description.options.tag, targetFields.get(target), true);
+      }
+      return Type.object(description.options.tag, {}, true);
+    },
+    constructor: target,
+  } as ObjectFuryClsInfo;
+};
+
+const targetFields = new WeakMap<new () => any, { [key: string]: TypeDescription }>();
+
+const addField = (target: new () => any, key: string, des: TypeDescription) => {
+  if (!targetFields.has(target)) {
+    targetFields.set(target, {});
+  }
+  targetFields.get(target)![key] = des;
 };

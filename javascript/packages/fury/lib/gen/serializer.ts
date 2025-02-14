@@ -212,6 +212,9 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
     this.scope.assertNameNotDuplicate("readInner");
     this.scope.assertNameNotDuplicate("write");
     this.scope.assertNameNotDuplicate("writeInner");
+    this.scope.assertNameNotDuplicate("fury");
+    this.scope.assertNameNotDuplicate("external");
+    this.scope.assertNameNotDuplicate("options");
 
     const declare = `
       const readInner = (fromRef) => {
@@ -228,7 +231,7 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
       };
     `;
     return `
-        return function (fury, external) {
+        return function (fury, external, options) {
             ${this.scope.generate()}
             ${declare}
             return {

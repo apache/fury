@@ -29,12 +29,18 @@ export class CodegenRegistry {
   static map = new Map<string, SerializerGeneratorConstructor>();
   static external = new Map<string, any>();
 
+  private static checkExists(name: string) {
+    if (this.external.has(name)) {
+      throw new Error(`${name} has been registered.`);
+    }
+  }
+
   static register(type: InternalSerializerType, generator: SerializerGeneratorConstructor) {
     this.map.set(InternalSerializerType[type], generator);
-    this.external.set(generator.name, generator);
   }
 
   static registerExternal(object: { name: string }) {
+    CodegenRegistry.checkExists(object.name);
     this.external.set(object.name, object);
   }
 

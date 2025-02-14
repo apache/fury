@@ -383,4 +383,8 @@ export class CodecBuilder {
   getExternal(key: string) {
     return `external.${key}`;
   }
+
+  getOptions(key: string) {
+    return `options.${key}`;
+  }
 }
