@@ -18,7 +18,74 @@
  */
 
 import { ObjectTypeDescription } from "./description";
-import { Meta } from "./meta";
+
+export const getTypeIdByInternalSerializerType = (type: InternalSerializerType) => {
+  switch (type) {
+    case InternalSerializerType.BOOL:
+      return 1;
+    case InternalSerializerType.INT8:
+      return 2;
+    case InternalSerializerType.INT16:
+      return 3;
+    case InternalSerializerType.INT32:
+      return 4;
+    case InternalSerializerType.VAR_INT32:
+      return 5;
+    case InternalSerializerType.INT64:
+      return 6;
+    case InternalSerializerType.VAR_INT64:
+      return 7;
+    case InternalSerializerType.SLI_INT64:
+      return 8;
+    case InternalSerializerType.FLOAT16:
+      return 9;
+    case InternalSerializerType.FLOAT32:
+      return 10;
+    case InternalSerializerType.FLOAT64:
+      return 11;
+    case InternalSerializerType.STRING:
+      return 12;
+    case InternalSerializerType.ENUM:
+      return 13;
+    case InternalSerializerType.LIST:
+      return 14;
+    case InternalSerializerType.SET:
+      return 15;
+    case InternalSerializerType.MAP:
+      return 16;
+    case InternalSerializerType.DURATION:
+      return 17;
+    case InternalSerializerType.TIMESTAMP:
+      return 18;
+    case InternalSerializerType.DECIMAL:
+      return 19;
+    case InternalSerializerType.BINARY:
+      return 20;
+    case InternalSerializerType.TUPLE:
+    case InternalSerializerType.ARRAY:
+      return 21;
+    case InternalSerializerType.BOOL_ARRAY:
+      return 22;
+    case InternalSerializerType.INT8_ARRAY:
+      return 23;
+    case InternalSerializerType.INT16_ARRAY:
+      return 24;
+    case InternalSerializerType.INT32_ARRAY:
+      return 25;
+    case InternalSerializerType.INT64_ARRAY:
+      return 26;
+    case InternalSerializerType.FLOAT16_ARRAY:
+      return 27;
+    case InternalSerializerType.FLOAT32_ARRAY:
+      return 28;
+    case InternalSerializerType.FLOAT64_ARRAY:
+      return 29;
+    case InternalSerializerType.OBJECT: // todo
+      return 256;
+    default:
+      throw new Error(`typeId is not assigned to type ${InternalSerializerType[type]}`);
+  }
+};
 
 export enum InternalSerializerType {
   // primitive type
@@ -72,7 +139,9 @@ export type Serializer<T = any, T2 = any> = {
   write: (v: T2) => T;
   readInner: (refValue?: boolean) => T2;
   writeInner: (v: T2) => T;
-  meta: Meta;
+  fixedSize: number;
+  needToWriteRef: () => boolean;
+  getTypeId: () => number;
 };
 
 export enum RefFlags {

@@ -144,7 +144,7 @@ export default class {
     this.binaryWriter.skip(4); // preserve 4-byte for nativeObjects start offsets.
     this.binaryWriter.uint32(0); // nativeObjects length.
     // reserve fixed size
-    this.binaryWriter.reserve(serializer.meta.fixedSize);
+    this.binaryWriter.reserve(serializer.fixedSize);
     // start write
     serializer.write(data);
     this.binaryWriter.setUint32Position(cursor, this.binaryWriter.getCursor()); // nativeObjects start offsets;

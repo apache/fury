@@ -42,6 +42,14 @@ class TimestampSerializerGenerator extends BaseSerializerGenerator {
   readStmt(accessor: (expr: string) => string): string {
     return accessor(`new Date(Number(${this.builder.reader.int64()}))`);
   }
+
+  getFixedSize(): number {
+    return 11;
+  }
+
+  needToWriteRef(): boolean {
+    return false;
+  }
 }
 
 class DurationSerializerGenerator extends BaseSerializerGenerator {
@@ -69,6 +77,14 @@ class DurationSerializerGenerator extends BaseSerializerGenerator {
     return accessor(`
             new Date(${epoch} + (${this.builder.reader.int32()} * (24 * 60 * 60) * 1000))
         `);
+  }
+
+  getFixedSize(): number {
+    return 7;
+  }
+
+  needToWriteRef(): boolean {
+    return false;
   }
 }
 

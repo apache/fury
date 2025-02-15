@@ -19,7 +19,7 @@
 
 import { TypeDescription } from "../description";
 import { CodecBuilder } from "./builder";
-import { BaseSerializerGenerator } from "./serializer";
+import { BaseSerializerGenerator, RefState } from "./serializer";
 import { CodegenRegistry } from "./router";
 import { InternalSerializerType } from "../type";
 import { Scope } from "./scope";
@@ -36,8 +36,22 @@ class StringSerializerGenerator extends BaseSerializerGenerator {
     return this.builder.writer.stringOfVarUInt32(accessor);
   }
 
-  readStmt(accessor: (expr: string) => string): string {
-    return accessor(this.builder.reader.stringOfVarUInt32());
+  readStmt(accessor: (expr: string) => string, refState: RefState): string {
+    const result = this.scope.uniqueName("result");
+
+    return `
+        ${result} = ${this.builder.reader.stringOfVarUInt32()};
+        ${this.maybeReference(result, refState)};
+        ${accessor(result)}
+    `;
+  }
+
+  getFixedSize(): number {
+    return 8;
+  }
+
+  needToWriteRef(): boolean {
+    return Boolean(this.builder.fury.config.refTracking);
   }
 }
 

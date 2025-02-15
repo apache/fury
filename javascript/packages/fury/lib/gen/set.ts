@@ -47,6 +47,14 @@ class SetSerializerGenerator extends CollectionSerializerGenerator {
   putAccessor(result: string, item: string): string {
     return `${result}.add(${item})`;
   }
+
+  getFixedSize(): number {
+    return 7;
+  }
+
+  needToWriteRef(): boolean {
+    return Boolean(this.builder.fury.config.refTracking);
+  }
 }
 
 CodegenRegistry.register(InternalSerializerType.SET, SetSerializerGenerator);

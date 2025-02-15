@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import { FuryClsInfoSymbol, InternalSerializerType, ObjectFuryClsInfo, Serializer } from "./type";
+import { FuryClsInfoSymbol, getTypeIdByInternalSerializerType, InternalSerializerType, ObjectFuryClsInfo, Serializer } from "./type";
 import { fromString } from "./platformBuffer";
 import { x64hash128 } from "./murmurHash3";
 import { BinaryWriter } from "./writer";
@@ -68,11 +68,12 @@ const uninitSerialize = {
   writeInner: () => {
     throw new Error("uninitSerialize");
   },
-  meta: {
-    fixedSize: 0,
-    type: InternalSerializerType.ANY,
-    needToWriteRef: false,
-    typeId: null,
+  fixedSize: 0,
+  getTypeId: () => {
+    throw new Error("uninitSerialize");
+  },
+  needToWriteRef: () => {
+    throw new Error("uninitSerialize");
   },
 };
 
@@ -84,7 +85,7 @@ export default class SerializerResolver {
   private writeStringIndex: number[] = [];
 
   private registerSerializer(fury: Fury, description: TypeDescription) {
-    return fury.classResolver.registerSerializerById(SerializerResolver.getTypeIdByInternalSerializerType(description.type), generateSerializer(fury, description));
+    return fury.classResolver.registerSerializerById(getTypeIdByInternalSerializerType(description.type), generateSerializer(fury, description));
   }
 
   private initInternalSerializer(fury: Fury) {
@@ -114,14 +115,14 @@ export default class SerializerResolver {
     this.registerSerializer(fury, Type.float32Array());
     this.registerSerializer(fury, Type.float64Array());
 
-    this.numberSerializer = this.getSerializerById(SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.FLOAT64));
-    this.int64Serializer = this.getSerializerById(SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.INT64));
-    this.boolSerializer = this.getSerializerById(SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.BOOL));
-    this.dateSerializer = this.getSerializerById(SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.TIMESTAMP));
-    this.stringSerializer = this.getSerializerById(SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.STRING));
-    this.setSerializer = this.getSerializerById(SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.SET));
-    this.arraySerializer = this.getSerializerById(SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.ARRAY));
-    this.mapSerializer = this.getSerializerById(SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.MAP));
+    this.numberSerializer = this.getSerializerById(getTypeIdByInternalSerializerType(InternalSerializerType.FLOAT64));
+    this.int64Serializer = this.getSerializerById(getTypeIdByInternalSerializerType(InternalSerializerType.INT64));
+    this.boolSerializer = this.getSerializerById(getTypeIdByInternalSerializerType(InternalSerializerType.BOOL));
+    this.dateSerializer = this.getSerializerById(getTypeIdByInternalSerializerType(InternalSerializerType.TIMESTAMP));
+    this.stringSerializer = this.getSerializerById(getTypeIdByInternalSerializerType(InternalSerializerType.STRING));
+    this.setSerializer = this.getSerializerById(getTypeIdByInternalSerializerType(InternalSerializerType.SET));
+    this.arraySerializer = this.getSerializerById(getTypeIdByInternalSerializerType(InternalSerializerType.ARRAY));
+    this.mapSerializer = this.getSerializerById(getTypeIdByInternalSerializerType(InternalSerializerType.MAP));
   }
 
   private numberSerializer: null | Serializer = null;
@@ -140,10 +141,6 @@ export default class SerializerResolver {
   reset() {
     this.readStringPool = [];
     this.writeStringIndex.fill(-1);
-  }
-
-  getSerializerByType(type: InternalSerializerType) {
-    return this.internalSerializer[SerializerResolver.getTypeIdByInternalSerializerType(type)];
   }
 
   getSerializerById(id: number) {
@@ -277,73 +274,5 @@ export default class SerializerResolver {
     }
 
     throw new Error(`Failed to detect the Fury type from JavaScript type: ${typeof v}`);
-  }
-
-  static getTypeIdByInternalSerializerType(type: InternalSerializerType) {
-    switch (type) {
-      case InternalSerializerType.BOOL:
-        return 1;
-      case InternalSerializerType.INT8:
-        return 2;
-      case InternalSerializerType.INT16:
-        return 3;
-      case InternalSerializerType.INT32:
-        return 4;
-      case InternalSerializerType.VAR_INT32:
-        return 5;
-      case InternalSerializerType.INT64:
-        return 6;
-      case InternalSerializerType.VAR_INT64:
-        return 7;
-      case InternalSerializerType.SLI_INT64:
-        return 8;
-      case InternalSerializerType.FLOAT16:
-        return 9;
-      case InternalSerializerType.FLOAT32:
-        return 10;
-      case InternalSerializerType.FLOAT64:
-        return 11;
-      case InternalSerializerType.STRING:
-        return 12;
-      case InternalSerializerType.ENUM:
-        return 13;
-      case InternalSerializerType.LIST:
-        return 14;
-      case InternalSerializerType.SET:
-        return 15;
-      case InternalSerializerType.MAP:
-        return 16;
-      case InternalSerializerType.DURATION:
-        return 17;
-      case InternalSerializerType.TIMESTAMP:
-        return 18;
-      case InternalSerializerType.DECIMAL:
-        return 19;
-      case InternalSerializerType.BINARY:
-        return 20;
-      case InternalSerializerType.TUPLE:
-      case InternalSerializerType.ARRAY:
-        return 21;
-      case InternalSerializerType.BOOL_ARRAY:
-        return 22;
-      case InternalSerializerType.INT8_ARRAY:
-        return 23;
-      case InternalSerializerType.INT16_ARRAY:
-        return 24;
-      case InternalSerializerType.INT32_ARRAY:
-        return 25;
-      case InternalSerializerType.INT64_ARRAY:
-        return 26;
-      case InternalSerializerType.FLOAT16_ARRAY:
-        return 27;
-      case InternalSerializerType.FLOAT32_ARRAY:
-        return 28;
-      case InternalSerializerType.FLOAT64_ARRAY:
-        return 29;
-      case InternalSerializerType.OBJECT: // todo
-        return 256;
-      default:
-        throw new Error(`typeId is not assigned to type ${InternalSerializerType[type]}`);
-    }
   }
 }

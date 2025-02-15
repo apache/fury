@@ -40,6 +40,14 @@ function buildNumberSerializer(writeFun: (builder: CodecBuilder, accessor: strin
     readStmt(accessor: (expr: string) => string): string {
       return accessor(read(this.builder));
     }
+
+    getFixedSize(): number {
+      return 11;
+    }
+
+    needToWriteRef(): boolean {
+      return false;
+    }
   };
 }
 

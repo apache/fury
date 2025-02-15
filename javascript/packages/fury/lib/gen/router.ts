@@ -44,6 +44,14 @@ export class CodegenRegistry {
     this.external.set(object.name, object);
   }
 
+  static newGeneratorByDescription(description: TypeDescription, builder: CodecBuilder, scope: Scope) {
+    const constructor = CodegenRegistry.get(description.type);
+    if (!constructor) {
+      throw new Error("type not registered // todo");
+    }
+    return new constructor(description, builder, scope);
+  }
+
   static get(type: InternalSerializerType) {
     return this.map.get(InternalSerializerType[type]);
   }

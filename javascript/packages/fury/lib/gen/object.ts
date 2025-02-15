@@ -17,14 +17,14 @@
  * under the License.
  */
 
-import { InternalSerializerType, MaxInt32, Mode } from "../type";
+import { getTypeIdByInternalSerializerType, InternalSerializerType, MaxInt32, Mode } from "../type";
 import { Scope } from "./scope";
 import { CodecBuilder } from "./builder";
 import { ObjectTypeDescription, TypeDescription } from "../description";
 import { fromString } from "../platformBuffer";
 import { CodegenRegistry } from "./router";
 import { BaseSerializerGenerator, RefState } from "./serializer";
-import SerializerResolver from "../classResolver";
+import ClassResolver from "../classResolver";
 import { FieldInfo, TypeMeta } from "../meta/TypeMeta";
 
 function computeFieldHash(hash: number, id: number): number {
@@ -50,7 +50,7 @@ const computeStringHash = (str: string) => {
 const computeStructHash = (description: TypeDescription) => {
   let hash = 17;
   for (const [, value] of Object.entries((<ObjectTypeDescription>description).options.props).sort()) {
-    let id = SerializerResolver.getTypeIdByInternalSerializerType(value.type);
+    let id = getTypeIdByInternalSerializerType(value.type);
     if (value.type === InternalSerializerType.OBJECT) {
       id = computeStringHash((<ObjectTypeDescription>value).options.tag);
     }
@@ -163,6 +163,24 @@ class ObjectSerializerGenerator extends BaseSerializerGenerator {
       return `${name}.write(${accessor})`;
     }
     return `${name}.writeInner(${accessor})`;
+  }
+
+  getFixedSize(): number {
+    const options = (<ObjectTypeDescription> this.description).options;
+    let fixedSize = ClassResolver.tagBuffer(options.tag).byteLength + 8;
+    if (options.props) {
+      Object.values(options.props).forEach((x) => {
+        const propGenerator = new (CodegenRegistry.get(x.type)!)(x, this.builder, this.scope);
+        fixedSize += propGenerator.getFixedSize();
+      });
+    } else {
+      fixedSize += this.builder.fury.classResolver.getSerializerByTag(options.tag).fixedSize;
+    }
+    return fixedSize;
+  }
+
+  needToWriteRef(): boolean {
+    return Boolean(this.builder.fury.config.refTracking);
   }
 }
 

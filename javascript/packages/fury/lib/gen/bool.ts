@@ -39,6 +39,14 @@ class BoolSerializerGenerator extends BaseSerializerGenerator {
   readStmt(accessor: (expr: string) => string): string {
     return accessor(`${this.builder.reader.uint8()} === 1`);
   }
+
+  getFixedSize(): number {
+    return 4;
+  }
+
+  needToWriteRef(): boolean {
+    return false;
+  }
 }
 
 CodegenRegistry.register(InternalSerializerType.BOOL, BoolSerializerGenerator);

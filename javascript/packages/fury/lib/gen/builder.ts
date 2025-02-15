@@ -18,8 +18,6 @@
  */
 
 import { Scope } from "./scope";
-import { getMeta } from "../meta";
-import { TypeDescription } from "../description";
 import Fury from "../fury";
 
 class TypeMetaBuilder {
@@ -335,18 +333,6 @@ export class CodecBuilder {
     this.typeMeta = new TypeMetaBuilder("fury"); // Initialize the TypeMetaWrapper
   }
 
-  furyName() {
-    return "fury";
-  }
-
-  meta(description: TypeDescription) {
-    return getMeta(description, this.fury);
-  }
-
-  config() {
-    return this.fury.config;
-  }
-
   static isReserved(key: string) {
     return /^(?:do|if|in|for|let|new|try|var|case|else|enum|eval|false|null|this|true|void|with|break|catch|class|const|super|throw|while|yield|delete|export|import|public|return|static|switch|typeof|default|extends|finally|package|private|continue|debugger|function|arguments|interface|protected|implements|instanceof)$/.test(key);
   }
@@ -378,6 +364,10 @@ export class CodecBuilder {
       return `["${CodecBuilder.replaceBackslashAndQuote(prop)}"]`;
     }
     return prop;
+  }
+
+  getFuryName() {
+    return "fury";
   }
 
   getExternal(key: string) {

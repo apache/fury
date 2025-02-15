@@ -17,19 +17,21 @@
  * under the License.
  */
 
-import { InternalSerializerType } from "../type";
+import { getTypeIdByInternalSerializerType, InternalSerializerType } from "../type";
 import { CodecBuilder } from "./builder";
-import SerializerResolver from "../classResolver";
 import { RefFlags } from "../type";
 import { Scope } from "./scope";
 import { TypeDescription, ObjectTypeDescription } from "../description";
 
 export const makeHead = (flag: RefFlags, type: InternalSerializerType) => {
-  return (((SerializerResolver.getTypeIdByInternalSerializerType(type) << 16) >>> 16) << 8) | ((flag << 24) >>> 24);
+  return (((getTypeIdByInternalSerializerType(type) << 16) >>> 16) << 8) | ((flag << 24) >>> 24);
 };
 
 export interface SerializerGenerator {
   toSerializer(): string;
+  getFixedSize(): number;
+  needToWriteRef(): boolean;
+  getType(): InternalSerializerType;
   toWriteEmbed(accessor: string, excludeHead?: boolean): string;
   toReadEmbed(accessor: (expr: string) => string, excludeHead?: boolean, refState?: RefState): string;
 }
@@ -106,9 +108,17 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
 
   }
 
+  abstract getFixedSize(): number;
+
+  abstract needToWriteRef(): boolean;
+
   abstract writeStmt(accessor: string): string;
 
   abstract readStmt(accessor: (expr: string) => string, refState: RefState): string;
+
+  getType() {
+    return this.description.type;
+  }
 
   protected maybeReference(accessor: string, refState: RefState) {
     if (refState.getState() === RefStateType.False) {
@@ -127,8 +137,6 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
   }
 
   protected wrapWriteHead(accessor: string, stmt: (accessor: string) => string) {
-    const meta = this.builder.meta(this.description);
-
     const maybeTag = () => {
       if (this.description.type !== InternalSerializerType.OBJECT) {
         return "";
@@ -138,7 +146,7 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
       return `${tagWriter}.write(${this.builder.writer.ownName()})`;
     };
 
-    if (meta.needToWriteRef) {
+    if (this.needToWriteRef()) {
       const head = makeHead(RefFlags.RefValueFlag, this.description.type);
       const existsId = this.scope.uniqueName("existsId");
       return `
@@ -178,7 +186,7 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
       switch (${refFlag}) {
           case ${RefFlags.NotNullValueFlag}:
           case ${RefFlags.RefValueFlag}:
-              if (${this.builder.reader.int16()} === ${SerializerResolver.getTypeIdByInternalSerializerType(InternalSerializerType.OBJECT)}) {
+              if (${this.builder.reader.int16()} === ${getTypeIdByInternalSerializerType(InternalSerializerType.OBJECT)}) {
                   ${this.builder.classResolver.readTag(this.builder.reader.ownName())};
               }
               ${stmt(accessor, RefState.fromCondition(`${refFlag} === ${RefFlags.RefValueFlag}`))}
@@ -239,7 +247,9 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
               readInner,
               write,
               writeInner,
-              meta: ${JSON.stringify(this.builder.meta(this.description))}
+              fixedSize: ${this.getFixedSize()},
+              needToWriteRef: () => ${this.needToWriteRef()},
+              getTypeId: () => ${getTypeIdByInternalSerializerType(this.getType())}
             };
         }
         `;

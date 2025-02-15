@@ -19,7 +19,7 @@
 
 import { Type, TypeDescription } from "../description";
 import { CodecBuilder } from "./builder";
-import { BaseSerializerGenerator, RefState } from "./serializer";
+import { BaseSerializerGenerator, RefState, SerializerGenerator } from "./serializer";
 import { CodegenRegistry } from "./router";
 import { InternalSerializerType } from "../type";
 import { Scope } from "./scope";
@@ -27,39 +27,26 @@ import { Scope } from "./scope";
 function build(inner: TypeDescription) {
   return class TypedArraySerializerGenerator extends BaseSerializerGenerator {
     description: TypeDescription;
+    innerGenerator: SerializerGenerator;
 
     constructor(description: TypeDescription, builder: CodecBuilder, scope: Scope) {
       super(description, builder, scope);
       this.description = <TypeDescription>description;
-    }
-
-    private innerMeta() {
-      return this.builder.meta(inner);
-    }
-
-    private innerGenerator() {
-      const InnerGeneratorClass = CodegenRegistry.get(inner.type);
-      if (!InnerGeneratorClass) {
-        throw new Error(`${InternalSerializerType[inner.type]} generator not exists`);
-      }
-      return new InnerGeneratorClass(inner, this.builder, this.scope);
+      this.innerGenerator = CodegenRegistry.newGeneratorByDescription(inner, builder, scope);
     }
 
     writeStmt(accessor: string): string {
-      const innerMeta = this.innerMeta();
-      const innerGenerator = this.innerGenerator();
       const item = this.scope.uniqueName("item");
       return `
                 ${this.builder.writer.varUInt32(`${accessor}.length`)}
-                ${this.builder.writer.reserve(`${innerMeta.fixedSize} * ${accessor}.length`)};
+                ${this.builder.writer.reserve(`${this.innerGenerator.getFixedSize()} * ${accessor}.length`)};
                 for (const ${item} of ${accessor}) {
-                    ${innerGenerator.toWriteEmbed(item, true)}
+                    ${this.innerGenerator.toWriteEmbed(item, true)}
                 }
             `;
     }
 
     readStmt(accessor: (expr: string) => string, refState: RefState): string {
-      const innerGenerator = this.innerGenerator();
       const result = this.scope.uniqueName("result");
       const len = this.scope.uniqueName("len");
       const idx = this.scope.uniqueName("idx");
@@ -69,10 +56,18 @@ function build(inner: TypeDescription) {
                 const ${result} = new Array(${len});
                 ${this.maybeReference(result, refState)}
                 for (let ${idx} = 0; ${idx} < ${len}; ${idx}++) {
-                    ${innerGenerator.toReadEmbed(x => `${result}[${idx}] = ${x};`, true, RefState.fromFalse())}
+                    ${this.innerGenerator.toReadEmbed(x => `${result}[${idx}] = ${x};`, true, RefState.fromFalse())}
                 }
                 ${accessor(result)}
              `;
+    }
+
+    getFixedSize(): number {
+      return 7;
+    }
+
+    needToWriteRef(): boolean {
+      return Boolean(this.builder.fury.config.refTracking);
     }
   };
 }

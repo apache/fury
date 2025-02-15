@@ -83,6 +83,14 @@ class EnumSerializerGenerator extends BaseSerializerGenerator {
         }
     `;
   }
+
+  getFixedSize(): number {
+    return 7;
+  }
+
+  needToWriteRef(): boolean {
+    return false;
+  }
 }
 
 CodegenRegistry.register(InternalSerializerType.ENUM, EnumSerializerGenerator);

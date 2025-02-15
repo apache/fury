@@ -49,6 +49,14 @@ class BinarySerializerGenerator extends BaseSerializerGenerator {
         ${accessor(result)}
         `;
   }
+
+  getFixedSize(): number {
+    return 8;
+  }
+
+  needToWriteRef(): boolean {
+    return Boolean(this.builder.fury.config.refTracking);
+  }
 }
 
 CodegenRegistry.register(InternalSerializerType.BINARY, BinarySerializerGenerator);
