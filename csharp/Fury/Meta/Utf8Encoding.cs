@@ -7,8 +7,6 @@ internal sealed class Utf8Encoding() : MetaStringEncoding(MetaString.Encoding.Ut
 {
     public static readonly Utf8Encoding Instance = new();
 
-    public override bool CanEncode(ReadOnlySpan<char> chars) => true;
-
     public override int GetMaxByteCount(int charCount) => UTF8.GetMaxByteCount(charCount);
 
     public override int GetMaxCharCount(int byteCount) => UTF8.GetMaxCharCount(byteCount);

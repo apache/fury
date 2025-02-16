@@ -10,29 +10,6 @@ internal sealed class FirstToLowerSpecialEncoding()
 
     private static readonly FirstToLowerSpecialDecoder SharedDecoder = new();
 
-    public override bool CanEncode(ReadOnlySpan<char> chars)
-    {
-        if (chars.Length == 0)
-        {
-            return true;
-        }
-
-        if (!TryEncodeChar(char.ToLowerInvariant(chars[0]), out _))
-        {
-            return false;
-        }
-
-        foreach (var c in chars)
-        {
-            if (!TryEncodeChar(c, out _))
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
     public override int GetByteCount(ReadOnlySpan<char> chars)
     {
         return LowerSpecialEncoding.Instance.GetByteCount(chars);

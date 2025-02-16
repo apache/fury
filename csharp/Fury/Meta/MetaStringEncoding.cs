@@ -11,8 +11,6 @@ internal abstract class MetaStringEncoding(MetaString.Encoding encoding) : Encod
 
     public MetaString.Encoding Encoding { get; } = encoding;
 
-    public abstract bool CanEncode(ReadOnlySpan<char> chars);
-
     protected static void WriteByte(byte input, ref byte b1, int bitOffset, int bitsPerChar)
     {
         var unusedBitsPerChar = BitsOfByte - bitsPerChar;
@@ -60,8 +58,8 @@ internal abstract class MetaStringEncoding(MetaString.Encoding encoding) : Encod
         if (leftOverBitsCount >= bitsPerChar)
         {
             leftOverBitsCount -= bitsPerChar;
-            bits = BitUtility.KeepLowBits((byte)(leftOverBits >>> leftOverBitsCount), bitsPerChar);
-            leftOverBits = BitUtility.KeepLowBits(leftOverBits, leftOverBitsCount);
+            bits = BitHelper.KeepLowBits((byte)(leftOverBits >>> leftOverBitsCount), bitsPerChar);
+            leftOverBits = BitHelper.KeepLowBits(leftOverBits, leftOverBitsCount);
             decoder.SetLeftoverData(leftOverBits, leftOverBitsCount);
             bitsUsedFromBitsReader = 0;
             return true;
@@ -76,7 +74,7 @@ internal abstract class MetaStringEncoding(MetaString.Encoding encoding) : Encod
         }
 
         var bitsFromLeftOver = leftOverBits << bitsUsedFromBitsReader;
-        bits = BitUtility.KeepLowBits((byte)(bitsFromLeftOver | bitsFromNextByte), bitsPerChar);
+        bits = BitHelper.KeepLowBits((byte)(bitsFromLeftOver | bitsFromNextByte), bitsPerChar);
         decoder.SetLeftoverData(0, 0);
         return true;
     }

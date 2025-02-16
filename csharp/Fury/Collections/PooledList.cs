@@ -2,6 +2,7 @@
 using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace Fury.Collections;
@@ -10,40 +11,83 @@ namespace Fury.Collections;
 /// A list that uses pooled arrays to reduce allocations.
 /// </summary>
 internal sealed class PooledList<TElement> : IList<TElement>, IDisposable
-    where TElement : class
 {
-    // Use object instead of TElement to improve possibility of reusing pooled objects.
-    private readonly ArrayPool<object?> _pool = ArrayPool<object?>.Shared;
-    private object?[] _elements = [];
+    private static readonly bool NeedClear = TypeHelper<TElement>.IsReferenceOrContainsReferences;
+
+    private readonly ArrayPool<TElement> _pool = ArrayPool<TElement>.Shared;
+    private TElement[] _elements = [];
     public int Count { get; private set; }
+
+    public PooledList() { }
+
+    public PooledList(int capacity)
+    {
+        _elements = _pool.Rent(capacity);
+    }
+
+    public PooledList(IEnumerable<TElement> enumerable)
+    {
+        AddRange(enumerable);
+    }
+
+    private void EnsureCapacity(int capacity)
+    {
+        if (_elements.Length < capacity)
+        {
+            var newElements = _pool.Rent(capacity);
+            _elements.CopyTo(newElements, 0);
+            ClearElementsIfNeeded();
+            _pool.Return(_elements);
+            _elements = newElements;
+        }
+    }
 
     public Enumerator GetEnumerator() => new(this);
 
     public void Add(TElement item)
     {
-        var length = _elements.Length;
-        if (Count == length)
-        {
-            var newLength = Math.Max(length * 2, StaticConfigs.BuiltInListDefaultCapacity);
-            var newElements = _pool.Rent(newLength);
-            _elements.CopyTo(newElements, 0);
-            ClearElements();
-            _pool.Return(_elements);
-            _elements = newElements;
-        }
+        EnsureCapacity(Count + 1);
         _elements[Count++] = item;
+    }
+
+    public void AddRange(IEnumerable<TElement> elements)
+    {
+        if (elements.TryGetSpan(out var span))
+        {
+            AddRange(span);
+            return;
+        }
+
+        if (elements.TryGetNonEnumeratedCount(out var count))
+        {
+            EnsureCapacity(Count + count);
+        }
+        foreach (var element in elements)
+        {
+            Add(element);
+        }
+    }
+
+    public void AddRange(Span<TElement> elements)
+    {
+        EnsureCapacity(Count + elements.Length);
+        elements.CopyTo(_elements.AsSpan(Count));
+        Count += elements.Length;
     }
 
     public void Clear()
     {
-        ClearElements();
+        ClearElementsIfNeeded();
         Count = 0;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void ClearElements()
+    private void ClearElementsIfNeeded()
     {
-        Array.Clear(_elements, 0, _elements.Length);
+        if (NeedClear)
+        {
+            Array.Clear(_elements, 0, _elements.Length);
+        }
     }
 
     public bool Contains(TElement item) => Array.IndexOf(_elements, item) != -1;
@@ -82,7 +126,7 @@ internal sealed class PooledList<TElement> : IList<TElement>, IDisposable
             Array.Copy(_elements, 0, newElements, 0, index);
             newElements[index] = item;
             Array.Copy(_elements, index, newElements, index + 1, Count - index);
-            ClearElements();
+            ClearElementsIfNeeded();
             _pool.Return(_elements);
             _elements = newElements;
         }
@@ -111,7 +155,7 @@ internal sealed class PooledList<TElement> : IList<TElement>, IDisposable
         get
         {
             ThrowIfOutOfRange(index, nameof(index));
-            return Unsafe.As<TElement>(_elements[index]);
+            return _elements[index];
         }
         set
         {
@@ -149,9 +193,9 @@ internal sealed class PooledList<TElement> : IList<TElement>, IDisposable
             _current = 0;
         }
 
-        public TElement Current => Unsafe.As<TElement>(list._elements[_current]);
+        public TElement Current => list._elements[_current];
 
-        object IEnumerator.Current => Current;
+        object IEnumerator.Current => Current!;
 
         public void Dispose() { }
     }
@@ -163,8 +207,10 @@ internal sealed class PooledList<TElement> : IList<TElement>, IDisposable
             return;
         }
 
-        ClearElements();
+        ClearElementsIfNeeded();
         _pool.Return(_elements);
         _elements = [];
     }
+
+    public Span<TElement> AsSpan() => _elements.AsSpan(0, Count);
 }

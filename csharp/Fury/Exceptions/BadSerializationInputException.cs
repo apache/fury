@@ -1,6 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using Fury.Serializer;
 
 namespace Fury;
 
@@ -36,5 +36,29 @@ internal static partial class ThrowHelper
     public static void ThrowBadSerializationInputException_CircularDependencyDetected()
     {
         throw new BadSerializationInputException("Circular dependency detected.");
+    }
+
+    [DoesNotReturn]
+    public static void ThrowBadSerializationInputException_NoSerializerFactoryProvider(Type targetType)
+    {
+        throw new BadSerializationInputException(
+            $"Can not find an appropriate serializer factory provider for type '{targetType.FullName}'."
+        );
+    }
+
+    [DoesNotReturn]
+    public static void ThrowBadSerializationInputException_AttemptedToSerializeNullValueWhenResuming()
+    {
+        throw new BadSerializationInputException("Attempted to serialize a null value when resuming.");
+    }
+
+    [DoesNotReturn]
+    public static void ThrowBadSerializationInputException_ObjectWithBuiltInSerializerAndCustomDeserializer(
+        Type targetType
+    )
+    {
+        throw new BadSerializationInputException(
+            "Attempted to serialize an object of type '{targetType.FullName}' with a built-in serializer and a custom deserializer."
+        );
     }
 }

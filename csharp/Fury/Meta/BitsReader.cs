@@ -25,7 +25,7 @@ internal ref struct BitsReader(ReadOnlySpan<byte> bytes)
             }
 
             var currentByte = _bytes[CurrentByteIndex];
-            return BitUtility.KeepLowBits(currentByte, unusedBitCountInLastUsedByte);
+            return BitHelper.KeepLowBits(currentByte, unusedBitCountInLastUsedByte);
         }
     }
 
@@ -51,7 +51,7 @@ internal ref struct BitsReader(ReadOnlySpan<byte> bytes)
         var bitsLeftInCurrentByte = BitsOfByte - bitOffsetInCurrentByte;
         if (bitsLeftInCurrentByte >= bitCount)
         {
-            bits = BitUtility.ReadBits(_bytes[currentByteIndex], bitOffsetInCurrentByte, bitCount);
+            bits = BitHelper.ReadBits(_bytes[currentByteIndex], bitOffsetInCurrentByte, bitCount);
             return true;
         }
 
@@ -61,7 +61,7 @@ internal ref struct BitsReader(ReadOnlySpan<byte> bytes)
             return false;
         }
 
-        bits = BitUtility.ReadBits(
+        bits = BitHelper.ReadBits(
             _bytes[currentByteIndex],
             _bytes[currentByteIndex + 1],
             bitOffsetInCurrentByte,

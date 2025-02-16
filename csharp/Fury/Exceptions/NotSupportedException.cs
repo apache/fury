@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
+using Fury.Meta;
 
 namespace Fury;
 
@@ -21,5 +22,23 @@ internal static partial class ThrowHelper
     public static TReturn ThrowNotSupportedException_EncoderNotSupportedForThisEncoding<TReturn>(string? encodingName)
     {
         throw new NotSupportedException($"The encoder is not supported for the encoding '{encodingName}'.");
+    }
+
+    [DoesNotReturn]
+    public static void ThrowNotSupportedException_SearchTypeByNamespaceAndName()
+    {
+        throw new NotSupportedException("Searching for types by namespace and name is not supported yet.");
+    }
+
+    [DoesNotReturn]
+    public static void ThrowNotSupportedException_NotSupportedBuiltInSerializer(Type type)
+    {
+        throw new NotSupportedException($"Built-in serializer for type '{type}' is not supported.");
+    }
+
+    [DoesNotReturn]
+    public static void ThrowNotSupportedException_NotSupportedBuiltInDeserializer(Type type)
+    {
+        throw new NotSupportedException($"Built-in deserializer for type '{type}' is not supported.");
     }
 }

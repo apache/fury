@@ -2,8 +2,8 @@
 
 internal sealed class Encodings
 {
-    public static readonly HybridMetaStringEncoding CommonEncoding = new('.', '_');
-    public static readonly HybridMetaStringEncoding NamespaceEncoding = CommonEncoding;
+    public static readonly HybridMetaStringEncoding GenericEncoding = new('.', '_');
+    public static readonly HybridMetaStringEncoding NamespaceEncoding = GenericEncoding;
     public static readonly HybridMetaStringEncoding TypeNameEncoding = new('$', '_');
 
     private static readonly MetaString.Encoding[] NamespaceEncodings =

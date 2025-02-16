@@ -10,21 +10,14 @@ internal sealed class LowerUpperDigitSpecialEncoding(char specialChar1, char spe
     private const int UnusedBitsPerChar = BitsOfByte - BitsPerChar;
     private const int MaxRepresentableChar = (1 << BitsPerChar) - 1;
 
-    public override bool CanEncode(ReadOnlySpan<char> chars)
-    {
-        foreach (var c in chars)
-        {
-            if (!TryEncodeChar(c, out _))
-            {
-                return false;
-            }
-        }
-        return true;
-    }
-
     public override int GetByteCount(ReadOnlySpan<char> chars)
     {
         return GetMaxByteCount(chars.Length);
+    }
+
+    public static int GetBitCount(int charCount)
+    {
+        return charCount * BitsPerChar;
     }
 
     public override int GetCharCount(ReadOnlySpan<byte> bytes)
@@ -41,7 +34,7 @@ internal sealed class LowerUpperDigitSpecialEncoding(char specialChar1, char spe
 
     public override int GetMaxByteCount(int charCount)
     {
-        return charCount * BitsPerChar / BitsOfByte + 1;
+        return GetBitCount(charCount) / BitsOfByte + 1;
     }
 
     public override int GetMaxCharCount(int byteCount)
@@ -200,7 +193,7 @@ internal sealed class LowerUpperDigitSpecialEncoding(char specialChar1, char spe
         charsUsed = charsWriter.CharsUsed;
     }
 
-    private bool TryEncodeChar(char c, out byte b)
+    internal bool TryEncodeChar(char c, out byte b)
     {
         var success = true;
         if (c == specialChar1)

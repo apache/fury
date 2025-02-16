@@ -12,28 +12,24 @@ internal sealed class AllToLowerSpecialEncoding() : AbstractLowerSpecialEncoding
 
     private static readonly AllToLowerSpecialDecoder SharedDecoder = new();
 
-    public override bool CanEncode(ReadOnlySpan<char> chars)
+    public override int GetByteCount(ReadOnlySpan<char> chars)
     {
-        foreach (var t in chars)
+        var upperCount = 0;
+        foreach (var c in chars)
         {
-            var c = char.ToLowerInvariant(t);
-            if (!TryEncodeChar(c, out _))
+            if (char.IsUpper(c))
             {
-                return false;
+                upperCount++;
             }
         }
 
-        return true;
+        var bitCount = GetBitCount(chars.Length, upperCount);
+        return bitCount / BitsOfByte + 1;
     }
 
-    public override int GetByteCount(ReadOnlySpan<char> chars)
+    public static int GetBitCount(int charCount, int upperCount)
     {
-        var bitCount = 0;
-        foreach (var c in chars)
-        {
-            bitCount += char.IsUpper(c) ? BitsPerChar * 2 : BitsPerChar;
-        }
-        return bitCount / BitsOfByte + 1;
+        return (charCount + upperCount) * BitsPerChar;
     }
 
     public override int GetCharCount(ReadOnlySpan<byte> bytes)

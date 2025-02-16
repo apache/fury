@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Text;
 
 namespace Fury.Meta;
@@ -86,6 +87,39 @@ internal abstract class MetaStringDecoder : Decoder
         Convert(byteSpan, charSpan, flush, out bytesUsed, out charsUsed, out completed);
     }
 
+    public void Convert(
+        ReadOnlySequence<byte> bytes,
+        Span<char> chars,
+        bool flush,
+        out int bytesUsed,
+        out int charsUsed,
+        out bool completed
+    )
+    {
+        var reader = new SequenceReader<byte>(bytes);
+        bytesUsed = 0;
+        charsUsed = 0;
+        var unwrittenChars = chars;
+        completed = reader.End;
+        while (!reader.End && unwrittenChars.Length > 0)
+        {
+            var currentSpan = reader.UnreadSpan;
+            var currentFlush = flush && reader.Remaining == currentSpan.Length;
+            Convert(
+                currentSpan,
+                chars,
+                currentFlush,
+                out var currentBytesUsed,
+                out var currentCharsUsed,
+                out completed
+            );
+            bytesUsed += currentBytesUsed;
+            charsUsed += currentCharsUsed;
+            unwrittenChars = chars.Slice(charsUsed);
+            reader.Advance(currentBytesUsed);
+        }
+    }
+
     public sealed override unsafe int GetCharCount(byte* bytes, int count, bool flush)
     {
         return GetCharCount(new ReadOnlySpan<byte>(bytes, count), flush);
@@ -99,6 +133,20 @@ internal abstract class MetaStringDecoder : Decoder
     public sealed override int GetCharCount(byte[] bytes, int index, int count, bool flush)
     {
         return GetCharCount(bytes.AsSpan(index, count), flush);
+    }
+
+    public int GetCharCount(ReadOnlySequence<byte> bytes, bool flush)
+    {
+        var reader = new SequenceReader<byte>(bytes);
+        var charCount = 0;
+        while (!reader.End)
+        {
+            var currentSpan = reader.UnreadSpan;
+            var currentFlush = flush && reader.Remaining == currentSpan.Length;
+            charCount += GetCharCount(currentSpan, currentFlush);
+            reader.Advance(currentSpan.Length);
+        }
+        return charCount;
     }
 
     public sealed override unsafe int GetChars(byte* bytes, int byteCount, char* chars, int charCount, bool flush)

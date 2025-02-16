@@ -9,18 +9,6 @@ internal sealed class LowerSpecialEncoding() : AbstractLowerSpecialEncoding(Meta
 
     private static readonly LowerSpecialDecoder SharedDecoder = new();
 
-    public override bool CanEncode(ReadOnlySpan<char> chars)
-    {
-        foreach (var c in chars)
-        {
-            if (!TryEncodeChar(c, out _))
-            {
-                return false;
-            }
-        }
-        return true;
-    }
-
     public override int GetByteCount(ReadOnlySpan<char> chars)
     {
         return GetMaxByteCount(chars.Length);

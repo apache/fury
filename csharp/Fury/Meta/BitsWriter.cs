@@ -25,7 +25,7 @@ public ref struct BitsWriter(Span<byte> bytes)
             }
 
             var currentByte = _bytes[CurrentByteIndex];
-            return BitUtility.KeepLowBits(currentByte, unusedBitCountInLastUsedByte);
+            return BitHelper.KeepLowBits(currentByte, unusedBitCountInLastUsedByte);
         }
     }
 
@@ -49,7 +49,7 @@ public ref struct BitsWriter(Span<byte> bytes)
         var bitsLeftInCurrentByte = BitsOfByte - bitOffsetInCurrentByte;
         if (bitsLeftInCurrentByte >= bitCount)
         {
-            bits = BitUtility.ReadBits(_bytes[currentByteIndex], bitOffsetInCurrentByte, bitCount);
+            bits = BitHelper.ReadBits(_bytes[currentByteIndex], bitOffsetInCurrentByte, bitCount);
             return true;
         }
 
@@ -59,7 +59,7 @@ public ref struct BitsWriter(Span<byte> bytes)
             return false;
         }
 
-        bits = BitUtility.ReadBits(
+        bits = BitHelper.ReadBits(
             _bytes[currentByteIndex],
             _bytes[currentByteIndex + 1],
             bitOffsetInCurrentByte,
@@ -74,7 +74,7 @@ public ref struct BitsWriter(Span<byte> bytes)
         {
             return false;
         }
-        bits = (byte)(bits & BitUtility.GetBitMask32(bitCount));
+        bits = (byte)(bits & BitHelper.GetBitMask32(bitCount));
         var currentByteIndex = CurrentByteIndex;
         if (currentByteIndex >= _bytes.Length)
         {
@@ -86,7 +86,7 @@ public ref struct BitsWriter(Span<byte> bytes)
         byte currentByte;
         if (bitsLeftInCurrentByte >= bitCount)
         {
-            currentByte = BitUtility.ClearLowBits(_bytes[currentByteIndex], bitsLeftInCurrentByte);
+            currentByte = BitHelper.ClearLowBits(_bytes[currentByteIndex], bitsLeftInCurrentByte);
             _bytes[currentByteIndex] = (byte)(currentByte | (bits << (bitsLeftInCurrentByte - bitCount)));
             return true;
         }
@@ -97,8 +97,8 @@ public ref struct BitsWriter(Span<byte> bytes)
         }
 
         var bitsToWriteInCurrentByte = bits >>> (bitCount - bitsLeftInCurrentByte);
-        var bitsToWriteInNextByte = bits & BitUtility.GetBitMask32(bitCount - bitsLeftInCurrentByte);
-        currentByte = BitUtility.ClearLowBits(_bytes[currentByteIndex], bitsLeftInCurrentByte);
+        var bitsToWriteInNextByte = bits & BitHelper.GetBitMask32(bitCount - bitsLeftInCurrentByte);
+        currentByte = BitHelper.ClearLowBits(_bytes[currentByteIndex], bitsLeftInCurrentByte);
         _bytes[currentByteIndex] = (byte)(currentByte | bitsToWriteInCurrentByte);
         _bytes[currentByteIndex + 1] = (byte)(bitsToWriteInNextByte << (BitsOfByte - bitCount + bitsLeftInCurrentByte));
 

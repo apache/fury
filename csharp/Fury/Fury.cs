@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Fury.Buffers;
+using Fury.Context;
 using Fury.Meta;
 
 namespace Fury;
@@ -12,16 +13,16 @@ public sealed class Fury(Config config)
 
     private const short MagicNumber = 0x62D4;
 
-    public TypeResolver TypeResolver { get; } =
-        new(config.SerializerProviders, config.DeserializerProviders, config.ArrayPoolProvider);
+    public TypeRegistry TypeRegistry { get; } =
+        new(config.SerializerProviders, config.DeserializerProviders);
 
-    private readonly ObjectPool<RefContext> _refResolverPool =
-        new(config.ArrayPoolProvider, () => new RefContext(config.ArrayPoolProvider));
+    private readonly ObjectPool<DeserializationRefContext> _refResolverPool =
+        new(config.ArrayPoolProvider, () => new DeserializationRefContext());
 
     public void Serialize<T>(PipeWriter writer, in T? value)
         where T : notnull
     {
-        var refResolver = _refResolverPool.Rent();
+        var refResolver = _refResolverPool.Get();
         try
         {
             if (SerializeCommon(new BatchWriter(writer), in value, refResolver, out var context))
@@ -38,7 +39,7 @@ public sealed class Fury(Config config)
     public void Serialize<T>(PipeWriter writer, in T? value)
         where T : struct
     {
-        var refResolver = _refResolverPool.Rent();
+        var refResolver = _refResolverPool.Get();
         try
         {
             if (SerializeCommon(new BatchWriter(writer), in value, refResolver, out var context))
@@ -55,7 +56,7 @@ public sealed class Fury(Config config)
     private bool SerializeCommon<T>(
         BatchWriter writer,
         in T? value,
-        RefContext refContext,
+        DeserializationRefContext refContext,
         out SerializationContext context
     )
     {
@@ -77,7 +78,7 @@ public sealed class Fury(Config config)
     public async ValueTask<T?> DeserializeAsync<T>(PipeReader reader, CancellationToken cancellationToken = default)
         where T : notnull
     {
-        var refResolver = _refResolverPool.Rent();
+        var refResolver = _refResolverPool.Get();
         T? result = default;
         try
         {
@@ -101,7 +102,7 @@ public sealed class Fury(Config config)
     )
         where T : struct
     {
-        var refResolver = _refResolverPool.Rent();
+        var refResolver = _refResolverPool.Get();
         T? result = default;
         try
         {
@@ -119,7 +120,7 @@ public sealed class Fury(Config config)
         return result;
     }
 
-    private async ValueTask<DeserializationContext?> DeserializeCommonAsync(BatchReader reader, RefContext refContext)
+    private async ValueTask<DeserializationContext?> DeserializeCommonAsync(BatchReader reader, DeserializationRefContext refContext)
     {
         var magicNumber = await reader.ReadAsync<short>();
         if (magicNumber != MagicNumber)
@@ -143,7 +144,7 @@ public sealed class Fury(Config config)
             return default;
         }
         await reader.ReadAsync<byte>();
-        var metaStringResolver = new MetaStringResolver(Config.ArrayPoolProvider);
+        var metaStringResolver = new MetaStringResolver();
         var context = new DeserializationContext(this, reader, refContext, metaStringResolver);
         return context;
     }
