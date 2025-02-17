@@ -34,8 +34,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.apache.fury.config.CompatibleMode;
-import org.apache.fury.config.Language;
 import org.apache.fury.io.FuryInputStream;
 import org.apache.fury.io.FuryReadableChannel;
 import org.apache.fury.io.FuryStreamReader;
@@ -380,6 +380,18 @@ public class StreamTest extends FuryTestBase {
     assertEquals(fury.deserialize(stream), new int[5000]);
   }
 
+  @Test
+  public void testReadNullChunkMapOnFillBound() {
+    Fury fury = builder().build();
+    Map<String, String> m = new HashMap<>();
+    m.put("1", null);
+    ByteArrayOutputStream outputStream = new ByteArrayOutputStream(100);
+    fury.serialize(outputStream, m);
+    InputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
+    FuryInputStream input = new FuryInputStream(inputStream);
+    assertEquals(fury.deserialize(input), m);
+  }
+
   public static class SimpleType {
     public double dVal;
 
@@ -391,7 +403,7 @@ public class StreamTest extends FuryTestBase {
   // For issue https://github.com/apache/fury/issues/2060
   @Test
   public void testReadPrimitivesOnBufferFillBound() {
-    Fury fury = Fury.builder().withLanguage(Language.JAVA).build();
+    Fury fury = builder().build();
     fury.register(SimpleType.class);
     SimpleType v = new SimpleType();
     ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
