@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import org.apache.fury.config.CompatibleMode;
+import org.apache.fury.config.Language;
 import org.apache.fury.io.FuryInputStream;
 import org.apache.fury.io.FuryReadableChannel;
 import org.apache.fury.io.FuryStreamReader;
@@ -377,5 +378,27 @@ public class StreamTest extends FuryTestBase {
     assertEquals(fury.deserialize(stream), list);
     assertEquals(fury.deserialize(stream), new long[5000]);
     assertEquals(fury.deserialize(stream), new int[5000]);
+  }
+
+  public static class SimpleType {
+    public double dVal;
+
+    public SimpleType() {
+      dVal = 0.5;
+    }
+  }
+
+  // For issue https://github.com/apache/fury/issues/2060
+  @Test
+  public void testReadPrimitivesOnBufferFillBound() {
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).build();
+    fury.register(SimpleType.class);
+    SimpleType v = new SimpleType();
+    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    fury.serialize(outputStream, v);
+    InputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
+    FuryInputStream input = new FuryInputStream(inputStream, 11);
+    SimpleType newValue = (SimpleType) fury.deserialize(input);
+    Assert.assertEquals(v.dVal, newValue.dVal, 0.001);
   }
 }
