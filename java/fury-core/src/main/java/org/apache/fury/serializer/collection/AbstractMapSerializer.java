@@ -679,7 +679,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
       } else {
         readNullKeyChunk(buffer, map, chunkHeader, valueSerializer, valueHasNull);
       }
-      if (size-- == 0) {
+      if (--size == 0) {
         return 0;
       } else {
         chunkHeader = buffer.readUnsignedByte();

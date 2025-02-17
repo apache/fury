@@ -34,6 +34,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.io.FuryInputStream;
 import org.apache.fury.io.FuryReadableChannel;
@@ -377,5 +378,17 @@ public class StreamTest extends FuryTestBase {
     assertEquals(fury.deserialize(stream), list);
     assertEquals(fury.deserialize(stream), new long[5000]);
     assertEquals(fury.deserialize(stream), new int[5000]);
+  }
+
+  @Test
+  public void testReadNullChunkMapOnFillBound() {
+    Fury fury = builder().build();
+    Map<String, String> m = new HashMap<>();
+    m.put("1", null);
+    ByteArrayOutputStream outputStream = new ByteArrayOutputStream(100);
+    fury.serialize(outputStream, m);
+    InputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
+    FuryInputStream input = new FuryInputStream(inputStream);
+    assertEquals(fury.deserialize(input), m);
   }
 }
