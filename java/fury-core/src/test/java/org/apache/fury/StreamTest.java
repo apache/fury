@@ -391,4 +391,26 @@ public class StreamTest extends FuryTestBase {
     FuryInputStream input = new FuryInputStream(inputStream);
     assertEquals(fury.deserialize(input), m);
   }
+
+  public static class SimpleType {
+    public double dVal;
+
+    public SimpleType() {
+      dVal = 0.5;
+    }
+  }
+
+  // For issue https://github.com/apache/fury/issues/2060
+  @Test
+  public void testReadPrimitivesOnBufferFillBound() {
+    Fury fury = builder().build();
+    fury.register(SimpleType.class);
+    SimpleType v = new SimpleType();
+    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    fury.serialize(outputStream, v);
+    InputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
+    FuryInputStream input = new FuryInputStream(inputStream, 11);
+    SimpleType newValue = (SimpleType) fury.deserialize(input);
+    Assert.assertEquals(v.dVal, newValue.dVal, 0.001);
+  }
 }
