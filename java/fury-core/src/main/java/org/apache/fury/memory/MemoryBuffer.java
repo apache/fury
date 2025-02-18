@@ -2198,10 +2198,9 @@ public final class MemoryBuffer {
     int remaining = size - readerIdx;
     if (remaining >= 8) {
       readerIndex = readerIdx + len;
-      long v =
-          UNSAFE.getLong(heapMemory, address + readerIdx)
-              & (0xffffffffffffffffL >>> ((8 - len) * 8));
-      return LITTLE_ENDIAN ? v : Long.reverseBytes(v);
+      long v = UNSAFE.getLong(heapMemory, address + readerIdx);
+      v = (LITTLE_ENDIAN ? v : Long.reverseBytes(v)) & (0xffffffffffffffffL >>> ((8 - len) * 8));
+      return v;
     }
     return slowReadBytesAsInt64(remaining, len);
   }
