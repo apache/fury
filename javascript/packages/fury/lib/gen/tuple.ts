@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import { TupleTypeDescription, TypeDescription } from "../description";
+import { TupleClassInfo, ClassInfo } from "../classInfo";
 import { CodecBuilder } from "./builder";
 import { BaseSerializerGenerator, RefState, SerializerGenerator } from "./serializer";
 import { CodegenRegistry } from "./router";
@@ -25,14 +25,14 @@ import { InternalSerializerType } from "../type";
 import { Scope } from "./scope";
 
 class TupleSerializerGenerator extends BaseSerializerGenerator {
-  description: TupleTypeDescription;
+  classInfo: TupleClassInfo;
   innerGenerators: SerializerGenerator[];
 
-  constructor(description: TypeDescription, builder: CodecBuilder, scope: Scope) {
-    super(description, builder, scope);
-    this.description = <TupleTypeDescription>description;
-    const inner = this.description.options.inner;
-    this.innerGenerators = inner.map(x => CodegenRegistry.newGeneratorByDescription(x, this.builder, this.scope));
+  constructor(classinfo: ClassInfo, builder: CodecBuilder, scope: Scope) {
+    super(classinfo, builder, scope);
+    this.classInfo = <TupleClassInfo>classinfo;
+    const inner = this.classInfo.options.inner;
+    this.innerGenerators = inner.map(x => CodegenRegistry.newGeneratorByClassInfo(x, this.builder, this.scope));
   }
 
   writeStmt(accessor: string): string {

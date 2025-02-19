@@ -17,14 +17,13 @@
  * under the License.
  */
 
-import { TypeDescription } from "../description";
+import { ClassInfo } from "../classInfo";
 import { CodecBuilder } from "./builder";
 import { BaseSerializerGenerator } from "./serializer";
 import { CodegenRegistry } from "./router";
-import { getTypeIdByInternalSerializerType, InternalSerializerType, RefFlags, Serializer } from "../type";
+import { InternalSerializerType, RefFlags, Serializer, TypeId } from "../type";
 import { Scope } from "./scope";
 import Fury from "../fury";
-import SerializerResolver from "../classResolver";
 
 export class AnySerializer {
   constructor(private fury: Fury) {
@@ -41,9 +40,10 @@ export class AnySerializer {
   detectSerializer() {
     const typeId = this.fury.binaryReader.int16();
     let serializer: Serializer | undefined;
-    if (typeId === getTypeIdByInternalSerializerType(InternalSerializerType.OBJECT)) {
-      const tag = this.fury.classResolver.readTag(this.fury.binaryReader)();
-      serializer = this.fury.classResolver.getSerializerByTag(tag);
+    if (TypeId.IS_NAMED_TYPE(typeId)) {
+      const ns = this.fury.metaStringResolver.readNamespace(this.fury.binaryReader);
+      const typeName = this.fury.metaStringResolver.readTypeName(this.fury.binaryReader);
+      serializer = this.fury.classResolver.getSerializerByName(`${ns}$${typeName}`);
     } else {
       serializer = this.fury.classResolver.getSerializerById(typeId);
     }
@@ -94,11 +94,11 @@ export class AnySerializer {
 }
 
 class AnySerializerGenerator extends BaseSerializerGenerator {
-  description: TypeDescription;
+  classInfo: ClassInfo;
 
-  constructor(description: TypeDescription, builder: CodecBuilder, scope: Scope) {
-    super(description, builder, scope);
-    this.description = description;
+  constructor(classinfo: ClassInfo, builder: CodecBuilder, scope: Scope) {
+    super(classinfo, builder, scope);
+    this.classInfo = classinfo;
   }
 
   writeStmt(): string {

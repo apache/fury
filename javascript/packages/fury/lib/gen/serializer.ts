@@ -17,14 +17,15 @@
  * under the License.
  */
 
-import { getTypeIdByInternalSerializerType, InternalSerializerType } from "../type";
+import { InternalSerializerType, Mode, TypeId } from "../type";
 import { CodecBuilder } from "./builder";
 import { RefFlags } from "../type";
 import { Scope } from "./scope";
-import { TypeDescription, ObjectTypeDescription } from "../description";
+import { ClassInfo, StructClassInfo } from "../classInfo";
+import { TypeMeta } from "../meta/TypeMeta";
 
-export const makeHead = (flag: RefFlags, type: InternalSerializerType) => {
-  return (((getTypeIdByInternalSerializerType(type) << 16) >>> 16) << 8) | ((flag << 24) >>> 24);
+export const makeHead = (flag: RefFlags, typeId: number) => {
+  return (((typeId << 16) >>> 16) << 8) | ((flag << 24) >>> 24);
 };
 
 export interface SerializerGenerator {
@@ -32,6 +33,7 @@ export interface SerializerGenerator {
   getFixedSize(): number;
   needToWriteRef(): boolean;
   getType(): InternalSerializerType;
+  getTypeId(): number | undefined;
   toWriteEmbed(accessor: string, excludeHead?: boolean): string;
   toReadEmbed(accessor: (expr: string) => string, excludeHead?: boolean, refState?: RefState): string;
 }
@@ -101,7 +103,7 @@ export class RefState {
 
 export abstract class BaseSerializerGenerator implements SerializerGenerator {
   constructor(
-    protected description: TypeDescription,
+    protected classInfo: ClassInfo,
     protected builder: CodecBuilder,
     protected scope: Scope,
   ) {
@@ -117,7 +119,11 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
   abstract readStmt(accessor: (expr: string) => string, refState: RefState): string;
 
   getType() {
-    return this.description.type;
+    return this.classInfo.type;
+  }
+
+  getTypeId() {
+    return this.classInfo.typeId;
   }
 
   protected maybeReference(accessor: string, refState: RefState) {
@@ -137,17 +143,32 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
   }
 
   protected wrapWriteHead(accessor: string, stmt: (accessor: string) => string) {
-    const maybeTag = () => {
-      if (this.description.type !== InternalSerializerType.OBJECT) {
+    if (!this.classInfo.typeId) {
+      throw new Error("typeId not provided, write failed");
+    }
+    const maybeNamed = () => {
+      if (!TypeId.IS_NAMED_TYPE(this.classInfo.typeId!)) {
         return "";
       }
-      const safeTag = CodecBuilder.replaceBackslashAndQuote((<ObjectTypeDescription> this.description).options.tag);
-      const tagWriter = this.scope.declare("tagWriter", `${this.builder.classResolver.createTagWriter(safeTag)}`);
-      return `${tagWriter}.write(${this.builder.writer.ownName()})`;
+      const classInfo = this.classInfo.castToStruct();
+      const nsBytes = this.scope.declare("nsBytes", this.builder.metaStringResolver.encodeNamespace(CodecBuilder.replaceBackslashAndQuote(classInfo.namespace)));
+      const typeNameBytes = this.scope.declare("typeNameBytes", this.builder.metaStringResolver.encodeTypeName(CodecBuilder.replaceBackslashAndQuote(classInfo.typeName)));
+      return `
+        ${this.builder.metaStringResolver.writeBytes(this.builder.writer.ownName(), nsBytes)}
+        ${this.builder.metaStringResolver.writeBytes(this.builder.writer.ownName(), typeNameBytes)}
+      `;
+    };
+
+    const maybeCompatiable = () => {
+      if (this.builder.fury.config.mode === Mode.Compatible && (this.classInfo.typeId === TypeId.STRUCT || this.classInfo.typeId === TypeId.NAMED_STRUCT)) {
+        const bytes = this.scope.declare("classInfoBytes", `new Uint8Array([${TypeMeta.fromClassInfo(<StructClassInfo> this.classInfo).toBytes().join(",")}])`);
+        return this.builder.typeMetaResolver.writeTypeMeta(this.builder.getClassInfo(), this.builder.writer.ownName(), bytes);
+      }
+      return "";
     };
 
     if (this.needToWriteRef()) {
-      const head = makeHead(RefFlags.RefValueFlag, this.description.type);
+      const head = makeHead(RefFlags.RefValueFlag, this.classInfo.typeId);
       const existsId = this.scope.uniqueName("existsId");
       return `
                 if (${accessor} !== null && ${accessor} !== undefined) {
@@ -158,7 +179,8 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
                     } else {
                         ${this.builder.referenceResolver.writeRef(accessor)}
                         ${this.builder.writer.int24(head)};
-                        ${maybeTag()}
+                        ${maybeNamed()}
+                        ${maybeCompatiable()}
                         ${stmt(accessor)};
                     }
                 } else {
@@ -166,11 +188,12 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
                 }
                 `;
     } else {
-      const head = makeHead(RefFlags.NotNullValueFlag, this.description.type);
+      const head = makeHead(RefFlags.NotNullValueFlag, this.classInfo.typeId);
       return `
             if (${accessor} !== null && ${accessor} !== undefined) {
                 ${this.builder.writer.int24(head)};
-                ${maybeTag()}
+                ${maybeNamed()}
+                ${maybeCompatiable()}
                 ${stmt(accessor)};
             } else {
                 ${this.builder.writer.int8(RefFlags.NullFlag)};
@@ -180,16 +203,44 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
 
   private wrapReadHead(accessor: (expr: string) => string, stmt: (accessor: (expr: string) => string, refState: RefState) => string) {
     const refFlag = this.scope.uniqueName("refFlag");
+    const ns = this.scope.uniqueName("ns");
+    const typeName = this.scope.uniqueName("typeName");
+    const typeId = this.scope.uniqueName("typeId");
+
+    const typeMeta = (this.builder.fury.config.mode !== Mode.SchemaConsistent && this.scope.uniqueName("typeMeta")) || "";
+    const lastestHash = (this.builder.fury.config.mode !== Mode.SchemaConsistent && this.scope.declare("hash_serializer", `{
+      hash: ${(this.classInfo.castToStruct()).hash.toString()},
+      serializer: ${this.builder.classResolver.getSerializerByName(CodecBuilder.replaceBackslashAndQuote((this.classInfo.castToStruct()).named!))},
+    }`)) || "";
 
     return `
       const ${refFlag} = ${this.builder.reader.int8()};
       switch (${refFlag}) {
           case ${RefFlags.NotNullValueFlag}:
           case ${RefFlags.RefValueFlag}:
-              if (${this.builder.reader.int16()} === ${getTypeIdByInternalSerializerType(InternalSerializerType.OBJECT)}) {
-                  ${this.builder.classResolver.readTag(this.builder.reader.ownName())};
+              const ${typeId} = ${this.builder.reader.int16()};
+              let ${ns};
+              let ${typeName};
+              if (${typeId} === ${TypeId.NAMED_STRUCT} || ${typeId} === ${TypeId.NAMED_ENUM}) {
+                ${ns} = ${this.builder.metaStringResolver.readNamespace(this.builder.reader.ownName())};
+                ${typeName} = ${this.builder.metaStringResolver.readTypeName(this.builder.reader.ownName())};
               }
-              ${stmt(accessor, RefState.fromCondition(`${refFlag} === ${RefFlags.RefValueFlag}`))}
+              ${
+                this.builder.fury.config.mode === Mode.Compatible && (this.classInfo.typeId === TypeId.STRUCT || this.classInfo.typeId === TypeId.NAMED_STRUCT)
+                ? `
+                  const ${typeMeta} = ${this.builder.typeMetaResolver.readTypeMeta(this.builder.reader.ownName())};
+                  if (${lastestHash}.hash === ${typeMeta}.getHash()) {
+                      return ${lastestHash}.serializer.readInner(${RefState.fromCondition(`${refFlag} === ${RefFlags.RefValueFlag}`).toConditionExpr()});
+                  } else {
+                      ${lastestHash}.serializer = ${this.builder.typeMetaResolver.genSerializerByTypeMetaRuntime(typeMeta, ns, typeName)};
+                      ${lastestHash}.hash = ${typeMeta}.getHash();
+                  }
+                  ${accessor(`${lastestHash}.serializer.readInner(${RefState.fromCondition(`${refFlag} === ${RefFlags.RefValueFlag}`).toConditionExpr()})`)};
+                `
+: `
+                  ${stmt(accessor, RefState.fromCondition(`${refFlag} === ${RefFlags.RefValueFlag}`))}
+                `
+              }
               break;
           case ${RefFlags.RefFlag}:
               ${accessor(this.builder.referenceResolver.getReadObject(this.builder.reader.varUInt32()))}
@@ -223,6 +274,7 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
     this.scope.assertNameNotDuplicate("fury");
     this.scope.assertNameNotDuplicate("external");
     this.scope.assertNameNotDuplicate("options");
+    this.scope.assertNameNotDuplicate("classInfo");
 
     const declare = `
       const readInner = (fromRef) => {
@@ -239,7 +291,7 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
       };
     `;
     return `
-        return function (fury, external, options) {
+        return function (fury, external, classInfo, options) {
             ${this.scope.generate()}
             ${declare}
             return {
@@ -249,7 +301,7 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
               writeInner,
               fixedSize: ${this.getFixedSize()},
               needToWriteRef: () => ${this.needToWriteRef()},
-              getTypeId: () => ${getTypeIdByInternalSerializerType(this.getType())}
+              getTypeId: () => ${this.getTypeId()}
             };
         }
         `;

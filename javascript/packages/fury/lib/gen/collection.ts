@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import { TypeDescription } from "../description";
+import { ClassInfo } from "../classInfo";
 import { CodecBuilder } from "./builder";
 import { BaseSerializerGenerator, RefState, SerializerGenerator } from "./serializer";
 import { CodegenRegistry } from "./router";
@@ -47,7 +47,7 @@ class CollectionAnySerializer {
   protected writeElementsHeader(arr: any) {
     let flag = 0;
     let isSame = true;
-    let serializer: Serializer | null = null;
+    let serializer: Serializer | null | undefined = null;
     let includeNone = false;
 
     for (const item of arr) {
@@ -56,7 +56,7 @@ class CollectionAnySerializer {
       }
       if (isSame) {
         const current = this.fury.classResolver.getSerializerByData(item);
-        if (serializer !== null && current !== serializer) {
+        if (serializer !== null && serializer !== undefined && current !== serializer) {
           isSame = false;
         } else {
           serializer = current;
@@ -70,12 +70,12 @@ class CollectionAnySerializer {
     if (includeNone) {
       flag |= CollectionFlags.HAS_NULL;
     }
-    if (serializer!.needToWriteRef()) {
+    if (serializer && serializer!.needToWriteRef()) {
       flag |= CollectionFlags.TRACKING_REF;
     }
     this.fury.binaryWriter.uint8(flag);
     if (isSame) {
-      this.fury.binaryWriter.int16(serializer!.getTypeId());
+      this.fury.binaryWriter.int16(serializer ? serializer!.getTypeId() : 0);
     }
     return {
       serializer,
@@ -138,17 +138,17 @@ class CollectionAnySerializer {
 }
 
 export abstract class CollectionSerializerGenerator extends BaseSerializerGenerator {
-  description: TypeDescription;
+  classInfo: ClassInfo;
   innerGenerator: SerializerGenerator;
 
-  constructor(description: TypeDescription, builder: CodecBuilder, scope: Scope) {
-    super(description, builder, scope);
-    this.description = description;
+  constructor(classinfo: ClassInfo, builder: CodecBuilder, scope: Scope) {
+    super(classinfo, builder, scope);
+    this.classInfo = classinfo;
     const inner = this.genericTypeDescriptin();
-    this.innerGenerator = CodegenRegistry.newGeneratorByDescription(inner, this.builder, this.scope);
+    this.innerGenerator = CodegenRegistry.newGeneratorByClassInfo(inner, this.builder, this.scope);
   }
 
-  abstract genericTypeDescriptin(): TypeDescription;
+  abstract genericTypeDescriptin(): ClassInfo;
 
   private isAny() {
     return this.genericTypeDescriptin().type === InternalSerializerType.ANY;
@@ -187,7 +187,7 @@ export abstract class CollectionSerializerGenerator extends BaseSerializerGenera
     return `
             let ${flags} = 0;
             ${this.writeElementsHeader(accessor, flags)}
-            ${this.builder.writer.int16(this.description.type)}
+            ${this.builder.writer.int16(this.classInfo.type)}
             ${this.builder.writer.varUInt32(`${accessor}.${this.sizeProp()}`)}
             ${this.builder.writer.reserve(`${this.innerGenerator.getFixedSize()} * ${accessor}.${this.sizeProp()}`)};
             if (${flags} & ${CollectionFlags.TRACKING_REF}) {

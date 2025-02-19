@@ -17,11 +17,11 @@
  * under the License.
  */
 
-import { MapTypeDescription, TypeDescription } from "../description";
+import { MapClassInfo, ClassInfo } from "../classInfo";
 import { CodecBuilder } from "./builder";
 import { BaseSerializerGenerator, RefState, SerializerGenerator } from "./serializer";
 import { CodegenRegistry } from "./router";
-import { getTypeIdByInternalSerializerType, InternalSerializerType, RefFlags, Serializer } from "../type";
+import { InternalSerializerType, RefFlags, Serializer } from "../type";
 import { Scope } from "./scope";
 import Fury from "../fury";
 
@@ -238,19 +238,19 @@ class MapAnySerializer {
 }
 
 export class MapSerializerGenerator extends BaseSerializerGenerator {
-  description: MapTypeDescription;
+  classInfo: MapClassInfo;
   keyGenerator: SerializerGenerator;
   valueGenerator: SerializerGenerator;
 
-  constructor(description: TypeDescription, builder: CodecBuilder, scope: Scope) {
-    super(description, builder, scope);
-    this.description = <MapTypeDescription>description;
-    this.keyGenerator = CodegenRegistry.newGeneratorByDescription(this.description.options.key, this.builder, this.scope);
-    this.valueGenerator = CodegenRegistry.newGeneratorByDescription(this.description.options.value, this.builder, this.scope);
+  constructor(classinfo: ClassInfo, builder: CodecBuilder, scope: Scope) {
+    super(classinfo, builder, scope);
+    this.classInfo = <MapClassInfo>classinfo;
+    this.keyGenerator = CodegenRegistry.newGeneratorByClassInfo(this.classInfo.options.key, this.builder, this.scope);
+    this.valueGenerator = CodegenRegistry.newGeneratorByClassInfo(this.classInfo.options.value, this.builder, this.scope);
   }
 
   private isAny() {
-    return this.description.options.key.type === InternalSerializerType.ANY || this.description.options.value.type === InternalSerializerType.ANY;
+    return this.classInfo.options.key.type === InternalSerializerType.ANY || this.classInfo.options.value.type === InternalSerializerType.ANY;
   }
 
   private writeStmtSpecificType(accessor: string) {
@@ -258,9 +258,7 @@ export class MapSerializerGenerator extends BaseSerializerGenerator {
     const v = this.scope.uniqueName("v");
     const keyHeader = (this.keyGenerator.needToWriteRef() ? MapFlags.TRACKING_REF : 0);
     const valueHeader = (this.valueGenerator.needToWriteRef() ? MapFlags.TRACKING_REF : 0);
-    const typeId = (
-      getTypeIdByInternalSerializerType(this.keyGenerator.getType()) << 8)
-      | getTypeIdByInternalSerializerType(this.valueGenerator.getType());
+    const typeId = (this.keyGenerator.getTypeId()! << 8) | (this.valueGenerator.getTypeId()!);
     const lastKeyIsNull = this.scope.uniqueName("lastKeyIsNull");
     const lastValueIsNull = this.scope.uniqueName("lastValueIsNull");
     const chunkSize = this.scope.uniqueName("chunkSize");
@@ -343,9 +341,9 @@ export class MapSerializerGenerator extends BaseSerializerGenerator {
       return this.writeStmtSpecificType(accessor);
     }
     return `new (${anySerializer})(${this.builder.getFuryName()}, ${
-      this.description.options.key.type !== InternalSerializerType.ANY ? getTypeIdByInternalSerializerType(this.description.options.key.type) : null
+      this.classInfo.options.key.type !== InternalSerializerType.ANY ? this.classInfo.options.key.typeId : null
     }, ${
-      this.description.options.value.type !== InternalSerializerType.ANY ? getTypeIdByInternalSerializerType(this.description.options.value.type) : null
+      this.classInfo.options.value.type !== InternalSerializerType.ANY ? this.classInfo.options.value.typeId : null
     }).write(${accessor})`;
   }
 
@@ -426,9 +424,9 @@ export class MapSerializerGenerator extends BaseSerializerGenerator {
       return this.readStmtSpecificType(accessor, refState);
     }
     return accessor(`new (${anySerializer})(${this.builder.getFuryName()}, ${
-      this.description.options.key.type !== InternalSerializerType.ANY ? getTypeIdByInternalSerializerType(this.description.options.key.type) : null
+      this.classInfo.options.key.type !== InternalSerializerType.ANY ? (this.classInfo.options.key.typeId) : null
     }, ${
-      this.description.options.value.type !== InternalSerializerType.ANY ? getTypeIdByInternalSerializerType(this.description.options.value.type) : null
+      this.classInfo.options.value.type !== InternalSerializerType.ANY ? (this.classInfo.options.value.typeId) : null
     }).read(${refState.toConditionExpr()})`);
   }
 
