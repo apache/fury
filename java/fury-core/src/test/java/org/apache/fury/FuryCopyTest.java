@@ -276,6 +276,8 @@ public class FuryCopyTest extends FuryTestBase {
     assetEqualsButNotSame(new java.sql.Date(System.currentTimeMillis()));
     assetEqualsButNotSame(new Time(System.currentTimeMillis()));
     assetEqualsButNotSame(new Timestamp(System.currentTimeMillis()));
+    assetEqualsButNotSame(Calendar.getInstance());
+    assetEqualsButNotSame(TimeZone.getDefault());
   }
 
   private void assertSame(Object obj) {
