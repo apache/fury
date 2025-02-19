@@ -46,13 +46,24 @@ import org.apache.fury.util.DateTimeUtils;
 
 /** Serializers for all time related types. */
 public class TimeSerializers {
-  public abstract static class TimeSerializer<T> extends ImmutableSerializer<T> {
+  public abstract static class TimeSerializer<T> extends Serializer<T> {
 
     public TimeSerializer(Fury fury, Class<T> type) {
       super(fury, type, !fury.getConfig().isTimeRefIgnored());
     }
 
     public TimeSerializer(Fury fury, Class<T> type, boolean needToWriteRef) {
+      super(fury, type, needToWriteRef);
+    }
+  }
+
+  public abstract static class ImmutableTimeSerializer<T> extends ImmutableSerializer<T> {
+
+    public ImmutableTimeSerializer(Fury fury, Class<T> type) {
+      super(fury, type, !fury.getConfig().isTimeRefIgnored());
+    }
+
+    public ImmutableTimeSerializer(Fury fury, Class<T> type, boolean needToWriteRef) {
       super(fury, type, needToWriteRef);
     }
   }
@@ -171,7 +182,7 @@ public class TimeSerializers {
     }
   }
 
-  public static final class LocalDateSerializer extends TimeSerializer<LocalDate> {
+  public static final class LocalDateSerializer extends ImmutableTimeSerializer<LocalDate> {
     public LocalDateSerializer(Fury fury) {
       super(fury, LocalDate.class);
     }
@@ -215,7 +226,7 @@ public class TimeSerializers {
     }
   }
 
-  public static final class InstantSerializer extends TimeSerializer<Instant> {
+  public static final class InstantSerializer extends ImmutableTimeSerializer<Instant> {
     public InstantSerializer(Fury fury) {
       super(fury, Instant.class);
     }
@@ -249,7 +260,7 @@ public class TimeSerializers {
     }
   }
 
-  public static class DurationSerializer extends TimeSerializer<Duration> {
+  public static class DurationSerializer extends ImmutableTimeSerializer<Duration> {
     public DurationSerializer(Fury fury) {
       super(fury, Duration.class);
     }
@@ -272,7 +283,7 @@ public class TimeSerializers {
     }
   }
 
-  public static class LocalDateTimeSerializer extends TimeSerializer<LocalDateTime> {
+  public static class LocalDateTimeSerializer extends ImmutableTimeSerializer<LocalDateTime> {
     public LocalDateTimeSerializer(Fury fury) {
       super(fury, LocalDateTime.class);
     }
@@ -295,7 +306,7 @@ public class TimeSerializers {
     }
   }
 
-  public static class LocalTimeSerializer extends TimeSerializer<LocalTime> {
+  public static class LocalTimeSerializer extends ImmutableTimeSerializer<LocalTime> {
     public LocalTimeSerializer(Fury fury) {
       super(fury, LocalTime.class);
     }
@@ -421,7 +432,7 @@ public class TimeSerializers {
     }
   }
 
-  public static class ZoneIdSerializer extends TimeSerializer<ZoneId> {
+  public static class ZoneIdSerializer extends ImmutableTimeSerializer<ZoneId> {
     public ZoneIdSerializer(Fury fury, Class<ZoneId> type) {
       super(fury, type);
     }
@@ -441,7 +452,7 @@ public class TimeSerializers {
     }
   }
 
-  public static class ZoneOffsetSerializer extends TimeSerializer<ZoneOffset> {
+  public static class ZoneOffsetSerializer extends ImmutableTimeSerializer<ZoneOffset> {
     public ZoneOffsetSerializer(Fury fury) {
       super(fury, ZoneOffset.class);
     }
@@ -475,7 +486,7 @@ public class TimeSerializers {
     }
   }
 
-  public static class ZonedDateTimeSerializer extends TimeSerializer<ZonedDateTime> {
+  public static class ZonedDateTimeSerializer extends ImmutableTimeSerializer<ZonedDateTime> {
 
     public ZonedDateTimeSerializer(Fury fury) {
       super(fury, ZonedDateTime.class);
@@ -499,7 +510,7 @@ public class TimeSerializers {
     }
   }
 
-  public static class YearSerializer extends TimeSerializer<Year> {
+  public static class YearSerializer extends ImmutableTimeSerializer<Year> {
     public YearSerializer(Fury fury) {
       super(fury, Year.class);
     }
@@ -519,7 +530,7 @@ public class TimeSerializers {
     }
   }
 
-  public static class YearMonthSerializer extends TimeSerializer<YearMonth> {
+  public static class YearMonthSerializer extends ImmutableTimeSerializer<YearMonth> {
     public YearMonthSerializer(Fury fury) {
       super(fury, YearMonth.class);
     }
@@ -542,7 +553,7 @@ public class TimeSerializers {
     }
   }
 
-  public static class MonthDaySerializer extends TimeSerializer<MonthDay> {
+  public static class MonthDaySerializer extends ImmutableTimeSerializer<MonthDay> {
     public MonthDaySerializer(Fury fury) {
       super(fury, MonthDay.class);
     }
@@ -563,7 +574,7 @@ public class TimeSerializers {
     }
   }
 
-  public static class PeriodSerializer extends TimeSerializer<Period> {
+  public static class PeriodSerializer extends ImmutableTimeSerializer<Period> {
     public PeriodSerializer(Fury fury) {
       super(fury, Period.class);
     }
@@ -586,7 +597,7 @@ public class TimeSerializers {
     }
   }
 
-  public static class OffsetTimeSerializer extends TimeSerializer<OffsetTime> {
+  public static class OffsetTimeSerializer extends ImmutableTimeSerializer<OffsetTime> {
     public OffsetTimeSerializer(Fury fury) {
       super(fury, OffsetTime.class);
     }
@@ -607,7 +618,7 @@ public class TimeSerializers {
     }
   }
 
-  public static class OffsetDateTimeSerializer extends TimeSerializer<OffsetDateTime> {
+  public static class OffsetDateTimeSerializer extends ImmutableTimeSerializer<OffsetDateTime> {
     public OffsetDateTimeSerializer(Fury fury) {
       super(fury, OffsetDateTime.class);
     }
