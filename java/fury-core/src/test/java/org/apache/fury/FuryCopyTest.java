@@ -130,6 +130,7 @@ public class FuryCopyTest extends FuryTestBase {
     collectionCopyTest();
     mapCopyTest();
     objectCopyTest();
+    dateCopyTest();
   }
 
   @Test
@@ -255,10 +256,6 @@ public class FuryCopyTest extends FuryTestBase {
   }
 
   private void timeCopyTest() {
-    assertSame(new java.util.Date());
-    assertSame(new java.sql.Date(System.currentTimeMillis()));
-    assertSame(new Time(System.currentTimeMillis()));
-    assertSame(new Timestamp(System.currentTimeMillis()));
     assertSame(LocalDate.now());
     assertSame(LocalTime.now());
     assertSame(LocalDateTime.now());
@@ -272,6 +269,13 @@ public class FuryCopyTest extends FuryTestBase {
     assertSame(Period.ofDays(10));
     assertSame(OffsetTime.now());
     assertSame(OffsetDateTime.now());
+  }
+
+  private void dateCopyTest() {
+    assetEqualsButNotSame(new java.util.Date());
+    assetEqualsButNotSame(new java.sql.Date(System.currentTimeMillis()));
+    assetEqualsButNotSame(new Time(System.currentTimeMillis()));
+    assetEqualsButNotSame(new Timestamp(System.currentTimeMillis()));
   }
 
   private void assertSame(Object obj) {

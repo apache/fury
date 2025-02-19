@@ -49,11 +49,11 @@ public class TimeSerializers {
   public abstract static class TimeSerializer<T> extends Serializer<T> {
 
     public TimeSerializer(Fury fury, Class<T> type) {
-      super(fury, type, !fury.getConfig().isTimeRefIgnored());
+      super(fury, type, !fury.getConfig().isTimeRefIgnored(), false);
     }
 
     public TimeSerializer(Fury fury, Class<T> type, boolean needToWriteRef) {
-      super(fury, type, needToWriteRef);
+      super(fury, type, needToWriteRef, false);
     }
   }
 
@@ -113,6 +113,11 @@ public class TimeSerializers {
     protected Date newInstance(long time) {
       return new Date(time);
     }
+
+    @Override
+    public Date copy(Date value) {
+      return newInstance(value.getTime());
+    }
   }
 
   public static final class SqlDateSerializer extends BaseDateSerializer<java.sql.Date> {
@@ -127,6 +132,11 @@ public class TimeSerializers {
     @Override
     protected java.sql.Date newInstance(long time) {
       return new java.sql.Date(time);
+    }
+
+    @Override
+    public java.sql.Date copy(java.sql.Date value) {
+      return newInstance(value.getTime());
     }
   }
 
@@ -143,6 +153,11 @@ public class TimeSerializers {
     @Override
     protected Time newInstance(long time) {
       return new Time(time);
+    }
+
+    @Override
+    public Time copy(Time value) {
+      return newInstance(value.getTime());
     }
   }
 
@@ -179,6 +194,11 @@ public class TimeSerializers {
       Timestamp t = new Timestamp(buffer.readInt64());
       t.setNanos(buffer.readInt32());
       return t;
+    }
+
+    @Override
+    public Timestamp copy(Timestamp value) {
+      return new Timestamp(value.getTime());
     }
   }
 
@@ -387,6 +407,11 @@ public class TimeSerializers {
     public TimeZone read(MemoryBuffer buffer) {
       return TimeZone.getTimeZone(fury.readJavaString(buffer));
     }
+
+    @Override
+    public TimeZone copy(TimeZone value) {
+      return TimeZone.getTimeZone(value.getID());
+    }
   }
 
   public static final class CalendarSerializer extends TimeSerializer<Calendar> {
@@ -429,6 +454,20 @@ public class TimeSerializers {
         }
       }
       return result;
+    }
+
+    @Override
+    public Calendar copy(Calendar value) {
+      Calendar copy = Calendar.getInstance(value.getTimeZone());
+      copy.setTimeInMillis(value.getTimeInMillis());
+      copy.setLenient(value.isLenient());
+      copy.setFirstDayOfWeek(value.getFirstDayOfWeek());
+      copy.setMinimalDaysInFirstWeek(value.getMinimalDaysInFirstWeek());
+      if (value instanceof GregorianCalendar) {
+        ((GregorianCalendar) copy)
+            .setGregorianChange(((GregorianCalendar) value).getGregorianChange());
+      }
+      return copy;
     }
   }
 
