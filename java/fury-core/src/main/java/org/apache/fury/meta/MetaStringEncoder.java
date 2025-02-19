@@ -254,7 +254,7 @@ public class MetaStringEncoder {
     int charInd = 0;
     int charBitRemain = bitsPerChar;  // Remaining bits to process for the current character
     int mask;
-    do {
+    while(charInd < chars.length) {
       int charVal = (bitsPerChar == 5) ? charToValueLowerSpecial(chars[charInd])
         : charToValueLowerUpperDigitSpecial(chars[charInd]);
       // Calculate how many bits are remaining in the current byte
@@ -280,7 +280,7 @@ public class MetaStringEncoder {
         bitInd = 0;  // Reset bit index for the new byte
         charBitRemain -= nowByteRemain;  // Decrease the remaining bits for the character
       }
-    } while (charInd < chars.length);
+    }
 
     boolean stripLastChar = bytes.length * 8 >= totalBits + bitsPerChar;
     if (stripLastChar) {
