@@ -625,14 +625,14 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     List<Expression> expressions = new ArrayList<>();
     int numPrimitiveFields = getNumPrimitiveFields(primitiveGroups);
     Literal totalSizeLiteral = Literal.ofInt(totalSize);
+    // After this check, following read can be totally unsafe without checks
+    expressions.add(new Invoke(buffer, "checkReadableBytes", totalSizeLiteral));
     Expression heapBuffer =
         new Invoke(buffer, "getHeapMemory", "heapBuffer", PRIMITIVE_BYTE_ARRAY_TYPE);
     Expression readerAddr =
         new Invoke(buffer, "getUnsafeReaderAddress", "readerAddr", PRIMITIVE_LONG_TYPE);
     expressions.add(heapBuffer);
     expressions.add(readerAddr);
-    // After this check, following read can be totally unsafe without checks
-    expressions.add(new Invoke(buffer, "checkReadableBytes", totalSizeLiteral));
     int acc = 0;
     for (List<Descriptor> group : primitiveGroups) {
       ListExpression groupExpressions = new ListExpression();
@@ -690,16 +690,17 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
       Expression bean, Expression buffer, List<List<Descriptor>> primitiveGroups) {
     List<Expression> expressions = new ArrayList<>();
     int numPrimitiveFields = getNumPrimitiveFields(primitiveGroups);
-    Expression heapBuffer =
-        new Invoke(buffer, "getHeapMemory", "heapBuffer", PRIMITIVE_BYTE_ARRAY_TYPE);
-    expressions.add(heapBuffer);
     for (List<Descriptor> group : primitiveGroups) {
+      // After this check, following read can be totally unsafe without checks.
+      // checkReadableBytes first, `fillBuffer` may create a new heap buffer.
+      ReplaceStub checkReadableBytesStub = new ReplaceStub();
+      expressions.add(checkReadableBytesStub);
+      Expression heapBuffer =
+          new Invoke(buffer, "getHeapMemory", "heapBuffer", PRIMITIVE_BYTE_ARRAY_TYPE);
+      expressions.add(heapBuffer);
       ListExpression groupExpressions = new ListExpression();
       Expression readerAddr =
           new Invoke(buffer, "getUnsafeReaderAddress", "readerAddr", PRIMITIVE_LONG_TYPE);
-      // After this check, following read can be totally unsafe without checks.
-      ReplaceStub checkReadableBytesStub = new ReplaceStub();
-      expressions.add(checkReadableBytesStub);
       int acc = 0;
       boolean compressStarted = false;
       for (Descriptor descriptor : group) {
