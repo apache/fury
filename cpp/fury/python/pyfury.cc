@@ -1,5 +1,5 @@
 /*
-* Licensed to the Apache Software Foundation (ASF) under one
+ * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
  * regarding copyright ownership.  The ASF licenses this file
@@ -17,7 +17,9 @@
  * under the License.
  */
 
-#include "pyfury.h"
+#include "fury/python/pyfury.h"
+#include <cpython/listobject.h>
+#include <cpython/tupleobject.h>
 
 static PyObject **PySequenceGetItems(PyObject *collection) {
   if (PyList_CheckExact(collection)) {
@@ -37,7 +39,7 @@ int Fury_PyBooleanSequenceWriteToBuffer(PyObject *collection, Buffer *buffer,
   }
   Py_ssize_t size = Py_SIZE(collection);
   for (Py_ssize_t i = 0; i < size; i++) {
-    bool b = Py_IsTrue(items[i]);
+    bool b = items[i] == Py_True;
     buffer->UnsafePut(start_index, b);
     start_index += sizeof(bool);
   }
