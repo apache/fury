@@ -34,8 +34,8 @@ from pyfury.lib import mmh3
 from pyfury.meta.metastring import Encoding
 from pyfury.type import is_primitive_type
 from pyfury.util import is_little_endian
-from pyfury.includes.libserialization cimport (TypeId, IsNamespacedType,
-    Fury_PyBooleanSequenceWriteToBuffer, Fury_PyFloatSequenceWriteToBuffer)
+from pyfury.includes.libserialization cimport \
+    (TypeId, IsNamespacedType, Fury_PyBooleanSequenceWriteToBuffer, Fury_PyFloatSequenceWriteToBuffer)
 
 from libc.stdint cimport int8_t, int16_t, int32_t, int64_t, uint64_t
 from libc.stdint cimport *
