@@ -18,14 +18,12 @@
  */
 
 #include "fury/python/pyfury.h"
-#include <cpython/listobject.h>
-#include <cpython/tupleobject.h>
 
 static PyObject **PySequenceGetItems(PyObject *collection) {
   if (PyList_CheckExact(collection)) {
-    return _PyList_CAST(collection)->ob_item;
+    return ((PyListObject *)collection)->ob_item;
   } else if (PyTuple_CheckExact(collection)) {
-    return _PyTuple_CAST(collection)->ob_item;
+    return ((PyTupleObject *)collection)->ob_item;
   }
   return nullptr;
 }
