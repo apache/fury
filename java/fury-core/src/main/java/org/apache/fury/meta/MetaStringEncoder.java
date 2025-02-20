@@ -246,25 +246,50 @@ public class MetaStringEncoder {
 
   private byte[] encodeGeneric(char[] chars, int bitsPerChar) {
     int totalBits = chars.length * bitsPerChar + 1;
-    int byteLength = (totalBits + 7) / 8; // Calculate number of needed bytes
+    int byteLength = (totalBits + 7) / 8;
     byte[] bytes = new byte[byteLength];
-    int currentBit = 1;
-    for (char c : chars) {
-      int value =
-          (bitsPerChar == 5) ? charToValueLowerSpecial(c) : charToValueLowerUpperDigitSpecial(c);
-      // Encode the value in bitsPerChar bits
-      for (int i = bitsPerChar - 1; i >= 0; i--) {
-        if ((value & (1 << i)) != 0) {
-          // Set the bit in the byte array
-          int bytePos = currentBit / 8;
-          int bitPos = currentBit % 8;
-          bytes[bytePos] |= (byte) (1 << (7 - bitPos));
+    int byteInd = 0;
+    int bitInd = 1; // Start from the second bit (the first is reserved for the flag)
+    int charInd = 0;
+    int charBitRemain = bitsPerChar; // Remaining bits to process for the current character
+    int mask;
+    while (charInd < chars.length) {
+      int charVal =
+          (bitsPerChar == 5)
+              ? charToValueLowerSpecial(chars[charInd])
+              : charToValueLowerUpperDigitSpecial(chars[charInd]);
+      // Calculate how many bits are remaining in the current byte
+      int nowByteRemain = 8 - bitInd;
+      if (nowByteRemain >= charBitRemain) {
+        // If the remaining bits in the current byte can fit the whole character value
+        mask = (1 << charBitRemain) - 1; // Create a mask for the bits of the character
+        bytes[byteInd] |=
+            (byte)
+                ((charVal & mask)
+                    << (nowByteRemain - charBitRemain)); // Place the character bits into the byte
+        bitInd += charBitRemain;
+        if (bitInd == 8) {
+          ++byteInd;
+          bitInd = 0;
         }
-        currentBit++;
+        ++charInd;
+        charBitRemain = bitsPerChar; // Reset the remaining bits for the next character
+      } else {
+        // If the remaining bits in the current byte are not enough to hold the whole character
+        mask = (1 << nowByteRemain) - 1; // Create a mask for the current available bits in the byte
+        bytes[byteInd] |=
+            (byte)
+                ((charVal >> (charBitRemain - nowByteRemain))
+                    & mask); // Place part of the character bits into the byte
+        ++byteInd; // Move to the next byte
+        bitInd = 0; // Reset bit index for the new byte
+        charBitRemain -= nowByteRemain; // Decrease the remaining bits for the character
       }
     }
+
     boolean stripLastChar = bytes.length * 8 >= totalBits + bitsPerChar;
     if (stripLastChar) {
+      // Mark the first byte as indicating a stripped character
       bytes[0] = (byte) (bytes[0] | 0x80);
     }
     return bytes;
