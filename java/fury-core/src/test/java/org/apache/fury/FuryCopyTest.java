@@ -45,6 +45,7 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Currency;
@@ -62,6 +63,7 @@ import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.PriorityQueue;
+import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
@@ -130,6 +132,7 @@ public class FuryCopyTest extends FuryTestBase {
     collectionCopyTest();
     mapCopyTest();
     objectCopyTest();
+    dateCopyTest();
   }
 
   @Test
@@ -255,10 +258,6 @@ public class FuryCopyTest extends FuryTestBase {
   }
 
   private void timeCopyTest() {
-    assertSame(new java.util.Date());
-    assertSame(new java.sql.Date(System.currentTimeMillis()));
-    assertSame(new Time(System.currentTimeMillis()));
-    assertSame(new Timestamp(System.currentTimeMillis()));
     assertSame(LocalDate.now());
     assertSame(LocalTime.now());
     assertSame(LocalDateTime.now());
@@ -272,6 +271,15 @@ public class FuryCopyTest extends FuryTestBase {
     assertSame(Period.ofDays(10));
     assertSame(OffsetTime.now());
     assertSame(OffsetDateTime.now());
+  }
+
+  private void dateCopyTest() {
+    assetEqualsButNotSame(new java.util.Date());
+    assetEqualsButNotSame(new java.sql.Date(System.currentTimeMillis()));
+    assetEqualsButNotSame(new Time(System.currentTimeMillis()));
+    assetEqualsButNotSame(new Timestamp(System.currentTimeMillis()));
+    assetEqualsButNotSame(Calendar.getInstance());
+    assetEqualsButNotSame(TimeZone.getDefault());
   }
 
   private void assertSame(Object obj) {
