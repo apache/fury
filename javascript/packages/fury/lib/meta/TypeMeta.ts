@@ -20,7 +20,7 @@
 import { BinaryWriter } from "../writer";
 import { BinaryReader } from "../reader";
 import { Encoding, MetaStringDecoder, MetaStringEncoder } from "./MetaString";
-import { StructClassInfo } from "../classInfo";
+import { StructTypeInfo } from "../typeInfo";
 
 const fieldEncoder = new MetaStringEncoder("$", ".");
 const fieldDecoder = new MetaStringDecoder("$", ".");
@@ -130,10 +130,10 @@ export class TypeMeta {
     return this.layers[0].getTypeId();
   }
 
-  static fromClassInfo(classInfo: StructClassInfo) {
-    const typeId = classInfo.typeId;
-    const fieldInfo = Object.entries(classInfo.options.props!).map(([fieldName, classInfo]) => {
-      return new FieldInfo(fieldName, classInfo.typeId!);
+  static fromTypeInfo(typeInfo: StructTypeInfo) {
+    const typeId = typeInfo.typeId;
+    const fieldInfo = Object.entries(typeInfo.options.props!).map(([fieldName, typeInfo]) => {
+      return new FieldInfo(fieldName, typeInfo.typeId!);
     });
     return new TypeMeta(BigInt(fieldInfo.length), [new TypeMetaLayer(typeId, fieldInfo)]);
   }

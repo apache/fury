@@ -29,7 +29,7 @@ const assert = require('assert');
 const { spawn } = require("child_process");
 
 
-export const data2ClassInfo = (
+export const data2TypeInfo = (
   data,
   typeName,
 ) => {
@@ -37,7 +37,7 @@ export const data2ClassInfo = (
     return null;
   }
   if (Array.isArray(data)) {
-    const item = data2ClassInfo(data[0], typeName);
+    const item = data2TypeInfo(data[0], typeName);
     if (!item) {
       throw new Error("empty array can't convert");
     }
@@ -50,12 +50,12 @@ export const data2ClassInfo = (
     return Type.string();
   }
   if (data instanceof Set) {
-    return Type.set(data2ClassInfo([...data.values()][0], typeName));
+    return Type.set(data2TypeInfo([...data.values()][0], typeName));
   }
   if (data instanceof Map) {
     return Type.map(
-      data2ClassInfo([...data.keys()][0], typeName),
-      data2ClassInfo([...data.values()][0], typeName),
+      data2TypeInfo([...data.keys()][0], typeName),
+      data2TypeInfo([...data.values()][0], typeName),
     );
   }
   if (typeof data === "boolean") {
@@ -80,7 +80,7 @@ export const data2ClassInfo = (
       Object.fromEntries(
         Object.entries(data)
           .map(([key, value]) => {
-            return [key, data2ClassInfo(value, `${typeName}.${key}`)];
+            return [key, data2TypeInfo(value, `${typeName}.${key}`)];
           })
           .filter(([, v]) => Boolean(v)),
       ),
@@ -170,8 +170,8 @@ const sample = {
 };
 
 
-const classinfo = utils.data2ClassInfo(sample, "fury.test.foo");
-const { serialize, deserialize, serializeVolatile } = fury.registerSerializer(classinfo);
+const typeinfo = utils.data2TypeInfo(sample, "fury.test.foo");
+const { serialize, deserialize, serializeVolatile } = fury.registerSerializer(typeinfo);
 
 const furyAb = serialize(sample);
 const sampleJson = JSON.stringify(sample);

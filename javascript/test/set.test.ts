@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import Fury, { ClassInfo, InternalSerializerType, Type } from '../packages/fury/index';
+import Fury, { TypeInfo, InternalSerializerType, Type } from '../packages/fury/index';
 import { describe, expect, test } from '@jest/globals';
 
 describe('set', () => {
@@ -31,14 +31,14 @@ describe('set', () => {
         expect(result).toEqual(new Set(["foo1", "bar1", "cc2"]))
     });
     test('should set in object work', () => {
-        const classinfo = Type.struct({
+        const typeinfo = Type.struct({
             typeName: "example.foo"
         }, {
             a: Type.set(Type.string())
         });
         
         const fury = new Fury({ refTracking: true });    
-        const { serialize, deserialize } = fury.registerSerializer(classinfo);
+        const { serialize, deserialize } = fury.registerSerializer(typeinfo);
         const input = serialize({ a: new Set(["foo1", "bar2"]) });
         const result = deserialize(
             input

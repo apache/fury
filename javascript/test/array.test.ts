@@ -25,7 +25,7 @@ describe('array', () => {
   test('should array work', () => {
     
 
-    const classinfo = Type.struct({
+    const typeinfo = Type.struct({
       typeName: "example.bar"
     }, {
       c: Type.array(Type.struct({
@@ -39,12 +39,12 @@ describe('array', () => {
         return beautify.js(code, { indent_size: 2, space_in_empty_paren: true, indent_empty_lines: true });
       }
     } });
-    const { serialize, deserialize } = fury.registerSerializer(classinfo);
+    const { serialize, deserialize } = fury.registerSerializer(typeinfo);
     const o = { a: "123" };
     expect(deserialize(serialize({ c: [o, o] }))).toEqual({ c: [o, o] })
   });
   test('should typedarray work', () => {
-    const classinfo = Type.struct({
+    const typeinfo = Type.struct({
       typeName: "example.foo",
     }, {
       a: Type.boolArray(),
@@ -54,7 +54,7 @@ describe('array', () => {
       a6: Type.float64Array()
     });
 
-    const fury = new Fury({ refTracking: true }); const serializer = fury.registerSerializer(classinfo).serializer;
+    const fury = new Fury({ refTracking: true }); const serializer = fury.registerSerializer(typeinfo).serializer;
     const input = fury.serialize({
       a: [true, false],
       a2: [1, 2, 3],
@@ -77,13 +77,13 @@ describe('array', () => {
 
 
   test('should floatarray work', () => {
-    const classinfo = Type.struct({
+    const typeinfo = Type.struct({
       typeName: "example.foo"
     }, {
       a5: Type.float32Array(),
     })
     
-    const fury = new Fury({ refTracking: true }); const serialize = fury.registerSerializer(classinfo).serializer;
+    const fury = new Fury({ refTracking: true }); const serialize = fury.registerSerializer(typeinfo).serializer;
     const input = fury.serialize({
       a5: [2.43, 654.4, 55],
     }, serialize);

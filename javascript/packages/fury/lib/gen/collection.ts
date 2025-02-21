@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import { ClassInfo } from "../classInfo";
+import { TypeInfo } from "../typeInfo";
 import { CodecBuilder } from "./builder";
 import { BaseSerializerGenerator, RefState, SerializerGenerator } from "./serializer";
 import { CodegenRegistry } from "./router";
@@ -138,17 +138,17 @@ class CollectionAnySerializer {
 }
 
 export abstract class CollectionSerializerGenerator extends BaseSerializerGenerator {
-  classInfo: ClassInfo;
+  typeInfo: TypeInfo;
   innerGenerator: SerializerGenerator;
 
-  constructor(classinfo: ClassInfo, builder: CodecBuilder, scope: Scope) {
-    super(classinfo, builder, scope);
-    this.classInfo = classinfo;
+  constructor(typeInfo: TypeInfo, builder: CodecBuilder, scope: Scope) {
+    super(typeInfo, builder, scope);
+    this.typeInfo = typeInfo;
     const inner = this.genericTypeDescriptin();
-    this.innerGenerator = CodegenRegistry.newGeneratorByClassInfo(inner, this.builder, this.scope);
+    this.innerGenerator = CodegenRegistry.newGeneratorByTypeInfo(inner, this.builder, this.scope);
   }
 
-  abstract genericTypeDescriptin(): ClassInfo;
+  abstract genericTypeDescriptin(): TypeInfo;
 
   private isAny() {
     return this.genericTypeDescriptin().type === InternalSerializerType.ANY;
@@ -187,7 +187,7 @@ export abstract class CollectionSerializerGenerator extends BaseSerializerGenera
     return `
             let ${flags} = 0;
             ${this.writeElementsHeader(accessor, flags)}
-            ${this.builder.writer.int16(this.classInfo.type)}
+            ${this.builder.writer.int16(this.typeInfo.type)}
             ${this.builder.writer.varUInt32(`${accessor}.${this.sizeProp()}`)}
             ${this.builder.writer.reserve(`${this.innerGenerator.getFixedSize()} * ${accessor}.${this.sizeProp()}`)};
             if (${flags} & ${CollectionFlags.TRACKING_REF}) {

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import { EnumClassInfo, ClassInfo } from "../classInfo";
+import { EnumTypeInfo, TypeInfo } from "../typeInfo";
 import { CodecBuilder } from "./builder";
 import { BaseSerializerGenerator } from "./serializer";
 import { CodegenRegistry } from "./router";
@@ -25,19 +25,19 @@ import { InternalSerializerType, MaxUInt32 } from "../type";
 import { Scope } from "./scope";
 
 class EnumSerializerGenerator extends BaseSerializerGenerator {
-  classInfo: EnumClassInfo;
+  typeInfo: EnumTypeInfo;
 
-  constructor(classinfo: ClassInfo, builder: CodecBuilder, scope: Scope) {
-    super(classinfo, builder, scope);
-    this.classInfo = <EnumClassInfo>classinfo;
+  constructor(typeInfo: TypeInfo, builder: CodecBuilder, scope: Scope) {
+    super(typeInfo, builder, scope);
+    this.typeInfo = <EnumTypeInfo>typeInfo;
   }
 
   writeStmt(accessor: string): string {
-    if (Object.values(this.classInfo.options.inner).length < 1) {
+    if (Object.values(this.typeInfo.options.inner).length < 1) {
       throw new Error("An enum must contain at least one field");
     }
     return `
-        ${Object.values(this.classInfo.options.inner).map((value, index) => {
+        ${Object.values(this.typeInfo.options.inner).map((value, index) => {
             if (typeof value !== "string" && typeof value !== "number") {
                 throw new Error("Enum value must be string or number");
             }
@@ -62,7 +62,7 @@ class EnumSerializerGenerator extends BaseSerializerGenerator {
     return `
         const ${enumValue} = ${this.builder.reader.varUInt32()};
         switch(${enumValue}) {
-            ${Object.values(this.classInfo.options.inner).map((value, index) => {
+            ${Object.values(this.typeInfo.options.inner).map((value, index) => {
                 if (typeof value !== "string" && typeof value !== "number") {
                     throw new Error("Enum value must be string or number");
                 }

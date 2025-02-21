@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import { ArrayClassInfo, ClassInfo } from "../classInfo";
+import { ArrayTypeInfo, TypeInfo } from "../typeInfo";
 import { CodecBuilder } from "./builder";
 import { CodegenRegistry } from "./router";
 import { InternalSerializerType } from "../type";
@@ -25,15 +25,15 @@ import { Scope } from "./scope";
 import { CollectionSerializerGenerator } from "./collection";
 
 class ArraySerializerGenerator extends CollectionSerializerGenerator {
-  classInfo: ArrayClassInfo;
+  typeInfo: ArrayTypeInfo;
 
-  constructor(classinfo: ClassInfo, builder: CodecBuilder, scope: Scope) {
-    super(classinfo, builder, scope);
-    this.classInfo = <ArrayClassInfo>classinfo;
+  constructor(typeInfo: TypeInfo, builder: CodecBuilder, scope: Scope) {
+    super(typeInfo, builder, scope);
+    this.typeInfo = <ArrayTypeInfo>typeInfo;
   }
 
-  genericTypeDescriptin(): ClassInfo {
-    return this.classInfo.options.inner;
+  genericTypeDescriptin(): TypeInfo {
+    return this.typeInfo.options.inner;
   }
 
   sizeProp() {

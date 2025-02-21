@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import Fury, { ClassInfo, InternalSerializerType } from '../packages/fury/index';
+import Fury, { TypeInfo, InternalSerializerType } from '../packages/fury/index';
 import {describe, expect, test} from '@jest/globals';
 
 describe('bool', () => {

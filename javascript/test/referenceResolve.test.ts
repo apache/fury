@@ -19,7 +19,7 @@
 
 import { fromUint8Array, alloc, BrowserBuffer } from '../packages/fury/lib/platformBuffer';
 import { describe, expect, test } from '@jest/globals';
-import Fury, { ClassInfo, InternalSerializerType } from '../packages/fury/index';
+import Fury, { TypeInfo, InternalSerializerType } from '../packages/fury/index';
 import { RefFlags } from '../packages/fury/lib/type';
 import { BinaryWriter } from '../packages/fury/lib/writer';
 import { BinaryReader } from '../packages/fury/lib/reader';

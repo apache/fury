@@ -305,8 +305,8 @@ class ClassResolverBuilder {
     return `${this.holder}.readTag(${v})`;
   }
 
-  getClassInfo(v: string) {
-    return `${this.holder}.getClassInfo("${v}")`;
+  getTypeInfo(v: string) {
+    return `${this.holder}.getTypeInfo("${v}")`;
   }
 }
 
@@ -319,8 +319,8 @@ class TypeMetaResolverBuilder {
     return this.holder;
   }
 
-  writeTypeMeta(classInfo: string, writer: string, bytes: string) {
-    return `${this.holder}.writeTypeMeta(${classInfo}, ${writer}, ${bytes})`;
+  writeTypeMeta(typeInfo: string, writer: string, bytes: string) {
+    return `${this.holder}.writeTypeMeta(${typeInfo}, ${writer}, ${bytes})`;
   }
 
   readTypeMeta(reader: string) {
@@ -430,7 +430,7 @@ export class CodecBuilder {
     return `options.${key}`;
   }
 
-  getClassInfo() {
-    return "classInfo";
+  getTypeInfo() {
+    return "typeInfo";
   }
 }

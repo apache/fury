@@ -21,7 +21,7 @@ import { InternalSerializerType, Mode, TypeId } from "../type";
 import { CodecBuilder } from "./builder";
 import { RefFlags } from "../type";
 import { Scope } from "./scope";
-import { ClassInfo, StructClassInfo } from "../classInfo";
+import { TypeInfo, StructTypeInfo } from "../typeInfo";
 import { TypeMeta } from "../meta/TypeMeta";
 
 export const makeHead = (flag: RefFlags, typeId: number) => {
@@ -103,7 +103,7 @@ export class RefState {
 
 export abstract class BaseSerializerGenerator implements SerializerGenerator {
   constructor(
-    protected classInfo: ClassInfo,
+    protected typeInfo: TypeInfo,
     protected builder: CodecBuilder,
     protected scope: Scope,
   ) {
@@ -119,11 +119,11 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
   abstract readStmt(accessor: (expr: string) => string, refState: RefState): string;
 
   getType() {
-    return this.classInfo.type;
+    return this.typeInfo.type;
   }
 
   getTypeId() {
-    return this.classInfo.typeId;
+    return this.typeInfo.typeId;
   }
 
   protected maybeReference(accessor: string, refState: RefState) {
@@ -143,16 +143,16 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
   }
 
   protected wrapWriteHead(accessor: string, stmt: (accessor: string) => string) {
-    if (!this.classInfo.typeId) {
+    if (!this.typeInfo.typeId) {
       throw new Error("typeId not provided, write failed");
     }
     const maybeNamed = () => {
-      if (!TypeId.IS_NAMED_TYPE(this.classInfo.typeId!)) {
+      if (!TypeId.IS_NAMED_TYPE(this.typeInfo.typeId!)) {
         return "";
       }
-      const classInfo = this.classInfo.castToStruct();
-      const nsBytes = this.scope.declare("nsBytes", this.builder.metaStringResolver.encodeNamespace(CodecBuilder.replaceBackslashAndQuote(classInfo.namespace)));
-      const typeNameBytes = this.scope.declare("typeNameBytes", this.builder.metaStringResolver.encodeTypeName(CodecBuilder.replaceBackslashAndQuote(classInfo.typeName)));
+      const typeInfo = this.typeInfo.castToStruct();
+      const nsBytes = this.scope.declare("nsBytes", this.builder.metaStringResolver.encodeNamespace(CodecBuilder.replaceBackslashAndQuote(typeInfo.namespace)));
+      const typeNameBytes = this.scope.declare("typeNameBytes", this.builder.metaStringResolver.encodeTypeName(CodecBuilder.replaceBackslashAndQuote(typeInfo.typeName)));
       return `
         ${this.builder.metaStringResolver.writeBytes(this.builder.writer.ownName(), nsBytes)}
         ${this.builder.metaStringResolver.writeBytes(this.builder.writer.ownName(), typeNameBytes)}
@@ -160,15 +160,15 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
     };
 
     const maybeCompatiable = () => {
-      if (this.builder.fury.config.mode === Mode.Compatible && (this.classInfo.typeId === TypeId.STRUCT || this.classInfo.typeId === TypeId.NAMED_STRUCT)) {
-        const bytes = this.scope.declare("classInfoBytes", `new Uint8Array([${TypeMeta.fromClassInfo(<StructClassInfo> this.classInfo).toBytes().join(",")}])`);
-        return this.builder.typeMetaResolver.writeTypeMeta(this.builder.getClassInfo(), this.builder.writer.ownName(), bytes);
+      if (this.builder.fury.config.mode === Mode.Compatible && (this.typeInfo.typeId === TypeId.STRUCT || this.typeInfo.typeId === TypeId.NAMED_STRUCT)) {
+        const bytes = this.scope.declare("typeInfoBytes", `new Uint8Array([${TypeMeta.fromTypeInfo(<StructTypeInfo> this.typeInfo).toBytes().join(",")}])`);
+        return this.builder.typeMetaResolver.writeTypeMeta(this.builder.getTypeInfo(), this.builder.writer.ownName(), bytes);
       }
       return "";
     };
 
     if (this.needToWriteRef()) {
-      const head = makeHead(RefFlags.RefValueFlag, this.classInfo.typeId);
+      const head = makeHead(RefFlags.RefValueFlag, this.typeInfo.typeId);
       const existsId = this.scope.uniqueName("existsId");
       return `
                 if (${accessor} !== null && ${accessor} !== undefined) {
@@ -188,7 +188,7 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
                 }
                 `;
     } else {
-      const head = makeHead(RefFlags.NotNullValueFlag, this.classInfo.typeId);
+      const head = makeHead(RefFlags.NotNullValueFlag, this.typeInfo.typeId);
       return `
             if (${accessor} !== null && ${accessor} !== undefined) {
                 ${this.builder.writer.int24(head)};
@@ -209,8 +209,8 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
 
     const typeMeta = (this.builder.fury.config.mode !== Mode.SchemaConsistent && this.scope.uniqueName("typeMeta")) || "";
     const lastestHash = (this.builder.fury.config.mode !== Mode.SchemaConsistent && this.scope.declare("hash_serializer", `{
-      hash: ${(this.classInfo.castToStruct()).hash.toString()},
-      serializer: ${this.builder.classResolver.getSerializerByName(CodecBuilder.replaceBackslashAndQuote((this.classInfo.castToStruct()).named!))},
+      hash: ${(this.typeInfo.castToStruct()).hash.toString()},
+      serializer: ${this.builder.classResolver.getSerializerByName(CodecBuilder.replaceBackslashAndQuote((this.typeInfo.castToStruct()).named!))},
     }`)) || "";
 
     return `
@@ -226,7 +226,7 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
                 ${typeName} = ${this.builder.metaStringResolver.readTypeName(this.builder.reader.ownName())};
               }
               ${
-                this.builder.fury.config.mode === Mode.Compatible && (this.classInfo.typeId === TypeId.STRUCT || this.classInfo.typeId === TypeId.NAMED_STRUCT)
+                this.builder.fury.config.mode === Mode.Compatible && (this.typeInfo.typeId === TypeId.STRUCT || this.typeInfo.typeId === TypeId.NAMED_STRUCT)
                 ? `
                   const ${typeMeta} = ${this.builder.typeMetaResolver.readTypeMeta(this.builder.reader.ownName())};
                   if (${lastestHash}.hash === ${typeMeta}.getHash()) {
@@ -274,7 +274,7 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
     this.scope.assertNameNotDuplicate("fury");
     this.scope.assertNameNotDuplicate("external");
     this.scope.assertNameNotDuplicate("options");
-    this.scope.assertNameNotDuplicate("classInfo");
+    this.scope.assertNameNotDuplicate("typeInfo");
 
     const declare = `
       const readInner = (fromRef) => {
@@ -291,7 +291,7 @@ export abstract class BaseSerializerGenerator implements SerializerGenerator {
       };
     `;
     return `
-        return function (fury, external, classInfo, options) {
+        return function (fury, external, typeInfo, options) {
             ${this.scope.generate()}
             ${declare}
             return {

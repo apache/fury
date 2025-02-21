@@ -23,12 +23,12 @@ import { describe, expect, test } from '@jest/globals';
 
 describe('binary', () => {
     test('should binary work', () => {
-        const classinfo = Type.struct("example.foo", {
+        const typeinfo = Type.struct("example.foo", {
             a: Type.binary()
         })
 
         const fury = new Fury({ refTracking: true });    
-        const serializer = fury.registerSerializer(classinfo).serializer;
+        const serializer = fury.registerSerializer(typeinfo).serializer;
         const input = fury.serialize({ a: new Uint8Array([1, 2, 3]) }, serializer);
         const result = fury.deserialize(
             input

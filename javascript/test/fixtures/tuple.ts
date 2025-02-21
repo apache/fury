@@ -65,7 +65,7 @@ export const tupleType3 = Type.tuple([
 
 export const tupleObjectTag = 'tuple-object-wrapper';
 
-export const tupleObjectClassInfo =  Type.struct(tupleObjectTag, {
+export const tupleObjectTypeInfo =  Type.struct(tupleObjectTag, {
   tuple1: tupleType1,
   tuple1_: tupleType1,
   tuple2: tupleType2,
@@ -73,6 +73,6 @@ export const tupleObjectClassInfo =  Type.struct(tupleObjectTag, {
 });
 
 export const tupleObjectType3Tag = 'tuple-object-type3-tag';
-export const tupleObjectType3ClassInfo = Type.struct(tupleObjectType3Tag, {
+export const tupleObjectType3TypeInfo = Type.struct(tupleObjectType3Tag, {
   tuple: tupleType3
 })

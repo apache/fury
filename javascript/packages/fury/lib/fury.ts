@@ -23,7 +23,7 @@ import { BinaryReader } from "./reader";
 import { ReferenceResolver } from "./referenceResolver";
 import { ConfigFlags, Serializer, Config, Language, MAGIC_NUMBER, Mode, FuryClsInfoSymbol, WithFuryClsInfo } from "./type";
 import { OwnershipError } from "./error";
-import { InputType, ResultType, ClassInfo } from "./classInfo";
+import { InputType, ResultType, TypeInfo } from "./typeInfo";
 import { Gen, AnySerializer } from "./gen";
 import { TypeMeta } from "./meta/TypeMeta";
 import { PlatformBuffer } from "./platformBuffer";
@@ -72,7 +72,7 @@ export default class {
     };
     deserialize(bytes: Uint8Array): InstanceType<T> | null;
   };
-  registerSerializer<T extends ClassInfo>(classInfo: T, replace?: boolean): {
+  registerSerializer<T extends TypeInfo>(typeInfo: T, replace?: boolean): {
     serializer: Serializer;
     serialize(data: InputType<T> | null): PlatformBuffer;
     serializeVolatile(data: InputType<T>): {
@@ -84,12 +84,12 @@ export default class {
   registerSerializer(constructor: any, replace = false) {
     let serializer: Serializer;
     if (constructor.prototype?.[FuryClsInfoSymbol]) {
-      const classInfo: ClassInfo = (<WithFuryClsInfo>(constructor.prototype[FuryClsInfoSymbol])).structClassInfo;
-      serializer = new Gen(this, replace, { constructor }).generateSerializer(classInfo);
-      this.classResolver.registerSerializer(classInfo, serializer);
+      const typeInfo: TypeInfo = (<WithFuryClsInfo>(constructor.prototype[FuryClsInfoSymbol])).structTypeInfo;
+      serializer = new Gen(this, replace, { constructor }).generateSerializer(typeInfo);
+      this.classResolver.registerSerializer(typeInfo, serializer);
     } else {
-      const classInfo = constructor;
-      serializer = new Gen(this, replace).generateSerializer(classInfo);
+      const typeInfo = constructor;
+      serializer = new Gen(this, replace).generateSerializer(typeInfo);
     }
     return {
       serializer,

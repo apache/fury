@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import { ClassInfo } from "../classInfo";
+import { TypeInfo } from "../typeInfo";
 import { CodecBuilder } from "./builder";
 import { BaseSerializerGenerator } from "./serializer";
 import { CodegenRegistry } from "./router";
@@ -94,11 +94,11 @@ export class AnySerializer {
 }
 
 class AnySerializerGenerator extends BaseSerializerGenerator {
-  classInfo: ClassInfo;
+  typeInfo: TypeInfo;
 
-  constructor(classinfo: ClassInfo, builder: CodecBuilder, scope: Scope) {
-    super(classinfo, builder, scope);
-    this.classInfo = classinfo;
+  constructor(typeInfo: TypeInfo, builder: CodecBuilder, scope: Scope) {
+    super(typeInfo, builder, scope);
+    this.typeInfo = typeInfo;
   }
 
   writeStmt(): string {

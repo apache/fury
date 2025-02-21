@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import { StructClassInfo, Type } from "./classInfo";
+import { StructTypeInfo, Type } from "./typeInfo";
 import fury from "./fury";
 import { TypeMeta } from "./meta/TypeMeta";
 import { BinaryReader } from "./reader";
@@ -25,7 +25,7 @@ import { Serializer } from "./type";
 import { BinaryWriter } from "./writer";
 
 export class TypeMetaResolver {
-  private disposeClassInfo: StructClassInfo[] = [];
+  private disposeTypeInfo: StructTypeInfo[] = [];
   private dynamicTypeId = 0;
   private typeMeta: TypeMeta[] = [];
 
@@ -33,7 +33,7 @@ export class TypeMetaResolver {
 
   }
 
-  private typeMetaToClassInfo(typeMeta: TypeMeta, ns: string, typeName: string) {
+  private typeMetaToTypeInfo(typeMeta: TypeMeta, ns: string, typeName: string) {
     const typeId = typeMeta.getTypeId();
     return Type.struct({
       typeId: typeId < 0xFF ? undefined : typeId,
@@ -43,18 +43,18 @@ export class TypeMetaResolver {
       ...Object.fromEntries(typeMeta.getFieldInfo().map((x) => {
         const typeId = x.getFieldId();
         const fieldName = x.getFieldName();
-        const classInfo = this.fury.classResolver.getClassInfo(typeId);
-        if (!classInfo) {
+        const typeInfo = this.fury.classResolver.getTypeInfo(typeId);
+        if (!typeInfo) {
           throw new Error(`${typeId} not registered`); // todo
         }
-        return [fieldName, classInfo];
+        return [fieldName, typeInfo];
       })),
     });
   }
 
   genSerializerByTypeMetaRuntime(typeMeta: TypeMeta, ns: string, typeName: string): Serializer {
-    const classInfo = this.typeMetaToClassInfo(typeMeta, ns, typeName);
-    return this.fury.registerSerializer(classInfo, true).serializer;
+    const typeInfo = this.typeMetaToTypeInfo(typeMeta, ns, typeName);
+    return this.fury.registerSerializer(typeInfo, true).serializer;
   }
 
   readTypeMeta(reader: BinaryReader): TypeMeta {
@@ -69,23 +69,23 @@ export class TypeMetaResolver {
     }
   }
 
-  writeTypeMeta(classInfo: StructClassInfo, writer: BinaryWriter, bytes: Uint8Array) {
-    if (classInfo.dynamicTypeId !== -1) {
+  writeTypeMeta(typeInfo: StructTypeInfo, writer: BinaryWriter, bytes: Uint8Array) {
+    if (typeInfo.dynamicTypeId !== -1) {
       writer.varUInt32(((this.dynamicTypeId + 1) << 1) | 1);
     } else {
-      classInfo.dynamicTypeId = this.dynamicTypeId;
+      typeInfo.dynamicTypeId = this.dynamicTypeId;
       this.dynamicTypeId += 1;
-      this.disposeClassInfo.push(classInfo);
+      this.disposeTypeInfo.push(typeInfo);
       writer.varUInt32(bytes.byteLength << 1);
       writer.buffer(bytes);
     }
   }
 
   reset() {
-    this.disposeClassInfo.forEach((x) => {
+    this.disposeTypeInfo.forEach((x) => {
       x.dynamicTypeId = -1;
     });
-    this.disposeClassInfo = [];
+    this.disposeTypeInfo = [];
     this.dynamicTypeId = 0;
   }
 }

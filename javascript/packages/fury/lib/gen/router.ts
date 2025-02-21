@@ -17,13 +17,13 @@
  * under the License.
  */
 
-import { ClassInfo } from "../classInfo";
+import { TypeInfo } from "../typeInfo";
 import { SerializerGenerator } from "./serializer";
 import { InternalSerializerType } from "../type";
 import { CodecBuilder } from "./builder";
 import { Scope } from "./scope";
 
-type SerializerGeneratorConstructor = new (classinfo: ClassInfo, builder: CodecBuilder, scope: Scope) => SerializerGenerator;
+type SerializerGeneratorConstructor = new (typeInfo: TypeInfo, builder: CodecBuilder, scope: Scope) => SerializerGenerator;
 
 export class CodegenRegistry {
   static map = new Map<string, SerializerGeneratorConstructor>();
@@ -44,12 +44,12 @@ export class CodegenRegistry {
     this.external.set(object.name, object);
   }
 
-  static newGeneratorByClassInfo(classinfo: ClassInfo, builder: CodecBuilder, scope: Scope) {
-    const constructor = CodegenRegistry.get(classinfo.type);
+  static newGeneratorByTypeInfo(typeInfo: TypeInfo, builder: CodecBuilder, scope: Scope) {
+    const constructor = CodegenRegistry.get(typeInfo.type);
     if (!constructor) {
       throw new Error("type not registered // todo");
     }
-    return new constructor(classinfo, builder, scope);
+    return new constructor(typeInfo, builder, scope);
   }
 
   static get(type: InternalSerializerType) {

@@ -18,20 +18,20 @@
  */
 
 import {
-  StructClassInfo,
-  ClassInfo,
-  ArrayClassInfo,
+  StructTypeInfo,
+  TypeInfo,
+  ArrayTypeInfo,
   Type,
-} from "./lib/classInfo";
+} from "./lib/typeInfo";
 import { Serializer, InternalSerializerType, Mode } from "./lib/type";
 import Fury from "./lib/fury";
 
 export {
   Serializer,
   InternalSerializerType,
-  ClassInfo,
-  ArrayClassInfo,
-  StructClassInfo,
+  TypeInfo,
+  ArrayTypeInfo,
+  StructTypeInfo,
   Type,
   Mode,
 };

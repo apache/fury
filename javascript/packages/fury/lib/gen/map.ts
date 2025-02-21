@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import { MapClassInfo, ClassInfo } from "../classInfo";
+import { MapTypeInfo, TypeInfo } from "../typeInfo";
 import { CodecBuilder } from "./builder";
 import { BaseSerializerGenerator, RefState, SerializerGenerator } from "./serializer";
 import { CodegenRegistry } from "./router";
@@ -39,7 +39,7 @@ const MapFlags = {
   NOT_SAME_TYPE: 0b1000,
 };
 
-class MapTypeInfo {
+class MapHeadUtil {
   private static IS_NULL = 0b10;
   private static TRACKING_REF = 0b01;
   static elementInfo(typeId: number, isNull: 0 | 1, trackRef: 0 | 1) {
@@ -69,17 +69,17 @@ class MapChunkWriter {
 
   private getHead(keyInfo: number, valueInfo: number) {
     let flag = 0;
-    if (MapTypeInfo.isNull(keyInfo)) {
+    if (MapHeadUtil.isNull(keyInfo)) {
       flag |= MapFlags.HAS_NULL;
     }
-    if (MapTypeInfo.trackingRef(keyInfo)) {
+    if (MapHeadUtil.trackingRef(keyInfo)) {
       flag |= MapFlags.TRACKING_REF;
     }
     flag <<= 4;
-    if (MapTypeInfo.isNull(valueInfo)) {
+    if (MapHeadUtil.isNull(valueInfo)) {
       flag |= MapFlags.HAS_NULL;
     }
-    if (MapTypeInfo.trackingRef(valueInfo)) {
+    if (MapHeadUtil.trackingRef(valueInfo)) {
       flag |= MapFlags.TRACKING_REF;
     }
     return flag;
@@ -165,8 +165,8 @@ class MapAnySerializer {
       const valueSerializer = this.valueSerializer !== null ? this.valueSerializer : this.fury.classResolver.getSerializerByData(v);
 
       const header = mapChunkWriter.next(
-        MapTypeInfo.elementInfo(keySerializer!.getTypeId()!, k == null ? 1 : 0, keySerializer!.needToWriteRef() ? 1 : 0),
-        MapTypeInfo.elementInfo(valueSerializer!.getTypeId()!, v == null ? 1 : 0, valueSerializer!.needToWriteRef() ? 1 : 0)
+        MapHeadUtil.elementInfo(keySerializer!.getTypeId()!, k == null ? 1 : 0, keySerializer!.needToWriteRef() ? 1 : 0),
+        MapHeadUtil.elementInfo(valueSerializer!.getTypeId()!, v == null ? 1 : 0, valueSerializer!.needToWriteRef() ? 1 : 0)
       );
 
       this.writeHead(header >> 4, k);
@@ -238,19 +238,19 @@ class MapAnySerializer {
 }
 
 export class MapSerializerGenerator extends BaseSerializerGenerator {
-  classInfo: MapClassInfo;
+  typeInfo: MapTypeInfo;
   keyGenerator: SerializerGenerator;
   valueGenerator: SerializerGenerator;
 
-  constructor(classinfo: ClassInfo, builder: CodecBuilder, scope: Scope) {
-    super(classinfo, builder, scope);
-    this.classInfo = <MapClassInfo>classinfo;
-    this.keyGenerator = CodegenRegistry.newGeneratorByClassInfo(this.classInfo.options.key, this.builder, this.scope);
-    this.valueGenerator = CodegenRegistry.newGeneratorByClassInfo(this.classInfo.options.value, this.builder, this.scope);
+  constructor(typeInfo: TypeInfo, builder: CodecBuilder, scope: Scope) {
+    super(typeInfo, builder, scope);
+    this.typeInfo = <MapTypeInfo>typeInfo;
+    this.keyGenerator = CodegenRegistry.newGeneratorByTypeInfo(this.typeInfo.options.key, this.builder, this.scope);
+    this.valueGenerator = CodegenRegistry.newGeneratorByTypeInfo(this.typeInfo.options.value, this.builder, this.scope);
   }
 
   private isAny() {
-    return this.classInfo.options.key.type === InternalSerializerType.ANY || this.classInfo.options.value.type === InternalSerializerType.ANY;
+    return this.typeInfo.options.key.type === InternalSerializerType.ANY || this.typeInfo.options.value.type === InternalSerializerType.ANY;
   }
 
   private writeStmtSpecificType(accessor: string) {
@@ -341,9 +341,9 @@ export class MapSerializerGenerator extends BaseSerializerGenerator {
       return this.writeStmtSpecificType(accessor);
     }
     return `new (${anySerializer})(${this.builder.getFuryName()}, ${
-      this.classInfo.options.key.type !== InternalSerializerType.ANY ? this.classInfo.options.key.typeId : null
+      this.typeInfo.options.key.type !== InternalSerializerType.ANY ? this.typeInfo.options.key.typeId : null
     }, ${
-      this.classInfo.options.value.type !== InternalSerializerType.ANY ? this.classInfo.options.value.typeId : null
+      this.typeInfo.options.value.type !== InternalSerializerType.ANY ? this.typeInfo.options.value.typeId : null
     }).write(${accessor})`;
   }
 
@@ -424,9 +424,9 @@ export class MapSerializerGenerator extends BaseSerializerGenerator {
       return this.readStmtSpecificType(accessor, refState);
     }
     return accessor(`new (${anySerializer})(${this.builder.getFuryName()}, ${
-      this.classInfo.options.key.type !== InternalSerializerType.ANY ? (this.classInfo.options.key.typeId) : null
+      this.typeInfo.options.key.type !== InternalSerializerType.ANY ? (this.typeInfo.options.key.typeId) : null
     }, ${
-      this.classInfo.options.value.type !== InternalSerializerType.ANY ? (this.classInfo.options.value.typeId) : null
+      this.typeInfo.options.value.type !== InternalSerializerType.ANY ? (this.typeInfo.options.value.typeId) : null
     }).read(${refState.toConditionExpr()})`);
   }
 

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import { ClassInfo } from "../classInfo";
+import { TypeInfo } from "../typeInfo";
 import { CodecBuilder } from "./builder";
 import { BaseSerializerGenerator } from "./serializer";
 import { CodegenRegistry } from "./router";
@@ -25,11 +25,11 @@ import { InternalSerializerType } from "../type";
 import { Scope } from "./scope";
 
 class TimestampSerializerGenerator extends BaseSerializerGenerator {
-  classInfo: ClassInfo;
+  typeInfo: TypeInfo;
 
-  constructor(classInfo: ClassInfo, builder: CodecBuilder, scope: Scope) {
-    super(classInfo, builder, scope);
-    this.classInfo = classInfo;
+  constructor(typeInfo: TypeInfo, builder: CodecBuilder, scope: Scope) {
+    super(typeInfo, builder, scope);
+    this.typeInfo = typeInfo;
   }
 
   writeStmt(accessor: string): string {
@@ -53,11 +53,11 @@ class TimestampSerializerGenerator extends BaseSerializerGenerator {
 }
 
 class DurationSerializerGenerator extends BaseSerializerGenerator {
-  classInfo: ClassInfo;
+  typeInfo: TypeInfo;
 
-  constructor(classInfo: ClassInfo, builder: CodecBuilder, scope: Scope) {
-    super(classInfo, builder, scope);
-    this.classInfo = classInfo;
+  constructor(typeInfo: TypeInfo, builder: CodecBuilder, scope: Scope) {
+    super(typeInfo, builder, scope);
+    this.typeInfo = typeInfo;
   }
 
   writeStmt(accessor: string): string {

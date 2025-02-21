@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import Fury, { ClassInfo, InternalSerializerType, Type, Mode } from '../packages/fury/index';
+import Fury, { TypeInfo, InternalSerializerType, Type, Mode } from '../packages/fury/index';
 import {describe, expect, test} from '@jest/globals';
 import * as beautify from 'js-beautify';
 

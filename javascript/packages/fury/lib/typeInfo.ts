@@ -20,20 +20,20 @@
 import { TypeMeta } from "./meta/TypeMeta";
 import { FuryClsInfoSymbol, InternalSerializerType, WithFuryClsInfo, TypeId } from "./type";
 
-const initMeta = (target: new () => any, classInfo: ClassInfo) => {
+const initMeta = (target: new () => any, typeInfo: TypeInfo) => {
   if (!target.prototype) {
     target.prototype = {};
   }
   target.prototype[FuryClsInfoSymbol] = {
-    structClassInfo: Type.struct({
+    structTypeInfo: Type.struct({
       ...(
-        TypeId.IS_NAMED_TYPE(classInfo.typeId)
+        TypeId.IS_NAMED_TYPE(typeInfo.typeId)
           ? {
-              namespace: classInfo.namespace,
-              typeName: classInfo.typeName,
+              namespace: typeInfo.namespace,
+              typeName: typeInfo.typeName,
             }
           : {
-              typeId: classInfo.typeId,
+              typeId: typeInfo.typeId,
             }
       ),
     }, targetFields.get(target) || {}, {
@@ -42,9 +42,9 @@ const initMeta = (target: new () => any, classInfo: ClassInfo) => {
   } as WithFuryClsInfo;
 };
 
-const targetFields = new WeakMap<new () => any, { [key: string]: ClassInfo }>();
+const targetFields = new WeakMap<new () => any, { [key: string]: TypeInfo }>();
 
-const addField = (target: new () => any, key: string, des: ClassInfo) => {
+const addField = (target: new () => any, key: string, des: TypeInfo) => {
   if (!targetFields.has(target)) {
     targetFields.set(target, {});
   }
@@ -63,7 +63,7 @@ class ExtensibleFunction extends Function {
  * T is for type matching
  */
 // eslint-disable-next-line
-export class ClassInfo<T = unknown> extends ExtensibleFunction {
+export class TypeInfo<T = unknown> extends ExtensibleFunction {
   dynamicTypeId = -1;
   hash = BigInt(0);
   named = "";
@@ -74,7 +74,7 @@ export class ClassInfo<T = unknown> extends ExtensibleFunction {
   private constructor(public type: InternalSerializerType, public typeId: number) {
     super(function (target: any, key?: string | { name?: string }) {
       if (key === undefined) {
-        initMeta(target, that as unknown as StructClassInfo);
+        initMeta(target, that as unknown as StructTypeInfo);
       } else {
         const keyString = typeof key === "string" ? key : key?.name;
         if (!keyString) {
@@ -88,16 +88,16 @@ export class ClassInfo<T = unknown> extends ExtensibleFunction {
   }
 
   static fromNonParam<T extends InternalSerializerType>(type: T, typeId: number) {
-    return new ClassInfo<{
+    return new TypeInfo<{
       type: T;
     }>(type, typeId);
   }
 
-  static fromStruct<T = any>(typeInfo: {
+  static fromStruct<T = any>(nameInfo: {
     typeId?: number;
     namespace?: string;
     typeName?: string;
-  } | string | number, props?: Record<string, ClassInfo>, {
+  } | string | number, props?: Record<string, TypeInfo>, {
     withConstructor = false,
   }: {
     withConstructor?: boolean;
@@ -105,14 +105,14 @@ export class ClassInfo<T = unknown> extends ExtensibleFunction {
     let typeId: number | undefined;
     let namespace: string | undefined;
     let typeName: string | undefined;
-    if (typeof typeInfo === "string") {
-      typeName = typeInfo;
-    } else if (typeof typeInfo === "number") {
-      typeId = typeInfo;
+    if (typeof nameInfo === "string") {
+      typeName = nameInfo;
+    } else if (typeof nameInfo === "number") {
+      typeId = nameInfo;
     } else {
-      namespace = typeInfo.namespace;
-      typeName = typeInfo.typeName;
-      typeId = typeInfo.typeId;
+      namespace = nameInfo.namespace;
+      typeName = nameInfo.typeName;
+      typeId = nameInfo.typeId;
     }
     if (typeId !== undefined && typeName !== undefined) {
       throw new Error(`type name ${typeName} and id ${typeId} should not be set at the same time`);
@@ -130,28 +130,28 @@ export class ClassInfo<T = unknown> extends ExtensibleFunction {
       }
     }
     const finalTypeId = typeId !== undefined ? ((typeId << 8) | TypeId.STRUCT) : TypeId.NAMED_STRUCT;
-    const classInfo = new ClassInfo<T>(InternalSerializerType.STRUCT, finalTypeId).cast<StructClassInfo>();
-    classInfo.options = {
+    const typeInfo = new TypeInfo<T>(InternalSerializerType.STRUCT, finalTypeId).cast<StructTypeInfo>();
+    typeInfo.options = {
       props: props || {},
       withConstructor,
     };
-    classInfo.namespace = namespace || "";
-    classInfo.typeName = typeId !== undefined ? "" : typeName!;
-    classInfo.hash = TypeMeta.fromClassInfo(classInfo).getHash();
-    classInfo.named = `${classInfo.namespace}$${classInfo.typeName}`;
-    return classInfo as ClassInfo<T>;
+    typeInfo.namespace = namespace || "";
+    typeInfo.typeName = typeId !== undefined ? "" : typeName!;
+    typeInfo.hash = TypeMeta.fromTypeInfo(typeInfo).getHash();
+    typeInfo.named = `${typeInfo.namespace}$${typeInfo.typeName}`;
+    return typeInfo as TypeInfo<T>;
   }
 
   static fromWithOptions<T extends InternalSerializerType, T2>(type: T, typeId: number, options: T2) {
-    const classInfo = new ClassInfo<{
+    const typeInfo = new TypeInfo<{
       type: T;
       options: T2;
     }>(type, typeId);
-    classInfo.options = options;
-    return classInfo;
+    typeInfo.options = options;
+    return typeInfo;
   }
 
-  static fromEnum<T>(typeInfo: {
+  static fromEnum<T>(nameInfo: {
     typeId?: number;
     namespace?: string;
     typeName?: string;
@@ -159,14 +159,14 @@ export class ClassInfo<T = unknown> extends ExtensibleFunction {
     let typeId: number | undefined;
     let namespace: string | undefined;
     let typeName: string | undefined;
-    if (typeof typeInfo === "string") {
-      typeName = typeInfo;
-    } else if (typeof typeInfo === "number") {
-      typeId = typeInfo;
+    if (typeof nameInfo === "string") {
+      typeName = nameInfo;
+    } else if (typeof nameInfo === "number") {
+      typeId = nameInfo;
     } else {
-      namespace = typeInfo.namespace;
-      typeName = typeInfo.typeName;
-      typeId = typeInfo.typeId;
+      namespace = nameInfo.namespace;
+      typeName = nameInfo.typeName;
+      typeId = nameInfo.typeId;
     }
     if (typeId !== undefined && typeName !== undefined) {
       throw new Error(`type name ${typeName} and id ${typeId} should not be set at the same time`);
@@ -184,18 +184,18 @@ export class ClassInfo<T = unknown> extends ExtensibleFunction {
       }
     }
     const finalTypeId = typeId !== undefined ? ((typeId << 8) | TypeId.ENUM) : TypeId.NAMED_ENUM;
-    const classInfo = new ClassInfo<T>(InternalSerializerType.ENUM, finalTypeId);
-    classInfo.cast<EnumClassInfo>().options = {
+    const typeInfo = new TypeInfo<T>(InternalSerializerType.ENUM, finalTypeId);
+    typeInfo.cast<EnumTypeInfo>().options = {
       inner: props,
     };
-    classInfo.namespace = namespace || "";
-    classInfo.typeName = typeId !== undefined ? "" : typeName!;
-    classInfo.named = `${classInfo.namespace}$${classInfo.typeName}`;
-    return classInfo;
+    typeInfo.namespace = namespace || "";
+    typeInfo.typeName = typeId !== undefined ? "" : typeName!;
+    typeInfo.named = `${typeInfo.namespace}$${typeInfo.typeName}`;
+    return typeInfo;
   }
 
   castToStruct() {
-    return this as unknown as StructClassInfo;
+    return this as unknown as StructTypeInfo;
   }
 
   cast<T>() {
@@ -203,47 +203,47 @@ export class ClassInfo<T = unknown> extends ExtensibleFunction {
   }
 }
 
-export interface StructClassInfo extends ClassInfo {
+export interface StructTypeInfo extends TypeInfo {
   options: {
-    props?: { [key: string]: ClassInfo };
+    props?: { [key: string]: TypeInfo };
     withConstructor?: boolean;
   };
 }
 
-export interface EnumClassInfo extends ClassInfo {
+export interface EnumTypeInfo extends TypeInfo {
   options: {
     inner: { [key: string]: any };
   };
 }
 
-export interface OneofClassInfo extends ClassInfo {
+export interface OneofTypeInfo extends TypeInfo {
   options: {
-    inner: { [key: string]: ClassInfo };
+    inner: { [key: string]: TypeInfo };
   };
 }
 
-export interface ArrayClassInfo extends ClassInfo {
+export interface ArrayTypeInfo extends TypeInfo {
   options: {
-    inner: ClassInfo;
+    inner: TypeInfo;
   };
 }
 
-export interface TupleClassInfo extends ClassInfo {
+export interface TupleTypeInfo extends TypeInfo {
   options: {
-    inner: ClassInfo[];
+    inner: TypeInfo[];
   };
 }
 
-export interface SetClassInfo extends ClassInfo {
+export interface SetTypeInfo extends TypeInfo {
   options: {
-    key: ClassInfo;
+    key: TypeInfo;
   };
 }
 
-export interface MapClassInfo extends ClassInfo {
+export interface MapTypeInfo extends TypeInfo {
   options: {
-    key: ClassInfo;
-    value: ClassInfo;
+    key: TypeInfo;
+    value: TypeInfo;
   };
 }
 
@@ -259,7 +259,7 @@ type Props<T> = T extends {
 
 type InnerProps<T> = T extends {
   options: {
-    inner: infer T2 extends ClassInfo;
+    inner: infer T2 extends TypeInfo;
   };
 }
   ? (InputType<T2> | null)[]
@@ -267,8 +267,8 @@ type InnerProps<T> = T extends {
 
 type MapProps<T> = T extends {
   options: {
-    key: infer T2 extends ClassInfo;
-    value: infer T3 extends ClassInfo;
+    key: infer T2 extends TypeInfo;
+    value: infer T3 extends TypeInfo;
   };
 }
   ? Map<InputType<T2>, InputType<T3> | null>
@@ -276,7 +276,7 @@ type MapProps<T> = T extends {
 
 type TupleProps<T> = T extends {
   options: {
-    inner: infer T2 extends readonly [...ClassInfo[]];
+    inner: infer T2 extends readonly [...TypeInfo[]];
   };
 }
   ? { [K in keyof T2]: InputType<T2[K]> }
@@ -312,13 +312,13 @@ type OneofResult<T> = T extends {
 
 type SetProps<T> = T extends {
   options: {
-    key: infer T2 extends ClassInfo;
+    key: infer T2 extends TypeInfo;
   };
 }
   ? Set<(InputType<T2> | null)>
   : unknown;
 
-export type InputType<T> = T extends ClassInfo<infer M> ? HintInput<M> : unknown;
+export type InputType<T> = T extends TypeInfo<infer M> ? HintInput<M> : unknown;
 
 export type HintInput<T> = T extends unknown ? any : T extends {
   type: InternalSerializerType.STRUCT;
@@ -388,7 +388,7 @@ export type HintInput<T> = T extends unknown ? any : T extends {
                               type: InternalSerializerType.ONEOF;
                             } ? OneofProps<T> : unknown;
 
-export type ResultType<T> = T extends ClassInfo<infer M> ? HintResult<M> : HintResult<T>;
+export type ResultType<T> = T extends TypeInfo<infer M> ? HintResult<M> : HintResult<T>;
 
 export type HintResult<T> = T extends never ? any : T extends {
   type: InternalSerializerType.STRUCT;
@@ -458,50 +458,50 @@ export type HintResult<T> = T extends never ? any : T extends {
 
 export const Type = {
   any() {
-    return ClassInfo.fromNonParam(InternalSerializerType.ANY, TypeId.STRUCT);
+    return TypeInfo.fromNonParam(InternalSerializerType.ANY, TypeId.STRUCT);
   },
-  oneof<T extends { [key: string]: ClassInfo }>(inner?: T) {
-    return ClassInfo.fromWithOptions(InternalSerializerType.ONEOF as const, TypeId.STRUCT, {
+  oneof<T extends { [key: string]: TypeInfo }>(inner?: T) {
+    return TypeInfo.fromWithOptions(InternalSerializerType.ONEOF as const, TypeId.STRUCT, {
       inner,
     });
   },
-  array<T extends ClassInfo>(inner: T) {
-    return ClassInfo.fromWithOptions(InternalSerializerType.ARRAY as const, TypeId.ARRAY, {
+  array<T extends TypeInfo>(inner: T) {
+    return TypeInfo.fromWithOptions(InternalSerializerType.ARRAY as const, TypeId.ARRAY, {
       inner,
     });
   },
-  tuple<T1 extends readonly [...readonly ClassInfo[]]>(t1: T1) {
-    return ClassInfo.fromWithOptions(InternalSerializerType.TUPLE as const, TypeId.LIST, {
+  tuple<T1 extends readonly [...readonly TypeInfo[]]>(t1: T1) {
+    return TypeInfo.fromWithOptions(InternalSerializerType.TUPLE as const, TypeId.LIST, {
       inner: t1,
     });
   },
-  map<T1 extends ClassInfo, T2 extends ClassInfo>(
+  map<T1 extends TypeInfo, T2 extends TypeInfo>(
     key: T1,
     value: T2
   ) {
-    return ClassInfo.fromWithOptions(InternalSerializerType.MAP as const, TypeId.MAP, {
+    return TypeInfo.fromWithOptions(InternalSerializerType.MAP as const, TypeId.MAP, {
       key,
       value,
     });
   },
-  set<T extends ClassInfo>(key: T) {
-    return ClassInfo.fromWithOptions(InternalSerializerType.SET as const, TypeId.SET, {
+  set<T extends TypeInfo>(key: T) {
+    return TypeInfo.fromWithOptions(InternalSerializerType.SET as const, TypeId.SET, {
       key,
     });
   },
-  enum<T1 extends { [key: string]: any }>(typeInfo: {
+  enum<T1 extends { [key: string]: any }>(nameInfo: {
     typeId?: number;
     namespace?: string;
     typeName?: string;
   } | string | number, t1: T1) {
-    return ClassInfo.fromEnum<{
+    return TypeInfo.fromEnum<{
       type: InternalSerializerType.ENUM;
       options: {
         inner: T1;
       };
-    }>(typeInfo, t1);
+    }>(nameInfo, t1);
   },
-  struct<T extends { [key: string]: ClassInfo }>(typeInfo: {
+  struct<T extends { [key: string]: TypeInfo }>(nameInfo: {
     typeId?: number;
     namespace?: string;
     typeName?: string;
@@ -510,161 +510,161 @@ export const Type = {
   }: {
     withConstructor?: boolean;
   } = {}) {
-    return ClassInfo.fromStruct<{
+    return TypeInfo.fromStruct<{
       type: InternalSerializerType.STRUCT;
       options: {
         props: T;
       };
-    }>(typeInfo, props, {
+    }>(nameInfo, props, {
       withConstructor,
     });
   },
   string() {
-    return ClassInfo.fromNonParam(
+    return TypeInfo.fromNonParam(
       InternalSerializerType.STRING as const,
       (TypeId.STRING),
     );
   },
   bool() {
-    return ClassInfo.fromNonParam(
+    return TypeInfo.fromNonParam(
       InternalSerializerType.BOOL as const,
       (TypeId.BOOL),
     );
   },
   int8() {
-    return ClassInfo.fromNonParam(
+    return TypeInfo.fromNonParam(
       InternalSerializerType.INT8 as const,
       (TypeId.INT8),
     );
   },
   int16() {
-    return ClassInfo.fromNonParam(
+    return TypeInfo.fromNonParam(
       InternalSerializerType.INT16 as const,
       (TypeId.INT16),
 
     );
   },
   int32() {
-    return ClassInfo.fromNonParam(
+    return TypeInfo.fromNonParam(
       InternalSerializerType.INT32 as const,
       (TypeId.INT32),
 
     );
   },
   varInt32() {
-    return ClassInfo.fromNonParam(
+    return TypeInfo.fromNonParam(
       InternalSerializerType.VAR_INT32 as const,
       (TypeId.VAR_INT32),
 
     );
   },
   int64() {
-    return ClassInfo.fromNonParam(
+    return TypeInfo.fromNonParam(
       InternalSerializerType.INT64 as const,
       (TypeId.INT64),
 
     );
   },
   sliInt64() {
-    return ClassInfo.fromNonParam(
+    return TypeInfo.fromNonParam(
       InternalSerializerType.SLI_INT64 as const,
       (TypeId.SLI_INT64),
 
     );
   },
   float16() {
-    return ClassInfo.fromNonParam(
+    return TypeInfo.fromNonParam(
       InternalSerializerType.FLOAT16 as const,
       (TypeId.FLOAT16),
 
     );
   },
   float32() {
-    return ClassInfo.fromNonParam(
+    return TypeInfo.fromNonParam(
       InternalSerializerType.FLOAT32 as const,
       (TypeId.FLOAT32),
 
     );
   },
   float64() {
-    return ClassInfo.fromNonParam(
+    return TypeInfo.fromNonParam(
       InternalSerializerType.FLOAT64 as const,
       (TypeId.FLOAT64),
 
     );
   },
   binary() {
-    return ClassInfo.fromNonParam(
+    return TypeInfo.fromNonParam(
       InternalSerializerType.BINARY as const,
       (TypeId.BINARY),
 
     );
   },
   duration() {
-    return ClassInfo.fromNonParam(
+    return TypeInfo.fromNonParam(
       InternalSerializerType.DURATION as const,
       (TypeId.DURATION),
 
     );
   },
   timestamp() {
-    return ClassInfo.fromNonParam(
+    return TypeInfo.fromNonParam(
       InternalSerializerType.TIMESTAMP as const,
       (TypeId.TIMESTAMP),
 
     );
   },
   boolArray() {
-    return ClassInfo.fromNonParam(
+    return TypeInfo.fromNonParam(
       InternalSerializerType.BOOL_ARRAY as const,
       (TypeId.BOOL_ARRAY),
 
     );
   },
   int8Array() {
-    return ClassInfo.fromNonParam(
+    return TypeInfo.fromNonParam(
       InternalSerializerType.INT8_ARRAY as const,
       (TypeId.INT8_ARRAY),
 
     );
   },
   int16Array() {
-    return ClassInfo.fromNonParam(
+    return TypeInfo.fromNonParam(
       InternalSerializerType.INT16_ARRAY as const,
       (TypeId.INT16_ARRAY),
 
     );
   },
   int32Array() {
-    return ClassInfo.fromNonParam(
+    return TypeInfo.fromNonParam(
       InternalSerializerType.INT32_ARRAY as const,
       (TypeId.INT32_ARRAY),
 
     );
   },
   int64Array() {
-    return ClassInfo.fromNonParam(
+    return TypeInfo.fromNonParam(
       InternalSerializerType.INT64_ARRAY as const,
       (TypeId.INT64_ARRAY),
 
     );
   },
   float16Array() {
-    return ClassInfo.fromNonParam(
+    return TypeInfo.fromNonParam(
       InternalSerializerType.FLOAT16_ARRAY as const,
       (TypeId.FLOAT16_ARRAY),
 
     );
   },
   float32Array() {
-    return ClassInfo.fromNonParam(
+    return TypeInfo.fromNonParam(
       InternalSerializerType.FLOAT32_ARRAY as const,
       (TypeId.FLOAT32_ARRAY),
 
     );
   },
   float64Array() {
-    return ClassInfo.fromNonParam(
+    return TypeInfo.fromNonParam(
       InternalSerializerType.FLOAT64_ARRAY as const,
       (TypeId.FLOAT64_ARRAY)
     );

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import Fury, { ClassInfo, Type } from '../packages/fury/index';
+import Fury, { TypeInfo, Type } from '../packages/fury/index';
 import { describe, expect, test } from '@jest/globals';
 import { fromUint8Array } from '../packages/fury/lib/platformBuffer';
 import { MAGIC_NUMBER } from '../packages/fury/lib/type';
@@ -69,52 +69,52 @@ describe('fury', () => {
         expect(deserialize(bin)).toEqual(["hello", "world"]);
     });
 
-    describe('serializer classinfo should work', () => {
+    describe('serializer typeinfo should work', () => {
         test('can serialize and deserialize primitive types', () => {
-            const classinfo = Type.int8()
-            testClassInfo(classinfo, 123)
+            const typeinfo = Type.int8()
+            testTypeInfo(typeinfo, 123)
 
-            const classinfo2 = Type.int16()
-            testClassInfo(classinfo2, 123)
+            const typeinfo2 = Type.int16()
+            testTypeInfo(typeinfo2, 123)
 
-            const classinfo3 = Type.int32()
-            testClassInfo(classinfo3, 123)
+            const typeinfo3 = Type.int32()
+            testTypeInfo(typeinfo3, 123)
 
-            const classinfo4 = Type.bool()
-            testClassInfo(classinfo4, true)
+            const typeinfo4 = Type.bool()
+            testTypeInfo(typeinfo4, true)
 
             // has precision problem
-            // const classinfo5 = Type.float()
-            // testClassInfo(classinfo5, 123.456)
+            // const typeinfo5 = Type.float()
+            // testTypeInfo(typeinfo5, 123.456)
 
-            const classinfo6 = Type.float64()
-            testClassInfo(classinfo6, 123.456789)
+            const typeinfo6 = Type.float64()
+            testTypeInfo(typeinfo6, 123.456789)
 
-            const classinfo7 = Type.binary()
-            testClassInfo(classinfo7, new Uint8Array([1, 2, 3]), fromUint8Array(new Uint8Array([1, 2, 3])));
+            const typeinfo7 = Type.binary()
+            testTypeInfo(typeinfo7, new Uint8Array([1, 2, 3]), fromUint8Array(new Uint8Array([1, 2, 3])));
 
-            const classinfo8 = Type.string()
-            testClassInfo(classinfo8, '123')
+            const typeinfo8 = Type.string()
+            testTypeInfo(typeinfo8, '123')
 
-            const classinfo9 = Type.set(Type.string())
-            testClassInfo(classinfo9, new Set(['123']))
+            const typeinfo9 = Type.set(Type.string())
+            testTypeInfo(typeinfo9, new Set(['123']))
         })
 
         test('can serialize and deserialize array', () => {
-            const classinfo = Type.array(Type.int8())
-            testClassInfo(classinfo, [1, 2, 3])
-            testClassInfo(classinfo, [])
+            const typeinfo = Type.array(Type.int8())
+            testTypeInfo(typeinfo, [1, 2, 3])
+            testTypeInfo(typeinfo, [])
         })
 
         test('can serialize and deserialize tuple', () => {
-            const classinfo = Type.tuple([Type.int8(), Type.int16(), Type.timestamp()] as const)
-            testClassInfo(classinfo, [1, 2, new Date()])
+            const typeinfo = Type.tuple([Type.int8(), Type.int16(), Type.timestamp()] as const)
+            testTypeInfo(typeinfo, [1, 2, new Date()])
         })
 
 
-        function testClassInfo(classinfo: ClassInfo, input: any, expected?: any) {
+        function testTypeInfo(typeinfo: TypeInfo, input: any, expected?: any) {
             const fury = new Fury();
-            const serialize = fury.registerSerializer(classinfo);
+            const serialize = fury.registerSerializer(typeinfo);
             const result = serialize.deserialize(
                 serialize.serialize(input)
             );

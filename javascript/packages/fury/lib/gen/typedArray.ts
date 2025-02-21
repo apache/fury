@@ -17,22 +17,22 @@
  * under the License.
  */
 
-import { Type, ClassInfo } from "../classInfo";
+import { Type, TypeInfo } from "../typeInfo";
 import { CodecBuilder } from "./builder";
 import { BaseSerializerGenerator, RefState, SerializerGenerator } from "./serializer";
 import { CodegenRegistry } from "./router";
 import { InternalSerializerType } from "../type";
 import { Scope } from "./scope";
 
-function build(inner: ClassInfo) {
+function build(inner: TypeInfo) {
   return class TypedArraySerializerGenerator extends BaseSerializerGenerator {
-    classInfo: ClassInfo;
+    typeInfo: TypeInfo;
     innerGenerator: SerializerGenerator;
 
-    constructor(classinfo: ClassInfo, builder: CodecBuilder, scope: Scope) {
-      super(classinfo, builder, scope);
-      this.classInfo = <ClassInfo>classinfo;
-      this.innerGenerator = CodegenRegistry.newGeneratorByClassInfo(inner, builder, scope);
+    constructor(typeInfo: TypeInfo, builder: CodecBuilder, scope: Scope) {
+      super(typeInfo, builder, scope);
+      this.typeInfo = <TypeInfo>typeInfo;
+      this.innerGenerator = CodegenRegistry.newGeneratorByTypeInfo(inner, builder, scope);
     }
 
     writeStmt(accessor: string): string {

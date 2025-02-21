@@ -19,7 +19,7 @@
 
 import { FuryClsInfoSymbol, WithFuryClsInfo, Serializer, TypeId } from "./type";
 import { Gen } from "./gen";
-import { Type, ClassInfo } from "./classInfo";
+import { Type, TypeInfo } from "./typeInfo";
 import Fury from "./fury";
 
 const uninitSerialize = {
@@ -47,11 +47,11 @@ const uninitSerialize = {
 export default class ClassResolver {
   private internalSerializer: Serializer[] = new Array(300);
   private customSerializer: Map<number | string, Serializer> = new Map();
-  private classInfoMap: Map<number | string, ClassInfo> = new Map();
+  private typeInfoMap: Map<number | string, TypeInfo> = new Map();
 
   private initInternalSerializer() {
-    const registerSerializer = (classInfo: ClassInfo) => {
-      return this.registerSerializer(classInfo, new Gen(this.fury).generateSerializer(classInfo));
+    const registerSerializer = (typeInfo: TypeInfo) => {
+      return this.registerSerializer(typeInfo, new Gen(this.fury).generateSerializer(typeInfo));
     };
     registerSerializer(Type.string());
     registerSerializer(Type.array(Type.any()));
@@ -105,20 +105,20 @@ export default class ClassResolver {
     this.initInternalSerializer();
   }
 
-  getClassInfo(typeIdOrName: number | string) {
-    return this.classInfoMap.get(typeIdOrName);
+  getTypeInfo(typeIdOrName: number | string) {
+    return this.typeInfoMap.get(typeIdOrName);
   }
 
-  registerSerializer(classInfo: ClassInfo, serializer: Serializer = uninitSerialize) {
-    if (!TypeId.IS_NAMED_TYPE(classInfo.typeId)) {
-      const id = classInfo.typeId;
+  registerSerializer(typeInfo: TypeInfo, serializer: Serializer = uninitSerialize) {
+    if (!TypeId.IS_NAMED_TYPE(typeInfo.typeId)) {
+      const id = typeInfo.typeId;
       if (id <= 0xFF) {
         if (this.internalSerializer[id]) {
           Object.assign(this.internalSerializer[id], serializer);
         } else {
           this.internalSerializer[id] = { ...serializer };
         }
-        this.classInfoMap.set(id, classInfo);
+        this.typeInfoMap.set(id, typeInfo);
         return this.internalSerializer[id];
       } else {
         if (this.customSerializer.has(id)) {
@@ -126,34 +126,34 @@ export default class ClassResolver {
         } else {
           this.customSerializer.set(id, { ...serializer || uninitSerialize });
         }
-        this.classInfoMap.set(id, classInfo);
+        this.typeInfoMap.set(id, typeInfo);
         return this.customSerializer.get(id);
       }
     } else {
-      const namedClassInfo = classInfo.castToStruct();
-      const name = namedClassInfo.named!;
+      const namedTypeInfo = typeInfo.castToStruct();
+      const name = namedTypeInfo.named!;
       if (this.customSerializer.has(name)) {
         Object.assign(this.customSerializer.get(name)!, serializer || uninitSerialize);
       } else {
         this.customSerializer.set(name, { ...serializer || uninitSerialize });
       }
-      this.classInfoMap.set(name, classInfo);
+      this.typeInfoMap.set(name, typeInfo);
       return this.customSerializer.get(name);
     }
   }
 
-  classInfoExists(classInfo: ClassInfo) {
-    if (TypeId.IS_NAMED_TYPE(classInfo.typeId)) {
-      return this.classInfoMap.has((classInfo.castToStruct()).named!);
+  typeInfoExists(typeInfo: TypeInfo) {
+    if (TypeId.IS_NAMED_TYPE(typeInfo.typeId)) {
+      return this.typeInfoMap.has((typeInfo.castToStruct()).named!);
     }
-    return this.classInfoMap.has(classInfo.typeId);
+    return this.typeInfoMap.has(typeInfo.typeId);
   }
 
-  getSerializerByClassInfo(classInfo: ClassInfo) {
-    if (TypeId.IS_NAMED_TYPE(classInfo.typeId)) {
-      return this.customSerializer.get((classInfo.castToStruct()).named!);
+  getSerializerByTypeInfo(typeInfo: TypeInfo) {
+    if (TypeId.IS_NAMED_TYPE(typeInfo.typeId)) {
+      return this.customSerializer.get((typeInfo.castToStruct()).named!);
     }
-    return this.getSerializerById(classInfo.typeId);
+    return this.getSerializerById(typeInfo.typeId);
   }
 
   getSerializerById(id: number) {
@@ -204,8 +204,8 @@ export default class ClassResolver {
 
     // custome types
     if (typeof v === "object" && v !== null && FuryClsInfoSymbol in v) {
-      const classInfo = (v[FuryClsInfoSymbol] as WithFuryClsInfo).structClassInfo;
-      return this.getSerializerByClassInfo(classInfo);
+      const typeInfo = (v[FuryClsInfoSymbol] as WithFuryClsInfo).structTypeInfo;
+      return this.getSerializerByTypeInfo(typeInfo);
     }
 
     throw new Error(`Failed to detect the Fury type from JavaScript type: ${typeof v}`);

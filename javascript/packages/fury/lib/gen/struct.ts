@@ -20,7 +20,7 @@
 import { InternalSerializerType, MaxInt32, Mode, TypeId } from "../type";
 import { Scope } from "./scope";
 import { CodecBuilder } from "./builder";
-import { StructClassInfo, ClassInfo } from "../classInfo";
+import { StructTypeInfo, TypeInfo } from "../typeInfo";
 import { CodegenRegistry } from "./router";
 import { BaseSerializerGenerator, RefState } from "./serializer";
 import { fromString } from "../platformBuffer";
@@ -45,12 +45,12 @@ const computeStringHash = (str: string) => {
   return hash;
 };
 
-const computeStructHash = (classInfo: ClassInfo) => {
+const computeStructHash = (typeInfo: TypeInfo) => {
   let hash = 17;
-  for (const [, value] of Object.entries((<StructClassInfo>classInfo).options.props!).sort()) {
+  for (const [, value] of Object.entries((<StructTypeInfo>typeInfo).options.props!).sort()) {
     let id = value.typeId;
     if (TypeId.IS_NAMED_TYPE(value.typeId!)) {
-      id = computeStringHash((<StructClassInfo>value).namespace! + (<StructClassInfo>value).typeName!);
+      id = computeStringHash((<StructTypeInfo>value).namespace! + (<StructTypeInfo>value).typeName!);
     }
     hash = computeFieldHash(hash, id || 0);
   }
@@ -58,18 +58,18 @@ const computeStructHash = (classInfo: ClassInfo) => {
 };
 
 class StructSerializerGenerator extends BaseSerializerGenerator {
-  classInfo: StructClassInfo;
+  typeInfo: StructTypeInfo;
 
-  constructor(classInfo: ClassInfo, builder: CodecBuilder, scope: Scope) {
-    super(classInfo, builder, scope);
-    this.classInfo = <StructClassInfo>classInfo;
+  constructor(typeInfo: TypeInfo, builder: CodecBuilder, scope: Scope) {
+    super(typeInfo, builder, scope);
+    this.typeInfo = <StructTypeInfo>typeInfo;
   }
 
   writeStmt(accessor: string): string {
-    const options = this.classInfo.options;
+    const options = this.typeInfo.options;
 
     return `
-      ${this.builder.fury.config.mode === Mode.SchemaConsistent ? this.builder.writer.varUInt32(computeStructHash(this.classInfo)) : ""}
+      ${this.builder.fury.config.mode === Mode.SchemaConsistent ? this.builder.writer.varUInt32(computeStructHash(this.typeInfo)) : ""}
       ${Object.entries(options.props!).sort().map(([key, inner]) => {
         const InnerGeneratorClass = CodegenRegistry.get(inner.type);
         if (!InnerGeneratorClass) {
@@ -82,21 +82,21 @@ class StructSerializerGenerator extends BaseSerializerGenerator {
   }
 
   readStmt(accessor: (expr: string) => string, refState: RefState): string {
-    const options = this.classInfo.options;
+    const options = this.typeInfo.options;
     const result = this.scope.uniqueName("result");
 
     return `
       ${
         this.builder.fury.config.mode === Mode.SchemaConsistent
 ? `
-        if (${this.builder.reader.varUInt32()} !== ${computeStructHash(this.classInfo)}) {
+        if (${this.builder.reader.varUInt32()} !== ${computeStructHash(this.typeInfo)}) {
           throw new Error("hash error");
         }`
 : ""
       }
 
       ${
-        this.classInfo.options.withConstructor && this.builder.fury.config?.constructClass
+        this.typeInfo.options.withConstructor && this.builder.fury.config?.constructClass
 ? `
           const ${result} = new ${this.builder.getOptions("constructor")}();
         `
@@ -124,9 +124,9 @@ class StructSerializerGenerator extends BaseSerializerGenerator {
   toReadEmbed(accessor: (expr: string) => string, excludeHead?: boolean, refState?: RefState): string {
     const name = this.scope.declare(
       "tag_ser",
-      TypeId.IS_NAMED_TYPE(this.classInfo.typeId)
-        ? this.builder.classResolver.getSerializerByName(CodecBuilder.replaceBackslashAndQuote(this.classInfo.named!))
-        : this.builder.classResolver.getSerializerById(this.classInfo.typeId)
+      TypeId.IS_NAMED_TYPE(this.typeInfo.typeId)
+        ? this.builder.classResolver.getSerializerByName(CodecBuilder.replaceBackslashAndQuote(this.typeInfo.named!))
+        : this.builder.classResolver.getSerializerById(this.typeInfo.typeId)
     );
     if (!excludeHead) {
       return accessor(`${name}.read()`);
@@ -137,9 +137,9 @@ class StructSerializerGenerator extends BaseSerializerGenerator {
   toWriteEmbed(accessor: string, excludeHead?: boolean): string {
     const name = this.scope.declare(
       "tag_ser",
-      TypeId.IS_NAMED_TYPE(this.classInfo.typeId)
-        ? this.builder.classResolver.getSerializerByName(CodecBuilder.replaceBackslashAndQuote(this.classInfo.named!))
-        : this.builder.classResolver.getSerializerById(this.classInfo.typeId)
+      TypeId.IS_NAMED_TYPE(this.typeInfo.typeId)
+        ? this.builder.classResolver.getSerializerByName(CodecBuilder.replaceBackslashAndQuote(this.typeInfo.named!))
+        : this.builder.classResolver.getSerializerById(this.typeInfo.typeId)
     );
     if (!excludeHead) {
       return `${name}.write(${accessor})`;
@@ -148,8 +148,8 @@ class StructSerializerGenerator extends BaseSerializerGenerator {
   }
 
   getFixedSize(): number {
-    const classInfo = <StructClassInfo> this.classInfo;
-    const options = classInfo.options;
+    const typeInfo = <StructTypeInfo> this.typeInfo;
+    const options = typeInfo.options;
     let fixedSize = 8;
     if (options.props) {
       Object.values(options.props).forEach((x) => {
@@ -157,7 +157,7 @@ class StructSerializerGenerator extends BaseSerializerGenerator {
         fixedSize += propGenerator.getFixedSize();
       });
     } else {
-      fixedSize += this.builder.fury.classResolver.getSerializerByName(classInfo.named!)!.fixedSize;
+      fixedSize += this.builder.fury.classResolver.getSerializerByName(typeInfo.named!)!.fixedSize;
     }
     return fixedSize;
   }

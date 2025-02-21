@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import { StructClassInfo } from "./classInfo";
+import { StructTypeInfo } from "./typeInfo";
 
 export const TypeId = {
   // a boolean value (true or false).
@@ -224,7 +224,7 @@ export enum Language {
 export const MAGIC_NUMBER = 0x62D4;
 
 export interface WithFuryClsInfo {
-  structClassInfo: StructClassInfo;
+  structTypeInfo: StructTypeInfo;
 }
 
 export const FuryClsInfoSymbol = Symbol("furyClsInfo");

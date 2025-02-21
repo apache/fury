@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import Fury, { ClassInfo, InternalSerializerType, Type } from '../packages/fury/index';
+import Fury, { TypeInfo, InternalSerializerType, Type } from '../packages/fury/index';
 import { describe, expect, test } from '@jest/globals';
 
 describe('object', () => {
@@ -61,13 +61,13 @@ describe('object', () => {
   });
 
   test('should object work', () => {
-    const classInfo = Type.struct("example.foo", {
+    const typeInfo = Type.struct("example.foo", {
       a: Type.struct("example.bar", {
         b: Type.string()
       })
     })
     const fury = new Fury({ refTracking: true });
-    const { serialize, deserialize } = fury.registerSerializer(classInfo);
+    const { serialize, deserialize } = fury.registerSerializer(typeInfo);
     const input = serialize({ a: { b: "hel" } });
     const result = deserialize(
       input
@@ -77,13 +77,13 @@ describe('object', () => {
 
 
   test('should null value work', () => {
-    const classInfo = Type.struct("example.foo", {
+    const typeInfo = Type.struct("example.foo", {
       a: Type.struct("example.bar", {
         b: Type.string()
       })
     })
     const fury = new Fury({ refTracking: true });
-    const { serialize, deserialize } = fury.registerSerializer(classInfo);
+    const { serialize, deserialize } = fury.registerSerializer(typeInfo);
     const input = serialize({ a: null });
     const result = deserialize(
       input
@@ -92,7 +92,7 @@ describe('object', () => {
   });
 
   test('should object in array work', () => {
-    const classInfo = Type.struct('example.foo', {
+    const typeInfo = Type.struct('example.foo', {
       a: Type.array(Type.struct('example.bar', {
         b: Type.string(),
         c: Type.bool(),
@@ -103,7 +103,7 @@ describe('object', () => {
     })
     
     const fury = new Fury({ refTracking: true });
-    const serializer = fury.registerSerializer(classInfo).serializer;
+    const serializer = fury.registerSerializer(typeInfo).serializer;
     const input = fury.serialize({ a: [{ b: "hel", c: true, d: 123, e: 123, f: new Uint8Array([1,2,3]) }] }, serializer);
     const result = fury.deserialize(
       input
@@ -113,14 +113,14 @@ describe('object', () => {
   });
 
   test('should write tag and read tag work', () => {
-    const classInfo = Type.struct("example.foo", {
+    const typeInfo = Type.struct("example.foo", {
       a: Type.struct("example.bar", {
         b: Type.string()
       }),
       a2: Type.struct("example.bar")
     });
     const fury = new Fury({ refTracking: true });
-    const serializer = fury.registerSerializer(classInfo).serializer;
+    const serializer = fury.registerSerializer(typeInfo).serializer;
     const input = fury.serialize({ a: { b: "hel" }, a2: { b: "hel2" } }, serializer);
     const result = fury.deserialize(
       input
@@ -129,7 +129,7 @@ describe('object', () => {
   });
 
   test('should ciycle ref work', () => {
-    const classInfo = Type.struct( "example.foo", {
+    const typeInfo = Type.struct( "example.foo", {
       a: Type.struct("example.bar", {
         b: Type.string(),
       }),
@@ -137,7 +137,7 @@ describe('object', () => {
     })
     
     const fury = new Fury({ refTracking: true });
-    const serialize = fury.registerSerializer(classInfo).serializer;
+    const serialize = fury.registerSerializer(typeInfo).serializer;
     const param: any = {};
     param.a = { b: "hel" };
     param.a2 = param;
@@ -150,7 +150,7 @@ describe('object', () => {
   });
 
   test('should dot prop accessor work', () => {
-    const classInfo = Type.struct("example.foo", {
+    const typeInfo = Type.struct("example.foo", {
       "+a": Type.struct("example.bar", {
         "delete": Type.string(),
         c: Type.array(Type.struct("example.foo2", {
@@ -160,7 +160,7 @@ describe('object', () => {
     })
     
     const fury = new Fury({ refTracking: true });
-    const { serialize, deserialize } = fury.registerSerializer(classInfo);
+    const { serialize, deserialize } = fury.registerSerializer(typeInfo);
     const input = serialize({ "+a": { "delete": "hel", c: [{ d: "hello" }] } });
     const result = deserialize(
       input
@@ -170,7 +170,7 @@ describe('object', () => {
 
 
   test('should type function tools work', () => {
-    const classInfo = Type.struct("example.foo", {
+    const typeInfo = Type.struct("example.foo", {
       a: Type.struct("example\".bar", {
         b: Type.string(),
         c: Type.array(Type.struct("example\\\".foo2", {
@@ -180,7 +180,7 @@ describe('object', () => {
     })
     
     const fury = new Fury({ refTracking: true });
-    const { serialize, deserialize } = fury.registerSerializer(classInfo);
+    const { serialize, deserialize } = fury.registerSerializer(typeInfo);
     const input = serialize({ a: { b: "hel", c: [{ d: "hello" }] } });
     const result = deserialize(
       input
@@ -190,13 +190,13 @@ describe('object', () => {
 
   test("should partial record work", () => {
     const hps = undefined;
-    const classInfo = Type.struct('ws-channel-protocol', {
+    const typeInfo = Type.struct('ws-channel-protocol', {
         kind: Type.string(),
         path: Type.string(),
     });
 
     const fury = new Fury({ hps });
-    const { serialize, deserialize } = fury.registerSerializer(classInfo);
+    const { serialize, deserialize } = fury.registerSerializer(typeInfo);
     const bin = serialize({
         kind: "123",
     });
@@ -205,12 +205,12 @@ describe('object', () => {
 })
 
   test('should handle emojis', () => {
-    const classInfo = Type.struct("example.emoji", {
+    const typeInfo = Type.struct("example.emoji", {
       a: Type.string()
     });
     
     const fury = new Fury({ refTracking: true });
-    const { serialize, deserialize } = fury.registerSerializer(classInfo);
+    const { serialize, deserialize } = fury.registerSerializer(typeInfo);
     const input = serialize({ a: "Hello, world! 🌍😊" });
     const result = deserialize(input);
     expect(result).toEqual({ a: "Hello, world! 🌍😊" });
