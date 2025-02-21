@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import { FuryClsInfoSymbol, WithFuryClsInfo, Serializer, TypeId } from "./type";
+import { FuryTypeInfoSymbol, WithFuryClsInfo, Serializer, TypeId } from "./type";
 import { Gen } from "./gen";
 import { Type, TypeInfo } from "./typeInfo";
 import Fury from "./fury";
@@ -203,8 +203,8 @@ export default class ClassResolver {
     }
 
     // custome types
-    if (typeof v === "object" && v !== null && FuryClsInfoSymbol in v) {
-      const typeInfo = (v[FuryClsInfoSymbol] as WithFuryClsInfo).structTypeInfo;
+    if (typeof v === "object" && v !== null && FuryTypeInfoSymbol in v) {
+      const typeInfo = (v[FuryTypeInfoSymbol] as WithFuryClsInfo).structTypeInfo;
       return this.getSerializerByTypeInfo(typeInfo);
     }
 

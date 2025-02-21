@@ -18,13 +18,13 @@
  */
 
 import { TypeMeta } from "./meta/TypeMeta";
-import { FuryClsInfoSymbol, InternalSerializerType, WithFuryClsInfo, TypeId } from "./type";
+import { FuryTypeInfoSymbol, InternalSerializerType, WithFuryClsInfo, TypeId } from "./type";
 
 const initMeta = (target: new () => any, typeInfo: TypeInfo) => {
   if (!target.prototype) {
     target.prototype = {};
   }
-  target.prototype[FuryClsInfoSymbol] = {
+  target.prototype[FuryTypeInfoSymbol] = {
     structTypeInfo: Type.struct({
       ...(
         TypeId.IS_NAMED_TYPE(typeInfo.typeId)

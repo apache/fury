@@ -227,4 +227,4 @@ export interface WithFuryClsInfo {
   structTypeInfo: StructTypeInfo;
 }
 
-export const FuryClsInfoSymbol = Symbol("furyClsInfo");
+export const FuryTypeInfoSymbol = Symbol("furyTypeInfo");
