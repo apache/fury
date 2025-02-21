@@ -1299,7 +1299,8 @@ cdef class CollectionSerializer(Serializer):
 
     cdef inline _write_bool(self, Buffer buffer, value):
         buffer.write_int16(NOT_NULL_BOOL_FLAG)
-        if isinstance(value, (list, tuple)):
+        value_type = type(value)
+        if value_type is list or value_type is tuple:
             size = sizeof(bool) * Py_SIZE(value)
             buffer.grow(<int32_t>size)
             Fury_PyBooleanSequenceWriteToBuffer(value, buffer.c_buffer.get(), buffer.writer_index)
@@ -1315,7 +1316,8 @@ cdef class CollectionSerializer(Serializer):
 
     cdef inline _write_float(self, Buffer buffer, value):
         buffer.write_int16(NOT_NULL_FLOAT64_FLAG)
-        if isinstance(value, (list, tuple)):
+        value_type = type(value)
+        if value_type is list or value_type is tuple:
             size = sizeof(double) * Py_SIZE(value)
             buffer.grow(<int32_t>size)
             Fury_PyFloatSequenceWriteToBuffer(value, buffer.c_buffer.get(), buffer.writer_index)
