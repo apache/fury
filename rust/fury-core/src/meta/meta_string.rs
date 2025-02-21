@@ -326,16 +326,16 @@ impl MetaStringDecoder {
             let byte_index = bit_index / 8;
             let intra_byte_index = bit_index % 8;
             let char_value: usize = if intra_byte_index > 3 {
-                ((data[byte_index] as usize) << 8
+                ((((data[byte_index] as usize) << 8)
                     | if byte_index + 1 < data.len() {
                         data.get(byte_index + 1).cloned().unwrap() as usize & 0xFF
                     } else {
                         0
                     })
-                    >> (11 - intra_byte_index)
+                    >> (11 - intra_byte_index))
                     & bit_mask
             } else {
-                (data[byte_index] as usize) >> (3 - intra_byte_index) & bit_mask
+                ((data[byte_index] as usize) >> (3 - intra_byte_index)) & bit_mask
             };
             bit_index += 5;
             decoded.push(self.decode_lower_special_char(char_value as u8)?);
@@ -353,16 +353,16 @@ impl MetaStringDecoder {
             let byte_index = bit_index / 8;
             let intra_byte_index = bit_index % 8;
             let char_value: usize = if intra_byte_index > 2 {
-                ((data[byte_index] as usize) << 8
+                ((((data[byte_index] as usize) << 8)
                     | if byte_index + 1 < data.len() {
                         data.get(byte_index + 1).cloned().unwrap() as usize & 0xFF
                     } else {
                         0
                     })
-                    >> (10 - intra_byte_index)
+                    >> (10 - intra_byte_index))
                     & bit_mask
             } else {
-                (data[byte_index] as usize) >> (2 - intra_byte_index) & bit_mask
+                ((data[byte_index] as usize) >> (2 - intra_byte_index)) & bit_mask
             };
             bit_index += 6;
             decoded.push(self.decode_lower_upper_digit_special_char(char_value as u8)?);

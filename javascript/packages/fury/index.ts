@@ -18,21 +18,22 @@
  */
 
 import {
-  ObjectTypeDescription,
-  TypeDescription,
-  ArrayTypeDescription,
+  StructTypeInfo,
+  TypeInfo,
+  ArrayTypeInfo,
   Type,
-} from "./lib/description";
-import { Serializer, InternalSerializerType } from "./lib/type";
+} from "./lib/typeInfo";
+import { Serializer, InternalSerializerType, Mode } from "./lib/type";
 import Fury from "./lib/fury";
 
 export {
   Serializer,
   InternalSerializerType,
-  TypeDescription,
-  ArrayTypeDescription,
-  ObjectTypeDescription,
+  TypeInfo,
+  ArrayTypeInfo,
+  StructTypeInfo,
   Type,
+  Mode,
 };
 
 export default Fury;

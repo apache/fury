@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import { ArrayTypeDescription, TypeDescription } from "../description";
+import { ArrayTypeInfo, TypeInfo } from "../typeInfo";
 import { CodecBuilder } from "./builder";
 import { CodegenRegistry } from "./router";
 import { InternalSerializerType } from "../type";
@@ -25,15 +25,15 @@ import { Scope } from "./scope";
 import { CollectionSerializerGenerator } from "./collection";
 
 class ArraySerializerGenerator extends CollectionSerializerGenerator {
-  description: ArrayTypeDescription;
+  typeInfo: ArrayTypeInfo;
 
-  constructor(description: TypeDescription, builder: CodecBuilder, scope: Scope) {
-    super(description, builder, scope);
-    this.description = <ArrayTypeDescription>description;
+  constructor(typeInfo: TypeInfo, builder: CodecBuilder, scope: Scope) {
+    super(typeInfo, builder, scope);
+    this.typeInfo = <ArrayTypeInfo>typeInfo;
   }
 
-  genericTypeDescriptin(): TypeDescription {
-    return this.description.options.inner;
+  genericTypeDescriptin(): TypeInfo {
+    return this.typeInfo.options.inner;
   }
 
   sizeProp() {
@@ -46,6 +46,14 @@ class ArraySerializerGenerator extends CollectionSerializerGenerator {
 
   putAccessor(result: string, item: string, index: string): string {
     return `${result}[${index}] = ${item}`;
+  }
+
+  getFixedSize(): number {
+    return 7;
+  }
+
+  needToWriteRef(): boolean {
+    return Boolean(this.builder.fury.config.refTracking);
   }
 }
 
