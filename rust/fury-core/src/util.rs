@@ -58,7 +58,7 @@ pub fn to_utf8(utf16: &[u16], is_little_endian: bool) -> Result<Vec<u8>, String>
                 // 2-byte UTF-8
                 // [0000|0bbb|bbcc|cccc] => [110|bbbbb], [10|cccccc]
                 let bytes = [
-                    (code_point >> 6 & 0b1_1111) as u8 | 0b1100_0000,
+                    ((code_point >> 6) & 0b1_1111) as u8 | 0b1100_0000,
                     (code_point & 0b11_1111) as u8 | 0b1000_0000,
                 ];
                 unsafe {
@@ -84,9 +84,9 @@ pub fn to_utf8(utf16: &[u16], is_little_endian: bool) -> Result<Vec<u8>, String>
                     // 11110??? 10?????? 10?????? 10??????
                     // Need 21 bit suffix of code_point
                     let bytes = [
-                        (code_point >> 18 & 0b111) as u8 | 0b1111_0000,
-                        (code_point >> 12 & 0b11_1111) as u8 | 0b1000_0000,
-                        (code_point >> 6 & 0b11_1111) as u8 | 0b1000_0000,
+                        ((code_point >> 18) & 0b111) as u8 | 0b1111_0000,
+                        ((code_point >> 12) & 0b11_1111) as u8 | 0b1000_0000,
+                        ((code_point >> 6) & 0b11_1111) as u8 | 0b1000_0000,
                         (code_point & 0b11_1111) as u8 | 0b1000_0000,
                     ];
                     unsafe {
@@ -102,8 +102,8 @@ pub fn to_utf8(utf16: &[u16], is_little_endian: bool) -> Result<Vec<u8>, String>
                 // [aaaa|bbbb|bbcc|cccc] => [1110|aaaa], [10|bbbbbb], [10|cccccc]
                 // Need 16 bit suffix of wc, as same as wc itself
                 let bytes = [
-                    (wc >> 12 | 0b1110_0000) as u8,
-                    (wc >> 6 & 0b11_1111) as u8 | 0b1000_0000,
+                    ((wc >> 12) | 0b1110_0000) as u8,
+                    ((wc >> 6) & 0b11_1111) as u8 | 0b1000_0000,
                     (wc & 0b11_1111) as u8 | 0b1000_0000,
                 ];
                 unsafe {
