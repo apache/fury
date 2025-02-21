@@ -34,7 +34,8 @@ from pyfury.lib import mmh3
 from pyfury.meta.metastring import Encoding
 from pyfury.type import is_primitive_type
 from pyfury.util import is_little_endian
-from pyfury.includes.libserialization cimport TypeId, IsNamespacedType
+from pyfury.includes.libserialization cimport \
+    (TypeId, IsNamespacedType, Fury_PyBooleanSequenceWriteToBuffer, Fury_PyFloatSequenceWriteToBuffer)
 
 from libc.stdint cimport int8_t, int16_t, int32_t, int64_t, uint64_t
 from libc.stdint cimport *
@@ -69,6 +70,7 @@ cdef extern from *:
     object int2obj(int64_t obj_addr)
     int64_t obj2int(object obj_ref)
     dict _PyDict_NewPresized(Py_ssize_t minused)
+    Py_ssize_t Py_SIZE(object obj)
 
 
 cdef int8_t NULL_FLAG = -3
@@ -1297,8 +1299,15 @@ cdef class CollectionSerializer(Serializer):
 
     cdef inline _write_bool(self, Buffer buffer, value):
         buffer.write_int16(NOT_NULL_BOOL_FLAG)
-        for s in value:
-            buffer.write_bool(s)
+        value_type = type(value)
+        if value_type is list or value_type is tuple:
+            size = sizeof(bool) * Py_SIZE(value)
+            buffer.grow(<int32_t>size)
+            Fury_PyBooleanSequenceWriteToBuffer(value, buffer.c_buffer.get(), buffer.writer_index)
+            buffer.writer_index += size
+        else:
+            for s in value:
+                buffer.write_bool(s)
 
     cdef inline _read_bool(self, Buffer buffer, int64_t len_, object collection_):
         assert buffer.read_int16() == NOT_NULL_BOOL_FLAG
@@ -1307,8 +1316,15 @@ cdef class CollectionSerializer(Serializer):
 
     cdef inline _write_float(self, Buffer buffer, value):
         buffer.write_int16(NOT_NULL_FLOAT64_FLAG)
-        for s in value:
-            buffer.write_double(s)
+        value_type = type(value)
+        if value_type is list or value_type is tuple:
+            size = sizeof(double) * Py_SIZE(value)
+            buffer.grow(<int32_t>size)
+            Fury_PyFloatSequenceWriteToBuffer(value, buffer.c_buffer.get(), buffer.writer_index)
+            buffer.writer_index += size
+        else:
+            for s in value:
+                buffer.write_double(s)
 
     cdef inline _read_float(self, Buffer buffer, int64_t len_, object collection_):
         assert buffer.read_int16() == NOT_NULL_FLOAT64_FLAG
