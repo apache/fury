@@ -327,12 +327,12 @@ impl MetaStringDecoder {
             let intra_byte_index = bit_index % 8;
             let char_value: usize = if intra_byte_index > 3 {
                 ((((data[byte_index] as usize) << 8)
-                | if byte_index + 1 < data.len() {
-                    data.get(byte_index + 1).cloned().unwrap() as usize & 0xFF
-                } else {
-                    0
-                })
-                >> (11 - intra_byte_index))
+                    | if byte_index + 1 < data.len() {
+                        data.get(byte_index + 1).cloned().unwrap() as usize & 0xFF
+                    } else {
+                        0
+                    })
+                    >> (11 - intra_byte_index))
                     & bit_mask
             } else {
                 ((data[byte_index] as usize) >> (3 - intra_byte_index)) & bit_mask
@@ -354,12 +354,12 @@ impl MetaStringDecoder {
             let intra_byte_index = bit_index % 8;
             let char_value: usize = if intra_byte_index > 2 {
                 ((((data[byte_index] as usize) << 8)
-                | if byte_index + 1 < data.len() {
-                    data.get(byte_index + 1).cloned().unwrap() as usize & 0xFF
-                } else {
-                    0
-                })
-                >> (10 - intra_byte_index))
+                    | if byte_index + 1 < data.len() {
+                        data.get(byte_index + 1).cloned().unwrap() as usize & 0xFF
+                    } else {
+                        0
+                    })
+                    >> (10 - intra_byte_index))
                     & bit_mask
             } else {
                 ((data[byte_index] as usize) >> (2 - intra_byte_index)) & bit_mask
