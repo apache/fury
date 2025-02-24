@@ -66,11 +66,10 @@ public class SubListSerializers {
 
   public static void registerSerializers(Fury fury, boolean preserveView) {
     ClassResolver classResolver = fury.getClassResolver();
-    // java.util.ImmutableCollections$SubList is already registered in ImmutableCollectionSerializers
+    // java.util.ImmutableCollections$SubList is already registered in
+    // ImmutableCollectionSerializers
     for (Class<?> cls :
-        new Class[] {
-          SubListClass, RandomAccessSubListClass, ArrayListSubListClass
-        }) {
+        new Class[] {SubListClass, RandomAccessSubListClass, ArrayListSubListClass}) {
       if (fury.trackingRef() && preserveView && fury.getConfig().getLanguage() == Language.JAVA) {
         classResolver.registerSerializer(cls, new SubListViewSerializer(fury, cls));
       } else {
