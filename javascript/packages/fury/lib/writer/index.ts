@@ -17,12 +17,20 @@
  * under the License.
  */
 
-import { HalfMaxInt32, HalfMinInt32, Hps, LATIN1, UTF8 } from "../type";
+import { HalfMaxInt32, HalfMinInt32, Hps, LATIN1, UTF16, UTF8 } from "../type";
 import { PlatformBuffer, alloc, strByteLength } from "../platformBuffer";
 import { OwnershipError } from "../error";
 import { toFloat16 } from "./number";
 
 const MAX_POOL_SIZE = 1024 * 1024 * 3; // 3MB
+
+function getInternalStringDetector() {
+  if (!globalThis || !globalThis.require) {
+    return null;
+  }
+  const { isStringOneByteRepresentation } = global.require("node:v8");
+  return isStringOneByteRepresentation;
+}
 
 export class BinaryWriter {
   private cursor = 0;
@@ -36,6 +44,7 @@ export class BinaryWriter {
   };
 
   private hpsEnable = false;
+  private internalStringDetector: (((content: string) => boolean) | null) = null;
 
   constructor(config: {
     hps?: Hps;
@@ -43,6 +52,7 @@ export class BinaryWriter {
     this.initPoll();
     this.config = config;
     this.hpsEnable = Boolean(config?.hps);
+    this.internalStringDetector = getInternalStringDetector();
   }
 
   private initPoll() {
@@ -197,7 +207,32 @@ export class BinaryWriter {
     this.cursor = serializeString(v, this.platformBuffer, this.cursor);
   }
 
-  stringOfVarUInt32Slow(v: string) {
+  stringOfVarUInt32WithDetector(v: string) {
+    const isLatin1 = this.internalStringDetector!(v);
+    if (isLatin1) {
+      const len = v.length;
+      this.dataView.setUint8(this.cursor++, LATIN1);
+      this.varUInt32(len);
+      this.reserve(len);
+      if (len < 40) {
+        for (let index = 0; index < v.length; index++) {
+          this.platformBuffer[this.cursor + index] = v.charCodeAt(index);
+        }
+      } else {
+        this.platformBuffer.write(v, this.cursor, "latin1");
+      }
+      this.cursor += len;
+    } else {
+      const len = v.length * 2;
+      this.dataView.setUint8(this.cursor++, UTF16);
+      this.varUInt32(len);
+      this.reserve(len);
+      this.platformBuffer.write(v, this.cursor, "utf16le");
+      this.cursor += len;
+    }
+  }
+
+  stringOfVarUInt32Compatibly(v: string) {
     const len = strByteLength(v);
     const isLatin1 = len === v.length;
     this.dataView.setUint8(this.cursor++, isLatin1 ? LATIN1 : UTF8);
@@ -326,8 +361,12 @@ export class BinaryWriter {
   }
 
   stringOfVarUInt32(v: string) {
-    return this.hpsEnable
-      ? this.stringOfVarUInt32Fast(v)
-      : this.stringOfVarUInt32Slow(v);
+    if (this.hpsEnable) {
+      return this.stringOfVarUInt32Fast(v);
+    }
+    if (this.internalStringDetector !== null) {
+      return this.stringOfVarUInt32WithDetector(v);
+    }
+    return this.stringOfVarUInt32Compatibly(v);
   }
 }
