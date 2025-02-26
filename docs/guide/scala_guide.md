@@ -19,13 +19,13 @@ Scala 2 and 3 are both supported.
 To add a dependency on Fury scala for scala 2 with sbt, use the following:
 
 ```sbt
-libraryDependencies += "org.apache.fury" % "fury-scala_2.13" % "0.9.0"
+libraryDependencies += "org.apache.fury" % "fury-scala_2.13" % "0.10.0"
 ```
 
 To add a dependency on Fury scala for scala 3 with sbt, use the following:
 
 ```sbt
-libraryDependencies += "org.apache.fury" % "fury-scala_3" % "0.9.0"
+libraryDependencies += "org.apache.fury" % "fury-scala_3" % "0.10.0"
 ```
 
 ## Quict Start
