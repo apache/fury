@@ -69,7 +69,11 @@ public final class LoaderBinding {
       }
     } else {
       Set<Fury> furySet = new HashSet<>(furyMap.size());
-      Collections.addAll(furyMap.values());
+      for (Fury f : furyMap.values()) {
+          if (f != null) {
+              furySet.add(f);
+          }
+      }
       for (SoftReference<Fury> ref : furySoftMap.values()) {
         Fury f = ref.get();
         if (f != null) {
