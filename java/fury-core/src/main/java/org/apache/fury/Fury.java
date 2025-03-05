@@ -705,7 +705,7 @@ public final class Fury implements BaseFury {
     return stringSerializer.readString(buffer);
   }
 
-  public void writeJavaStringRef(MemoryBuffer buffer, String str) {
+  public void writeNullableJavaStringRef(MemoryBuffer buffer, String str) {
     if (stringSerializer.needToWriteRef()) {
       if (!refResolver.writeRefOrNull(buffer, str)) {
         stringSerializer.writeJavaString(buffer, str);
@@ -720,7 +720,7 @@ public final class Fury implements BaseFury {
     }
   }
 
-  public void writeJavaStringRef(MemoryBuffer buffer, String str, boolean nullable) {
+  public void writeNullableJavaStringRef(MemoryBuffer buffer, String str, boolean nullable) {
     if (stringSerializer.needToWriteRef()) {
       if (!refResolver.writeRefOrNull(buffer, str)) {
         stringSerializer.writeJavaString(buffer, str);

@@ -344,7 +344,7 @@ public class MapSerializers {
     public void write(MemoryBuffer buffer, Map<String, T> value) {
       buffer.writeVarUint32Small7(value.size());
       for (Map.Entry<String, T> e : value.entrySet()) {
-        fury.writeJavaStringRef(buffer, e.getKey());
+        fury.writeNullableJavaStringRef(buffer, e.getKey());
         // If value is a collection, the `newCollection` method will record itself to
         // reference map, which may get wrong index if this value is written without index.
         fury.writeRef(buffer, e.getValue());

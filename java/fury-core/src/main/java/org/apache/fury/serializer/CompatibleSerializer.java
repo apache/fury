@@ -182,7 +182,7 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
         buffer.writeFloat64((Double) fieldValue);
         return;
       case ClassResolver.STRING_CLASS_ID:
-        fury.writeJavaStringRef(
+        fury.writeNullableJavaStringRef(
             buffer, (String) fieldValue, fieldInfo.getFuryFieldAnnotationInfo().nullable);
         break;
       case ClassResolver.NO_CLASS_ID: // SEPARATE_TYPES_HASH

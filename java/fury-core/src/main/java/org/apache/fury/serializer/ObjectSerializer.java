@@ -560,89 +560,52 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
     // add time types serialization here.
     switch (classId) {
       case ClassResolver.STRING_CLASS_ID: // fast path for string.
-        fury.writeJavaStringRef(buffer, (String) (fieldValue), nullable);
+        fury.writeNullableJavaStringRef(buffer, (String) (fieldValue), nullable);
         return false;
       case ClassResolver.BOOLEAN_CLASS_ID:
-        if (nullable) {
-          if (fieldValue == null) {
-            buffer.writeByte(Fury.NULL_FLAG);
-          } else {
-            buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
-            buffer.writeBoolean((Boolean) (fieldValue));
-          }
-        } else {
-          buffer.writeBoolean((Boolean) (fieldValue));
-        }
+          writeNullableBoolean(buffer, fieldValue, nullable);
         return false;
       case ClassResolver.BYTE_CLASS_ID:
-        if (nullable) {
-          if (fieldValue == null) {
-            buffer.writeByte(Fury.NULL_FLAG);
-          } else {
-            buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
-            buffer.writeByte((Byte) (fieldValue));
-          }
-        } else {
-          buffer.writeByte((Byte) (fieldValue));
-        }
-        return false;
+          writeNullableByte(buffer, fieldValue, nullable);
+          return false;
       case ClassResolver.CHAR_CLASS_ID:
-        if (nullable) {
-          if (fieldValue == null) {
-            buffer.writeByte(Fury.NULL_FLAG);
-          } else {
-            buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
-            buffer.writeChar((Character) (fieldValue));
-          }
-        } else {
-          buffer.writeChar((Character) (fieldValue));
-        }
-        return false;
+          writeNullableChar(buffer, fieldValue, nullable);
+          return false;
       case ClassResolver.SHORT_CLASS_ID:
-        if (nullable) {
-          if (fieldValue == null) {
-            buffer.writeByte(Fury.NULL_FLAG);
-          } else {
-            buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
-            buffer.writeInt16((Short) (fieldValue));
-          }
-        } else {
-          buffer.writeInt16((Short) (fieldValue));
-        }
-        return false;
+          writeNullableShort(buffer, fieldValue, nullable);
+          return false;
       case ClassResolver.INTEGER_CLASS_ID:
-        if (nullable) {
-          if (fieldValue == null) {
-            buffer.writeByte(Fury.NULL_FLAG);
-          } else {
-            buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
-            if (fury.compressInt()) {
-              buffer.writeVarInt32((Integer) (fieldValue));
-            } else {
-              buffer.writeInt32((Integer) (fieldValue));
-            }
-          }
-        } else {
-          if (fury.compressInt()) {
-            buffer.writeVarInt32((Integer) (fieldValue));
-          } else {
-            buffer.writeInt32((Integer) (fieldValue));
-          }
-        }
-        return false;
+          writeNullableInteger(fury, buffer, fieldValue, nullable);
+          return false;
       case ClassResolver.FLOAT_CLASS_ID:
+          writeNullableFloat(buffer, fieldValue, nullable);
+          return false;
+      case ClassResolver.LONG_CLASS_ID:
+          writeNullableLong(fury, buffer, fieldValue, nullable);
+          return false;
+      case ClassResolver.DOUBLE_CLASS_ID:
+          writeNullableDouble(buffer, fieldValue, nullable);
+          return false;
+      default:
+        return true;
+    }
+  }
+
+
+    private static void writeNullableDouble(MemoryBuffer buffer, Object fieldValue, boolean nullable) {
         if (nullable) {
           if (fieldValue == null) {
             buffer.writeByte(Fury.NULL_FLAG);
           } else {
             buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
-            buffer.writeFloat32((Float) (fieldValue));
+            buffer.writeFloat64((Double) fieldValue);
           }
         } else {
-          buffer.writeFloat32((Float) (fieldValue));
+          buffer.writeFloat64((Double) fieldValue);
         }
-        return false;
-      case ClassResolver.LONG_CLASS_ID:
+    }
+
+    private static void writeNullableLong(Fury fury, MemoryBuffer buffer, Object fieldValue, boolean nullable) {
         if (nullable) {
           if (fieldValue == null) {
             buffer.writeByte(Fury.NULL_FLAG);
@@ -651,24 +614,94 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
             fury.writeInt64(buffer, (Long) fieldValue);
           }
         } else {
-          fury.writeInt64(buffer, (Long) (fieldValue));
+          fury.writeInt64(buffer, (Long) fieldValue);
         }
-        return false;
-      case ClassResolver.DOUBLE_CLASS_ID:
+    }
+
+    private static void writeNullableFloat(MemoryBuffer buffer, Object fieldValue, boolean nullable) {
         if (nullable) {
           if (fieldValue == null) {
             buffer.writeByte(Fury.NULL_FLAG);
           } else {
             buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
-            buffer.writeFloat64((Double) (fieldValue));
+            buffer.writeFloat32((Float) fieldValue);
           }
         } else {
-          buffer.writeFloat64((Double) (fieldValue));
+          buffer.writeFloat32((Float) fieldValue);
         }
-        return false;
-      default:
-        return true;
     }
+
+    private static void writeNullableInteger(Fury fury, MemoryBuffer buffer, Object fieldValue, boolean nullable) {
+        if (nullable) {
+          if (fieldValue == null) {
+            buffer.writeByte(Fury.NULL_FLAG);
+          } else {
+            buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
+            if (fury.compressInt()) {
+              buffer.writeVarInt32((Integer) fieldValue);
+            } else {
+              buffer.writeInt32((Integer) fieldValue);
+            }
+          }
+        } else {
+          if (fury.compressInt()) {
+            buffer.writeVarInt32((Integer) fieldValue);
+          } else {
+            buffer.writeInt32((Integer) fieldValue);
+          }
+        }
+    }
+
+    private static void writeNullableShort(MemoryBuffer buffer, Object fieldValue, boolean nullable) {
+        if (nullable) {
+          if (fieldValue == null) {
+            buffer.writeByte(Fury.NULL_FLAG);
+          } else {
+            buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
+            buffer.writeInt16((Short) fieldValue);
+          }
+        } else {
+          buffer.writeInt16((Short) fieldValue);
+        }
+    }
+
+    private static void writeNullableChar(MemoryBuffer buffer, Object fieldValue, boolean nullable) {
+        if (nullable) {
+          if (fieldValue == null) {
+            buffer.writeByte(Fury.NULL_FLAG);
+          } else {
+            buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
+            buffer.writeChar((Character) fieldValue);
+          }
+        } else {
+          buffer.writeChar((Character) fieldValue);
+        }
+    }
+
+    private static void writeNullableByte(MemoryBuffer buffer, Object fieldValue, boolean nullable) {
+        if (nullable) {
+          if (fieldValue == null) {
+            buffer.writeByte(Fury.NULL_FLAG);
+          } else {
+            buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
+            buffer.writeByte((Byte) fieldValue);
+          }
+        } else {
+          buffer.writeByte((Byte) fieldValue);
+        }
+    }
+
+    private static void writeNullableBoolean(MemoryBuffer buffer, Object fieldValue, boolean nullable) {
+      if (nullable) {
+          if (fieldValue == null) {
+              buffer.writeByte(Fury.NULL_FLAG);
+          } else {
+              buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
+              buffer.writeBoolean((Boolean) (fieldValue));
+          }
+      } else {
+          buffer.writeBoolean((Boolean) (fieldValue));
+      }
   }
 
   /**
