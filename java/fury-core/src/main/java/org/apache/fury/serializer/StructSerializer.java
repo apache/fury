@@ -83,7 +83,9 @@ public class StructSerializer<T> extends Serializer<T> {
     this.constructor = ctr;
     fieldAccessors =
         Descriptor.getFields(cls).stream()
-            .sorted(Comparator.comparing(f -> StringUtils.lowerCamelToLowerUnderscore(f.getName())))
+            .map(f -> new AbstractMap.SimpleEntry<>(f, StringUtils.lowerCamelToLowerUnderscore(f.getName())))
+            .sorted(Map.Entry.comparingByValue())
+            .map(Map.Entry::getKey)
             .map(FieldAccessor::createAccessor)
             .toArray(FieldAccessor[]::new);
     fieldGenerics = buildFieldGenerics(fury, TypeRef.of(cls), fieldAccessors);
