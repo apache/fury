@@ -20,11 +20,10 @@
 package org.apache.fury.pool;
 
 import java.util.Objects;
-import java.util.Queue;
 import java.util.WeakHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
@@ -43,15 +42,15 @@ public class ClassLoaderFuryPooled {
 
   private final ClassLoader classLoader;
 
-  /**
-   * idle Fury cache change. by : 1. getLoaderBind() 2. returnObject(LoaderBinding) 3.
-   * addObjAndWarp()
-   */
-  private final Queue<Fury> idleCacheQueue;
+  /** idle Fury cache change. by : 1. init() 2. getFury() 3.returnFury() */
+  private final BlockingQueue<Fury> idleCacheQueue;
 
   final WeakHashMap<Fury, Object> allFury = new WeakHashMap<>();
 
-  /** active cache size's number change by : 1. getLoaderBind() 2. returnObject(LoaderBinding). */
+  /**
+   * The number of active Fury objects in the cache.Make sure it does not exceed the maximum number
+   * of object pools.
+   */
   private final AtomicInteger activeCacheNumber = new AtomicInteger(0);
 
   /**
@@ -61,7 +60,6 @@ public class ClassLoaderFuryPooled {
   private final int maxPoolSize;
 
   private final Lock lock = new ReentrantLock();
-  private final Condition furyCondition = lock.newCondition();
 
   public ClassLoaderFuryPooled(
       ClassLoader classLoader,
@@ -72,58 +70,66 @@ public class ClassLoaderFuryPooled {
     this.maxPoolSize = maxPoolSize;
     this.furyFactory = furyFactory;
     this.classLoader = classLoader;
-    idleCacheQueue = new ConcurrentLinkedQueue<>();
+    idleCacheQueue = new LinkedBlockingQueue<>(maxPoolSize);
     while (idleCacheQueue.size() < minPoolSize) {
-      addFury();
+      addFury(true);
     }
   }
 
   public Fury getFury() {
-    try {
-      lock.lock();
+    if (activeCacheNumber.get() < maxPoolSize) {
       Fury fury = idleCacheQueue.poll();
-      while (fury == null) {
-        if (activeCacheNumber.get() < maxPoolSize) {
-          addFury();
-        } else {
-          furyCondition.await();
+      if (fury != null) {
+        return fury;
+      } else {
+        // new Fury return directly, no need to add to queue, it will be added by returnFury()
+        fury = addFury(false);
+        if (fury != null) {
+          return fury;
         }
-        fury = idleCacheQueue.poll();
       }
-      activeCacheNumber.incrementAndGet();
-      return fury;
-    } catch (Exception e) {
-      LOG.error(e.getMessage(), e);
+    }
+    try {
+      return idleCacheQueue.take();
+    } catch (InterruptedException e) {
       throw new RuntimeException(e);
-    } finally {
-      lock.unlock();
     }
   }
 
   public void returnFury(Fury fury) {
     Objects.requireNonNull(fury);
+    idleCacheQueue.offer(fury);
+  }
+
+  private Fury addFury(boolean addQueue) {
+    // only activeCacheNumber increment success, can lock and create new Fury, otherwise return
+    // null, and block in getFury(), wait for other thread to release idleCacheQueue.
+    int after = activeCacheNumber.incrementAndGet();
+    if (after > maxPoolSize) {
+      activeCacheNumber.decrementAndGet();
+      return null;
+    }
     try {
       lock.lock();
-      idleCacheQueue.add(fury);
-      activeCacheNumber.decrementAndGet();
-      furyCondition.signalAll();
-    } catch (Exception e) {
-      LOG.error(e.getMessage(), e);
-      throw new RuntimeException(e);
+      Fury fury = furyFactory.apply(classLoader);
+      factoryCallback.accept(fury);
+      allFury.put(fury, null);
+      if (addQueue) {
+        idleCacheQueue.add(fury);
+      }
+      return fury;
     } finally {
       lock.unlock();
     }
   }
 
-  private void addFury() {
-    Fury fury = furyFactory.apply(classLoader);
-    factoryCallback.accept(fury);
-    idleCacheQueue.add(fury);
-    allFury.put(fury, null);
-  }
-
   void setFactoryCallback(Consumer<Fury> factoryCallback) {
-    this.factoryCallback = this.factoryCallback.andThen(factoryCallback);
-    allFury.keySet().forEach(factoryCallback);
+    try {
+      lock.lock();
+      this.factoryCallback = this.factoryCallback.andThen(factoryCallback);
+      allFury.keySet().forEach(factoryCallback);
+    } finally {
+      lock.unlock();
+    }
   }
 }
