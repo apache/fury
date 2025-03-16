@@ -15,6 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
+# Note: update `DisallowedList#SHA256_HASH` when added new classes.
 bsh.Interpreter
 bsh.XThis
 ch.qos.logback.core.db.DriverManagerConnectionSource
