@@ -19,38 +19,40 @@
 
 package org.apache.fury.resolver;
 
-import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 import org.apache.fury.exception.InsecureException;
 
 /** A class to record which classes are not allowed for serialization. */
 class DisallowedList {
   private static final String DISALLOWED_LIST_TXT_PATH = "fury/disallowed.txt";
-  // when disallowed.txt changed, update this hash by print the result of `calculateSHA256`
+  // when disallowed.txt changed, update this hash by result of `sha256sum disallowed.txt`
   private static final String SHA256_HASH =
-      "d418999c49b0aa83b8bde8a79aa758a16adb5599e384f842db65dbcd633c541b";
+      "30dc5228f52b02f61aff35a94d29ccd903abbf490d8231810c5e1c0321c56557";
   private static final Set<String> DEFAULT_DISALLOWED_LIST_SET;
 
   static {
     try (InputStream is =
         DisallowedList.class.getClassLoader().getResourceAsStream(DISALLOWED_LIST_TXT_PATH)) {
       if (is != null) {
-        DEFAULT_DISALLOWED_LIST_SET =
-            new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))
-                .lines()
-                .filter(line -> !line.isEmpty() && !line.startsWith("#"))
-                .collect(Collectors.toSet());
-        if (!SHA256_HASH.equals(calculateSHA256(DEFAULT_DISALLOWED_LIST_SET))) {
+        byte[] fileBytes = readAllBytes(is);
+        String calculatedHash = calculateSHA256(fileBytes);
+        if (!SHA256_HASH.equals(calculatedHash)) {
+          // add a check to avoid some malicious overwrite disallowed.txt
           throw new SecurityException("Disallowed list has been tampered");
         }
+        DEFAULT_DISALLOWED_LIST_SET =
+            Arrays.stream(
+                    new String(fileBytes, StandardCharsets.UTF_8).split(System.lineSeparator()))
+                .filter(line -> !line.isEmpty() && !line.startsWith("#"))
+                .collect(Collectors.toSet());
       } else {
         throw new IllegalStateException(
             String.format("Read disallowed list %s failed", DISALLOWED_LIST_TXT_PATH));
@@ -61,19 +63,21 @@ class DisallowedList {
     }
   }
 
-  private static String calculateSHA256(Set<String> disallowedSet) {
+  private static byte[] readAllBytes(InputStream inputStream) throws IOException {
+    ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+    int nRead;
+    byte[] data = new byte[1024];
+    while ((nRead = inputStream.read(data, 0, data.length)) != -1) {
+      buffer.write(data, 0, nRead);
+    }
+    buffer.flush();
+    return buffer.toByteArray();
+  }
+
+  private static String calculateSHA256(byte[] input) {
     try {
       MessageDigest digest = MessageDigest.getInstance("SHA-256");
-      // Sort the set to ensure consistent ordering
-      TreeSet<String> sortedSet = new TreeSet<>(disallowedSet);
-      // Update the digest with each string in the set
-      for (String s : sortedSet) {
-        digest.update(s.getBytes(StandardCharsets.UTF_8));
-        // Add a separator to prevent collision (e.g., "ab", "c" vs "a", "bc")
-        digest.update((byte) 0);
-      }
-      byte[] hashBytes = digest.digest();
-      // Convert the byte array to a hexadecimal string
+      byte[] hashBytes = digest.digest(input);
       StringBuilder hexString = new StringBuilder();
       for (byte b : hashBytes) {
         String hex = Integer.toHexString(0xff & b);
