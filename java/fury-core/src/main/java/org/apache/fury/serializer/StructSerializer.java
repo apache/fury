@@ -24,11 +24,11 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.apache.fury.Fury;
 import org.apache.fury.config.Language;
 import org.apache.fury.exception.ClassNotCompatibleException;
@@ -84,7 +84,10 @@ public class StructSerializer<T> extends Serializer<T> {
     this.constructor = ctr;
     fieldAccessors =
         Descriptor.getFields(cls).stream()
-            .map(f -> new AbstractMap.SimpleEntry<>(f, StringUtils.lowerCamelToLowerUnderscore(f.getName())))
+            .map(
+                f ->
+                    new AbstractMap.SimpleEntry<>(
+                        f, StringUtils.lowerCamelToLowerUnderscore(f.getName())))
             .sorted(Map.Entry.comparingByValue())
             .map(Map.Entry::getKey)
             .map(FieldAccessor::createAccessor)
