@@ -34,6 +34,7 @@ import org.apache.fury.exception.InsecureException;
 /** A class to record which classes are not allowed for serialization. */
 class DisallowedList {
   private static final String DISALLOWED_LIST_TXT_PATH = "fury/disallowed.txt";
+  // when disallowed.txt changed, update this hash by print the result of `calculateSHA256`
   private static final String SHA256_HASH =
       "d418999c49b0aa83b8bde8a79aa758a16adb5599e384f842db65dbcd633c541b";
   private static final Set<String> DEFAULT_DISALLOWED_LIST_SET;
