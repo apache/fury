@@ -39,10 +39,6 @@ class DisallowedList {
       "d418999c49b0aa83b8bde8a79aa758a16adb5599e384f842db65dbcd633c541b";
   private static final Set<String> DEFAULT_DISALLOWED_LIST_SET;
 
-  public static void main(String[] args) {
-    System.out.println(calculateSHA256(DEFAULT_DISALLOWED_LIST_SET));
-  }
-
   static {
     try (InputStream is =
         DisallowedList.class.getClassLoader().getResourceAsStream(DISALLOWED_LIST_TXT_PATH)) {
