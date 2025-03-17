@@ -65,10 +65,10 @@ class DisallowedList {
 
   private static byte[] readAllBytes(InputStream inputStream) throws IOException {
     ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-    int nRead;
+    int numbytesRead;
     byte[] data = new byte[1024];
-    while ((nRead = inputStream.read(data, 0, data.length)) != -1) {
-      buffer.write(data, 0, nRead);
+    while ((numbytesRead = inputStream.read(data, 0, data.length)) != -1) {
+      buffer.write(data, 0, numbytesRead);
     }
     buffer.flush();
     return buffer.toByteArray();
