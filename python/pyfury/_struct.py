@@ -181,7 +181,9 @@ class StructHashVisitor(TypeVisitor):
         if classinfo is not None:
             hash_value = classinfo.type_id
             if TypeId.is_namespaced_type(classinfo.type_id):
-                hash_value = compute_string_hash(classinfo.namespace + classinfo.typename)
+                hash_value = compute_string_hash(
+                    classinfo.namespace + classinfo.typename
+                )
         self._hash = self._compute_field_hash(self._hash, hash_value)
 
     def visit_other(self, field_name, type_, types_path=None):
