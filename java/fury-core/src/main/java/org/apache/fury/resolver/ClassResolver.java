@@ -123,6 +123,7 @@ import org.apache.fury.serializer.JdkProxySerializer;
 import org.apache.fury.serializer.LambdaSerializer;
 import org.apache.fury.serializer.LocaleSerializer;
 import org.apache.fury.serializer.MetaSharedSerializer;
+import org.apache.fury.serializer.NoneSerializer;
 import org.apache.fury.serializer.NonexistentClass;
 import org.apache.fury.serializer.NonexistentClass.NonexistentMetaShared;
 import org.apache.fury.serializer.NonexistentClass.NonexistentSkip;
@@ -322,6 +323,7 @@ public class ClassResolver {
 
   private void addDefaultSerializers() {
     // primitive types will be boxed.
+    addDefaultSerializer(void.class, NoneSerializer.class);
     addDefaultSerializer(String.class, new StringSerializer(fury));
     PrimitiveSerializers.registerDefaultSerializers(fury);
     Serializers.registerDefaultSerializers(fury);
