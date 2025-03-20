@@ -1,0 +1,1 @@
+const inline = pragma('vm:prefer-inline');
