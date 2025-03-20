@@ -17,6 +17,7 @@
 
 from libc.stdint cimport int32_t
 from libcpp cimport bool as c_bool
+from pyfury.includes.libutil cimport CBuffer
 
 cdef extern from "fury/type/type.h" namespace "fury" nogil:
 
@@ -64,3 +65,7 @@ cdef extern from "fury/type/type.h" namespace "fury" nogil:
         BOUND = 64
 
     cdef c_bool IsNamespacedType(int32_t type_id)
+
+cdef extern from "fury/python/pyfury.h" namespace "fury":
+    int Fury_PyBooleanSequenceWriteToBuffer(object collection, CBuffer *buffer, Py_ssize_t start_index)
+    int Fury_PyFloatSequenceWriteToBuffer(object collection, CBuffer *buffer, Py_ssize_t start_index)

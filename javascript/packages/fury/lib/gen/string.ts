@@ -17,27 +17,41 @@
  * under the License.
  */
 
-import { TypeDescription } from "../description";
+import { TypeInfo } from "../typeInfo";
 import { CodecBuilder } from "./builder";
-import { BaseSerializerGenerator } from "./serializer";
+import { BaseSerializerGenerator, RefState } from "./serializer";
 import { CodegenRegistry } from "./router";
 import { InternalSerializerType } from "../type";
 import { Scope } from "./scope";
 
 class StringSerializerGenerator extends BaseSerializerGenerator {
-  description: TypeDescription;
+  typeInfo: TypeInfo;
 
-  constructor(description: TypeDescription, builder: CodecBuilder, scope: Scope) {
-    super(description, builder, scope);
-    this.description = description;
+  constructor(typeInfo: TypeInfo, builder: CodecBuilder, scope: Scope) {
+    super(typeInfo, builder, scope);
+    this.typeInfo = typeInfo;
   }
 
   writeStmt(accessor: string): string {
     return this.builder.writer.stringOfVarUInt32(accessor);
   }
 
-  readStmt(accessor: (expr: string) => string): string {
-    return accessor(this.builder.reader.stringOfVarUInt32());
+  readStmt(accessor: (expr: string) => string, refState: RefState): string {
+    const result = this.scope.uniqueName("result");
+
+    return `
+        ${result} = ${this.builder.reader.stringOfVarUInt32()};
+        ${this.maybeReference(result, refState)};
+        ${accessor(result)}
+    `;
+  }
+
+  getFixedSize(): number {
+    return 8;
+  }
+
+  needToWriteRef(): boolean {
+    return Boolean(this.builder.fury.config.refTracking);
   }
 }
 

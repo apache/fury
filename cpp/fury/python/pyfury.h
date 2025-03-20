@@ -17,27 +17,13 @@
  * under the License.
  */
 
-import Fury, { Type } from '../packages/fury/index';
-import { describe, expect, test } from '@jest/globals';
+#pragma once
+#include "Python.h"
+#include "fury/util/buffer.h"
 
-
-describe('binary', () => {
-    test('should binary work', () => {
-        const typeinfo = Type.struct("example.foo", {
-            a: Type.binary()
-        })
-
-        const fury = new Fury({ refTracking: true });    
-        const serializer = fury.registerSerializer(typeinfo).serializer;
-        const input = fury.serialize({ a: new Uint8Array([1, 2, 3]) }, serializer);
-        const result = fury.deserialize(
-            input
-        );
-        expect(result instanceof Uint8Array)
-        expect(result.a[0] === 1);
-        expect(result.a[1] === 2);
-        expect(result.a[2] === 3);
-    });
-});
-
-
+namespace fury {
+int Fury_PyBooleanSequenceWriteToBuffer(PyObject *collection, Buffer *buffer,
+                                        Py_ssize_t start_index);
+int Fury_PyFloatSequenceWriteToBuffer(PyObject *collection, Buffer *buffer,
+                                      Py_ssize_t start_index);
+} // namespace fury

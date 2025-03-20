@@ -15,26 +15,19 @@
 # specific language governing permissions and limitations
 # under the License.
 
-[workspace]
-members = [
-    "fury-core",
-    "fury",
-    "fury-derive",
-    "tests"
-]
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+load("@com_github_grpc_grpc//bazel:cython_library.bzl", "pyx_library")
 
-exclude = [
-    "fuzz"
-]
-
-resolver = "2"
-
-[workspace.package]
-version = "0.11.0"
-rust-version = "1.70"
-license = "Apache-2.0"
-readme = "README.md"
-repository = "https://github.com/apache/fury"
-edition = "2021"
-keywords = ["fury", "data", "serialization"]
-categories = ["encoding"]
+cc_library(
+    name = "_pyfury",
+    srcs = ["pyfury.cc"],
+    hdrs = ["pyfury.h"],
+    alwayslink=True,
+    linkstatic=True,
+    strip_include_prefix = "/cpp",
+    deps = [
+        "//cpp/fury/util:fury_util",
+        "@local_config_python//:python_headers",
+    ],
+    visibility = ["//visibility:public"],
+)
