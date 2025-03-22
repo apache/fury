@@ -118,8 +118,9 @@ class ClassDefDecoder {
       Encoding encoding = fieldNameEncodings[encodingFlags];
       String fieldName = Encoders.FIELD_NAME_DECODER.decode(buffer.readBytes(size), encoding);
       boolean isMonomorphic = (header & 0b100) != 0;
+      boolean trackingRef = (header & 0b001) != 0;
       int typeId = buffer.readVarUint32Small14();
-      FieldType fieldType = FieldType.read(buffer, isMonomorphic, typeId);
+      FieldType fieldType = FieldType.read(buffer, isMonomorphic, trackingRef, typeId);
       fieldInfos.add(new ClassDef.FieldInfo(className, fieldName, fieldType));
     }
     return fieldInfos;
