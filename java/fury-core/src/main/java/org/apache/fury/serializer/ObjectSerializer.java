@@ -163,11 +163,15 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
         if (writeBasicObjectFieldValueFailed(fury, buffer, fieldValue, classId)) {
           Serializer<Object> serializer = fieldInfo.classInfo.getSerializer();
           if (!metaShareEnabled || isFinal[i]) {
-            // whether tracking ref is recorded in `fieldInfo.serializer`, so it's still
-            // consistent with jit serializer.
-            fury.writeRef(buffer, fieldValue, serializer);
+            if (!fieldInfo.trackingRef) {
+              fury.writeNullable(buffer, fieldValue, serializer);
+            } else {
+              // whether tracking ref is recorded in `fieldInfo.serializer`, so it's still
+              // consistent with jit serializer.
+              fury.writeRef(buffer, fieldValue, serializer);
+            }
           } else {
-            if (serializer.needToWriteRef()) {
+            if (fieldInfo.trackingRef && serializer.needToWriteRef()) {
               if (!refResolver.writeRefOrNull(buffer, fieldValue)) {
                 classResolver.writeClass(buffer, fieldInfo.classInfo);
                 // No generics for field, no need to update `depth`.
@@ -336,6 +340,9 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
     Serializer<Object> serializer = fieldInfo.classInfo.getSerializer();
     Object fieldValue;
     if (isFinal) {
+      if (!fieldInfo.trackingRef) {
+        return fury.readNullable(buffer, serializer);
+      }
       // whether tracking ref is recorded in `fieldInfo.serializer`, so it's still
       // consistent with jit serializer.
       fieldValue = fury.readRef(buffer, serializer);

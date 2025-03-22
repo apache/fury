@@ -475,6 +475,15 @@ public final class Fury implements BaseFury {
     }
   }
 
+  public void writeNullable(MemoryBuffer buffer, Object obj, Serializer serializer) {
+    if (obj == null) {
+      buffer.writeByte(Fury.NULL_FLAG);
+    } else {
+      buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
+      serializer.write(buffer, obj);
+    }
+  }
+
   /** Write object class and data without tracking ref. */
   public void writeNullable(MemoryBuffer buffer, Object obj, ClassInfoHolder classInfoHolder) {
     if (obj == null) {
@@ -945,6 +954,15 @@ public final class Fury implements BaseFury {
       return null;
     } else {
       return readNonRef(buffer);
+    }
+  }
+
+  public Object readNullable(MemoryBuffer buffer, Serializer serializer) {
+    byte headFlag = buffer.readByte();
+    if (headFlag == Fury.NULL_FLAG) {
+      return null;
+    } else {
+      return serializer.read(buffer);
     }
   }
 

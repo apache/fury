@@ -109,6 +109,7 @@ import org.apache.fury.meta.ClassDef;
 import org.apache.fury.meta.ClassSpec;
 import org.apache.fury.meta.Encoders;
 import org.apache.fury.meta.MetaString;
+import org.apache.fury.meta.TypeExtMeta;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.serializer.ArraySerializers;
@@ -1120,7 +1121,13 @@ public class ClassResolver {
    * Whether to track reference for this type. If false, reference tracing of subclasses may be
    * ignored too.
    */
-  public boolean needToWriteRef(Class<?> cls) {
+  public boolean needToWriteRef(TypeRef<?> typeRef) {
+    Object extInfo = typeRef.getExtInfo();
+    if (extInfo instanceof TypeExtMeta) {
+      TypeExtMeta meta = (TypeExtMeta) extInfo;
+      return meta.trackingRef();
+    }
+    Class<?> cls = typeRef.getRawType();
     if (fury.trackingRef()) {
       ClassInfo classInfo = getClassInfo(cls, false);
       if (classInfo == null || classInfo.serializer == null) {
@@ -1900,7 +1907,7 @@ public class ClassResolver {
 
   public GenericType buildGenericType(TypeRef<?> typeRef) {
     return GenericType.build(
-        typeRef.getType(),
+        typeRef,
         t -> {
           if (t.getClass() == Class.class) {
             return isMonomorphic((Class<?>) t);
