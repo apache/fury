@@ -177,11 +177,13 @@ class StructHashVisitor(TypeVisitor):
 
     def visit_customized(self, field_name, type_, types_path=None):
         classinfo = self.fury.class_resolver.get_classinfo(type_, create=False)
-        if classinfo is None:
-            return
-        hash_value = classinfo.type_id
-        if TypeId.is_namespaced_type(classinfo.type_id):
-            hash_value = compute_string_hash(classinfo.namespace + classinfo.typename)
+        hash_value = 0
+        if classinfo is not None:
+            hash_value = classinfo.type_id
+            if TypeId.is_namespaced_type(classinfo.type_id):
+                hash_value = compute_string_hash(
+                    classinfo.namespace + classinfo.typename
+                )
         self._hash = self._compute_field_hash(self._hash, hash_value)
 
     def visit_other(self, field_name, type_, types_path=None):
