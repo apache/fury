@@ -366,7 +366,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       Expression action =
           new ListExpression(
               new Invoke(
-                  buffer, "writeByte", new Literal(Fury.REF_VALUE_FLAG, PRIMITIVE_BYTE_TYPE)),
+                  buffer, "writeByte", new Literal(Fury.NOT_NULL_VALUE_FLAG, PRIMITIVE_BYTE_TYPE)),
               serializeForNotNull(inputObject, buffer, typeRef, serializer, generateNewMethod));
       return new If(
           eqNull(inputObject),
