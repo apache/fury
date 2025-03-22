@@ -246,7 +246,6 @@ public class ClassDef implements Serializable {
               || NonexistentClass.isNonexistent(rawType)
               || rawType == FinalObjectTypeStub.class
               || (rawType.isArray() && getArrayComponent(rawType) == FinalObjectTypeStub.class)) {
-
             descriptor = descriptor.copyWithTypeName(newDesc.getTypeName());
             descriptors.add(descriptor);
           } else {
@@ -463,7 +462,7 @@ public class ClassDef implements Serializable {
 
     @Override
     public TypeRef<?> toTypeToken(ClassResolver classResolver) {
-      return TypeRef.of(classResolver.getRegisteredClass(classId));
+      return TypeRef.of(classResolver.getRegisteredClass(classId), new TypeExtMeta(trackingRef));
     }
 
     @Override
@@ -521,7 +520,7 @@ public class ClassDef implements Serializable {
 
     @Override
     public TypeRef<?> toTypeToken(ClassResolver classResolver) {
-      return collectionOf(elementType.toTypeToken(classResolver));
+      return collectionOf(elementType.toTypeToken(classResolver), new TypeExtMeta(trackingRef));
     }
 
     @Override
@@ -586,7 +585,10 @@ public class ClassDef implements Serializable {
 
     @Override
     public TypeRef<?> toTypeToken(ClassResolver classResolver) {
-      return mapOf(keyType.toTypeToken(classResolver), valueType.toTypeToken(classResolver));
+      return mapOf(
+          keyType.toTypeToken(classResolver),
+          valueType.toTypeToken(classResolver),
+          new TypeExtMeta(trackingRef));
     }
 
     @Override
@@ -661,9 +663,12 @@ public class ClassDef implements Serializable {
             // We embed `isMonomorphic` flag in ObjectArraySerializer, so this flag can be ignored
             // here.
             NonexistentClass.getNonexistentClass(
-                componentType instanceof EnumFieldType, dimensions, true));
+                componentType instanceof EnumFieldType, dimensions, true),
+            new TypeExtMeta(trackingRef));
       } else {
-        return TypeRef.of(Array.newInstance(componentRawType, new int[dimensions]).getClass());
+        return TypeRef.of(
+            Array.newInstance(componentRawType, new int[dimensions]).getClass(),
+            new TypeExtMeta(trackingRef));
       }
     }
 
@@ -719,7 +724,9 @@ public class ClassDef implements Serializable {
 
     @Override
     public TypeRef<?> toTypeToken(ClassResolver classResolver) {
-      return isMonomorphic() ? TypeRef.of(FinalObjectTypeStub.class) : TypeRef.of(Object.class);
+      return isMonomorphic()
+          ? TypeRef.of(FinalObjectTypeStub.class, new TypeExtMeta(trackingRef))
+          : TypeRef.of(Object.class, new TypeExtMeta(trackingRef));
     }
 
     @Override

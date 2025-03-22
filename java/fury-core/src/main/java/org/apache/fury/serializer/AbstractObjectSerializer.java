@@ -371,7 +371,7 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
     for (Descriptor descriptor : grouper.getOtherDescriptors()) {
       GenericTypeField genericTypeField =
           new GenericTypeField(
-              descriptor.getRawType(),
+              descriptor.getTypeRef(),
               descriptor.getDeclaringClass() + "." + descriptor.getName(),
               descriptor.getField() != null
                   ? FieldAccessor.createAccessor(descriptor.getField())
@@ -394,7 +394,7 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
 
   private static FinalTypeField buildFinalTypeField(Fury fury, Descriptor d) {
     return new FinalTypeField(
-        d.getRawType(),
+        d.getTypeRef(),
         d.getDeclaringClass() + "." + d.getName(),
         // `d.getField()` will be null when peer class doesn't have this field.
         d.getField() != null ? FieldAccessor.createAccessor(d.getField()) : null,
@@ -410,12 +410,14 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
   }
 
   public static class InternalFieldInfo {
+    private final TypeRef<?> typeRef;
     protected final short classId;
     protected final String qualifiedFieldName;
     protected final FieldAccessor fieldAccessor;
 
     private InternalFieldInfo(
-        short classId, String qualifiedFieldName, FieldAccessor fieldAccessor) {
+        TypeRef<?> typeRef, short classId, String qualifiedFieldName, FieldAccessor fieldAccessor) {
+      this.typeRef = typeRef;
       this.classId = classId;
       this.qualifiedFieldName = qualifiedFieldName;
       this.fieldAccessor = fieldAccessor;
@@ -437,15 +439,15 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
   static final class FinalTypeField extends InternalFieldInfo {
     final ClassInfo classInfo;
 
-    private FinalTypeField(Class<?> type, String fieldName, FieldAccessor accessor, Fury fury) {
-      super(getRegisteredClassId(fury, type), fieldName, accessor);
+    private FinalTypeField(TypeRef<?> type, String fieldName, FieldAccessor accessor, Fury fury) {
+      super(type, getRegisteredClassId(fury, type.getRawType()), fieldName, accessor);
       // invoke `copy` to avoid ObjectSerializer construct clear serializer by `clearSerializer`.
-      if (type == FinalObjectTypeStub.class) {
+      if (type.getRawType() == FinalObjectTypeStub.class) {
         // `FinalObjectTypeStub` has no fields, using its `classInfo`
         // will make deserialization failed.
         classInfo = null;
       } else {
-        classInfo = fury.getClassResolver().getClassInfo(type);
+        classInfo = fury.getClassResolver().getClassInfo(type.getRawType());
       }
     }
   }
@@ -456,21 +458,12 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
     final boolean trackingRef;
 
     private GenericTypeField(
-        Class<?> cls, String qualifiedFieldName, FieldAccessor accessor, Fury fury) {
-      super(getRegisteredClassId(fury, cls), qualifiedFieldName, accessor);
-      // TODO support generics <T> in Pojo<T>, see ComplexObjectSerializer.getGenericTypes
-      genericType = fury.getClassResolver().buildGenericType(cls);
-      classInfoHolder = fury.getClassResolver().nilClassInfoHolder();
-      trackingRef = fury.getClassResolver().needToWriteRef(cls);
-    }
-
-    private GenericTypeField(
         TypeRef<?> typeRef, String qualifiedFieldName, FieldAccessor accessor, Fury fury) {
-      super(getRegisteredClassId(fury, getRawType(typeRef)), qualifiedFieldName, accessor);
+      super(typeRef, getRegisteredClassId(fury, getRawType(typeRef)), qualifiedFieldName, accessor);
       // TODO support generics <T> in Pojo<T>, see ComplexObjectSerializer.getGenericTypes
       genericType = fury.getClassResolver().buildGenericType(typeRef);
       classInfoHolder = fury.getClassResolver().nilClassInfoHolder();
-      trackingRef = fury.getClassResolver().needToWriteRef(getRawType(typeRef));
+      trackingRef = fury.getClassResolver().needToWriteRef(typeRef);
     }
 
     @Override
