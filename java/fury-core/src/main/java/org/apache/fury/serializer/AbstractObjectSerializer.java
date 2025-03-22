@@ -438,6 +438,7 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
 
   static final class FinalTypeField extends InternalFieldInfo {
     final ClassInfo classInfo;
+    final boolean trackingRef;
 
     private FinalTypeField(TypeRef<?> type, String fieldName, FieldAccessor accessor, Fury fury) {
       super(type, getRegisteredClassId(fury, type.getRawType()), fieldName, accessor);
@@ -449,6 +450,7 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
       } else {
         classInfo = fury.getClassResolver().getClassInfo(type.getRawType());
       }
+      trackingRef = fury.getClassResolver().needToWriteRef(type);
     }
   }
 
