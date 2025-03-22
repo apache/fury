@@ -511,12 +511,22 @@ public class TypeUtils {
     return new TypeRef<Collection<E>>() {}.where(new TypeParameter<E>() {}, elemType);
   }
 
+  public static <E> TypeRef<Collection<E>> collectionOf(TypeRef<E> elemType, Object extMeta) {
+    return new TypeRef<Collection<E>>(extMeta) {}.where(new TypeParameter<E>() {}, elemType);
+  }
+
   public static <K, V> TypeRef<Map<K, V>> mapOf(Class<K> keyType, Class<V> valueType) {
     return mapOf(TypeRef.of(keyType), TypeRef.of(valueType));
   }
 
   public static <K, V> TypeRef<Map<K, V>> mapOf(TypeRef<K> keyType, TypeRef<V> valueType) {
     return new TypeRef<Map<K, V>>() {}.where(new TypeParameter<K>() {}, keyType)
+        .where(new TypeParameter<V>() {}, valueType);
+  }
+
+  public static <K, V> TypeRef<Map<K, V>> mapOf(
+      TypeRef<K> keyType, TypeRef<V> valueType, Object extMeta) {
+    return new TypeRef<Map<K, V>>(extMeta) {}.where(new TypeParameter<K>() {}, keyType)
         .where(new TypeParameter<V>() {}, valueType);
   }
 

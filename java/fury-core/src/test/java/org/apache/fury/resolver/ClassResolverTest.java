@@ -53,6 +53,7 @@ import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.resolver.longlongpkg.C1;
 import org.apache.fury.resolver.longlongpkg.C2;
 import org.apache.fury.resolver.longlongpkg.C3;
@@ -293,7 +294,8 @@ public class ClassResolverTest extends FuryTestBase {
             .requireClassRegistration(false)
             .build();
     ClassResolver classResolver = fury.getClassResolver();
-    Assert.assertFalse(classResolver.needToWriteRef(TestNeedToWriteReferenceClass.class));
+    Assert.assertFalse(
+        classResolver.needToWriteRef(TypeRef.of(TestNeedToWriteReferenceClass.class)));
     assertNull(classResolver.getClassInfo(TestNeedToWriteReferenceClass.class, false));
   }
 

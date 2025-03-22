@@ -250,6 +250,7 @@ class ClassDefEncoder {
       // `3 bits size + 2 bits field name encoding + polymorphism flag + nullability flag + ref
       // tracking flag`
       int header = ((fieldType.isMonomorphic() ? 1 : 0) << 2);
+      header |= ((fieldType.trackingRef() ? 1 : 0));
       // Encoding `UTF8/ALL_TO_LOWER_SPECIAL/LOWER_UPPER_DIGIT_SPECIAL/TAG_ID`
       MetaString metaString = Encoders.encodeFieldName(fieldInfo.getFieldName());
       int encodingFlags = fieldNameEncodingsList.indexOf(metaString.getEncoding());
