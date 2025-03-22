@@ -375,7 +375,9 @@ public class ClassDef implements Serializable {
 
     @Override
     public boolean equals(Object o) {
-      if (o == null || getClass() != o.getClass()) return false;
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
       FieldType fieldType = (FieldType) o;
       return isMonomorphic == fieldType.isMonomorphic && trackingRef == fieldType.trackingRef;
     }
@@ -520,6 +522,7 @@ public class ClassDef implements Serializable {
 
     @Override
     public TypeRef<?> toTypeToken(ClassResolver classResolver) {
+      // TODO support preserve element TypeExtMeta
       return collectionOf(elementType.toTypeToken(classResolver), new TypeExtMeta(trackingRef));
     }
 
@@ -585,6 +588,7 @@ public class ClassDef implements Serializable {
 
     @Override
     public TypeRef<?> toTypeToken(ClassResolver classResolver) {
+      // TODO support preserve element TypeExtMeta, it will be lost when building other TypeRef
       return mapOf(
           keyType.toTypeToken(classResolver),
           valueType.toTypeToken(classResolver),
