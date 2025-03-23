@@ -686,21 +686,37 @@ public class TypeUtils {
       typeRefs.addAll(getAllTypeArguments(typeRef));
     }
 
-    typeRefs.stream()
-        .filter(typeToken -> isBean(getRawType(typeToken)))
-        .forEach(
-            typeToken -> {
-              Class<?> cls = getRawType(typeToken);
-              beans.add(cls);
-              if (walkedTypePath.contains(typeToken)) {
-                throw new UnsupportedOperationException(
-                    "cyclic type is not supported. walkedTypePath: " + walkedTypePath);
-              } else {
-                LinkedHashSet<TypeRef<?>> newPath = new LinkedHashSet<>(walkedTypePath);
-                newPath.add(typeToken);
-                beans.addAll(listBeansRecursiveInclusive(cls, newPath));
-              }
-            });
+    for (TypeRef<?> typeToken : typeRefs) {
+      Class<?> type = getRawType(typeToken);
+      if (isBean(type)) {
+        beans.add(type);
+        if (walkedTypePath.contains(typeToken)) {
+          throw new UnsupportedOperationException(
+              "cyclic type is not supported. walkedTypePath: " + walkedTypePath);
+        } else {
+          LinkedHashSet<TypeRef<?>> newPath = new LinkedHashSet<>(walkedTypePath);
+          newPath.add(typeToken);
+          beans.addAll(listBeansRecursiveInclusive(type, newPath));
+        }
+      } else if (isCollection(type)) {
+        TypeRef<?> elementType = getElementType(typeToken);
+        LinkedHashSet<TypeRef<?>> newPath = new LinkedHashSet<>(walkedTypePath);
+        newPath.add(elementType);
+        beans.addAll(listBeansRecursiveInclusive(elementType.getClass(), newPath));
+      } else if (isMap(type)) {
+        Tuple2<TypeRef<?>, TypeRef<?>> mapKeyValueType = getMapKeyValueType(typeToken);
+        LinkedHashSet<TypeRef<?>> newPath = new LinkedHashSet<>(walkedTypePath);
+        newPath.add(mapKeyValueType.f0);
+        newPath.add(mapKeyValueType.f1);
+        beans.addAll(listBeansRecursiveInclusive(mapKeyValueType.f0.getRawType(), newPath));
+        beans.addAll(listBeansRecursiveInclusive(mapKeyValueType.f1.getRawType(), newPath));
+      } else if (type.isArray()) {
+        Class<?> arrayComponent = getArrayComponent(type);
+        LinkedHashSet<TypeRef<?>> newPath = new LinkedHashSet<>(walkedTypePath);
+        newPath.add(TypeRef.of(arrayComponent));
+        beans.addAll(listBeansRecursiveInclusive(arrayComponent, newPath));
+      }
+    }
     return beans;
   }
 
