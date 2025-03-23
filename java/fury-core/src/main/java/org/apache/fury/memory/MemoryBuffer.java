@@ -313,17 +313,23 @@ public final class MemoryBuffer {
   }
 
   public void get(int index, byte[] dst, int offset, int length) {
-    final long pos = address + index;
-    if ((index
-            | offset
-            | length
-            | (offset + length)
-            | (dst.length - (offset + length))
-            | addressLimit - length - pos)
-        < 0) {
-      throwOOBException();
+    final byte[] heapMemory = this.heapMemory;
+    if (heapMemory != null) {
+      // System.arraycopy faster for some jdk than Unsafe.
+      System.arraycopy(heapMemory, heapOffset + index, dst, offset, length);
+    } else {
+      final long pos = address + index;
+      if ((index
+              | offset
+              | length
+              | (offset + length)
+              | (dst.length - (offset + length))
+              | addressLimit - length - pos)
+          < 0) {
+        throwOOBException();
+      }
+      Platform.copyMemory(null, pos, dst, Platform.BYTE_ARRAY_OFFSET + offset, length);
     }
-    Platform.copyMemory(heapMemory, pos, dst, Platform.BYTE_ARRAY_OFFSET + offset, length);
   }
 
   public void get(int offset, ByteBuffer target, int numBytes) {
@@ -378,19 +384,25 @@ public final class MemoryBuffer {
   }
 
   public void put(int index, byte[] src, int offset, int length) {
-    final long pos = address + index;
-    // check the byte array offset and length
-    if ((index
-            | offset
-            | length
-            | (offset + length)
-            | (src.length - (offset + length))
-            | addressLimit - length - pos)
-        < 0) {
-      throwOOBException();
+    final byte[] heapMemory = this.heapMemory;
+    if (heapMemory != null) {
+      // System.arraycopy faster for some jdk than Unsafe.
+      System.arraycopy(src, offset, heapMemory, heapOffset + index, length);
+    } else {
+      final long pos = address + index;
+      // check the byte array offset and length
+      if ((index
+              | offset
+              | length
+              | (offset + length)
+              | (src.length - (offset + length))
+              | addressLimit - length - pos)
+          < 0) {
+        throwOOBException();
+      }
+      final long arrayAddress = Platform.BYTE_ARRAY_OFFSET + offset;
+      Platform.copyMemory(src, arrayAddress, null, pos, length);
     }
-    final long arrayAddress = Platform.BYTE_ARRAY_OFFSET + offset;
-    Platform.copyMemory(src, arrayAddress, heapMemory, pos, length);
   }
 
   public byte getByte(int index) {
@@ -2198,10 +2210,9 @@ public final class MemoryBuffer {
     int remaining = size - readerIdx;
     if (remaining >= 8) {
       readerIndex = readerIdx + len;
-      long v =
-          UNSAFE.getLong(heapMemory, address + readerIdx)
-              & (0xffffffffffffffffL >>> ((8 - len) * 8));
-      return LITTLE_ENDIAN ? v : Long.reverseBytes(v);
+      long v = UNSAFE.getLong(heapMemory, address + readerIdx);
+      v = (LITTLE_ENDIAN ? v : Long.reverseBytes(v)) & (0xffffffffffffffffL >>> ((8 - len) * 8));
+      return v;
     }
     return slowReadBytesAsInt64(remaining, len);
   }

@@ -904,4 +904,33 @@ public class CollectionSerializersTest extends FuryTestBase {
       copyCheck(fury, test);
     }
   }
+
+  @Test(dataProvider = "enableCodegen")
+  public void testCollectionAllNullElements(boolean enableCodegen) {
+    Fury fury =
+        Fury.builder()
+            .withCodegen(true)
+            .withRefTracking(true)
+            .requireClassRegistration(false)
+            .build();
+    List<Foo> fooList = new ArrayList<>();
+    fooList.add(null);
+    // serDeCheck(fury, fooList);
+
+    CollectionAbstractTest obj = new CollectionAbstractTest();
+    // fill elemTypeCache
+    obj.fooList = ofArrayList(new Foo1());
+    serDeCheck(fury, obj);
+
+    obj.fooList = fooList;
+    serDeCheck(fury, obj);
+
+    fury =
+        Fury.builder()
+            .withCodegen(enableCodegen)
+            .withRefTracking(true)
+            .requireClassRegistration(false)
+            .build();
+    serDeCheck(fury, obj);
+  }
 }

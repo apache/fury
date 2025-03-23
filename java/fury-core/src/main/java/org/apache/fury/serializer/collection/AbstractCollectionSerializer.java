@@ -192,6 +192,9 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
       bitmap |= CollectionFlags.NOT_SAME_TYPE | CollectionFlags.NOT_DECL_ELEMENT_TYPE;
       buffer.writeByte(bitmap);
     } else {
+      if (elemClass == null) {
+        elemClass = void.class;
+      }
       // Write class in case peer doesn't have this class.
       if (!fury.getConfig().isMetaShareEnabled() && elemClass == declareElementType) {
         buffer.writeByte(bitmap);

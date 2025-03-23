@@ -17,26 +17,21 @@
  * under the License.
  */
 
-package org.apache.fury.serializer;
+package org.apache.fury.meta;
 
-import org.apache.fury.Fury;
+public class TypeExtMeta {
+  private final boolean trackingRef;
 
-/**
- * Serializer for immutable objects.
- *
- * @param <T> type of objects being serializing/deserializing
- */
-public abstract class ImmutableSerializer<T> extends Serializer<T> {
-
-  public ImmutableSerializer(Fury fury, Class<T> type) {
-    super(fury, type, true);
+  TypeExtMeta(boolean trackingRef) {
+    this.trackingRef = trackingRef;
   }
 
-  public ImmutableSerializer(Fury fury, Class<T> type, boolean needToWriteRef) {
-    super(fury, type, needToWriteRef, true);
+  public boolean trackingRef() {
+    return trackingRef;
   }
 
-  public ImmutableSerializer(Fury fury, Class<T> type, boolean needToWriteRef, boolean immutable) {
-    super(fury, type, needToWriteRef, immutable);
+  @Override
+  public String toString() {
+    return "TypeExtMeta{" + "trackingRef=" + trackingRef + '}';
   }
 }

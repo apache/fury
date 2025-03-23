@@ -20,23 +20,27 @@
 package org.apache.fury.serializer;
 
 import org.apache.fury.Fury;
+import org.apache.fury.memory.MemoryBuffer;
 
-/**
- * Serializer for immutable objects.
- *
- * @param <T> type of objects being serializing/deserializing
- */
-public abstract class ImmutableSerializer<T> extends Serializer<T> {
-
-  public ImmutableSerializer(Fury fury, Class<T> type) {
-    super(fury, type, true);
+@SuppressWarnings("rawtypes")
+public class NoneSerializer extends Serializer {
+  public NoneSerializer(Fury fury, Class type) {
+    super(fury, type);
   }
 
-  public ImmutableSerializer(Fury fury, Class<T> type, boolean needToWriteRef) {
-    super(fury, type, needToWriteRef, true);
+  @Override
+  public void write(MemoryBuffer buffer, Object value) {}
+
+  @Override
+  public Object read(MemoryBuffer buffer) {
+    return null;
   }
 
-  public ImmutableSerializer(Fury fury, Class<T> type, boolean needToWriteRef, boolean immutable) {
-    super(fury, type, needToWriteRef, immutable);
+  @Override
+  public void xwrite(MemoryBuffer buffer, Object value) {}
+
+  @Override
+  public Object xread(MemoryBuffer buffer) {
+    return null;
   }
 }

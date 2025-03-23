@@ -103,6 +103,7 @@ import org.apache.fury.meta.ClassDef;
 import org.apache.fury.meta.ClassSpec;
 import org.apache.fury.meta.Encoders;
 import org.apache.fury.meta.MetaString;
+import org.apache.fury.meta.TypeExtMeta;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.serializer.ArraySerializers;
@@ -117,6 +118,7 @@ import org.apache.fury.serializer.JdkProxySerializer;
 import org.apache.fury.serializer.LambdaSerializer;
 import org.apache.fury.serializer.LocaleSerializer;
 import org.apache.fury.serializer.MetaSharedSerializer;
+import org.apache.fury.serializer.NoneSerializer;
 import org.apache.fury.serializer.NonexistentClass;
 import org.apache.fury.serializer.NonexistentClass.NonexistentMetaShared;
 import org.apache.fury.serializer.NonexistentClass.NonexistentSkip;
@@ -319,6 +321,7 @@ public class ClassResolver {
 
   private void addDefaultSerializers() {
     // primitive types will be boxed.
+    addDefaultSerializer(void.class, NoneSerializer.class);
     addDefaultSerializer(String.class, new StringSerializer(fury));
     PrimitiveSerializers.registerDefaultSerializers(fury);
     Serializers.registerDefaultSerializers(fury);
@@ -1086,7 +1089,13 @@ public class ClassResolver {
    * Whether to track reference for this type. If false, reference tracing of subclasses may be
    * ignored too.
    */
-  public boolean needToWriteRef(Class<?> cls) {
+  public boolean needToWriteRef(TypeRef<?> typeRef) {
+    Object extInfo = typeRef.getExtInfo();
+    if (extInfo instanceof TypeExtMeta) {
+      TypeExtMeta meta = (TypeExtMeta) extInfo;
+      return meta.trackingRef();
+    }
+    Class<?> cls = typeRef.getRawType();
     if (fury.trackingRef()) {
       ClassInfo classInfo = getClassInfo(cls, false);
       if (classInfo == null || classInfo.serializer == null) {
@@ -1923,7 +1932,7 @@ public class ClassResolver {
 
   public GenericType buildGenericType(TypeRef<?> typeRef) {
     return GenericType.build(
-        typeRef.getType(),
+        typeRef,
         t -> {
           if (t.getClass() == Class.class) {
             return isMonomorphic((Class<?>) t);
