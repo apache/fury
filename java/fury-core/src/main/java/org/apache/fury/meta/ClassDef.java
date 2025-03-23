@@ -237,10 +237,16 @@ public class ClassDef implements Serializable {
         Descriptor descriptor =
             descriptorsMap.get(fieldInfo.getDefinedClass() + "." + fieldInfo.getFieldName());
         Descriptor newDesc = fieldInfo.toDescriptor(resolver);
+        Class<?> rawType = newDesc.getRawType();
+        if (resolver.isRegistered(rawType)) {
+          String typeAlias = resolver.getTypeAlias(rawType);
+          if (!typeAlias.equals(newDesc.getTypeName())) {
+            newDesc = newDesc.copyWithTypeName(typeAlias);
+          }
+        }
         if (descriptor != null) {
           // Make DescriptorGrouper have consistent order whether field exist or not
           // fury builtin types skip
-          Class<?> rawType = newDesc.getRawType();
           if (rawType.isEnum()
               || rawType.isAssignableFrom(descriptor.getRawType())
               || NonexistentClass.isNonexistent(rawType)

@@ -31,6 +31,8 @@ import java.util.stream.Collectors;
 import org.apache.fury.Fury;
 import org.apache.fury.FuryTestBase;
 import org.apache.fury.builder.MetaSharedCodecBuilder;
+import org.apache.fury.codegen.CompileUnit;
+import org.apache.fury.codegen.JaninoUtils;
 import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.config.FuryBuilder;
 import org.apache.fury.config.Language;
@@ -672,5 +674,85 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
             .TestClassLengthTestClassLengthTestClassLengthTestClassLengthTestClassLengthTestClassLengthTestClassLength
             .InnerClassTestLengthInnerClassTestLengthInnerClassTestLength();
     serDeCheck(fury, o);
+  }
+
+  @Test
+  public void testRegisterToSameIdForRenamedClass() throws Exception {
+    CompileUnit unit1 =
+        new CompileUnit(
+            "demo.pkg1",
+            "A",
+            (""
+                + "package demo.pkg1;\n"
+                + "import demo.test.*;\n"
+                + "import demo.report.*;\n"
+                + "public class A {\n"
+                + "  int f1;\n"
+                + "  B f2;\n"
+                + "  C f3;\n"
+                + "  public String toString() {return \"A\" + \",\" + f1 + \",\" + f2 + \",\" + f3;}\n"
+                + "  public static A create() { A a = new A(); a.f1 = 10; a.f2 = new B(); a.f3 = new C(); return a;}\n"
+                + "}"));
+    CompileUnit unit2 =
+        new CompileUnit(
+            "demo.test", "B", ("" + "package demo.test;\n" + "public class B {\n" + "}"));
+    CompileUnit unit3 =
+        new CompileUnit(
+            "demo.report", "C", ("" + "package demo.report;\n" + "public class C {\n" + "}"));
+    ClassLoader classLoader =
+        JaninoUtils.compile(Thread.currentThread().getContextClassLoader(), unit1, unit2, unit3);
+    byte[] serialized;
+    {
+      Class<?> A = classLoader.loadClass("demo.pkg1.A");
+      Class<?> B = classLoader.loadClass("demo.test.B");
+      Class<?> C = classLoader.loadClass("demo.report.C");
+      Fury fury = builder().withCompatibleMode(CompatibleMode.COMPATIBLE).build();
+      fury.register(A);
+      fury.register(B);
+      fury.register(C);
+      Object a = A.getMethod("create").invoke(null);
+      System.out.println(a);
+      serialized = fury.serialize(a);
+    }
+    {
+      unit1 =
+          new CompileUnit(
+              "example.pkg1",
+              "A",
+              (""
+                  + "package example.pkg1;\n"
+                  + "import example.test.*;\n"
+                  + "import example.report.*;\n"
+                  + "public class A {\n"
+                  + "  int f1;\n"
+                  + "  B f2;\n"
+                  + "  C f3;\n"
+                  + "  public String toString() {return \"A\" + \",\" + f1 + \",\" + f2 + \",\" + f3;}\n"
+                  + "  public static A create() { A a = new A(); a.f1 = 10; a.f2 = new B(); a.f3 = new C(); return a;}\n"
+                  + "}"));
+      unit2 =
+          new CompileUnit(
+              "example.report",
+              "B",
+              ("" + "package example.report;\n" + "public class B {\n" + "}"));
+      unit3 =
+          new CompileUnit(
+              "example.test", "C", ("" + "package example.test;\n" + "public class C {\n" + "}"));
+      classLoader =
+          JaninoUtils.compile(Thread.currentThread().getContextClassLoader(), unit1, unit2, unit3);
+      Class<?> A = classLoader.loadClass("example.pkg1.A");
+      Class<?> B = classLoader.loadClass("example.report.B");
+      Class<?> C = classLoader.loadClass("example.test.C");
+      Fury fury =
+          builder()
+              .withCompatibleMode(CompatibleMode.COMPATIBLE)
+              .withClassLoader(classLoader)
+              .build();
+      fury.register(A);
+      fury.register(B);
+      fury.register(C);
+      Object newObj = fury.deserialize(serialized);
+      System.out.println(newObj);
+    }
   }
 }
