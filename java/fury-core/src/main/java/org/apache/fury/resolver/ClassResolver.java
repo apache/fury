@@ -536,6 +536,11 @@ public class ClassResolver {
     }
   }
 
+  public boolean isRegistered(Class<?> cls) {
+    return extRegistry.registeredClassIdMap.containsKey(cls)
+        || extRegistry.registeredClasses.inverse().containsKey(cls);
+  }
+
   public boolean isRegisteredById(Class<?> cls) {
     return extRegistry.registeredClassIdMap.get(cls) != null;
   }
@@ -559,6 +564,18 @@ public class ClassResolver {
         .filter(Objects::nonNull)
         .map(info -> info.cls)
         .collect(Collectors.toList());
+  }
+
+  public String getTypeAlias(Class<?> cls) {
+    Short id = extRegistry.registeredClassIdMap.get(cls);
+    if (id != null) {
+      return String.valueOf(id);
+    }
+    String name = extRegistry.registeredClasses.inverse().get(cls);
+    if (name != null) {
+      return name;
+    }
+    return cls.getName();
   }
 
   /**
