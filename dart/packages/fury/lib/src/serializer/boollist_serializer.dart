@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 import 'package:collection/collection.dart';
 import 'package:fury/src/const/obj_type.dart';
-import 'package:fury/src/serializer/array/array_serializer.dart';
+import 'package:fury/src/serializer/array_serializer.dart';
 import 'package:fury/src/deserializer_pack.dart';
 import 'package:fury/src/memory/byte_reader.dart';
 import 'package:fury/src/memory/byte_writer.dart';
@@ -9,7 +9,6 @@ import 'package:fury/src/serializer/serializer_cache.dart';
 import 'package:fury/src/serializer_pack.dart';
 
 final class _BoolListSerializerCache extends ArraySerializerCache {
-
   static BoolListSerializer? _noRefSer;
   static BoolListSerializer? _writeRefSer;
 
@@ -29,7 +28,6 @@ final class _BoolListSerializerCache extends ArraySerializerCache {
 
 final class BoolListSerializer extends ArraySerializer<bool>{
   static const SerializerCache cache = _BoolListSerializerCache();
-
   const BoolListSerializer(bool writeRef) : super(ObjType.BOOL_ARRAY, writeRef);
 
   @override

@@ -13,7 +13,7 @@ class ClassAnnotationAnalyzer {
 
   FuryClass analyze(
     List<ElementAnnotation> metadata,
-    int classId,
+    int classElementId,
     @LocationEnsure(LocationLevel.clsLevel)LocationMark locationMark,
   ){
     assert(locationMark.ensureClassLevel);

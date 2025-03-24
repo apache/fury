@@ -2,9 +2,25 @@ import 'dart:typed_data';
 import 'package:fury/src/deserializer_pack.dart';
 import 'package:fury/src/memory/byte_reader.dart';
 import 'package:fury/src/memory/byte_writer.dart';
-import 'package:fury/src/serializer/array/array_serializer.dart';
 import 'package:fury/src/serializer_pack.dart';
 import 'package:fury/src/util/math_checker.dart';
+import 'package:fury/src/config/fury_config.dart';
+import 'package:fury/src/serializer/serializer.dart';
+import 'package:fury/src/serializer/serializer_cache.dart';
+
+abstract base class ArraySerializerCache extends SerializerCache{
+  const ArraySerializerCache();
+
+  @override
+  Serializer getSer(FuryConfig conf,){
+    return getSerWithRef(conf.refTracking);
+  }
+  Serializer getSerWithRef(bool writeRef);
+}
+
+abstract base class ArraySerializer<T> extends Serializer<List<T>> {
+  const ArraySerializer(super.type, super.writeRef);
+}
 
 abstract base class NumArraySerializer<T extends num> extends ArraySerializer<T> {
   const NumArraySerializer(super.type, super.writeRef);

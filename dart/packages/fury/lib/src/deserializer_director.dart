@@ -8,7 +8,7 @@ import 'package:fury/src/datatype/int16.dart';
 import 'package:fury/src/datatype/int32.dart';
 import 'package:fury/src/datatype/int8.dart';
 import 'package:fury/src/memory/byte_reader.dart';
-import 'package:fury/src/meta/class_info.dart';
+import 'package:fury/src/meta/type_info.dart';
 import 'package:fury/src/meta/spec_wraps/type_spec_wrap.dart';
 import 'package:fury/src/resolver/ref/deser_ref_resolver.dart';
 import 'package:fury/src/resolver/struct_hash_resolver.dart';
@@ -54,9 +54,9 @@ class DeserializeDirector {
     }
     if (refFlag >= RefFlag.UNTRACK_NOT_NULL.id){
       // must deserialize
-      ClassInfo clsInfo = pack.xtypeResolver.readClassInfo(br);
+      TypeInfo typeInfo = pack.xtypeResolver.readTypeInfo(br);
       int refId = refResolver.reserveId();
-      Object o = _xDeser(br, clsInfo, refId, pack);
+      Object o = _xDeser(br, typeInfo, refId, pack);
       refResolver.setRef(refId, o);
       return o;
     }
@@ -89,8 +89,8 @@ class DeserializeDirector {
   }
 
   /// this method will only be invoked by Fury::_xReadRef
-  Object _xDeser(ByteReader br, ClassInfo clsInfo, int refId, DeserializerPack pack) {
-    switch (clsInfo.objType) {
+  Object _xDeser(ByteReader br, TypeInfo typeInfo, int refId, DeserializerPack pack) {
+    switch (typeInfo.objType) {
       case ObjType.BOOL:
         return br.readInt8() != 0;
       case ObjType.INT8:
@@ -109,7 +109,7 @@ class DeserializeDirector {
       case ObjType.FLOAT64:
         return br.readFloat64();
       default:
-        Object o = clsInfo.ser.read(br, refId, pack);
+        Object o = typeInfo.ser.read(br, refId, pack);
         return o;
     }
   }

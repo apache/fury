@@ -2,7 +2,7 @@ import 'package:fury/src/const/obj_type.dart';
 import 'package:fury/src/meta/meta_string_byte.dart';
 import 'package:fury/src/serializer/serializer.dart';
 
-class ClassInfo {
+class TypeInfo {
   final Type dartType;
   final ObjType objType;
   final String? tag;
@@ -10,7 +10,7 @@ class ClassInfo {
   final MetaStringBytes? nsBytes;
   late Serializer ser;
 
-  ClassInfo(
+  TypeInfo(
     this.dartType,
     this.objType,
     this.tag,
@@ -18,7 +18,7 @@ class ClassInfo {
     this.nsBytes,
   );
 
-  ClassInfo.fromInnerType(
+  TypeInfo.fromInnerType(
     this.dartType,
     this.objType,
     this.ser,

@@ -3,12 +3,12 @@ import 'package:fury/src/codegen/entity/struct_hash_pair.dart';
 import 'package:fury/src/collection/key/long_long_key.dart';
 import 'package:fury/src/const/obj_type.dart';
 import 'package:fury/src/dev_annotation/optimize.dart';
-import 'package:fury/src/exception/unsupported_type_excep.dart';
+import 'package:fury/src/exception/unsupported_type_exception.dart';
 import 'package:fury/src/exception/registration_exception.dart' show UnregisteredTagException, UnregisteredTypeException;
 import 'package:fury/src/fury_context.dart';
 import 'package:fury/src/memory/byte_reader.dart';
 import 'package:fury/src/memory/byte_writer.dart';
-import 'package:fury/src/meta/class_info.dart';
+import 'package:fury/src/meta/type_info.dart';
 import 'package:fury/src/meta/meta_string_byte.dart';
 import 'package:fury/src/meta/spec_wraps/type_spec_wrap.dart';
 import 'package:fury/src/meta/specs/class_spec.dart';
@@ -18,8 +18,8 @@ import 'package:fury/src/resolver/meta_str/meta_string_resolver.dart';
 import 'package:fury/src/resolver/meta_str/tag_str_encode_resolver.dart';
 import 'package:fury/src/resolver/struct_hash_resolver.dart';
 import 'package:fury/src/resolver/xtype_resolver.dart';
-import 'package:fury/src/serializer/custom/class_serializer.dart';
-import 'package:fury/src/serializer/custom/enum_serializer.dart';
+import 'package:fury/src/serializer/class_serializer.dart';
+import 'package:fury/src/serializer/enum_serializer.dart';
 import 'package:fury/src/serializer/serializer.dart';
 import 'package:fury/src/serializer_pack.dart';
 import 'package:fury/src/util/string_util.dart';
@@ -29,12 +29,12 @@ final class XtypeResolverImpl extends XtypeResolver {
   final FuryContext _ctx;
   final MetaStringResolver _msResolver;
   final TagStringEncodeResolver _tstrEncoder;
-  final Map<LongLongKey, ClassInfo> _tagHash2Info;
+  final Map<LongLongKey, TypeInfo> _tagHash2Info;
 
   XtypeResolverImpl(
     super.conf,
   )
-  : _tagHash2Info = HashMap<LongLongKey, ClassInfo>(),
+  : _tagHash2Info = HashMap<LongLongKey, TypeInfo>(),
     _msResolver = MetaStringResolver.newInst,
     _tstrEncoder = TagStringEncodeResolver.newInst,
     _ctx = FuryContext(conf) {
@@ -60,11 +60,11 @@ final class XtypeResolverImpl extends XtypeResolver {
 
   @override
   void registerSerializer(Type type, Serializer ser) {
-    ClassInfo? clsInfo = _ctx.type2ClsInfo[type];
-    if (clsInfo == null){
+    TypeInfo? typeInfo = _ctx.type2TypeInfo[type];
+    if (typeInfo == null){
       throw UnregisteredTypeException(type);
     }
-    clsInfo.ser = ser;
+    typeInfo.ser = ser;
   }
 
   void _regWithNamespace(CustomTypeSpec spec, String tag, String tn, [String ns= '']) {
@@ -75,15 +75,15 @@ final class XtypeResolverImpl extends XtypeResolver {
     MetaStringBytes nsMsb = _msResolver.getOrCreateMetaStringBytes(
       _tstrEncoder.encodeTn(ns),
     );
-    ClassInfo classInfo = ClassInfo(
+    TypeInfo typeInfo = TypeInfo(
       spec.dartType,
       spec.objType,
       tag,
       tnMsb,
       nsMsb,
     );
-    classInfo.ser = _getSerFor(spec);
-    _ctx.reg(classInfo);
+    typeInfo.ser = _getSerFor(spec);
+    _ctx.reg(typeInfo);
   }
 
 
@@ -107,7 +107,7 @@ final class XtypeResolverImpl extends XtypeResolver {
   @override
   @inline
   String getTagByCustomDartType(Type type) {
-    String? tag = _ctx.type2ClsInfo[type]?.tag;
+    String? tag = _ctx.type2TypeInfo[type]?.tag;
     if (tag == null){
       throw UnregisteredTypeException(type);
     }
@@ -120,7 +120,7 @@ final class XtypeResolverImpl extends XtypeResolver {
     for (int i = 0; i < typeWraps.length; ++i){
       wrap = typeWraps[i];
       if (wrap.certainForSer){
-        wrap.ser = _ctx.type2ClsInfo[wrap.type]!.ser;
+        wrap.ser = _ctx.type2TypeInfo[wrap.type]!.ser;
       }else if (wrap.objType == ObjType.LIST){
         wrap.ser = _ctx.abstractListSer;
       }else if (wrap.objType == ObjType.MAP) {
@@ -132,7 +132,7 @@ final class XtypeResolverImpl extends XtypeResolver {
   }
 
   @override
-  ClassInfo readClassInfo(ByteReader br) {
+  TypeInfo readTypeInfo(ByteReader br) {
     int xtypeId = br.readVarUint32Small14();
     ObjType xtype = ObjType.fromId(xtypeId)!;
     switch(xtype){
@@ -144,26 +144,26 @@ final class XtypeResolverImpl extends XtypeResolver {
         // assert(pkgBytes.length == 0); // fury dart does not support package
         MetaStringBytes simpleClassNameBytes = _msResolver.readMetaStringBytes(br);
         LongLongKey key = LongLongKey(pkgBytes.hashCode, simpleClassNameBytes.hashCode);
-        ClassInfo? clsInfo = _tagHash2Info[key];
-        if (clsInfo != null) {
+        TypeInfo? typeInfo = _tagHash2Info[key];
+        if (typeInfo != null) {
           // Indicates that it has been registered
-          return clsInfo;
+          return typeInfo;
         }
-        clsInfo = _getAndCacheSpecByBytes(key, pkgBytes, simpleClassNameBytes);
-        // _tagHash2Info[key] = clsInfo;
-        return clsInfo;
+        typeInfo = _getAndCacheSpecByBytes(key, pkgBytes, simpleClassNameBytes);
+        // _tagHash2Info[key] = typeInfo;
+        return typeInfo;
       default:
         // Indicates built-in type
-        ClassInfo? clsInfo = _ctx.objTypeId2ClsInfo[xtypeId];
-        if (clsInfo != null) {
-          return clsInfo;
+        TypeInfo? typeInfo = _ctx.objTypeId2TypeInfo[xtypeId];
+        if (typeInfo != null) {
+          return typeInfo;
         } else {
           throw UnsupportedTypeException(xtype);
         }
     }
   }
 
-  ClassInfo _getAndCacheSpecByBytes(
+  TypeInfo _getAndCacheSpecByBytes(
     LongLongKey key,
     MetaStringBytes packageBytes,
     MetaStringBytes simpleClassNameBytes,
@@ -171,45 +171,45 @@ final class XtypeResolverImpl extends XtypeResolver {
     String tn = _msResolver.decodeTypename(simpleClassNameBytes);
     String ns = _msResolver.decodeNamespace(packageBytes);
     String qualifiedName = StringUtil.addingTypeNameAndNs(ns, tn);
-    ClassInfo? clsInfo = _ctx.tag2ClsInfo[qualifiedName];
-    if (clsInfo == null) {
+    TypeInfo? typeInfo = _ctx.tag2TypeInfo[qualifiedName];
+    if (typeInfo == null) {
       // TODO: Does not support non-existent class, furyJava seems to have some support
       throw UnregisteredTagException(qualifiedName);
     }
-    _tagHash2Info[key] = clsInfo;
-    return clsInfo;
+    _tagHash2Info[key] = typeInfo;
+    return typeInfo;
   }
 
   @override
-  ClassInfo writeGetClassInfo(ByteWriter bw, Object obj, SerPack pack){
+  TypeInfo writeGetTypeInfo(ByteWriter bw, Object obj, SerPack pack){
     Type dartType = dartTypeResolver.getFuryType(obj);
-    ClassInfo? clsInfo = _ctx.type2ClsInfo[dartType];
-    if (clsInfo == null){
+    TypeInfo? typeInfo = _ctx.type2TypeInfo[dartType];
+    if (typeInfo == null){
       throw UnregisteredTypeException(dartType);
     }
-    bw.writeVarUint32Small7(clsInfo.objType.id);
-    switch(clsInfo.objType){
+    bw.writeVarUint32Small7(typeInfo.objType.id);
+    switch(typeInfo.objType){
       case ObjType.NAMED_ENUM:
       case ObjType.NAMED_STRUCT:
       case ObjType.NAMED_COMPATIBLE_STRUCT:
       case ObjType.NAMED_EXT:
-        pack.msWritingResolver.writeMsb(bw, clsInfo.nsBytes!);
-        pack.msWritingResolver.writeMsb(bw, clsInfo.typeNameBytes!);
+        pack.msWritingResolver.writeMsb(bw, typeInfo.nsBytes!);
+        pack.msWritingResolver.writeMsb(bw, typeInfo.typeNameBytes!);
         break;
       default:
         break;
     }
-    return clsInfo;
+    return typeInfo;
   }
   
   // for test only
   @override
   StructHashPair getHashPairForTest(Type type) {
-    ClassInfo? clsInfo = _ctx.type2ClsInfo[type];
-    if (clsInfo == null){
+    TypeInfo? typeInfo = _ctx.type2TypeInfo[type];
+    if (typeInfo == null){
       throw UnregisteredTypeException(type);
     }
-    ClassSerializer ser = clsInfo.ser as ClassSerializer;
+    ClassSerializer ser = typeInfo.ser as ClassSerializer;
     StructHashPair pair = ser.getHashPairForTest(
       StructHashResolver.inst,
       getTagByCustomDartType,

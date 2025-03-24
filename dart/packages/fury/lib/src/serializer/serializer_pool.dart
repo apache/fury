@@ -10,15 +10,8 @@ import 'package:fury/src/datatype/int32.dart';
 import 'package:fury/src/datatype/int8.dart';
 import 'package:fury/src/datatype/local_date.dart';
 import 'package:fury/src/datatype/timestamp.dart';
-import 'package:fury/src/meta/class_info.dart';
-import 'package:fury/src/serializer/array/boollist_serializer.dart';
-import 'package:fury/src/serializer/array/float32list_serializer.dart';
-import 'package:fury/src/serializer/array/float64list_serializer.dart';
-import 'package:fury/src/serializer/array/int16list_serializer.dart';
-import 'package:fury/src/serializer/array/int32list_serializer.dart';
-import 'package:fury/src/serializer/array/int64list_serializer.dart';
-import 'package:fury/src/serializer/array/int8list_serializer.dart';
-import 'package:fury/src/serializer/array/uint8list_serializer.dart';
+import 'package:fury/src/meta/type_info.dart';
+import 'package:fury/src/serializer/boollist_serializer.dart';
 import 'package:fury/src/serializer/collection/list/def_list_serializer.dart';
 import 'package:fury/src/serializer/collection/map/hashmap_serializer.dart';
 import 'package:fury/src/serializer/collection/map/linked_hash_map_serializer.dart';
@@ -26,24 +19,19 @@ import 'package:fury/src/serializer/collection/map/splay_tree_map_serializer.dar
 import 'package:fury/src/serializer/collection/set/hash_set_serializer.dart';
 import 'package:fury/src/serializer/collection/set/linked_hash_set_serializer.dart';
 import 'package:fury/src/serializer/collection/set/splay_tree_set_serializer.dart';
-import 'package:fury/src/serializer/other_core/string_serializer.dart';
-import 'package:fury/src/serializer/primitive/bool_serializer.dart';
-import 'package:fury/src/serializer/primitive/float32_serializer.dart';
-import 'package:fury/src/serializer/primitive/float64_serializer.dart';
-import 'package:fury/src/serializer/primitive/int16_serializer.dart';
-import 'package:fury/src/serializer/primitive/int32_serializer.dart';
-import 'package:fury/src/serializer/primitive/int64_serializer.dart';
-import 'package:fury/src/serializer/primitive/int8_serializer.dart';
+import 'package:fury/src/serializer/primitive_type_serializer.dart';
+import 'package:fury/src/serializer/string_serializer.dart';
 import 'package:fury/src/serializer/serializer.dart';
 import 'package:fury/src/serializer/time/date_serializer.dart';
 import 'package:fury/src/serializer/time/timestamp_serializer.dart';
+import 'package:fury/src/serializer/typed_data_array_serializer.dart';
 
 class SerializerPool{
 
-  static List<ClassInfo?> setSerForDefaultType(
-    Map<Type, ClassInfo> type2Ser,
-    FuryConfig conf,
-  ){
+  static List<TypeInfo?> setSerForDefaultType(
+      Map<Type, TypeInfo> type2Ser,
+      FuryConfig conf,
+      ){
 
     Serializer linkedMapSer = LinkedHashMapSerializer.cache.getSer(conf);
     Serializer linkedHashSetSer = LinkedHashSetSerializer.cache.getSer(conf);
@@ -80,7 +68,7 @@ class SerializerPool{
     type2Ser[Float64List]!.ser = Float64ListSerializer.cache.getSer(conf);
     type2Ser[BoolList]!.ser = BoolListSerializer.cache.getSer(conf);
 
-    List<ClassInfo?> objTypeId2ClsInfo = List<ClassInfo?>.filled(
+    List<TypeInfo?> objTypeId2TypeInfo = List<TypeInfo?>.filled(
       ObjType.values.length,
       null,
     );
@@ -90,8 +78,8 @@ class SerializerPool{
       if (!values[i].supported || !values[i].defForObjType){
         continue;
       }
-      objTypeId2ClsInfo[values[i].objType!.id] = type2Ser[values[i].dartType];
+      objTypeId2TypeInfo[values[i].objType!.id] = type2Ser[values[i].dartType];
     }
-    return objTypeId2ClsInfo;
+    return objTypeId2TypeInfo;
   }
 }

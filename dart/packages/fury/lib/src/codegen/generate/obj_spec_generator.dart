@@ -9,10 +9,10 @@ import 'package:fury/src/codegen/meta/gen_export.dart';
 import 'package:fury/src/annotation/fury_enum.dart';
 import 'package:fury/src/annotation/fury_class.dart';
 
-class FuryObjSpecGenerator extends GeneratorForAnnotation<FuryObject> {
+class ObjSpecGenerator extends GeneratorForAnnotation<FuryObject> {
 
-  static int? furyEnumId;
-  static int? furyClassId;
+  static int? enumElementId;
+  static int? classElementId;
 
   @override
   Future<String> generateForAnnotatedElement(
@@ -23,19 +23,19 @@ class FuryObjSpecGenerator extends GeneratorForAnnotation<FuryObject> {
     Element anno = annotation.objectValue.type!.element!;
     late GenExport spec;
     late bool enumOrClass;
-    if (furyEnumId != null){
-      enumOrClass = anno.id == furyEnumId;
+    if (enumElementId != null){
+      enumOrClass = anno.id == enumElementId;
     }else{
-      if (furyClassId != null) {
-        enumOrClass = anno.id != furyClassId;
+      if (classElementId != null) {
+        enumOrClass = anno.id != classElementId;
       }else{
         if (anno.name == 'FuryClass'){
           enumOrClass = false;
-          furyClassId = anno.id;
+          classElementId = anno.id;
           AnalysisTypeIdentifier.giveFuryClassId(anno.id);
         }else{
           enumOrClass = true;
-          furyEnumId = anno.id;
+          enumElementId = anno.id;
           AnalysisTypeIdentifier.giveFuryEnumId(anno.id);
         }
       }

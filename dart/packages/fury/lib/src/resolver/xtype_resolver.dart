@@ -1,6 +1,6 @@
 import 'package:fury/src/codegen/entity/struct_hash_pair.dart';
 import 'package:fury/src/memory/byte_reader.dart';
-import 'package:fury/src/meta/class_info.dart';
+import 'package:fury/src/meta/type_info.dart';
 import 'package:fury/src/meta/spec_wraps/type_spec_wrap.dart';
 import 'package:fury/src/resolver/impl/xtype_resolver_impl.dart';
 import 'package:fury/src/serializer/serializer.dart';
@@ -23,11 +23,11 @@ abstract base class XtypeResolver{
 
   void setSersForTypeWrap(List<TypeSpecWrap> typeWraps);
 
-  ClassInfo readClassInfo(ByteReader br);
+  TypeInfo readTypeInfo(ByteReader br);
 
   String getTagByCustomDartType(Type type);
 
-  ClassInfo writeGetClassInfo(ByteWriter bw, Object obj, SerPack pack);
+  TypeInfo writeGetTypeInfo(ByteWriter bw, Object obj, SerPack pack);
 
   /*-----For test only------------------------------------------------*/
   StructHashPair getHashPairForTest(

@@ -5,7 +5,7 @@ import 'package:fury/src/exception/deserialization_exception.dart';
 import 'package:fury/src/memory/byte_reader.dart';
 import 'package:fury/src/memory/byte_writer.dart';
 import 'package:fury/src/meta/specs/enum_spec.dart';
-import 'package:fury/src/serializer/custom/custom_serializer.dart';
+import 'package:fury/src/serializer/custom_serializer.dart';
 import 'package:fury/src/serializer/serializer_cache.dart';
 import 'package:fury/src/serializer_pack.dart';
 

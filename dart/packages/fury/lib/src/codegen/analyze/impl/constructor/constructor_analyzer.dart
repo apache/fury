@@ -20,10 +20,10 @@ class ConstructorAnalyzer {
   ConstructorParams? _analyzeInner(
     ConstructorElement element,
     @LocationEnsure(LocationLevel.clsLevel) LocationMark locationMark,
-    [int? classId,
+    [int? classElementId,
       int depth = 0]
   ){
-    classId ??= element.enclosingElement3.id;
+    classElementId ??= element.enclosingElement3.id;
     // Each annotated class will only be analyzed once, and a class has only one UnnamedConstructor.
     // Therefore, for depth = 0, it must be the first time the class is being analyzed,
     // so it is definitely not in the cache and there is no need to check.
@@ -31,7 +31,7 @@ class ConstructorAnalyzer {
       assert (depth > 0);
       if (element.superConstructor == null) return null; // There's nothing to analyze once the inheritance chain reaches Object
       // now got key, check cache
-      ConstructorParams? cParams = AnalysisCache.getUnnamedCons(classId);
+      ConstructorParams? cParams = AnalysisCache.getUnnamedCons(classElementId);
       if (cParams != null) return cParams;
     }
 
@@ -86,7 +86,7 @@ class ConstructorAnalyzer {
       positional,
       named,
     );
-    AnalysisCache.putUnnamedCons(classId, cParams);
+    AnalysisCache.putUnnamedCons(classElementId, cParams);
     return cParams;
   }
 
@@ -159,7 +159,7 @@ class ConstructorAnalyzer {
 
   ConstructorInfo analyze(
     List<ConstructorElement> cons,
-    int classId,
+    int classElementId,
     bool promiseAcyclic,
     bool allFieldsPrimitive,
     @LocationEnsure(LocationLevel.clsLevel) LocationMark locationMark,
@@ -210,7 +210,7 @@ class ConstructorAnalyzer {
     // Indicates the specified constructor
     assert(consEle.superConstructor != null); // Currently analyzing a class, it cannot be Object. In Dart, only the Object class does not have a super class.
     return ConstructorInfo.useUnnamedCons(
-      _analyzeInner(consEle, locationMark, classId, 0),
+      _analyzeInner(consEle, locationMark, classElementId, 0),
     );
   }
 

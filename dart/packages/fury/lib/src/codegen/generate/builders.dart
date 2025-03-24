@@ -6,7 +6,7 @@ import 'obj_spec_generator.dart';
 
 Builder furyObjSpecBuilder(BuilderOptions options) {
   return SharedPartBuilder(
-    [FuryObjSpecGenerator()],  // 提供生成器
+    [ObjSpecGenerator()],  // 提供生成器
     FuryConst.intermediateMark,     // 输出文件的名称
   );
 }

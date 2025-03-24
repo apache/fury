@@ -4,7 +4,7 @@ import 'package:fury/src/config/fury_config.dart';
 import 'package:fury/src/const/obj_type.dart';
 import 'package:fury/src/const/ref_flag.dart';
 import 'package:fury/src/memory/byte_writer.dart';
-import 'package:fury/src/meta/class_info.dart';
+import 'package:fury/src/meta/type_info.dart';
 import 'package:fury/src/meta/spec_wraps/type_spec_wrap.dart';
 import 'package:fury/src/resolver/meta_str/ms_writing_resolver.dart';
 import 'package:fury/src/resolver/ref/ser_ref_resolver.dart';
@@ -58,8 +58,8 @@ class SerializerDirector {
       bw.writeVarUint32(serRef.refId!);
     }
     if (serRef.refFlag.noNeedToSer) return;
-    ClassInfo clsInfo = pack.xtypeResolver.writeGetClassInfo(bw, obj!, pack);
-    switch (clsInfo.objType) {
+    TypeInfo typeInfo = pack.xtypeResolver.writeGetTypeInfo(bw, obj!, pack);
+    switch (typeInfo.objType) {
       case ObjType.BOOL:
         bw.writeBool(obj as bool);
         break;
@@ -84,7 +84,7 @@ class SerializerDirector {
         bw.writeFloat64(obj as double);
         break;
       default:
-        clsInfo.ser.write(bw, obj, pack);
+        typeInfo.ser.write(bw, obj, pack);
     }
   }
 

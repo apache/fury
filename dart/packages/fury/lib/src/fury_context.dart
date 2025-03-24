@@ -1,60 +1,60 @@
 import 'dart:collection';
 import 'package:fury/src/config/fury_config.dart';
 import 'package:fury/src/exception/registration_exception.dart' show DuplicatedTagRegistrationException, DuplicatedTypeRegistrationException;
-import 'package:fury/src/meta/class_info.dart';
+import 'package:fury/src/meta/type_info.dart';
 import 'package:fury/src/serializer/serializer.dart';
 import 'package:fury/src/serializer/serializer_pool.dart';
 import 'package:fury/src/const/dart_type.dart';
 import 'package:fury/src/const/obj_type.dart';
 
 class FuryContext {
-  // Cannot be static because ClassInfo contains the Ser field
-  final Iterable<MapEntry<Type,ClassInfo>> _defaultClassInfos =
+  // Cannot be static because TypeInfo contains the Ser field
+  final Iterable<MapEntry<Type,TypeInfo>> _defaultTypeInfos =
     DartTypeEnum.values.where(
       (e) => e.objType != null
     ).map(
       (e) => MapEntry(
         e.dartType,
-        ClassInfo(e.dartType, e.objType!, null,null,null),
+        TypeInfo(e.dartType, e.objType!, null,null,null),
       )
     );
 
   final FuryConfig conf;
-  final Map<String, ClassInfo> tag2ClsInfo; // tag -> ser
-  final Map<Type, ClassInfo> type2ClsInfo; // type -> ser
-  late final List<ClassInfo?> objTypeId2ClsInfo;
+  final Map<String, TypeInfo> tag2TypeInfo;
+  final Map<Type, TypeInfo> type2TypeInfo;
+  late final List<TypeInfo?> objTypeId2TypeInfo;
 
   late final Serializer abstractListSer;
   late final Serializer abstractMapSer;
 
   FuryContext(this.conf)
-    : tag2ClsInfo = HashMap(),
-    type2ClsInfo = HashMap();
+    : tag2TypeInfo = HashMap(),
+    type2TypeInfo = HashMap();
 
   void initForDefaultTypes() {
-    type2ClsInfo.addEntries(_defaultClassInfos);
-    objTypeId2ClsInfo = SerializerPool.setSerForDefaultType(type2ClsInfo, conf);
-    abstractListSer = objTypeId2ClsInfo[ObjType.LIST.id]!.ser;
-    abstractMapSer = objTypeId2ClsInfo[ObjType.MAP.id]!.ser;
+    type2TypeInfo.addEntries(_defaultTypeInfos);
+    objTypeId2TypeInfo = SerializerPool.setSerForDefaultType(type2TypeInfo, conf);
+    abstractListSer = objTypeId2TypeInfo[ObjType.LIST.id]!.ser;
+    abstractMapSer = objTypeId2TypeInfo[ObjType.MAP.id]!.ser;
   }
 
-  void reg(ClassInfo clsInfo) {
-    assert(clsInfo.tag != null);
-    ClassInfo? info = type2ClsInfo[clsInfo.dartType];
+  void reg(TypeInfo typeInfo) {
+    assert(typeInfo.tag != null);
+    TypeInfo? info = type2TypeInfo[typeInfo.dartType];
     // Check if the type is already registered
     if (info!= null) {
       throw DuplicatedTypeRegistrationException(info.dartType, info.tag!);
     }
     // Check if the tag is already registered
-    info = tag2ClsInfo[clsInfo.tag];
+    info = tag2TypeInfo[typeInfo.tag];
     if (info != null) {
       throw DuplicatedTagRegistrationException(
-        clsInfo.tag!, 
+        typeInfo.tag!,
         info.dartType, 
-        clsInfo.dartType,
+        typeInfo.dartType,
       );
     }
-    tag2ClsInfo[clsInfo.tag!] = clsInfo;
-    type2ClsInfo[clsInfo.dartType] = clsInfo;
+    tag2TypeInfo[typeInfo.tag!] = typeInfo;
+    type2TypeInfo[typeInfo.dartType] = typeInfo;
   }
 }
