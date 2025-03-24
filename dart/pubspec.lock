@@ -66,7 +66,7 @@ packages:
     source: hosted
     version: "4.0.4"
   build_resolvers:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: build_resolvers
       sha256: b9e4fda21d846e192628e7a4f6deda6888c36b5b69ba02ff291a01fd529140f0
@@ -82,7 +82,7 @@ packages:
     source: hosted
     version: "2.4.15"
   build_runner_core:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: build_runner_core
       sha256: "22e3aa1c80e0ada3722fe5b63fd43d9c8990759d0a2cf489c8c5d7b2bdebc021"
@@ -434,21 +434,13 @@ packages:
     source: hosted
     version: "3.0.0"
   source_gen:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: source_gen
       sha256: "35c8150ece9e8c8d263337a265153c3329667640850b9304861faea59fc98f6b"
       url: "https://pub.dev"
     source: hosted
     version: "2.0.0"
-  source_gen_test:
-    dependency: transitive
-    description:
-      name: source_gen_test
-      sha256: e605d2d8349bf4cc29fd653cf6c56cffdedaec2d254eaa9890dae2c0e3d14597
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.1.1"
   source_helper:
     dependency: transitive
     description:
@@ -522,7 +514,7 @@ packages:
     source: hosted
     version: "1.2.2"
   test:
-    dependency: "direct dev"
+    dependency: transitive
     description:
       name: test
       sha256: "301b213cd241ca982e9ba50266bd3f5bd1ea33f1455554c5abb85d1be0e2d87e"

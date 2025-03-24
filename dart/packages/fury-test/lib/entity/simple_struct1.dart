@@ -1,4 +1,4 @@
-import 'package:fury_core/fury_core.dart';
+import 'package:fury/fury.dart';
 part '../generated/simple_struct1.g.dart';
 
 @furyClass

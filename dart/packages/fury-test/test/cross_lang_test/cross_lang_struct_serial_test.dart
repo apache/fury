@@ -4,24 +4,21 @@ library;
 import 'dart:collection';
 import 'dart:io';
 import 'dart:typed_data';
-
 import 'package:checks/checks.dart';
-import 'package:fury_core/fury_core.dart';
+import 'package:fury/fury.dart';
 import 'package:fury_test/entity/complex_obj_1.dart';
 import 'package:fury_test/entity/complex_obj_2.dart';
 import 'package:fury_test/entity/complex_obj_3.dart';
 import 'package:fury_test/entity/simple_struct1.dart';
+import 'package:fury_test/util/cross_lang_util.dart';
+import 'package:fury_test/util/test_file_util.dart';
 import 'package:test/test.dart';
 
-import '../util/test_file_util.dart';
-import 'cross_lang_util.dart';
-
 void main() {
-  group('A group of tests', () {
+  group('cross lang struct serialization tests', () {
 
     test('testSimpleStruct1', () {
       Fury fury = Fury(
-        xlangMode: true,
         refTracking: true,
       );
       fury.register($SimpleStruct1, "SimpleStruct1");
@@ -34,7 +31,6 @@ void main() {
 
     test('testSerializeSimpleStruct', () {
       Fury fury = Fury(
-        xlangMode: true,
         refTracking: true,
       );
       fury.register($ComplexObject2, "test.ComplexObject2");
@@ -44,7 +40,6 @@ void main() {
 
     test('testSerializeComplexStruct', () {
       Fury fury = Fury(
-        xlangMode: true,
         refTracking: true,
       );
       fury.register($ComplexObject2, "test.ComplexObject2");
@@ -68,7 +63,6 @@ void main() {
 
     test('testCrossLanguageReference', () {
       Fury fury = Fury(
-        xlangMode: true,
         refTracking: true,
       );
       List<Object> list = [];
@@ -97,7 +91,6 @@ void main() {
 
     test('testNestedStructure', () {
       Fury fury = Fury(
-        xlangMode: true,
         refTracking: true,
       );
       fury.register($ComplexObject3, "test.ComplexObject3");

@@ -1,5 +1,5 @@
 import 'dart:collection';
-import 'package:fury_core/fury_core.dart';
+import 'package:fury/fury.dart';
 import 'package:fury_test/extensions/map_ext.dart';
 
 part '../generated/complex_obj_3.g.dart';

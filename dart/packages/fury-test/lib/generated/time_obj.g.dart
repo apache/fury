@@ -145,7 +145,7 @@ final $TimeObj = ClassSpec(
   null,
 );
 
-mixin _$TimeObjFury implements Furable {
+mixin _$TimeObjFury implements Furiable {
   @override
   Type get $furyType => TimeObj;
 }

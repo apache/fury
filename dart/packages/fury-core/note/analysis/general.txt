@@ -1,4 +1,0 @@
-及时有一些语法错误，dart analyzer也可以分析
-例如一个类with了一个未定义的mixin，也可以进行分析，但是ClassElement::mixins不会记录
-
-

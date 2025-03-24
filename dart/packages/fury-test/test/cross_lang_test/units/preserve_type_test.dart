@@ -4,7 +4,7 @@ library;
 import 'dart:typed_data';
 
 import 'package:checks/checks.dart';
-import 'package:fury_core/fury_core.dart';
+import 'package:fury/fury.dart';
 import 'package:fury_test/entity/time_obj.dart';
 import 'package:fury_test/extensions/array_ext.dart';
 import 'package:fury_test/extensions/map_ext.dart';
@@ -17,11 +17,10 @@ Object? _serDeserRoundBack(Fury fury, Object? obj) {
 }
 
 void main(){
-  group('PreserveTypeTest', () {
+  group('PreservedTypeTest', () {
 
     test('Test Primitive Type', () {
       Fury fury = Fury(
-        xlangMode: true,
         refTracking: true,
       );
       Object? obj0 = _serDeserRoundBack(fury, true);
@@ -55,7 +54,6 @@ void main(){
 
     test('Test String Type', () {
       Fury fury = Fury(
-        xlangMode: true,
         refTracking: true,
       );
       Object? obj1 = _serDeserRoundBack(fury, "str");
@@ -73,7 +71,6 @@ void main(){
 
     test('Test String Type', () {
       Fury fury = Fury(
-        xlangMode: true,
         refTracking: true,
       );
       Object? obj1 = _serDeserRoundBack(fury, BoolList.of([true, false, true, true, false, true]));
@@ -85,7 +82,6 @@ void main(){
 
     test('Test Array Type', () {
       Fury fury = Fury(
-        xlangMode: true,
         refTracking: true,
       );
       Int32List int32List = Int32List.fromList([1, 2]);
@@ -115,7 +111,6 @@ void main(){
 
     test('Test List Type', () {
       Fury fury = Fury(
-        xlangMode: true,
         refTracking: true,
       );
       List<String> strList = ["str", "str"];
@@ -139,7 +134,6 @@ void main(){
 
     test('Test Map Type', () {
       Fury fury = Fury(
-        xlangMode: true,
         refTracking: true,
       );
       Map<String, Int16> strMap = {"key": Int16(1), "key2": Int16(2)};
@@ -151,7 +145,6 @@ void main(){
 
     test('Test Time Type', () {
       Fury fury = Fury(
-        xlangMode: true,
         refTracking: true,
       );
       TimeObj timeObj = TimeObj(

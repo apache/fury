@@ -4,7 +4,7 @@ library;
 import 'dart:math';
 
 import 'package:checks/checks.dart';
-import 'package:fury_core/fury_core.dart';
+import 'package:fury/fury.dart';
 import 'package:test/test.dart';
 
 void main() {

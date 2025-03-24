@@ -4,18 +4,16 @@ library;
 import 'dart:collection';
 import 'dart:io';
 import 'dart:typed_data';
-
+import 'package:fury_test/util/cross_lang_util.dart';
+import 'package:fury_test/util/test_file_util.dart';
+import 'package:test/test.dart';
 import 'package:checks/checks.dart';
-import 'package:fury_core/fury_core.dart';
+import 'package:fury/fury.dart';
 import 'package:fury_test/entity/enum_foo.dart';
 import 'package:fury_test/extensions/array_ext.dart';
 import 'package:fury_test/extensions/collection_ext.dart';
 import 'package:fury_test/extensions/map_ext.dart';
 import 'package:fury_test/extensions/obj_ext.dart';
-import 'package:test/test.dart';
-
-import '../util/test_file_util.dart';
-import 'cross_lang_util.dart';
 
 T Function<T>(Fury, Fury, T) serDe = CrossLangUtil.serDe;
 
@@ -62,11 +60,9 @@ void _testCollectionType(Fury fury1, Fury fury2) {
 
 void _testArrayCollection(bool refTracking) {
   Fury fury1 = Fury(
-    xlangMode: true,
     refTracking: refTracking,
   );
   Fury fury2 = Fury(
-    xlangMode: true,
     refTracking: refTracking,
   );
   _testTypedDataArray(fury1, fury2);
@@ -75,11 +71,9 @@ void _testArrayCollection(bool refTracking) {
 
 void _basicTypeTest(bool refTracking) {
   Fury fury1 = Fury(
-    xlangMode: true,
     refTracking: refTracking,
   );
   Fury fury2 = Fury(
-    xlangMode: true,
     refTracking: refTracking,
   );
   check('str').equals(serDe(fury1, fury2, 'str'));
@@ -106,11 +100,10 @@ void _basicTypeTest(bool refTracking) {
 }
 
 void main() {
-  group('test cross language data type serialization', () {
+  group('test cross language datatype serialization', () {
 
     test('testCrossLanguageSerializer', () {
       Fury fury = Fury(
-        xlangMode: true,
         refTracking: true,
       );
       ByteWriter bw = ByteWriter();

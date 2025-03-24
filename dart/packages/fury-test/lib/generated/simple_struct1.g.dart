@@ -31,7 +31,7 @@ final $SimpleStruct1 = ClassSpec(
   () => SimpleStruct1(),
 );
 
-mixin _$SimpleStruct1Fury implements Furable {
+mixin _$SimpleStruct1Fury implements Furiable {
   @override
   Type get $furyType => SimpleStruct1;
 }

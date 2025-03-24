@@ -10,16 +10,14 @@ resolution: workspace
 
 # Add regular dependencies here.
 dependencies:
-  fury_core: 1.0.0
-
-  build_runner_core: any
-  source_gen: any
-  build_runner: any
+  fury: 1.0.0
+  checks: ^0.3.0
+  path: ^1.9.1
 dev_dependencies:
   lints: ^5.0.0
-  build: ^2.4.2
+  build_runner: any
   test: ^1.24.0
-  checks: ^0.3.0
   build_test: ^2.2.3
   analyzer: ^7.3.0
   collection: ^1.19.1
+  build: any

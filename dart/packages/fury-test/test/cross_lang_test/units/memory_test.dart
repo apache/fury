@@ -3,14 +3,12 @@ library;
 
 import 'dart:io';
 import 'dart:typed_data';
-
 import 'package:checks/checks.dart';
-import 'package:fury_core/fury_core.dart';
-import 'package:fury_test/extensions/array_ext.dart';
+import 'package:fury_test/util/cross_lang_util.dart';
+import 'package:fury_test/util/test_file_util.dart';
 import 'package:test/test.dart';
-
-import '../../util/test_file_util.dart';
-import '../cross_lang_util.dart';
+import 'package:fury/fury.dart';
+import 'package:fury_test/extensions/array_ext.dart';
 
 void main() {
   test('testBuffer', () {

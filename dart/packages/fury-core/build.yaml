@@ -1,9 +1,0 @@
-builders:
-  fury_obj_builder:
-    import: "package:fury_core/src/code_gen/generate/fury_builders.dart"
-    builder_factories: [ "furyObjSpecBuilder" ]
-    build_extensions: { ".dart": [ "fury_meta.g.part" ] }  # 处理 .dart 文件并生成 .g.part 文件
-    auto_apply: dependents
-    build_to: cache
-    applies_builders: [ "source_gen|combining_builder" ]  # 确保在 source_gen 运行后执行
-

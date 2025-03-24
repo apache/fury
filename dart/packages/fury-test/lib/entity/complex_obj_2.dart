@@ -1,9 +1,8 @@
-import 'package:fury_core/fury_core.dart';
+import 'package:fury/fury.dart';
 import 'package:fury_test/extensions/map_ext.dart';
 
 part '../generated/complex_obj_2.g.dart';
 
-///
 @FuryClass(promiseAcyclic: true)
 class ComplexObject2 with _$ComplexObject2Fury {
   final Object f1;

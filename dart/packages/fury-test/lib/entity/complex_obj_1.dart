@@ -1,9 +1,9 @@
 import 'dart:typed_data';
-import 'package:fury_core/fury_core.dart';
+import 'package:fury/fury.dart';
 import 'package:fury_test/extensions/map_ext.dart';
 
 part '../generated/complex_obj_1.g.dart';
-////
+
 @furyClass
 class ComplexObject1 with _$ComplexObject1Fury{
   late Object f1;

@@ -3,23 +3,19 @@ library;
 
 import 'dart:io';
 import 'dart:typed_data';
-
 import 'package:checks/checks.dart';
-import 'package:fury_core/fury_core.dart';
-import 'package:fury_core/src/deser_pack.dart';
-import 'package:fury_core/src/ser_pack.dart';
+import 'package:fury/fury.dart';
 import 'package:fury_test/entity/complex_obj_1.dart';
+import 'package:fury_test/util/cross_lang_util.dart';
+import 'package:fury_test/util/test_file_util.dart';
 import 'package:test/test.dart';
 
-import '../util/test_file_util.dart';
-import 'cross_lang_util.dart';
-
-final class ComplexObject1Serializer extends Ser<ComplexObject1>{
+final class ComplexObject1Serializer extends Serializer<ComplexObject1>{
 
   const ComplexObject1Serializer(): super(ObjType.NAMED_STRUCT, true);
 
   @override
-  ComplexObject1 read(ByteReader br, int refId, DeserPack pack) {
+  ComplexObject1 read(ByteReader br, int refId, DeserializerPack pack) {
     ComplexObject1 obj = ComplexObject1();
     pack.refResolver.setRefTheLatestId(obj);
     obj.f1 = pack.furyDeser.xReadRefNoSer(br, pack)!;
@@ -41,7 +37,6 @@ void main() {
 
     test('testRegisterSerializer', () {
       Fury fury = Fury(
-        xlangMode: true,
         refTracking: true,
       );
       fury.register($ComplexObject1,"test.ComplexObject1");

@@ -1,0 +1,8 @@
+builders:
+  fury_obj_builder:
+    import: "package:fury/src/codegen/generate/builders.dart"
+    builder_factories: [ "furyObjSpecBuilder" ]
+    build_extensions: { ".dart": [ "fury_meta.g.part" ] }  # Process .dart files and generate .g.part files
+    auto_apply: dependents
+    build_to: cache
+    applies_builders: [ "source_gen|combining_builder" ]  # Ensure execution after source_gen

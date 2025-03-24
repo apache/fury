@@ -79,7 +79,7 @@ final $SomeClass = ClassSpec(
   () => SomeClass.noArgs(),
 );
 
-mixin _$SomeClassFury implements Furable {
+mixin _$SomeClassFury implements Furiable {
   @override
   Type get $furyType => SomeClass;
 }

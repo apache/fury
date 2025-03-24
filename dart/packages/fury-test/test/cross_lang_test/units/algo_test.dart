@@ -3,15 +3,13 @@ library;
 
 import 'dart:io';
 import 'dart:typed_data';
-
 import 'package:checks/checks.dart';
-import 'package:fury_core/fury_core.dart';
-import 'package:fury_core/fury_core_test.dart';
+import 'package:fury/fury.dart';
+import 'package:fury/fury_test.dart';
 import 'package:fury_test/entity/complex_obj_1.dart';
+import 'package:fury_test/util/cross_lang_util.dart';
+import 'package:fury_test/util/test_file_util.dart';
 import 'package:test/test.dart';
-
-import '../../util/test_file_util.dart';
-import '../cross_lang_util.dart';
 
 void main() {
   group('serialization algorithm test', () {
@@ -32,7 +30,6 @@ void main() {
 
     test('testStructHash', () {
       Fury fury = Fury(
-        xlangMode: true,
         refTracking: true,
       );
       fury.register($ComplexObject1, "test.ComplexObject1");

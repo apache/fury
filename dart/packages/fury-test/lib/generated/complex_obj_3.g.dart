@@ -168,7 +168,7 @@ final $ComplexObject3 = ClassSpec(
   () => ComplexObject3(),
 );
 
-mixin _$ComplexObject3Fury implements Furable {
+mixin _$ComplexObject3Fury implements Furiable {
   @override
   Type get $furyType => ComplexObject3;
 }

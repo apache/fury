@@ -3,18 +3,17 @@ library;
 
 import 'dart:collection';
 import 'dart:typed_data';
-
-import 'package:fury_core/fury_core.dart';
-import 'package:fury_core/fury_core_test.dart';
+import 'package:fury/fury.dart';
+import 'package:fury/fury_test.dart';
 import 'package:test/test.dart';
 
-class TestFurable implements Furable {
+class TestFuriable implements Furiable {
   @override
   Type get $furyType => String;
 }
 
 void testDeterminingDartType() {
-  // 准备测试数据
+  // prepare test data
   final testObjects = [
     'string',
     123,
@@ -29,16 +28,16 @@ void testDeterminingDartType() {
     Float32List(10),
     HashSet<int>.from([1, 2, 3]),
     LinkedHashSet<int>.from([4, 5, 6]),
-    TestFurable(),
+    TestFuriable(),
   ];
 
   final resolver = DartTypeResolver.I;
-  final iterations = 1000000; // 100万次迭代
+  final iterations = 1000000; // 1 million iterations
   final stopwatch = Stopwatch();
 
   print('run each test $iterations times...\n');
 
-  // 测试 getFuryType 方法
+  // Test getFuryType method
   stopwatch.start();
   for (int i = 0; i < iterations; i++) {
     resolver.getFuryType(testObjects[i % testObjects.length]);
@@ -46,10 +45,10 @@ void testDeterminingDartType() {
   stopwatch.stop();
   print('DartTypeResolver.getFuryType: ${stopwatch.elapsedMilliseconds} ms');
 
-  // 重置计时器
+  // Reset the stopwatch
   stopwatch.reset();
 
-  // 测试 runtimeType 直接访问
+  // Test runtimeType direct access
   stopwatch.start();
   for (int i = 0; i < iterations; i++) {
     testObjects[i % testObjects.length].runtimeType;
@@ -57,10 +56,10 @@ void testDeterminingDartType() {
   stopwatch.stop();
   print('directly obj.runtimeType: ${stopwatch.elapsedMilliseconds} ms');
 
-  // 重置计时器
+  // Reset the stopwatch
   stopwatch.reset();
 
-  // 测试类型检查链
+  // Test type check chain
   stopwatch.start();
   for (int i = 0; i < iterations; i++) {
     var obj = testObjects[i % testObjects.length];

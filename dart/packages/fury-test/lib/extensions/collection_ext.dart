@@ -1,19 +1,19 @@
 // extension ListEqualsExtension<T> on List<T> {
-//   /// 检查此列表是否与另一列表内容相等
+//   /// Checks if this list is equal to another list.
 //   bool isEqualTo(List<T>? other) {
-//     // 如果other为null，则不相等
+//     // If other is null, they are not equal
 //     if (other == null) {
 //       return false;
 //     }
-//     // 如果长度不同，则不相等
+//     // If lengths are different, they are not equal
 //     if (length != other.length) {
 //       return false;
 //     }
-//     // 如果是同一个对象引用，则相等
+//     // If they are the same object reference, they are equal
 //     if (identical(this, other)) {
 //       return true;
 //     }
-//     // 逐个元素比较
+//     // Compare each element one by one
 //     for (int index = 0; index < length; index += 1) {
 //       if (this[index] != other[index]) {
 //         return false;

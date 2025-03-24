@@ -29,7 +29,7 @@ This approach ensures compatibility with Flutter while maintaining the performan
 ### Basic Class Serialization
 
 ```dart
-import 'package:fury_core/fury_core.dart';
+import 'package:fury/fury.dart';
 
 part 'some_class.g.dart';
 
@@ -73,7 +73,7 @@ obj = fury.fromFury(bytes) as SomeClass;
 ### Enum Serialization
 
 ```dart
-import 'package:fury_core/fury_core.dart';
+import 'package:fury/fury.dart';
 
 part 'enum_foo.g.dart';
 
@@ -128,13 +128,13 @@ Fury Dart currently supports the following type mappings in XLANG mode:
 
 The implementation is organized into three main components:
 
-1. **SourceGen**: Located at `dart-fury/packages/fury-core/lib/src/code_gen`
+1. **Codegen**: Located at `dart-fury/packages/fury/lib/src/code_gen`  
    Handles static code generation for serialization/deserialization.
 
-2. **FuryCore**: Located at `dart-fury/packages/fury-core/lib/src`
+2. **FuryCore**: Located at `dart-fury/packages/fury/lib/src`  
    Contains the core serialization and deserialization logic.
 
-3. **FuryTest**: Located at `dart-fury/fury_test`
+3. **FuryTest**: Located at `dart-fury/fury_test`  
    Comprehensive test suite for Fury Dart functionality.
 
 ## Testing Approach
@@ -188,7 +188,7 @@ dart fix --apply
 
 ## Dependencies
 
-### fury-core package:
+### fury package:
 ```
 analyzer: '>=6.5.0 <8.0.0'
 build: ^2.4.1
@@ -207,6 +207,7 @@ test: ^1.24.4
 
 ### fury-test package:
 ```
+path: ^1.9.1
 lints: ^5.0.0
 build: ^2.4.2
 build_runner: ^2.4.15
