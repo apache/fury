@@ -32,6 +32,7 @@ import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.meta.ClassDef.FieldType;
 import org.apache.fury.meta.MetaString.Encoding;
 import org.apache.fury.resolver.ClassResolver;
+import org.apache.fury.serializer.NonexistentClass;
 import org.apache.fury.util.Preconditions;
 
 /**
@@ -79,15 +80,25 @@ class ClassDefDecoder {
       boolean isRegistered = (currentClassHeader & 0b1) != 0;
       int numFields = currentClassHeader >>> 1;
       if (isRegistered) {
-        int registeredId = classDefBuf.readVarUint32Small7();
-        Class<?> cls = classResolver.getClassInfo((short) registeredId).getCls();
-        className = cls.getName();
-        classSpec = new ClassSpec(cls);
+        short registeredId = (short) classDefBuf.readVarUint32Small7();
+        if (classResolver.getRegisteredClass(registeredId) == null) {
+          classSpec = new ClassSpec(NonexistentClass.NonexistentMetaShared.class);
+          className = classSpec.entireClassName;
+        } else {
+          Class<?> cls = classResolver.getClassInfo(registeredId).getCls();
+          className = cls.getName();
+          classSpec = new ClassSpec(cls);
+        }
       } else {
         String pkg = readPkgName(classDefBuf);
         String typeName = readTypeName(classDefBuf);
         classSpec = Encoders.decodePkgAndClass(pkg, typeName);
         className = classSpec.entireClassName;
+        if (classResolver.isRegisteredByName(className)) {
+          Class<?> cls = classResolver.getRegisteredClass(className);
+          className = cls.getName();
+          classSpec = new ClassSpec(cls);
+        }
       }
       List<ClassDef.FieldInfo> fieldInfos = readFieldsInfo(classDefBuf, className, numFields);
       classFields.addAll(fieldInfos);

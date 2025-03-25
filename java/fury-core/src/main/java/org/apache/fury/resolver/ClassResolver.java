@@ -541,6 +541,28 @@ public class ClassResolver {
         || extRegistry.registeredClasses.inverse().containsKey(cls);
   }
 
+  public boolean isRegisteredByName(String name) {
+    return extRegistry.registeredClasses.containsKey(name);
+  }
+
+  public boolean isRegisteredByName(Class<?> cls) {
+    return extRegistry.registeredClasses.inverse().containsKey(cls);
+  }
+
+  public String getRegisteredName(Class<?> cls) {
+    return extRegistry.registeredClasses.inverse().get(cls);
+  }
+
+  public Tuple2<String, String> getRegisteredNameTuple(Class<?> cls) {
+    String name = extRegistry.registeredClasses.inverse().get(cls);
+    int index = name.lastIndexOf(".");
+    if (index != -1) {
+      return Tuple2.of(name.substring(0, index), name.substring(index + 1));
+    } else {
+      return Tuple2.of("", name);
+    }
+  }
+
   public boolean isRegisteredById(Class<?> cls) {
     return extRegistry.registeredClassIdMap.get(cls) != null;
   }
@@ -557,6 +579,10 @@ public class ClassResolver {
       }
     }
     return null;
+  }
+
+  public Class<?> getRegisteredClass(String className) {
+    return extRegistry.registeredClasses.get(className);
   }
 
   public List<Class<?>> getRegisteredClasses() {
@@ -1023,6 +1049,9 @@ public class ClassResolver {
   }
 
   public boolean isMap(Class<?> cls) {
+    if (cls == NonexistentMetaShared.class) {
+      return false;
+    }
     return Map.class.isAssignableFrom(cls)
         || (fury.getConfig().isScalaOptimizationEnabled()
             && ScalaTypes.getScalaMapType().isAssignableFrom(cls));
@@ -1893,6 +1922,10 @@ public class ClassResolver {
   private Class<?> loadClass(
       String className, boolean isEnum, int arrayDims, boolean deserializeNonexistentClass) {
     extRegistry.classChecker.checkClass(this, className);
+    Class<?> cls = extRegistry.registeredClasses.get(className);
+    if (cls != null) {
+      return cls;
+    }
     try {
       return Class.forName(className, false, fury.getClassLoader());
     } catch (ClassNotFoundException e) {

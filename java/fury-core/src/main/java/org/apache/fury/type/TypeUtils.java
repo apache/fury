@@ -50,6 +50,7 @@ import org.apache.fury.collection.Tuple2;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeParameter;
 import org.apache.fury.reflect.TypeRef;
+import org.apache.fury.serializer.NonexistentClass;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.StringUtils;
 
@@ -553,6 +554,9 @@ public class TypeUtils {
   }
 
   public static boolean isMap(Class<?> cls) {
+    if (cls == NonexistentClass.NonexistentMetaShared.class) {
+      return false;
+    }
     return cls == HashMap.class || Map.class.isAssignableFrom(cls);
   }
 
