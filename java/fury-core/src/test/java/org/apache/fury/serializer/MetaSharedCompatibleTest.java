@@ -19,6 +19,7 @@
 
 package org.apache.fury.serializer;
 
+import static org.apache.fury.reflect.ReflectionUtils.getObjectFieldValue;
 import static org.apache.fury.serializer.ClassUtils.loadClass;
 
 import com.google.common.collect.ImmutableSet;
@@ -691,11 +692,22 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
               + "  public String toString() {return \"A\" + \",\" + f1 + \",\" + f2 + \",\" + f3;}\n"
               + "  public static A create() { A a = new A(); a.f1 = 10; a.f2 = new B(); a.f3 = new C(); return a;}\n"
               + "}"));
+
   CompileUnit unit2 =
-      new CompileUnit("demo.test", "B", ("" + "package demo.test;\n" + "public class B {\n" + "}"));
+      new CompileUnit(
+          "demo.test",
+          "B",
+          ("" + "package demo.test;\n" + "public class B {\n" + "  public int f1 = 100;\n" + "}"));
+
   CompileUnit unit3 =
       new CompileUnit(
-          "demo.report", "C", ("" + "package demo.report;\n" + "public class C {\n" + "}"));
+          "demo.report",
+          "C",
+          (""
+              + "package demo.report;\n"
+              + "public class C {\n"
+              + "  public int f2 = 1000;\n"
+              + "}"));
 
   @Test
   public void testRegisterToSameIdForRenamedClass() throws Exception {
@@ -719,7 +731,7 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
       serialized = fury.serialize(a);
     }
     {
-      unit1 =
+      CompileUnit unit1 =
           new CompileUnit(
               "example.pkg1",
               "A",
@@ -734,12 +746,12 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
                   + "  public String toString() {return \"A\" + \",\" + f1 + \",\" + f2 + \",\" + f3;}\n"
                   + "  public static A create() { A a = new A(); a.f1 = 10; a.f2 = new B(); a.f3 = new C(); return a;}\n"
                   + "}"));
-      unit2 =
+      CompileUnit unit2 =
           new CompileUnit(
               "example.report",
               "B",
               ("" + "package example.report;\n" + "public class B {\n" + "}"));
-      unit3 =
+      CompileUnit unit3 =
           new CompileUnit(
               "example.test", "C", ("" + "package example.test;\n" + "public class C {\n" + "}"));
       classLoader =
@@ -761,7 +773,7 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
   }
 
   @Test
-  public void testInconsistentRegistration() throws Exception {
+  public void testInconsistentRegistrationID() throws Exception {
     ClassLoader classLoader =
         JaninoUtils.compile(Thread.currentThread().getContextClassLoader(), unit1, unit2, unit3);
     byte[] serialized;
@@ -777,6 +789,70 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
       fury.register(A, 300);
       fury.register(B, 301);
       fury.register(C, 302);
+      Object a = A.getMethod("create").invoke(null);
+      System.out.println(a);
+      serialized = fury.serialize(a);
+    }
+    {
+      CompileUnit unit1 =
+          new CompileUnit(
+              "example.pkg1",
+              "A",
+              (""
+                  + "package example.pkg1;\n"
+                  + "import example.test.*;\n"
+                  + "import example.report.*;\n"
+                  + "public class A {\n"
+                  + "  public int f1;\n"
+                  + "  public C f3;\n"
+                  + "  public String toString() {return \"A\" + \",\" + f1 + \",\" + f3;}\n"
+                  + "  public static A create() { A a = new A(); a.f1 = 10; a.f3 = new C(); return a;}\n"
+                  + "}"));
+      CompileUnit unit3 =
+          new CompileUnit(
+              "example.test",
+              "C",
+              (""
+                  + "package example.test;\n"
+                  + "public class C {\n"
+                  + "  public int f2;\n"
+                  + "  public String toString() {return \"C{f2=\" + f2 + \"}\";}\n"
+                  + "}"));
+      classLoader =
+          JaninoUtils.compile(Thread.currentThread().getContextClassLoader(), unit1, unit3);
+      Class<?> A = classLoader.loadClass("example.pkg1.A");
+      Class<?> C = classLoader.loadClass("example.test.C");
+      Fury fury =
+          builder()
+              .withCompatibleMode(CompatibleMode.COMPATIBLE)
+              .withClassLoader(classLoader)
+              .build();
+      fury.register(A, 300);
+      fury.register(C, 302);
+      Object newObj = fury.deserialize(serialized);
+      System.out.println(newObj);
+      Object f3 = getObjectFieldValue(newObj, "f3");
+      Assert.assertEquals(f3.toString(), "C{f2=1000}");
+    }
+  }
+
+  @Test
+  public void testInconsistentRegistrationName() throws Exception {
+    ClassLoader classLoader =
+        JaninoUtils.compile(Thread.currentThread().getContextClassLoader(), unit1, unit2, unit3);
+    byte[] serialized;
+    {
+      Class<?> A = classLoader.loadClass("demo.pkg1.A");
+      Class<?> B = classLoader.loadClass("demo.test.B");
+      Class<?> C = classLoader.loadClass("demo.report.C");
+      Fury fury =
+          builder()
+              .withCompatibleMode(CompatibleMode.COMPATIBLE)
+              .withClassLoader(classLoader)
+              .build();
+      fury.register(A, "test.A");
+      fury.register(B, "test.B");
+      fury.register(C, "test.C");
       Object a = A.getMethod("create").invoke(null);
       System.out.println(a);
       serialized = fury.serialize(a);
@@ -813,8 +889,8 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
               .withCompatibleMode(CompatibleMode.COMPATIBLE)
               .withClassLoader(classLoader)
               .build();
-      fury.register(A, 300);
-      fury.register(C, 302);
+      fury.register(A, "test.A");
+      fury.register(C, "test.C");
       Object newObj = fury.deserialize(serialized);
       System.out.println(newObj);
     }
