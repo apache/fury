@@ -94,6 +94,11 @@ class ClassDefDecoder {
         String typeName = readTypeName(classDefBuf);
         classSpec = Encoders.decodePkgAndClass(pkg, typeName);
         className = classSpec.entireClassName;
+        if (classResolver.isRegisteredByName(className)) {
+          Class<?> cls = classResolver.getRegisteredClass(className);
+          className = cls.getName();
+          classSpec = new ClassSpec(cls);
+        }
       }
       List<ClassDef.FieldInfo> fieldInfos = readFieldsInfo(classDefBuf, className, numFields);
       classFields.addAll(fieldInfos);

@@ -148,9 +148,18 @@ class ClassDefEncoder {
       } else {
         classDefBuf.writeVarUint32Small7(currentClassHeader);
         Class<?> currentType = getType(type, className);
-        Tuple2<String, String> encoded = Encoders.encodePkgAndClass(currentType);
-        writePkgName(classDefBuf, encoded.f0);
-        writeTypeName(classDefBuf, encoded.f1);
+        String ns, typename;
+        if (classResolver.isRegisteredByName(type)) {
+          Tuple2<String, String> nameTuple = classResolver.getRegisteredNameTuple(type);
+          ns = nameTuple.f0;
+          typename = nameTuple.f1;
+        } else {
+          Tuple2<String, String> encoded = Encoders.encodePkgAndClass(currentType);
+          ns = encoded.f0;
+          typename = encoded.f1;
+        }
+        writePkgName(classDefBuf, ns);
+        writeTypeName(classDefBuf, typename);
       }
       writeFieldsInfo(classDefBuf, fields);
     }

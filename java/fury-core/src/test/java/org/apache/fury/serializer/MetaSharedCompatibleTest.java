@@ -677,7 +677,7 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
     serDeMetaSharedCheck(fury, o);
   }
 
-  CompileUnit unit1 =
+  CompileUnit aunit =
       new CompileUnit(
           "demo.pkg1",
           "A",
@@ -693,13 +693,13 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
               + "  public static A create() { A a = new A(); a.f1 = 10; a.f2 = new B(); a.f3 = new C(); return a;}\n"
               + "}"));
 
-  CompileUnit unit2 =
+  CompileUnit bunit =
       new CompileUnit(
           "demo.test",
           "B",
           ("" + "package demo.test;\n" + "public class B {\n" + "  public int f1 = 100;\n" + "}"));
 
-  CompileUnit unit3 =
+  CompileUnit cunit =
       new CompileUnit(
           "demo.report",
           "C",
@@ -707,12 +707,39 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
               + "package demo.report;\n"
               + "public class C {\n"
               + "  public int f2 = 1000;\n"
+              + "  public String toString() {return \"C{f2=\" + f2 + \"}\";}\n"
+              + "}"));
+
+  CompileUnit newAUnit =
+      new CompileUnit(
+          "example.pkg1",
+          "A",
+          (""
+              + "package example.pkg1;\n"
+              + "import example.test.*;\n"
+              + "import example.report.*;\n"
+              + "public class A {\n"
+              + "  public int f1;\n"
+              + "  public C f3;\n"
+              + "  public String toString() {return \"A\" + \",\" + f1 + \",\" + f3;}\n"
+              + "  public static A create() { A a = new A(); a.f1 = 10; a.f3 = new C(); return a;}\n"
+              + "}"));
+
+  CompileUnit newCUnit =
+      new CompileUnit(
+          "example.test",
+          "C",
+          (""
+              + "package example.test;\n"
+              + "public class C {\n"
+              + "  public int f2;\n"
+              + "  public String toString() {return \"C{f2=\" + f2 + \"}\";}\n"
               + "}"));
 
   @Test
   public void testRegisterToSameIdForRenamedClass() throws Exception {
     ClassLoader classLoader =
-        JaninoUtils.compile(Thread.currentThread().getContextClassLoader(), unit1, unit2, unit3);
+        JaninoUtils.compile(Thread.currentThread().getContextClassLoader(), aunit, bunit, cunit);
     byte[] serialized;
     {
       Class<?> A = classLoader.loadClass("demo.pkg1.A");
@@ -775,7 +802,7 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
   @Test
   public void testInconsistentRegistrationID() throws Exception {
     ClassLoader classLoader =
-        JaninoUtils.compile(Thread.currentThread().getContextClassLoader(), unit1, unit2, unit3);
+        JaninoUtils.compile(Thread.currentThread().getContextClassLoader(), aunit, bunit, cunit);
     byte[] serialized;
     {
       Class<?> A = classLoader.loadClass("demo.pkg1.A");
@@ -794,32 +821,8 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
       serialized = fury.serialize(a);
     }
     {
-      CompileUnit unit1 =
-          new CompileUnit(
-              "example.pkg1",
-              "A",
-              (""
-                  + "package example.pkg1;\n"
-                  + "import example.test.*;\n"
-                  + "import example.report.*;\n"
-                  + "public class A {\n"
-                  + "  public int f1;\n"
-                  + "  public C f3;\n"
-                  + "  public String toString() {return \"A\" + \",\" + f1 + \",\" + f3;}\n"
-                  + "  public static A create() { A a = new A(); a.f1 = 10; a.f3 = new C(); return a;}\n"
-                  + "}"));
-      CompileUnit unit3 =
-          new CompileUnit(
-              "example.test",
-              "C",
-              (""
-                  + "package example.test;\n"
-                  + "public class C {\n"
-                  + "  public int f2;\n"
-                  + "  public String toString() {return \"C{f2=\" + f2 + \"}\";}\n"
-                  + "}"));
       classLoader =
-          JaninoUtils.compile(Thread.currentThread().getContextClassLoader(), unit1, unit3);
+          JaninoUtils.compile(Thread.currentThread().getContextClassLoader(), newAUnit, newCUnit);
       Class<?> A = classLoader.loadClass("example.pkg1.A");
       Class<?> C = classLoader.loadClass("example.test.C");
       Fury fury =
@@ -832,6 +835,7 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
       Object newObj = fury.deserialize(serialized);
       System.out.println(newObj);
       Object f3 = getObjectFieldValue(newObj, "f3");
+      Assert.assertNotNull(f3);
       Assert.assertEquals(f3.toString(), "C{f2=1000}");
     }
   }
@@ -839,7 +843,7 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
   @Test
   public void testInconsistentRegistrationName() throws Exception {
     ClassLoader classLoader =
-        JaninoUtils.compile(Thread.currentThread().getContextClassLoader(), unit1, unit2, unit3);
+        JaninoUtils.compile(Thread.currentThread().getContextClassLoader(), aunit, bunit, cunit);
     byte[] serialized;
     {
       Class<?> A = classLoader.loadClass("demo.pkg1.A");
@@ -858,30 +862,8 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
       serialized = fury.serialize(a);
     }
     {
-      unit1 =
-          new CompileUnit(
-              "example.pkg1",
-              "A",
-              (""
-                  + "package example.pkg1;\n"
-                  + "import example.test.*;\n"
-                  + "import example.report.*;\n"
-                  + "public class A {\n"
-                  + "  public int f1;\n"
-                  + "  public C f3;\n"
-                  + "  public String toString() {return \"A\" + \",\" + f1 + \",\" + f3;}\n"
-                  + "  public static A create() { A a = new A(); a.f1 = 10; a.f3 = new C(); return a;}\n"
-                  + "}"));
-      unit2 =
-          new CompileUnit(
-              "example.report",
-              "B",
-              ("" + "package example.report;\n" + "public class B {\n" + "}"));
-      unit3 =
-          new CompileUnit(
-              "example.test", "C", ("" + "package example.test;\n" + "public class C {\n" + "}"));
       classLoader =
-          JaninoUtils.compile(Thread.currentThread().getContextClassLoader(), unit1, unit3);
+          JaninoUtils.compile(Thread.currentThread().getContextClassLoader(), newAUnit, newCUnit);
       Class<?> A = classLoader.loadClass("example.pkg1.A");
       Class<?> C = classLoader.loadClass("example.test.C");
       Fury fury =
@@ -893,6 +875,9 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
       fury.register(C, "test.C");
       Object newObj = fury.deserialize(serialized);
       System.out.println(newObj);
+      Object f3 = getObjectFieldValue(newObj, "f3");
+      Assert.assertNotNull(f3);
+      Assert.assertEquals(f3.toString(), "C{f2=1000}");
     }
   }
 }
