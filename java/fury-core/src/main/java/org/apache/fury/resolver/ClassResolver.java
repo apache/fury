@@ -1023,6 +1023,9 @@ public class ClassResolver {
   }
 
   public boolean isMap(Class<?> cls) {
+    if (cls == NonexistentMetaShared.class) {
+      return false;
+    }
     return Map.class.isAssignableFrom(cls)
         || (fury.getConfig().isScalaOptimizationEnabled()
             && ScalaTypes.getScalaMapType().isAssignableFrom(cls));

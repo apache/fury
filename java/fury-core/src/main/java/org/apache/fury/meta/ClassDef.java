@@ -238,8 +238,9 @@ public class ClassDef implements Serializable {
             descriptorsMap.get(fieldInfo.getDefinedClass() + "." + fieldInfo.getFieldName());
         Descriptor newDesc = fieldInfo.toDescriptor(resolver);
         Class<?> rawType = newDesc.getRawType();
-        if (resolver.isRegistered(rawType)) {
-          String typeAlias = resolver.getTypeAlias(rawType);
+        FieldType fieldType = fieldInfo.getFieldType();
+        if (fieldType instanceof RegisteredFieldType) {
+          String typeAlias = String.valueOf(((RegisteredFieldType) fieldType).getClassId());
           if (!typeAlias.equals(newDesc.getTypeName())) {
             newDesc = newDesc.copyWithTypeName(typeAlias);
           }
@@ -470,7 +471,12 @@ public class ClassDef implements Serializable {
 
     @Override
     public TypeRef<?> toTypeToken(ClassResolver classResolver) {
-      return TypeRef.of(classResolver.getRegisteredClass(classId), new TypeExtMeta(trackingRef));
+      Class<?> cls = classResolver.getRegisteredClass(classId);
+      if (cls == null) {
+        LOG.warn("Class {} not registered, take it as Struct type for deserialization.", classId);
+        cls = NonexistentClass.NonexistentMetaShared.class;
+      }
+      return TypeRef.of(cls, new TypeExtMeta(trackingRef));
     }
 
     @Override
