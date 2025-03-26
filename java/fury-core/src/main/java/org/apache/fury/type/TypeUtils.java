@@ -50,6 +50,7 @@ import org.apache.fury.collection.Tuple2;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeParameter;
 import org.apache.fury.reflect.TypeRef;
+import org.apache.fury.serializer.NonexistentClass;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.StringUtils;
 
@@ -512,12 +513,22 @@ public class TypeUtils {
     return new TypeRef<Collection<E>>() {}.where(new TypeParameter<E>() {}, elemType);
   }
 
+  public static <E> TypeRef<Collection<E>> collectionOf(TypeRef<E> elemType, Object extMeta) {
+    return new TypeRef<Collection<E>>(extMeta) {}.where(new TypeParameter<E>() {}, elemType);
+  }
+
   public static <K, V> TypeRef<Map<K, V>> mapOf(Class<K> keyType, Class<V> valueType) {
     return mapOf(TypeRef.of(keyType), TypeRef.of(valueType));
   }
 
   public static <K, V> TypeRef<Map<K, V>> mapOf(TypeRef<K> keyType, TypeRef<V> valueType) {
     return new TypeRef<Map<K, V>>() {}.where(new TypeParameter<K>() {}, keyType)
+        .where(new TypeParameter<V>() {}, valueType);
+  }
+
+  public static <K, V> TypeRef<Map<K, V>> mapOf(
+      TypeRef<K> keyType, TypeRef<V> valueType, Object extMeta) {
+    return new TypeRef<Map<K, V>>(extMeta) {}.where(new TypeParameter<K>() {}, keyType)
         .where(new TypeParameter<V>() {}, valueType);
   }
 
@@ -543,6 +554,9 @@ public class TypeUtils {
   }
 
   public static boolean isMap(Class<?> cls) {
+    if (cls == NonexistentClass.NonexistentMetaShared.class) {
+      return false;
+    }
     return cls == HashMap.class || Map.class.isAssignableFrom(cls);
   }
 
@@ -676,21 +690,37 @@ public class TypeUtils {
       typeRefs.addAll(getAllTypeArguments(typeRef));
     }
 
-    typeRefs.stream()
-        .filter(typeToken -> isBean(getRawType(typeToken)))
-        .forEach(
-            typeToken -> {
-              Class<?> cls = getRawType(typeToken);
-              beans.add(cls);
-              if (walkedTypePath.contains(typeToken)) {
-                throw new UnsupportedOperationException(
-                    "cyclic type is not supported. walkedTypePath: " + walkedTypePath);
-              } else {
-                LinkedHashSet<TypeRef<?>> newPath = new LinkedHashSet<>(walkedTypePath);
-                newPath.add(typeToken);
-                beans.addAll(listBeansRecursiveInclusive(cls, newPath));
-              }
-            });
+    for (TypeRef<?> typeToken : typeRefs) {
+      Class<?> type = getRawType(typeToken);
+      if (isBean(type)) {
+        beans.add(type);
+        if (walkedTypePath.contains(typeToken)) {
+          throw new UnsupportedOperationException(
+              "cyclic type is not supported. walkedTypePath: " + walkedTypePath);
+        } else {
+          LinkedHashSet<TypeRef<?>> newPath = new LinkedHashSet<>(walkedTypePath);
+          newPath.add(typeToken);
+          beans.addAll(listBeansRecursiveInclusive(type, newPath));
+        }
+      } else if (isCollection(type)) {
+        TypeRef<?> elementType = getElementType(typeToken);
+        LinkedHashSet<TypeRef<?>> newPath = new LinkedHashSet<>(walkedTypePath);
+        newPath.add(elementType);
+        beans.addAll(listBeansRecursiveInclusive(elementType.getClass(), newPath));
+      } else if (isMap(type)) {
+        Tuple2<TypeRef<?>, TypeRef<?>> mapKeyValueType = getMapKeyValueType(typeToken);
+        LinkedHashSet<TypeRef<?>> newPath = new LinkedHashSet<>(walkedTypePath);
+        newPath.add(mapKeyValueType.f0);
+        newPath.add(mapKeyValueType.f1);
+        beans.addAll(listBeansRecursiveInclusive(mapKeyValueType.f0.getRawType(), newPath));
+        beans.addAll(listBeansRecursiveInclusive(mapKeyValueType.f1.getRawType(), newPath));
+      } else if (type.isArray()) {
+        Class<?> arrayComponent = getArrayComponent(type);
+        LinkedHashSet<TypeRef<?>> newPath = new LinkedHashSet<>(walkedTypePath);
+        newPath.add(TypeRef.of(arrayComponent));
+        beans.addAll(listBeansRecursiveInclusive(arrayComponent, newPath));
+      }
+    }
     return beans;
   }
 

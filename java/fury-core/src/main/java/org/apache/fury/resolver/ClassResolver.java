@@ -109,6 +109,7 @@ import org.apache.fury.meta.ClassDef;
 import org.apache.fury.meta.ClassSpec;
 import org.apache.fury.meta.Encoders;
 import org.apache.fury.meta.MetaString;
+import org.apache.fury.meta.TypeExtMeta;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.serializer.ArraySerializers;
@@ -123,6 +124,7 @@ import org.apache.fury.serializer.JdkProxySerializer;
 import org.apache.fury.serializer.LambdaSerializer;
 import org.apache.fury.serializer.LocaleSerializer;
 import org.apache.fury.serializer.MetaSharedSerializer;
+import org.apache.fury.serializer.NoneSerializer;
 import org.apache.fury.serializer.NonexistentClass;
 import org.apache.fury.serializer.NonexistentClass.NonexistentMetaShared;
 import org.apache.fury.serializer.NonexistentClass.NonexistentSkip;
@@ -322,6 +324,7 @@ public class ClassResolver {
 
   private void addDefaultSerializers() {
     // primitive types will be boxed.
+    addDefaultSerializer(void.class, NoneSerializer.class);
     addDefaultSerializer(String.class, new StringSerializer(fury));
     PrimitiveSerializers.registerDefaultSerializers(fury);
     Serializers.registerDefaultSerializers(fury);
@@ -533,6 +536,33 @@ public class ClassResolver {
     }
   }
 
+  public boolean isRegistered(Class<?> cls) {
+    return extRegistry.registeredClassIdMap.containsKey(cls)
+        || extRegistry.registeredClasses.inverse().containsKey(cls);
+  }
+
+  public boolean isRegisteredByName(String name) {
+    return extRegistry.registeredClasses.containsKey(name);
+  }
+
+  public boolean isRegisteredByName(Class<?> cls) {
+    return extRegistry.registeredClasses.inverse().containsKey(cls);
+  }
+
+  public String getRegisteredName(Class<?> cls) {
+    return extRegistry.registeredClasses.inverse().get(cls);
+  }
+
+  public Tuple2<String, String> getRegisteredNameTuple(Class<?> cls) {
+    String name = extRegistry.registeredClasses.inverse().get(cls);
+    int index = name.lastIndexOf(".");
+    if (index != -1) {
+      return Tuple2.of(name.substring(0, index), name.substring(index + 1));
+    } else {
+      return Tuple2.of("", name);
+    }
+  }
+
   public boolean isRegisteredById(Class<?> cls) {
     return extRegistry.registeredClassIdMap.get(cls) != null;
   }
@@ -551,11 +581,27 @@ public class ClassResolver {
     return null;
   }
 
+  public Class<?> getRegisteredClass(String className) {
+    return extRegistry.registeredClasses.get(className);
+  }
+
   public List<Class<?>> getRegisteredClasses() {
     return Arrays.stream(registeredId2ClassInfo)
         .filter(Objects::nonNull)
         .map(info -> info.cls)
         .collect(Collectors.toList());
+  }
+
+  public String getTypeAlias(Class<?> cls) {
+    Short id = extRegistry.registeredClassIdMap.get(cls);
+    if (id != null) {
+      return String.valueOf(id);
+    }
+    String name = extRegistry.registeredClasses.inverse().get(cls);
+    if (name != null) {
+      return name;
+    }
+    return cls.getName();
   }
 
   /**
@@ -1003,6 +1049,9 @@ public class ClassResolver {
   }
 
   public boolean isMap(Class<?> cls) {
+    if (cls == NonexistentMetaShared.class) {
+      return false;
+    }
     return Map.class.isAssignableFrom(cls)
         || (fury.getConfig().isScalaOptimizationEnabled()
             && ScalaTypes.getScalaMapType().isAssignableFrom(cls));
@@ -1118,7 +1167,13 @@ public class ClassResolver {
    * Whether to track reference for this type. If false, reference tracing of subclasses may be
    * ignored too.
    */
-  public boolean needToWriteRef(Class<?> cls) {
+  public boolean needToWriteRef(TypeRef<?> typeRef) {
+    Object extInfo = typeRef.getExtInfo();
+    if (extInfo instanceof TypeExtMeta) {
+      TypeExtMeta meta = (TypeExtMeta) extInfo;
+      return meta.trackingRef();
+    }
+    Class<?> cls = typeRef.getRawType();
     if (fury.trackingRef()) {
       ClassInfo classInfo = getClassInfo(cls, false);
       if (classInfo == null || classInfo.serializer == null) {
@@ -1867,6 +1922,10 @@ public class ClassResolver {
   private Class<?> loadClass(
       String className, boolean isEnum, int arrayDims, boolean deserializeNonexistentClass) {
     extRegistry.classChecker.checkClass(this, className);
+    Class<?> cls = extRegistry.registeredClasses.get(className);
+    if (cls != null) {
+      return cls;
+    }
     try {
       return Class.forName(className, false, fury.getClassLoader());
     } catch (ClassNotFoundException e) {
@@ -1898,7 +1957,7 @@ public class ClassResolver {
 
   public GenericType buildGenericType(TypeRef<?> typeRef) {
     return GenericType.build(
-        typeRef.getType(),
+        typeRef,
         t -> {
           if (t.getClass() == Class.class) {
             return isMonomorphic((Class<?>) t);

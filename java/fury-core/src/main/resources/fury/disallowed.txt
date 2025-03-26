@@ -15,6 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
+# Note: update `DisallowedList#SHA256_HASH` when added new classes.
 bsh.Interpreter
 bsh.XThis
 ch.qos.logback.core.db.DriverManagerConnectionSource
@@ -262,6 +263,7 @@ org.thymeleaf.standard.expression.Expression
 org.thymeleaf.standard.expression.StandardExpressionParser
 org.yaml.snakeyaml.tokens.DirectiveToken
 pstore.shaded.org.apache.commons.collections.functors.InvokerTransformer
+sun.print.PrintServiceLookupProvider
 sun.print.UnixPrintService
 sun.print.UnixPrintServiceLookup
 sun.rmi.server.UnicastRef

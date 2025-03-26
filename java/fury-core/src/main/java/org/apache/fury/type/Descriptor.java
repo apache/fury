@@ -206,7 +206,7 @@ public class Descriptor {
     sb.append(", name=").append(name);
     sb.append(", modifier=").append(modifier);
     if (field != null) {
-      sb.append(", field=").append(field.getDeclaringClass().getSimpleName()).append('.');
+      sb.append(", declaringClass=").append(field.getDeclaringClass().getSimpleName());
     }
     if (readMethod != null) {
       sb.append(", readMethod=").append(readMethod);

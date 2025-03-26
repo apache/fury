@@ -199,7 +199,6 @@ public final class Fury implements BaseFury {
 
   /** register class with given type tag which will be used for cross-language serialization. */
   public void register(Class<?> cls, String typeName) {
-    Preconditions.checkArgument(language != Language.JAVA);
     int idx = typeName.lastIndexOf('.');
     String namespace = "";
     if (idx > 0) {
@@ -472,6 +471,15 @@ public final class Fury implements BaseFury {
     } else {
       buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
       writeNonRef(buffer, obj);
+    }
+  }
+
+  public void writeNullable(MemoryBuffer buffer, Object obj, Serializer serializer) {
+    if (obj == null) {
+      buffer.writeByte(Fury.NULL_FLAG);
+    } else {
+      buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
+      serializer.write(buffer, obj);
     }
   }
 
@@ -945,6 +953,15 @@ public final class Fury implements BaseFury {
       return null;
     } else {
       return readNonRef(buffer);
+    }
+  }
+
+  public Object readNullable(MemoryBuffer buffer, Serializer serializer) {
+    byte headFlag = buffer.readByte();
+    if (headFlag == Fury.NULL_FLAG) {
+      return null;
+    } else {
+      return serializer.read(buffer);
     }
   }
 

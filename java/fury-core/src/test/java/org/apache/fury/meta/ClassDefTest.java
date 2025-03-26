@@ -20,6 +20,7 @@
 package org.apache.fury.meta;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
 import com.google.common.collect.ImmutableList;
@@ -34,6 +35,9 @@ import org.apache.fury.Fury;
 import org.apache.fury.FuryTestBase;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.reflect.ReflectionUtils;
+import org.apache.fury.reflect.TypeRef;
+import org.apache.fury.resolver.ClassResolver;
+import org.apache.fury.test.bean.Foo;
 import org.testng.annotations.Test;
 
 public class ClassDefTest extends FuryTestBase {
@@ -175,5 +179,13 @@ public class ClassDefTest extends FuryTestBase {
     ClassDef classDef = ClassDef.buildClassDef(fury, Map.class);
     assertTrue(classDef.getFieldsInfo().isEmpty());
     assertTrue(classDef.isObjectType());
+  }
+
+  @Test
+  public void testTypeExtInfo() {
+    Fury fury = Fury.builder().withMetaShare(true).build();
+    ClassResolver classResolver = fury.getClassResolver();
+    assertTrue(classResolver.needToWriteRef(TypeRef.of(Foo.class, new TypeExtMeta(true))));
+    assertFalse(classResolver.needToWriteRef(TypeRef.of(Foo.class, new TypeExtMeta(false))));
   }
 }
