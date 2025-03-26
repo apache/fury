@@ -52,6 +52,7 @@ import org.apache.fury.resolver.MetaStringResolver;
 import org.apache.fury.resolver.NoRefResolver;
 import org.apache.fury.resolver.RefResolver;
 import org.apache.fury.resolver.SerializationContext;
+import org.apache.fury.resolver.TypeResolver;
 import org.apache.fury.resolver.XtypeResolver;
 import org.apache.fury.serializer.ArraySerializers;
 import org.apache.fury.serializer.BufferCallback;
@@ -113,6 +114,7 @@ public final class Fury implements BaseFury {
   private final ArrayListSerializer arrayListSerializer;
   private final HashMapSerializer hashMapSerializer;
   private final Language language;
+  private final boolean crossLanguage;
   private final boolean compressInt;
   private final LongEncoding longEncoding;
   private final Generics generics;
@@ -131,6 +133,7 @@ public final class Fury implements BaseFury {
     // `org.apache.fury.ThreadSafeFury.clearClassLoader` is called.
     config = new Config(builder);
     this.language = config.getLanguage();
+    crossLanguage = language != Language.JAVA;
     this.refTracking = config.trackingRef();
     this.copyRefTracking = config.copyRef();
     this.shareMeta = config.isMetaShareEnabled();
@@ -145,11 +148,14 @@ public final class Fury implements BaseFury {
     generics = new Generics(this);
     metaStringResolver = new MetaStringResolver();
     classResolver = new ClassResolver(this);
-    classResolver.initialize();
     if (language != Language.JAVA) {
       xtypeResolver = new XtypeResolver(this);
     } else {
       xtypeResolver = null;
+    }
+    classResolver.initialize();
+    if (xtypeResolver != null) {
+      xtypeResolver.initialize();
     }
     serializationContext = new SerializationContext(config);
     this.classLoader = classLoader;
@@ -396,7 +402,7 @@ public final class Fury implements BaseFury {
     // reduce caller stack
     if (!refResolver.writeRefOrNull(buffer, obj)) {
       ClassInfo classInfo = classResolver.getOrUpdateClassInfo(obj.getClass());
-      classResolver.writeClass(buffer, classInfo);
+      classResolver.writeClassInfo(buffer, classInfo);
       writeData(buffer, classInfo, obj);
     }
     MetaContext metaContext = serializationContext.getMetaContext();
@@ -410,7 +416,7 @@ public final class Fury implements BaseFury {
   public void writeRef(MemoryBuffer buffer, Object obj) {
     if (!refResolver.writeRefOrNull(buffer, obj)) {
       ClassInfo classInfo = classResolver.getOrUpdateClassInfo(obj.getClass());
-      classResolver.writeClass(buffer, classInfo);
+      classResolver.writeClassInfo(buffer, classInfo);
       writeData(buffer, classInfo, obj);
     }
   }
@@ -418,7 +424,7 @@ public final class Fury implements BaseFury {
   public void writeRef(MemoryBuffer buffer, Object obj, ClassInfoHolder classInfoHolder) {
     if (!refResolver.writeRefOrNull(buffer, obj)) {
       ClassInfo classInfo = classResolver.getClassInfo(obj.getClass(), classInfoHolder);
-      classResolver.writeClass(buffer, classInfo);
+      classResolver.writeClassInfo(buffer, classInfo);
       writeData(buffer, classInfo, obj);
     }
   }
@@ -427,7 +433,7 @@ public final class Fury implements BaseFury {
     Serializer<Object> serializer = classInfo.getSerializer();
     if (serializer.needToWriteRef()) {
       if (!refResolver.writeRefOrNull(buffer, obj)) {
-        classResolver.writeClass(buffer, classInfo);
+        classResolver.writeClassInfo(buffer, classInfo);
         depth++;
         serializer.write(buffer, obj);
         depth--;
@@ -437,7 +443,7 @@ public final class Fury implements BaseFury {
         buffer.writeByte(Fury.NULL_FLAG);
       } else {
         buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
-        classResolver.writeClass(buffer, classInfo);
+        classResolver.writeClassInfo(buffer, classInfo);
         depth++;
         serializer.write(buffer, obj);
         depth--;
@@ -510,12 +516,12 @@ public final class Fury implements BaseFury {
    */
   public void writeNonRef(MemoryBuffer buffer, Object obj) {
     ClassInfo classInfo = classResolver.getOrUpdateClassInfo(obj.getClass());
-    classResolver.writeClass(buffer, classInfo);
+    classResolver.writeClassInfo(buffer, classInfo);
     writeData(buffer, classInfo, obj);
   }
 
   public void writeNonRef(MemoryBuffer buffer, Object obj, ClassInfo classInfo) {
-    classResolver.writeClass(buffer, classInfo);
+    classResolver.writeClassInfo(buffer, classInfo);
     Serializer serializer = classInfo.getSerializer();
     depth++;
     serializer.write(buffer, obj);
@@ -1119,7 +1125,7 @@ public final class Fury implements BaseFury {
         buffer.writeInt32(-1); // preserve 4-byte for meta start offsets.
         if (!refResolver.writeRefOrNull(buffer, obj)) {
           ClassInfo classInfo = classResolver.getOrUpdateClassInfo(obj.getClass());
-          classResolver.writeClass(buffer, classInfo);
+          classResolver.writeClassInfo(buffer, classInfo);
           writeData(buffer, classInfo, obj);
           MetaContext metaContext = serializationContext.getMetaContext();
           if (metaContext != null && !metaContext.writingClassDefs.isEmpty()) {
@@ -1589,6 +1595,9 @@ public final class Fury implements BaseFury {
     return xtypeResolver;
   }
 
+  // don't provide getTypeResolver directly to avoid users use this
+  // API too much since it has polymorphic invoke cost.
+
   public MetaStringResolver getMetaStringResolver() {
     return metaStringResolver;
   }
@@ -1628,6 +1637,10 @@ public final class Fury implements BaseFury {
 
   public Language getLanguage() {
     return language;
+  }
+
+  public boolean isCrossLanguage() {
+    return crossLanguage;
   }
 
   public boolean trackingRef() {
