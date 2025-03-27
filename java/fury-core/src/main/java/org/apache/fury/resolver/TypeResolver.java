@@ -1,12 +1,11 @@
 package org.apache.fury.resolver;
 
+import java.lang.reflect.Type;
 import org.apache.fury.annotation.Internal;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.type.GenericType;
-
-import java.lang.reflect.Type;
 
 // Internal type dispatcher.
 // Do not use this interface outside of fury package

@@ -68,7 +68,6 @@ interface SerializationBinding {
     }
   }
 
-
   final class XlangSerializationBinding implements SerializationBinding {
 
     private final Fury fury;
@@ -108,4 +107,3 @@ interface SerializationBinding {
     }
   }
 }
-

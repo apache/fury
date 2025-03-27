@@ -52,7 +52,6 @@ import org.apache.fury.resolver.MetaStringResolver;
 import org.apache.fury.resolver.NoRefResolver;
 import org.apache.fury.resolver.RefResolver;
 import org.apache.fury.resolver.SerializationContext;
-import org.apache.fury.resolver.TypeResolver;
 import org.apache.fury.resolver.XtypeResolver;
 import org.apache.fury.serializer.ArraySerializers;
 import org.apache.fury.serializer.BufferCallback;
