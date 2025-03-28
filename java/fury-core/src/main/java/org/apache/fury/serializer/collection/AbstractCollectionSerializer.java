@@ -204,7 +204,7 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
         // Update classinfo, the caller will use it.
         ClassResolver classResolver = fury.getClassResolver();
         ClassInfo classInfo = classResolver.getClassInfo(elemClass, cache);
-        classResolver.writeClass(buffer, classInfo);
+        classResolver.writeClassInfo(buffer, classInfo);
       }
     }
     return bitmap;
@@ -246,7 +246,7 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
         bitmap |= CollectionFlags.TRACKING_REF;
       }
       buffer.writeByte(bitmap);
-      classResolver.writeClass(buffer, classInfo);
+      classResolver.writeClassInfo(buffer, classInfo);
     }
     return bitmap;
   }
@@ -294,7 +294,7 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
         buffer.writeByte(bitmap);
         ClassResolver classResolver = fury.getClassResolver();
         ClassInfo classInfo = classResolver.getClassInfo(elemClass, cache);
-        classResolver.writeClass(buffer, classInfo);
+        classResolver.writeClassInfo(buffer, classInfo);
       }
     }
     return bitmap;

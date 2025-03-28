@@ -260,7 +260,7 @@ public class GuavaCollectionSerializers {
     public T xread(MemoryBuffer buffer) {
       int size = buffer.readVarUint32Small7();
       Map map = new HashMap();
-      xreadElements(fury, buffer, map, size);
+      readElements(buffer, size, map);
       return xnewInstance(map);
     }
 

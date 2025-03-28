@@ -167,7 +167,7 @@ import org.apache.fury.util.function.Functions;
  * up relations between serializer and types.
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
-public class ClassResolver {
+public class ClassResolver implements TypeResolver {
   private static final Logger LOG = LoggerFactory.getLogger(ClassResolver.class);
 
   // bit 0 unset indicates class is written as an id.
@@ -277,6 +277,7 @@ public class ClassResolver {
     ClassResolver._addGraalvmClassRegistry(fury.getConfig().getConfigHash(), this);
   }
 
+  @Override
   public void initialize() {
     register(LambdaSerializer.ReplaceStub.class, LAMBDA_STUB_ID);
     register(JdkProxySerializer.ReplaceStub.class, JDK_PROXY_STUB_ID);
@@ -1379,7 +1380,7 @@ public class ClassResolver {
 
   /**
    * Write class info to <code>buffer</code>. TODO(chaokunyang): The method should try to write
-   * aligned data to reduce cpu instruction overhead. `writeClass` is the last step before
+   * aligned data to reduce cpu instruction overhead. `writeClassInfo` is the last step before
    * serializing object, if this writes are aligned, then later serialization will be more
    * efficient.
    */
@@ -1390,26 +1391,27 @@ public class ClassResolver {
     } else if (cls == Long.class) {
       buffer.writeVarUint32Small7(LONG_CLASS_ID << 1);
     } else {
-      writeClass(buffer, getOrUpdateClassInfo(cls));
+      writeClassInfo(buffer, getOrUpdateClassInfo(cls));
     }
   }
 
   // The jit-compiled native code fot this method will be too big for inline, so we generated
   // `getClassInfo`
   // in fury-jit, see `BaseSeqCodecBuilder#writeAndGetClassInfo`
-  // public ClassInfo writeClass(MemoryBuffer buffer, Class<?> cls, ClassInfoHolder classInfoHolder)
+  // public ClassInfo writeClassInfo(MemoryBuffer buffer, Class<?> cls, ClassInfoHolder
+  // classInfoHolder)
   // {
   //   ClassInfo classInfo = getClassInfo(cls, classInfoHolder);
-  //   writeClass(buffer, classInfo);
+  //   writeClassInfo(buffer, classInfo);
   //   return classInfo;
   // }
 
   /** Write classname for java serialization. */
-  public void writeClass(MemoryBuffer buffer, ClassInfo classInfo) {
+  public void writeClassInfo(MemoryBuffer buffer, ClassInfo classInfo) {
     if (metaContextShareEnabled) {
       // FIXME(chaokunyang) Register class but not register serializer can't be used with
       //  meta share mode, because no class def are sent to peer.
-      writeClassWithMetaShare(buffer, classInfo);
+      writeClassInfoWithMetaShare(buffer, classInfo);
     } else {
       if (classInfo.classId == NO_CLASS_ID) { // no class id provided.
         // use classname
@@ -1425,7 +1427,7 @@ public class ClassResolver {
     }
   }
 
-  public void writeClassWithMetaShare(MemoryBuffer buffer, ClassInfo classInfo) {
+  public void writeClassInfoWithMetaShare(MemoryBuffer buffer, ClassInfo classInfo) {
     if (classInfo.classId != NO_CLASS_ID && !classInfo.needToWriteClassDef) {
       buffer.writeVarUint32(classInfo.classId << 1);
       return;
@@ -1680,7 +1682,7 @@ public class ClassResolver {
   }
 
   /**
-   * Native code for ClassResolver.writeClass is too big to inline, so inline it manually.
+   * Native code for ClassResolver.writeClassInfo is too big to inline, so inline it manually.
    *
    * <p>See `already compiled into a big method` in <a
    * href="https://wiki.openjdk.org/display/HotSpot/Server+Compiler+Inlining+Messages">Server+Compiler+Inlining+Messages</a>
@@ -1688,7 +1690,7 @@ public class ClassResolver {
   // Note: Thread safe fot jit thread to call.
   public Expression writeClassExpr(
       Expression classResolverRef, Expression buffer, Expression classInfo) {
-    return new Invoke(classResolverRef, "writeClass", buffer, classInfo);
+    return new Invoke(classResolverRef, "writeClassInfo", buffer, classInfo);
   }
 
   // Note: Thread safe fot jit thread to call.
@@ -1710,7 +1712,7 @@ public class ClassResolver {
   /**
    * Write classname for java serialization. Note that the object of provided class can be
    * non-serializable, and class with writeReplace/readResolve defined won't be skipped. For
-   * serializable object, {@link #writeClass(MemoryBuffer, ClassInfo)} should be invoked.
+   * serializable object, {@link #writeClassInfo(MemoryBuffer, ClassInfo)} should be invoked.
    */
   public void writeClassInternal(MemoryBuffer buffer, Class<?> cls) {
     ClassInfo classInfo = classInfoMap.get(cls);

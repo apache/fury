@@ -27,6 +27,7 @@ import static org.apache.fury.meta.Encoders.TYPE_NAME_DECODER;
 import static org.apache.fury.resolver.ClassResolver.NO_CLASS_ID;
 import static org.apache.fury.type.TypeUtils.qualifiedName;
 
+import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Timestamp;
@@ -58,6 +59,7 @@ import org.apache.fury.memory.Platform;
 import org.apache.fury.meta.Encoders;
 import org.apache.fury.meta.MetaString;
 import org.apache.fury.reflect.ReflectionUtils;
+import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.serializer.EnumSerializer;
 import org.apache.fury.serializer.NonexistentClass;
 import org.apache.fury.serializer.NonexistentClassSerializers;
@@ -74,7 +76,7 @@ import org.apache.fury.util.Preconditions;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 // TODO(chaokunyang) Abstract type resolver for java/xlang type resolution.
-public class XtypeResolver {
+public class XtypeResolver implements TypeResolver {
   private static final Logger LOG = LoggerFactory.getLogger(XtypeResolver.class);
 
   private static final float loadFactor = 0.5f;
@@ -107,6 +109,10 @@ public class XtypeResolver {
     this.classResolver = fury.getClassResolver();
     this.generics = fury.getGenerics();
     this.metaStringResolver = fury.getMetaStringResolver();
+  }
+
+  @Override
+  public void initialize() {
     registerDefaultTypes();
   }
 
@@ -277,6 +283,21 @@ public class XtypeResolver {
     return classInfo;
   }
 
+  @Override
+  public boolean needToWriteRef(TypeRef<?> typeRef) {
+    return getClassInfo(typeRef.getRawType()).serializer.needToWriteRef();
+  }
+
+  @Override
+  public GenericType buildGenericType(TypeRef<?> typeRef) {
+    return classResolver.buildGenericType(typeRef);
+  }
+
+  @Override
+  public GenericType buildGenericType(Type type) {
+    return classResolver.buildGenericType(type);
+  }
+
   private ClassInfo buildClassInfo(Class<?> cls) {
     Serializer serializer;
     int xtypeId;
@@ -354,6 +375,12 @@ public class XtypeResolver {
 
   public ClassInfo writeClassInfo(MemoryBuffer buffer, Object obj) {
     ClassInfo classInfo = getClassInfo(obj.getClass(), classInfoCache);
+    writeClassInfo(buffer, classInfo);
+    return classInfo;
+  }
+
+  @Override
+  public void writeClassInfo(MemoryBuffer buffer, ClassInfo classInfo) {
     int xtypeId = classInfo.getXtypeId();
     byte internalTypeId = (byte) xtypeId;
     buffer.writeVarUint32Small7(xtypeId);
@@ -370,7 +397,26 @@ public class XtypeResolver {
       default:
         break;
     }
-    return classInfo;
+  }
+
+  @Override
+  public <T> Serializer<T> getSerializer(Class<T> cls) {
+    return (Serializer) getClassInfo(cls).serializer;
+  }
+
+  @Override
+  public ClassInfo nilClassInfo() {
+    return classResolver.nilClassInfo();
+  }
+
+  @Override
+  public ClassInfoHolder nilClassInfoHolder() {
+    return classResolver.nilClassInfoHolder();
+  }
+
+  @Override
+  public ClassInfo readClassInfo(MemoryBuffer buffer, ClassInfoHolder classInfoHolder) {
+    return readClassInfo(buffer);
   }
 
   public ClassInfo readClassInfo(MemoryBuffer buffer) {
