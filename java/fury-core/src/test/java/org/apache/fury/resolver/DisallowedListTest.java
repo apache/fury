@@ -19,7 +19,15 @@
 
 package org.apache.fury.resolver;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.rmi.server.UnicastRemoteObject;
+import java.security.MessageDigest;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 import org.apache.fury.Fury;
 import org.apache.fury.FuryTestBase;
 import org.apache.fury.config.Language;
@@ -29,6 +37,33 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class DisallowedListTest extends FuryTestBase {
+
+  @Test
+  public void testCalculateSHA256() throws Exception {
+    try (InputStream is =
+        DisallowedList.class.getClassLoader().getResourceAsStream("fury/disallowed.txt")) {
+      assert is != null;
+      Set<String> set =
+          new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))
+              .lines()
+              .filter(line -> !line.isEmpty() && !line.startsWith("#"))
+              .collect(Collectors.toSet());
+      MessageDigest digest = MessageDigest.getInstance("SHA-256");
+      byte[] hashBytes =
+          digest.digest(String.join(",", new TreeSet<>(set)).getBytes(StandardCharsets.UTF_8));
+      StringBuilder hexString = new StringBuilder();
+      for (byte b : hashBytes) {
+        String hex = Integer.toHexString(0xff & b);
+        if (hex.length() == 1) {
+          hexString.append('0');
+        }
+        hexString.append(hex);
+      }
+      System.out.println("SHA256 HASH for disallowed.txt is " + hexString);
+      Assert.assertEquals(
+          hexString.toString(), "53ecb405085d795d45ce033cd4f1055ae06247a5dbaa617ecd20e4aac4303f60");
+    }
+  }
 
   @Test
   public void testCheckHitDisallowedList() {

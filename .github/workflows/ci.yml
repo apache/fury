@@ -94,6 +94,26 @@ jobs:
         run: ./ci/run_ci.sh install_pyfury
       - name: Run CI with Maven
         run: ./ci/run_ci.sh java${{ matrix.java-version }}
+
+  java21_windows:
+    name: Windows Java 21 CI
+    runs-on: windows-2022
+    env:
+      MY_VAR: "PATH"
+    strategy:
+      matrix:
+        java-version: ["21"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK ${{ matrix.java-version }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ matrix.java-version }}
+          distribution: "temurin"
+      - name: Run CI with Maven
+        shell: bash
+        run: ./ci/run_ci.sh windows_java21
+
   graalvm:
     name: GraalVM CI
     runs-on: ubuntu-latest
@@ -113,6 +133,7 @@ jobs:
         with:
           python-version: 3.8
       - name: Build native image and run
+        shell: bash
         run: ./ci/run_ci.sh graalvm_test
 
   scala:
