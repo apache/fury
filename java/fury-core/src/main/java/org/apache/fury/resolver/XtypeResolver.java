@@ -270,11 +270,6 @@ public class XtypeResolver implements TypeResolver {
     return classInfo;
   }
 
-  @Override
-  public boolean needToWriteRef(TypeRef<?> typeRef) {
-    return getClassInfo(typeRef.getRawType()).serializer.needToWriteRef();
-  }
-
   public ClassInfo getClassInfo(Class<?> cls, ClassInfoHolder classInfoHolder) {
     ClassInfo classInfo = classInfoHolder.classInfo;
     if (classInfo.getCls() != cls) {
@@ -286,6 +281,11 @@ public class XtypeResolver implements TypeResolver {
     }
     assert classInfo.serializer != null;
     return classInfo;
+  }
+
+  @Override
+  public boolean needToWriteRef(TypeRef<?> typeRef) {
+    return getClassInfo(typeRef.getRawType()).serializer.needToWriteRef();
   }
 
   @Override
