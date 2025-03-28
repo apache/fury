@@ -156,6 +156,19 @@ jdk17_plus_tests() {
   echo "Executing latest_jdk_tests succeeds"
 }
 
+windows_java21_test() {
+  java -version
+  echo "Executing fury java tests"
+  cd "$ROOT/java"
+  set +e
+  mvn -T10 --batch-mode --no-transfer-progress test -Dtest=!org.apache.fury.CrossLanguageTest install -pl '!fury-format,!fury-testsuite'
+  testcode=$?
+  if [[ $testcode -ne 0 ]]; then
+    exit $testcode
+  fi
+  echo "Executing fury java tests succeeds"
+}
+
 case $1 in
     java8)
       echo "Executing fury java tests"
@@ -185,6 +198,9 @@ case $1 in
     ;;
     java21)
       jdk17_plus_tests
+    ;;
+    windows_java21)
+      windows_java21_test
     ;;
     integration_tests)
       echo "Install jdk"
