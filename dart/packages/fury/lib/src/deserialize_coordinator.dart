@@ -17,11 +17,11 @@ import 'package:fury/src/serializer/fury_header_serializer.dart';
 import 'package:fury/src/deserializer_pack.dart';
 import 'package:fury/src/serializer/serializer.dart';
 
-class DeserializeDirector {
+class DeserializeCoordinator {
 
-  static final DeserializeDirector _instance = DeserializeDirector._internal();
-  static DeserializeDirector get I => _instance;
-  DeserializeDirector._internal();
+  static final DeserializeCoordinator _instance = DeserializeCoordinator._internal();
+  static DeserializeCoordinator get I => _instance;
+  DeserializeCoordinator._internal();
 
   static final FuryHeaderSerializer _furyHeaderSer = FuryHeaderSerializer.I;
 

@@ -3,7 +3,7 @@
 
 The test suite is inspired by Fury Java's testing approach and includes:
 
-- **Data Type Tests**: Validates custom data types implemented for Dart
+- **Datatype Tests**: Validates custom data types implemented for Dart
 - **Code Generation Tests**: Ensures correctness of the generated static code
 - **Buffer Tests**: Validates correct memory handling for primitive types
 - **Cross-Language Tests**: Tests functionality against other Fury implementations

@@ -31,7 +31,7 @@ This approach ensures compatibility with Flutter while maintaining the performan
 ```dart
 import 'package:fury/fury.dart';
 
-part 'some_class.g.dart';
+part 'example.g.dart';
 
 @furyClass
 class SomeClass with _$SomeClassFury {
@@ -51,13 +51,12 @@ After annotating your class with `@furyClass`, run:
 dart run build_runner build
 ```
 
-This generates the necessary code in `some_class.g.dart` and creates the `_$SomeClassFury` mixin.
+This generates the necessary code in `example.g.dart` and creates the `_$SomeClassFury` mixin.
 
 ### Serializing and Deserializing
 
 ```dart
 Fury fury = Fury(
-  xlangMode: true,
   refTracking: true,
 );
 fury.register($SomeClass, "example.SomeClass");
@@ -75,7 +74,7 @@ obj = fury.fromFury(bytes) as SomeClass;
 ```dart
 import 'package:fury/fury.dart';
 
-part 'enum_foo.g.dart';
+part 'example.g.dart';
 
 @furyEnum
 enum EnumFoo {
@@ -128,13 +127,13 @@ Fury Dart currently supports the following type mappings in XLANG mode:
 
 The implementation is organized into three main components:
 
-1. **Codegen**: Located at `dart-fury/packages/fury/lib/src/code_gen`  
+1. **Codegen**: Located at `dart/packages/fury/lib/src/codegen`  
    Handles static code generation for serialization/deserialization.
 
-2. **FuryCore**: Located at `dart-fury/packages/fury/lib/src`  
+2. **FuryCore**: Located at `dart/packages/fury/lib/src`  
    Contains the core serialization and deserialization logic.
 
-3. **FuryTest**: Located at `dart-fury/fury_test`  
+3. **FuryTest**: Located at `dart/fury-test`  
    Comprehensive test suite for Fury Dart functionality.
 
 ## Testing Approach
@@ -193,16 +192,13 @@ dart fix --apply
 analyzer: '>=6.5.0 <8.0.0'
 build: ^2.4.1
 build_config: ^1.1.0
-collection: ^1.17.0
+collection: ^1.19.1
 meta: ^1.14.0
 source_gen: ^2.0.0
-source_helper: ^1.3.4
 glob: ^2.1.3
 decimal: ^3.2.1
 lints: ^5.0.0
 build_runner: ^2.4.6
-source_gen_test: ^1.0.6
-test: ^1.24.4
 ```
 
 ### fury-test package:
@@ -214,6 +210,6 @@ build_runner: ^2.4.15
 test: ^1.24.0
 checks: ^0.3.0
 build_test: ^2.2.3
-analyzer: ^7.3.0
+analyzer: '>=6.5.0 <8.0.0'
 collection: ^1.19.1
 ```

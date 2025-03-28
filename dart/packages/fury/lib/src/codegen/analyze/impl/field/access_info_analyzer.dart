@@ -4,7 +4,7 @@ import 'package:fury/src/codegen/analyze/annotation/location_level_ensure.dart';
 import 'package:fury/src/codegen/const/location_level.dart';
 import 'package:fury/src/codegen/entity/contructor_params.dart';
 import 'package:fury/src/codegen/entity/location_mark.dart';
-import 'package:fury/src/codegen/exception/field_access_exception.dart';
+import 'package:fury/src/codegen/exception/field_exception.dart' show FieldAccessErrorType, FieldAccessException;
 import 'package:fury/src/codegen/meta/impl/field_spec_immutable.dart';
 import 'package:fury/src/codegen/meta/impl/fields_spec_gen.dart';
 import 'package:fury/src/dev_annotation/maybe_modified.dart';

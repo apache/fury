@@ -18,10 +18,10 @@ import 'package:fury/src/datatype/int16.dart';
 import 'package:fury/src/datatype/int32.dart';
 import 'package:fury/src/datatype/float32.dart';
 
-class SerializerDirector {
-  static final SerializerDirector _instance = SerializerDirector._internal();
-  static SerializerDirector get I => _instance;
-  SerializerDirector._internal();
+class SerializeCoordinator {
+  static final SerializeCoordinator _instance = SerializeCoordinator._internal();
+  static SerializeCoordinator get I => _instance;
+  SerializeCoordinator._internal();
 
   static final FuryHeaderSerializer _furyHeaderSer = FuryHeaderSerializer.I;
 

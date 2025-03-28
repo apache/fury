@@ -4,8 +4,8 @@ import 'package:fury/src/codegen/entity/struct_hash_pair.dart';
 import 'package:fury/src/memory/byte_reader.dart';
 import 'package:fury/src/memory/byte_writer.dart';
 import 'package:fury/src/dev_annotation/optimize.dart';
-import 'package:fury/src/deserializer_director.dart';
-import 'package:fury/src/serializer_director.dart';
+import 'package:fury/src/deserialize_coordinator.dart';
+import 'package:fury/src/serialize_coordinator.dart';
 import 'package:fury/src/manager/fury_config_manager.dart';
 import 'package:fury/src/resolver/xtype_resolver.dart';
 import 'package:fury/src/config/fury_config.dart';
@@ -14,8 +14,8 @@ import 'package:fury/src/serializer/serializer.dart';
 
 final class Fury implements BaseFury{
 
-  static final DeserializeDirector _deserDirector = DeserializeDirector.I;
-  static final SerializerDirector _serDirector = SerializerDirector.I;
+  static final DeserializeCoordinator _deserDirector = DeserializeCoordinator.I;
+  static final SerializeCoordinator _serDirector = SerializeCoordinator.I;
 
   final FuryConfig _conf;
   late final XtypeResolver _xtypeResolver;

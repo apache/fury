@@ -1,7 +1,58 @@
-import 'package:fury/src/codegen/exception/class_level_exception.dart';
-import 'package:fury/src/codegen/exception/field_exception.dart';
 import 'package:fury/src/codegen/exception/fury_codegen_exception.dart';
 import 'package:fury/src/codegen/rules/code_rules.dart';
+
+class ClassLevelException extends FuryCodegenException {
+  final String _libPath;
+  final String _className;
+
+  ClassLevelException(this._libPath, this._className, [super._where]);
+
+  @override
+  void giveExceptionMessage(StringBuffer buf) {
+    super.giveExceptionMessage(buf);
+    buf.write('related class: ');
+    buf.write(_libPath);
+    buf.write('@');
+    buf.write(_className);
+    buf.write('\n');
+  }
+
+
+  @override
+  String toString() {
+    final buf = StringBuffer();
+    giveExceptionMessage(buf);
+    return buf.toString();
+  }
+}
+
+abstract class FieldException extends FuryConstraintViolation {
+  final String _libPath;
+  final String _className;
+  final List<String> _invalidFields;
+
+  FieldException(this._libPath, this._className, this._invalidFields, super._constraint, [super.where]);
+
+  @override
+  void giveExceptionMessage(StringBuffer buf) {
+    super.giveExceptionMessage(buf);
+    buf.write('related class: ');
+    buf.write(_libPath);
+    buf.write('@');
+    buf.write(_className);
+    buf.write('\n');
+    buf.write('invalidFields: ');
+    buf.writeAll(_invalidFields, ', ');
+    buf.write('\n');
+  }
+
+  @override
+  String toString() {
+    StringBuffer buf = StringBuffer();
+    giveExceptionMessage(buf);
+    return buf.toString();
+  }
+}
 
 abstract class FuryConstraintViolation extends FuryCodegenException {
   final String _constraint;
@@ -83,9 +134,47 @@ class FieldOverridingException extends FieldException {
 class NoUsableConstructorException extends FuryCodegenException {
   final String libPath;
   final String className;
-  final reason;
+  final String reason;
 
   NoUsableConstructorException(this.libPath, this.className, this.reason)
       : super('$libPath@$className');
 }
 
+class UnsupportedTypeException extends FuryCodegenException {
+  final String clsLibPath;
+  final String clsName;
+  final String fieldName;
+
+  final String typeScheme;
+  final String typePath;
+  final String typeName;
+
+  UnsupportedTypeException(
+      this.clsLibPath,
+      this.clsName,
+      this.fieldName,
+      this.typeScheme,
+      this.typePath,
+      this.typeName,
+      ): super('$clsLibPath@$clsName');
+
+  /// will generate warning and error location
+  @override
+  void giveExceptionMessage(StringBuffer buf) {
+    super.giveExceptionMessage(buf);
+    buf.write('Unsupported type: ');
+    buf.write(typeScheme);
+    buf.write(':');
+    buf.write(typePath);
+    buf.write('@');
+    buf.write(typeName);
+    buf.write('\n');
+  }
+
+  @override
+  String toString() {
+    StringBuffer buf = StringBuffer();
+    giveExceptionMessage(buf);
+    return buf.toString();
+  }
+}

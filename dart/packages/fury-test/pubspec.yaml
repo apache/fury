@@ -1,14 +1,12 @@
 name: fury_test
-description: A sample command-line application.
+description: test for fury dart
 version: 1.0.0
-# repository: https://github.com/my_org/my_repo
 
 environment:
   sdk: ^3.6.1
 
 resolution: workspace
 
-# Add regular dependencies here.
 dependencies:
   fury: 1.0.0
   checks: ^0.3.0
@@ -18,6 +16,6 @@ dev_dependencies:
   build_runner: any
   test: ^1.24.0
   build_test: ^2.2.3
-  analyzer: ^7.3.0
+  analyzer: '>=6.5.0 <8.0.0'
   collection: ^1.19.1
   build: any

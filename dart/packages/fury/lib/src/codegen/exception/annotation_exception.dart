@@ -1,13 +1,12 @@
 import 'package:meta/meta_meta.dart';
-
-import 'package:fury/src/codegen/exception/meta_spec_exception.dart';
+import 'package:fury/src/codegen/exception/fury_codegen_exception.dart';
 import 'package:fury/src/const/meta_string_const.dart';
 
-abstract class AnnotationException extends MetaSpecException {
+abstract class AnnotationException extends FuryCodegenException {
   AnnotationException(super._where);
 }
 
-class InvalidClassTagException extends MetaSpecException{
+class InvalidClassTagException extends FuryCodegenException{
 
   final List<String>? _classesWithEmptyTag;
   final List<String>? _classesWithTooLongTag;

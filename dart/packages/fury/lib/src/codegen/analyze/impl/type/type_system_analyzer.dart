@@ -8,7 +8,7 @@ import 'package:fury/src/codegen/analyze/entity/obj_type_res.dart';
 import 'package:fury/src/codegen/const/location_level.dart';
 import 'package:fury/src/codegen/entity/either.dart';
 import 'package:fury/src/codegen/entity/location_mark.dart';
-import 'package:fury/src/codegen/exception/unsupported_type_exception.dart';
+import 'package:fury/src/codegen/exception/constraint_violation_exception.dart';
 import 'package:fury/src/const/dart_type.dart';
 
 class TypeSystemAnalyzer{
