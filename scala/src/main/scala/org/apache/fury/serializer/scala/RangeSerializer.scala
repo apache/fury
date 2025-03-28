@@ -74,7 +74,7 @@ class NumericRangeSerializer[A, T <: NumericRange[A]](fury: Fury, cls: Class[T])
     val cls = value.start.getClass
     val resolver = fury.getClassResolver
     val classInfo = resolver.getClassInfo(cls)
-    resolver.writeClass(buffer, classInfo)
+    resolver.writeClassInfo(buffer, classInfo)
     val serializer = classInfo.getSerializer.asInstanceOf[Serializer[A]]
     serializer.write(buffer, value.start)
     serializer.write(buffer, value.end)

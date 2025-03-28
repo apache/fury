@@ -1380,7 +1380,7 @@ public class ClassResolver implements TypeResolver {
 
   /**
    * Write class info to <code>buffer</code>. TODO(chaokunyang): The method should try to write
-   * aligned data to reduce cpu instruction overhead. `writeClass` is the last step before
+   * aligned data to reduce cpu instruction overhead. `writeClassInfo` is the last step before
    * serializing object, if this writes are aligned, then later serialization will be more
    * efficient.
    */
@@ -1398,10 +1398,10 @@ public class ClassResolver implements TypeResolver {
   // The jit-compiled native code fot this method will be too big for inline, so we generated
   // `getClassInfo`
   // in fury-jit, see `BaseSeqCodecBuilder#writeAndGetClassInfo`
-  // public ClassInfo writeClass(MemoryBuffer buffer, Class<?> cls, ClassInfoHolder classInfoHolder)
+  // public ClassInfo writeClassInfo(MemoryBuffer buffer, Class<?> cls, ClassInfoHolder classInfoHolder)
   // {
   //   ClassInfo classInfo = getClassInfo(cls, classInfoHolder);
-  //   writeClass(buffer, classInfo);
+  //   writeClassInfo(buffer, classInfo);
   //   return classInfo;
   // }
 
@@ -1681,7 +1681,7 @@ public class ClassResolver implements TypeResolver {
   }
 
   /**
-   * Native code for ClassResolver.writeClass is too big to inline, so inline it manually.
+   * Native code for ClassResolver.writeClassInfo is too big to inline, so inline it manually.
    *
    * <p>See `already compiled into a big method` in <a
    * href="https://wiki.openjdk.org/display/HotSpot/Server+Compiler+Inlining+Messages">Server+Compiler+Inlining+Messages</a>
