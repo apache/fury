@@ -1,0 +1,12 @@
+Fish(int? para1, double? para2,) :
+  _g = para1, i = para2;
+This is not considered a Redirecting Constructor
+
+ConstructorElement::superConstructor parameter is the parent class constructor used by the current constructor.
+Since a class can have more than one constructor, this represents which parent class constructor is chosen by the current constructor being analyzed.
+Note that using super.param in the parameters also counts as using the parent class constructor (obviously, this is the unnamed constructor of the parent class).
+
+ConstructorElement::redirectedConstructor parameter is the redirecting constructor used by the current constructor.
+Note that the parent class constructor is not a redirecting constructor, even if it is called using :super(...).
+
+Even if a class does not declare a constructor, there will be a default constructor, in which case isDefaultConstructor will be true.

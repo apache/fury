@@ -1,0 +1,3 @@
+analyzer:
+  errors:
+    prefer_relative_imports: ignore
