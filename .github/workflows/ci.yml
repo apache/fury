@@ -96,7 +96,7 @@ jobs:
         run: ./ci/run_ci.sh java${{ matrix.java-version }}
 
   java21_windows:
-    name: Java 21 CI on Windows
+    name: Windows Java 21 CI
     runs-on: windows-2022
     env:
       MY_VAR: "PATH"
