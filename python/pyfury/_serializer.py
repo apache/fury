@@ -167,6 +167,10 @@ class Float64Serializer(CrossLanguageCompatibleSerializer):
 
 
 class StringSerializer(CrossLanguageCompatibleSerializer):
+    def __init__(self, fury, type_):
+        super().__init__(fury, type_)
+        self.need_to_write_ref = False
+
     def write(self, buffer, value: str):
         buffer.write_string(value)
 
@@ -209,89 +213,200 @@ class TimestampSerializer(CrossLanguageCompatibleSerializer):
         return datetime.datetime.fromtimestamp(ts)
 
 
+COLLECTION_DEFAULT_FLAG = 0b0
+COLLECTION_TRACKING_REF = 0b1
+COLLECTION_HAS_NULL = 0b10
+COLLECTION_NOT_DECL_ELEMENT_TYPE = 0b100
+COLLECTION_NOT_SAME_TYPE = 0b1000
+
+
 class CollectionSerializer(Serializer):
-    __slots__ = "class_resolver", "ref_resolver", "elem_serializer"
+    __slots__ = (
+        "class_resolver",
+        "ref_resolver",
+        "elem_serializer",
+        "is_py",
+        "elem_tracking_ref",
+        "elem_type",
+        "elem_typeinfo",
+    )
 
     def __init__(self, fury, type_, elem_serializer=None):
         super().__init__(fury, type_)
         self.class_resolver = fury.class_resolver
         self.ref_resolver = fury.ref_resolver
         self.elem_serializer = elem_serializer
+        if elem_serializer is None:
+            self.elem_type = None
+            self.elem_typeinfo = self.class_resolver.get_classinfo(None)
+            self.elem_tracking_ref = -1
+        else:
+            self.elem_type = elem_serializer.type_
+            self.elem_typeinfo = fury.class_resolver.get_classinfo(self.elem_type)
+            self.elem_tracking_ref = int(elem_serializer.need_to_write_ref)
+        self.is_py = fury.is_py
 
-    def write(self, buffer, value: Iterable[Any]):
+    def write_header(self, buffer, value):
+        collect_flag = COLLECTION_DEFAULT_FLAG
+        elem_type = self.elem_type
+        elem_typeinfo = self.elem_typeinfo
+        has_null = False
+        has_different_type = False
+        if elem_type is None:
+            collect_flag |= COLLECTION_NOT_DECL_ELEMENT_TYPE
+            for s in value:
+                if not has_null and s is None:
+                    has_null = True
+                    continue
+                if elem_type is None:
+                    elem_type = type(s)
+                elif not has_different_type and type(s) is not elem_type:
+                    collect_flag |= COLLECTION_NOT_SAME_TYPE
+                    has_different_type = True
+            if not has_different_type and elem_type is not None:
+                elem_typeinfo = self.class_resolver.get_classinfo(elem_type)
+        else:
+            for s in value:
+                if s is None:
+                    has_null = True
+                    break
+        if has_null:
+            collect_flag |= COLLECTION_HAS_NULL
+        if self.fury.ref_tracking:
+            if self.elem_tracking_ref == 1:
+                collect_flag |= COLLECTION_TRACKING_REF
+            elif self.elem_tracking_ref == -1:
+                if elem_type is None or elem_typeinfo.serializer.need_to_write_ref:
+                    collect_flag |= COLLECTION_TRACKING_REF
         buffer.write_varuint32(len(value))
-        for s in value:
-            cls = type(s)
-            if cls is str:
-                buffer.write_int16(NOT_NULL_STRING_FLAG)
-                buffer.write_string(s)
-            elif cls is int:
-                buffer.write_int16(NOT_NULL_INT64_FLAG)
-                buffer.write_varint64(s)
-            elif cls is bool:
-                buffer.write_int16(NOT_NULL_BOOL_FLAG)
-                buffer.write_bool(s)
+        buffer.write_int8(collect_flag)
+        if (
+            not has_different_type
+            and (collect_flag & COLLECTION_NOT_DECL_ELEMENT_TYPE) != 0
+        ):
+            self.class_resolver.write_typeinfo(buffer, elem_typeinfo)
+        return collect_flag, elem_typeinfo
+
+    def write(self, buffer, value):
+        if len(value) == 0:
+            buffer.write_varuint32(0)
+            return
+        collect_flag, classinfo = self.write_header(buffer, value)
+        if (collect_flag & COLLECTION_NOT_SAME_TYPE) == 0:
+            if (collect_flag & COLLECTION_TRACKING_REF) == 0:
+                self._write_same_type_no_ref(buffer, value, classinfo)
             else:
+                self._write_same_type_ref(buffer, value, classinfo)
+        else:
+            self._write_different_types(buffer, value)
+
+    def _write_same_type_no_ref(self, buffer, value, classinfo):
+        if self.is_py:
+            for s in value:
+                classinfo.serializer.write(buffer, s)
+        else:
+            for s in value:
+                classinfo.serializer.xwrite(buffer, s)
+
+    def _write_same_type_ref(self, buffer, value, classinfo):
+        if self.is_py:
+            for s in value:
                 if not self.ref_resolver.write_ref_or_null(buffer, s):
-                    classinfo = self.class_resolver.get_classinfo(cls)
-                    self.class_resolver.write_typeinfo(buffer, classinfo)
                     classinfo.serializer.write(buffer, s)
+        else:
+            for s in value:
+                if not self.ref_resolver.write_ref_or_null(buffer, s):
+                    classinfo.serializer.xwrite(buffer, s)
+
+    def _write_different_types(self, buffer, value):
+        for s in value:
+            if not self.ref_resolver.write_ref_or_null(buffer, s):
+                classinfo = self.class_resolver.get_classinfo(type(s))
+                self.class_resolver.write_typeinfo(buffer, classinfo)
+                if self.is_py:
+                    classinfo.serializer.write(buffer, s)
+                else:
+                    classinfo.serializer.xwrite(buffer, s)
 
     def read(self, buffer):
         len_ = buffer.read_varuint32()
         collection_ = self.new_instance(self.type_)
-        for i in range(len_):
-            self.handle_read_elem(self.fury.deserialize_ref(buffer), collection_)
+        if len_ == 0:
+            return collection_
+        collect_flag = buffer.read_int8()
+        if (collect_flag & COLLECTION_NOT_SAME_TYPE) == 0:
+            if (collect_flag & COLLECTION_TRACKING_REF) == 0:
+                self._read_same_type_no_ref(buffer, len_, collection_)
+            else:
+                self._read_same_type_ref(buffer, len_, collection_)
+        else:
+            self._read_different_types(buffer, len_, collection_)
         return collection_
 
     def new_instance(self, type_):
-        # TODO support iterable subclass
-        instance = []
-        self.fury.ref_resolver.reference(instance)
-        return instance
+        raise NotImplementedError
 
-    def handle_read_elem(self, elem, collection_):
-        collection_.append(elem)
+    def _add_element(self, collection_, element):
+        raise NotImplementedError
+
+    def _read_same_type_no_ref(self, buffer, len_, collection_):
+        classinfo = self.class_resolver.read_typeinfo(buffer)
+        if self.is_py:
+            for _ in range(len_):
+                self._add_element(collection_, classinfo.serializer.read(buffer))
+        else:
+            for _ in range(len_):
+                self._add_element(collection_, classinfo.serializer.xread(buffer))
+
+    def _read_same_type_ref(self, buffer, len_, collection_):
+        classinfo = self.class_resolver.read_typeinfo(buffer)
+        for _ in range(len_):
+            ref_id = self.ref_resolver.try_preserve_ref_id(buffer)
+            if ref_id < NOT_NULL_VALUE_FLAG:
+                obj = self.ref_resolver.get_read_object()
+            else:
+                if self.is_py:
+                    obj = classinfo.serializer.read(buffer)
+                else:
+                    obj = classinfo.serializer.xread(buffer)
+                self.ref_resolver.set_read_object(ref_id, obj)
+            self._add_element(collection_, obj)
+
+    def _read_different_types(self, buffer, len_, collection_):
+        for _ in range(len_):
+            self._add_element(
+                collection_,
+                get_next_element(
+                    buffer, self.ref_resolver, self.class_resolver, self.is_py
+                ),
+            )
 
     def xwrite(self, buffer, value):
-        try:
-            len_ = len(value)
-        except AttributeError:
-            value = list(value)
-            len_ = len(value)
-        buffer.write_varuint32(len_)
-        for s in value:
-            self.fury.xserialize_ref(buffer, s, serializer=self.elem_serializer)
-            len_ += 1
+        self.write(buffer, value)
 
     def xread(self, buffer):
-        len_ = buffer.read_varuint32()
-        collection_ = self.new_instance(self.type_)
-        for i in range(len_):
-            self.handle_read_elem(
-                self.fury.xdeserialize_ref(buffer, serializer=self.elem_serializer),
-                collection_,
-            )
-        return collection_
+        return self.read(buffer)
 
 
 class ListSerializer(CollectionSerializer):
-    def read(self, buffer):
-        len_ = buffer.read_varuint32()
+    def new_instance(self, type_):
         instance = []
         self.fury.ref_resolver.reference(instance)
-        for i in range(len_):
-            instance.append(self.fury.deserialize_ref(buffer))
         return instance
+
+    def _add_element(self, collection_, element):
+        collection_.append(element)
 
 
 class TupleSerializer(CollectionSerializer):
+    def new_instance(self, type_):
+        return []
+
+    def _add_element(self, collection_, element):
+        collection_.append(element)
+
     def read(self, buffer):
-        len_ = buffer.read_varuint32()
-        collection_ = []
-        for i in range(len_):
-            collection_.append(self.fury.deserialize_ref(buffer))
-        return tuple(collection_)
+        return tuple(super().read(buffer))
 
 
 class StringArraySerializer(ListSerializer):
@@ -305,8 +420,21 @@ class SetSerializer(CollectionSerializer):
         self.fury.ref_resolver.reference(instance)
         return instance
 
-    def handle_read_elem(self, elem, set_: set):
-        set_.add(elem)
+    def _add_element(self, collection_, element):
+        collection_.add(element)
+
+
+def get_next_element(buffer, ref_resolver, class_resolver, is_py):
+    ref_id = ref_resolver.try_preserve_ref_id(buffer)
+    if ref_id < NOT_NULL_VALUE_FLAG:
+        return ref_resolver.get_read_object()
+    classinfo = class_resolver.read_typeinfo(buffer)
+    if is_py:
+        obj = classinfo.serializer.read(buffer)
+    else:
+        obj = classinfo.serializer.xread(buffer)
+    ref_resolver.set_read_object(ref_id, obj)
+    return obj
 
 
 class MapSerializer(Serializer):

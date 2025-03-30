@@ -199,6 +199,7 @@ class ClassResolver:
 
     def _initialize_xlang(self):
         register = functools.partial(self._register_type, internal=True)
+        register(None, type_id=TypeId.NA, serializer=NoneSerializer)
         register(bool, type_id=TypeId.BOOL, serializer=BooleanSerializer)
         register(Int8Type, type_id=TypeId.INT8, serializer=ByteSerializer)
         register(Int16Type, type_id=TypeId.INT16, serializer=Int16Serializer)
