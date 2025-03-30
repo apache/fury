@@ -435,8 +435,16 @@ public class XtypeResolver implements TypeResolver {
       case Types.TIMESTAMP:
         return getGenericClassInfo();
       default:
-        return xtypeIdToClassMap.get(xtypeId);
+        ClassInfo classInfo = xtypeIdToClassMap.get(xtypeId);
+        if (classInfo == null) {
+          throwUnexpectTypeIdException(xtypeId);
+        }
+        return classInfo;
     }
+  }
+
+  private void throwUnexpectTypeIdException(long xtypeId) {
+    throw new IllegalStateException(String.format("Type id %s not registered", xtypeId));
   }
 
   private ClassInfo getListClassInfo() {
