@@ -276,7 +276,7 @@ class CollectionSerializer(Serializer):
             if self.elem_tracking_ref == 1:
                 collect_flag |= COLLECTION_TRACKING_REF
             elif self.elem_tracking_ref == -1:
-                if elem_type is None or elem_typeinfo.serializer.need_to_write_ref:
+                if has_different_type or elem_typeinfo.serializer.need_to_write_ref:
                     collect_flag |= COLLECTION_TRACKING_REF
         buffer.write_varuint32(len(value))
         buffer.write_int8(collect_flag)
