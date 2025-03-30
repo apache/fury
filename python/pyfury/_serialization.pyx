@@ -1224,7 +1224,7 @@ cdef class CollectionSerializer(Serializer):
     cdef Serializer elem_serializer
     cdef c_bool is_py
     cdef int8_t elem_tracking_ref
-    cdef type elem_type
+    cdef elem_type
     cdef ClassInfo elem_typeinfo
 
     def __init__(self, fury, type_, elem_serializer=None):
