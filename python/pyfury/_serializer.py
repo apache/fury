@@ -460,8 +460,8 @@ class MapSerializer(Serializer):
         items_iter = iter(obj.items())
         key, value = next(items_iter)
         has_next = True
+        serialize_ref = fury.serialize_ref if self.fury.is_py else fury.xserialize_ref
         while has_next:
-
             while True:
                 if key is not None:
                     if value is not None:
@@ -470,13 +470,13 @@ class MapSerializer(Serializer):
                         if key_serializer.need_to_write_ref:
                             buffer.write_int8(NULL_VALUE_KEY_DECL_TYPE_TRACKING_REF)
                             if not ref_resolver.write_ref_or_null(buffer, key):
-                                key_serializer.write(buffer, key)
+                                self._write_obj(key_serializer, buffer, key)
                         else:
                             buffer.write_int8(NULL_VALUE_KEY_DECL_TYPE)
-                            key_serializer.write(buffer, key)
+                            self._write_obj(key_serializer, buffer, key)
                     else:
                         buffer.write_int8(VALUE_HAS_NULL | TRACKING_KEY_REF)
-                        fury.serialize_ref(buffer, key)
+                        serialize_ref(buffer, key)
                 else:
                     if value is not None:
                         if value_serializer is not None:
@@ -491,7 +491,7 @@ class MapSerializer(Serializer):
                                 value_serializer.write(buffer, value)
                         else:
                             buffer.write_int8(KEY_HAS_NULL | TRACKING_VALUE_REF)
-                            fury.serialize_ref(buffer, value)
+                            serialize_ref(buffer, value)
                     else:
                         buffer.write_int8(KV_NULL)
                 try:
@@ -538,7 +538,6 @@ class MapSerializer(Serializer):
             chunk_size = 0
 
             while chunk_size < MAX_CHUNK_SIZE:
-
                 if (
                     key is None
                     or value is None
@@ -547,14 +546,13 @@ class MapSerializer(Serializer):
                 ):
                     break
                 if not key_write_ref or not ref_resolver.write_ref_or_null(buffer, key):
-                    key_serializer.write(buffer, key)
+                    self._write_obj(key_serializer, buffer, key)
                 if not value_write_ref or not ref_resolver.write_ref_or_null(
                     buffer, value
                 ):
                     value_serializer.write(buffer, value)
 
                 chunk_size += 1
-
                 try:
                     key, value = next(items_iter)
                 except StopIteration:
@@ -576,7 +574,9 @@ class MapSerializer(Serializer):
         if size != 0:
             chunk_header = buffer.read_uint8()
         key_serializer, value_serializer = None, None
-
+        deserialize_ref = (
+            fury.deserialize_ref if self.fury.is_py else fury.xdeserialize_ref
+        )
         while size > 0:
             while True:
                 key_has_null = (chunk_header & KEY_HAS_NULL) != 0
@@ -592,12 +592,12 @@ class MapSerializer(Serializer):
                                 if ref_id < NOT_NULL_VALUE_FLAG:
                                     key = ref_resolver.get_read_object()
                                 else:
-                                    key = key_serializer.read(buffer)
+                                    key = self._read_obj(key_serializer, buffer)
                                     ref_resolver.set_read_object(ref_id, key)
                             else:
-                                key = key_serializer.read(buffer)
+                                key = self._read_obj(key_serializer, buffer)
                         else:
-                            key = fury.deserialize_ref(buffer)
+                            key = deserialize_ref(buffer)
                         map_[key] = None
                 else:
                     if not value_has_null:
@@ -608,10 +608,10 @@ class MapSerializer(Serializer):
                                 if ref_id < NOT_NULL_VALUE_FLAG:
                                     value = ref_resolver.get_read_object()
                                 else:
-                                    value = value_serializer.read(buffer)
+                                    value = self._read_obj(value_serializer, buffer)
                                     ref_resolver.set_read_object(ref_id, value)
                         else:
-                            value = fury.deserialize_ref(buffer)
+                            value = deserialize_ref(buffer)
                         map_[None] = value
                     else:
                         map_[None] = None
@@ -638,65 +638,42 @@ class MapSerializer(Serializer):
                     if ref_id < NOT_NULL_VALUE_FLAG:
                         key = ref_resolver.get_read_object()
                     else:
-                        key = key_serializer.read(buffer)
+                        key = self._read_obj(key_serializer, buffer)
                         ref_resolver.set_read_object(ref_id, key)
                 else:
-                    if key_serializer_type is StringSerializer:
-                        key = buffer.read_string()
-                    elif key_serializer_type is Int64Serializer:
-                        key = buffer.read_varint64()
-                    elif key_serializer_type is Float64Serializer:
-                        key = buffer.read_double()
-                    elif key_serializer_type is Int32Serializer:
-                        key = buffer.read_varint32()
-                    elif key_serializer_type is Float32Serializer:
-                        key = buffer.read_float()
-                    else:
-                        key = key_serializer.read(buffer)
+                    key = self._read_obj(key_serializer, buffer)
                 if track_value_ref:
                     ref_id = ref_resolver.try_preserve_ref_id(buffer)
                     if ref_id < NOT_NULL_VALUE_FLAG:
                         value = ref_resolver.get_read_object()
                     else:
-                        value = value_serializer.read(buffer)
+                        value = self._read_obj(value_serializer, buffer)
                         ref_resolver.set_read_object(ref_id, value)
                 else:
-                    if value_serializer_type is StringSerializer:
-                        value = buffer.read_string()
-                    elif value_serializer_type is Int64Serializer:
-                        value = buffer.read_varint64()
-                    elif value_serializer_type is Float64Serializer:
-                        value = buffer.read_double()
-                    elif value_serializer_type is Int32Serializer:
-                        value = buffer.read_varint32()
-                    elif value_serializer_type is Float32Serializer:
-                        value = buffer.read_float()
-                    elif value_serializer_type is BooleanSerializer:
-                        value = buffer.read_bool()
-                    else:
-                        value = value_serializer.read(buffer)
+                    value = self._read_obj(value_serializer, buffer)
                 map_[key] = value
                 size -= 1
             if size != 0:
                 chunk_header = buffer.read_uint8()
-
         return map_
+
+    def _write_obj(self, serializer, buffer, obj):
+        if self.fury.is_py:
+            serializer.write(buffer, obj)
+        else:
+            serializer.xwrite(buffer, obj)
+
+    def _read_obj(self, serializer, buffer):
+        if self.fury.is_py:
+            return serializer.read(buffer)
+        else:
+            return serializer.xread(buffer)
 
     def xwrite(self, buffer, value: Dict):
-        buffer.write_varuint32(len(value))
-        for k, v in value.items():
-            self.fury.xserialize_ref(buffer, k, serializer=self.key_serializer)
-            self.fury.xserialize_ref(buffer, v, serializer=self.value_serializer)
+        self.write(buffer, value)
 
     def xread(self, buffer):
-        len_ = buffer.read_varuint32()
-        map_ = {}
-        self.fury.ref_resolver.reference(map_)
-        for i in range(len_):
-            k = self.fury.xdeserialize_ref(buffer, serializer=self.key_serializer)
-            v = self.fury.xdeserialize_ref(buffer, serializer=self.value_serializer)
-            map_[k] = v
-        return map_
+        return self.read(buffer)
 
 
 SubMapSerializer = MapSerializer
