@@ -1388,10 +1388,9 @@ cdef class CollectionSerializer(Serializer):
             for s in value:
                 classinfo.serializer.xwrite(buffer, s)
 
-    cpdef _read_same_type_no_ref(self, Buffer buffer, int64_t len_, object collection_):
+    cpdef _read_same_type_no_ref(self, Buffer buffer, int64_t len_, object collection_, ClassInfo classinfo):
         cdef MapRefResolver ref_resolver = self.ref_resolver
         cdef ClassResolver class_resolver = self.class_resolver
-        classinfo = class_resolver.read_typeinfo(buffer)
         if self.is_py:
             for i in range(len_):
                 obj = classinfo.serializer.read(buffer)
@@ -1413,10 +1412,9 @@ cdef class CollectionSerializer(Serializer):
                 if not ref_resolver.write_ref_or_null(buffer, s):
                     classinfo.serializer.xwrite(buffer, s)
 
-    cpdef _read_same_type_ref(self, Buffer buffer, int64_t len_, object collection_):
+    cpdef _read_same_type_ref(self, Buffer buffer, int64_t len_, object collection_, ClassInfo classinfo):
         cdef MapRefResolver ref_resolver = self.ref_resolver
         cdef ClassResolver class_resolver = self.class_resolver
-        classinfo = class_resolver.read_typeinfo(buffer)
         cdef c_bool is_py = self.is_py
         for i in range(len_):
             ref_id = ref_resolver.try_preserve_ref_id(buffer)
@@ -1447,24 +1445,34 @@ cdef class ListSerializer(CollectionSerializer):
         cdef int8_t collect_flag = buffer.read_int8()
         ref_resolver.reference(list_)
         cdef c_bool is_py = self.is_py
+        cdef ClassInfo classinfo
+        cdef int32_t type_id = -1
         if (collect_flag & COLLECTION_NOT_SAME_TYPE) == 0:
-            type_flag = buffer.get_int16(buffer.reader_index)
-            if type_flag == NOT_NULL_STRING_FLAG:
-                self._read_string(buffer, len_, list_)
-            elif type_flag == NOT_NULL_INT64_FLAG:
-                self._read_int(buffer, len_, list_)
-            elif type_flag == NOT_NULL_BOOL_FLAG:
-                self._read_bool(buffer, len_, list_)
-            elif type_flag == NOT_NULL_FLOAT64_FLAG:
-                self._read_float(buffer, len_, list_)
+            if collect_flag & COLLECTION_NOT_DECL_ELEMENT_TYPE != 0:
+                classinfo = self.class_resolver.read_typeinfo(buffer)
             else:
-                if (collect_flag & COLLECTION_TRACKING_REF) == 0:
-                    self._read_same_type_no_ref(buffer, len_, list_)
-                else:
-                    self._read_same_type_ref(buffer, len_, list_)
+                classinfo = self.elem_typeinfo
+            if (collect_flag & COLLECTION_HAS_NULL) == 0:
+                type_id = classinfo.type_id
+                if type_id == <int32_t>TypeId.STRING:
+                    self._read_string(buffer, len_, list_)
+                    return list_
+                elif type_id == <int32_t>TypeId.VAR_INT64:
+                    self._read_int(buffer, len_, list_)
+                    return list_
+                elif type_id == <int32_t>TypeId.BOOL:
+                    self._read_bool(buffer, len_, list_)
+                    return list_
+                elif type_id == <int32_t>TypeId.FLOAT64:
+                    self._read_float(buffer, len_, list_)
+                    return list_
+            if (collect_flag & COLLECTION_TRACKING_REF) == 0:
+                self._read_same_type_no_ref(buffer, len_, list_, classinfo)
+            else:
+                self._read_same_type_ref(buffer, len_, list_, classinfo)
         else:
             for i in range(len_):
-                elem = get_next_elenment(buffer, ref_resolver, class_resolver, is_py)
+                elem = get_next_element(buffer, ref_resolver, class_resolver, is_py)
                 Py_INCREF(elem)
                 PyList_SET_ITEM(list_, i, elem)
         return list_
@@ -1476,7 +1484,7 @@ cdef class ListSerializer(CollectionSerializer):
     cpdef xread(self, Buffer buffer):
         return self.read(buffer)
 
-cdef inline get_next_elenment(
+cdef inline get_next_element(
         Buffer buffer,
         MapRefResolver ref_resolver,
         ClassResolver class_resolver,
@@ -1489,17 +1497,17 @@ cdef inline get_next_elenment(
         return ref_resolver.get_read_object()
     # indicates that the object is first read.
     classinfo = class_resolver.read_typeinfo(buffer)
-    cls = classinfo.cls
+    cdef int32_t type_id = classinfo.type_id
     # Note that all read operations in fast paths of list/tuple/set/dict/sub_dict
     # ust match corresponding writing operations. Otherwise, ref tracking will
     # error.
-    if cls is str:
+    if type_id == <int32_t>TypeId.STRING:
         return buffer.read_string()
-    elif cls is int:
+    elif type_id == <int32_t>TypeId.VAR_INT32:
         return buffer.read_varint64()
-    elif cls is bool:
+    elif type_id == <int32_t>TypeId.BOOL:
         return buffer.read_bool()
-    elif cls is float:
+    elif type_id == <int32_t>TypeId.FLOAT64:
         return buffer.read_double()
     else:
         if is_py:
@@ -1508,33 +1516,6 @@ cdef inline get_next_elenment(
             o = classinfo.serializer.xread(buffer)
         ref_resolver.set_read_object(ref_id, o)
         return o
-
-
-cdef int32_t MAX_CHUNK_SIZE = 255
-# Whether track key ref.
-cdef int32_t TRACKING_KEY_REF = 0b1
-# Whether key has null.
-cdef int32_t KEY_HAS_NULL = 0b10
-# Whether key is not declare type.
-cdef int32_t KEY_DECL_TYPE = 0b100
-# Whether track value ref.
-cdef int32_t TRACKING_VALUE_REF = 0b1000
-# Whether value has null.
-cdef int32_t VALUE_HAS_NULL = 0b10000
-# Whether value is not declare type.
-cdef int32_t VALUE_DECL_TYPE = 0b100000
-# When key or value is null that entry will be serialized as a new chunk with size 1.
-# In such cases, chunk size will be skipped writing.
-# Both key and value are null.
-cdef int32_t KV_NULL = KEY_HAS_NULL | VALUE_HAS_NULL
-# Key is null, value type is declared type, and ref tracking for value is disabled.
-cdef int32_t NULL_KEY_VALUE_DECL_TYPE = KEY_HAS_NULL | VALUE_DECL_TYPE
-# Key is null, value type is declared type, and ref tracking for value is enabled.
-cdef int32_t NULL_KEY_VALUE_DECL_TYPE_TRACKING_REF =KEY_HAS_NULL | VALUE_DECL_TYPE | TRACKING_VALUE_REF
-# Value is null, key type is declared type, and ref tracking for key is disabled.
-cdef int32_t NULL_VALUE_KEY_DECL_TYPE = VALUE_HAS_NULL | KEY_DECL_TYPE
-# Value is null, key type is declared type, and ref tracking for key is enabled.
-cdef int32_t NULL_VALUE_KEY_DECL_TYPE_TRACKING_REF = VALUE_HAS_NULL | KEY_DECL_TYPE | TRACKING_VALUE_REF
 
 
 @cython.final
@@ -1548,24 +1529,34 @@ cdef class TupleSerializer(CollectionSerializer):
             return tuple_
         cdef int8_t collect_flag = buffer.read_int8()
         cdef c_bool is_py = self.is_py
+        cdef ClassInfo classinfo
+        cdef int32_t type_id = -1
         if (collect_flag & COLLECTION_NOT_SAME_TYPE) == 0:
-            type_flag = buffer.get_int16(buffer.reader_index)
-            if type_flag == NOT_NULL_STRING_FLAG:
-                self._read_string(buffer, len_, tuple_)
-            elif type_flag == NOT_NULL_INT64_FLAG:
-                self._read_int(buffer, len_, tuple_)
-            elif type_flag == NOT_NULL_BOOL_FLAG:
-                self._read_bool(buffer, len_, tuple_)
-            elif type_flag == NOT_NULL_FLOAT64_FLAG:
-                self._read_float(buffer, len_, tuple_)
+            if collect_flag & COLLECTION_NOT_DECL_ELEMENT_TYPE != 0:
+                classinfo = self.class_resolver.read_typeinfo(buffer)
             else:
-                if (collect_flag & COLLECTION_TRACKING_REF) == 0:
-                    self._read_same_type_no_ref(buffer, len_, tuple_)
-                else:
-                    self._read_same_type_ref(buffer, len_, tuple_)
+                classinfo = self.elem_typeinfo
+            if (collect_flag & COLLECTION_HAS_NULL) == 0:
+                type_id = classinfo.type_id
+                if type_id == <int32_t>TypeId.STRING:
+                    self._read_string(buffer, len_, tuple_)
+                    return tuple_
+                if type_id == <int32_t>TypeId.VAR_INT64:
+                    self._read_int(buffer, len_, tuple_)
+                    return tuple_
+                if type_id == <int32_t>TypeId.BOOL:
+                    self._read_bool(buffer, len_, tuple_)
+                    return tuple_
+                if type_id == <int32_t>TypeId.FLOAT64:
+                    self._read_float(buffer, len_, tuple_)
+                    return tuple_
+            if (collect_flag & COLLECTION_TRACKING_REF) == 0:
+                self._read_same_type_no_ref(buffer, len_, tuple_, classinfo)
+            else:
+                self._read_same_type_ref(buffer, len_, tuple_, classinfo)
         else:
             for i in range(len_):
-                elem = get_next_elenment(buffer, ref_resolver, class_resolver, is_py)
+                elem = get_next_element(buffer, ref_resolver, class_resolver, is_py)
                 Py_INCREF(elem)
                 PyTuple_SET_ITEM(tuple_, i, elem)
         return tuple_
@@ -1597,22 +1588,31 @@ cdef class SetSerializer(CollectionSerializer):
         cdef int8_t collect_flag = buffer.read_int8()
         cdef int32_t ref_id
         cdef ClassInfo classinfo
+        cdef int32_t type_id = -1
         cdef c_bool is_py = self.is_py
         if (collect_flag & COLLECTION_NOT_SAME_TYPE) == 0:
-            type_flag = buffer.get_int16(buffer.reader_index)
-            if type_flag == NOT_NULL_STRING_FLAG:
-                self._read_string(buffer, len_, instance)
-            elif type_flag == NOT_NULL_INT64_FLAG:
-                self._read_int(buffer, len_, instance)
-            elif type_flag == NOT_NULL_BOOL_FLAG:
-                self._read_bool(buffer, len_, instance)
-            elif type_flag == NOT_NULL_FLOAT64_FLAG:
-                self._read_float(buffer, len_, instance)
+            if collect_flag & COLLECTION_NOT_DECL_ELEMENT_TYPE != 0:
+                classinfo = self.class_resolver.read_typeinfo(buffer)
             else:
-                if (collect_flag & COLLECTION_TRACKING_REF) == 0:
-                    self._read_same_type_no_ref(buffer, len_, instance)
-                else:
-                    self._read_same_type_ref(buffer, len_, instance)
+                classinfo = self.elem_typeinfo
+            if (collect_flag & COLLECTION_HAS_NULL) == 0:
+                type_id = classinfo.type_id
+                if type_id == <int32_t>TypeId.STRING:
+                    self._read_string(buffer, len_, instance)
+                    return instance
+                if type_id == <int32_t>TypeId.VAR_INT64:
+                    self._read_int(buffer, len_, instance)
+                    return instance
+                if type_id == <int32_t>TypeId.BOOL:
+                    self._read_bool(buffer, len_, instance)
+                    return instance
+                if type_id == <int32_t>TypeId.FLOAT64:
+                    self._read_float(buffer, len_, instance)
+                    return instance
+            if (collect_flag & COLLECTION_TRACKING_REF) == 0:
+                self._read_same_type_no_ref(buffer, len_, instance, classinfo)
+            else:
+                self._read_same_type_ref(buffer, len_, instance, classinfo)
         else:
             for i in range(len_):
                 ref_id = ref_resolver.try_preserve_ref_id(buffer)
@@ -1621,14 +1621,14 @@ cdef class SetSerializer(CollectionSerializer):
                     continue
                 # indicates that the object is first read.
                 classinfo = class_resolver.read_typeinfo(buffer)
-                cls = classinfo.cls
-                if cls is str:
+                type_id = classinfo.type_id
+                if type_id == <int32_t>TypeId.STRING:
                     instance.add(buffer.read_string())
-                elif cls is int:
+                elif type_id == <int32_t>TypeId.VAR_INT64:
                     instance.add(buffer.read_varint64())
-                elif cls is bool:
+                elif type_id == <int32_t>TypeId.BOOL:
                     instance.add(buffer.read_bool())
-                elif cls is float:
+                elif type_id == <int32_t>TypeId.FLOAT64:
                     instance.add(buffer.read_double())
                 else:
                     if is_py:
@@ -1644,6 +1644,33 @@ cdef class SetSerializer(CollectionSerializer):
 
     cpdef inline xread(self, Buffer buffer):
         return self.read(buffer)
+
+
+cdef int32_t MAX_CHUNK_SIZE = 255
+# Whether track key ref.
+cdef int32_t TRACKING_KEY_REF = 0b1
+# Whether key has null.
+cdef int32_t KEY_HAS_NULL = 0b10
+# Whether key is not declare type.
+cdef int32_t KEY_DECL_TYPE = 0b100
+# Whether track value ref.
+cdef int32_t TRACKING_VALUE_REF = 0b1000
+# Whether value has null.
+cdef int32_t VALUE_HAS_NULL = 0b10000
+# Whether value is not declare type.
+cdef int32_t VALUE_DECL_TYPE = 0b100000
+# When key or value is null that entry will be serialized as a new chunk with size 1.
+# In such cases, chunk size will be skipped writing.
+# Both key and value are null.
+cdef int32_t KV_NULL = KEY_HAS_NULL | VALUE_HAS_NULL
+# Key is null, value type is declared type, and ref tracking for value is disabled.
+cdef int32_t NULL_KEY_VALUE_DECL_TYPE = KEY_HAS_NULL | VALUE_DECL_TYPE
+# Key is null, value type is declared type, and ref tracking for value is enabled.
+cdef int32_t NULL_KEY_VALUE_DECL_TYPE_TRACKING_REF =KEY_HAS_NULL | VALUE_DECL_TYPE | TRACKING_VALUE_REF
+# Value is null, key type is declared type, and ref tracking for key is disabled.
+cdef int32_t NULL_VALUE_KEY_DECL_TYPE = VALUE_HAS_NULL | KEY_DECL_TYPE
+# Value is null, key type is declared type, and ref tracking for key is enabled.
+cdef int32_t NULL_VALUE_KEY_DECL_TYPE_TRACKING_REF = VALUE_HAS_NULL | KEY_DECL_TYPE | TRACKING_VALUE_REF
 
 
 @cython.final
