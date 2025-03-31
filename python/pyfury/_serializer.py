@@ -18,13 +18,9 @@
 import datetime
 import logging
 from abc import ABC, abstractmethod
-from typing import Dict, Iterable, Any
+from typing import Dict
 
-from pyfury._fury import (
-    NOT_NULL_INT64_FLAG,
-    NOT_NULL_BOOL_FLAG,
-    NOT_NULL_STRING_FLAG,
-)
+from pyfury._fury import NOT_NULL_INT64_FLAG
 from pyfury.resolver import NOT_NULL_VALUE_FLAG, NULL_FLAG
 from pyfury.type import is_primitive_type
 
