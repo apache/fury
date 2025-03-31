@@ -375,7 +375,7 @@ public final class FuryBuilder {
       }
     }
     if (language != Language.JAVA) {
-      stringRefIgnored = false;
+      stringRefIgnored = true;
     }
     if (ENABLE_CLASS_REGISTRATION_FORCIBLY) {
       if (!requireClassRegistration) {

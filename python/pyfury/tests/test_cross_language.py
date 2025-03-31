@@ -352,15 +352,20 @@ def test_cross_language_reference(data_file_path):
         data_bytes = f.read()
         buffer = pyfury.Buffer(data_bytes)
         fury = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
-        objects = []
-        new_list = _deserialize_and_append(fury, buffer, objects)
+        new_list = fury.deserialize(buffer)
         assert new_list[0] is new_list
         new_map = new_list[1]
         assert new_map["k1"] is new_map
         assert new_map["k2"] is new_list
+
+        new_list2 = fury.deserialize(fury.serialize(new_list))
+        assert new_list2[0] is new_list2
+        new_map = new_list2[1]
+        assert new_map["k1"] is new_map
+        assert new_map["k2"] is new_list2
+
         new_buf = pyfury.Buffer.allocate(32)
-        for obj in objects:
-            fury.serialize(obj, buffer=new_buf)
+        fury.serialize(new_list, buffer=new_buf)
     with open(data_file_path, "wb+") as f:
         f.write(new_buf.get_bytes(0, new_buf.writer_index))
 
@@ -543,19 +548,29 @@ def test_register_serializer(data_file_path):
     with open(data_file_path, "rb") as f:
         data_bytes = f.read()
     buffer = pyfury.Buffer(data_bytes)
+
     fury = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=True)
     fury.register_type(
         ComplexObject1,
         typename="test.ComplexObject1",
         serializer=ComplexObject1Serializer(fury, ComplexObject1),
     )
-    new_obj = fury.deserialize(buffer)
     expected = ComplexObject1(*[None] * 12)
     expected.f1, expected.f2, expected.f3 = True, "abc", ["abc", "abc"]
+    bytes1 = fury.serialize(expected)
+    assert fury.deserialize(bytes1) == expected
+    new_obj = fury.deserialize(buffer)
+
     debug_print(new_obj)
     assert new_obj == expected
     new_buf = pyfury.Buffer.allocate(32)
     fury.serialize(new_obj, buffer=new_buf)
+    bytes1 = fury.serialize(new_obj)
+    assert len(bytes1) == len(data_bytes)
+    # header can be different to embed writer info like language
+    assert bytes1[8:] == data_bytes[8:]
+    assert fury.deserialize(fury.serialize(new_obj)) == new_obj, new_obj
+    print(f"test_register_serializer: {new_obj}")
     with open(data_file_path, "wb+") as f:
         f.write(new_buf.get_bytes(0, new_buf.writer_index))
 

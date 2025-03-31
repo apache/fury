@@ -96,6 +96,7 @@ class BufferObject(ABC):
 class Fury:
     __slots__ = (
         "language",
+        "is_py",
         "ref_tracking",
         "ref_resolver",
         "class_resolver",
@@ -130,6 +131,7 @@ class Fury:
           you disable this option.
         """
         self.language = language
+        self.is_py = language == Language.PYTHON
         self.require_class_registration = (
             _ENABLE_CLASS_REGISTRATION_FORCIBLY or require_class_registration
         )
@@ -469,6 +471,7 @@ class Fury:
         self.ref_resolver.reset_write()
         self.class_resolver.reset_write()
         self.serialization_context.reset()
+        self.metastring_resolver.reset_write()
         self.pickler.clear_memo()
         self._buffer_callback = None
         self._unsupported_callback = None
@@ -477,6 +480,7 @@ class Fury:
         self.ref_resolver.reset_read()
         self.class_resolver.reset_read()
         self.serialization_context.reset()
+        self.metastring_resolver.reset_write()
         self.unpickler = None
         self._buffers = None
         self._unsupported_objects = None

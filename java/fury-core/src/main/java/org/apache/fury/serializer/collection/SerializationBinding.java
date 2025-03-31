@@ -29,17 +29,25 @@ import org.apache.fury.serializer.Serializer;
 @SuppressWarnings({"rawtypes", "unchecked"})
 // noinspection Duplicates
 interface SerializationBinding {
+  <T> void writeRef(MemoryBuffer buffer, T obj);
+
   <T> void writeRef(MemoryBuffer buffer, T obj, Serializer<T> serializer);
 
   void writeRef(MemoryBuffer buffer, Object obj, ClassInfoHolder classInfoHolder);
+
+  void writeNonRef(MemoryBuffer buffer, Object elem);
+
+  void write(MemoryBuffer buffer, Serializer serializer, Object value);
+
+  Object read(MemoryBuffer buffer, Serializer serializer);
 
   <T> T readRef(MemoryBuffer buffer, Serializer<T> serializer);
 
   Object readRef(MemoryBuffer buffer, ClassInfoHolder classInfoHolder);
 
-  void write(MemoryBuffer buffer, Serializer serializer, Object value);
+  Object readRef(MemoryBuffer buffer);
 
-  Object read(MemoryBuffer buffer, Serializer serializer);
+  Object readNonRef(MemoryBuffer buffer);
 
   static SerializationBinding createBinding(Fury fury) {
     if (fury.isCrossLanguage()) {
@@ -54,6 +62,11 @@ interface SerializationBinding {
 
     JavaSerializationBinding(Fury fury) {
       this.fury = fury;
+    }
+
+    @Override
+    public <T> void writeRef(MemoryBuffer buffer, T obj) {
+      fury.writeRef(buffer, obj);
     }
 
     @Override
@@ -77,6 +90,16 @@ interface SerializationBinding {
     }
 
     @Override
+    public Object readRef(MemoryBuffer buffer) {
+      return fury.readRef(buffer);
+    }
+
+    @Override
+    public Object readNonRef(MemoryBuffer buffer) {
+      return fury.readNonRef(buffer);
+    }
+
+    @Override
     public void write(MemoryBuffer buffer, Serializer serializer, Object value) {
       serializer.write(buffer, value);
     }
@@ -84,6 +107,11 @@ interface SerializationBinding {
     @Override
     public Object read(MemoryBuffer buffer, Serializer serializer) {
       return serializer.read(buffer);
+    }
+
+    @Override
+    public void writeNonRef(MemoryBuffer buffer, Object elem) {
+      fury.writeNonRef(buffer, elem);
     }
   }
 
@@ -93,6 +121,11 @@ interface SerializationBinding {
 
     XlangSerializationBinding(Fury fury) {
       this.fury = fury;
+    }
+
+    @Override
+    public <T> void writeRef(MemoryBuffer buffer, T obj) {
+      fury.xwriteRef(buffer, obj);
     }
 
     @Override
@@ -116,6 +149,16 @@ interface SerializationBinding {
     }
 
     @Override
+    public Object readRef(MemoryBuffer buffer) {
+      return fury.xreadRef(buffer);
+    }
+
+    @Override
+    public Object readNonRef(MemoryBuffer buffer) {
+      return fury.xreadNonRef(buffer);
+    }
+
+    @Override
     public void write(MemoryBuffer buffer, Serializer serializer, Object value) {
       serializer.xwrite(buffer, value);
     }
@@ -123,6 +166,11 @@ interface SerializationBinding {
     @Override
     public Object read(MemoryBuffer buffer, Serializer serializer) {
       return serializer.xread(buffer);
+    }
+
+    @Override
+    public void writeNonRef(MemoryBuffer buffer, Object elem) {
+      fury.xwriteNonRef(buffer, elem);
     }
   }
 }

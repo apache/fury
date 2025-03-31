@@ -113,6 +113,10 @@ from pyfury.type import (
 
 
 class NoneSerializer(Serializer):
+    def __init__(self, fury):
+        super().__init__(fury, None)
+        self.need_to_write_ref = False
+
     def xwrite(self, buffer, value):
         raise NotImplementedError
 

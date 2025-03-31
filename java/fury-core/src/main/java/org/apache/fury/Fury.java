@@ -530,40 +530,7 @@ public final class Fury implements BaseFury {
   public void xwriteRef(MemoryBuffer buffer, Object obj) {
     if (!refResolver.writeRefOrNull(buffer, obj)) {
       ClassInfo classInfo = xtypeResolver.writeClassInfo(buffer, obj);
-      switch (classInfo.getXtypeId()) {
-        case Types.BOOL:
-          buffer.writeBoolean((Boolean) obj);
-          break;
-        case Types.INT8:
-          buffer.writeByte((Byte) obj);
-          break;
-        case Types.INT16:
-          buffer.writeInt16((Short) obj);
-          break;
-        case Types.INT32:
-        case Types.VAR_INT32:
-          // TODO(chaokunyang) support other encoding
-          buffer.writeVarInt32((Integer) obj);
-          break;
-        case Types.INT64:
-        case Types.VAR_INT64:
-          // TODO(chaokunyang) support other encoding
-        case Types.SLI_INT64:
-          // TODO(chaokunyang) support varint encoding
-          buffer.writeVarInt64((Long) obj);
-          break;
-        case Types.FLOAT32:
-          buffer.writeFloat32((Float) obj);
-          break;
-        case Types.FLOAT64:
-          buffer.writeFloat64((Double) obj);
-          break;
-          // TODO(add fastpath for other types)
-        default:
-          depth++;
-          classInfo.getSerializer().xwrite(buffer, obj);
-          depth--;
-      }
+      xwriteData(buffer, classInfo, obj);
     }
   }
 
@@ -583,6 +550,48 @@ public final class Fury implements BaseFury {
         serializer.xwrite(buffer, obj);
         depth--;
       }
+    }
+  }
+
+  public void xwriteNonRef(MemoryBuffer buffer, Object obj) {
+    ClassInfo classInfo = xtypeResolver.writeClassInfo(buffer, obj);
+    xwriteData(buffer, classInfo, obj);
+  }
+
+  private void xwriteData(MemoryBuffer buffer, ClassInfo classInfo, Object obj) {
+    switch (classInfo.getXtypeId()) {
+      case Types.BOOL:
+        buffer.writeBoolean((Boolean) obj);
+        break;
+      case Types.INT8:
+        buffer.writeByte((Byte) obj);
+        break;
+      case Types.INT16:
+        buffer.writeInt16((Short) obj);
+        break;
+      case Types.INT32:
+      case Types.VAR_INT32:
+        // TODO(chaokunyang) support other encoding
+        buffer.writeVarInt32((Integer) obj);
+        break;
+      case Types.INT64:
+      case Types.VAR_INT64:
+        // TODO(chaokunyang) support other encoding
+      case Types.SLI_INT64:
+        // TODO(chaokunyang) support varint encoding
+        buffer.writeVarInt64((Long) obj);
+        break;
+      case Types.FLOAT32:
+        buffer.writeFloat32((Float) obj);
+        break;
+      case Types.FLOAT64:
+        buffer.writeFloat64((Double) obj);
+        break;
+        // TODO(add fastpath for other types)
+      default:
+        depth++;
+        classInfo.getSerializer().xwrite(buffer, obj);
+        depth--;
     }
   }
 
@@ -1062,6 +1071,10 @@ public final class Fury implements BaseFury {
         return xreadNonRef(buffer, serializer);
       }
     }
+  }
+
+  public Object xreadNonRef(MemoryBuffer buffer) {
+    return xreadNonRef(buffer, xtypeResolver.readClassInfo(buffer));
   }
 
   public Object xreadNonRef(MemoryBuffer buffer, Serializer<?> serializer) {
