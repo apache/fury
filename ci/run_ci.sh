@@ -205,6 +205,9 @@ case $1 in
     java21)
       jdk17_plus_tests
     ;;
+    java24)
+      jdk17_plus_tests
+    ;;
     windows_java21)
       windows_java21_test
     ;;
