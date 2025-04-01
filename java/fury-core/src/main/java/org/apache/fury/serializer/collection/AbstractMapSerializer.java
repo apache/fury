@@ -769,6 +769,8 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
       }
     } else {
       for (int i = 0; i < chunkSize; i++) {
+        // increase depth to avoid read wrong outer generic type
+        fury.incDepth(1);
         Object key =
             trackKeyRef
                 ? binding.readRef(buffer, keySerializer)
@@ -777,6 +779,7 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
             trackValueRef
                 ? binding.readRef(buffer, valueSerializer)
                 : binding.read(buffer, valueSerializer);
+        fury.incDepth(-1);
         map.put(key, value);
         size--;
       }
