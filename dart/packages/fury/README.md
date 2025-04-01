@@ -127,13 +127,13 @@ Fury Dart currently supports the following type mappings in XLANG mode:
 
 The implementation is organized into three main components:
 
-1. **Codegen**: Located at `dart/packages/fury/lib/src/codegen`  
+1. **Codegen**: Located at `dart/packages/fury/lib/src/codegen`
    Handles static code generation for serialization/deserialization.
 
-2. **FuryCore**: Located at `dart/packages/fury/lib/src`  
+2. **FuryCore**: Located at `dart/packages/fury/lib/src`
    Contains the core serialization and deserialization logic.
 
-3. **FuryTest**: Located at `dart/fury_test`  
+3. **FuryTest**: Located at `dart/fury_test`
    Comprehensive test suite for Fury Dart functionality.
 
 ## Testing Approach
