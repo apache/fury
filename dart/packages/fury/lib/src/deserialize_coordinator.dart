@@ -10,7 +10,7 @@ import 'package:fury/src/datatype/int8.dart';
 import 'package:fury/src/memory/byte_reader.dart';
 import 'package:fury/src/meta/type_info.dart';
 import 'package:fury/src/meta/spec_wraps/type_spec_wrap.dart';
-import 'package:fury/src/resolver/ref/deser_ref_resolver.dart';
+import 'package:fury/src/resolver/deserialization_ref_resolver.dart';
 import 'package:fury/src/resolver/struct_hash_resolver.dart';
 import 'package:fury/src/resolver/xtype_resolver.dart';
 import 'package:fury/src/serializer/fury_header_serializer.dart';
@@ -35,7 +35,7 @@ class DeserializeCoordinator {
       xtypeResolver.getTagByCustomDartType,
       header,
       this,
-      DeserRefResolver.getOne(conf.refTracking),
+      DeserializationRefResolver.getOne(conf.refTracking),
       xtypeResolver,
       Stack<TypeSpecWrap>(),
     );
@@ -47,7 +47,7 @@ class DeserializeCoordinator {
     //assert(RefFlag.checkAllow(refFlag));
     //assert(refFlag >= RefFlag.NULL.id);
     if (refFlag == RefFlag.NULL.id) return null;
-    DeserRefResolver refResolver = pack.refResolver;
+    DeserializationRefResolver refResolver = pack.refResolver;
     if (refFlag == RefFlag.TRACK_ALREADY.id){
       int refId = br.readVarUint32Small14();
       return refResolver.getObj(refId);
@@ -66,7 +66,7 @@ class DeserializeCoordinator {
 
   Object? xReadRefWithSer(ByteReader br, Serializer ser, DeserializerPack pack) {
     if (ser.writeRef){
-      DeserRefResolver refResolver = pack.refResolver;
+      DeserializationRefResolver refResolver = pack.refResolver;
       int refFlag = br.readInt8();
       //assert(RefFlag.checkAllow(refFlag));
       //assert(refFlag >= RefFlag.NULL.id);

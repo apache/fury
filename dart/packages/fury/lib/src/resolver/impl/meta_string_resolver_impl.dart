@@ -7,7 +7,7 @@ import 'package:fury/src/dev_annotation/optimize.dart';
 import 'package:fury/src/memory/byte_reader.dart';
 import 'package:fury/src/meta/meta_string.dart';
 import 'package:fury/src/meta/meta_string_byte.dart';
-import 'package:fury/src/resolver/meta_str/meta_string_resolver.dart';
+import 'package:fury/src/resolver/meta_string_resolver.dart';
 import 'package:fury/src/util/murmur3hash.dart';
 
 /// only serve one serialization/deserialization process

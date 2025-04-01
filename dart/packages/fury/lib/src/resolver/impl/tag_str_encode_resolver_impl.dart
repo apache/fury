@@ -3,7 +3,7 @@ import 'package:fury/src/codec/encoders.dart';
 import 'package:fury/src/codec/meta_string_encoder.dart';
 import 'package:fury/src/codec/meta_string_encoding.dart';
 import 'package:fury/src/meta/meta_string.dart';
-import 'package:fury/src/resolver/meta_str/tag_str_encode_resolver.dart';
+import 'package:fury/src/resolver/tag_str_encode_resolver.dart';
 
 final class TagStringEncodeResolverImpl extends TagStringEncodeResolver {
 

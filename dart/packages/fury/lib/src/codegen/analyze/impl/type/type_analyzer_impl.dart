@@ -2,10 +2,9 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:fury/src/codegen/analyze/analysis_cache.dart';
+import 'package:fury/src/codegen/analyze/analysis_wrappers.dart';
 import 'package:fury/src/codegen/analyze/analyzer.dart';
 import 'package:fury/src/codegen/analyze/annotation/location_level_ensure.dart';
-import 'package:fury/src/codegen/analyze/entity/analysis_res_wrap.dart';
-import 'package:fury/src/codegen/analyze/entity/obj_type_res.dart';
 import 'package:fury/src/codegen/analyze/interface/type_analyzer.dart';
 import 'package:fury/src/codegen/const/location_level.dart';
 import 'package:fury/src/codegen/entity/location_mark.dart';
@@ -51,7 +50,7 @@ class TypeAnalyzerImpl extends TypeAnalyzer{
     int libId = element.library.id;
     bool nullable = (typeDecision.forceNullable) ? true:  type.nullabilitySuffix == NullabilitySuffix.question;
 
-    ObjTypeRes objTypeRes = Analyzer.typeSystemAnalyzer.analyzeObjType(element, locationMark);
+    ObjTypeWrapper objTypeRes = Analyzer.typeSystemAnalyzer.analyzeObjType(element, locationMark);
     List<TypeSpecGen> typeArgsTypes = [];
     for (DartType arg in type.typeArguments){
       typeArgsTypes.add(
@@ -88,7 +87,7 @@ class TypeAnalyzerImpl extends TypeAnalyzer{
     // step by step
     String name = element.name;
 
-    ObjTypeRes objTypeRes = Analyzer.typeSystemAnalyzer.analyzeObjType(element, locationMark);
+    ObjTypeWrapper objTypeRes = Analyzer.typeSystemAnalyzer.analyzeObjType(element, locationMark);
     int libId = element.library.id;
     // cache
     typeImmutable = TypeImmutable(

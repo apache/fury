@@ -33,8 +33,7 @@ final class ComplexObject1Serializer extends Serializer<ComplexObject1>{
 }
 
 void main() {
-  group('A group of tests', () {
-
+  group('Test Registering Serializer', () {
     test('testRegisterSerializer', () {
       Fury fury = Fury(
         refTracking: true,

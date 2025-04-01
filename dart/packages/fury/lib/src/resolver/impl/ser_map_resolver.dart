@@ -1,15 +1,15 @@
 import 'dart:collection';
 
 import 'package:fury/src/const/ref_flag.dart';
-import 'package:fury/src/resolver/ref/ser_ref_resolver.dart';
+import 'package:fury/src/resolver/serialization_ref_resolver.dart';
 
-final class SerMapRefResolver extends SerRefResolver {
-  static final SerRefRes noRef = (refFlag: RefFlag.NULL, refId: null);
+final class SerMapRefResolver extends SerializationRefResolver {
+  static final SerializationRefMeta noRef = (refFlag: RefFlag.NULL, refId: null);
 
   final Map<int, int> idenHashToRefId = HashMap();
 
   @override
-  SerRefRes getRefId(Object? obj) {
+  SerializationRefMeta getRefId(Object? obj) {
     if (obj == null) {
       return noRef;
     }

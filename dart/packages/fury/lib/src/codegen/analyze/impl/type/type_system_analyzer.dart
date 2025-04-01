@@ -1,10 +1,9 @@
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:fury/src/codegen/analyze/analysis_type_identifier.dart';
+import 'package:fury/src/codegen/analyze/analysis_wrappers.dart';
 import 'package:fury/src/codegen/analyze/analyzer.dart';
 import 'package:fury/src/codegen/analyze/annotation/location_level_ensure.dart';
-import 'package:fury/src/codegen/analyze/entity/analysis_res_wrap.dart';
-import 'package:fury/src/codegen/analyze/entity/obj_type_res.dart';
 import 'package:fury/src/codegen/const/location_level.dart';
 import 'package:fury/src/codegen/entity/either.dart';
 import 'package:fury/src/codegen/entity/location_mark.dart';
@@ -15,13 +14,13 @@ class TypeSystemAnalyzer{
 
   const TypeSystemAnalyzer();
 
-  ObjTypeRes analyzeObjType(
+  ObjTypeWrapper analyzeObjType(
     InterfaceElement element,
     @LocationEnsure(LocationLevel.fieldLevel)LocationMark locationMark,
   ){
     assert(locationMark.ensureFieldLevel);
     // 确认现在的ObjType
-    Either<ObjTypeRes, DartTypeEnum> res = Analyzer.customTypeAnalyzer.analyzeType(element);
+    Either<ObjTypeWrapper, DartTypeEnum> res = Analyzer.customTypeAnalyzer.analyzeType(element);
     if (res.isRight){
       throw UnsupportedTypeException(
         locationMark.libPath,

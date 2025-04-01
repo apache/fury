@@ -1,6 +1,6 @@
-import 'package:fury/src/resolver/ref/deser_ref_resolver.dart';
+import 'package:fury/src/resolver/deserialization_ref_resolver.dart';
 
-class DeserNoRefResolver implements DeserRefResolver{
+class DeserNoRefResolver implements DeserializationRefResolver{
 
   const DeserNoRefResolver();
 

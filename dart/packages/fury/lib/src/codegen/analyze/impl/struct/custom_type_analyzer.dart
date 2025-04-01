@@ -1,6 +1,6 @@
 import 'package:analyzer/dart/element/element.dart';
+import 'package:fury/src/codegen/analyze/analysis_wrappers.dart';
 import 'package:fury/src/codegen/analyze/analyzer.dart';
-import 'package:fury/src/codegen/analyze/entity/obj_type_res.dart';
 import 'package:fury/src/codegen/entity/either.dart';
 import 'package:fury/src/codegen/exception/annotation_exception.dart';
 import 'package:fury/src/const/dart_type.dart';
@@ -16,7 +16,7 @@ class CustomTypeAnalyzer {
    Additionally, for now, annotations are simple and it seems possible to analyze everything at once, but in the future, as fields may gradually increase, handling it here would be overstepping, so it is not cached now.
    */
   // Here, the left of either is the result found without prohibition, and the right is the prohibited type.
-  Either<ObjTypeRes, DartTypeEnum> analyzeType(InterfaceElement element){
+  Either<ObjTypeWrapper, DartTypeEnum> analyzeType(InterfaceElement element){
     String name = element.name;
     Uri libLoc = element.library.source.uri;
     String scheme = libLoc.scheme;
@@ -29,7 +29,7 @@ class CustomTypeAnalyzer {
         return Either.right(dartTypeEnum);
       }
       return Either.left(
-        ObjTypeRes(dartTypeEnum.objType!, dartTypeEnum.certainForSer)
+        ObjTypeWrapper(dartTypeEnum.objType!, dartTypeEnum.certainForSer)
       );
     }
     // Not found in built-in types, considered as a custom type
@@ -37,13 +37,13 @@ class CustomTypeAnalyzer {
       if (!Analyzer.enumAnnotationAnalyzer.hasFuryEnumAnnotation(element.metadata)){
         throw CodegenUnregisteredTypeException(path, name, 'FuryEnum');
       }
-      return Either.left(ObjTypeRes.namedEnum);
+      return Either.left(ObjTypeWrapper.namedEnum);
     }
     assert(element is ClassElement);
     if (Analyzer.classAnnotationAnalyzer.hasFuryClassAnnotation(element.metadata)){
-      return Either.left(ObjTypeRes.namedStruct);
+      return Either.left(ObjTypeWrapper.namedStruct);
     }
-    return Either.left(ObjTypeRes.unknownStruct);
+    return Either.left(ObjTypeWrapper.unknownStruct);
   }
 
 }

@@ -2,7 +2,7 @@ import 'package:fury/src/codegen/entity/struct_hash_pair.dart';
 import 'package:fury/src/config/fury_config.dart';
 import 'package:fury/src/const/obj_type.dart';
 import 'package:fury/src/deserializer_pack.dart';
-import 'package:fury/src/exception/fury_mismatch_exception.dart';
+import 'package:fury/src/exception/deserialization_exception.dart';
 import 'package:fury/src/memory/byte_reader.dart';
 import 'package:fury/src/memory/byte_writer.dart';
 import 'package:fury/src/meta/spec_wraps/type_spec_wrap.dart';

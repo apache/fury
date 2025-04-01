@@ -1,6 +1,6 @@
 import 'package:fury/src/deserialize_coordinator.dart';
 import 'package:fury/src/meta/spec_wraps/type_spec_wrap.dart';
-import 'package:fury/src/resolver/ref/deser_ref_resolver.dart';
+import 'package:fury/src/resolver/deserialization_ref_resolver.dart';
 import 'package:fury/src/resolver/xtype_resolver.dart';
 import 'package:fury/src/serializer/fury_header_serializer.dart';
 import 'package:fury/src/pack.dart';
@@ -11,7 +11,7 @@ final class DeserializerPack extends Pack{
 
    final DeserializeCoordinator furyDeser;
 
-   final DeserRefResolver refResolver;
+   final DeserializationRefResolver refResolver;
    final XtypeResolver xtypeResolver;
 
    final Stack<TypeSpecWrap> typeWrapStack;

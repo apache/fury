@@ -1,5 +1,7 @@
 import 'package:fury/src/exception/fury_exception.dart';
 
+import 'package:fury/src/const/obj_type.dart';
+
 abstract class DeserializationException extends FuryException {
   final String? _where;
 
@@ -81,5 +83,42 @@ class InvalidParamException extends DeserializationException{
     buf.writeln(_invalidParam);
     buf.write('while the valid params: ');
     buf.writeln(_validParams);
+  }
+}
+
+class FuryMismatchException extends DeserializationException{
+  final Object readValue;
+  final Object expected;
+  final String specification;
+
+  FuryMismatchException(
+      this.readValue,
+      this.expected,
+      this.specification,
+      );
+
+  @override
+  void giveExceptionMessage(StringBuffer buf) {
+    super.giveExceptionMessage(buf);
+    buf.write('FuryMismatchException: ');
+    buf.write(specification);
+    buf.write('\nread value: ');
+    buf.write(readValue);
+    buf.write(' ,while expected: ');
+    buf.write(expected);
+    buf.write('\n');
+  }
+}
+
+class UnsupportedTypeException extends FuryException{
+  final ObjType _objType;
+
+  UnsupportedTypeException(this._objType,);
+
+  @override
+  void giveExceptionMessage(StringBuffer buf) {
+    super.giveExceptionMessage(buf);
+    buf.write('unsupported type: ');
+    buf.writeln(_objType);
   }
 }

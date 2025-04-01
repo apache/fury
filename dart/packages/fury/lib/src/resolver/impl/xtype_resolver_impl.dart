@@ -3,7 +3,6 @@ import 'package:fury/src/codegen/entity/struct_hash_pair.dart';
 import 'package:fury/src/collection/key/long_long_key.dart';
 import 'package:fury/src/const/obj_type.dart';
 import 'package:fury/src/dev_annotation/optimize.dart';
-import 'package:fury/src/exception/unsupported_type_exception.dart';
 import 'package:fury/src/exception/registration_exception.dart' show UnregisteredTagException, UnregisteredTypeException;
 import 'package:fury/src/fury_context.dart';
 import 'package:fury/src/memory/byte_reader.dart';
@@ -14,8 +13,8 @@ import 'package:fury/src/meta/spec_wraps/type_spec_wrap.dart';
 import 'package:fury/src/meta/specs/class_spec.dart';
 import 'package:fury/src/meta/specs/custom_type_spec.dart';
 import 'package:fury/src/resolver/dart_type_resolver.dart';
-import 'package:fury/src/resolver/meta_str/meta_string_resolver.dart';
-import 'package:fury/src/resolver/meta_str/tag_str_encode_resolver.dart';
+import 'package:fury/src/resolver/meta_string_resolver.dart';
+import 'package:fury/src/resolver/tag_str_encode_resolver.dart';
 import 'package:fury/src/resolver/struct_hash_resolver.dart';
 import 'package:fury/src/resolver/xtype_resolver.dart';
 import 'package:fury/src/serializer/class_serializer.dart';
@@ -23,6 +22,8 @@ import 'package:fury/src/serializer/enum_serializer.dart';
 import 'package:fury/src/serializer/serializer.dart';
 import 'package:fury/src/serializer_pack.dart';
 import 'package:fury/src/util/string_util.dart';
+
+import '../../exception/deserialization_exception.dart' show UnsupportedTypeException;
 
 final class XtypeResolverImpl extends XtypeResolver {
   static const DartTypeResolver dartTypeResolver = DartTypeResolver.I;

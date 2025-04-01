@@ -3,7 +3,6 @@ import 'package:fury/src/codegen/entity/contructor_params.dart';
 import 'package:fury/src/codegen/entity/fields_cache_unit.dart';
 import 'package:fury/src/codegen/meta/impl/type_immutable.dart';
 import 'package:fury/src/codegen/meta/lib_import_pack.dart';
-import 'package:fury/src/dev_annotation/donot_modify.dart';
 
 class AnalysisCache{
   static final Map<int, ConstructorParams> _clsIdToUnnamedCons = HashMap();
@@ -15,15 +14,15 @@ class AnalysisCache{
   static final Map<int, TypeImmutable> _typeId2TypeImmutable = HashMap();
 
   /*--------------------------------------------------------------------*/
-  @doNotModifyReturn
   static ConstructorParams? getUnnamedCons(int id){
     return _clsIdToUnnamedCons[id];
   }
+  // the modification of the return value is not allowed
   static void putUnnamedCons(int id, ConstructorParams params){
     _clsIdToUnnamedCons[id] = params;
   }
   /*--------------------------------------------------------------------*/
-  @doNotModifyReturn
+  // the modification of the return value is not allowed
   static FieldsCacheUnit? getFields(int id){
     return _clsIdToFields[id];
   }
@@ -41,7 +40,7 @@ class AnalysisCache{
   }
 
   /*-----------------lib imports---------------------------------------------------*/
-  @doNotModifyReturn
+  // the modification of the return value is not allowed
   static LibImportPack? getLibImport(int id){
     return _libToImport[id];
   }
