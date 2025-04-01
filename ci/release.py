@@ -127,7 +127,7 @@ def bump_version(**kwargs):
     new_version = kwargs["version"]
     langs = kwargs["l"]
     if langs == "all":
-        langs = ["java", "python", "javascript", "scala", "rust"]
+        langs = ["java", "python", "javascript", "scala", "rust", "kotlin"]
     else:
         langs = langs.split(",")
     for lang in langs:
@@ -135,6 +135,8 @@ def bump_version(**kwargs):
             bump_java_version(new_version)
         elif lang == "scala":
             _bump_version("scala", "build.sbt", new_version, _update_scala_version)
+        elif lang == "kotlin":
+            _bump_version("kotlin", "pom.xml", new_version, _update_kotlin_version)
         elif lang == "rust":
             _bump_version("rust", "Cargo.toml", new_version, _update_rust_version)
         elif lang == "python":
@@ -210,6 +212,22 @@ def _update_scala_version(lines, v):
         if "furyVersion = " in line:
             lines[index] = f'val furyVersion = "{v}"\n'
             break
+    return lines
+
+
+def _update_kotlin_version(lines, v):
+    target_index = -1
+    for index, line in enumerate(lines):
+        if "<artifactId>fury-kotlin</artifactId>" in line:
+            target_index = index + 1
+            break
+    current_version_line = lines[target_index]
+    # Find the start and end of the version number
+    start = current_version_line.index("<version>") + len("<version>")
+    end = current_version_line.index("</version>")
+    # Replace the version number
+    updated_version_line = current_version_line[:start] + v + current_version_line[end:]
+    lines[target_index] = updated_version_line
     return lines
 
 
