@@ -1,0 +1,2 @@
+Even if there are some syntax errors, dart analyzer can still analyze.
+For example, if a class uses an undefined mixin, it can still be analyzed, but ClassElement::mixins will not record it.
