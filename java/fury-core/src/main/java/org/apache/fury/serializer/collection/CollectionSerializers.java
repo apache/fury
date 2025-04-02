@@ -488,7 +488,7 @@ public class CollectionSerializers {
       final Map<?, Boolean> map = (Map<?, Boolean>) Platform.getObject(value, MAP_FIELD_OFFSET);
       final ClassInfo classInfo = fury.getClassResolver().getClassInfo(map.getClass());
       AbstractMapSerializer mapSerializer = (AbstractMapSerializer) classInfo.getSerializer();
-      fury.getClassResolver().writeClass(buffer, classInfo);
+      fury.getClassResolver().writeClassInfo(buffer, classInfo);
       if (mapSerializer.supportCodegenHook) {
         buffer.writeBoolean(true);
         mapSerializer.onMapWrite(buffer, map);

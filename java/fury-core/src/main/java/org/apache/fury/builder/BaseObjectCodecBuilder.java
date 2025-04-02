@@ -224,8 +224,8 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     return fury.getJITContext().asyncVisitFury(function);
   }
 
-  private boolean needWriteRef(Class<?> cls) {
-    return visitFury(fury -> fury.getClassResolver().needToWriteRef(cls));
+  private boolean needWriteRef(TypeRef<?> type) {
+    return visitFury(fury -> fury.getClassResolver().needToWriteRef(type));
   }
 
   @Override
@@ -354,7 +354,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       boolean generateNewMethod) {
     // access rawType without jit lock to reduce lock competition.
     Class<?> rawType = getRawType(typeRef);
-    if (needWriteRef(rawType)) {
+    if (needWriteRef(typeRef)) {
       return new If(
           not(writeRefOrNull(buffer, inputObject)),
           serializeForNotNull(inputObject, buffer, typeRef, serializer, generateNewMethod));
@@ -366,7 +366,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       Expression action =
           new ListExpression(
               new Invoke(
-                  buffer, "writeByte", new Literal(Fury.REF_VALUE_FLAG, PRIMITIVE_BYTE_TYPE)),
+                  buffer, "writeByte", new Literal(Fury.NOT_NULL_VALUE_FLAG, PRIMITIVE_BYTE_TYPE)),
               serializeForNotNull(inputObject, buffer, typeRef, serializer, generateNewMethod));
       return new If(
           eqNull(inputObject),
@@ -791,7 +791,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     walkPath.add(elementType.toString());
     ListExpression builder = new ListExpression();
     Class<?> elemClass = TypeUtils.getRawType(elementType);
-    boolean trackingRef = needWriteRef(elemClass);
+    boolean trackingRef = needWriteRef(elementType);
     Tuple2<Expression, Invoke> writeElementsHeader =
         writeElementsHeader(elemClass, trackingRef, serializer, buffer, collection);
     Expression flags = writeElementsHeader.f0;
@@ -1084,10 +1084,8 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     boolean inline = keyMonomorphic && valueMonomorphic;
     Class<?> keyTypeRawType = keyType.getRawType();
     Class<?> valueTypeRawType = valueType.getRawType();
-    boolean trackingKeyRef =
-        visitFury(fury -> fury.getClassResolver().needToWriteRef(keyTypeRawType));
-    boolean trackingValueRef =
-        visitFury(fury -> fury.getClassResolver().needToWriteRef(valueTypeRawType));
+    boolean trackingKeyRef = visitFury(fury -> fury.getClassResolver().needToWriteRef(keyType));
+    boolean trackingValueRef = visitFury(fury -> fury.getClassResolver().needToWriteRef(valueType));
     Tuple2<Expression, Expression> mapKVSerializer =
         getMapKVSerializer(keyTypeRawType, valueTypeRawType);
     Expression keySerializer = mapKVSerializer.f0;
@@ -1179,10 +1177,8 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
 
     Expression chunkHeader;
     Expression keySerializer, valueSerializer;
-    boolean trackingKeyRef =
-        visitFury(fury -> fury.getClassResolver().needToWriteRef(keyTypeRawType));
-    boolean trackingValueRef =
-        visitFury(fury -> fury.getClassResolver().needToWriteRef(valueTypeRawType));
+    boolean trackingKeyRef = visitFury(fury -> fury.getClassResolver().needToWriteRef(keyType));
+    boolean trackingValueRef = visitFury(fury -> fury.getClassResolver().needToWriteRef(valueType));
     Expression keyWriteRef = Literal.ofBoolean(trackingKeyRef);
     Expression valueWriteRef = Literal.ofBoolean(trackingValueRef);
     boolean inline = keyMonomorphic && valueMonomorphic;
@@ -1392,8 +1388,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       TypeRef<?> typeRef,
       Function<Expression, Expression> callback,
       InvokeHint invokeHint) {
-    Class<?> rawType = getRawType(typeRef);
-    if (visitFury(f -> f.getClassResolver().needToWriteRef(rawType))) {
+    if (visitFury(f -> f.getClassResolver().needToWriteRef(typeRef))) {
       return readRef(buffer, callback, () -> deserializeForNotNull(buffer, typeRef, invokeHint));
     } else {
       if (typeRef.isPrimitive()) {
@@ -1566,7 +1561,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     Class<?> elemClass = TypeUtils.getRawType(elementType);
     walkPath.add(elementType.toString());
     boolean finalType = isMonomorphic(elemClass);
-    boolean trackingRef = visitFury(fury -> fury.getClassResolver().needToWriteRef(elemClass));
+    boolean trackingRef = visitFury(fury -> fury.getClassResolver().needToWriteRef(elementType));
     if (finalType) {
       if (trackingRef) {
         builder.add(readContainerElements(elementType, true, null, null, buffer, collection, size));
@@ -1770,8 +1765,8 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     Class<?> valueCls = valueType.getRawType();
     boolean keyMonomorphic = isMonomorphic(keyCls);
     boolean valueMonomorphic = isMonomorphic(valueCls);
-    boolean refKey = needWriteRef(keyCls);
-    boolean refValue = needWriteRef(valueCls);
+    boolean refKey = needWriteRef(keyType);
+    boolean refValue = needWriteRef(valueType);
     boolean inline = keyMonomorphic && valueMonomorphic && (!refKey || !refValue);
     Tuple2<Expression, Expression> mapKVSerializer = getMapKVSerializer(keyCls, valueCls);
     Expression keySerializer = mapKVSerializer.f0;
@@ -1845,8 +1840,8 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     boolean valueMonomorphic = isMonomorphic(valueType);
     Class<?> keyTypeRawType = keyType.getRawType();
     Class<?> valueTypeRawType = valueType.getRawType();
-    boolean trackingKeyRef = needWriteRef(keyTypeRawType);
-    boolean trackingValueRef = needWriteRef(valueTypeRawType);
+    boolean trackingKeyRef = needWriteRef(keyType);
+    boolean trackingValueRef = needWriteRef(valueType);
     boolean inline = keyMonomorphic && valueMonomorphic && (!trackingKeyRef || !trackingValueRef);
     ListExpression expressions = new ListExpression(buffer);
     Expression trackKeyRef = neq(bitand(chunkHeader, ofInt(TRACKING_KEY_REF)), ofInt(0));

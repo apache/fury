@@ -106,6 +106,12 @@ public class StructSerializer<T> extends Serializer<T> {
   private static <T> GenericType getGenericType(
       Fury fury, TypeRef<T> type, FieldAccessor fieldAccessor) {
     GenericType t = GenericType.build(type, fieldAccessor.getField().getGenericType());
+    if (t.getTypeParametersCount() > 0) {
+      boolean skip = Arrays.stream(t.getTypeParameters()).allMatch(p -> p.getCls() == Object.class);
+      if (skip) {
+        t = new GenericType(t.getTypeRef(), t.isMonomorphic());
+      }
+    }
     ClassResolver resolver = fury.getClassResolver();
     Class cls = t.getCls();
     if (resolver.isMonomorphic(cls)) {

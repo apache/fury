@@ -132,6 +132,27 @@ public class TypeUtilsTest {
     assertEquals(classes.size(), 2);
   }
 
+  public static class ListBeanGenericFoo1 {}
+
+  public static class ListBeanGenericFoo2 {}
+
+  public static class ListBeanGenericFoo3 {}
+
+  public static class ListBeanGenericFoo4 {}
+
+  public static class ListBeanGeneric {
+    List<ListBeanGenericFoo1> f1;
+    ListBeanGenericFoo2[] f2;
+    Map<ListBeanGenericFoo3, ListBeanGenericFoo4> f3;
+  }
+
+  @Test
+  public void listBeanGeneric() {
+    LinkedHashSet<Class<?>> classes = TypeUtils.listBeansRecursiveInclusive(ListBeanGeneric.class);
+    // System.out.println(classes);
+    assertEquals(classes.size(), 5);
+  }
+
   @Test
   public void isBean() {
     Assert.assertTrue(TypeUtils.isBean(BeanA.class));

@@ -31,11 +31,12 @@ import java.util.List;
 import java.util.function.Predicate;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeRef;
-import org.apache.fury.resolver.ClassResolver;
+import org.apache.fury.resolver.TypeResolver;
 import org.apache.fury.serializer.Serializer;
 
 /** GenericType for building java generics as a tree and binding with fury serializers. */
 // TODO(chaokunyang) refine generics which can be inspired by spring ResolvableType.
+@SuppressWarnings("rawtypes")
 public class GenericType {
   private static final Predicate<Type> defaultFinalPredicate =
       type -> {
@@ -115,11 +116,15 @@ public class GenericType {
   }
 
   public static GenericType build(TypeRef<?> context, Type type, Predicate<Type> finalPredicate) {
-    return build(context.resolveType(type).getType(), finalPredicate);
+    return build(context.resolveType(type), finalPredicate);
   }
 
-  @SuppressWarnings("rawtypes")
   public static GenericType build(Type type, Predicate<Type> finalPredicate) {
+    return build(TypeRef.of(type), finalPredicate);
+  }
+
+  public static GenericType build(TypeRef<?> typeRef, Predicate<Type> finalPredicate) {
+    Type type = typeRef.getType();
     if (type instanceof ParameterizedType) {
       // List<String>, List<T>, Map<String, List<String>>, SomeClass<T>
       Type[] actualTypeArguments = ((ParameterizedType) type).getActualTypeArguments();
@@ -129,10 +134,10 @@ public class GenericType {
         list.add(build);
       }
       GenericType[] genericTypes = list.toArray(new GenericType[0]);
-      return new GenericType(TypeRef.of(type), finalPredicate.test(type), genericTypes);
+      return new GenericType(typeRef, finalPredicate.test(type), genericTypes);
     } else if (type instanceof GenericArrayType) { // List<String>[] or T[]
       Type componentType = ((GenericArrayType) type).getGenericComponentType();
-      return new GenericType(TypeRef.of(type), finalPredicate.test(type), build(componentType));
+      return new GenericType(typeRef, finalPredicate.test(type), build(componentType));
     } else if (type instanceof TypeVariable) { // T
       TypeVariable typeVariable = (TypeVariable) type;
       Type typeVariableBound =
@@ -149,7 +154,7 @@ public class GenericType {
       }
     } else {
       // Class type: String, Integer
-      return new GenericType(TypeRef.of(type), finalPredicate.test(type));
+      return new GenericType(typeRef, finalPredicate.test(type));
     }
   }
 
@@ -181,7 +186,7 @@ public class GenericType {
     this.serializer = serializer;
   }
 
-  public Serializer<?> getSerializer(ClassResolver classResolver) {
+  public Serializer<?> getSerializer(TypeResolver classResolver) {
     Serializer<?> serializer = this.serializer;
     if (serializer == null) {
       serializer = classResolver.getSerializer(cls);
@@ -198,10 +203,10 @@ public class GenericType {
     return isMonomorphic;
   }
 
-  public boolean trackingRef(ClassResolver classResolver) {
+  public boolean trackingRef(TypeResolver classResolver) {
     Boolean trackingRef = this.trackingRef;
     if (trackingRef == null) {
-      trackingRef = this.trackingRef = classResolver.needToWriteRef(cls);
+      trackingRef = this.trackingRef = classResolver.needToWriteRef(typeRef);
     }
     return trackingRef;
   }

@@ -990,4 +990,18 @@ public class MapSerializersTest extends FuryTestBase {
     o.map2 = ofArrayList(ofHashMap("k2", "2"));
     serDeCheck(fury, o);
   }
+
+  @Data
+  public static class NestedMapCollectionGenericTestClass {
+    public Map<String, Object> map = new HashMap<>();
+  }
+
+  @Test(dataProvider = "enableCodegen")
+  public void testNestedMapCollectionGeneric(boolean enableCodegen) {
+    NestedMapCollectionGenericTestClass obj = new NestedMapCollectionGenericTestClass();
+    obj.map = new LinkedHashMap<>();
+    obj.map.put("obj", ofHashMap("obj", 1, "b", ofArrayList(10)));
+    Fury fury = Fury.builder().requireClassRegistration(false).withCodegen(enableCodegen).build();
+    fury.deserialize(fury.serialize(obj));
+  }
 }

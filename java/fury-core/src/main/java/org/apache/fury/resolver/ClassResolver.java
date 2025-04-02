@@ -109,6 +109,7 @@ import org.apache.fury.meta.ClassDef;
 import org.apache.fury.meta.ClassSpec;
 import org.apache.fury.meta.Encoders;
 import org.apache.fury.meta.MetaString;
+import org.apache.fury.meta.TypeExtMeta;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.serializer.ArraySerializers;
@@ -123,6 +124,7 @@ import org.apache.fury.serializer.JdkProxySerializer;
 import org.apache.fury.serializer.LambdaSerializer;
 import org.apache.fury.serializer.LocaleSerializer;
 import org.apache.fury.serializer.MetaSharedSerializer;
+import org.apache.fury.serializer.NoneSerializer;
 import org.apache.fury.serializer.NonexistentClass;
 import org.apache.fury.serializer.NonexistentClass.NonexistentMetaShared;
 import org.apache.fury.serializer.NonexistentClass.NonexistentSkip;
@@ -165,7 +167,7 @@ import org.apache.fury.util.function.Functions;
  * up relations between serializer and types.
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
-public class ClassResolver {
+public class ClassResolver implements TypeResolver {
   private static final Logger LOG = LoggerFactory.getLogger(ClassResolver.class);
 
   // bit 0 unset indicates class is written as an id.
@@ -275,6 +277,7 @@ public class ClassResolver {
     ClassResolver._addGraalvmClassRegistry(fury.getConfig().getConfigHash(), this);
   }
 
+  @Override
   public void initialize() {
     register(LambdaSerializer.ReplaceStub.class, LAMBDA_STUB_ID);
     register(JdkProxySerializer.ReplaceStub.class, JDK_PROXY_STUB_ID);
@@ -322,6 +325,7 @@ public class ClassResolver {
 
   private void addDefaultSerializers() {
     // primitive types will be boxed.
+    addDefaultSerializer(void.class, NoneSerializer.class);
     addDefaultSerializer(String.class, new StringSerializer(fury));
     PrimitiveSerializers.registerDefaultSerializers(fury);
     Serializers.registerDefaultSerializers(fury);
@@ -533,6 +537,33 @@ public class ClassResolver {
     }
   }
 
+  public boolean isRegistered(Class<?> cls) {
+    return extRegistry.registeredClassIdMap.containsKey(cls)
+        || extRegistry.registeredClasses.inverse().containsKey(cls);
+  }
+
+  public boolean isRegisteredByName(String name) {
+    return extRegistry.registeredClasses.containsKey(name);
+  }
+
+  public boolean isRegisteredByName(Class<?> cls) {
+    return extRegistry.registeredClasses.inverse().containsKey(cls);
+  }
+
+  public String getRegisteredName(Class<?> cls) {
+    return extRegistry.registeredClasses.inverse().get(cls);
+  }
+
+  public Tuple2<String, String> getRegisteredNameTuple(Class<?> cls) {
+    String name = extRegistry.registeredClasses.inverse().get(cls);
+    int index = name.lastIndexOf(".");
+    if (index != -1) {
+      return Tuple2.of(name.substring(0, index), name.substring(index + 1));
+    } else {
+      return Tuple2.of("", name);
+    }
+  }
+
   public boolean isRegisteredById(Class<?> cls) {
     return extRegistry.registeredClassIdMap.get(cls) != null;
   }
@@ -551,11 +582,27 @@ public class ClassResolver {
     return null;
   }
 
+  public Class<?> getRegisteredClass(String className) {
+    return extRegistry.registeredClasses.get(className);
+  }
+
   public List<Class<?>> getRegisteredClasses() {
     return Arrays.stream(registeredId2ClassInfo)
         .filter(Objects::nonNull)
         .map(info -> info.cls)
         .collect(Collectors.toList());
+  }
+
+  public String getTypeAlias(Class<?> cls) {
+    Short id = extRegistry.registeredClassIdMap.get(cls);
+    if (id != null) {
+      return String.valueOf(id);
+    }
+    String name = extRegistry.registeredClasses.inverse().get(cls);
+    if (name != null) {
+      return name;
+    }
+    return cls.getName();
   }
 
   /**
@@ -1003,6 +1050,9 @@ public class ClassResolver {
   }
 
   public boolean isMap(Class<?> cls) {
+    if (cls == NonexistentMetaShared.class) {
+      return false;
+    }
     return Map.class.isAssignableFrom(cls)
         || (fury.getConfig().isScalaOptimizationEnabled()
             && ScalaTypes.getScalaMapType().isAssignableFrom(cls));
@@ -1118,7 +1168,13 @@ public class ClassResolver {
    * Whether to track reference for this type. If false, reference tracing of subclasses may be
    * ignored too.
    */
-  public boolean needToWriteRef(Class<?> cls) {
+  public boolean needToWriteRef(TypeRef<?> typeRef) {
+    Object extInfo = typeRef.getExtInfo();
+    if (extInfo instanceof TypeExtMeta) {
+      TypeExtMeta meta = (TypeExtMeta) extInfo;
+      return meta.trackingRef();
+    }
+    Class<?> cls = typeRef.getRawType();
     if (fury.trackingRef()) {
       ClassInfo classInfo = getClassInfo(cls, false);
       if (classInfo == null || classInfo.serializer == null) {
@@ -1324,7 +1380,7 @@ public class ClassResolver {
 
   /**
    * Write class info to <code>buffer</code>. TODO(chaokunyang): The method should try to write
-   * aligned data to reduce cpu instruction overhead. `writeClass` is the last step before
+   * aligned data to reduce cpu instruction overhead. `writeClassInfo` is the last step before
    * serializing object, if this writes are aligned, then later serialization will be more
    * efficient.
    */
@@ -1335,26 +1391,27 @@ public class ClassResolver {
     } else if (cls == Long.class) {
       buffer.writeVarUint32Small7(LONG_CLASS_ID << 1);
     } else {
-      writeClass(buffer, getOrUpdateClassInfo(cls));
+      writeClassInfo(buffer, getOrUpdateClassInfo(cls));
     }
   }
 
   // The jit-compiled native code fot this method will be too big for inline, so we generated
   // `getClassInfo`
   // in fury-jit, see `BaseSeqCodecBuilder#writeAndGetClassInfo`
-  // public ClassInfo writeClass(MemoryBuffer buffer, Class<?> cls, ClassInfoHolder classInfoHolder)
+  // public ClassInfo writeClassInfo(MemoryBuffer buffer, Class<?> cls, ClassInfoHolder
+  // classInfoHolder)
   // {
   //   ClassInfo classInfo = getClassInfo(cls, classInfoHolder);
-  //   writeClass(buffer, classInfo);
+  //   writeClassInfo(buffer, classInfo);
   //   return classInfo;
   // }
 
   /** Write classname for java serialization. */
-  public void writeClass(MemoryBuffer buffer, ClassInfo classInfo) {
+  public void writeClassInfo(MemoryBuffer buffer, ClassInfo classInfo) {
     if (metaContextShareEnabled) {
       // FIXME(chaokunyang) Register class but not register serializer can't be used with
       //  meta share mode, because no class def are sent to peer.
-      writeClassWithMetaShare(buffer, classInfo);
+      writeClassInfoWithMetaShare(buffer, classInfo);
     } else {
       if (classInfo.classId == NO_CLASS_ID) { // no class id provided.
         // use classname
@@ -1370,7 +1427,7 @@ public class ClassResolver {
     }
   }
 
-  public void writeClassWithMetaShare(MemoryBuffer buffer, ClassInfo classInfo) {
+  public void writeClassInfoWithMetaShare(MemoryBuffer buffer, ClassInfo classInfo) {
     if (classInfo.classId != NO_CLASS_ID && !classInfo.needToWriteClassDef) {
       buffer.writeVarUint32(classInfo.classId << 1);
       return;
@@ -1625,7 +1682,7 @@ public class ClassResolver {
   }
 
   /**
-   * Native code for ClassResolver.writeClass is too big to inline, so inline it manually.
+   * Native code for ClassResolver.writeClassInfo is too big to inline, so inline it manually.
    *
    * <p>See `already compiled into a big method` in <a
    * href="https://wiki.openjdk.org/display/HotSpot/Server+Compiler+Inlining+Messages">Server+Compiler+Inlining+Messages</a>
@@ -1633,7 +1690,7 @@ public class ClassResolver {
   // Note: Thread safe fot jit thread to call.
   public Expression writeClassExpr(
       Expression classResolverRef, Expression buffer, Expression classInfo) {
-    return new Invoke(classResolverRef, "writeClass", buffer, classInfo);
+    return new Invoke(classResolverRef, "writeClassInfo", buffer, classInfo);
   }
 
   // Note: Thread safe fot jit thread to call.
@@ -1655,7 +1712,7 @@ public class ClassResolver {
   /**
    * Write classname for java serialization. Note that the object of provided class can be
    * non-serializable, and class with writeReplace/readResolve defined won't be skipped. For
-   * serializable object, {@link #writeClass(MemoryBuffer, ClassInfo)} should be invoked.
+   * serializable object, {@link #writeClassInfo(MemoryBuffer, ClassInfo)} should be invoked.
    */
   public void writeClassInternal(MemoryBuffer buffer, Class<?> cls) {
     ClassInfo classInfo = classInfoMap.get(cls);
@@ -1867,6 +1924,10 @@ public class ClassResolver {
   private Class<?> loadClass(
       String className, boolean isEnum, int arrayDims, boolean deserializeNonexistentClass) {
     extRegistry.classChecker.checkClass(this, className);
+    Class<?> cls = extRegistry.registeredClasses.get(className);
+    if (cls != null) {
+      return cls;
+    }
     try {
       return Class.forName(className, false, fury.getClassLoader());
     } catch (ClassNotFoundException e) {
@@ -1898,7 +1959,7 @@ public class ClassResolver {
 
   public GenericType buildGenericType(TypeRef<?> typeRef) {
     return GenericType.build(
-        typeRef.getType(),
+        typeRef,
         t -> {
           if (t.getClass() == Class.class) {
             return isMonomorphic((Class<?>) t);

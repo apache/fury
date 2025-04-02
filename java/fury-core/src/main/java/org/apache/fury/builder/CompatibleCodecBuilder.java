@@ -877,7 +877,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
       return classResolver.writeClassExpr(buffer, classInfo.getClassId());
     }
     Expression classInfoExpr = getFinalClassInfo(cls);
-    return new Invoke(classResolverRef, "writeClass", buffer, classInfoExpr);
+    return new Invoke(classResolverRef, "writeClassInfo", buffer, classInfoExpr);
   }
 
   protected Expression skipFinalClassInfo(Class<?> cls, Expression buffer) {
