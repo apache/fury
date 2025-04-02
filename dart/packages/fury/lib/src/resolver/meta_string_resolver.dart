@@ -21,9 +21,9 @@ import 'package:fury/src/memory/byte_reader.dart';
 import 'package:fury/src/meta/meta_string.dart';
 import 'package:fury/src/meta/meta_string_byte.dart';
 import 'package:fury/src/resolver/impl/meta_string_resolver_impl.dart';
-import 'package:fury/src/resolver/ms_handler.dart';
+import 'package:fury/src/resolver/meta_string_handler.dart';
 
-abstract class MetaStringResolver extends MsHandler{
+abstract class MetaStringResolver extends MataStringHandler{
   const MetaStringResolver();
   static MetaStringResolver get newInst => MetaStringResolverImpl();
 

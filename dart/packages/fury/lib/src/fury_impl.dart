@@ -70,19 +70,19 @@ final class Fury implements BaseFury{
   @override
   @inline
   Object? fromFury(Uint8List bytes, [ByteReader? reader]) {
-    return _deserDirector.deser(bytes, _conf, _xtypeResolver, reader);
+    return _deserDirector.read(bytes, _conf, _xtypeResolver, reader);
   }
 
   @override
   @inline
   Uint8List toFury(Object? obj,) {
-    return _serDirector.ser(obj, _conf, _xtypeResolver);
+    return _serDirector.write(obj, _conf, _xtypeResolver);
   }
 
   @override
   @inline
   void toFuryWithWriter(Object? obj, ByteWriter writer) {
-    _serDirector.serWithWriter(obj, _conf, _xtypeResolver, writer);
+    _serDirector.writeWithWriter(obj, _conf, _xtypeResolver, writer);
   }
 
   // for test only

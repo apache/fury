@@ -19,7 +19,7 @@
 
 import 'dart:collection';
 import 'package:fury/src/codegen/entity/struct_hash_pair.dart';
-import 'package:fury/src/collection/key/long_long_key.dart';
+import 'package:fury/src/collection/long_long_key.dart';
 import 'package:fury/src/const/obj_type.dart';
 import 'package:fury/src/dev_annotation/optimize.dart';
 import 'package:fury/src/exception/registration_exception.dart' show UnregisteredTagException, UnregisteredTypeException;
@@ -90,10 +90,10 @@ final class XtypeResolverImpl extends XtypeResolver {
   void _regWithNamespace(CustomTypeSpec spec, String tag, String tn, [String ns= '']) {
     assert(spec.objType == ObjType.NAMED_STRUCT || spec.objType == ObjType.NAMED_ENUM);
     MetaStringBytes tnMsb = _msResolver.getOrCreateMetaStringBytes(
-      _tstrEncoder.encodeTn(tn),
+      _tstrEncoder.encodeTypeName(tn),
     );
     MetaStringBytes nsMsb = _msResolver.getOrCreateMetaStringBytes(
-      _tstrEncoder.encodeTn(ns),
+      _tstrEncoder.encodeTypeName(ns),
     );
     TypeInfo typeInfo = TypeInfo(
       spec.dartType,
@@ -116,11 +116,11 @@ final class XtypeResolverImpl extends XtypeResolver {
   /// resulting in an error that they are not registered even though they are.
   Serializer _getSerFor(CustomTypeSpec spec) {
     if (spec.objType == ObjType.NAMED_ENUM){
-      Serializer ser = EnumSerializer.cache.getSerWithSpec(_ctx.conf, spec, spec.dartType);
+      Serializer ser = EnumSerializer.cache.getSerializerWithSpec(_ctx.conf, spec, spec.dartType);
       return ser;
     }
     // Indicates ClassSer
-    return ClassSerializer.cache.getSerWithSpec(_ctx.conf, spec as ClassSpec, spec.dartType);
+    return ClassSerializer.cache.getSerializerWithSpec(_ctx.conf, spec as ClassSpec, spec.dartType);
   }
 
   /// This type must be a user-defined class or enum
@@ -201,7 +201,7 @@ final class XtypeResolverImpl extends XtypeResolver {
   }
 
   @override
-  TypeInfo writeGetTypeInfo(ByteWriter bw, Object obj, SerPack pack){
+  TypeInfo writeGetTypeInfo(ByteWriter bw, Object obj, SerializerPack pack){
     Type dartType = dartTypeResolver.getFuryType(obj);
     TypeInfo? typeInfo = _ctx.type2TypeInfo[dartType];
     if (typeInfo == null){
@@ -213,8 +213,8 @@ final class XtypeResolverImpl extends XtypeResolver {
       case ObjType.NAMED_STRUCT:
       case ObjType.NAMED_COMPATIBLE_STRUCT:
       case ObjType.NAMED_EXT:
-        pack.msWritingResolver.writeMsb(bw, typeInfo.nsBytes!);
-        pack.msWritingResolver.writeMsb(bw, typeInfo.typeNameBytes!);
+        pack.msWritingResolver.writeMetaStringBytes(bw, typeInfo.nsBytes!);
+        pack.msWritingResolver.writeMetaStringBytes(bw, typeInfo.typeNameBytes!);
         break;
       default:
         break;

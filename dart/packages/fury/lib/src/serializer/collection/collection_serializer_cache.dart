@@ -25,7 +25,7 @@ abstract base class CollectionSerializerCache extends SerializerCache{
   const CollectionSerializerCache();
 
   @override
-  Serializer getSer(FuryConfig conf,){
+  Serializer getSerializer(FuryConfig conf,){
     return getSerWithRef(conf.refTracking);
   }
 

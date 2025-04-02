@@ -17,33 +17,30 @@
  * under the License.
  */
 
-import 'package:fury/src/memory/byte_writer.dart';
-import 'package:fury/src/meta/meta_string_byte.dart';
-import 'package:fury/src/resolver/ms_writing_resolver.dart';
+import 'dart:collection';
 
-final class MsWritingResolverImpl extends MsWritingResolver{
-  
-  int _dynamicWriteStrId = 0;
+import 'package:fury/src/const/ref_flag.dart';
+import 'package:fury/src/resolver/serialization_ref_resolver.dart';
 
-  final Map<int, int> _memHash2Id = {};
-  
+final class SerializationMapRefResolver extends SerializationRefResolver {
+  static final SerializationRefMeta noRef = (refFlag: RefFlag.NULL, refId: null);
+
+  final Map<int, int> idenHashToRefId = HashMap();
+
   @override
-  void writeMsb(ByteWriter bw, MetaStringBytes msb) {
-    int idenHash = identityHashCode(msb);
-    int? id = _memHash2Id[idenHash];
-    if(id != null){
-      bw.writeVarUint32Small7( ((id + 1) << 1) | 1 );
-      return;
+  SerializationRefMeta getRefId(Object? obj) {
+    if (obj == null) {
+      return noRef;
     }
-    _memHash2Id[idenHash] = _dynamicWriteStrId;
-    ++_dynamicWriteStrId;
-    int bytesLen = msb.length;
-    bw.writeVarUint32Small7(bytesLen << 1);
-    if (bytesLen > smallStringThreshold){
-      bw.writeInt64(msb.hashCode);
-    }else {
-      bw.writeInt8(msb.encoding.id);
+    int idenHash = identityHashCode(obj);
+    int? refId = idenHashToRefId[idenHash];
+    if (refId != null) {
+      return (refFlag: RefFlag.TRACKED_ALREADY, refId: refId);
+    } else {
+      // first time
+      refId = idenHashToRefId.length;
+      idenHashToRefId[idenHash] = refId;
+      return (refFlag: RefFlag.TRACK_FIRST, refId: null);
     }
-    bw.writeBytes(msb.bytes);
   }
 }

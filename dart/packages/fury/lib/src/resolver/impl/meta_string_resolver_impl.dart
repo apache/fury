@@ -21,7 +21,7 @@ import 'dart:collection';
 import 'dart:typed_data';
 import 'package:fury/src/codec/encoders.dart';
 import 'package:fury/src/codec/meta_string_decoder.dart';
-import 'package:fury/src/collection/key/long_long_key.dart';
+import 'package:fury/src/collection/long_long_key.dart';
 import 'package:fury/src/dev_annotation/optimize.dart';
 import 'package:fury/src/memory/byte_reader.dart';
 import 'package:fury/src/meta/meta_string.dart';

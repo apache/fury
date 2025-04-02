@@ -19,7 +19,7 @@
 
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
-import 'package:fury/src/codegen/collection/key/type_3string_key.dart';
+import 'package:fury/src/codegen/collection/type_3string_key.dart';
 
 class AnalysisTypeIdentifier{
 

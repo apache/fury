@@ -31,7 +31,7 @@ abstract base class ArraySerializerCache extends SerializerCache{
   const ArraySerializerCache();
 
   @override
-  Serializer getSer(FuryConfig conf,){
+  Serializer getSerializer(FuryConfig conf,){
     return getSerWithRef(conf.refTracking);
   }
   Serializer getSerWithRef(bool writeRef);
@@ -41,8 +41,8 @@ abstract base class ArraySerializer<T> extends Serializer<List<T>> {
   const ArraySerializer(super.type, super.writeRef);
 }
 
-abstract base class NumArraySerializer<T extends num> extends ArraySerializer<T> {
-  const NumArraySerializer(super.type, super.writeRef);
+abstract base class NumericArraySerializer<T extends num> extends ArraySerializer<T> {
+  const NumericArraySerializer(super.type, super.writeRef);
 
   TypedDataList<T> readToList(Uint8List copiedMem);
 
@@ -55,7 +55,7 @@ abstract base class NumArraySerializer<T extends num> extends ArraySerializer<T>
   }
 
   @override
-  void write(ByteWriter bw, covariant TypedDataList<T> v, SerPack pack) {
+  void write(ByteWriter bw, covariant TypedDataList<T> v, SerializerPack pack) {
     if (!MathChecker.validInt32(v.lengthInBytes)){
       throw ArgumentError('NumArray lengthInBytes is not valid int32: ${v.lengthInBytes}');
     }

@@ -59,7 +59,7 @@ final class TimestampSerializer extends Serializer<TimeStamp> {
   }
 
   @override
-  void write(ByteWriter bw, TimeStamp v, SerPack pack) {
+  void write(ByteWriter bw, TimeStamp v, SerializerPack pack) {
     bw.writeInt64(v.microsecondsSinceEpoch);
   }
 }

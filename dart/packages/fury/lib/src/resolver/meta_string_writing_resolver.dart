@@ -17,7 +17,16 @@
  * under the License.
  */
 
-abstract class MsHandler{
-  const MsHandler();
-  final int smallStringThreshold = 16;
+import 'package:fury/src/memory/byte_writer.dart';
+import 'package:fury/src/meta/meta_string_byte.dart';
+import 'package:fury/src/resolver/impl/meta_string_writing_resolver_impl.dart';
+import 'package:fury/src/resolver/meta_string_handler.dart';
+
+abstract class MetaStringWritingResolver extends MataStringHandler{
+
+  const MetaStringWritingResolver();
+
+  static MetaStringWritingResolver get newInst => MetaStringWritingResolverImpl();
+
+  void writeMetaStringBytes(ByteWriter bw, MetaStringBytes msb);
 }

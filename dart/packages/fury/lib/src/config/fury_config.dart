@@ -21,7 +21,6 @@ import 'package:fury/src/config/config.dart';
 
 class FuryConfig extends Config{
   final int  _configId;
-  final bool _xlangMode = true;
   //final bool _isLittleEndian;
   final bool _refTracking;
   final bool _basicTypesRefIgnored;
@@ -42,12 +41,11 @@ class FuryConfig extends Config{
     _stringRefIgnored = false
   {
     // some checking works
-    assert(_xlangMode == true, 'currently only support xlang mode');
+    // assert(_xlangMode == true, 'currently only support xlang mode');
     //assert(_isLittleEndian == true, 'Non-Little-Endian format detected. Only Little-Endian is supported.');
   }
 
   //getters
-  bool get xlangMode => _xlangMode;
   //bool get isLittleEndian => _isLittleEndian;
   bool get refTracking => _refTracking;
   int get configId => _configId;

@@ -17,27 +17,33 @@
  * under the License.
  */
 
-import 'package:fury/src/const/obj_type.dart';
-import 'package:fury/src/deserializer_pack.dart';
-import 'package:fury/src/memory/byte_reader.dart';
 import 'package:fury/src/memory/byte_writer.dart';
-import 'package:fury/src/serializer_pack.dart';
+import 'package:fury/src/meta/meta_string_byte.dart';
+import 'package:fury/src/resolver/meta_string_writing_resolver.dart';
 
-/// Planned to only handle non-null type serializers. Null values should be handled externally.
-abstract base class Serializer<T> {
+final class MetaStringWritingResolverImpl extends MetaStringWritingResolver{
+  
+  int _dynamicWriteStrId = 0;
 
-  final ObjType objType;
-  // final bool forceNoRefWrite; // Not controlled by Fury's Config; indicates no reference writing for this type
-  final bool writeRef; // Indicates whether to write references
-
-  const Serializer(
-    this.objType,
-    this.writeRef,
-    // [this.forceNoRefWrite = false]
-  );
-  T read(ByteReader br, int refId, DeserializerPack pack);
-
-  void write(ByteWriter bw, T v, SerializerPack pack);
-
-  String get tag => throw UnimplementedError('tag is not implemented');
+  final Map<int, int> _memHash2Id = {};
+  
+  @override
+  void writeMetaStringBytes(ByteWriter bw, MetaStringBytes msb) {
+    int identityHash = identityHashCode(msb);
+    int? id = _memHash2Id[identityHash];
+    if(id != null){
+      bw.writeVarUint32Small7( ((id + 1) << 1) | 1 );
+      return;
+    }
+    _memHash2Id[identityHash] = _dynamicWriteStrId;
+    ++_dynamicWriteStrId;
+    int bytesLen = msb.length;
+    bw.writeVarUint32Small7(bytesLen << 1);
+    if (bytesLen > smallStringThreshold){
+      bw.writeInt64(msb.hashCode);
+    }else {
+      bw.writeInt8(msb.encoding.id);
+    }
+    bw.writeBytes(msb.bytes);
+  }
 }

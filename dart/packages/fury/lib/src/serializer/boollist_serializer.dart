@@ -61,7 +61,7 @@ final class BoolListSerializer extends ArraySerializer<bool>{
   }
 
   @override
-  void write(ByteWriter bw, covariant BoolList v, SerPack pack) {
+  void write(ByteWriter bw, covariant BoolList v, SerializerPack pack) {
     bw.writeVarUint32(v.length);
     Uint8List bytes = Uint8List(v.length);
     for (int i = 0; i < v.length; ++i) {

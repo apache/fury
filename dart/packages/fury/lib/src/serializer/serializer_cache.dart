@@ -25,11 +25,11 @@ abstract base class SerializerCache{
 
   const SerializerCache();
 
-  Serializer getSer(FuryConfig conf){
+  Serializer getSerializer(FuryConfig conf){
     throw UnimplementedError('SerCache does not support getSer');
   }
 
-  Serializer getSerWithSpec(FuryConfig conf, CustomTypeSpec spec, Type dartType){
+  Serializer getSerializerWithSpec(FuryConfig conf, CustomTypeSpec spec, Type dartType){
     throw UnimplementedError('SerCache does not support getEnumSerWithSpec');
   }
 }

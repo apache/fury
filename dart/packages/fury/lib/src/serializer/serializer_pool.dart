@@ -52,40 +52,40 @@ class SerializerPool{
       FuryConfig conf,
       ){
 
-    Serializer linkedMapSer = LinkedHashMapSerializer.cache.getSer(conf);
-    Serializer linkedHashSetSer = LinkedHashSetSerializer.cache.getSer(conf);
+    Serializer linkedMapSer = LinkedHashMapSerializer.cache.getSerializer(conf);
+    Serializer linkedHashSetSer = LinkedHashSetSerializer.cache.getSerializer(conf);
 
-    type2Ser[int]!.ser = Int64Serializer.cache.getSer(conf);
-    type2Ser[bool]!.ser = BoolSerializer.cache.getSer(conf);
-    type2Ser[TimeStamp]!.ser = TimestampSerializer.cache.getSer(conf);
-    type2Ser[LocalDate]!.ser = DateSerializer.cache.getSer(conf);
-    type2Ser[double]!.ser = Float64Serializer.cache.getSer(conf);
-    type2Ser[Int8]!.ser = Int8Serializer.cache.getSer(conf);
-    type2Ser[Int16]!.ser = Int16Serializer.cache.getSer(conf);
-    type2Ser[Int32]!.ser = Int32Serializer.cache.getSer(conf);
-    type2Ser[Float32]!.ser = Float32Serializer.cache.getSer(conf);
-    type2Ser[String]!.ser = StringSerializer.cache.getSer(conf);
+    type2Ser[int]!.ser = Int64Serializer.cache.getSerializer(conf);
+    type2Ser[bool]!.ser = BoolSerializer.cache.getSerializer(conf);
+    type2Ser[TimeStamp]!.ser = TimestampSerializer.cache.getSerializer(conf);
+    type2Ser[LocalDate]!.ser = DateSerializer.cache.getSerializer(conf);
+    type2Ser[double]!.ser = Float64Serializer.cache.getSerializer(conf);
+    type2Ser[Int8]!.ser = Int8Serializer.cache.getSerializer(conf);
+    type2Ser[Int16]!.ser = Int16Serializer.cache.getSerializer(conf);
+    type2Ser[Int32]!.ser = Int32Serializer.cache.getSerializer(conf);
+    type2Ser[Float32]!.ser = Float32Serializer.cache.getSerializer(conf);
+    type2Ser[String]!.ser = StringSerializer.cache.getSerializer(conf);
 
-    type2Ser[List]!.ser = DefListSerializer.cache.getSer(conf);
+    type2Ser[List]!.ser = DefListSerializer.cache.getSerializer(conf);
 
     type2Ser[Map]!.ser = linkedMapSer;
     type2Ser[LinkedHashMap]!.ser = linkedMapSer;
-    type2Ser[HashMap]!.ser = HashMapSerializer.cache.getSer(conf);
-    type2Ser[SplayTreeMap]!.ser = SplayTreeMapSerializer.cache.getSer(conf);
+    type2Ser[HashMap]!.ser = HashMapSerializer.cache.getSerializer(conf);
+    type2Ser[SplayTreeMap]!.ser = SplayTreeMapSerializer.cache.getSerializer(conf);
 
     type2Ser[Set]!.ser = linkedHashSetSer;
     type2Ser[LinkedHashSet]!.ser = linkedHashSetSer;
-    type2Ser[HashSet]!.ser = HashSetSerializer.cache.getSer(conf);
-    type2Ser[SplayTreeSet]!.ser = SplayTreeSetSerializer.cache.getSer(conf);
+    type2Ser[HashSet]!.ser = HashSetSerializer.cache.getSerializer(conf);
+    type2Ser[SplayTreeSet]!.ser = SplayTreeSetSerializer.cache.getSerializer(conf);
 
-    type2Ser[Uint8List]!.ser = Uint8ListSerializer.cache.getSer(conf);
-    type2Ser[Int8List]!.ser = Int8ListSerializer.cache.getSer(conf);
-    type2Ser[Int16List]!.ser = Int16ListSerializer.cache.getSer(conf);
-    type2Ser[Int32List]!.ser = Int32ListSerializer.cache.getSer(conf);
-    type2Ser[Int64List]!.ser = Int64ListSerializer.cache.getSer(conf);
-    type2Ser[Float32List]!.ser = Float32ListSerializer.cache.getSer(conf);
-    type2Ser[Float64List]!.ser = Float64ListSerializer.cache.getSer(conf);
-    type2Ser[BoolList]!.ser = BoolListSerializer.cache.getSer(conf);
+    type2Ser[Uint8List]!.ser = Uint8ListSerializer.cache.getSerializer(conf);
+    type2Ser[Int8List]!.ser = Int8ListSerializer.cache.getSerializer(conf);
+    type2Ser[Int16List]!.ser = Int16ListSerializer.cache.getSerializer(conf);
+    type2Ser[Int32List]!.ser = Int32ListSerializer.cache.getSerializer(conf);
+    type2Ser[Int64List]!.ser = Int64ListSerializer.cache.getSerializer(conf);
+    type2Ser[Float32List]!.ser = Float32ListSerializer.cache.getSerializer(conf);
+    type2Ser[Float64List]!.ser = Float64ListSerializer.cache.getSerializer(conf);
+    type2Ser[BoolList]!.ser = BoolListSerializer.cache.getSerializer(conf);
 
     List<TypeInfo?> objTypeId2TypeInfo = List<TypeInfo?>.filled(
       ObjType.values.length,

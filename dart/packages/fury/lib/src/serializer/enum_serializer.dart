@@ -35,7 +35,7 @@ final class _EnumSerializerCache extends SerializerCache{
   const _EnumSerializerCache();
 
   @override
-  EnumSerializer getSerWithSpec(FuryConfig conf, covariant EnumSpec spec, Type dartType){
+  EnumSerializer getSerializerWithSpec(FuryConfig conf, covariant EnumSpec spec, Type dartType){
     EnumSerializer? ser = _cache[dartType];
     if (ser != null) {
       return ser;
@@ -66,7 +66,7 @@ final class EnumSerializer extends CustomSerializer<Enum>{
   }
 
   @override
-  void write(ByteWriter bw, Enum v, SerPack pack) {
+  void write(ByteWriter bw, Enum v, SerializerPack pack) {
     bw.writeVarUint32Small7(v.index);
   }
 }

@@ -46,7 +46,7 @@ abstract base class XtypeResolver{
 
   String getTagByCustomDartType(Type type);
 
-  TypeInfo writeGetTypeInfo(ByteWriter bw, Object obj, SerPack pack);
+  TypeInfo writeGetTypeInfo(ByteWriter bw, Object obj, SerializerPack pack);
 
   /*-----For test only------------------------------------------------*/
   StructHashPair getHashPairForTest(

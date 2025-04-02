@@ -19,8 +19,8 @@
 
 enum RefFlag{
   NULL(-3),
-  TRACK_ALREADY(-2),
-  UNTRACK_NOT_NULL(-1),
+  TRACKED_ALREADY(-2),
+  UNTRACKED_NOT_NULL(-1),
   TRACK_FIRST(0);
 
   final int id;
@@ -31,5 +31,5 @@ enum RefFlag{
   //   return id >= NULL.id && id <= TRACK_FIRST.id;
   // }
 
-  bool get noNeedToSer => (this == NULL || this == TRACK_ALREADY);
+  bool get noNeedToSer => (this == NULL || this == TRACKED_ALREADY);
 }

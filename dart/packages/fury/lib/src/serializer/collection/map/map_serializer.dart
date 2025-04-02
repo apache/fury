@@ -103,7 +103,7 @@ abstract base class MapSerializer<T extends Map<Object?,Object?>> extends Serial
   /// This code may look a bit lengthy, but to avoid unnecessary checks multiple times in the loop
   /// (since it only needs to be done once), the outer judgment cases are separated, making the code look a bit long
   @override
-  void write(ByteWriter bw, covariant T v, SerPack pack) {
+  void write(ByteWriter bw, covariant T v, SerializerPack pack) {
     bw.writeVarUint32Small7(v.length);
     TypeSpecWrap? typeWrap = pack.typeWrapStack.peek;
     if (typeWrap == null){
@@ -171,7 +171,7 @@ abstract base class MapSerializer<T extends Map<Object?,Object?>> extends Serial
   }
 
   @inline
-  void _writeWithNullableSer(ByteWriter bw, Object? v, Serializer? ser, SerPack pack){
+  void _writeWithNullableSer(ByteWriter bw, Object? v, Serializer? ser, SerializerPack pack){
     ser == null ?
     pack.furySer.xWriteRefNoSer(bw, v, pack) :
     pack.furySer.xWriteRefWithSer(bw, ser, v, pack);

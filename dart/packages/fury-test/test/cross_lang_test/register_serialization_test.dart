@@ -44,7 +44,7 @@ final class ComplexObject1Serializer extends Serializer<ComplexObject1>{
   }
 
   @override
-  void write(ByteWriter bw, ComplexObject1 v, SerPack pack) {
+  void write(ByteWriter bw, ComplexObject1 v, SerializerPack pack) {
     pack.furySer.xWriteRefNoSer(bw, v.f1, pack);
     pack.furySer.xWriteRefNoSer(bw, v.f2, pack);
     pack.furySer.xWriteRefNoSer(bw, v.f3, pack);

@@ -19,41 +19,46 @@
 
 import 'package:fury/src/resolver/deserialization_ref_resolver.dart';
 
-class DeserNoRefResolver implements DeserializationRefResolver{
+class DeserializationMapRefResolver implements DeserializationRefResolver{
 
-  const DeserNoRefResolver();
+  final List<Object?> _refs = [];
 
-  // @override
-  // void appendRef(Object obj) {}
+  int _lastRefId = -1;
 
   @override
   Object getObj(int refId) {
-    throw UnimplementedError("NoRefResolver does not support getObj");
+    assert (_refs.length > refId);
+    return _refs[refId]!;
   }
 
   @override
   int reserveId() {
-    return 0; // nothing
+    ++_lastRefId;
+    _refs.add(null);
+    return _lastRefId;
   }
 
   @override
   void setRefTheLatestId(Object o) {
-    // do nothing
+    _refs[_lastRefId] = o;
   }
 
   @override
   void setRef(int refId, Object o) {
-    // do nothing
+    _refs[refId] = o;
   }
 
   // @override
   // int reserveIdSetMuchLatter() {
-  //   return 0; // nothing
+  //   assert(_refIdWillSetLater == null);
+  //   _refIdWillSetLater = reserveId();
+  //   return _refIdWillSetLater!;
   // }
   //
   // @override
   // void setRefForLaterRefId(Object o) {
-  //   // do nothing
+  //   assert(_refIdWillSetLater != null);
+  //   _refs[_refIdWillSetLater!] = o;
+  //   _refIdWillSetLater = null;
   // }
-
 }

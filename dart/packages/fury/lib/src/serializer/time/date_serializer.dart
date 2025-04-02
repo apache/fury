@@ -59,7 +59,7 @@ final class DateSerializer extends Serializer<LocalDate> {
   }
 
   @override
-  void write(ByteWriter bw, LocalDate v, SerPack pack) {
+  void write(ByteWriter bw, LocalDate v, SerializerPack pack) {
     int days = v.toEpochDay(utc: true);
     if (!MathChecker.validInt32(days)){
       throw ArgumentError('Date toEpochDay is not valid int32: $days');

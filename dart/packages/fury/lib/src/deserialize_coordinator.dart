@@ -44,7 +44,7 @@ class DeserializeCoordinator {
 
   static final FuryHeaderSerializer _furyHeaderSer = FuryHeaderSerializer.I;
 
-  Object? deser(Uint8List bytes, FuryConfig conf, XtypeResolver xtypeResolver, [ByteReader? reader]) {
+  Object? read(Uint8List bytes, FuryConfig conf, XtypeResolver xtypeResolver, [ByteReader? reader]) {
     var br = reader ?? ByteReader.forBytes(bytes,);
     HeaderBrief? header = _furyHeaderSer.read(br, conf);
     if (header == null) return null;
@@ -67,15 +67,15 @@ class DeserializeCoordinator {
     //assert(refFlag >= RefFlag.NULL.id);
     if (refFlag == RefFlag.NULL.id) return null;
     DeserializationRefResolver refResolver = pack.refResolver;
-    if (refFlag == RefFlag.TRACK_ALREADY.id){
+    if (refFlag == RefFlag.TRACKED_ALREADY.id){
       int refId = br.readVarUint32Small14();
       return refResolver.getObj(refId);
     }
-    if (refFlag >= RefFlag.UNTRACK_NOT_NULL.id){
+    if (refFlag >= RefFlag.UNTRACKED_NOT_NULL.id){
       // must deserialize
       TypeInfo typeInfo = pack.xtypeResolver.readTypeInfo(br);
       int refId = refResolver.reserveId();
-      Object o = _xDeser(br, typeInfo, refId, pack);
+      Object o = _xRead(br, typeInfo, refId, pack);
       refResolver.setRef(refId, o);
       return o;
     }
@@ -90,11 +90,11 @@ class DeserializeCoordinator {
       //assert(RefFlag.checkAllow(refFlag));
       //assert(refFlag >= RefFlag.NULL.id);
       if (refFlag == RefFlag.NULL.id) return null;
-      if (refFlag == RefFlag.TRACK_ALREADY.id){
+      if (refFlag == RefFlag.TRACKED_ALREADY.id){
         int refId = br.readVarUint32Small14();
         return refResolver.getObj(refId);
       }
-      if (refFlag >= RefFlag.UNTRACK_NOT_NULL.id){
+      if (refFlag >= RefFlag.UNTRACKED_NOT_NULL.id){
         // must deserialize
         int refId = refResolver.reserveId();
         Object o = ser.read(br, refId, pack);
@@ -108,7 +108,7 @@ class DeserializeCoordinator {
   }
 
   /// this method will only be invoked by Fury::_xReadRef
-  Object _xDeser(ByteReader br, TypeInfo typeInfo, int refId, DeserializerPack pack) {
+  Object _xRead(ByteReader br, TypeInfo typeInfo, int refId, DeserializerPack pack) {
     switch (typeInfo.objType) {
       case ObjType.BOOL:
         return br.readInt8() != 0;

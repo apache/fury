@@ -36,7 +36,7 @@ abstract base class PrimitiveSerializerCache extends SerializerCache{
   const PrimitiveSerializerCache();
 
   @override
-  Serializer getSer(FuryConfig conf,){
+  Serializer getSerializer(FuryConfig conf,){
     // Currently, there are only two types of Ser for primitive types: one that write a reference
     // and one that does not, so only these two are cached here.
     bool writeRef = conf.refTracking && !conf.basicTypesRefIgnored;
@@ -76,7 +76,7 @@ final class BoolSerializer extends Serializer<bool> {
   }
 
   @override
-  void write(ByteWriter bw, bool v, SerPack pack) {
+  void write(ByteWriter bw, bool v, SerializerPack pack) {
     bw.writeBool(v);
   }
 }
@@ -112,7 +112,7 @@ final class Int8Serializer extends Serializer<FixedNum>{
   }
 
   @override
-  void write(ByteWriter bw, covariant Int8 v, SerPack pack) {
+  void write(ByteWriter bw, covariant Int8 v, SerializerPack pack) {
     // if (value < -128 || value > 127){
     //   throw FuryException.serRangeExcep(objType, value);
     // }
@@ -149,7 +149,7 @@ final class Int16Serializer extends Serializer<FixedNum>{
   }
 
   @override
-  void write(ByteWriter bw, covariant Int16 v, SerPack pack) {
+  void write(ByteWriter bw, covariant Int16 v, SerializerPack pack) {
     // if (value < -32768 || value > 32767){
     //   throw FuryException.serRangeExcep(objType, value);
     // }
@@ -187,7 +187,7 @@ final class Int32Serializer extends Serializer<FixedNum>{
   }
 
   @override
-  void write(ByteWriter bw, covariant Int32 v, SerPack pack) {
+  void write(ByteWriter bw, covariant Int32 v, SerializerPack pack) {
     // No check is done here directly
     // if (value < -2147483648 || value > 2147483647){
     //   throw FuryException.serRangeExcep(objType, value);
@@ -226,7 +226,7 @@ final class Int64Serializer extends Serializer<int> {
   }
 
   @override
-  void write(ByteWriter bw, int v, SerPack pack) {
+  void write(ByteWriter bw, int v, SerializerPack pack) {
     bw.writeVarInt64(v);
   }
 }
@@ -262,7 +262,7 @@ final class Float32Serializer extends Serializer<FixedNum>{
   }
 
   @override
-  void write(ByteWriter bw, covariant Float32 v, SerPack pack) {
+  void write(ByteWriter bw, covariant Float32 v, SerializerPack pack) {
     // No checks are performed here
     // if (value.isInfinite || value.isNaN || value < -3.4028235e38 || value > 3.4028235e38){
     //   throw FuryException.serRangeExcep(objType, value);
@@ -301,7 +301,7 @@ final class Float64Serializer extends Serializer<double>{
   }
 
   @override
-  void write(ByteWriter bw, double v, SerPack pack) {
+  void write(ByteWriter bw, double v, SerializerPack pack) {
     bw.writeFloat64(v);
   }
 }

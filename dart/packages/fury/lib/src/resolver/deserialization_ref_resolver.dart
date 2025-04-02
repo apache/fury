@@ -17,15 +17,15 @@
  * under the License.
  */
 
-import 'package:fury/src/resolver/impl/deser_map_ref_resolver.dart';
-import 'package:fury/src/resolver/impl/deser_no_ref_resolver.dart';
+import 'package:fury/src/resolver/impl/deserialization_map_ref_resolver.dart';
+import 'package:fury/src/resolver/impl/deserialization_no_ref_resolver.dart';
 
 abstract class DeserializationRefResolver {
 
-  static const DeserializationRefResolver _noRefResolver = DeserNoRefResolver();
+  static const DeserializationRefResolver _noRefResolver = DeserializationNoRefResolver();
 
   static DeserializationRefResolver getOne(bool enableRefTracking) {
-    return enableRefTracking ? DeserMapRefResolver() : _noRefResolver;
+    return enableRefTracking ? DeserializationMapRefResolver() : _noRefResolver;
   }
 
   Object getObj(int refId);

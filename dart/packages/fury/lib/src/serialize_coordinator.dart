@@ -25,7 +25,7 @@ import 'package:fury/src/const/ref_flag.dart';
 import 'package:fury/src/memory/byte_writer.dart';
 import 'package:fury/src/meta/type_info.dart';
 import 'package:fury/src/meta/spec_wraps/type_spec_wrap.dart';
-import 'package:fury/src/resolver/ms_writing_resolver.dart';
+import 'package:fury/src/resolver/meta_string_writing_resolver.dart';
 import 'package:fury/src/resolver/serialization_ref_resolver.dart';
 import 'package:fury/src/resolver/struct_hash_resolver.dart';
 import 'package:fury/src/resolver/xtype_resolver.dart';
@@ -44,33 +44,33 @@ class SerializeCoordinator {
 
   static final FuryHeaderSerializer _furyHeaderSer = FuryHeaderSerializer.I;
 
-  void _ser(Object? obj, FuryConfig conf, XtypeResolver xtypeResolver, ByteWriter writer) {
+  void _write(Object? obj, FuryConfig conf, XtypeResolver xtypeResolver, ByteWriter writer) {
     _furyHeaderSer.write(writer, obj == null, conf);
-    SerPack pack = SerPack(
+    SerializerPack pack = SerializerPack(
       StructHashResolver.inst,
       xtypeResolver.getTagByCustomDartType,
       this,
       xtypeResolver,
       SerializationRefResolver.getOne(conf.refTracking),
       SerializationRefResolver.noRefResolver,
-      MsWritingResolver.newInst,
+      MetaStringWritingResolver.newInst,
       Stack<TypeSpecWrap>(),
     );
     xWriteRefNoSer(writer, obj, pack);
     // pack.resetAndRecycle();
   }
 
-  Uint8List ser(Object? obj, FuryConfig conf, XtypeResolver xtypeResolver,) {
+  Uint8List write(Object? obj, FuryConfig conf, XtypeResolver xtypeResolver,) {
     ByteWriter bw = ByteWriter();
-    _ser(obj, conf, xtypeResolver, bw);
+    _write(obj, conf, xtypeResolver, bw);
     return bw.takeBytes();
   }
 
-  void serWithWriter(Object? obj, FuryConfig conf, XtypeResolver xtypeResolver, ByteWriter writer) {
-    _ser(obj, conf, xtypeResolver, writer);
+  void writeWithWriter(Object? obj, FuryConfig conf, XtypeResolver xtypeResolver, ByteWriter writer) {
+    _write(obj, conf, xtypeResolver, writer);
   }
 
-  void xWriteRefNoSer(ByteWriter bw, Object? obj, SerPack pack) {
+  void xWriteRefNoSer(ByteWriter bw, Object? obj, SerializerPack pack) {
     SerializationRefMeta serRef = pack.refResolver.getRefId(obj);
     bw.writeInt8(serRef.refFlag.id);
     if (serRef.refId != null) {
@@ -107,7 +107,7 @@ class SerializeCoordinator {
     }
   }
 
-  void xWriteRefWithSer(ByteWriter bw, Serializer ser, Object? obj, SerPack pack) {
+  void xWriteRefWithSer(ByteWriter bw, Serializer ser, Object? obj, SerializerPack pack) {
     if (ser.writeRef) {
       SerializationRefMeta serRef = pack.refResolver.getRefId(obj);
       bw.writeInt8(serRef.refFlag.id);

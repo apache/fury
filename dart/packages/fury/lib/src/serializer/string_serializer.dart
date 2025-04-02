@@ -44,7 +44,7 @@ final class _StringSerializerCache extends SerializerCache{
   const _StringSerializerCache();
 
   @override
-  Serializer getSer(FuryConfig conf,){
+  Serializer getSerializer(FuryConfig conf,){
     // Currently, there are only two types of Ser for primitive types:
     // one that writes a reference and one that does not, so only these two are cached here.
     bool writeRef = conf.refTracking && !conf.stringRefIgnored;
@@ -82,7 +82,7 @@ final class StringSerializer extends Serializer<String>{
   }
 
   @override
-  void write(ByteWriter bw, String v, SerPack pack){
+  void write(ByteWriter bw, String v, SerializerPack pack){
     if (StringUtil.hasNonLatin(v)){
       _writeUtf16(bw, v);
       return;

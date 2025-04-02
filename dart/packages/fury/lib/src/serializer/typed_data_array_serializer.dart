@@ -42,7 +42,7 @@ final class _Uint8ListSerializerCache extends ArraySerializerCache {
   }
 }
 
-final class Uint8ListSerializer extends NumArraySerializer<int> {
+final class Uint8ListSerializer extends NumericArraySerializer<int> {
   static const SerializerCache cache = _Uint8ListSerializerCache();
 
   const Uint8ListSerializer(bool writeRef) : super(ObjType.BINARY, writeRef);
@@ -76,7 +76,7 @@ final class _Int8ListSerializerCache extends ArraySerializerCache{
   }
 }
 
-final class Int8ListSerializer extends NumArraySerializer<int> {
+final class Int8ListSerializer extends NumericArraySerializer<int> {
   static const SerializerCache cache = _Int8ListSerializerCache();
   const Int8ListSerializer(bool writeRef) : super(ObjType.INT8_ARRAY, writeRef);
 
@@ -109,7 +109,7 @@ final class _Int16ListSerializerCache extends ArraySerializerCache{
   }
 }
 
-final class Int16ListSerializer extends NumArraySerializer<int> {
+final class Int16ListSerializer extends NumericArraySerializer<int> {
   static const SerializerCache cache = _Int16ListSerializerCache();
   const Int16ListSerializer(bool writeRef) : super(ObjType.INT16_ARRAY, writeRef);
 
@@ -142,7 +142,7 @@ final class _Int32ListSerializerCache extends ArraySerializerCache{
   }
 }
 
-final class Int32ListSerializer extends NumArraySerializer<int> {
+final class Int32ListSerializer extends NumericArraySerializer<int> {
   static const SerializerCache cache = _Int32ListSerializerCache();
   const Int32ListSerializer(bool writeRef) : super(ObjType.INT32_ARRAY, writeRef);
 
@@ -193,7 +193,7 @@ final class _Int64ListSerializerCache extends ArraySerializerCache{
   }
 }
 
-final class Int64ListSerializer extends NumArraySerializer<int> {
+final class Int64ListSerializer extends NumericArraySerializer<int> {
   static const SerializerCache cache = _Int64ListSerializerCache();
   const Int64ListSerializer(bool writeRef) : super(ObjType.INT64_ARRAY, writeRef);
 
@@ -208,7 +208,7 @@ final class Int64ListSerializer extends NumArraySerializer<int> {
   int get bytesPerNum => 8;
 }
 
-final class Float32ListSerializer extends NumArraySerializer<double> {
+final class Float32ListSerializer extends NumericArraySerializer<double> {
   static const SerializerCache cache = _Float32ListSerializerCache();
 
   const Float32ListSerializer(bool writeRef) : super(ObjType.FLOAT32_ARRAY, writeRef);
@@ -241,7 +241,7 @@ final class _Float64ListSerializerCache extends ArraySerializerCache{
   }
 }
 
-final class Float64ListSerializer extends NumArraySerializer<double> {
+final class Float64ListSerializer extends NumericArraySerializer<double> {
   static const SerializerCache cache = _Float64ListSerializerCache();
   const Float64ListSerializer(bool writeRef) : super(ObjType.FLOAT64_ARRAY, writeRef);
 

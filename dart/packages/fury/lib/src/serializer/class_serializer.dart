@@ -37,7 +37,7 @@ final class ClassSerializerCache extends SerializerCache{
   const ClassSerializerCache();
 
   @override
-  ClassSerializer getSerWithSpec(FuryConfig conf, covariant ClassSpec spec, Type dartType){
+  ClassSerializer getSerializerWithSpec(FuryConfig conf, covariant ClassSpec spec, Type dartType){
     List<TypeSpecWrap> typeWraps = TypeSpecWrap.ofList(spec.fields);
     return ClassSerializer(
       spec.fields,
@@ -128,7 +128,7 @@ final class ClassSerializer extends CustomSerializer<Object>{
   }
 
   @override
-  void write(ByteWriter bw, Object v, SerPack pack) {
+  void write(ByteWriter bw, Object v, SerializerPack pack) {
     if (!_fieldsSersComputed){
       pack.xtypeResolver.setSersForTypeWrap(_fieldTypeWraps);
       _fieldsSersComputed = true;

@@ -38,11 +38,9 @@ final class FuryHeaderSerializer {
   FuryHeaderSerializer._();
 
   HeaderBrief? read(ByteReader br, FuryConfig conf) {
-    if (conf.xlangMode){
-      int magicNumber = br.readUint16();
-      // Note: In AOT mode, assert will be removed, do not put code that affects subsequent logic in assert
-      assert(magicNumber == FuryHeaderConst.magicNumber, 'no magic number detected');
-    }
+    int magicNumber = br.readUint16();
+    // Note: In AOT mode, assert will be removed, do not put code that affects subsequent logic in assert
+    assert(magicNumber == FuryHeaderConst.magicNumber, 'no magic number detected');
     int bitmap = br.readInt8();
     // header: nullFlag
     if ((bitmap & FuryHeaderConst.nullFlag) != 0){
@@ -56,14 +54,8 @@ final class FuryHeaderSerializer {
     // header: xlang
     bool isXLang = (bitmap & FuryHeaderConst.crossLanguageFlag) != 0;
     assert (isXLang, 'Now Fury Dart only supports xlang mode');
-    if (conf.xlangMode != isXLang){
-      throw DeserializationConflictException(
-        'XLang:${isXLang? 'true': 'false'}',
-        'XLang:${conf.xlangMode? 'true': 'false'}',
-      );
-    }
     bool oobEnabled = (bitmap & FuryHeaderConst.outOfBandFlag) != 0;
-    //TODO: oobEnabled: don't know how to deal with yet.
+    //TODO: oobEnabled unsupported yet.
     // header: peer_lang
     int peerLangInd = br.readInt8();
     if (peerLangInd < Language.peerLangBeginIndex || peerLangInd > Language.peerLangEndIndex){
@@ -85,7 +77,6 @@ final class FuryHeaderSerializer {
   }
 
   void write(ByteWriter bd, bool objNull, FuryConfig conf) {
-    assert(conf.xlangMode);
     bd.writeInt16(FuryHeaderConst.magicNumber);
     int bitmap = FuryHeaderConst.littleEndianFlag;
     bitmap |= FuryHeaderConst.crossLanguageFlag;

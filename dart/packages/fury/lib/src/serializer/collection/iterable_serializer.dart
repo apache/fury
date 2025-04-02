@@ -27,7 +27,7 @@ abstract base class IterableSerializer extends Serializer<Iterable> {
   const IterableSerializer(super.objType, super.writeRef);
 
   @override
-  void write(ByteWriter bw, Iterable v, SerPack pack) {
+  void write(ByteWriter bw, Iterable v, SerializerPack pack) {
     bw.writeVarUint32Small7(v.length);
     TypeSpecWrap? elemWrap = pack.typeWrapStack.peek?.param0;
     if (elemWrap == null){

@@ -48,7 +48,7 @@ final class TagStringEncodeResolverImpl extends TagStringEncodeResolver {
   final Map<String, MetaString> _nsMetaStringCache = HashMap();
 
   @override
-  MetaString encodeTn(String tag){
+  MetaString encodeTypeName(String tag){
     MetaString? metaString = _tnMetaStringCache[tag];
     if(metaString != null){
       return metaString;

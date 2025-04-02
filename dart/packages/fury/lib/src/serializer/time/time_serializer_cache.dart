@@ -26,7 +26,7 @@ abstract base class TimeSerializerCache extends SerializerCache{
   const TimeSerializerCache();
 
   @override
-  Serializer getSer(FuryConfig conf, [Type? type]){
+  Serializer getSerializer(FuryConfig conf, [Type? type]){
     // Currently, there are only two types of Serialization for primitive types:
     // with ref and without ref. So only these two are cached here.
     bool writeRef = conf.refTracking && !conf.timeRefIgnored;
