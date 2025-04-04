@@ -231,6 +231,9 @@ The text of each license is the standard Apache 2.0 license.
     Files:
       java/fury-core/src/main/java/org/apache/fury/io/ClassLoaderObjectInputStream.java
 
+* common-lang3 (https://github.com/apache/commons-lang)
+    Files:
+      java/fury-core/src/main/java/org/apache/fury/util/StringUtils.java
 
 * fast-serialization (https://github.com/RuedigerMoeller/fast-serialization)
     Files:
