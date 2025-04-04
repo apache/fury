@@ -18,7 +18,7 @@ license: |
   limitations under the License.
 ---
 
-# Debugging C++
+## Debugging C++
 
 Debug C++ is tricky and binary protocol bug is hard to locate without debugging support, but setup
 debugging support for bazel project is not easy.
