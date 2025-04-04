@@ -231,6 +231,9 @@ The text of each license is the standard Apache 2.0 license.
     Files:
       java/fury-core/src/main/java/org/apache/fury/io/ClassLoaderObjectInputStream.java
 
+* common-lang3 (https://github.com/apache/commons-lang)
+    Files:
+      java/fury-core/src/main/java/org/apache/fury/util/StringUtils.java
 
 * fast-serialization (https://github.com/RuedigerMoeller/fast-serialization)
     Files:
@@ -271,11 +274,6 @@ The text of each license is also included in licenses/LICENSE-[project].txt.
       java/fury-core/src/main/java/org/apache/fury/collection/ObjectIntMap.java
       java/fury-core/src/main/java/org/apache/fury/type/Generics.java
       java/fury-core/src/test/java/org/apache/fury/type/GenericsTest.java
-
-* v8 (https://chromium.googlesource.com/v8/v8.git)
-    Files:
-      javascript/packages/hps/src/v8-fast-api-calls.h
-
 
 ================================================================
 MIT licenses
