@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.function.Predicate;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeRef;
-import org.apache.fury.resolver.ClassResolver;
+import org.apache.fury.resolver.TypeResolver;
 import org.apache.fury.serializer.Serializer;
 
 /** GenericType for building java generics as a tree and binding with fury serializers. */
@@ -186,7 +186,7 @@ public class GenericType {
     this.serializer = serializer;
   }
 
-  public Serializer<?> getSerializer(ClassResolver classResolver) {
+  public Serializer<?> getSerializer(TypeResolver classResolver) {
     Serializer<?> serializer = this.serializer;
     if (serializer == null) {
       serializer = classResolver.getSerializer(cls);
@@ -203,7 +203,7 @@ public class GenericType {
     return isMonomorphic;
   }
 
-  public boolean trackingRef(ClassResolver classResolver) {
+  public boolean trackingRef(TypeResolver classResolver) {
     Boolean trackingRef = this.trackingRef;
     if (trackingRef == null) {
       trackingRef = this.trackingRef = classResolver.needToWriteRef(typeRef);

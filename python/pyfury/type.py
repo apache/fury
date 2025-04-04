@@ -130,6 +130,8 @@ class TypeId:
     See `org.apache.fury.types.Type`
     """
 
+    # null value
+    NA = 0
     # a boolean value (true or false).
     BOOL = 1
     # a 8-bit signed integer.

@@ -173,7 +173,7 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
           } else {
             if (fieldInfo.trackingRef && serializer.needToWriteRef()) {
               if (!refResolver.writeRefOrNull(buffer, fieldValue)) {
-                classResolver.writeClass(buffer, fieldInfo.classInfo);
+                classResolver.writeClassInfo(buffer, fieldInfo.classInfo);
                 // No generics for field, no need to update `depth`.
                 serializer.write(buffer, fieldValue);
               }

@@ -27,15 +27,20 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 import org.apache.fury.exception.InsecureException;
 
 /** A class to record which classes are not allowed for serialization. */
 class DisallowedList {
   private static final String DISALLOWED_LIST_TXT_PATH = "fury/disallowed.txt";
-  // when disallowed.txt changed, update this hash by result of `sha256sum disallowed.txt`
+  // When the disallowed.txt file is modified, update this hash using the following steps:
+  // 1. Run the DisallowedListTest#testCalculateSHA256 test method
+  // 2. Copy the output hash from the test result
+  // 3. Replace the value of SHA256_HASH below with the new hash
+  // 4. Rerun all tests to ensure everything is working correctly with the new hash
   private static final String SHA256_HASH =
-      "30dc5228f52b02f61aff35a94d29ccd903abbf490d8231810c5e1c0321c56557";
+      "53ecb405085d795d45ce033cd4f1055ae06247a5dbaa617ecd20e4aac4303f60";
   private static final Set<String> DEFAULT_DISALLOWED_LIST_SET;
 
   static {
@@ -43,16 +48,16 @@ class DisallowedList {
         DisallowedList.class.getClassLoader().getResourceAsStream(DISALLOWED_LIST_TXT_PATH)) {
       if (is != null) {
         byte[] fileBytes = readAllBytes(is);
-        String calculatedHash = calculateSHA256(fileBytes);
-        if (!SHA256_HASH.equals(calculatedHash)) {
-          // add a check to avoid some malicious overwrite disallowed.txt
-          throw new SecurityException("Disallowed list has been tampered");
-        }
         DEFAULT_DISALLOWED_LIST_SET =
             Arrays.stream(
                     new String(fileBytes, StandardCharsets.UTF_8).split(System.lineSeparator()))
                 .filter(line -> !line.isEmpty() && !line.startsWith("#"))
                 .collect(Collectors.toSet());
+        String calculatedHash = calculateSHA256(new TreeSet<>(DEFAULT_DISALLOWED_LIST_SET));
+        if (!SHA256_HASH.equals(calculatedHash)) {
+          // add a check to avoid some malicious overwrite disallowed.txt
+          throw new SecurityException("Disallowed list has been tampered");
+        }
       } else {
         throw new IllegalStateException(
             String.format("Read disallowed list %s failed", DISALLOWED_LIST_TXT_PATH));
@@ -74,10 +79,10 @@ class DisallowedList {
     return buffer.toByteArray();
   }
 
-  private static String calculateSHA256(byte[] input) {
+  private static String calculateSHA256(TreeSet<String> set) {
     try {
       MessageDigest digest = MessageDigest.getInstance("SHA-256");
-      byte[] hashBytes = digest.digest(input);
+      byte[] hashBytes = digest.digest(String.join(",", set).getBytes(StandardCharsets.UTF_8));
       StringBuilder hexString = new StringBuilder();
       for (byte b : hashBytes) {
         String hex = Integer.toHexString(0xff & b);
