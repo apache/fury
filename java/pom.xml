@@ -132,7 +132,7 @@
       <dependency>
         <groupId>org.projectlombok</groupId>
         <artifactId>lombok</artifactId>
-        <version>1.18.30</version>
+        <version>1.18.36</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
