@@ -38,6 +38,7 @@ import org.apache.fury.reflect.FieldAccessor;
 import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.resolver.RefResolver;
+import org.apache.fury.resolver.TypeResolver;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.DescriptorGrouper;
 import org.apache.fury.type.Generics;
@@ -73,6 +74,8 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
   private final GenericTypeField[] otherFields;
   private final GenericTypeField[] containerFields;
   private final int classVersionHash;
+  private final SerializationBinding binding;
+  private final TypeResolver typeResolver;
 
   public ObjectSerializer(Fury fury, Class<T> cls) {
     this(fury, cls, true);
@@ -80,12 +83,14 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
 
   public ObjectSerializer(Fury fury, Class<T> cls, boolean resolveParent) {
     super(fury, cls);
+    binding = SerializationBinding.createBinding(fury);
     // avoid recursive building serializers.
     // Use `setSerializerIfAbsent` to avoid overwriting existing serializer for class when used
     // as data serializer.
     if (resolveParent) {
       classResolver.setSerializerIfAbsent(cls, this);
     }
+    typeResolver = fury.isCrossLanguage() ? fury.getXtypeResolver() : classResolver;
     Collection<Descriptor> descriptors;
     boolean shareMeta = fury.getConfig().isMetaShareEnabled();
     if (shareMeta) {
@@ -128,30 +133,25 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
   public void write(MemoryBuffer buffer, T value) {
     Fury fury = this.fury;
     RefResolver refResolver = this.refResolver;
-    ClassResolver classResolver = this.classResolver;
     if (fury.checkClassVersion()) {
       buffer.writeInt32(classVersionHash);
     }
     // write order: primitive,boxed,final,other,collection,map
-    writeFinalFields(buffer, value, fury, refResolver, classResolver);
+    writeFinalFields(buffer, value, fury, refResolver, typeResolver);
     for (GenericTypeField fieldInfo : otherFields) {
       FieldAccessor fieldAccessor = fieldInfo.fieldAccessor;
       Object fieldValue = fieldAccessor.getObject(value);
       if (fieldInfo.trackingRef) {
-        fury.writeRef(buffer, fieldValue, fieldInfo.classInfoHolder);
+        binding.writeRef(buffer, fieldValue, fieldInfo.classInfoHolder);
       } else {
-        fury.writeNullable(buffer, fieldValue, fieldInfo.classInfoHolder);
+        binding.writeNullable(buffer, fieldValue, fieldInfo.classInfoHolder);
       }
     }
-    writeContainerFields(buffer, value, fury, refResolver, classResolver);
+    writeContainerFields(buffer, value, fury, refResolver, typeResolver);
   }
 
   private void writeFinalFields(
-      MemoryBuffer buffer,
-      T value,
-      Fury fury,
-      RefResolver refResolver,
-      ClassResolver classResolver) {
+      MemoryBuffer buffer, T value, Fury fury, RefResolver refResolver, TypeResolver typeResolver) {
     FinalTypeField[] finalFields = this.finalFields;
     boolean metaShareEnabled = fury.getConfig().isMetaShareEnabled();
     for (int i = 0; i < finalFields.length; i++) {
@@ -164,21 +164,21 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
           Serializer<Object> serializer = fieldInfo.classInfo.getSerializer();
           if (!metaShareEnabled || isFinal[i]) {
             if (!fieldInfo.trackingRef) {
-              fury.writeNullable(buffer, fieldValue, serializer);
+              binding.writeNullable(buffer, fieldValue, serializer);
             } else {
               // whether tracking ref is recorded in `fieldInfo.serializer`, so it's still
               // consistent with jit serializer.
-              fury.writeRef(buffer, fieldValue, serializer);
+              binding.writeRef(buffer, fieldValue, serializer);
             }
           } else {
             if (fieldInfo.trackingRef && serializer.needToWriteRef()) {
               if (!refResolver.writeRefOrNull(buffer, fieldValue)) {
-                classResolver.writeClassInfo(buffer, fieldInfo.classInfo);
+                typeResolver.writeClassInfo(buffer, fieldInfo.classInfo);
                 // No generics for field, no need to update `depth`.
-                serializer.write(buffer, fieldValue);
+                binding.write(buffer, serializer, fieldValue);
               }
             } else {
-              fury.writeNullable(buffer, fieldValue, fieldInfo.classInfo);
+              binding.writeNullable(buffer, fieldValue, fieldInfo.classInfo);
             }
           }
         }
@@ -187,24 +187,20 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
   }
 
   private void writeContainerFields(
-      MemoryBuffer buffer,
-      T value,
-      Fury fury,
-      RefResolver refResolver,
-      ClassResolver classResolver) {
+      MemoryBuffer buffer, T value, Fury fury, RefResolver refResolver, TypeResolver typeResolver) {
     Generics generics = fury.getGenerics();
     for (GenericTypeField fieldInfo : containerFields) {
       FieldAccessor fieldAccessor = fieldInfo.fieldAccessor;
       Object fieldValue = fieldAccessor.getObject(value);
       writeContainerFieldValue(
-          fury, refResolver, classResolver, generics, fieldInfo, buffer, fieldValue);
+          binding, refResolver, typeResolver, generics, fieldInfo, buffer, fieldValue);
     }
   }
 
   static void writeContainerFieldValue(
-      Fury fury,
+      SerializationBinding binding,
       RefResolver refResolver,
-      ClassResolver classResolver,
+      TypeResolver typeResolver,
       Generics generics,
       GenericTypeField fieldInfo,
       MemoryBuffer buffer,
@@ -212,9 +208,9 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
     if (fieldInfo.trackingRef) {
       if (!refResolver.writeRefOrNull(buffer, fieldValue)) {
         ClassInfo classInfo =
-            classResolver.getClassInfo(fieldValue.getClass(), fieldInfo.classInfoHolder);
+            typeResolver.getClassInfo(fieldValue.getClass(), fieldInfo.classInfoHolder);
         generics.pushGenericType(fieldInfo.genericType);
-        fury.writeNonRef(buffer, fieldValue, classInfo);
+        binding.writeNonRef(buffer, fieldValue, classInfo);
         generics.popGenericType();
       }
     } else {
@@ -223,10 +219,10 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
       } else {
         buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
         generics.pushGenericType(fieldInfo.genericType);
-        fury.writeNonRef(
+        binding.writeNonRef(
             buffer,
             fieldValue,
-            classResolver.getClassInfo(fieldValue.getClass(), fieldInfo.classInfoHolder));
+            typeResolver.getClassInfo(fieldValue.getClass(), fieldInfo.classInfoHolder));
         generics.popGenericType();
       }
     }
@@ -253,7 +249,7 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
   public Object[] readFields(MemoryBuffer buffer) {
     Fury fury = this.fury;
     RefResolver refResolver = this.refResolver;
-    ClassResolver classResolver = this.classResolver;
+    TypeResolver typeResolver = this.typeResolver;
     if (fury.checkClassVersion()) {
       int hash = buffer.readInt32();
       checkClassVersion(fury, hash, classVersionHash);
@@ -273,17 +269,18 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
         fieldValues[counter++] = Serializers.readPrimitiveValue(fury, buffer, classId);
       } else {
         Object fieldValue =
-            readFinalObjectFieldValue(fury, refResolver, classResolver, fieldInfo, isFinal, buffer);
+            readFinalObjectFieldValue(
+                binding, refResolver, typeResolver, fieldInfo, isFinal, buffer);
         fieldValues[counter++] = fieldValue;
       }
     }
     for (GenericTypeField fieldInfo : otherFields) {
-      Object fieldValue = readOtherFieldValue(fury, fieldInfo, buffer);
+      Object fieldValue = readOtherFieldValue(binding, fieldInfo, buffer);
       fieldValues[counter++] = fieldValue;
     }
     Generics generics = fury.getGenerics();
     for (GenericTypeField fieldInfo : containerFields) {
-      Object fieldValue = readContainerFieldValue(fury, generics, fieldInfo, buffer);
+      Object fieldValue = readContainerFieldValue(binding, generics, fieldInfo, buffer);
       fieldValues[counter++] = fieldValue;
     }
     return fieldValues;
@@ -292,7 +289,7 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
   public T readAndSetFields(MemoryBuffer buffer, T obj) {
     Fury fury = this.fury;
     RefResolver refResolver = this.refResolver;
-    ClassResolver classResolver = this.classResolver;
+    TypeResolver typeResolver = this.typeResolver;
     if (fury.checkClassVersion()) {
       int hash = buffer.readInt32();
       checkClassVersion(fury, hash, classVersionHash);
@@ -308,18 +305,19 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
       if (readPrimitiveFieldValueFailed(fury, buffer, obj, fieldAccessor, classId)
           && readBasicObjectFieldValueFailed(fury, buffer, obj, fieldAccessor, classId)) {
         Object fieldValue =
-            readFinalObjectFieldValue(fury, refResolver, classResolver, fieldInfo, isFinal, buffer);
+            readFinalObjectFieldValue(
+                binding, refResolver, typeResolver, fieldInfo, isFinal, buffer);
         fieldAccessor.putObject(obj, fieldValue);
       }
     }
     for (GenericTypeField fieldInfo : otherFields) {
-      Object fieldValue = readOtherFieldValue(fury, fieldInfo, buffer);
+      Object fieldValue = readOtherFieldValue(binding, fieldInfo, buffer);
       FieldAccessor fieldAccessor = fieldInfo.fieldAccessor;
       fieldAccessor.putObject(obj, fieldValue);
     }
     Generics generics = fury.getGenerics();
     for (GenericTypeField fieldInfo : containerFields) {
-      Object fieldValue = readContainerFieldValue(fury, generics, fieldInfo, buffer);
+      Object fieldValue = readContainerFieldValue(binding, generics, fieldInfo, buffer);
       FieldAccessor fieldAccessor = fieldInfo.fieldAccessor;
       fieldAccessor.putObject(obj, fieldValue);
     }
@@ -331,9 +329,9 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
    * because primitive field doesn't write null flag.
    */
   static Object readFinalObjectFieldValue(
-      Fury fury,
+      SerializationBinding binding,
       RefResolver refResolver,
-      ClassResolver classResolver,
+      TypeResolver typeResolver,
       FinalTypeField fieldInfo,
       boolean isFinal,
       MemoryBuffer buffer) {
@@ -341,16 +339,16 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
     Object fieldValue;
     if (isFinal) {
       if (!fieldInfo.trackingRef) {
-        return fury.readNullable(buffer, serializer);
+        return binding.readNullable(buffer, serializer);
       }
       // whether tracking ref is recorded in `fieldInfo.serializer`, so it's still
       // consistent with jit serializer.
-      fieldValue = fury.readRef(buffer, serializer);
+      fieldValue = binding.readRef(buffer, serializer);
     } else {
       if (serializer.needToWriteRef()) {
         int nextReadRefId = refResolver.tryPreserveRefId(buffer);
         if (nextReadRefId >= Fury.NOT_NULL_VALUE_FLAG) {
-          classResolver.readClassInfo(buffer, fieldInfo.classInfo);
+          typeResolver.readClassInfo(buffer, fieldInfo.classInfo);
           fieldValue = serializer.read(buffer);
           refResolver.setReadObject(nextReadRefId, fieldValue);
         } else {
@@ -361,7 +359,7 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
         if (headFlag == Fury.NULL_FLAG) {
           fieldValue = null;
         } else {
-          classResolver.readClassInfo(buffer, fieldInfo.classInfo);
+          typeResolver.readClassInfo(buffer, fieldInfo.classInfo);
           fieldValue = serializer.read(buffer);
         }
       }
@@ -369,27 +367,31 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
     return fieldValue;
   }
 
-  static Object readOtherFieldValue(Fury fury, GenericTypeField fieldInfo, MemoryBuffer buffer) {
+  static Object readOtherFieldValue(
+      SerializationBinding binding, GenericTypeField fieldInfo, MemoryBuffer buffer) {
     Object fieldValue;
     if (fieldInfo.trackingRef) {
-      fieldValue = fury.readRef(buffer, fieldInfo.classInfoHolder);
+      fieldValue = binding.readRef(buffer, fieldInfo.classInfoHolder);
     } else {
       byte headFlag = buffer.readByte();
       if (headFlag == Fury.NULL_FLAG) {
         fieldValue = null;
       } else {
-        fieldValue = fury.readNonRef(buffer, fieldInfo.classInfoHolder);
+        fieldValue = binding.readNonRef(buffer, fieldInfo.classInfoHolder);
       }
     }
     return fieldValue;
   }
 
   static Object readContainerFieldValue(
-      Fury fury, Generics generics, GenericTypeField fieldInfo, MemoryBuffer buffer) {
+      SerializationBinding binding,
+      Generics generics,
+      GenericTypeField fieldInfo,
+      MemoryBuffer buffer) {
     Object fieldValue;
     if (fieldInfo.trackingRef) {
       generics.pushGenericType(fieldInfo.genericType);
-      fieldValue = fury.readRef(buffer, fieldInfo.classInfoHolder);
+      fieldValue = binding.readRef(buffer, fieldInfo.classInfoHolder);
       generics.popGenericType();
     } else {
       byte headFlag = buffer.readByte();
@@ -397,7 +399,7 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
         fieldValue = null;
       } else {
         generics.pushGenericType(fieldInfo.genericType);
-        fieldValue = fury.readNonRef(buffer, fieldInfo.classInfoHolder);
+        fieldValue = binding.readNonRef(buffer, fieldInfo.classInfoHolder);
         generics.popGenericType();
       }
     }
@@ -649,9 +651,7 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
         fieldAccessor.putObject(targetObject, fury.readJavaStringRef(buffer));
         return false;
       default:
-        {
-          return true;
-        }
+        return true;
     }
   }
 
@@ -690,9 +690,7 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
         Platform.putObject(targetObject, fieldOffset, fury.readJavaStringRef(buffer));
         return false;
       default:
-        {
-          return true;
-        }
+        return true;
     }
   }
 

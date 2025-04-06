@@ -1793,6 +1793,7 @@ public class ClassResolver implements TypeResolver {
    * reduce map lookup to load class from binary.
    */
   @CodegenInvoke
+  @Override
   public ClassInfo readClassInfo(MemoryBuffer buffer, ClassInfo classInfoCache) {
     if (metaContextShareEnabled) {
       return readClassInfoWithMetaShare(buffer, fury.getSerializationContext().getMetaContext());
