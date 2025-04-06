@@ -153,13 +153,13 @@ public class MetaSharedSerializer<T> extends AbstractObjectSerializer<T> {
       FieldAccessor fieldAccessor = fieldInfo.fieldAccessor;
       if (fieldAccessor != null) {
         short classId = fieldInfo.classId;
-        if (ObjectSerializer.readPrimitiveFieldValueFailed(
+        if (AbstractObjectSerializer.readPrimitiveFieldValueFailed(
                 fury, buffer, obj, fieldAccessor, classId)
-            && ObjectSerializer.readBasicObjectFieldValueFailed(
+            && AbstractObjectSerializer.readBasicObjectFieldValueFailed(
                 fury, buffer, obj, fieldAccessor, classId)) {
           assert fieldInfo.classInfo != null;
           Object fieldValue =
-              ObjectSerializer.readFinalObjectFieldValue(
+              AbstractObjectSerializer.readFinalObjectFieldValue(
                   binding, refResolver, classResolver, fieldInfo, isFinal, buffer);
           fieldAccessor.putObject(obj, fieldValue);
         }
@@ -169,14 +169,14 @@ public class MetaSharedSerializer<T> extends AbstractObjectSerializer<T> {
             // TODO(chaokunyang) support registered serializer in peer with ref tracking disabled.
             fury.readRef(buffer, classInfoHolder);
           } else {
-            ObjectSerializer.readFinalObjectFieldValue(
+            AbstractObjectSerializer.readFinalObjectFieldValue(
                 binding, refResolver, classResolver, fieldInfo, isFinal, buffer);
           }
         }
       }
     }
     for (ObjectSerializer.GenericTypeField fieldInfo : otherFields) {
-      Object fieldValue = ObjectSerializer.readOtherFieldValue(binding, fieldInfo, buffer);
+      Object fieldValue = AbstractObjectSerializer.readOtherFieldValue(binding, fieldInfo, buffer);
       FieldAccessor fieldAccessor = fieldInfo.fieldAccessor;
       if (fieldAccessor != null) {
         fieldAccessor.putObject(obj, fieldValue);
@@ -185,7 +185,7 @@ public class MetaSharedSerializer<T> extends AbstractObjectSerializer<T> {
     Generics generics = fury.getGenerics();
     for (ObjectSerializer.GenericTypeField fieldInfo : containerFields) {
       Object fieldValue =
-          ObjectSerializer.readContainerFieldValue(binding, generics, fieldInfo, buffer);
+          AbstractObjectSerializer.readContainerFieldValue(binding, generics, fieldInfo, buffer);
       FieldAccessor fieldAccessor = fieldInfo.fieldAccessor;
       if (fieldAccessor != null) {
         fieldAccessor.putObject(obj, fieldValue);
@@ -214,7 +214,7 @@ public class MetaSharedSerializer<T> extends AbstractObjectSerializer<T> {
           fields[counter++] = Serializers.readPrimitiveValue(fury, buffer, classId);
         } else {
           Object fieldValue =
-              ObjectSerializer.readFinalObjectFieldValue(
+              AbstractObjectSerializer.readFinalObjectFieldValue(
                   binding, refResolver, classResolver, fieldInfo, isFinal, buffer);
           fields[counter++] = fieldValue;
         }
@@ -224,7 +224,7 @@ public class MetaSharedSerializer<T> extends AbstractObjectSerializer<T> {
             // TODO(chaokunyang) support registered serializer in peer with ref tracking disabled.
             fury.readRef(buffer, classInfoHolder);
           } else {
-            ObjectSerializer.readFinalObjectFieldValue(
+            AbstractObjectSerializer.readFinalObjectFieldValue(
                 binding, refResolver, classResolver, fieldInfo, isFinal, buffer);
           }
         }
@@ -232,13 +232,13 @@ public class MetaSharedSerializer<T> extends AbstractObjectSerializer<T> {
       }
     }
     for (ObjectSerializer.GenericTypeField fieldInfo : otherFields) {
-      Object fieldValue = ObjectSerializer.readOtherFieldValue(binding, fieldInfo, buffer);
+      Object fieldValue = AbstractObjectSerializer.readOtherFieldValue(binding, fieldInfo, buffer);
       fields[counter++] = fieldValue;
     }
     Generics generics = fury.getGenerics();
     for (ObjectSerializer.GenericTypeField fieldInfo : containerFields) {
       Object fieldValue =
-          ObjectSerializer.readContainerFieldValue(binding, generics, fieldInfo, buffer);
+          AbstractObjectSerializer.readContainerFieldValue(binding, generics, fieldInfo, buffer);
       fields[counter++] = fieldValue;
     }
   }
