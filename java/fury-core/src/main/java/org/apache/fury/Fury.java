@@ -558,6 +558,11 @@ public final class Fury implements BaseFury {
     xwriteData(buffer, classInfo, obj);
   }
 
+  public void xwriteNonRef(MemoryBuffer buffer, Object obj, ClassInfo classInfo) {
+    xtypeResolver.writeClassInfo(buffer, classInfo);
+    xwriteData(buffer, classInfo, obj);
+  }
+
   private void xwriteData(MemoryBuffer buffer, ClassInfo classInfo, Object obj) {
     switch (classInfo.getXtypeId()) {
       case Types.BOOL:
@@ -1112,6 +1117,15 @@ public final class Fury implements BaseFury {
         Object o = classInfo.getSerializer().xread(buffer);
         depth--;
         return o;
+    }
+  }
+
+  public Object xreadNullable(MemoryBuffer buffer, Serializer<Object> serializer) {
+    byte headFlag = buffer.readByte();
+    if (headFlag == Fury.NULL_FLAG) {
+      return null;
+    } else {
+      return serializer.xread(buffer);
     }
   }
 

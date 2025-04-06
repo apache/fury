@@ -419,6 +419,12 @@ public class XtypeResolver implements TypeResolver {
     return readClassInfo(buffer);
   }
 
+  @Override
+  public ClassInfo readClassInfo(MemoryBuffer buffer, ClassInfo classInfoCache) {
+    // TODO support type cache to speed up lookup
+    return readClassInfo(buffer);
+  }
+
   public ClassInfo readClassInfo(MemoryBuffer buffer) {
     long xtypeId = buffer.readVarUint32Small14();
     byte internalTypeId = (byte) xtypeId;

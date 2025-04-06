@@ -38,6 +38,8 @@ public interface TypeResolver {
 
   ClassInfo readClassInfo(MemoryBuffer buffer, ClassInfoHolder classInfoHolder);
 
+  ClassInfo readClassInfo(MemoryBuffer buffer, ClassInfo classInfoCache);
+
   <T> Serializer<T> getSerializer(Class<T> cls);
 
   ClassInfo nilClassInfo();
