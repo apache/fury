@@ -41,6 +41,8 @@ interface SerializationBinding {
 
   void writeNonRef(MemoryBuffer buffer, Object obj, ClassInfo classInfo);
 
+  void writeNonRef(MemoryBuffer buffer, Object obj, ClassInfoHolder classInfoHolder);
+
   void writeNullable(MemoryBuffer buffer, Object obj);
 
   void writeNullable(MemoryBuffer buffer, Object obj, Serializer serializer);
@@ -145,6 +147,11 @@ interface SerializationBinding {
     @Override
     public void writeNonRef(MemoryBuffer buffer, Object obj, ClassInfo classInfo) {
       fury.writeNonRef(buffer, obj, classInfo);
+    }
+
+    @Override
+    public void writeNonRef(MemoryBuffer buffer, Object obj, ClassInfoHolder classInfoHolder) {
+      fury.writeNonRef(buffer, obj, classResolver.getClassInfo(obj.getClass(), classInfoHolder));
     }
 
     @Override
@@ -261,6 +268,11 @@ interface SerializationBinding {
     @Override
     public void writeNonRef(MemoryBuffer buffer, Object obj, ClassInfo classInfo) {
       fury.xwriteNonRef(buffer, obj, classInfo);
+    }
+
+    @Override
+    public void writeNonRef(MemoryBuffer buffer, Object obj, ClassInfoHolder classInfoHolder) {
+      fury.xwriteNonRef(buffer, obj, xtypeResolver.getClassInfo(obj.getClass(), classInfoHolder));
     }
 
     @Override

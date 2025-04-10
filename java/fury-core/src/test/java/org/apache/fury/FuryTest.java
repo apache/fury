@@ -27,6 +27,7 @@ import static org.testng.Assert.assertTrue;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import java.io.*;
 import java.lang.invoke.MethodHandles;
 import java.math.BigDecimal;
@@ -53,6 +54,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.apache.fury.annotation.Expose;
+import org.apache.fury.annotation.FuryField;
 import org.apache.fury.annotation.Ignore;
 import org.apache.fury.builder.Generated;
 import org.apache.fury.config.CompatibleMode;
@@ -353,6 +355,121 @@ public class FuryTest extends FuryTestBase {
     o.f1 = 10;
     o.f2 = 1;
     serDeCheckSerializer(fury, o, "PackageLevelBean");
+  }
+
+  @Data
+  public static class BeanM {
+    @FuryField(nonNull = true)
+    public Long f1;
+
+    @FuryField(nonNull = true)
+    private Long f2;
+
+    String s = "str";
+    Short shortValue = Short.valueOf((short) 2);
+    Byte byteValue = Byte.valueOf((byte) 3);
+    Long longValue = Long.valueOf(4L);
+    Boolean booleanValue = Boolean.TRUE;
+    Float floatValue = Float.valueOf(5.0f);
+    Double doubleValue = Double.valueOf(6.0);
+    Character character = Character.valueOf('c');
+
+    int i = 10;
+
+    int i2;
+
+    long l1;
+
+    double d1;
+
+    char c1;
+
+    boolean b1;
+
+    byte byte1;
+
+    @FuryField(nonNull = true)
+    List<Integer> integerList = Lists.newArrayList(1);
+
+    @FuryField(nonNull = true)
+    String s1 = "str";
+
+    @FuryField(nonNull = true)
+    Short shortValue1 = Short.valueOf((short) 2);
+
+    @FuryField(nonNull = true)
+    Byte byteValue1 = Byte.valueOf((byte) 3);
+
+    @FuryField(nonNull = true)
+    Long longValue1 = Long.valueOf(4L);
+
+    @FuryField(nonNull = true)
+    Boolean booleanValue1 = Boolean.TRUE;
+
+    @FuryField(nonNull = true)
+    Float floatValue1 = Float.valueOf(5.0f);
+
+    @FuryField(nonNull = true)
+    Double doubleValue1 = Double.valueOf(6.0);
+
+    @FuryField(nonNull = true)
+    Character character1 = Character.valueOf('c');
+
+    public BeanM() {
+      this.f1 = 1L;
+      this.f2 = 1L;
+    }
+  }
+
+  @Data
+  public static class BeanN {
+    public long f1;
+    private long f2;
+  }
+
+  @Data
+  public static class BeanM1 {
+
+    @FuryField(nonNull = true)
+    private BeanN beanN;
+  }
+
+  @Test(dataProvider = "basicMultiConfigFury")
+  public void testFuryFieldAnnotation(
+          boolean trackingRef,
+          boolean codeGen,
+          boolean scopedMetaShare,
+          CompatibleMode compatibleMode) {
+      Fury fury =
+              Fury.builder()
+                      .withLanguage(Language.JAVA)
+                      .withRefTracking(trackingRef)
+                      .requireClassRegistration(false)
+                      .withCodegen(codeGen)
+                      .withCompatibleMode(compatibleMode)
+                      .withScopedMetaShare(scopedMetaShare)
+                      .build();
+    BeanM o = new BeanM();
+    byte[] bytes = fury.serialize(o);
+    final Object deserialize = fury.deserialize(bytes);
+    Assert.assertEquals(o, deserialize);
+  }
+
+  @Test(dataProvider = "referenceTrackingConfig")
+  public void testFuryFieldAnnotationException(boolean referenceTracking) {
+      Fury fury =
+              Fury.builder()
+                      .withLanguage(Language.JAVA)
+                      .withRefTracking(referenceTracking)
+                      .requireClassRegistration(false)
+                      .withCodegen(false)
+                      .build();
+    BeanM1 o1 = new BeanM1();
+    if (referenceTracking) {
+        assertEquals(serDe(fury, o1), o1);
+    } else {
+        assertThrows(NullPointerException.class, () -> fury.serialize(o1));
+    }
   }
 
   static class B {

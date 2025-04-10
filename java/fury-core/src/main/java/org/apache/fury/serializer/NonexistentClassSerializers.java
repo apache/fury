@@ -138,10 +138,12 @@ public final class NonexistentClassSerializers {
       }
       for (ObjectSerializer.GenericTypeField fieldInfo : fieldsInfo.otherFields) {
         Object fieldValue = value.get(fieldInfo.qualifiedFieldName);
-        if (fieldInfo.trackingRef) {
+          boolean nonNull = fieldInfo.furyFieldInfo.nonNull;
+          //todo question 这里为什么不用binding
+          if (fieldInfo.trackingRef) {
           fury.writeRef(buffer, fieldValue, fieldInfo.classInfoHolder);
         } else {
-          fury.writeNullable(buffer, fieldValue, fieldInfo.classInfoHolder);
+          AbstractObjectSerializer.writeNullable(binding, buffer, fieldValue, fieldInfo.classInfoHolder, nonNull);
         }
       }
       Generics generics = fury.getGenerics();
