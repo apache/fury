@@ -436,19 +436,19 @@ public class FuryTest extends FuryTestBase {
 
   @Test(dataProvider = "basicMultiConfigFury")
   public void testFuryFieldAnnotation(
-          boolean trackingRef,
-          boolean codeGen,
-          boolean scopedMetaShare,
-          CompatibleMode compatibleMode) {
-      Fury fury =
-              Fury.builder()
-                      .withLanguage(Language.JAVA)
-                      .withRefTracking(trackingRef)
-                      .requireClassRegistration(false)
-                      .withCodegen(codeGen)
-                      .withCompatibleMode(compatibleMode)
-                      .withScopedMetaShare(scopedMetaShare)
-                      .build();
+      boolean trackingRef,
+      boolean codeGen,
+      boolean scopedMetaShare,
+      CompatibleMode compatibleMode) {
+    Fury fury =
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withRefTracking(trackingRef)
+            .requireClassRegistration(false)
+            .withCodegen(codeGen)
+            .withCompatibleMode(compatibleMode)
+            .withScopedMetaShare(scopedMetaShare)
+            .build();
     BeanM o = new BeanM();
     byte[] bytes = fury.serialize(o);
     final Object deserialize = fury.deserialize(bytes);
@@ -457,18 +457,18 @@ public class FuryTest extends FuryTestBase {
 
   @Test(dataProvider = "referenceTrackingConfig")
   public void testFuryFieldAnnotationException(boolean referenceTracking) {
-      Fury fury =
-              Fury.builder()
-                      .withLanguage(Language.JAVA)
-                      .withRefTracking(referenceTracking)
-                      .requireClassRegistration(false)
-                      .withCodegen(false)
-                      .build();
+    Fury fury =
+        Fury.builder()
+            .withLanguage(Language.JAVA)
+            .withRefTracking(referenceTracking)
+            .requireClassRegistration(false)
+            .withCodegen(false)
+            .build();
     BeanM1 o1 = new BeanM1();
     if (referenceTracking) {
-        assertEquals(serDe(fury, o1), o1);
+      assertEquals(serDe(fury, o1), o1);
     } else {
-        assertThrows(NullPointerException.class, () -> fury.serialize(o1));
+      assertThrows(NullPointerException.class, () -> fury.serialize(o1));
     }
   }
 
