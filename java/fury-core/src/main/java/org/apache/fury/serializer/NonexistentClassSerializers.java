@@ -139,7 +139,7 @@ public final class NonexistentClassSerializers {
       for (ObjectSerializer.GenericTypeField fieldInfo : fieldsInfo.otherFields) {
         Object fieldValue = value.get(fieldInfo.qualifiedFieldName);
         boolean nonNull = fieldInfo.furyFieldInfo.nonNull;
-        // todo question 这里为什么不用binding
+        // todo question why not use binding
         if (fieldInfo.trackingRef) {
           fury.writeRef(buffer, fieldValue, fieldInfo.classInfoHolder);
         } else {
