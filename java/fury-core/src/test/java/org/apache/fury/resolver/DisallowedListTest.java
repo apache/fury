@@ -33,6 +33,7 @@ import org.apache.fury.FuryTestBase;
 import org.apache.fury.config.Language;
 import org.apache.fury.exception.InsecureException;
 import org.apache.fury.memory.Platform;
+import org.apache.fury.reflect.ReflectionUtils;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -40,8 +41,12 @@ public class DisallowedListTest extends FuryTestBase {
 
   @Test
   public void testCalculateSHA256() throws Exception {
+    final String disallowedListTxtPath =
+        (String)
+            ReflectionUtils.getDeclaredStaticFieldValue(
+                DisallowedList.class, "DISALLOWED_LIST_TXT_PATH");
     try (InputStream is =
-        DisallowedList.class.getClassLoader().getResourceAsStream("fury/disallowed.txt")) {
+        DisallowedList.class.getClassLoader().getResourceAsStream(disallowedListTxtPath)) {
       assert is != null;
       Set<String> set =
           new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))
@@ -60,8 +65,11 @@ public class DisallowedListTest extends FuryTestBase {
         hexString.append(hex);
       }
       System.out.println("SHA256 HASH for disallowed.txt is " + hexString);
+
       Assert.assertEquals(
-          hexString.toString(), "53ecb405085d795d45ce033cd4f1055ae06247a5dbaa617ecd20e4aac4303f60");
+          hexString.toString(),
+          ReflectionUtils.getDeclaredStaticFieldValue(DisallowedList.class, "SHA256_HASH"),
+          "Please update `DisallowedList#SHA256_HASH` with the above output hash value.");
     }
   }
 
