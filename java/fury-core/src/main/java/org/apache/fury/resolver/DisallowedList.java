@@ -19,13 +19,14 @@
 
 package org.apache.fury.resolver;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -47,10 +48,9 @@ class DisallowedList {
     try (InputStream is =
         DisallowedList.class.getClassLoader().getResourceAsStream(DISALLOWED_LIST_TXT_PATH)) {
       if (is != null) {
-        byte[] fileBytes = readAllBytes(is);
         DEFAULT_DISALLOWED_LIST_SET =
-            Arrays.stream(
-                    new String(fileBytes, StandardCharsets.UTF_8).split(System.lineSeparator()))
+            new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))
+                .lines()
                 .filter(line -> !line.isEmpty() && !line.startsWith("#"))
                 .collect(Collectors.toSet());
         String calculatedHash = calculateSHA256(new TreeSet<>(DEFAULT_DISALLOWED_LIST_SET));
