@@ -79,6 +79,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.fury.Fury;
@@ -154,6 +155,7 @@ import org.apache.fury.serializer.scala.SingletonMapSerializer;
 import org.apache.fury.serializer.scala.SingletonObjectSerializer;
 import org.apache.fury.serializer.shim.ShimDispatcher;
 import org.apache.fury.type.Descriptor;
+import org.apache.fury.type.DescriptorGrouper;
 import org.apache.fury.type.GenericType;
 import org.apache.fury.type.ScalaTypes;
 import org.apache.fury.type.TypeUtils;
@@ -611,6 +613,9 @@ public class ClassResolver implements TypeResolver {
    * non-final to write class def, so that it can be deserialized by the peer still.
    */
   public boolean isMonomorphic(Class<?> clz) {
+    if (fury.isCrossLanguage()) {
+      return TypeUtils.unwrap(clz).isPrimitive();
+    }
     if (fury.getConfig().isMetaShareEnabled()) {
       // can't create final map/collection type using TypeUtils.mapOf(TypeToken<K>,
       // TypeToken<V>)
@@ -1198,6 +1203,7 @@ public class ClassResolver implements TypeResolver {
   }
 
   // Invoked by fury JIT.
+  @Override
   public ClassInfo getClassInfo(Class<?> cls) {
     ClassInfo classInfo = classInfoMap.get(cls);
     if (classInfo == null || classInfo.serializer == null) {
@@ -2030,6 +2036,44 @@ public class ClassResolver implements TypeResolver {
 
   public void setCodeGenerator(ClassLoader[] loaders, CodeGenerator codeGenerator) {
     extRegistry.codeGeneratorMap.put(Arrays.asList(loaders), codeGenerator);
+  }
+
+  public DescriptorGrouper createDescriptorGrouper(
+      Collection<Descriptor> descriptors, boolean descriptorsGroupedOrdered) {
+    return createDescriptorGrouper(descriptors, descriptorsGroupedOrdered, null);
+  }
+
+  public DescriptorGrouper createDescriptorGrouper(
+      Collection<Descriptor> descriptors,
+      boolean descriptorsGroupedOrdered,
+      Function<Descriptor, Descriptor> descriptorUpdator) {
+    if (fury.isCrossLanguage()) {
+      return DescriptorGrouper.createDescriptorGrouper(
+          fury.getClassResolver()::isMonomorphic,
+          descriptors,
+          descriptorsGroupedOrdered,
+          descriptorUpdator,
+          fury.compressInt(),
+          fury.compressLong(),
+          (o1, o2) -> {
+            XtypeResolver xtypeResolver = fury.getXtypeResolver();
+            int xtypeId = xtypeResolver.getClassInfo(o1.getTypeRef().getRawType()).getXtypeId();
+            int xtypeId2 = xtypeResolver.getClassInfo(o2.getTypeRef().getRawType()).getXtypeId();
+            if (xtypeId == xtypeId2) {
+              return o1.getName().compareTo(o2.getName());
+            } else {
+              return xtypeId - xtypeId2;
+            }
+          });
+    }
+    return DescriptorGrouper.createDescriptorGrouper(
+        fury.getClassResolver()::isMonomorphic,
+        descriptors,
+        descriptorsGroupedOrdered,
+        descriptorUpdator,
+        fury.compressInt(),
+        fury.compressLong(),
+        DescriptorGrouper.COMPARATOR_BY_TYPE_AND_NAME);
   }
 
   public Fury getFury() {

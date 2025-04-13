@@ -19,7 +19,6 @@
 
 package org.apache.fury.serializer;
 
-import static org.apache.fury.type.DescriptorGrouper.createDescriptorGrouper;
 import static org.apache.fury.type.TypeUtils.getRawType;
 
 import java.lang.invoke.MethodHandle;
@@ -752,12 +751,7 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
       }
     }
     DescriptorGrouper descriptorGrouper =
-        createDescriptorGrouper(
-            fury.getClassResolver()::isMonomorphic,
-            descriptors,
-            false,
-            fury.compressInt(),
-            fury.compressLong());
+        fury.getClassResolver().createDescriptorGrouper(descriptors, false);
     Tuple3<Tuple2<FinalTypeField[], boolean[]>, GenericTypeField[], GenericTypeField[]> infos =
         buildFieldInfos(fury, descriptorGrouper);
     fieldInfos = new InternalFieldInfo[descriptors.size()];
@@ -782,12 +776,7 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
       }
     }
     DescriptorGrouper descriptorGrouper =
-        createDescriptorGrouper(
-            fury.getClassResolver()::isMonomorphic,
-            descriptors,
-            false,
-            fury.compressInt(),
-            fury.compressLong());
+        fury.getClassResolver().createDescriptorGrouper(descriptors, false);
     Tuple3<Tuple2<FinalTypeField[], boolean[]>, GenericTypeField[], GenericTypeField[]> infos =
         buildFieldInfos(fury, descriptorGrouper);
     InternalFieldInfo[] fieldInfos = new InternalFieldInfo[descriptors.size()];
@@ -931,7 +920,15 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
         TypeRef<?> typeRef, String qualifiedFieldName, FieldAccessor accessor, Fury fury) {
       super(typeRef, getRegisteredClassId(fury, getRawType(typeRef)), qualifiedFieldName, accessor);
       // TODO support generics <T> in Pojo<T>, see ComplexObjectSerializer.getGenericTypes
-      genericType = fury.getClassResolver().buildGenericType(typeRef);
+      GenericType t = fury.getClassResolver().buildGenericType(typeRef);
+      if (t.getTypeParametersCount() > 0) {
+        boolean skip =
+            Arrays.stream(t.getTypeParameters()).allMatch(p -> p.getCls() == Object.class);
+        if (skip) {
+          t = new GenericType(t.getTypeRef(), t.isMonomorphic());
+        }
+      }
+      genericType = t;
       classInfoHolder = fury.getClassResolver().nilClassInfoHolder();
       trackingRef = fury.getClassResolver().needToWriteRef(typeRef);
     }

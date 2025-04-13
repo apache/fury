@@ -85,13 +85,7 @@ public class MetaSharedSerializer<T> extends AbstractObjectSerializer<T> {
     Preconditions.checkArgument(
         fury.getConfig().isMetaShareEnabled(), "Meta share must be enabled.");
     Collection<Descriptor> descriptors = consolidateFields(this.classResolver, type, classDef);
-    DescriptorGrouper descriptorGrouper =
-        DescriptorGrouper.createDescriptorGrouper(
-            this.classResolver::isMonomorphic,
-            descriptors,
-            false,
-            fury.compressInt(),
-            fury.getConfig().compressLong());
+    DescriptorGrouper descriptorGrouper = classResolver.createDescriptorGrouper(descriptors, false);
     // d.getField() may be null if not exists in this class when meta share enabled.
     Tuple3<
             Tuple2<ObjectSerializer.FinalTypeField[], boolean[]>,

@@ -136,7 +136,7 @@ public class DescriptorGrouper {
    * @param primitiveComparator comparator for primitive/boxed fields.
    * @param comparator comparator for non-primitive fields.
    */
-  public DescriptorGrouper(
+  private DescriptorGrouper(
       Predicate<Class<?>> isMonomorphic,
       Collection<Descriptor> descriptors,
       boolean descriptorsGroupedOrdered,
@@ -222,16 +222,17 @@ public class DescriptorGrouper {
       Predicate<Class<?>> isMonomorphic,
       Collection<Descriptor> descriptors,
       boolean descriptorsGroupedOrdered,
+      Function<Descriptor, Descriptor> descriptorUpdator,
       boolean compressInt,
-      boolean compressLong) {
-    Comparator<Descriptor> comparator = getPrimitiveComparator(compressInt, compressLong);
+      boolean compressLong,
+      Comparator<Descriptor> comparator) {
     return new DescriptorGrouper(
         isMonomorphic,
         descriptors,
         descriptorsGroupedOrdered,
-        DescriptorGrouper::createDescriptor,
-        comparator,
-        COMPARATOR_BY_TYPE_AND_NAME);
+        descriptorUpdator == null ? DescriptorGrouper::createDescriptor : descriptorUpdator,
+        getPrimitiveComparator(compressInt, compressLong),
+        comparator);
   }
 
   public int getNumDescriptors() {

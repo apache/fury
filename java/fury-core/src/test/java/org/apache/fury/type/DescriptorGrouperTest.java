@@ -151,7 +151,13 @@ public class DescriptorGrouperTest {
         new Descriptor(new TypeRef<Map<String, String>>() {}, "c" + index++, -1, "TestClass"));
     DescriptorGrouper grouper =
         DescriptorGrouper.createDescriptorGrouper(
-            ReflectionUtils::isMonomorphic, descriptors, false, false, false);
+            ReflectionUtils::isMonomorphic,
+            descriptors,
+            false,
+            null,
+            false,
+            false,
+            DescriptorGrouper.COMPARATOR_BY_TYPE_AND_NAME);
     {
       List<? extends Class<?>> classes =
           grouper.getPrimitiveDescriptors().stream()
@@ -227,7 +233,13 @@ public class DescriptorGrouperTest {
   public void testCompressedPrimitiveGrouper() {
     DescriptorGrouper grouper =
         DescriptorGrouper.createDescriptorGrouper(
-            ReflectionUtils::isMonomorphic, createDescriptors(), false, true, true);
+            ReflectionUtils::isMonomorphic,
+            createDescriptors(),
+            false,
+            null,
+            true,
+            true,
+            DescriptorGrouper.COMPARATOR_BY_TYPE_AND_NAME);
     {
       List<? extends Class<?>> classes =
           grouper.getPrimitiveDescriptors().stream()

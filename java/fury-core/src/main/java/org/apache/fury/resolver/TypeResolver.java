@@ -32,6 +32,8 @@ import org.apache.fury.type.GenericType;
 public interface TypeResolver {
   boolean needToWriteRef(TypeRef<?> typeRef);
 
+  ClassInfo getClassInfo(Class<?> cls);
+
   ClassInfo getClassInfo(Class<?> cls, ClassInfoHolder classInfoHolder);
 
   void writeClassInfo(MemoryBuffer buffer, ClassInfo classInfo);

@@ -422,6 +422,9 @@ public final class FuryBuilder {
       if (metaShareEnabled == null) {
         metaShareEnabled = false;
       }
+      if (language != Language.JAVA) {
+        checkClassVersion = true;
+      }
     }
     if (!requireClassRegistration) {
       LOG.warn(
