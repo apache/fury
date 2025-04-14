@@ -143,6 +143,11 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
     writeContainerFields(buffer, value, fury, refResolver, typeResolver);
   }
 
+  @Override
+  public void xwrite(MemoryBuffer buffer, T value) {
+    write(buffer, value);
+  }
+
   private void writeFinalFields(
       MemoryBuffer buffer, T value, Fury fury, RefResolver refResolver, TypeResolver typeResolver) {
     FinalTypeField[] finalFields = this.finalFields;
@@ -237,6 +242,11 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
     T obj = newBean();
     refResolver.reference(obj);
     return readAndSetFields(buffer, obj);
+  }
+
+  @Override
+  public T xread(MemoryBuffer buffer) {
+    return read(buffer);
   }
 
   public Object[] readFields(MemoryBuffer buffer) {

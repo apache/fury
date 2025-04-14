@@ -123,13 +123,13 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
       SerializationBinding binding, GenericTypeField fieldInfo, MemoryBuffer buffer) {
     Object fieldValue;
     if (fieldInfo.trackingRef) {
-      fieldValue = binding.readRef(buffer, fieldInfo.classInfoHolder);
+      fieldValue = binding.readRef(buffer, fieldInfo);
     } else {
       byte headFlag = buffer.readByte();
       if (headFlag == Fury.NULL_FLAG) {
         fieldValue = null;
       } else {
-        fieldValue = binding.readNonRef(buffer, fieldInfo.classInfoHolder);
+        fieldValue = binding.readNonRef(buffer, fieldInfo);
       }
     }
     return fieldValue;
@@ -915,6 +915,7 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
     final GenericType genericType;
     final ClassInfoHolder classInfoHolder;
     final boolean trackingRef;
+    final boolean isArray;
 
     private GenericTypeField(
         TypeRef<?> typeRef, String qualifiedFieldName, FieldAccessor accessor, Fury fury) {
@@ -931,6 +932,7 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
       genericType = t;
       classInfoHolder = fury.getClassResolver().nilClassInfoHolder();
       trackingRef = fury.getClassResolver().needToWriteRef(typeRef);
+      isArray = t.getCls().isArray();
     }
 
     @Override

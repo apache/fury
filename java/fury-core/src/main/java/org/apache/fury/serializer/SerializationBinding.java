@@ -19,6 +19,8 @@
 
 package org.apache.fury.serializer;
 
+import static org.apache.fury.serializer.AbstractObjectSerializer.*;
+
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.resolver.ClassInfo;
@@ -55,6 +57,8 @@ interface SerializationBinding {
 
   <T> T readRef(MemoryBuffer buffer, Serializer<T> serializer);
 
+  Object readRef(MemoryBuffer buffer, GenericTypeField field);
+
   Object readRef(MemoryBuffer buffer, ClassInfoHolder classInfoHolder);
 
   Object readRef(MemoryBuffer buffer);
@@ -62,6 +66,8 @@ interface SerializationBinding {
   Object readNonRef(MemoryBuffer buffer);
 
   Object readNonRef(MemoryBuffer buffer, ClassInfoHolder classInfoHolder);
+
+  Object readNonRef(MemoryBuffer buffer, GenericTypeField field);
 
   Object readNullable(MemoryBuffer buffer, Serializer<Object> serializer);
 
@@ -103,6 +109,11 @@ interface SerializationBinding {
     }
 
     @Override
+    public Object readRef(MemoryBuffer buffer, GenericTypeField field) {
+      return fury.readRef(buffer, field.classInfoHolder);
+    }
+
+    @Override
     public Object readRef(MemoryBuffer buffer, ClassInfoHolder classInfoHolder) {
       return fury.readRef(buffer, classInfoHolder);
     }
@@ -120,6 +131,11 @@ interface SerializationBinding {
     @Override
     public Object readNonRef(MemoryBuffer buffer, ClassInfoHolder classInfoHolder) {
       return fury.readNonRef(buffer, classInfoHolder);
+    }
+
+    @Override
+    public Object readNonRef(MemoryBuffer buffer, GenericTypeField field) {
+      return fury.readNonRef(buffer, field.classInfoHolder);
     }
 
     @Override
@@ -219,6 +235,18 @@ interface SerializationBinding {
     }
 
     @Override
+    public Object readRef(MemoryBuffer buffer, GenericTypeField field) {
+      if (field.isArray) {
+        fury.getGenerics().pushGenericType(field.genericType);
+        Object o = fury.xreadRef(buffer);
+        fury.getGenerics().popGenericType();
+        return o;
+      } else {
+        return fury.xreadRef(buffer);
+      }
+    }
+
+    @Override
     public Object readRef(MemoryBuffer buffer, ClassInfoHolder classInfoHolder) {
       return fury.xreadRef(buffer);
     }
@@ -236,6 +264,18 @@ interface SerializationBinding {
     @Override
     public Object readNonRef(MemoryBuffer buffer, ClassInfoHolder classInfoHolder) {
       return fury.xreadNonRef(buffer, xtypeResolver.readClassInfo(buffer, classInfoHolder));
+    }
+
+    @Override
+    public Object readNonRef(MemoryBuffer buffer, GenericTypeField field) {
+      if (field.isArray) {
+        fury.getGenerics().pushGenericType(field.genericType);
+        Object o = fury.xreadNonRef(buffer);
+        fury.getGenerics().popGenericType();
+        return o;
+      } else {
+        return fury.xreadNonRef(buffer);
+      }
     }
 
     @Override

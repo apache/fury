@@ -61,7 +61,9 @@ import org.apache.fury.meta.Encoders;
 import org.apache.fury.meta.MetaString;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeRef;
+import org.apache.fury.serializer.ArraySerializers;
 import org.apache.fury.serializer.EnumSerializer;
+import org.apache.fury.serializer.LazySerializer;
 import org.apache.fury.serializer.NonexistentClass;
 import org.apache.fury.serializer.NonexistentClassSerializers;
 import org.apache.fury.serializer.ObjectSerializer;
@@ -151,7 +153,7 @@ public class XtypeResolver implements TypeResolver {
       xtypeId = (xtypeId << 8) + Types.ENUM;
     } else {
       if (serializer != null) {
-        if (serializer instanceof ObjectSerializer) {
+        if (isStructType(serializer)) {
           xtypeId = (xtypeId << 8) + Types.STRUCT;
         } else {
           xtypeId = (xtypeId << 8) + Types.EXT;
@@ -188,7 +190,7 @@ public class XtypeResolver implements TypeResolver {
     }
     short xtypeId;
     if (serializer != null) {
-      if (serializer instanceof ObjectSerializer || serializer instanceof GeneratedSerializer) {
+      if (isStructType(serializer)) {
         xtypeId = Types.NAMED_STRUCT;
       } else if (serializer instanceof EnumSerializer) {
         xtypeId = Types.NAMED_ENUM;
@@ -213,12 +215,21 @@ public class XtypeResolver implements TypeResolver {
       if (type.isEnum()) {
         classInfo.serializer = new EnumSerializer(fury, (Class<Enum>) type);
       } else {
-        classInfo.serializer = new ObjectSerializer<>(fury, type);
+        classInfo.serializer =
+            new LazySerializer.LazyObjectSerializer(
+                fury, type, () -> new ObjectSerializer<>(fury, type));
       }
     }
     classInfoMap.put(type, classInfo);
     registeredTypeIds.add(xtypeId);
     xtypeIdToClassMap.put(xtypeId, classInfo);
+  }
+
+  private boolean isStructType(Serializer serializer) {
+    if (serializer instanceof ObjectSerializer || serializer instanceof GeneratedSerializer) {
+      return true;
+    }
+    return serializer instanceof LazySerializer.LazyObjectSerializer;
   }
 
   private ClassInfo newClassInfo(Class<?> type, Serializer<?> serializer, short xtypeId) {
@@ -310,7 +321,7 @@ public class XtypeResolver implements TypeResolver {
       serializer = new CollectionSerializer(fury, cls);
       xtypeId = Types.LIST;
     } else if (cls.isArray() && !TypeUtils.getArrayComponent(cls).isPrimitive()) {
-      serializer = classResolver.getSerializer(cls);
+      serializer = new ArraySerializers.ObjectArraySerializer(fury, cls);
       xtypeId = Types.LIST;
     } else if (classResolver.isMap(cls)) {
       serializer = new MapSerializer(fury, cls);
