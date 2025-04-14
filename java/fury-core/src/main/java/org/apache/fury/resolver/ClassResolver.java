@@ -539,6 +539,7 @@ public class ClassResolver implements TypeResolver {
     }
   }
 
+  @Override
   public boolean isRegistered(Class<?> cls) {
     return extRegistry.registeredClassIdMap.containsKey(cls)
         || extRegistry.registeredClasses.inverse().containsKey(cls);
@@ -2057,8 +2058,14 @@ public class ClassResolver implements TypeResolver {
           fury.compressLong(),
           (o1, o2) -> {
             XtypeResolver xtypeResolver = fury.getXtypeResolver();
-            int xtypeId = xtypeResolver.getClassInfo(o1.getTypeRef().getRawType()).getXtypeId();
-            int xtypeId2 = xtypeResolver.getClassInfo(o2.getTypeRef().getRawType()).getXtypeId();
+            int xtypeId = 0;
+            if (xtypeResolver.isRegistered(o1.getRawType())) {
+              xtypeId = xtypeResolver.getClassInfo(o1.getRawType()).getXtypeId();
+            }
+            int xtypeId2 = 0;
+            if (xtypeResolver.isRegistered(o2.getRawType())) {
+              xtypeId2 = xtypeResolver.getClassInfo(o2.getRawType()).getXtypeId();
+            }
             if (xtypeId == xtypeId2) {
               return o1.getName().compareTo(o2.getName());
             } else {

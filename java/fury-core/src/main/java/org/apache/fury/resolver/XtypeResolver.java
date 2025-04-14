@@ -275,6 +275,11 @@ public class XtypeResolver implements TypeResolver {
   }
 
   @Override
+  public boolean isRegistered(Class<?> cls) {
+    return classInfoMap.get(cls) != null;
+  }
+
+  @Override
   public ClassInfo getClassInfo(Class<?> cls) {
     ClassInfo classInfo = classInfoMap.get(cls);
     if (classInfo == null) {
