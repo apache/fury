@@ -767,9 +767,12 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
           classResolver.readClassInfo(buffer, valueClassInfoReadCache).getSerializer();
     }
     for (int i = 0; i < chunkSize; i++) {
+      // increase depth to avoid read wrong outer generic type
+      fury.incDepth(1);
       Object key = trackKeyRef ? fury.readRef(buffer, keySerializer) : keySerializer.read(buffer);
       Object value =
           trackValueRef ? fury.readRef(buffer, valueSerializer) : valueSerializer.read(buffer);
+      fury.incDepth(-1);
       map.put(key, value);
       size--;
     }
