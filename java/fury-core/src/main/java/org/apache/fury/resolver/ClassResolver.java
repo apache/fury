@@ -2057,15 +2057,8 @@ public class ClassResolver implements TypeResolver {
           fury.compressInt(),
           fury.compressLong(),
           (o1, o2) -> {
-            XtypeResolver xtypeResolver = fury.getXtypeResolver();
-            int xtypeId = 0;
-            if (xtypeResolver.isRegistered(o1.getRawType())) {
-              xtypeId = xtypeResolver.getClassInfo(o1.getRawType()).getXtypeId();
-            }
-            int xtypeId2 = 0;
-            if (xtypeResolver.isRegistered(o2.getRawType())) {
-              xtypeId2 = xtypeResolver.getClassInfo(o2.getRawType()).getXtypeId();
-            }
+            int xtypeId = getXtypeId(o1.getRawType());
+            int xtypeId2 = getXtypeId(o2.getRawType());
             if (xtypeId == xtypeId2) {
               return o1.getName().compareTo(o2.getName());
             } else {
@@ -2081,6 +2074,17 @@ public class ClassResolver implements TypeResolver {
         fury.compressInt(),
         fury.compressLong(),
         DescriptorGrouper.COMPARATOR_BY_TYPE_AND_NAME);
+  }
+
+  private int getXtypeId(Class<?> cls) {
+    if (fury.getXtypeResolver().isRegistered(cls)) {
+      return fury.getXtypeResolver().getClassInfo(cls).getXtypeId();
+    } else {
+      if (ReflectionUtils.isMonomorphic(cls)) {
+        throw new UnsupportedOperationException(cls + " is not supported for xlang serialization");
+      }
+      return 128;
+    }
   }
 
   public Fury getFury() {
