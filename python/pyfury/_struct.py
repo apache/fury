@@ -103,6 +103,9 @@ def _get_hash(fury, field_names: list, type_hints: dict):
     return hash_
 
 
+_UNKNOWN_TYPE_ID = 4096
+
+
 def _sort_fields(class_resolver, field_names, serializers):
     boxed_types = []
     collection_types = []
@@ -112,7 +115,7 @@ def _sort_fields(class_resolver, field_names, serializers):
     type_ids = []
     for field_name, serializer in zip(field_names, serializers):
         if serializer is None:
-            other_types.append((128, serializer, field_name))
+            other_types.append((_UNKNOWN_TYPE_ID, serializer, field_name))
         else:
             type_ids.append(
                 (

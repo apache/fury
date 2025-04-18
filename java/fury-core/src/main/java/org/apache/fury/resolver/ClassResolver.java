@@ -2088,6 +2088,8 @@ public class ClassResolver implements TypeResolver {
         DescriptorGrouper.COMPARATOR_BY_TYPE_AND_NAME);
   }
 
+  private static final int UNKNOWN_TYPE_ID = 4096;
+
   private int getXtypeId(Class<?> cls) {
     if (isCollection(cls)) {
       return Types.LIST;
@@ -2104,7 +2106,7 @@ public class ClassResolver implements TypeResolver {
       if (ReflectionUtils.isMonomorphic(cls)) {
         throw new UnsupportedOperationException(cls + " is not supported for xlang serialization");
       }
-      return 128;
+      return UNKNOWN_TYPE_ID;
     }
   }
 

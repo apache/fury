@@ -21,7 +21,6 @@ package org.apache.fury.type;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
-import java.util.Objects;
 import org.apache.fury.util.Preconditions;
 
 public class Types {
@@ -189,7 +188,7 @@ public class Types {
           double.class, FLOAT64);
 
   public static int getPrimitiveTypeId(Class<?> cls) {
-    Preconditions.checkArgument(cls.isPrimitive());
+    Preconditions.checkArgument(cls.isPrimitive(), "Class %s is not primitive", cls);
     return PRIMITIVE_TYPE_ID_MAP.getOrDefault(cls, -1);
   }
 }
