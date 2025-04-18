@@ -190,6 +190,6 @@ public class Types {
 
   public static int getPrimitiveTypeId(Class<?> cls) {
     Preconditions.checkArgument(cls.isPrimitive());
-    return Objects.requireNonNull(PRIMITIVE_TYPE_ID_MAP.get(cls));
+    return PRIMITIVE_TYPE_ID_MAP.getOrDefault(cls, -1);
   }
 }
