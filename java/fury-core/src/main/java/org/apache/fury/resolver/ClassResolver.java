@@ -2088,7 +2088,7 @@ public class ClassResolver implements TypeResolver {
         DescriptorGrouper.COMPARATOR_BY_TYPE_AND_NAME);
   }
 
-  private static final int UNKNOWN_TYPE_ID = 4096;
+  private static final int UNKNOWN_TYPE_ID = -1;
 
   private int getXtypeId(Class<?> cls) {
     if (isCollection(cls)) {

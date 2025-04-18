@@ -103,7 +103,7 @@ def _get_hash(fury, field_names: list, type_hints: dict):
     return hash_
 
 
-_UNKNOWN_TYPE_ID = 4096
+_UNKNOWN_TYPE_ID = -1
 
 
 def _sort_fields(class_resolver, field_names, serializers):
