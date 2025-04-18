@@ -31,10 +31,12 @@ public class Slf4jLoggerTest {
     logger.info("testInfo {}", "placeHolder");
     logger.warn("testInfo {}", "placeHolder");
     logger.error("testInfo {}", "placeHolder", new Exception("test log"));
+    logger.error("testInfo {}", "placeHolder", new Exception("test log"));
     furyLogger.info("testInfo");
     furyLogger.info("testInfo {}", "placeHolder");
     furyLogger.warn("testInfo {}", "placeHolder");
     furyLogger.error("testInfo {}", "placeHolder", new Exception("test log"));
     furyLogger.error(null, new Exception("test log"));
+    furyLogger.error("test log {} {}", new Exception("test log {} {}"));
   }
 }
