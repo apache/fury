@@ -19,7 +19,8 @@
 
 package org.apache.fury.type;
 
-import com.google.common.collect.ImmutableMap;
+import static org.apache.fury.collection.Collections.ofHashMap;
+
 import java.util.Map;
 import org.apache.fury.util.Preconditions;
 
@@ -178,7 +179,7 @@ public class Types {
   }
 
   private static final Map<Class, Integer> PRIMITIVE_TYPE_ID_MAP =
-      ImmutableMap.of(
+      ofHashMap(
           boolean.class, BOOL,
           byte.class, INT8,
           short.class, INT16,
