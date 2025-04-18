@@ -199,6 +199,8 @@ class MapRefResolver(RefResolver):
 
     def set_read_object(self, id_, obj):
         if id_ >= 0:
+            if id_ >= len(self.read_objects):
+                raise RuntimeError(f"Ref id {id_} invalid")
             self.read_objects[id_] = obj
 
     def reset(self):
