@@ -136,7 +136,9 @@ def _sort_fields(class_resolver, field_names, serializers):
         else:
             container = other_types
         container.append((type_id, serializer, field_name))
-    sorter = lambda item: (item[0], item[2])
+
+    def sorter(item):
+        return item[0], item[2]
 
     def numeric_sorter(item):
         id_ = item[0]
