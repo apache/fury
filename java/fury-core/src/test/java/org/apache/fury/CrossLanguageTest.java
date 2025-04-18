@@ -462,10 +462,12 @@ public class CrossLanguageTest extends FuryTestBase {
             .build();
     fury.register(ComplexObject1.class, "test.ComplexObject1");
     ObjectSerializer serializer = (ObjectSerializer) fury.getSerializer(ComplexObject1.class);
-    Method method = ObjectSerializer.class.getDeclaredMethod("computeStructHash");
+    Method method =
+        ObjectSerializer.class.getDeclaredMethod("computeStructHash", Fury.class, Collection.class);
     method.setAccessible(true);
     Collection<Descriptor> descriptors =
         fury.getClassResolver().getAllDescriptorsMap(ComplexObject1.class, true).values();
+    descriptors = fury.getClassResolver().createDescriptorGrouper(descriptors, false).getSortedDescriptors();
     Integer hash = (Integer) method.invoke(serializer, fury, descriptors);
     MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(4);
     buffer.writeInt32(hash);
@@ -518,7 +520,7 @@ public class CrossLanguageTest extends FuryTestBase {
 
   private void structRoundBack(Fury fury, Object obj, String testName) throws IOException {
     byte[] serialized = fury.serialize(obj);
-    // Assert.assertEquals(fury.deserialize(serialized), obj);
+    Assert.assertEquals(fury.deserialize(serialized), obj);
     Path dataFile = Paths.get(testName);
     System.out.println(dataFile.toAbsolutePath());
     Files.deleteIfExists(dataFile);
