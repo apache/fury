@@ -461,13 +461,15 @@ public class CrossLanguageTest extends FuryTestBase {
             .requireClassRegistration(false)
             .build();
     fury.register(ComplexObject1.class, "test.ComplexObject1");
+    fury.serialize(new ComplexObject1()); // trigger serializer update
     ObjectSerializer serializer = (ObjectSerializer) fury.getSerializer(ComplexObject1.class);
     Method method =
         ObjectSerializer.class.getDeclaredMethod("computeStructHash", Fury.class, Collection.class);
     method.setAccessible(true);
     Collection<Descriptor> descriptors =
         fury.getClassResolver().getAllDescriptorsMap(ComplexObject1.class, true).values();
-    descriptors = fury.getClassResolver().createDescriptorGrouper(descriptors, false).getSortedDescriptors();
+    descriptors =
+        fury.getClassResolver().createDescriptorGrouper(descriptors, false).getSortedDescriptors();
     Integer hash = (Integer) method.invoke(serializer, fury, descriptors);
     MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(4);
     buffer.writeInt32(hash);
