@@ -35,7 +35,6 @@ import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeRef;
 import org.testng.annotations.Test;
 
-@SuppressWarnings("UnstableApiUsage")
 public class DescriptorGrouperTest {
 
   private List<Descriptor> createDescriptors() {
@@ -101,10 +100,10 @@ public class DescriptorGrouperTest {
             long.class,
             float.class,
             int.class,
-            char.class,
             short.class,
-            boolean.class,
+            char.class,
             byte.class,
+            boolean.class,
             void.class);
     assertEquals(classes, expected);
   }
@@ -124,10 +123,10 @@ public class DescriptorGrouperTest {
         Arrays.asList(
             double.class,
             float.class,
-            char.class,
             short.class,
-            boolean.class,
+            char.class,
             byte.class,
+            boolean.class,
             void.class,
             long.class,
             int.class);
@@ -169,10 +168,10 @@ public class DescriptorGrouperTest {
               long.class,
               float.class,
               int.class,
-              char.class,
               short.class,
-              boolean.class,
+              char.class,
               byte.class,
+              boolean.class,
               void.class);
       assertEquals(classes, expected);
     }
@@ -187,10 +186,10 @@ public class DescriptorGrouperTest {
               Long.class,
               Float.class,
               Integer.class,
-              Character.class,
               Short.class,
-              Boolean.class,
+              Character.class,
               Byte.class,
+              Boolean.class,
               Void.class);
       assertEquals(classes, expected);
     }
@@ -249,10 +248,10 @@ public class DescriptorGrouperTest {
           Arrays.asList(
               double.class,
               float.class,
-              char.class,
               short.class,
-              boolean.class,
+              char.class,
               byte.class,
+              boolean.class,
               void.class,
               long.class,
               int.class);
@@ -267,10 +266,10 @@ public class DescriptorGrouperTest {
           Arrays.asList(
               Double.class,
               Float.class,
-              Character.class,
               Short.class,
-              Boolean.class,
+              Character.class,
               Byte.class,
+              Boolean.class,
               Void.class,
               Long.class,
               Integer.class);

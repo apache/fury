@@ -41,7 +41,7 @@ import org.apache.fury.util.record.RecordUtils;
  * <li>other fields
  */
 public class DescriptorGrouper {
-  private static final Comparator<Descriptor> COMPARATOR_BY_PRIMITIVE_TYPE_ID =
+  static final Comparator<Descriptor> COMPARATOR_BY_PRIMITIVE_TYPE_ID =
       (d1, d2) -> {
         int c =
             Types.getPrimitiveTypeId(TypeUtils.unwrap(d2.getRawType()))
