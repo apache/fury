@@ -376,6 +376,8 @@ public final class FuryBuilder {
     }
     if (language != Language.JAVA) {
       stringRefIgnored = true;
+      longEncoding = LongEncoding.PVL;
+      compressInt = true;
     }
     if (ENABLE_CLASS_REGISTRATION_FORCIBLY) {
       if (!requireClassRegistration) {
