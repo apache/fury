@@ -208,7 +208,7 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
         ClassInfo classInfo =
             typeResolver.getClassInfo(fieldValue.getClass(), fieldInfo.classInfoHolder);
         generics.pushGenericType(fieldInfo.genericType);
-        binding.writeNonRef(buffer, fieldValue, classInfo);
+        binding.writeContainerFieldValue(buffer, fieldValue, classInfo);
         generics.popGenericType();
       }
     } else {
@@ -217,7 +217,7 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
       } else {
         buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
         generics.pushGenericType(fieldInfo.genericType);
-        binding.writeNonRef(
+        binding.writeContainerFieldValue(
             buffer,
             fieldValue,
             typeResolver.getClassInfo(fieldValue.getClass(), fieldInfo.classInfoHolder));

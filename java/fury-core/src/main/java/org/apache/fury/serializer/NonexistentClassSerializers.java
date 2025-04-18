@@ -166,6 +166,7 @@ public final class NonexistentClassSerializers {
                 ObjectSerializer.GenericTypeField[],
                 ObjectSerializer.GenericTypeField[]>
             tuple = AbstractObjectSerializer.buildFieldInfos(fury, descriptorGrouper);
+        descriptors = descriptorGrouper.getSortedDescriptors();
         int classVersionHash = 0;
         if (fury.checkClassVersion()) {
           classVersionHash = ObjectSerializer.computeStructHash(fury, descriptors);
