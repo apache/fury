@@ -20,7 +20,7 @@
 package org.apache.fury.serializer;
 
 import static org.apache.fury.Fury.NOT_NULL_VALUE_FLAG;
-import static org.apache.fury.serializer.AbstractObjectSerializer.*;
+import static org.apache.fury.serializer.AbstractObjectSerializer.GenericTypeField;
 
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
