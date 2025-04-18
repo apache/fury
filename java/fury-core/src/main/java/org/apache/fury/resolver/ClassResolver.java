@@ -159,6 +159,7 @@ import org.apache.fury.type.DescriptorGrouper;
 import org.apache.fury.type.GenericType;
 import org.apache.fury.type.ScalaTypes;
 import org.apache.fury.type.TypeUtils;
+import org.apache.fury.type.Types;
 import org.apache.fury.util.GraalvmSupport;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.StringUtils;
@@ -2050,7 +2051,18 @@ public class ClassResolver implements TypeResolver {
       Function<Descriptor, Descriptor> descriptorUpdator) {
     if (fury.isCrossLanguage()) {
       return DescriptorGrouper.createDescriptorGrouper(
-          fury.getClassResolver()::isMonomorphic,
+          c -> {
+            if (TypeUtils.unwrap(c).isPrimitive()) {
+              return true;
+            } else if (c == String.class) {
+              return true;
+            }
+            if (c.isArray() && TypeUtils.getArrayComponent(c).isPrimitive()) {
+              return true;
+            }
+            // TODO(chaokunyang) add more types.
+            return false;
+          },
           descriptors,
           descriptorsGroupedOrdered,
           descriptorUpdator,
@@ -2060,7 +2072,7 @@ public class ClassResolver implements TypeResolver {
             int xtypeId = getXtypeId(o1.getRawType());
             int xtypeId2 = getXtypeId(o2.getRawType());
             if (xtypeId == xtypeId2) {
-              return o1.getName().compareTo(o2.getName());
+              return o1.getSnakeCaseName().compareTo(o2.getSnakeCaseName());
             } else {
               return xtypeId - xtypeId2;
             }
@@ -2077,6 +2089,15 @@ public class ClassResolver implements TypeResolver {
   }
 
   private int getXtypeId(Class<?> cls) {
+    if (isCollection(cls)) {
+      return Types.LIST;
+    }
+    if (cls.isArray() && !cls.getComponentType().isPrimitive()) {
+      return Types.LIST;
+    }
+    if (isMap(cls)) {
+      return Types.MAP;
+    }
     if (fury.getXtypeResolver().isRegistered(cls)) {
       return fury.getXtypeResolver().getClassInfo(cls).getXtypeId();
     } else {

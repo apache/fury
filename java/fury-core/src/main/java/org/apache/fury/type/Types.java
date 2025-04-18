@@ -19,6 +19,11 @@
 
 package org.apache.fury.type;
 
+import com.google.common.collect.ImmutableMap;
+import java.util.Map;
+import java.util.Objects;
+import org.apache.fury.util.Preconditions;
+
 public class Types {
 
   /** bool: a boolean value (true or false). */
@@ -171,5 +176,20 @@ public class Types {
 
   public static boolean isEnumType(int value) {
     return value == ENUM || value == NAMED_ENUM;
+  }
+
+  private static final Map<Class, Integer> PRIMITIVE_TYPE_ID_MAP =
+      ImmutableMap.of(
+          boolean.class, BOOL,
+          byte.class, INT8,
+          short.class, INT16,
+          int.class, INT32,
+          long.class, INT64,
+          float.class, FLOAT32,
+          double.class, FLOAT64);
+
+  public static int getPrimitiveTypeId(Class<?> cls) {
+    Preconditions.checkArgument(cls.isPrimitive());
+    return Objects.requireNonNull(PRIMITIVE_TYPE_ID_MAP.get(cls));
   }
 }

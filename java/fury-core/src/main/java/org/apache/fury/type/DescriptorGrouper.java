@@ -41,15 +41,17 @@ import org.apache.fury.util.record.RecordUtils;
  * <li>other fields
  */
 public class DescriptorGrouper {
-  // sort primitive descriptors from largest to smallest, if size is the same,
-  // sort by field name to fix order.
-  private static final Comparator<Descriptor> PRIMITIVE_COMPARATOR =
+  private static final Comparator<Descriptor> COMPARATOR_BY_PRIMITIVE_TYPE_ID =
       (d1, d2) -> {
         int c =
-            getSizeOfPrimitiveType(TypeUtils.unwrap(d2.getRawType()))
-                - getSizeOfPrimitiveType(TypeUtils.unwrap(d1.getRawType()));
+            Types.getPrimitiveTypeId(TypeUtils.unwrap(d2.getRawType()))
+                - Types.getPrimitiveTypeId(TypeUtils.unwrap(d1.getRawType()));
         if (c == 0) {
-          c = DescriptorGrouper.COMPARATOR_BY_TYPE_AND_NAME.compare(d1, d2);
+          c = d1.getSnakeCaseName().compareTo(d2.getSnakeCaseName());
+          if (c == 0) {
+            // Field name duplicate in super/child classes.
+            c = d1.getDeclaringClass().compareTo(d2.getDeclaringClass());
+          }
         }
         return c;
       };
@@ -64,7 +66,17 @@ public class DescriptorGrouper {
   public static Comparator<Descriptor> getPrimitiveComparator(
       boolean compressInt, boolean compressLong) {
     if (!compressInt && !compressLong) {
-      return PRIMITIVE_COMPARATOR;
+      // sort primitive descriptors from largest to smallest, if size is the same,
+      // sort by field name to fix order.
+      return (d1, d2) -> {
+        int c =
+            getSizeOfPrimitiveType(TypeUtils.unwrap(d2.getRawType()))
+                - getSizeOfPrimitiveType(TypeUtils.unwrap(d1.getRawType()));
+        if (c == 0) {
+          c = COMPARATOR_BY_PRIMITIVE_TYPE_ID.compare(d1, d2);
+        }
+        return c;
+      };
     }
     return (d1, d2) -> {
       Class<?> t1 = TypeUtils.unwrap(d1.getRawType());
@@ -74,7 +86,7 @@ public class DescriptorGrouper {
       if ((t1Compress && t2Compress) || (!t1Compress && !t2Compress)) {
         int c = getSizeOfPrimitiveType(t2) - getSizeOfPrimitiveType(t1);
         if (c == 0) {
-          c = DescriptorGrouper.COMPARATOR_BY_TYPE_AND_NAME.compare(d1, d2);
+          c = COMPARATOR_BY_PRIMITIVE_TYPE_ID.compare(d1, d2);
         }
         return c;
       }
@@ -176,9 +188,9 @@ public class DescriptorGrouper {
     descriptors.addAll(getPrimitiveDescriptors());
     descriptors.addAll(getBoxedDescriptors());
     descriptors.addAll(getFinalDescriptors());
+    descriptors.addAll(getOtherDescriptors());
     descriptors.addAll(getCollectionDescriptors());
     descriptors.addAll(getMapDescriptors());
-    descriptors.addAll(getOtherDescriptors());
     return descriptors;
   }
 

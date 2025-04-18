@@ -323,12 +323,18 @@ public class XtypeResolver implements TypeResolver {
       serializer = new CollectionSerializer(fury, cls);
       xtypeId = Types.SET;
     } else if (classResolver.isCollection(cls)) {
+      if (cls.isAssignableFrom(ArrayList.class)) {
+        cls = ArrayList.class;
+      }
       serializer = new CollectionSerializer(fury, cls);
       xtypeId = Types.LIST;
     } else if (cls.isArray() && !TypeUtils.getArrayComponent(cls).isPrimitive()) {
       serializer = new ArraySerializers.ObjectArraySerializer(fury, cls);
       xtypeId = Types.LIST;
     } else if (classResolver.isMap(cls)) {
+      if (cls.isAssignableFrom(HashMap.class)) {
+        cls = HashMap.class;
+      }
       serializer = new MapSerializer(fury, cls);
       xtypeId = Types.MAP;
     } else {
