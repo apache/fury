@@ -143,7 +143,7 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
     Object fieldValue;
     if (fieldInfo.trackingRef) {
       generics.pushGenericType(fieldInfo.genericType);
-      fieldValue = binding.readRef(buffer, fieldInfo.classInfoHolder);
+      fieldValue = binding.readContainerFieldValueRef(buffer, fieldInfo);
       generics.popGenericType();
     } else {
       byte headFlag = buffer.readByte();
@@ -151,7 +151,7 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
         fieldValue = null;
       } else {
         generics.pushGenericType(fieldInfo.genericType);
-        fieldValue = binding.readNonRef(buffer, fieldInfo.classInfoHolder);
+        fieldValue = binding.readContainerFieldValue(buffer, fieldInfo);
         generics.popGenericType();
       }
     }
@@ -916,12 +916,15 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
     final ClassInfoHolder classInfoHolder;
     final boolean trackingRef;
     final boolean isArray;
+    final ClassInfo containerClassInfo;
 
     private GenericTypeField(
         TypeRef<?> typeRef, String qualifiedFieldName, FieldAccessor accessor, Fury fury) {
       super(typeRef, getRegisteredClassId(fury, getRawType(typeRef)), qualifiedFieldName, accessor);
       // TODO support generics <T> in Pojo<T>, see ComplexObjectSerializer.getGenericTypes
-      GenericType t = fury.getClassResolver().buildGenericType(typeRef);
+      ClassResolver classResolver = fury.getClassResolver();
+      GenericType t = classResolver.buildGenericType(typeRef);
+      Class<?> cls = t.getCls();
       if (t.getTypeParametersCount() > 0) {
         boolean skip =
             Arrays.stream(t.getTypeParameters()).allMatch(p -> p.getCls() == Object.class);
@@ -930,9 +933,18 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
         }
       }
       genericType = t;
-      classInfoHolder = fury.getClassResolver().nilClassInfoHolder();
-      trackingRef = fury.getClassResolver().needToWriteRef(typeRef);
-      isArray = t.getCls().isArray();
+      classInfoHolder = classResolver.nilClassInfoHolder();
+      trackingRef = classResolver.needToWriteRef(typeRef);
+      isArray = cls.isArray();
+      if (!fury.isCrossLanguage()) {
+        containerClassInfo = null;
+      } else {
+        if (classResolver.isMap(cls) || classResolver.isCollection(cls)) {
+          containerClassInfo = fury.getXtypeResolver().getClassInfo(cls);
+        } else {
+          containerClassInfo = null;
+        }
+      }
     }
 
     @Override
