@@ -310,10 +310,36 @@ _py_array_types = {
     Float32ArrayType,
     Float64ArrayType,
 }
+_np_array_types = {
+    BoolNDArrayType,
+    Int16NDArrayType,
+    Int32NDArrayType,
+    Int64NDArrayType,
+    Float32NDArrayType,
+    Float64NDArrayType,
+}
+_primitive_array_types = _py_array_types.union(_np_array_types)
 
 
 def is_py_array_type(type_) -> bool:
     return type_ in _py_array_types
+
+
+_primitive_array_type_ids = {
+    TypeId.BOOL_ARRAY,
+    TypeId.INT8_ARRAY,
+    TypeId.INT16_ARRAY,
+    TypeId.INT32_ARRAY,
+    TypeId.INT64_ARRAY,
+    TypeId.FLOAT32_ARRAY,
+    TypeId.FLOAT64_ARRAY,
+}
+
+
+def is_primitive_array_type(type_) -> bool:
+    if type(type_) is int:
+        return type_ in _primitive_array_type_ids
+    return type_ in _primitive_array_types
 
 
 def is_list_type(type_):

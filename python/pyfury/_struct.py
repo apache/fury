@@ -42,7 +42,13 @@ from pyfury.type import (
     is_primitive_type,
 )
 
-from pyfury.type import is_list_type, is_map_type, get_primitive_type_size
+from pyfury.type import (
+    is_list_type,
+    is_map_type,
+    get_primitive_type_size,
+    is_primitive_array_type,
+)
+
 
 logger = logging.getLogger(__name__)
 
@@ -131,7 +137,7 @@ def _sort_fields(class_resolver, field_names, serializers):
             container = collection_types
         elif is_map_type(serializer.type_):
             container = map_types
-        elif type_id in {TypeId.STRING}:
+        elif type_id in {TypeId.STRING} or is_primitive_array_type(type_id):
             container = final_types
         else:
             container = other_types
@@ -152,6 +158,7 @@ def _sort_fields(class_resolver, field_names, serializers):
 
     boxed_types = sorted(boxed_types, key=numeric_sorter)
     collection_types = sorted(collection_types, key=sorter)
+    final_types = sorted(final_types, key=sorter)
     map_types = sorted(map_types, key=sorter)
     other_types = sorted(other_types, key=sorter)
     all_types = boxed_types + final_types + other_types + collection_types + map_types
