@@ -482,10 +482,7 @@ public class XtypeResolver implements TypeResolver {
     GenericType genericType = generics.nextGenericType();
     fury.incDepth(-1);
     if (genericType != null) {
-      Class<?> cls = genericType.getCls();
-      if (cls.isArray()) {
-        return classResolver.getClassInfo(cls);
-      }
+      return getOrBuildClassInfo(genericType.getCls());
     }
     return xtypeIdToClassMap.get(Types.LIST);
   }
@@ -495,9 +492,18 @@ public class XtypeResolver implements TypeResolver {
     GenericType genericType = generics.nextGenericType();
     fury.incDepth(-1);
     if (genericType != null) {
-      return classResolver.getClassInfo(genericType.getCls());
+      return getOrBuildClassInfo(genericType.getCls());
     }
     return xtypeIdToClassMap.get(Types.TIMESTAMP);
+  }
+
+  private ClassInfo getOrBuildClassInfo(Class<?> cls) {
+    ClassInfo classInfo = classInfoMap.get(cls);
+    if (classInfo == null) {
+      classInfo = buildClassInfo(cls);
+      classInfoMap.put(cls, classInfo);
+    }
+    return classInfo;
   }
 
   private ClassInfo loadBytesToClassInfo(
