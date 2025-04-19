@@ -939,7 +939,9 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
       if (!fury.isCrossLanguage()) {
         containerClassInfo = null;
       } else {
-        if (classResolver.isMap(cls) || classResolver.isCollection(cls)) {
+        if (classResolver.isMap(cls)
+            || classResolver.isCollection(cls)
+            || classResolver.isSet(cls)) {
           containerClassInfo = fury.getXtypeResolver().getClassInfo(cls);
         } else {
           containerClassInfo = null;
