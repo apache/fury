@@ -35,7 +35,6 @@ import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeRef;
 import org.testng.annotations.Test;
 
-@SuppressWarnings("UnstableApiUsage")
 public class DescriptorGrouperTest {
 
   private List<Descriptor> createDescriptors() {
@@ -101,10 +100,10 @@ public class DescriptorGrouperTest {
             long.class,
             float.class,
             int.class,
-            char.class,
             short.class,
-            boolean.class,
+            char.class,
             byte.class,
+            boolean.class,
             void.class);
     assertEquals(classes, expected);
   }
@@ -124,10 +123,10 @@ public class DescriptorGrouperTest {
         Arrays.asList(
             double.class,
             float.class,
-            char.class,
             short.class,
-            boolean.class,
+            char.class,
             byte.class,
+            boolean.class,
             void.class,
             long.class,
             int.class);
@@ -151,7 +150,13 @@ public class DescriptorGrouperTest {
         new Descriptor(new TypeRef<Map<String, String>>() {}, "c" + index++, -1, "TestClass"));
     DescriptorGrouper grouper =
         DescriptorGrouper.createDescriptorGrouper(
-            ReflectionUtils::isMonomorphic, descriptors, false, false, false);
+            ReflectionUtils::isMonomorphic,
+            descriptors,
+            false,
+            null,
+            false,
+            false,
+            DescriptorGrouper.COMPARATOR_BY_TYPE_AND_NAME);
     {
       List<? extends Class<?>> classes =
           grouper.getPrimitiveDescriptors().stream()
@@ -163,10 +168,10 @@ public class DescriptorGrouperTest {
               long.class,
               float.class,
               int.class,
-              char.class,
               short.class,
-              boolean.class,
+              char.class,
               byte.class,
+              boolean.class,
               void.class);
       assertEquals(classes, expected);
     }
@@ -181,10 +186,10 @@ public class DescriptorGrouperTest {
               Long.class,
               Float.class,
               Integer.class,
-              Character.class,
               Short.class,
-              Boolean.class,
+              Character.class,
               Byte.class,
+              Boolean.class,
               Void.class);
       assertEquals(classes, expected);
     }
@@ -227,7 +232,13 @@ public class DescriptorGrouperTest {
   public void testCompressedPrimitiveGrouper() {
     DescriptorGrouper grouper =
         DescriptorGrouper.createDescriptorGrouper(
-            ReflectionUtils::isMonomorphic, createDescriptors(), false, true, true);
+            ReflectionUtils::isMonomorphic,
+            createDescriptors(),
+            false,
+            null,
+            true,
+            true,
+            DescriptorGrouper.COMPARATOR_BY_TYPE_AND_NAME);
     {
       List<? extends Class<?>> classes =
           grouper.getPrimitiveDescriptors().stream()
@@ -237,10 +248,10 @@ public class DescriptorGrouperTest {
           Arrays.asList(
               double.class,
               float.class,
-              char.class,
               short.class,
-              boolean.class,
+              char.class,
               byte.class,
+              boolean.class,
               void.class,
               long.class,
               int.class);
@@ -255,10 +266,10 @@ public class DescriptorGrouperTest {
           Arrays.asList(
               Double.class,
               Float.class,
-              Character.class,
               Short.class,
-              Boolean.class,
+              Character.class,
               Byte.class,
+              Boolean.class,
               Void.class,
               Long.class,
               Integer.class);

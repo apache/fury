@@ -160,20 +160,16 @@ public final class NonexistentClassSerializers {
             MetaSharedSerializer.consolidateFields(
                 fury.getClassResolver(), NonexistentClass.NonexistentSkip.class, classDef);
         DescriptorGrouper descriptorGrouper =
-            DescriptorGrouper.createDescriptorGrouper(
-                fury.getClassResolver()::isMonomorphic,
-                descriptors,
-                false,
-                fury.compressInt(),
-                fury.compressLong());
+            fury.getClassResolver().createDescriptorGrouper(descriptors, false);
         Tuple3<
                 Tuple2<ObjectSerializer.FinalTypeField[], boolean[]>,
                 ObjectSerializer.GenericTypeField[],
                 ObjectSerializer.GenericTypeField[]>
             tuple = AbstractObjectSerializer.buildFieldInfos(fury, descriptorGrouper);
+        descriptors = descriptorGrouper.getSortedDescriptors();
         int classVersionHash = 0;
         if (fury.checkClassVersion()) {
-          classVersionHash = ObjectSerializer.computeVersionHash(descriptors);
+          classVersionHash = ObjectSerializer.computeStructHash(fury, descriptors);
         }
         fieldsInfo =
             new ClassFieldsInfo(tuple.f0.f0, tuple.f0.f1, tuple.f1, tuple.f2, classVersionHash);

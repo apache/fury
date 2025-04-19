@@ -19,11 +19,15 @@
 
 package org.apache.fury.serializer;
 
+import static org.apache.fury.Fury.NOT_NULL_VALUE_FLAG;
+import static org.apache.fury.serializer.AbstractObjectSerializer.GenericTypeField;
+
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassInfoHolder;
 import org.apache.fury.resolver.ClassResolver;
+import org.apache.fury.resolver.RefResolver;
 import org.apache.fury.resolver.XtypeResolver;
 
 // This polymorphic interface has cost, do not expose it as a public class
@@ -49,11 +53,15 @@ interface SerializationBinding {
 
   void writeNullable(MemoryBuffer buffer, Object obj, ClassInfo classInfo);
 
+  void writeContainerFieldValue(MemoryBuffer buffer, Object fieldValue, ClassInfo classInfo);
+
   void write(MemoryBuffer buffer, Serializer serializer, Object value);
 
   Object read(MemoryBuffer buffer, Serializer serializer);
 
   <T> T readRef(MemoryBuffer buffer, Serializer<T> serializer);
+
+  Object readRef(MemoryBuffer buffer, GenericTypeField field);
 
   Object readRef(MemoryBuffer buffer, ClassInfoHolder classInfoHolder);
 
@@ -63,7 +71,13 @@ interface SerializationBinding {
 
   Object readNonRef(MemoryBuffer buffer, ClassInfoHolder classInfoHolder);
 
+  Object readNonRef(MemoryBuffer buffer, GenericTypeField field);
+
   Object readNullable(MemoryBuffer buffer, Serializer<Object> serializer);
+
+  Object readContainerFieldValue(MemoryBuffer buffer, GenericTypeField field);
+
+  Object readContainerFieldValueRef(MemoryBuffer buffer, GenericTypeField fieldInfo);
 
   static SerializationBinding createBinding(Fury fury) {
     if (fury.isCrossLanguage()) {
@@ -103,6 +117,11 @@ interface SerializationBinding {
     }
 
     @Override
+    public Object readRef(MemoryBuffer buffer, GenericTypeField field) {
+      return fury.readRef(buffer, field.classInfoHolder);
+    }
+
+    @Override
     public Object readRef(MemoryBuffer buffer, ClassInfoHolder classInfoHolder) {
       return fury.readRef(buffer, classInfoHolder);
     }
@@ -123,8 +142,32 @@ interface SerializationBinding {
     }
 
     @Override
+    public Object readNonRef(MemoryBuffer buffer, GenericTypeField field) {
+      return fury.readNonRef(buffer, field.classInfoHolder);
+    }
+
+    @Override
     public Object readNullable(MemoryBuffer buffer, Serializer<Object> serializer) {
       return fury.readNullable(buffer, serializer);
+    }
+
+    @Override
+    public Object readContainerFieldValue(MemoryBuffer buffer, GenericTypeField field) {
+      return fury.readNonRef(buffer, field.classInfoHolder);
+    }
+
+    @Override
+    public Object readContainerFieldValueRef(MemoryBuffer buffer, GenericTypeField fieldInfo) {
+      RefResolver refResolver = fury.getRefResolver();
+      int nextReadRefId = refResolver.tryPreserveRefId(buffer);
+      if (nextReadRefId >= NOT_NULL_VALUE_FLAG) {
+        // ref value or not-null value
+        Object o = fury.readData(buffer, classResolver.readClassInfo(buffer));
+        refResolver.setReadObject(nextReadRefId, o);
+        return o;
+      } else {
+        return refResolver.getReadObject();
+      }
     }
 
     @Override
@@ -152,7 +195,7 @@ interface SerializationBinding {
       if (obj == null) {
         buffer.writeByte(Fury.NULL_FLAG);
       } else {
-        buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
+        buffer.writeByte(NOT_NULL_VALUE_FLAG);
         writeNonRef(buffer, obj);
       }
     }
@@ -162,7 +205,7 @@ interface SerializationBinding {
       if (obj == null) {
         buffer.writeByte(Fury.NULL_FLAG);
       } else {
-        buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
+        buffer.writeByte(NOT_NULL_VALUE_FLAG);
         serializer.write(buffer, obj);
       }
     }
@@ -172,7 +215,7 @@ interface SerializationBinding {
       if (obj == null) {
         buffer.writeByte(Fury.NULL_FLAG);
       } else {
-        buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
+        buffer.writeByte(NOT_NULL_VALUE_FLAG);
         fury.writeNonRef(buffer, obj, classResolver.getClassInfo(obj.getClass(), classInfoHolder));
       }
     }
@@ -182,9 +225,15 @@ interface SerializationBinding {
       if (obj == null) {
         buffer.writeByte(Fury.NULL_FLAG);
       } else {
-        buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
+        buffer.writeByte(NOT_NULL_VALUE_FLAG);
         fury.writeNonRef(buffer, obj, classInfo);
       }
+    }
+
+    @Override
+    public void writeContainerFieldValue(
+        MemoryBuffer buffer, Object fieldValue, ClassInfo classInfo) {
+      fury.writeNonRef(buffer, fieldValue, classInfo);
     }
   }
 
@@ -192,10 +241,12 @@ interface SerializationBinding {
 
     private final Fury fury;
     private final XtypeResolver xtypeResolver;
+    private final RefResolver refResolver;
 
     XlangSerializationBinding(Fury fury) {
       this.fury = fury;
       xtypeResolver = fury.getXtypeResolver();
+      refResolver = fury.getRefResolver();
     }
 
     @Override
@@ -219,6 +270,18 @@ interface SerializationBinding {
     }
 
     @Override
+    public Object readRef(MemoryBuffer buffer, GenericTypeField field) {
+      if (field.isArray) {
+        fury.getGenerics().pushGenericType(field.genericType);
+        Object o = fury.xreadRef(buffer);
+        fury.getGenerics().popGenericType();
+        return o;
+      } else {
+        return fury.xreadRef(buffer);
+      }
+    }
+
+    @Override
     public Object readRef(MemoryBuffer buffer, ClassInfoHolder classInfoHolder) {
       return fury.xreadRef(buffer);
     }
@@ -239,8 +302,37 @@ interface SerializationBinding {
     }
 
     @Override
+    public Object readNonRef(MemoryBuffer buffer, GenericTypeField field) {
+      if (field.isArray) {
+        fury.getGenerics().pushGenericType(field.genericType);
+        Object o = fury.xreadNonRef(buffer);
+        fury.getGenerics().popGenericType();
+        return o;
+      } else {
+        return fury.xreadNonRef(buffer);
+      }
+    }
+
+    @Override
     public Object readNullable(MemoryBuffer buffer, Serializer<Object> serializer) {
       return fury.xreadNullable(buffer, serializer);
+    }
+
+    @Override
+    public Object readContainerFieldValue(MemoryBuffer buffer, GenericTypeField field) {
+      return fury.xreadNonRef(buffer, field.containerClassInfo);
+    }
+
+    @Override
+    public Object readContainerFieldValueRef(MemoryBuffer buffer, GenericTypeField field) {
+      int nextReadRefId = refResolver.tryPreserveRefId(buffer);
+      if (nextReadRefId >= NOT_NULL_VALUE_FLAG) {
+        Object o = fury.xreadNonRef(buffer, field.containerClassInfo);
+        refResolver.setReadObject(nextReadRefId, o);
+        return o;
+      } else {
+        return refResolver.getReadObject();
+      }
     }
 
     @Override
@@ -268,7 +360,7 @@ interface SerializationBinding {
       if (obj == null) {
         buffer.writeByte(Fury.NULL_FLAG);
       } else {
-        buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
+        buffer.writeByte(NOT_NULL_VALUE_FLAG);
         fury.xwriteNonRef(buffer, obj);
       }
     }
@@ -278,7 +370,7 @@ interface SerializationBinding {
       if (obj == null) {
         buffer.writeByte(Fury.NULL_FLAG);
       } else {
-        buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
+        buffer.writeByte(NOT_NULL_VALUE_FLAG);
         serializer.xwrite(buffer, obj);
       }
     }
@@ -288,7 +380,7 @@ interface SerializationBinding {
       if (obj == null) {
         buffer.writeByte(Fury.NULL_FLAG);
       } else {
-        buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
+        buffer.writeByte(NOT_NULL_VALUE_FLAG);
         fury.xwriteNonRef(buffer, obj, xtypeResolver.getClassInfo(obj.getClass(), classInfoHolder));
       }
     }
@@ -298,9 +390,15 @@ interface SerializationBinding {
       if (obj == null) {
         buffer.writeByte(Fury.NULL_FLAG);
       } else {
-        buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
+        buffer.writeByte(NOT_NULL_VALUE_FLAG);
         fury.xwriteNonRef(buffer, obj, classInfo);
       }
+    }
+
+    @Override
+    public void writeContainerFieldValue(
+        MemoryBuffer buffer, Object fieldValue, ClassInfo classInfo) {
+      fury.xwriteData(buffer, classInfo, fieldValue);
     }
   }
 }

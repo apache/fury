@@ -19,13 +19,10 @@
 
 package org.apache.fury.serializer;
 
-import static org.apache.fury.type.DescriptorGrouper.createDescriptorGrouper;
-
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.fury.Fury;
 import org.apache.fury.collection.Tuple2;
@@ -35,6 +32,7 @@ import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
 import org.apache.fury.meta.ClassDef;
 import org.apache.fury.reflect.FieldAccessor;
+import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.resolver.RefResolver;
@@ -42,6 +40,9 @@ import org.apache.fury.resolver.TypeResolver;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.DescriptorGrouper;
 import org.apache.fury.type.Generics;
+import org.apache.fury.type.TypeUtils;
+import org.apache.fury.type.Types;
+import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.record.RecordInfo;
 import org.apache.fury.util.record.RecordUtils;
 
@@ -99,25 +100,17 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
     } else {
       descriptors = fury.getClassResolver().getAllDescriptorsMap(cls, resolveParent).values();
     }
-    DescriptorGrouper descriptorGrouper =
-        createDescriptorGrouper(
-            fury.getClassResolver()::isMonomorphic,
-            descriptors,
-            false,
-            fury.compressInt(),
-            fury.compressLong());
-
+    DescriptorGrouper descriptorGrouper = classResolver.createDescriptorGrouper(descriptors, false);
+    descriptors = descriptorGrouper.getSortedDescriptors();
     if (isRecord) {
       List<String> fieldNames =
-          descriptorGrouper.getSortedDescriptors().stream()
-              .map(Descriptor::getName)
-              .collect(Collectors.toList());
+          descriptors.stream().map(Descriptor::getName).collect(Collectors.toList());
       recordInfo = new RecordInfo(cls, fieldNames);
     } else {
       recordInfo = null;
     }
     if (fury.checkClassVersion()) {
-      classVersionHash = computeVersionHash(descriptors);
+      classVersionHash = computeStructHash(fury, descriptors);
     } else {
       classVersionHash = 0;
     }
@@ -148,6 +141,11 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
       }
     }
     writeContainerFields(buffer, value, fury, refResolver, typeResolver);
+  }
+
+  @Override
+  public void xwrite(MemoryBuffer buffer, T value) {
+    write(buffer, value);
   }
 
   private void writeFinalFields(
@@ -210,7 +208,7 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
         ClassInfo classInfo =
             typeResolver.getClassInfo(fieldValue.getClass(), fieldInfo.classInfoHolder);
         generics.pushGenericType(fieldInfo.genericType);
-        binding.writeNonRef(buffer, fieldValue, classInfo);
+        binding.writeContainerFieldValue(buffer, fieldValue, classInfo);
         generics.popGenericType();
       }
     } else {
@@ -219,7 +217,7 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
       } else {
         buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
         generics.pushGenericType(fieldInfo.genericType);
-        binding.writeNonRef(
+        binding.writeContainerFieldValue(
             buffer,
             fieldValue,
             typeResolver.getClassInfo(fieldValue.getClass(), fieldInfo.classInfoHolder));
@@ -244,6 +242,11 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
     T obj = newBean();
     refResolver.reference(obj);
     return readAndSetFields(buffer, obj);
+  }
+
+  @Override
+  public T xread(MemoryBuffer buffer) {
+    return read(buffer);
   }
 
   public Object[] readFields(MemoryBuffer buffer) {
@@ -324,14 +327,44 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
     return obj;
   }
 
-  public static int computeVersionHash(Collection<Descriptor> descriptors) {
-    // TODO(chaokunyang) use murmurhash
-    List<Integer> list = new ArrayList<>();
-    for (Descriptor d : descriptors) {
-      Integer integer = Objects.hash(d.getName(), d.getRawType().getName(), d.getDeclaringClass());
-      list.add(integer);
+  public static int computeStructHash(Fury fury, Collection<Descriptor> descriptors) {
+    int hash = 17;
+    for (Descriptor descriptor : descriptors) {
+      hash = computeFieldHash(hash, fury, descriptor.getTypeRef());
     }
-    return list.hashCode();
+    Preconditions.checkState(hash != 0);
+    return hash;
+  }
+
+  private static int computeFieldHash(int hash, Fury fury, TypeRef<?> typeRef) {
+    int id;
+    if (typeRef.isSubtypeOf(List.class)) {
+      // TODO(chaokunyang) add list element type into schema hash
+      id = Types.LIST;
+    } else if (typeRef.isSubtypeOf(Map.class)) {
+      // TODO(chaokunyang) add map key&value type into schema hash
+      id = Types.MAP;
+    } else {
+      try {
+        TypeResolver resolver =
+            fury.isCrossLanguage() ? fury.getXtypeResolver() : fury.getClassResolver();
+        ClassInfo classInfo = resolver.getClassInfo(typeRef.getRawType());
+        int xtypeId = classInfo.getXtypeId();
+        if (Types.isStructType((byte) xtypeId)) {
+          id =
+              TypeUtils.computeStringHash(classInfo.decodeNamespace() + classInfo.decodeTypeName());
+        } else {
+          id = Math.abs(xtypeId);
+        }
+      } catch (Exception e) {
+        id = 0;
+      }
+    }
+    long newHash = ((long) hash) * 31 + id;
+    while (newHash >= Integer.MAX_VALUE) {
+      newHash /= 7;
+    }
+    return (int) newHash;
   }
 
   public static void checkClassVersion(Fury fury, int readHash, int classVersionHash) {

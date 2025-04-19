@@ -563,7 +563,7 @@ public final class Fury implements BaseFury {
     xwriteData(buffer, classInfo, obj);
   }
 
-  private void xwriteData(MemoryBuffer buffer, ClassInfo classInfo, Object obj) {
+  public void xwriteData(MemoryBuffer buffer, ClassInfo classInfo, Object obj) {
     switch (classInfo.getXtypeId()) {
       case Types.BOOL:
         buffer.writeBoolean((Boolean) obj);

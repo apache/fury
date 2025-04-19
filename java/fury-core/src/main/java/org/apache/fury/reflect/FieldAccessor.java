@@ -104,6 +104,11 @@ public abstract class FieldAccessor {
     }
   }
 
+  @Override
+  public String toString() {
+    return field.toString();
+  }
+
   public abstract static class FieldGetter extends FieldAccessor {
 
     private final Object getter;
