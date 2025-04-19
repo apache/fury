@@ -26,7 +26,7 @@ import static org.apache.fury.meta.Encoders.PACKAGE_DECODER;
 import static org.apache.fury.meta.Encoders.PACKAGE_ENCODER;
 import static org.apache.fury.meta.Encoders.TYPE_NAME_DECODER;
 import static org.apache.fury.resolver.ClassResolver.NO_CLASS_ID;
-import static org.apache.fury.serializer.collection.MapSerializers.*;
+import static org.apache.fury.serializer.collection.MapSerializers.HashMapSerializer;
 import static org.apache.fury.type.TypeUtils.qualifiedName;
 
 import java.lang.reflect.Type;
