@@ -676,6 +676,10 @@ SubMapSerializer = MapSerializer
 
 
 class EnumSerializer(Serializer):
+    def __init__(self, fury, type_):
+        super().__init__(fury, type_)
+        self.need_to_write_ref = False
+
     @classmethod
     def support_subclass(cls) -> bool:
         return True
@@ -688,10 +692,11 @@ class EnumSerializer(Serializer):
         return getattr(self.type_, name)
 
     def xwrite(self, buffer, value):
-        raise NotImplementedError
+        buffer.write_varuint32(value.value)
 
     def xread(self, buffer):
-        raise NotImplementedError
+        ordinal = buffer.read_varuint32()
+        return self.type_(ordinal)
 
 
 class SliceSerializer(Serializer):

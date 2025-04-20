@@ -905,7 +905,7 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
         // will make deserialization failed.
         classInfo = null;
       } else {
-        classInfo = fury.getClassResolver().getClassInfo(type.getRawType());
+        classInfo = SerializationUtils.getClassInfo(fury, type.getRawType());
       }
       trackingRef = fury.getClassResolver().needToWriteRef(type);
     }
