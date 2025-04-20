@@ -16,6 +16,7 @@
 # under the License.
 
 import datetime
+import enum
 import logging
 import typing
 
@@ -93,6 +94,8 @@ class ComplexTypeVisitor(TypeVisitor):
         return None
 
     def visit_other(self, field_name, type_, types_path=None):
+        if issubclass(type_, enum.Enum):
+            return self.fury.class_resolver.get_serializer(type_)
         if type_ not in basic_types and not is_py_array_type(type_):
             return None
         serializer = self.fury.class_resolver.get_serializer(type_)
@@ -110,6 +113,7 @@ def _get_hash(fury, field_names: list, type_hints: dict):
 
 
 _UNKNOWN_TYPE_ID = -1
+_time_types = {datetime.date, datetime.datetime, datetime.timedelta}
 
 
 def _sort_fields(class_resolver, field_names, serializers):
@@ -137,7 +141,11 @@ def _sort_fields(class_resolver, field_names, serializers):
             container = collection_types
         elif is_map_type(serializer.type_):
             container = map_types
-        elif type_id in {TypeId.STRING} or is_primitive_array_type(type_id):
+        elif (
+            type_id in {TypeId.STRING}
+            or is_primitive_array_type(type_id)
+            or issubclass(serializer.type_, enum.Enum)
+        ) or serializer.type_ in _time_types:
             container = final_types
         else:
             container = other_types

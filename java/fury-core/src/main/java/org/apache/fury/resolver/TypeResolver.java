@@ -36,6 +36,8 @@ public interface TypeResolver {
 
   ClassInfo getClassInfo(Class<?> cls);
 
+  ClassInfo getClassInfo(Class<?> cls, boolean createIfAbsent);
+
   ClassInfo getClassInfo(Class<?> cls, ClassInfoHolder classInfoHolder);
 
   void writeClassInfo(MemoryBuffer buffer, ClassInfo classInfo);
