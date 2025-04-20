@@ -164,7 +164,10 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
       short classId = fieldInfo.classId;
       if (writePrimitiveFieldValueFailed(fury, buffer, value, fieldAccessor, classId)) {
         Object fieldValue = fieldAccessor.getObject(value);
-        boolean writeBasicObjectResult = nonNull ? writeBasicObjectFieldValueFailed(fury, buffer, fieldValue, classId) : writeBasicNullableObjectFieldValueFailed(fury, buffer, fieldValue, classId);
+        boolean writeBasicObjectResult =
+            nonNull
+                ? writeBasicObjectFieldValueFailed(fury, buffer, fieldValue, classId)
+                : writeBasicNullableObjectFieldValueFailed(fury, buffer, fieldValue, classId);
         if (writeBasicObjectResult) {
           Serializer<Object> serializer = fieldInfo.classInfo.getSerializer();
           if (!metaShareEnabled || isFinal[i]) {
@@ -226,12 +229,13 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
           return;
         } else {
           buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
+        }
       }
       generics.pushGenericType(fieldInfo.genericType);
       binding.writeContainerFieldValue(
-            buffer,
-            fieldValue,
-            typeResolver.getClassInfo(fieldValue.getClass(), fieldInfo.classInfoHolder));
+          buffer,
+          fieldValue,
+          typeResolver.getClassInfo(fieldValue.getClass(), fieldInfo.classInfoHolder));
       generics.popGenericType();
     }
   }
@@ -314,11 +318,13 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
       FinalTypeField fieldInfo = finalFields[i];
       boolean isFinal = !metaShareEnabled || this.isFinal[i];
       FieldAccessor fieldAccessor = fieldInfo.fieldAccessor;
-        boolean nonNull = fieldInfo.nonNull;
+      boolean nonNull = fieldInfo.nonNull;
       short classId = fieldInfo.classId;
       if (readPrimitiveFieldValueFailed(fury, buffer, obj, fieldAccessor, classId)
-          && (nonNull ? readBasicObjectFieldValueFailed(
-              fury, buffer, obj, fieldAccessor, classId) : readBasicNullableObjectFieldValueFailed(fury, buffer, obj, fieldAccessor, classId))) {
+          && (nonNull
+              ? readBasicObjectFieldValueFailed(fury, buffer, obj, fieldAccessor, classId)
+              : readBasicNullableObjectFieldValueFailed(
+                  fury, buffer, obj, fieldAccessor, classId))) {
         Object fieldValue =
             readFinalObjectFieldValue(
                 binding, refResolver, typeResolver, fieldInfo, isFinal, buffer);

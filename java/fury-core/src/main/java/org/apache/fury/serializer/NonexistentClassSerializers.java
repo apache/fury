@@ -138,7 +138,7 @@ public final class NonexistentClassSerializers {
       }
       for (ObjectSerializer.GenericTypeField fieldInfo : fieldsInfo.otherFields) {
         Object fieldValue = value.get(fieldInfo.qualifiedFieldName);
-        boolean nonNull = fieldInfo.furyFieldInfo.nonNull;
+        boolean nonNull = fieldInfo.nonNull;
         // todo question why not use binding
         if (fieldInfo.trackingRef) {
           fury.writeRef(buffer, fieldValue, fieldInfo.classInfoHolder);

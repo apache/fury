@@ -50,7 +50,6 @@ import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.reflect.FieldAccessor;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeRef;
-import org.apache.fury.serializer.AbstractObjectSerializer;
 import org.apache.fury.serializer.PrimitiveSerializers;
 import org.apache.fury.serializer.collection.AbstractCollectionSerializer;
 import org.apache.fury.serializer.collection.AbstractMapSerializer;
@@ -750,7 +749,7 @@ public class FieldResolver {
     protected final ClassResolver classResolver;
     private final FieldAccessor fieldAccessor;
     private final ClassInfoHolder classInfoHolder;
-    private final boolean nonNull;
+    private boolean nonNull;
 
     public FieldInfo(
         Fury fury,
@@ -845,11 +844,11 @@ public class FieldResolver {
       }
     }
 
-      public boolean isNonNull() {
-          return nonNull;
-      }
+    public boolean isNonNull() {
+      return nonNull;
+    }
 
-      public String getName() {
+    public String getName() {
       return name;
     }
 

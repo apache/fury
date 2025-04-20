@@ -135,8 +135,13 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
         fury, buffer, targetObject, fieldAccessor, classId)) {
       Object fieldValue;
       fieldValue = fieldAccessor.getObject(targetObject);
-        boolean writeBasicObjectResult = nonNull ? AbstractObjectSerializer.writeBasicObjectFieldValueFailed(fury, buffer, fieldValue, classId) : AbstractObjectSerializer.writeBasicNullableObjectFieldValueFailed(fury, buffer, fieldValue, classId);
-        if (writeBasicObjectResult) {
+      boolean writeBasicObjectResult =
+          nonNull
+              ? AbstractObjectSerializer.writeBasicObjectFieldValueFailed(
+                  fury, buffer, fieldValue, classId)
+              : AbstractObjectSerializer.writeBasicNullableObjectFieldValueFailed(
+                  fury, buffer, fieldValue, classId);
+      if (writeBasicObjectResult) {
         if (classId == ClassResolver.NO_CLASS_ID) { // SEPARATE_TYPES_HASH
           writeSeparateFieldValue(fieldInfo, buffer, fieldValue);
         } else {
@@ -563,10 +568,11 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
     boolean nonNull = fieldInfo.isNonNull();
     if (AbstractObjectSerializer.readPrimitiveFieldValueFailed(
             fury, buffer, targetObject, fieldAccessor, classId)
-        && (nonNull ? AbstractObjectSerializer.readBasicObjectFieldValueFailed(
-              fury, buffer, targetObject, fieldAccessor, classId)
+        && (nonNull
+            ? AbstractObjectSerializer.readBasicObjectFieldValueFailed(
+                fury, buffer, targetObject, fieldAccessor, classId)
             : AbstractObjectSerializer.readBasicNullableObjectFieldValueFailed(
-              fury, buffer, targetObject, fieldAccessor, classId))) {
+                fury, buffer, targetObject, fieldAccessor, classId))) {
       if (classId == ClassResolver.NO_CLASS_ID) {
         // SEPARATE_TYPES_HASH
         Object fieldValue = fieldResolver.readObjectField(buffer, fieldInfo);

@@ -171,6 +171,7 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
         if (headFlag == Fury.NULL_FLAG) {
           return null;
         }
+      }
       fieldValue = binding.readNonRef(buffer, fieldInfo);
     }
     return fieldValue;
@@ -193,6 +194,7 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
         if (headFlag == Fury.NULL_FLAG) {
           return null;
         }
+      }
       generics.pushGenericType(fieldInfo.genericType);
       fieldValue = binding.readContainerFieldValue(buffer, fieldInfo);
       generics.popGenericType();
@@ -541,11 +543,11 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
     }
   }
 
-    /**
-     * read field value from buffer. This method handle the situation which all fields are not null.
-     *
-     * @return true if field value isn't read by this function.
-     */
+  /**
+   * read field value from buffer. This method handle the situation which all fields are not null.
+   *
+   * @return true if field value isn't read by this function.
+   */
   static boolean readBasicObjectFieldValueFailed(
       Fury fury,
       MemoryBuffer buffer,
@@ -562,17 +564,17 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
         return false;
       case ClassResolver.BOOLEAN_CLASS_ID:
         {
-            fieldAccessor.putObject(targetObject, buffer.readBoolean());
-            return false;
+          fieldAccessor.putObject(targetObject, buffer.readBoolean());
+          return false;
         }
       case ClassResolver.BYTE_CLASS_ID:
         {
-            fieldAccessor.putObject(targetObject, buffer.readByte());
+          fieldAccessor.putObject(targetObject, buffer.readByte());
           return false;
         }
       case ClassResolver.CHAR_CLASS_ID:
         {
-            fieldAccessor.putObject(targetObject, buffer.readChar());
+          fieldAccessor.putObject(targetObject, buffer.readChar());
           return false;
         }
       case ClassResolver.SHORT_CLASS_ID:
@@ -582,26 +584,26 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
         }
       case ClassResolver.INTEGER_CLASS_ID:
         {
-            if (fury.compressInt()) {
-                fieldAccessor.putObject(targetObject, buffer.readVarInt32());
-            } else {
-                fieldAccessor.putObject(targetObject, buffer.readInt32());
-            }
+          if (fury.compressInt()) {
+            fieldAccessor.putObject(targetObject, buffer.readVarInt32());
+          } else {
+            fieldAccessor.putObject(targetObject, buffer.readInt32());
+          }
           return false;
         }
       case ClassResolver.FLOAT_CLASS_ID:
         {
-            fieldAccessor.putObject(targetObject, buffer.readFloat32());
+          fieldAccessor.putObject(targetObject, buffer.readFloat32());
           return false;
         }
       case ClassResolver.LONG_CLASS_ID:
         {
-            fieldAccessor.putObject(targetObject, fury.readInt64(buffer));
+          fieldAccessor.putObject(targetObject, fury.readInt64(buffer));
           return false;
         }
       case ClassResolver.DOUBLE_CLASS_ID:
         {
-            fieldAccessor.putObject(targetObject, buffer.readFloat64());
+          fieldAccessor.putObject(targetObject, buffer.readFloat64());
           return false;
         }
       default:
@@ -615,93 +617,93 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
       Object targetObject,
       FieldAccessor fieldAccessor,
       short classId) {
-      if (!fury.isBasicTypesRefIgnored()) {
-          return true; // let common path handle this.
-      }
-      // add time types serialization here.
-      switch (classId) {
-          case ClassResolver.STRING_CLASS_ID: // fastpath for string.
-              fieldAccessor.putObject(targetObject, fury.readJavaStringRef(buffer));
-              return false;
-          case ClassResolver.BOOLEAN_CLASS_ID:
-          {
-              if (buffer.readByte() == Fury.NULL_FLAG) {
-                  fieldAccessor.putObject(targetObject, null);
-              } else {
-                  fieldAccessor.putObject(targetObject, buffer.readBoolean());
-              }
-              return false;
+    if (!fury.isBasicTypesRefIgnored()) {
+      return true; // let common path handle this.
+    }
+    // add time types serialization here.
+    switch (classId) {
+      case ClassResolver.STRING_CLASS_ID: // fastpath for string.
+        fieldAccessor.putObject(targetObject, fury.readJavaStringRef(buffer));
+        return false;
+      case ClassResolver.BOOLEAN_CLASS_ID:
+        {
+          if (buffer.readByte() == Fury.NULL_FLAG) {
+            fieldAccessor.putObject(targetObject, null);
+          } else {
+            fieldAccessor.putObject(targetObject, buffer.readBoolean());
           }
-          case ClassResolver.BYTE_CLASS_ID:
-          {
-              if (buffer.readByte() == Fury.NULL_FLAG) {
-                  fieldAccessor.putObject(targetObject, null);
-              } else {
-                  fieldAccessor.putObject(targetObject, buffer.readByte());
-              }
-              return false;
+          return false;
+        }
+      case ClassResolver.BYTE_CLASS_ID:
+        {
+          if (buffer.readByte() == Fury.NULL_FLAG) {
+            fieldAccessor.putObject(targetObject, null);
+          } else {
+            fieldAccessor.putObject(targetObject, buffer.readByte());
           }
-          case ClassResolver.CHAR_CLASS_ID:
-          {
-              if (buffer.readByte() == Fury.NULL_FLAG) {
-                  fieldAccessor.putObject(targetObject, null);
-              } else {
-                  fieldAccessor.putObject(targetObject, buffer.readChar());
-              }
-              return false;
+          return false;
+        }
+      case ClassResolver.CHAR_CLASS_ID:
+        {
+          if (buffer.readByte() == Fury.NULL_FLAG) {
+            fieldAccessor.putObject(targetObject, null);
+          } else {
+            fieldAccessor.putObject(targetObject, buffer.readChar());
           }
-          case ClassResolver.SHORT_CLASS_ID:
-          {
-              if (buffer.readByte() == Fury.NULL_FLAG) {
-                  fieldAccessor.putObject(targetObject, null);
-              } else {
-                  fieldAccessor.putObject(targetObject, buffer.readInt16());
-              }
-              return false;
+          return false;
+        }
+      case ClassResolver.SHORT_CLASS_ID:
+        {
+          if (buffer.readByte() == Fury.NULL_FLAG) {
+            fieldAccessor.putObject(targetObject, null);
+          } else {
+            fieldAccessor.putObject(targetObject, buffer.readInt16());
           }
-          case ClassResolver.INTEGER_CLASS_ID:
-          {
-              if (buffer.readByte() == Fury.NULL_FLAG) {
-                  fieldAccessor.putObject(targetObject, null);
-              } else {
-                  if (fury.compressInt()) {
-                      fieldAccessor.putObject(targetObject, buffer.readVarInt32());
-                  } else {
-                      fieldAccessor.putObject(targetObject, buffer.readInt32());
-                  }
-              }
-              return false;
+          return false;
+        }
+      case ClassResolver.INTEGER_CLASS_ID:
+        {
+          if (buffer.readByte() == Fury.NULL_FLAG) {
+            fieldAccessor.putObject(targetObject, null);
+          } else {
+            if (fury.compressInt()) {
+              fieldAccessor.putObject(targetObject, buffer.readVarInt32());
+            } else {
+              fieldAccessor.putObject(targetObject, buffer.readInt32());
+            }
           }
-          case ClassResolver.FLOAT_CLASS_ID:
-          {
-              if (buffer.readByte() == Fury.NULL_FLAG) {
-                  fieldAccessor.putObject(targetObject, null);
-              } else {
-                  fieldAccessor.putObject(targetObject, buffer.readFloat32());
-              }
-              return false;
+          return false;
+        }
+      case ClassResolver.FLOAT_CLASS_ID:
+        {
+          if (buffer.readByte() == Fury.NULL_FLAG) {
+            fieldAccessor.putObject(targetObject, null);
+          } else {
+            fieldAccessor.putObject(targetObject, buffer.readFloat32());
           }
-          case ClassResolver.LONG_CLASS_ID:
-          {
-              if (buffer.readByte() == Fury.NULL_FLAG) {
-                  fieldAccessor.putObject(targetObject, null);
-              } else {
-                  fieldAccessor.putObject(targetObject, fury.readInt64(buffer));
-              }
-              return false;
+          return false;
+        }
+      case ClassResolver.LONG_CLASS_ID:
+        {
+          if (buffer.readByte() == Fury.NULL_FLAG) {
+            fieldAccessor.putObject(targetObject, null);
+          } else {
+            fieldAccessor.putObject(targetObject, fury.readInt64(buffer));
           }
-          case ClassResolver.DOUBLE_CLASS_ID:
-          {
-              if (buffer.readByte() == Fury.NULL_FLAG) {
-                  fieldAccessor.putObject(targetObject, null);
-              } else {
-                  fieldAccessor.putObject(targetObject, buffer.readFloat64());
-              }
-              return false;
+          return false;
+        }
+      case ClassResolver.DOUBLE_CLASS_ID:
+        {
+          if (buffer.readByte() == Fury.NULL_FLAG) {
+            fieldAccessor.putObject(targetObject, null);
+          } else {
+            fieldAccessor.putObject(targetObject, buffer.readFloat64());
           }
-          default:
-              return true;
-      }
+          return false;
+        }
+      default:
+        return true;
+    }
   }
 
   @Override
