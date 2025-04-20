@@ -766,4 +766,30 @@ public class CrossLanguageTest extends FuryTestBase {
     assertEquals(
         Collections.singletonMap("k", 1), serDe(fury1, fury2, Collections.singletonMap("k", 1)));
   }
+
+  enum EnumTestClass {
+    FOO,
+    BAR
+  }
+
+  @Data
+  static class EnumFieldStruct {
+    EnumTestClass f1;
+    EnumTestClass f2;
+    String f3;
+  }
+
+  @Test
+  public void testEnumField() throws java.io.IOException {
+    Fury fury = Fury.builder().withLanguage(Language.XLANG).requireClassRegistration(true).build();
+    fury.register(EnumTestClass.class, "test.EnumTestClass");
+    fury.register(EnumFieldStruct.class, "test.EnumFieldStruct");
+
+    EnumFieldStruct a = new EnumFieldStruct();
+    a.f1 = EnumTestClass.FOO;
+    a.f2 = EnumTestClass.BAR;
+    a.f3 = "abc";
+    Assert.assertEquals(xserDe(fury, a), a);
+    structRoundBack(fury, a, "test_enum_field");
+  }
 }
