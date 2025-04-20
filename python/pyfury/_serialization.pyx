@@ -2118,7 +2118,6 @@ cdef class EnumSerializer(Serializer):
         return self.type_(ordinal)
 
 
-
 @cython.final
 cdef class SliceSerializer(Serializer):
     cpdef inline write(self, Buffer buffer, v):
