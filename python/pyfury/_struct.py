@@ -50,6 +50,7 @@ from pyfury.type import (
     is_primitive_array_type,
 )
 
+from pyfury.type import is_subclass
 
 logger = logging.getLogger(__name__)
 
@@ -94,7 +95,7 @@ class ComplexTypeVisitor(TypeVisitor):
         return None
 
     def visit_other(self, field_name, type_, types_path=None):
-        if issubclass(type_, enum.Enum):
+        if is_subclass(type_, enum.Enum):
             return self.fury.class_resolver.get_serializer(type_)
         if type_ not in basic_types and not is_py_array_type(type_):
             return None
@@ -144,7 +145,7 @@ def _sort_fields(class_resolver, field_names, serializers):
         elif (
             type_id in {TypeId.STRING}
             or is_primitive_array_type(type_id)
-            or issubclass(serializer.type_, enum.Enum)
+            or is_subclass(serializer.type_, enum.Enum)
         ) or serializer.type_ in _time_types:
             container = final_types
         else:

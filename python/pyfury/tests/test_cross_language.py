@@ -478,10 +478,8 @@ class EnumFieldStruct:
     f3: str
 
 
-# @cross_language_test
-def test_enum_field(
-    data_file_path="/Users/chaokunyang/Desktop/chaokun/fury_open_source/java/fury-core/test_enum_field",
-):
+@cross_language_test
+def test_enum_field(data_file_path):
     fury = pyfury.Fury(language=pyfury.Language.XLANG, ref_tracking=False)
     fury.register_type(EnumTestClass, namespace="test", typename="EnumTestClass")
     fury.register_type(EnumFieldStruct, namespace="test", typename="EnumFieldStruct")
