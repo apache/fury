@@ -129,14 +129,14 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
   private void readAndWriteFieldValue(
       MemoryBuffer buffer, FieldResolver.FieldInfo fieldInfo, Object targetObject) {
     FieldAccessor fieldAccessor = fieldInfo.getFieldAccessor();
-    FuryFieldInfo furyFieldInfo = fieldInfo.getFuryFieldInfo();
+    boolean nonNull = fieldInfo.isNonNull();
     short classId = fieldInfo.getEmbeddedClassId();
     if (AbstractObjectSerializer.writePrimitiveFieldValueFailed(
         fury, buffer, targetObject, fieldAccessor, classId)) {
       Object fieldValue;
       fieldValue = fieldAccessor.getObject(targetObject);
-      if (AbstractObjectSerializer.writeBasicObjectFieldValueFailed(
-          fury, buffer, fieldValue, classId, furyFieldInfo)) {
+        boolean writeBasicObjectResult = nonNull ? AbstractObjectSerializer.writeBasicObjectFieldValueFailed(fury, buffer, fieldValue, classId) : AbstractObjectSerializer.writeBasicNullableObjectFieldValueFailed(fury, buffer, fieldValue, classId);
+        if (writeBasicObjectResult) {
         if (classId == ClassResolver.NO_CLASS_ID) { // SEPARATE_TYPES_HASH
           writeSeparateFieldValue(fieldInfo, buffer, fieldValue);
         } else {
@@ -560,11 +560,13 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
       FieldResolver.FieldInfo fieldInfo, MemoryBuffer buffer, Object targetObject) {
     FieldAccessor fieldAccessor = fieldInfo.getFieldAccessor();
     short classId = fieldInfo.getEmbeddedClassId();
-    FuryFieldInfo furyFieldInfo = fieldInfo.getFuryFieldInfo();
+    boolean nonNull = fieldInfo.isNonNull();
     if (AbstractObjectSerializer.readPrimitiveFieldValueFailed(
             fury, buffer, targetObject, fieldAccessor, classId)
-        && AbstractObjectSerializer.readBasicObjectFieldValueFailed(
-            fury, buffer, targetObject, fieldAccessor, classId, furyFieldInfo)) {
+        && (nonNull ? AbstractObjectSerializer.readBasicObjectFieldValueFailed(
+              fury, buffer, targetObject, fieldAccessor, classId)
+            : AbstractObjectSerializer.readBasicNullableObjectFieldValueFailed(
+              fury, buffer, targetObject, fieldAccessor, classId))) {
       if (classId == ClassResolver.NO_CLASS_ID) {
         // SEPARATE_TYPES_HASH
         Object fieldValue = fieldResolver.readObjectField(buffer, fieldInfo);

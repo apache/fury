@@ -43,6 +43,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.fury.annotation.Expose;
+import org.apache.fury.annotation.FuryField;
 import org.apache.fury.annotation.Ignore;
 import org.apache.fury.annotation.Internal;
 import org.apache.fury.collection.Tuple2;
@@ -83,6 +84,8 @@ public class Descriptor {
   private final Field field;
   private final Method readMethod;
   private final Method writeMethod;
+  private boolean nonNull;
+  private boolean trackingRef;
 
   public Descriptor(Field field, TypeRef<?> typeRef, Method readMethod, Method writeMethod) {
     this.field = field;
@@ -93,6 +96,11 @@ public class Descriptor {
     this.readMethod = readMethod;
     this.writeMethod = writeMethod;
     this.typeRef = typeRef;
+    FuryField annotation = this.field.getAnnotation(FuryField.class);
+    if (annotation != null) {
+      this.nonNull = annotation.nonNull();
+      this.trackingRef = annotation.trackingRef();
+    }
   }
 
   public Descriptor(TypeRef<?> typeRef, String name, int modifier, String declaringClass) {
@@ -115,6 +123,11 @@ public class Descriptor {
     this.readMethod = readMethod;
     this.writeMethod = null;
     this.typeRef = null;
+    FuryField annotation = this.field.getAnnotation(FuryField.class);
+    if (annotation != null) {
+      this.nonNull = annotation.nonNull();
+      this.trackingRef = annotation.trackingRef();
+    }
   }
 
   private Descriptor(
@@ -134,6 +147,11 @@ public class Descriptor {
     this.field = field;
     this.readMethod = readMethod;
     this.writeMethod = writeMethod;
+    FuryField annotation = this.field.getAnnotation(FuryField.class);
+    if (annotation != null) {
+      this.nonNull = annotation.nonNull();
+      this.trackingRef = annotation.trackingRef();
+    }
   }
 
   public Descriptor copy(Method readMethod, Method writeMethod) {
@@ -178,6 +196,14 @@ public class Descriptor {
     return typeName;
   }
 
+  public boolean isNonNull() {
+    return nonNull;
+  }
+
+  public boolean isTrackingRef() {
+    return trackingRef;
+  }
+
   /** Try not use {@link TypeRef#getRawType()} since it's expensive. */
   public Class<?> getRawType() {
     Class<?> type = this.type;
@@ -214,6 +240,11 @@ public class Descriptor {
     if (writeMethod != null) {
       sb.append(", writeMethod=").append(writeMethod);
     }
+    if (typeRef != null) {
+      sb.append(", typeRef=").append(typeRef);
+    }
+    sb.append(", nonNull=").append(nonNull);
+    sb.append(", trackingRef=").append(trackingRef);
     sb.append('}');
     return sb.toString();
   }

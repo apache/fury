@@ -722,48 +722,6 @@ public final class Fury implements BaseFury {
     return stringSerializer.readString(buffer);
   }
 
-  public void writeNullableJavaStringRef(MemoryBuffer buffer, String str, boolean nonNull) {
-    if (stringSerializer.needToWriteRef()) {
-      if (!refResolver.writeRefOrNull(buffer, str)) {
-        stringSerializer.writeJavaString(buffer, str);
-      }
-    } else {
-      if (!nonNull) {
-        if (str == null) {
-          buffer.writeByte(Fury.NULL_FLAG);
-        } else {
-          buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
-          stringSerializer.write(buffer, str);
-        }
-      } else {
-        stringSerializer.write(buffer, str);
-      }
-    }
-  }
-
-  public String readNullableJavaStringRef(MemoryBuffer buffer, boolean nonNull) {
-    RefResolver refResolver = this.refResolver;
-    if (stringSerializer.needToWriteRef()) {
-      String obj;
-      int nextReadRefId = refResolver.tryPreserveRefId(buffer);
-      if (nextReadRefId >= NOT_NULL_VALUE_FLAG) {
-        obj = stringSerializer.read(buffer);
-        refResolver.setReadObject(nextReadRefId, obj);
-        return obj;
-      } else {
-        return (String) refResolver.getReadObject();
-      }
-    } else {
-      if (!nonNull) {
-        byte headFlag = buffer.readByte();
-        if (headFlag == Fury.NULL_FLAG) {
-          return null;
-        }
-      }
-      return stringSerializer.read(buffer);
-    }
-  }
-
   public void writeJavaStringRef(MemoryBuffer buffer, String str) {
     if (stringSerializer.needToWriteRef()) {
       if (!refResolver.writeRefOrNull(buffer, str)) {

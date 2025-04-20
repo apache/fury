@@ -750,7 +750,7 @@ public class FieldResolver {
     protected final ClassResolver classResolver;
     private final FieldAccessor fieldAccessor;
     private final ClassInfoHolder classInfoHolder;
-    private final AbstractObjectSerializer.FuryFieldInfo furyFieldInfo;
+    private final boolean nonNull;
 
     public FieldInfo(
         Fury fury,
@@ -775,9 +775,10 @@ public class FieldResolver {
       } else {
         fieldAccessor = FieldAccessor.createAccessor(field);
       }
-      this.furyFieldInfo =
-          new AbstractObjectSerializer.FuryFieldInfo(
-              field == null ? null : field.getAnnotation(FuryField.class));
+      FuryField furyField = field == null ? null : field.getAnnotation(FuryField.class);
+      if (furyField != null) {
+        this.nonNull = furyField.nonNull();
+      }
     }
 
     public static FieldInfo of(
@@ -844,11 +845,11 @@ public class FieldResolver {
       }
     }
 
-    public AbstractObjectSerializer.FuryFieldInfo getFuryFieldInfo() {
-      return furyFieldInfo;
-    }
+      public boolean isNonNull() {
+          return nonNull;
+      }
 
-    public String getName() {
+      public String getName() {
       return name;
     }
 

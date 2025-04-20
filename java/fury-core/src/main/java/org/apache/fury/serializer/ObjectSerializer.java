@@ -145,7 +145,7 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
   private void writeOtherFields(MemoryBuffer buffer, T value) {
     for (GenericTypeField fieldInfo : otherFields) {
       FieldAccessor fieldAccessor = fieldInfo.fieldAccessor;
-      boolean nonNull = fieldInfo.furyFieldInfo.nonNull;
+      boolean nonNull = fieldInfo.nonNull;
       Object fieldValue = fieldAccessor.getObject(value);
       if (fieldInfo.trackingRef) {
         binding.writeRef(buffer, fieldValue, fieldInfo.classInfoHolder);
@@ -162,12 +162,12 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
     for (int i = 0; i < finalFields.length; i++) {
       FinalTypeField fieldInfo = finalFields[i];
       FieldAccessor fieldAccessor = fieldInfo.fieldAccessor;
-      FuryFieldInfo furyFieldInfo = fieldInfo.furyFieldInfo;
-      boolean nonNull = furyFieldInfo.nonNull;
+      boolean nonNull = fieldInfo.nonNull;
       short classId = fieldInfo.classId;
       if (writePrimitiveFieldValueFailed(fury, buffer, value, fieldAccessor, classId)) {
         Object fieldValue = fieldAccessor.getObject(value);
-        if (writeBasicObjectFieldValueFailed(fury, buffer, fieldValue, classId, furyFieldInfo)) {
+        boolean writeBasicObjectResult = nonNull ? writeBasicObjectFieldValueFailed(fury, buffer, fieldValue, classId) : writeBasicNullableObjectFieldValueFailed(fury, buffer, fieldValue, classId);
+        if (writeBasicObjectResult) {
           Serializer<Object> serializer = fieldInfo.classInfo.getSerializer();
           if (!metaShareEnabled || isFinal[i]) {
             if (!fieldInfo.trackingRef) {
@@ -221,7 +221,7 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
         generics.popGenericType();
       }
     } else {
-      boolean nonNull = fieldInfo.furyFieldInfo.nonNull;
+      boolean nonNull = fieldInfo.nonNull;
       if (!nonNull) {
         if (fieldValue == null) {
           buffer.writeByte(Fury.NULL_FLAG);
@@ -312,11 +312,11 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
       FinalTypeField fieldInfo = finalFields[i];
       boolean isFinal = !metaShareEnabled || this.isFinal[i];
       FieldAccessor fieldAccessor = fieldInfo.fieldAccessor;
-      FuryFieldInfo furyFieldInfo = fieldInfo.furyFieldInfo;
+        boolean nonNull = fieldInfo.nonNull;
       short classId = fieldInfo.classId;
       if (readPrimitiveFieldValueFailed(fury, buffer, obj, fieldAccessor, classId)
-          && readBasicObjectFieldValueFailed(
-              fury, buffer, obj, fieldAccessor, classId, furyFieldInfo)) {
+          && (nonNull ? readBasicObjectFieldValueFailed(
+              fury, buffer, obj, fieldAccessor, classId) : readBasicNullableObjectFieldValueFailed(fury, buffer, obj, fieldAccessor, classId))) {
         Object fieldValue =
             readFinalObjectFieldValue(
                 binding, refResolver, typeResolver, fieldInfo, isFinal, buffer);
