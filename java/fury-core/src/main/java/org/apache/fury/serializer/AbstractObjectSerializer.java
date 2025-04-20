@@ -306,13 +306,13 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
     }
     // add time types serialization here.
     switch (classId) {
-      case ClassResolver.STRING_CLASS_ID:// fastpath for string.
-          String stringValue = (String) (fieldValue);
-          if (fury.getStringSerializer().needToWriteRef()) {
-              fury.writeJavaStringRef(buffer, stringValue);
-          } else {
-              fury.writeString(buffer, stringValue);
-          }
+      case ClassResolver.STRING_CLASS_ID: // fastpath for string.
+        String stringValue = (String) (fieldValue);
+        if (fury.getStringSerializer().needToWriteRef()) {
+          fury.writeJavaStringRef(buffer, stringValue);
+        } else {
+          fury.writeString(buffer, stringValue);
+        }
         return false;
       case ClassResolver.BOOLEAN_CLASS_ID:
         {
@@ -565,11 +565,11 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
     // add time types serialization here.
     switch (classId) {
       case ClassResolver.STRING_CLASS_ID: // fastpath for string.
-          if (fury.getStringSerializer().needToWriteRef()) {
-              fieldAccessor.putObject(targetObject, fury.readJavaStringRef(buffer));
-          } else {
-              fieldAccessor.putObject(targetObject, fury.readString(buffer));
-          }
+        if (fury.getStringSerializer().needToWriteRef()) {
+          fieldAccessor.putObject(targetObject, fury.readJavaStringRef(buffer));
+        } else {
+          fieldAccessor.putObject(targetObject, fury.readString(buffer));
+        }
         return false;
       case ClassResolver.BOOLEAN_CLASS_ID:
         {

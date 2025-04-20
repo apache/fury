@@ -1031,5 +1031,4 @@ public class FieldResolver {
       return valueType;
     }
   }
-
 }
