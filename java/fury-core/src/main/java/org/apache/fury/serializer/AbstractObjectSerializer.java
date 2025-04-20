@@ -1120,7 +1120,6 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
           + classId
           + ", qualifiedFieldName='"
           + qualifiedFieldName
-          + '\''
           + ", fieldAccessor="
           + fieldAccessor
           + ", nonNull="
