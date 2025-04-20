@@ -124,13 +124,16 @@ public class MapSerializers {
     @Override
     public Map onMapWrite(MemoryBuffer buffer, T value) {
       buffer.writeVarUint32Small7(value.size());
-      fury.writeRef(buffer, value.comparator());
+      if (!fury.isCrossLanguage()) {
+        fury.writeRef(buffer, value.comparator());
+      }
       return value;
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public Map newMap(MemoryBuffer buffer) {
+      assert !fury.isCrossLanguage();
       setNumElements(buffer.readVarUint32Small7());
       T map;
       Comparator comparator = (Comparator) fury.readRef(buffer);
@@ -167,7 +170,7 @@ public class MapSerializers {
   public static final class EmptyMapSerializer extends MapSerializer<Map<?, ?>> {
 
     public EmptyMapSerializer(Fury fury, Class<Map<?, ?>> cls) {
-      super(fury, cls, false, true);
+      super(fury, cls, fury.isCrossLanguage(), true);
     }
 
     @Override
@@ -175,8 +178,7 @@ public class MapSerializers {
 
     @Override
     public void xwrite(MemoryBuffer buffer, Map<?, ?> value) {
-      // write length
-      buffer.writeVarUint32Small7(0);
+      super.write(buffer, value);
     }
 
     @Override
@@ -186,14 +188,13 @@ public class MapSerializers {
 
     @Override
     public Map<?, ?> xread(MemoryBuffer buffer) {
-      buffer.readVarUint32Small7();
-      return Collections.EMPTY_MAP;
+      throw new IllegalStateException();
     }
   }
 
   public static final class EmptySortedMapSerializer extends MapSerializer<SortedMap<?, ?>> {
     public EmptySortedMapSerializer(Fury fury, Class<SortedMap<?, ?>> cls) {
-      super(fury, cls, false, true);
+      super(fury, cls, fury.isCrossLanguage(), true);
     }
 
     @Override
@@ -208,7 +209,7 @@ public class MapSerializers {
   public static final class SingletonMapSerializer extends MapSerializer<Map<?, ?>> {
 
     public SingletonMapSerializer(Fury fury, Class<Map<?, ?>> cls) {
-      super(fury, cls, false);
+      super(fury, cls, fury.isCrossLanguage());
     }
 
     @Override
@@ -226,14 +227,6 @@ public class MapSerializers {
     }
 
     @Override
-    public void xwrite(MemoryBuffer buffer, Map<?, ?> value) {
-      buffer.writeVarUint32Small7(1);
-      Map.Entry entry = value.entrySet().iterator().next();
-      fury.xwriteRef(buffer, entry.getKey());
-      fury.xwriteRef(buffer, entry.getValue());
-    }
-
-    @Override
     public Map<?, ?> read(MemoryBuffer buffer) {
       Object key = fury.readRef(buffer);
       Object value = fury.readRef(buffer);
@@ -241,11 +234,13 @@ public class MapSerializers {
     }
 
     @Override
+    public void xwrite(MemoryBuffer buffer, Map<?, ?> value) {
+      super.write(buffer, value);
+    }
+
+    @Override
     public Map<?, ?> xread(MemoryBuffer buffer) {
-      buffer.readVarUint32Small7();
-      Object key = fury.xreadRef(buffer);
-      Object value = fury.xreadRef(buffer);
-      return Collections.singletonMap(key, value);
+      throw new UnsupportedOperationException();
     }
   }
 

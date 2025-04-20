@@ -248,12 +248,43 @@ _primitive_types = {
     Float64Type,
 }
 
+_primitive_types_ids = {
+    TypeId.BOOL,
+    TypeId.INT8,
+    TypeId.INT16,
+    TypeId.INT32,
+    TypeId.INT64,
+    TypeId.FLOAT16,
+    TypeId.FLOAT32,
+    TypeId.FLOAT64,
+}
+
 
 # `Union[type, TypeVar]` is not supported in py3.6, so skip adding type hints for `type_`  # noqa: E501
 # See more at https://github.com/python/typing/issues/492 and
 # https://stackoverflow.com/questions/69427175/how-to-pass-forwardref-as-args-to-typevar-in-python-3-6  # noqa: E501
 def is_primitive_type(type_) -> bool:
+    if type(type_) is int:
+        return type_ in _primitive_types_ids
     return type_ in _primitive_types
+
+
+_primitive_type_sizes = {
+    TypeId.BOOL: 1,
+    TypeId.INT8: 1,
+    TypeId.INT16: 2,
+    TypeId.INT32: 4,
+    TypeId.VAR_INT32: 4,
+    TypeId.INT64: 8,
+    TypeId.VAR_INT64: 8,
+    TypeId.FLOAT16: 2,
+    TypeId.FLOAT32: 4,
+    TypeId.FLOAT64: 8,
+}
+
+
+def get_primitive_type_size(type_id) -> int:
+    return _primitive_type_sizes.get(type_id, -1)
 
 
 # Int8ArrayType = TypeVar("Int8ArrayType", bound=array.ArrayType)
@@ -279,10 +310,52 @@ _py_array_types = {
     Float32ArrayType,
     Float64ArrayType,
 }
+_np_array_types = {
+    BoolNDArrayType,
+    Int16NDArrayType,
+    Int32NDArrayType,
+    Int64NDArrayType,
+    Float32NDArrayType,
+    Float64NDArrayType,
+}
+_primitive_array_types = _py_array_types.union(_np_array_types)
 
 
 def is_py_array_type(type_) -> bool:
     return type_ in _py_array_types
+
+
+_primitive_array_type_ids = {
+    TypeId.BOOL_ARRAY,
+    TypeId.INT8_ARRAY,
+    TypeId.INT16_ARRAY,
+    TypeId.INT32_ARRAY,
+    TypeId.INT64_ARRAY,
+    TypeId.FLOAT32_ARRAY,
+    TypeId.FLOAT64_ARRAY,
+}
+
+
+def is_primitive_array_type(type_) -> bool:
+    if type(type_) is int:
+        return type_ in _primitive_array_type_ids
+    return type_ in _primitive_array_types
+
+
+def is_list_type(type_):
+    try:
+        # type_ may not be a instance of type
+        return issubclass(type_, typing.List)
+    except TypeError:
+        return False
+
+
+def is_map_type(type_):
+    try:
+        # type_ may not be a instance of type
+        return issubclass(type_, typing.Dict)
+    except TypeError:
+        return False
 
 
 class TypeVisitor(ABC):

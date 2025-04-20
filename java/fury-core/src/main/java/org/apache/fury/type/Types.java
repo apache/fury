@@ -19,6 +19,11 @@
 
 package org.apache.fury.type;
 
+import static org.apache.fury.collection.Collections.ofHashMap;
+
+import java.util.Map;
+import org.apache.fury.util.Preconditions;
+
 public class Types {
 
   /** bool: a boolean value (true or false). */
@@ -171,5 +176,20 @@ public class Types {
 
   public static boolean isEnumType(int value) {
     return value == ENUM || value == NAMED_ENUM;
+  }
+
+  private static final Map<Class, Integer> PRIMITIVE_TYPE_ID_MAP =
+      ofHashMap(
+          boolean.class, BOOL,
+          byte.class, INT8,
+          short.class, INT16,
+          int.class, INT32,
+          long.class, INT64,
+          float.class, FLOAT32,
+          double.class, FLOAT64);
+
+  public static int getPrimitiveTypeId(Class<?> cls) {
+    Preconditions.checkArgument(cls.isPrimitive(), "Class %s is not primitive", cls);
+    return PRIMITIVE_TYPE_ID_MAP.getOrDefault(cls, -1);
   }
 }

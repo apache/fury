@@ -99,13 +99,16 @@ public final class CodegenSerializer {
           if (interpreterSerializer != null) {
             return interpreterSerializer;
           }
+          fury.getClassResolver().getClassInfo(type).setSerializer(null);
           if (fury.getConfig().isAsyncCompilationEnabled()) {
             // jit not finished, avoid recursive call current serializer.
             Class<? extends Serializer> sc =
                 fury.getClassResolver().getSerializerClass(type, false);
+            fury.getClassResolver().getClassInfo(type).setSerializer(this);
             return interpreterSerializer = Serializers.newSerializer(fury, type, sc);
           } else {
             Class<? extends Serializer> sc = fury.getClassResolver().getSerializerClass(type);
+            fury.getClassResolver().getClassInfo(type).setSerializer(this);
             checkArgument(
                 Generated.GeneratedSerializer.class.isAssignableFrom(sc),
                 "Expect jit serializer but got %s for class %s",

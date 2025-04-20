@@ -146,11 +146,20 @@ public class FuryLogger implements Logger {
       msg = "null";
     }
     int len = msg.length();
+    int argLen = args.length;
+    if (argLen > 0 && args[argLen - 1] instanceof Throwable) {
+      argLen -= 1;
+    }
     int count = 0;
     for (int i = 0; i < len; i++) {
       char c = msg.charAt(i);
       if (c == '{' && msg.charAt(i + 1) == '}') {
-        builder.append(args[count++]);
+        int cnt = count++;
+        if (cnt < argLen) {
+          builder.append(args[cnt]);
+        } else {
+          builder.append("{}");
+        }
         i++;
       } else {
         builder.append(c);
