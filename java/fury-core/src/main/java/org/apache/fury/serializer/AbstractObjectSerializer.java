@@ -19,7 +19,6 @@
 
 package org.apache.fury.serializer;
 
-import static org.apache.fury.type.DescriptorGrouper.createDescriptorGrouper;
 import static org.apache.fury.type.TypeUtils.getRawType;
 
 import java.lang.invoke.MethodHandle;
@@ -165,15 +164,14 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
     Object fieldValue;
     boolean nonNull = fieldInfo.nonNull;
     if (fieldInfo.trackingRef) {
-      fieldValue = binding.readRef(buffer, fieldInfo.classInfoHolder);
+      fieldValue = binding.readRef(buffer, fieldInfo);
     } else {
       if (!nonNull) {
         byte headFlag = buffer.readByte();
         if (headFlag == Fury.NULL_FLAG) {
           return null;
         }
-      }
-      fieldValue = binding.readNonRef(buffer, fieldInfo.classInfoHolder);
+      fieldValue = binding.readNonRef(buffer, fieldInfo);
     }
     return fieldValue;
   }
@@ -186,7 +184,7 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
     Object fieldValue;
     if (fieldInfo.trackingRef) {
       generics.pushGenericType(fieldInfo.genericType);
-      fieldValue = binding.readRef(buffer, fieldInfo.classInfoHolder);
+      fieldValue = binding.readContainerFieldValueRef(buffer, fieldInfo);
       generics.popGenericType();
     } else {
       boolean nonNull = fieldInfo.nonNull;
@@ -195,9 +193,8 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
         if (headFlag == Fury.NULL_FLAG) {
           return null;
         }
-      }
       generics.pushGenericType(fieldInfo.genericType);
-      fieldValue = binding.readNonRef(buffer, fieldInfo.classInfoHolder);
+      fieldValue = binding.readContainerFieldValue(buffer, fieldInfo);
       generics.popGenericType();
     }
     return fieldValue;
@@ -917,12 +914,7 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
       }
     }
     DescriptorGrouper descriptorGrouper =
-        createDescriptorGrouper(
-            fury.getClassResolver()::isMonomorphic,
-            descriptors,
-            false,
-            fury.compressInt(),
-            fury.compressLong());
+        fury.getClassResolver().createDescriptorGrouper(descriptors, false);
     Tuple3<Tuple2<FinalTypeField[], boolean[]>, GenericTypeField[], GenericTypeField[]> infos =
         buildFieldInfos(fury, descriptorGrouper);
     fieldInfos = new InternalFieldInfo[descriptors.size()];
@@ -947,12 +939,7 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
       }
     }
     DescriptorGrouper descriptorGrouper =
-        createDescriptorGrouper(
-            fury.getClassResolver()::isMonomorphic,
-            descriptors,
-            false,
-            fury.compressInt(),
-            fury.compressLong());
+        fury.getClassResolver().createDescriptorGrouper(descriptors, false);
     Tuple3<Tuple2<FinalTypeField[], boolean[]>, GenericTypeField[], GenericTypeField[]> infos =
         buildFieldInfos(fury, descriptorGrouper);
     InternalFieldInfo[] fieldInfos = new InternalFieldInfo[descriptors.size()];
@@ -1074,13 +1061,37 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
     final GenericType genericType;
     final ClassInfoHolder classInfoHolder;
     final boolean trackingRef;
+    final boolean isArray;
+    final ClassInfo containerClassInfo;
 
     private GenericTypeField(Fury fury, Descriptor d) {
       super(d, getRegisteredClassId(fury, getRawType(d.getTypeRef())));
       // TODO support generics <T> in Pojo<T>, see ComplexObjectSerializer.getGenericTypes
-      genericType = fury.getClassResolver().buildGenericType(typeRef);
-      classInfoHolder = fury.getClassResolver().nilClassInfoHolder();
-      trackingRef = fury.getClassResolver().needToWriteRef(typeRef);
+      ClassResolver classResolver = fury.getClassResolver();
+      GenericType t = classResolver.buildGenericType(typeRef);
+      Class<?> cls = t.getCls();
+      if (t.getTypeParametersCount() > 0) {
+        boolean skip =
+            Arrays.stream(t.getTypeParameters()).allMatch(p -> p.getCls() == Object.class);
+        if (skip) {
+          t = new GenericType(t.getTypeRef(), t.isMonomorphic());
+        }
+      }
+      genericType = t;
+      classInfoHolder = classResolver.nilClassInfoHolder();
+      trackingRef = classResolver.needToWriteRef(typeRef);
+      isArray = cls.isArray();
+      if (!fury.isCrossLanguage()) {
+        containerClassInfo = null;
+      } else {
+        if (classResolver.isMap(cls)
+            || classResolver.isCollection(cls)
+            || classResolver.isSet(cls)) {
+          containerClassInfo = fury.getXtypeResolver().getClassInfo(cls);
+        } else {
+          containerClassInfo = null;
+        }
+      }
     }
 
     @Override

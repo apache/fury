@@ -79,6 +79,7 @@ public class Descriptor {
   private Class<?> type;
   private final String typeName;
   private final String name;
+  private String snakeCaseName;
   private final int modifier;
   private final String declaringClass;
   private final Field field;
@@ -170,6 +171,13 @@ public class Descriptor {
 
   public String getName() {
     return name;
+  }
+
+  public String getSnakeCaseName() {
+    if (snakeCaseName == null) {
+      snakeCaseName = StringUtils.lowerCamelToLowerUnderscore(name);
+    }
+    return snakeCaseName;
   }
 
   public int getModifiers() {

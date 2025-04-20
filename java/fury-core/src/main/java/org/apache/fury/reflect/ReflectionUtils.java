@@ -292,6 +292,16 @@ public class ReflectionUtils {
     }
   }
 
+  public static Object getDeclaredStaticFieldValue(Class<?> cls, String fieldName) {
+    try {
+      Field declaredField = getDeclaredField(cls, fieldName);
+      declaredField.setAccessible(true);
+      return declaredField.get(null);
+    } catch (IllegalAccessException e) {
+      throw new IllegalStateException("Unreachable");
+    }
+  }
+
   /**
    * Return a field named <code>fieldName</code> from <code>cls</code>. Search parent class if not
    * found.

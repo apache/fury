@@ -30,7 +30,6 @@ import static org.apache.fury.util.MathUtils.toInt;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -44,7 +43,6 @@ import org.apache.fury.meta.ClassDef.FieldInfo;
 import org.apache.fury.meta.ClassDef.FieldType;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.resolver.ClassResolver;
-import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.DescriptorGrouper;
 import org.apache.fury.util.MurmurHash3;
 
@@ -55,16 +53,12 @@ import org.apache.fury.util.MurmurHash3;
  */
 class ClassDefEncoder {
   static List<Field> buildFields(Fury fury, Class<?> cls, boolean resolveParent) {
-    Comparator<Descriptor> comparator =
-        DescriptorGrouper.getPrimitiveComparator(fury.compressInt(), fury.compressLong());
     DescriptorGrouper descriptorGrouper =
-        new DescriptorGrouper(
-            fury.getClassResolver()::isMonomorphic,
-            fury.getClassResolver().getAllDescriptorsMap(cls, resolveParent).values(),
-            false,
-            Function.identity(),
-            comparator,
-            DescriptorGrouper.COMPARATOR_BY_TYPE_AND_NAME);
+        fury.getClassResolver()
+            .createDescriptorGrouper(
+                fury.getClassResolver().getAllDescriptorsMap(cls, resolveParent).values(),
+                false,
+                Function.identity());
     List<Field> fields = new ArrayList<>();
     descriptorGrouper
         .getPrimitiveDescriptors()

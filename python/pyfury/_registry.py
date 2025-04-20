@@ -556,6 +556,12 @@ class ClassResolver:
             if typeinfo is None:
                 ns = ns_metabytes.decode(self.namespace_decoder)
                 typename = type_metabytes.decode(self.typename_decoder)
+                typeinfo = self._named_type_to_classinfo.get((ns, typename))
+                if typeinfo is not None:
+                    self._ns_type_to_classinfo[
+                        (ns_metabytes, type_metabytes)
+                    ] = typeinfo
+                    return typeinfo
                 # TODO(chaokunyang) generate a dynamic class and serializer
                 #  when meta share is enabled.
                 name = ns + "." + typename if ns else typename

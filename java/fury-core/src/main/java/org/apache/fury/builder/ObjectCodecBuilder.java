@@ -98,15 +98,10 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     } else {
       descriptors = fury.getClassResolver().getAllDescriptorsMap(beanClass, true).values();
     }
+    DescriptorGrouper grouper = classResolver.createDescriptorGrouper(descriptors, false);
+    descriptors = grouper.getSortedDescriptors();
     classVersionHash =
-        new Literal(ObjectSerializer.computeVersionHash(descriptors), PRIMITIVE_INT_TYPE);
-    DescriptorGrouper grouper =
-        DescriptorGrouper.createDescriptorGrouper(
-            fury.getClassResolver()::isMonomorphic,
-            descriptors,
-            false,
-            fury.compressInt(),
-            fury.compressLong());
+        new Literal(ObjectSerializer.computeStructHash(fury, descriptors), PRIMITIVE_INT_TYPE);
     objectCodecOptimizer =
         new ObjectCodecOptimizer(beanClass, grouper, !fury.isBasicTypesRefIgnored(), ctx);
     if (isRecord) {

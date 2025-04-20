@@ -39,7 +39,16 @@ from pyfury.type import (
     Float64Type,
     is_py_array_type,
     compute_string_hash,
+    is_primitive_type,
 )
+
+from pyfury.type import (
+    is_list_type,
+    is_map_type,
+    get_primitive_type_size,
+    is_primitive_array_type,
+)
+
 
 logger = logging.getLogger(__name__)
 
@@ -100,6 +109,62 @@ def _get_hash(fury, field_names: list, type_hints: dict):
     return hash_
 
 
+_UNKNOWN_TYPE_ID = -1
+
+
+def _sort_fields(class_resolver, field_names, serializers):
+    boxed_types = []
+    collection_types = []
+    map_types = []
+    final_types = []
+    other_types = []
+    type_ids = []
+    for field_name, serializer in zip(field_names, serializers):
+        if serializer is None:
+            other_types.append((_UNKNOWN_TYPE_ID, serializer, field_name))
+        else:
+            type_ids.append(
+                (
+                    class_resolver.get_classinfo(serializer.type_).type_id,
+                    serializer,
+                    field_name,
+                )
+            )
+    for type_id, serializer, field_name in type_ids:
+        if is_primitive_type(type_id):
+            container = boxed_types
+        elif is_list_type(serializer.type_):
+            container = collection_types
+        elif is_map_type(serializer.type_):
+            container = map_types
+        elif type_id in {TypeId.STRING} or is_primitive_array_type(type_id):
+            container = final_types
+        else:
+            container = other_types
+        container.append((type_id, serializer, field_name))
+
+    def sorter(item):
+        return item[0], item[2]
+
+    def numeric_sorter(item):
+        id_ = item[0]
+        compress = id_ in {
+            TypeId.INT32,
+            TypeId.INT64,
+            TypeId.VAR_INT32,
+            TypeId.VAR_INT64,
+        }
+        return int(compress), -get_primitive_type_size(id_), item[2]
+
+    boxed_types = sorted(boxed_types, key=numeric_sorter)
+    collection_types = sorted(collection_types, key=sorter)
+    final_types = sorted(final_types, key=sorter)
+    map_types = sorted(map_types, key=sorter)
+    other_types = sorted(other_types, key=sorter)
+    all_types = boxed_types + final_types + other_types + collection_types + map_types
+    return [t[1] for t in all_types], [t[2] for t in all_types]
+
+
 class ComplexObjectSerializer(Serializer):
     def __init__(self, fury, clz):
         super().__init__(fury, clz)
@@ -110,7 +175,11 @@ class ComplexObjectSerializer(Serializer):
         for index, key in enumerate(self._field_names):
             serializer = infer_field(key, self._type_hints[key], visitor, types_path=[])
             self._serializers[index] = serializer
-        from pyfury._fury import Language
+        self._serializers, self._field_names = _sort_fields(
+            fury.class_resolver, self._field_names, self._serializers
+        )
+
+        from pyfury import Language
 
         if self.fury.language == Language.PYTHON:
             logger.warning(

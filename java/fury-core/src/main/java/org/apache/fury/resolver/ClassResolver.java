@@ -79,6 +79,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.fury.Fury;
@@ -154,9 +155,11 @@ import org.apache.fury.serializer.scala.SingletonMapSerializer;
 import org.apache.fury.serializer.scala.SingletonObjectSerializer;
 import org.apache.fury.serializer.shim.ShimDispatcher;
 import org.apache.fury.type.Descriptor;
+import org.apache.fury.type.DescriptorGrouper;
 import org.apache.fury.type.GenericType;
 import org.apache.fury.type.ScalaTypes;
 import org.apache.fury.type.TypeUtils;
+import org.apache.fury.type.Types;
 import org.apache.fury.util.GraalvmSupport;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.StringUtils;
@@ -537,6 +540,7 @@ public class ClassResolver implements TypeResolver {
     }
   }
 
+  @Override
   public boolean isRegistered(Class<?> cls) {
     return extRegistry.registeredClassIdMap.containsKey(cls)
         || extRegistry.registeredClasses.inverse().containsKey(cls);
@@ -611,6 +615,9 @@ public class ClassResolver implements TypeResolver {
    * non-final to write class def, so that it can be deserialized by the peer still.
    */
   public boolean isMonomorphic(Class<?> clz) {
+    if (fury.isCrossLanguage()) {
+      return TypeUtils.unwrap(clz).isPrimitive();
+    }
     if (fury.getConfig().isMetaShareEnabled()) {
       // can't create final map/collection type using TypeUtils.mapOf(TypeToken<K>,
       // TypeToken<V>)
@@ -1198,6 +1205,7 @@ public class ClassResolver implements TypeResolver {
   }
 
   // Invoked by fury JIT.
+  @Override
   public ClassInfo getClassInfo(Class<?> cls) {
     ClassInfo classInfo = classInfoMap.get(cls);
     if (classInfo == null || classInfo.serializer == null) {
@@ -2030,6 +2038,76 @@ public class ClassResolver implements TypeResolver {
 
   public void setCodeGenerator(ClassLoader[] loaders, CodeGenerator codeGenerator) {
     extRegistry.codeGeneratorMap.put(Arrays.asList(loaders), codeGenerator);
+  }
+
+  public DescriptorGrouper createDescriptorGrouper(
+      Collection<Descriptor> descriptors, boolean descriptorsGroupedOrdered) {
+    return createDescriptorGrouper(descriptors, descriptorsGroupedOrdered, null);
+  }
+
+  public DescriptorGrouper createDescriptorGrouper(
+      Collection<Descriptor> descriptors,
+      boolean descriptorsGroupedOrdered,
+      Function<Descriptor, Descriptor> descriptorUpdator) {
+    if (fury.isCrossLanguage()) {
+      return DescriptorGrouper.createDescriptorGrouper(
+          c -> {
+            if (TypeUtils.unwrap(c).isPrimitive()) {
+              return true;
+            } else if (c == String.class) {
+              return true;
+            }
+            if (c.isArray() && TypeUtils.getArrayComponent(c).isPrimitive()) {
+              return true;
+            }
+            // TODO(chaokunyang) add more types.
+            return false;
+          },
+          descriptors,
+          descriptorsGroupedOrdered,
+          descriptorUpdator,
+          fury.compressInt(),
+          fury.compressLong(),
+          (o1, o2) -> {
+            int xtypeId = getXtypeId(o1.getRawType());
+            int xtypeId2 = getXtypeId(o2.getRawType());
+            if (xtypeId == xtypeId2) {
+              return o1.getSnakeCaseName().compareTo(o2.getSnakeCaseName());
+            } else {
+              return xtypeId - xtypeId2;
+            }
+          });
+    }
+    return DescriptorGrouper.createDescriptorGrouper(
+        fury.getClassResolver()::isMonomorphic,
+        descriptors,
+        descriptorsGroupedOrdered,
+        descriptorUpdator,
+        fury.compressInt(),
+        fury.compressLong(),
+        DescriptorGrouper.COMPARATOR_BY_TYPE_AND_NAME);
+  }
+
+  private static final int UNKNOWN_TYPE_ID = -1;
+
+  private int getXtypeId(Class<?> cls) {
+    if (isCollection(cls)) {
+      return Types.LIST;
+    }
+    if (cls.isArray() && !cls.getComponentType().isPrimitive()) {
+      return Types.LIST;
+    }
+    if (isMap(cls)) {
+      return Types.MAP;
+    }
+    if (fury.getXtypeResolver().isRegistered(cls)) {
+      return fury.getXtypeResolver().getClassInfo(cls).getXtypeId();
+    } else {
+      if (ReflectionUtils.isMonomorphic(cls)) {
+        throw new UnsupportedOperationException(cls + " is not supported for xlang serialization");
+      }
+      return UNKNOWN_TYPE_ID;
+    }
   }
 
   public Fury getFury() {

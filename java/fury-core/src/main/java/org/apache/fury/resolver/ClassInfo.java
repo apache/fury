@@ -139,6 +139,10 @@ public class ClassInfo {
     return (Serializer<T>) serializer;
   }
 
+  public void setSerializer(Serializer<?> serializer) {
+    this.serializer = serializer;
+  }
+
   void setSerializer(ClassResolver resolver, Serializer<?> serializer) {
     this.serializer = serializer;
     needToWriteClassDef = serializer != null && resolver.needToWriteClassDef(serializer);
