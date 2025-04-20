@@ -1032,8 +1032,4 @@ public class FieldResolver {
     }
   }
 
-  public static void main(String[] args) {
-    System.out.println(computeStringHash("list0") << 2);
-    System.out.println(computeStringHash("serializeListLast") << 2);
-  }
 }

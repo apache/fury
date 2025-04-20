@@ -148,7 +148,7 @@ public class Descriptor {
     this.field = field;
     this.readMethod = readMethod;
     this.writeMethod = writeMethod;
-    FuryField annotation = this.field.getAnnotation(FuryField.class);
+    FuryField annotation = this.field == null ? null : this.field.getAnnotation(FuryField.class);
     if (annotation != null) {
       this.nonNull = annotation.nonNull();
       this.trackingRef = annotation.trackingRef();
