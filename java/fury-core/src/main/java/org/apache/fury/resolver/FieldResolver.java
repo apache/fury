@@ -775,9 +775,7 @@ public class FieldResolver {
         fieldAccessor = FieldAccessor.createAccessor(field);
       }
       FuryField furyField = field == null ? null : field.getAnnotation(FuryField.class);
-      if (furyField != null) {
-        this.nullable = furyField.nullable();
-      }
+      this.nullable = furyField == null || furyField.nullable();
     }
 
     public static FieldInfo of(
