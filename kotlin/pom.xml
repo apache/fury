@@ -30,7 +30,7 @@
 
     <groupId>org.apache.fury</groupId>
     <artifactId>fury-kotlin</artifactId>
-    <version>0.11.0-SNAPSHOT</version>
+    <version>0.10.2</version>
     <modelVersion>4.0.0</modelVersion>
 
     <properties>
