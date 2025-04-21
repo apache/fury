@@ -33,7 +33,7 @@
   <groupId>org.apache.fury</groupId>
   <artifactId>fury-parent</artifactId>
   <packaging>pom</packaging>
-  <version>0.10.1</version>
+  <version>0.10.2</version>
   <name>Fury Project Parent POM</name>
   <description>
     Apache Fury™ is a blazingly fast multi-language serialization framework powered by jit and zero-copy.
