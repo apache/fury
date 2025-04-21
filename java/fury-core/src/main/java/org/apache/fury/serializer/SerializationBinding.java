@@ -456,11 +456,23 @@ interface SerializationBinding {
 
     @Override
     public void writeNullable(
-        MemoryBuffer buffer, Object obj, ClassInfoHolder classInfoHolder, boolean nullable) {}
+        MemoryBuffer buffer, Object obj, ClassInfoHolder classInfoHolder, boolean nullable) {
+      if (nullable) {
+        writeNullable(buffer, obj, classInfoHolder);
+      } else {
+        writeNonRef(buffer, obj, classInfoHolder);
+      }
+    }
 
     @Override
     public void writeNullable(
-        MemoryBuffer buffer, Object obj, Serializer serializer, boolean nullable) {}
+        MemoryBuffer buffer, Object obj, Serializer serializer, boolean nullable) {
+      if (nullable) {
+        writeNullable(buffer, obj, serializer);
+      } else {
+        write(buffer, serializer, obj);
+      }
+    }
 
     @Override
     public void writeContainerFieldValue(
