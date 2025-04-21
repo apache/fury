@@ -65,6 +65,8 @@ public class FuryAnnotationTest extends FuryTestBase {
 
     byte byte1;
 
+    @FuryField int i3 = 10;
+
     @FuryField List<Integer> integerList = Lists.newArrayList(1);
 
     @FuryField String s1 = "str";

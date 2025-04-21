@@ -85,8 +85,7 @@ public class Descriptor {
   private final Field field;
   private final Method readMethod;
   private final Method writeMethod;
-  private boolean nullable;
-  private boolean trackingRef;
+  private final FuryField furyField;
 
   public Descriptor(Field field, TypeRef<?> typeRef, Method readMethod, Method writeMethod) {
     this.field = field;
@@ -97,11 +96,7 @@ public class Descriptor {
     this.readMethod = readMethod;
     this.writeMethod = writeMethod;
     this.typeRef = typeRef;
-    FuryField annotation = this.field.getAnnotation(FuryField.class);
-    this.nullable = annotation == null || annotation.nullable();
-    if (annotation != null) {
-      this.trackingRef = annotation.trackingRef();
-    }
+    this.furyField = this.field.getAnnotation(FuryField.class);
   }
 
   public Descriptor(TypeRef<?> typeRef, String name, int modifier, String declaringClass) {
@@ -113,6 +108,7 @@ public class Descriptor {
     this.typeRef = typeRef;
     this.readMethod = null;
     this.writeMethod = null;
+    this.furyField = null;
   }
 
   private Descriptor(Field field, Method readMethod) {
@@ -124,11 +120,7 @@ public class Descriptor {
     this.readMethod = readMethod;
     this.writeMethod = null;
     this.typeRef = null;
-    FuryField annotation = this.field.getAnnotation(FuryField.class);
-    this.nullable = annotation == null || annotation.nullable();
-    if (annotation != null) {
-      this.trackingRef = annotation.trackingRef();
-    }
+    this.furyField = this.field.getAnnotation(FuryField.class);
   }
 
   private Descriptor(
@@ -148,11 +140,7 @@ public class Descriptor {
     this.field = field;
     this.readMethod = readMethod;
     this.writeMethod = writeMethod;
-    FuryField annotation = this.field == null ? null : this.field.getAnnotation(FuryField.class);
-    this.nullable = annotation == null || annotation.nullable();
-    if (annotation != null) {
-      this.trackingRef = annotation.trackingRef();
-    }
+    this.furyField = this.field == null ? null : this.field.getAnnotation(FuryField.class);
   }
 
   public Descriptor copy(Method readMethod, Method writeMethod) {
@@ -204,12 +192,8 @@ public class Descriptor {
     return typeName;
   }
 
-  public boolean isNullable() {
-    return nullable;
-  }
-
-  public boolean isTrackingRef() {
-    return trackingRef;
+  public FuryField getFuryField() {
+    return furyField;
   }
 
   /** Try not use {@link TypeRef#getRawType()} since it's expensive. */
@@ -251,8 +235,7 @@ public class Descriptor {
     if (typeRef != null) {
       sb.append(", typeRef=").append(typeRef);
     }
-    sb.append(", nullable=").append(nullable);
-    sb.append(", trackingRef=").append(trackingRef);
+    sb.append(", furyField=").append(furyField);
     sb.append('}');
     return sb.toString();
   }
