@@ -358,6 +358,13 @@ def is_map_type(type_):
         return False
 
 
+def is_subclass(from_type, to_type):
+    try:
+        return issubclass(from_type, to_type)
+    except TypeError:
+        return False
+
+
 class TypeVisitor(ABC):
     @abstractmethod
     def visit_list(self, field_name, elem_type, types_path=None):

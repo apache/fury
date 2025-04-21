@@ -225,6 +225,7 @@ public class ClassResolver implements TypeResolver {
       new ClassInfo(null, null, null, null, false, null, NO_CLASS_ID, NOT_SUPPORT_XLANG);
 
   private final Fury fury;
+  XtypeResolver xtypeResolver;
   private ClassInfo[] registeredId2ClassInfo = new ClassInfo[] {};
 
   // IdentityMap has better lookup performance, when loadFactor is 0.05f, performance is better
@@ -275,13 +276,13 @@ public class ClassResolver implements TypeResolver {
     classInfoCache = NIL_CLASS_INFO;
     metaContextShareEnabled = fury.getConfig().isMetaShareEnabled();
     extRegistry = new ExtRegistry();
-    extRegistry.objectGenericType = buildGenericType(OBJECT_TYPE);
     shimDispatcher = new ShimDispatcher(fury);
     ClassResolver._addGraalvmClassRegistry(fury.getConfig().getConfigHash(), this);
   }
 
   @Override
   public void initialize() {
+    extRegistry.objectGenericType = buildGenericType(OBJECT_TYPE);
     register(LambdaSerializer.ReplaceStub.class, LAMBDA_STUB_ID);
     register(JdkProxySerializer.ReplaceStub.class, JDK_PROXY_STUB_ID);
     register(ReplaceResolveSerializer.ReplaceStub.class, REPLACE_STUB_ID);
@@ -616,7 +617,22 @@ public class ClassResolver implements TypeResolver {
    */
   public boolean isMonomorphic(Class<?> clz) {
     if (fury.isCrossLanguage()) {
-      return TypeUtils.unwrap(clz).isPrimitive();
+      if (TypeUtils.unwrap(clz).isPrimitive() || clz.isEnum() || clz == String.class) {
+        return true;
+      }
+      if (clz.isArray() && TypeUtils.getArrayComponent(clz).isPrimitive()) {
+        return true;
+      }
+      ClassInfo classInfo = xtypeResolver.getClassInfo(clz, false);
+      if (classInfo != null) {
+        if (classInfo.serializer instanceof TimeSerializers.TimeSerializer) {
+          return true;
+        }
+        if (classInfo.serializer instanceof TimeSerializers.ImmutableTimeSerializer) {
+          return true;
+        }
+      }
+      return false;
     }
     if (fury.getConfig().isMetaShareEnabled()) {
       // can't create final map/collection type using TypeUtils.mapOf(TypeToken<K>,
@@ -1237,6 +1253,7 @@ public class ClassResolver implements TypeResolver {
    * @param createClassInfoIfNotFound whether create class info if not found.
    * @return Class info.
    */
+  @Override
   public ClassInfo getClassInfo(Class<?> cls, boolean createClassInfoIfNotFound) {
     if (createClassInfoIfNotFound) {
       return getOrUpdateClassInfo(cls);
@@ -2051,18 +2068,7 @@ public class ClassResolver implements TypeResolver {
       Function<Descriptor, Descriptor> descriptorUpdator) {
     if (fury.isCrossLanguage()) {
       return DescriptorGrouper.createDescriptorGrouper(
-          c -> {
-            if (TypeUtils.unwrap(c).isPrimitive()) {
-              return true;
-            } else if (c == String.class) {
-              return true;
-            }
-            if (c.isArray() && TypeUtils.getArrayComponent(c).isPrimitive()) {
-              return true;
-            }
-            // TODO(chaokunyang) add more types.
-            return false;
-          },
+          this::isMonomorphic,
           descriptors,
           descriptorsGroupedOrdered,
           descriptorUpdator,

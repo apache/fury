@@ -115,6 +115,7 @@ public class XtypeResolver implements TypeResolver {
     this.config = fury.getConfig();
     this.fury = fury;
     this.classResolver = fury.getClassResolver();
+    classResolver.xtypeResolver = this;
     this.generics = fury.getGenerics();
     this.metaStringResolver = fury.getMetaStringResolver();
   }
@@ -291,6 +292,14 @@ public class XtypeResolver implements TypeResolver {
       classInfo = buildClassInfo(cls);
     }
     return classInfo;
+  }
+
+  @Override
+  public ClassInfo getClassInfo(Class<?> cls, boolean createIfAbsent) {
+    if (createIfAbsent) {
+      return getClassInfo(cls);
+    }
+    return classInfoMap.get(cls);
   }
 
   public ClassInfo getClassInfo(Class<?> cls, ClassInfoHolder classInfoHolder) {

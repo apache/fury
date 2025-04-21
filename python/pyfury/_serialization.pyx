@@ -2111,10 +2111,11 @@ cdef class EnumSerializer(Serializer):
         return getattr(self.type_, name)
 
     cpdef inline xwrite(self, Buffer buffer, value):
-        raise NotImplementedError
+        buffer.write_varuint32(value.value)
 
     cpdef inline xread(self, Buffer buffer):
-        raise NotImplementedError
+        ordinal = buffer.read_varuint32()
+        return self.type_(ordinal)
 
 
 @cython.final
