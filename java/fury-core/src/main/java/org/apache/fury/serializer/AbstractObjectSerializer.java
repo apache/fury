@@ -990,7 +990,7 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
       this.classId = classId;
       this.qualifiedFieldName = d.getDeclaringClass() + "." + d.getName();
       this.fieldAccessor = d.getField() != null ? FieldAccessor.createAccessor(d.getField()) : null;
-      if (typeRef.isPrimitive()) {
+      if (!typeRef.isPrimitive()) {
         nullable = d.getFuryField() == null || d.getFuryField().nullable();
       }
     }
