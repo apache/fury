@@ -89,10 +89,10 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
       MemoryBuffer buffer) {
     Serializer<Object> serializer = fieldInfo.classInfo.getSerializer();
     Object fieldValue;
-    boolean nonNull = fieldInfo.nonNull;
+    boolean nullable = fieldInfo.nullable;
     if (isFinal) {
       if (!fieldInfo.trackingRef) {
-        return readNullable(binding, buffer, serializer, nonNull);
+        return binding.readNullable(buffer, serializer, nullable);
       }
       // whether tracking ref is recorded in `fieldInfo.serializer`, so it's still
       // consistent with jit serializer.
@@ -108,7 +108,7 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
           fieldValue = refResolver.getReadObject();
         }
       } else {
-        if (!nonNull) {
+        if (nullable) {
           byte headFlag = buffer.readByte();
           if (headFlag == Fury.NULL_FLAG) {
             return null;
@@ -121,52 +121,14 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
     return fieldValue;
   }
 
-  static Object readNullable(
-      SerializationBinding binding,
-      MemoryBuffer buffer,
-      Serializer<Object> serializer,
-      boolean nonNull) {
-    if (!nonNull) {
-      return binding.readNullable(buffer, serializer);
-    } else {
-      return binding.read(buffer, serializer);
-    }
-  }
-
-  static void writeNullable(
-      SerializationBinding binding,
-      MemoryBuffer buffer,
-      Object obj,
-      ClassInfoHolder classInfoHolder,
-      boolean nonNull) {
-    if (!nonNull) {
-      binding.writeNullable(buffer, obj, classInfoHolder);
-    } else {
-      binding.writeNonRef(buffer, obj, classInfoHolder);
-    }
-  }
-
-  static void writeNullable(
-      SerializationBinding binding,
-      MemoryBuffer buffer,
-      Object obj,
-      Serializer serializer,
-      boolean nonNull) {
-    if (!nonNull) {
-      binding.writeNullable(buffer, obj, serializer);
-    } else {
-      binding.write(buffer, serializer, obj);
-    }
-  }
-
   static Object readOtherFieldValue(
       SerializationBinding binding, GenericTypeField fieldInfo, MemoryBuffer buffer) {
     Object fieldValue;
-    boolean nonNull = fieldInfo.nonNull;
+    boolean nullable = fieldInfo.nullable;
     if (fieldInfo.trackingRef) {
       fieldValue = binding.readRef(buffer, fieldInfo);
     } else {
-      if (!nonNull) {
+      if (nullable) {
         byte headFlag = buffer.readByte();
         if (headFlag == Fury.NULL_FLAG) {
           return null;
@@ -188,8 +150,8 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
       fieldValue = binding.readContainerFieldValueRef(buffer, fieldInfo);
       generics.popGenericType();
     } else {
-      boolean nonNull = fieldInfo.nonNull;
-      if (!nonNull) {
+      boolean nullable = fieldInfo.nullable;
+      if (nullable) {
         byte headFlag = buffer.readByte();
         if (headFlag == Fury.NULL_FLAG) {
           return null;
@@ -1021,7 +983,7 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
     protected final short classId;
     protected final String qualifiedFieldName;
     protected final FieldAccessor fieldAccessor;
-    protected boolean nonNull;
+    protected boolean nullable;
 
     private InternalFieldInfo(Descriptor d, short classId) {
       this.typeRef = d.getTypeRef();
@@ -1029,7 +991,7 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
       this.qualifiedFieldName = d.getDeclaringClass() + "." + d.getName();
       ;
       this.fieldAccessor = d.getField() != null ? FieldAccessor.createAccessor(d.getField()) : null;
-      this.nonNull = d.isNonNull();
+      this.nullable = d.isNullable();
     }
 
     @Override
@@ -1041,11 +1003,10 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
           + classId
           + ", qualifiedFieldName='"
           + qualifiedFieldName
-          + '\''
           + ", fieldAccessor="
           + fieldAccessor
-          + ", nonNull="
-          + nonNull
+          + ", nullable="
+          + nullable
           + '}';
     }
   }
@@ -1122,8 +1083,8 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
           + qualifiedFieldName
           + ", fieldAccessor="
           + fieldAccessor
-          + ", nonNull="
-          + nonNull
+          + ", nullable="
+          + nullable
           + '}';
     }
   }

@@ -359,10 +359,10 @@ public class FuryTest extends FuryTestBase {
 
   @Data
   public static class BeanM {
-    @FuryField(nonNull = true)
+    @FuryField(nullable = false)
     public Long f1;
 
-    @FuryField(nonNull = true)
+    @FuryField(nullable = false)
     private Long f2;
 
     String s = "str";
@@ -388,32 +388,59 @@ public class FuryTest extends FuryTestBase {
 
     byte byte1;
 
-    @FuryField(nonNull = true)
+    @FuryField(nullable = false)
     List<Integer> integerList = Lists.newArrayList(1);
 
-    @FuryField(nonNull = true)
+    @FuryField(nullable = false)
     String s1 = "str";
 
-    @FuryField(nonNull = true)
+    @FuryField(nullable = false)
     Short shortValue1 = Short.valueOf((short) 2);
 
-    @FuryField(nonNull = true)
+    @FuryField(nullable = false)
     Byte byteValue1 = Byte.valueOf((byte) 3);
 
-    @FuryField(nonNull = true)
+    @FuryField(nullable = false)
     Long longValue1 = Long.valueOf(4L);
 
-    @FuryField(nonNull = true)
+    @FuryField(nullable = false)
     Boolean booleanValue1 = Boolean.TRUE;
 
-    @FuryField(nonNull = true)
+    @FuryField(nullable = false)
     Float floatValue1 = Float.valueOf(5.0f);
 
-    @FuryField(nonNull = true)
+    @FuryField(nullable = false)
     Double doubleValue1 = Double.valueOf(6.0);
 
-    @FuryField(nonNull = true)
+    @FuryField(nullable = false)
     Character character1 = Character.valueOf('c');
+
+    @FuryField(nullable = true)
+    List<Integer> integerList1 = Lists.newArrayList(1);
+
+    @FuryField(nullable = true)
+    String s2 = "str";
+
+    @FuryField(nullable = true)
+    Short shortValue2 = Short.valueOf((short) 2);
+
+    @FuryField(nullable = true)
+    Byte byteValue2 = Byte.valueOf((byte) 3);
+
+    @FuryField(nullable = true)
+    Long longValue2 = Long.valueOf(4L);
+
+    @FuryField(nullable = true)
+    Boolean booleanValue2 = Boolean.TRUE;
+
+    @FuryField(nullable = true)
+    Float floatValue2 = Float.valueOf(5.0f);
+
+    @FuryField(nullable = true)
+    Double doubleValue2 = Double.valueOf(6.0);
+
+    @FuryField(nullable = true)
+    Character character2 = Character.valueOf('c');
 
     public BeanM() {
       this.f1 = 1L;
@@ -430,7 +457,7 @@ public class FuryTest extends FuryTestBase {
   @Data
   public static class BeanM1 {
 
-    @FuryField(nonNull = true)
+    @FuryField(nullable = false)
     private BeanN beanN;
   }
 

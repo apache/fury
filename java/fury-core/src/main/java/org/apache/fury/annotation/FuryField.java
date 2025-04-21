@@ -28,8 +28,8 @@ import java.lang.annotation.Target;
 @Target(ElementType.FIELD)
 public @interface FuryField {
 
-  /** Whether field is nonNull, default false. */
-  boolean nonNull() default false;
+  /** Whether field is nullable, default false. */
+  boolean nullable() default false;
 
   /** Whether field is trackingRef, default false. */
   boolean trackingRef() default false;

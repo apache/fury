@@ -85,7 +85,7 @@ public class Descriptor {
   private final Field field;
   private final Method readMethod;
   private final Method writeMethod;
-  private boolean nonNull;
+  private boolean nullable;
   private boolean trackingRef;
 
   public Descriptor(Field field, TypeRef<?> typeRef, Method readMethod, Method writeMethod) {
@@ -99,7 +99,7 @@ public class Descriptor {
     this.typeRef = typeRef;
     FuryField annotation = this.field.getAnnotation(FuryField.class);
     if (annotation != null) {
-      this.nonNull = annotation.nonNull();
+      this.nullable = annotation.nullable();
       this.trackingRef = annotation.trackingRef();
     }
   }
@@ -126,7 +126,7 @@ public class Descriptor {
     this.typeRef = null;
     FuryField annotation = this.field.getAnnotation(FuryField.class);
     if (annotation != null) {
-      this.nonNull = annotation.nonNull();
+      this.nullable = annotation.nullable();
       this.trackingRef = annotation.trackingRef();
     }
   }
@@ -150,7 +150,7 @@ public class Descriptor {
     this.writeMethod = writeMethod;
     FuryField annotation = this.field == null ? null : this.field.getAnnotation(FuryField.class);
     if (annotation != null) {
-      this.nonNull = annotation.nonNull();
+      this.nullable = annotation.nullable();
       this.trackingRef = annotation.trackingRef();
     }
   }
@@ -204,8 +204,8 @@ public class Descriptor {
     return typeName;
   }
 
-  public boolean isNonNull() {
-    return nonNull;
+  public boolean isNullable() {
+    return nullable;
   }
 
   public boolean isTrackingRef() {
@@ -251,7 +251,7 @@ public class Descriptor {
     if (typeRef != null) {
       sb.append(", typeRef=").append(typeRef);
     }
-    sb.append(", nonNull=").append(nonNull);
+    sb.append(", nullable=").append(nullable);
     sb.append(", trackingRef=").append(trackingRef);
     sb.append('}');
     return sb.toString();

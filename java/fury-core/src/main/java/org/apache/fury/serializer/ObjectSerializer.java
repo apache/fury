@@ -138,12 +138,11 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
   private void writeOtherFields(MemoryBuffer buffer, T value) {
     for (GenericTypeField fieldInfo : otherFields) {
       FieldAccessor fieldAccessor = fieldInfo.fieldAccessor;
-      boolean nonNull = fieldInfo.nonNull;
       Object fieldValue = fieldAccessor.getObject(value);
       if (fieldInfo.trackingRef) {
         binding.writeRef(buffer, fieldValue, fieldInfo.classInfoHolder);
       } else {
-        writeNullable(binding, buffer, fieldValue, fieldInfo.classInfoHolder, nonNull);
+        binding.writeNullable(buffer, fieldValue, fieldInfo.classInfoHolder, fieldInfo.nullable);
       }
     }
   }
@@ -160,19 +159,19 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
     for (int i = 0; i < finalFields.length; i++) {
       FinalTypeField fieldInfo = finalFields[i];
       FieldAccessor fieldAccessor = fieldInfo.fieldAccessor;
-      boolean nonNull = fieldInfo.nonNull;
+      boolean nullable = fieldInfo.nullable;
       short classId = fieldInfo.classId;
       if (writePrimitiveFieldValueFailed(fury, buffer, value, fieldAccessor, classId)) {
         Object fieldValue = fieldAccessor.getObject(value);
         boolean writeBasicObjectResult =
-            nonNull
-                ? writeBasicObjectFieldValueFailed(fury, buffer, fieldValue, classId)
-                : writeBasicNullableObjectFieldValueFailed(fury, buffer, fieldValue, classId);
+            nullable
+                ? writeBasicNullableObjectFieldValueFailed(fury, buffer, fieldValue, classId)
+                : writeBasicObjectFieldValueFailed(fury, buffer, fieldValue, classId);
         if (writeBasicObjectResult) {
           Serializer<Object> serializer = fieldInfo.classInfo.getSerializer();
           if (!metaShareEnabled || isFinal[i]) {
             if (!fieldInfo.trackingRef) {
-              writeNullable(binding, buffer, fieldValue, serializer, nonNull);
+              binding.writeNullable(buffer, fieldValue, serializer, nullable);
             } else {
               // whether tracking ref is recorded in `fieldInfo.serializer`, so it's still
               // consistent with jit serializer.
@@ -186,7 +185,7 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
                 binding.write(buffer, serializer, fieldValue);
               }
             } else {
-              writeNullable(binding, buffer, fieldValue, serializer, nonNull);
+              binding.writeNullable(buffer, fieldValue, serializer, nullable);
             }
           }
         }
@@ -222,8 +221,7 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
         generics.popGenericType();
       }
     } else {
-      boolean nonNull = fieldInfo.nonNull;
-      if (!nonNull) {
+      if (fieldInfo.nullable) {
         if (fieldValue == null) {
           buffer.writeByte(Fury.NULL_FLAG);
           return;
@@ -318,13 +316,12 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
       FinalTypeField fieldInfo = finalFields[i];
       boolean isFinal = !metaShareEnabled || this.isFinal[i];
       FieldAccessor fieldAccessor = fieldInfo.fieldAccessor;
-      boolean nonNull = fieldInfo.nonNull;
+      boolean nullable = fieldInfo.nullable;
       short classId = fieldInfo.classId;
       if (readPrimitiveFieldValueFailed(fury, buffer, obj, fieldAccessor, classId)
-          && (nonNull
-              ? readBasicObjectFieldValueFailed(fury, buffer, obj, fieldAccessor, classId)
-              : readBasicNullableObjectFieldValueFailed(
-                  fury, buffer, obj, fieldAccessor, classId))) {
+          && (nullable
+              ? readBasicNullableObjectFieldValueFailed(fury, buffer, obj, fieldAccessor, classId)
+              : readBasicObjectFieldValueFailed(fury, buffer, obj, fieldAccessor, classId))) {
         Object fieldValue =
             readFinalObjectFieldValue(
                 binding, refResolver, typeResolver, fieldInfo, isFinal, buffer);

@@ -138,13 +138,12 @@ public final class NonexistentClassSerializers {
       }
       for (ObjectSerializer.GenericTypeField fieldInfo : fieldsInfo.otherFields) {
         Object fieldValue = value.get(fieldInfo.qualifiedFieldName);
-        boolean nonNull = fieldInfo.nonNull;
+        boolean nullable = fieldInfo.nullable;
         // todo question why not use binding
         if (fieldInfo.trackingRef) {
           fury.writeRef(buffer, fieldValue, fieldInfo.classInfoHolder);
         } else {
-          AbstractObjectSerializer.writeNullable(
-              binding, buffer, fieldValue, fieldInfo.classInfoHolder, nonNull);
+          binding.writeNullable(buffer, fieldValue, fieldInfo.classInfoHolder, nullable);
         }
       }
       Generics generics = fury.getGenerics();

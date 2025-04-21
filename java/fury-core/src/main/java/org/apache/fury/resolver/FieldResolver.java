@@ -749,7 +749,7 @@ public class FieldResolver {
     protected final ClassResolver classResolver;
     private final FieldAccessor fieldAccessor;
     private final ClassInfoHolder classInfoHolder;
-    private boolean nonNull;
+    private boolean nullable;
 
     public FieldInfo(
         Fury fury,
@@ -776,7 +776,7 @@ public class FieldResolver {
       }
       FuryField furyField = field == null ? null : field.getAnnotation(FuryField.class);
       if (furyField != null) {
-        this.nonNull = furyField.nonNull();
+        this.nullable = furyField.nullable();
       }
     }
 
@@ -844,8 +844,8 @@ public class FieldResolver {
       }
     }
 
-    public boolean isNonNull() {
-      return nonNull;
+    public boolean isNullable() {
+      return nullable;
     }
 
     public String getName() {
