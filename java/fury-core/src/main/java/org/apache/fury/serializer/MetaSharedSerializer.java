@@ -145,12 +145,16 @@ public class MetaSharedSerializer<T> extends AbstractObjectSerializer<T> {
       ObjectSerializer.FinalTypeField fieldInfo = finalFields[i];
       boolean isFinal = this.isFinal[i];
       FieldAccessor fieldAccessor = fieldInfo.fieldAccessor;
+      boolean nullable = fieldInfo.nullable;
       if (fieldAccessor != null) {
         short classId = fieldInfo.classId;
         if (AbstractObjectSerializer.readPrimitiveFieldValueFailed(
                 fury, buffer, obj, fieldAccessor, classId)
-            && AbstractObjectSerializer.readBasicObjectFieldValueFailed(
-                fury, buffer, obj, fieldAccessor, classId)) {
+            && (nullable
+                ? AbstractObjectSerializer.readBasicNullableObjectFieldValueFailed(
+                    fury, buffer, obj, fieldAccessor, classId)
+                : AbstractObjectSerializer.readBasicObjectFieldValueFailed(
+                    fury, buffer, obj, fieldAccessor, classId))) {
           assert fieldInfo.classInfo != null;
           Object fieldValue =
               AbstractObjectSerializer.readFinalObjectFieldValue(

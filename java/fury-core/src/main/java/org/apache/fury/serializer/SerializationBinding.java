@@ -45,6 +45,8 @@ interface SerializationBinding {
 
   void writeNonRef(MemoryBuffer buffer, Object obj, ClassInfo classInfo);
 
+  void writeNonRef(MemoryBuffer buffer, Object obj, ClassInfoHolder classInfoHolder);
+
   void writeNullable(MemoryBuffer buffer, Object obj);
 
   void writeNullable(MemoryBuffer buffer, Object obj, Serializer serializer);
@@ -52,6 +54,11 @@ interface SerializationBinding {
   void writeNullable(MemoryBuffer buffer, Object obj, ClassInfoHolder classInfoHolder);
 
   void writeNullable(MemoryBuffer buffer, Object obj, ClassInfo classInfo);
+
+  void writeNullable(
+      MemoryBuffer buffer, Object obj, ClassInfoHolder classInfoHolder, boolean nullable);
+
+  void writeNullable(MemoryBuffer buffer, Object obj, Serializer serializer, boolean nullable);
 
   void writeContainerFieldValue(MemoryBuffer buffer, Object fieldValue, ClassInfo classInfo);
 
@@ -74,6 +81,8 @@ interface SerializationBinding {
   Object readNonRef(MemoryBuffer buffer, GenericTypeField field);
 
   Object readNullable(MemoryBuffer buffer, Serializer<Object> serializer);
+
+  Object readNullable(MemoryBuffer buffer, Serializer<Object> serializer, boolean nullable);
 
   Object readContainerFieldValue(MemoryBuffer buffer, GenericTypeField field);
 
@@ -152,6 +161,16 @@ interface SerializationBinding {
     }
 
     @Override
+    public Object readNullable(
+        MemoryBuffer buffer, Serializer<Object> serializer, boolean nullable) {
+      if (nullable) {
+        return readNullable(buffer, serializer);
+      } else {
+        return read(buffer, serializer);
+      }
+    }
+
+    @Override
     public Object readContainerFieldValue(MemoryBuffer buffer, GenericTypeField field) {
       return fury.readNonRef(buffer, field.classInfoHolder);
     }
@@ -191,6 +210,11 @@ interface SerializationBinding {
     }
 
     @Override
+    public void writeNonRef(MemoryBuffer buffer, Object obj, ClassInfoHolder classInfoHolder) {
+      fury.writeNonRef(buffer, obj, classResolver.getClassInfo(obj.getClass(), classInfoHolder));
+    }
+
+    @Override
     public void writeNullable(MemoryBuffer buffer, Object obj) {
       if (obj == null) {
         buffer.writeByte(Fury.NULL_FLAG);
@@ -227,6 +251,26 @@ interface SerializationBinding {
       } else {
         buffer.writeByte(NOT_NULL_VALUE_FLAG);
         fury.writeNonRef(buffer, obj, classInfo);
+      }
+    }
+
+    @Override
+    public void writeNullable(
+        MemoryBuffer buffer, Object obj, ClassInfoHolder classInfoHolder, boolean nullable) {
+      if (nullable) {
+        writeNullable(buffer, obj, classInfoHolder);
+      } else {
+        writeNonRef(buffer, obj, classInfoHolder);
+      }
+    }
+
+    @Override
+    public void writeNullable(
+        MemoryBuffer buffer, Object obj, Serializer serializer, boolean nullable) {
+      if (nullable) {
+        writeNullable(buffer, obj, serializer);
+      } else {
+        write(buffer, serializer, obj);
       }
     }
 
@@ -319,6 +363,16 @@ interface SerializationBinding {
     }
 
     @Override
+    public Object readNullable(
+        MemoryBuffer buffer, Serializer<Object> serializer, boolean nullable) {
+      if (nullable) {
+        return readNullable(buffer, serializer);
+      } else {
+        return read(buffer, serializer);
+      }
+    }
+
+    @Override
     public Object readContainerFieldValue(MemoryBuffer buffer, GenericTypeField field) {
       return fury.xreadNonRef(buffer, field.containerClassInfo);
     }
@@ -353,6 +407,11 @@ interface SerializationBinding {
     @Override
     public void writeNonRef(MemoryBuffer buffer, Object obj, ClassInfo classInfo) {
       fury.xwriteNonRef(buffer, obj, classInfo);
+    }
+
+    @Override
+    public void writeNonRef(MemoryBuffer buffer, Object obj, ClassInfoHolder classInfoHolder) {
+      fury.xwriteNonRef(buffer, obj, xtypeResolver.getClassInfo(obj.getClass(), classInfoHolder));
     }
 
     @Override
@@ -392,6 +451,26 @@ interface SerializationBinding {
       } else {
         buffer.writeByte(NOT_NULL_VALUE_FLAG);
         fury.xwriteNonRef(buffer, obj, classInfo);
+      }
+    }
+
+    @Override
+    public void writeNullable(
+        MemoryBuffer buffer, Object obj, ClassInfoHolder classInfoHolder, boolean nullable) {
+      if (nullable) {
+        writeNullable(buffer, obj, classInfoHolder);
+      } else {
+        writeNonRef(buffer, obj, classInfoHolder);
+      }
+    }
+
+    @Override
+    public void writeNullable(
+        MemoryBuffer buffer, Object obj, Serializer serializer, boolean nullable) {
+      if (nullable) {
+        writeNullable(buffer, obj, serializer);
+      } else {
+        write(buffer, serializer, obj);
       }
     }
 
