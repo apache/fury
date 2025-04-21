@@ -98,8 +98,8 @@ public class Descriptor {
     this.writeMethod = writeMethod;
     this.typeRef = typeRef;
     FuryField annotation = this.field.getAnnotation(FuryField.class);
+    this.nullable = annotation == null || annotation.nullable();
     if (annotation != null) {
-      this.nullable = annotation.nullable();
       this.trackingRef = annotation.trackingRef();
     }
   }
@@ -125,8 +125,8 @@ public class Descriptor {
     this.writeMethod = null;
     this.typeRef = null;
     FuryField annotation = this.field.getAnnotation(FuryField.class);
+    this.nullable = annotation == null || annotation.nullable();
     if (annotation != null) {
-      this.nullable = annotation.nullable();
       this.trackingRef = annotation.trackingRef();
     }
   }
@@ -149,8 +149,8 @@ public class Descriptor {
     this.readMethod = readMethod;
     this.writeMethod = writeMethod;
     FuryField annotation = this.field == null ? null : this.field.getAnnotation(FuryField.class);
+    this.nullable = annotation == null || annotation.nullable();
     if (annotation != null) {
-      this.nullable = annotation.nullable();
       this.trackingRef = annotation.trackingRef();
     }
   }

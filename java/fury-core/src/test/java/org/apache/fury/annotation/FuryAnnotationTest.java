@@ -65,11 +65,9 @@ public class FuryAnnotationTest extends FuryTestBase {
 
     byte byte1;
 
-    @FuryField(nullable = false)
-    List<Integer> integerList = Lists.newArrayList(1);
+    @FuryField List<Integer> integerList = Lists.newArrayList(1);
 
-    @FuryField(nullable = false)
-    String s1 = "str";
+    @FuryField String s1 = "str";
 
     @FuryField(nullable = false)
     Short shortValue1 = Short.valueOf((short) 2);
@@ -134,8 +132,7 @@ public class FuryAnnotationTest extends FuryTestBase {
   @Data
   public static class BeanM1 {
 
-    @FuryField(nullable = false)
-    private BeanN beanN;
+    @FuryField private BeanN beanN;
   }
 
   @Test(dataProvider = "basicMultiConfigFury")
