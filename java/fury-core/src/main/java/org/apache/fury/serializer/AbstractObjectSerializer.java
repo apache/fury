@@ -993,7 +993,7 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
         nullable = furyField == null || furyField.nullable();
       }
       if (fury.trackingRef()) {
-        nullable =
+        trackingRef =
             furyField != null
                 ? furyField.trackingRef()
                 : fury.getClassResolver().needToWriteRef(typeRef);
