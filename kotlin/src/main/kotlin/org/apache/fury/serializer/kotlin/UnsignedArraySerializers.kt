@@ -24,7 +24,6 @@ package org.apache.fury.serializer.kotlin
 import org.apache.fury.Fury
 import org.apache.fury.memory.MemoryBuffer
 import org.apache.fury.serializer.Serializer
-import org.apache.fury.type.Type
 
 public abstract class AbstractDelegatingArraySerializer<T, T_Delegate>(
   fury: Fury,
