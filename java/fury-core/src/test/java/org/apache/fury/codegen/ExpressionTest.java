@@ -19,11 +19,15 @@
 
 package org.apache.fury.codegen;
 
+import static org.apache.fury.codegen.ExpressionUtils.neq;
+import static org.apache.fury.codegen.ExpressionUtils.or;
 import static org.apache.fury.type.TypeUtils.PRIMITIVE_SHORT_TYPE;
 import static org.testng.Assert.assertNull;
 
+import org.apache.fury.codegen.Code.ExprCode;
 import org.apache.fury.codegen.Expression.ListExpression;
 import org.apache.fury.codegen.Expression.Literal;
+import org.apache.fury.codegen.Expression.LogicalOr;
 import org.apache.fury.codegen.Expression.Reference;
 import org.apache.fury.codegen.Expression.Return;
 import org.testng.Assert;
@@ -77,5 +81,17 @@ public class ExpressionTest {
       String code = exp.genCode(new CodegenContext()).code();
       assertNull(code);
     }
+  }
+
+  @Test
+  public void testMultipleOr() {
+    CodegenContext ctx = new CodegenContext();
+    LogicalOr or =
+        or(
+            Literal.ofBoolean(false),
+            neq(Literal.ofInt(3), Literal.ofInt(4)),
+            neq(Literal.ofInt(5), Literal.ofInt(6)));
+    ExprCode exprCode = or.genCode(ctx);
+    Assert.assertEquals(exprCode.value().code(), "((false || (3 != 4)) || (5 != 6))");
   }
 }
