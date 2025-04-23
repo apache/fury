@@ -109,7 +109,6 @@ public class ULongSerializer(
   Serializers.CrossLanguageCompatibleSerializer<ULong>(
     fury,
     ULong::class.java,
-    Type.UINT64.id,
     fury.isBasicTypesRefIgnored,
     true
   ) {

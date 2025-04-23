@@ -39,10 +39,6 @@ public abstract class AbstractDelegatingArraySerializer<T, T_Delegate>(
 
   protected abstract fun fromDelegateClass(value: T_Delegate): T
 
-  override fun getXtypeId(): Short {
-    return (-Type.LIST.id).toShort()
-  }
-
   override fun xwrite(buffer: MemoryBuffer, value: T) {
     write(buffer, value)
   }
