@@ -1930,22 +1930,23 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     expressions.add(readKeyValues);
 
     if (inline) {
-      expressions.add(
-          new If(
-              gt(size, ofInt(0)),
+      return new If(
+          gt(size, ofInt(0)),
+          new ListExpression(
+              expressions,
               new Assign(
                   chunkHeader, inlineInvoke(buffer, "readUnsignedByte", PRIMITIVE_INT_TYPE))));
-      return expressions;
     } else {
-      Expression returnSizeAndHeader =
+      Expression action =
           new If(
               gt(size, ofInt(0)),
-              new Return(
-                  (bitor(
-                      shift("<<", size, 8),
-                      inlineInvoke(buffer, "readUnsignedByte", PRIMITIVE_INT_TYPE)))),
-              new Return(ofInt(0)));
-      expressions.add(returnSizeAndHeader);
+              expressions.add(
+                  new Return(
+                      (bitor(
+                          shift("<<", size, 8),
+                          inlineInvoke(buffer, "readUnsignedByte", PRIMITIVE_INT_TYPE)))),
+                  true),
+              expressions.add(new Return(ofInt(0)), true));
       // method too big, spilt it into a new method.
       // Generate similar signature as `AbstractMapSerializer.writeJavaChunk`(
       //   MemoryBuffer buffer,
@@ -1955,7 +1956,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       //   Serializer valueSerializer
       //  )
       Set<Expression> params = ofHashSet(buffer, size, chunkHeader, map);
-      return invokeGenerated(ctx, params, expressions, "readChunk", false);
+      return invokeGenerated(ctx, params, action, "readChunk", false);
     }
   }
 
