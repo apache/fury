@@ -1011,9 +1011,9 @@ public class MapSerializersTest extends FuryTestBase {
     public Map<String, List<Long>> stringInt64ListMap;
   }
 
-  @Test
-  public void testNestedStringLongListMap() {
-    Fury fury = Fury.builder().withLanguage(Language.JAVA).withCodegen(true).build();
+  @Test(dataProvider = "enableCodegen")
+  public void testNestedStringLongListMap(boolean enableCodegen) {
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).withCodegen(enableCodegen).build();
     fury.register(NestedStringLongListMap.class);
     NestedStringLongListMap pojo = new NestedStringLongListMap();
     pojo.stringInt64ListMap = new HashMap<>();
