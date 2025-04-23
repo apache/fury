@@ -247,6 +247,21 @@ public interface Expression {
       return expressions;
     }
 
+    public Expression last() {
+      return expressions.get(expressions.size() - 1);
+    }
+
+    public ListExpression add(Expression expr, boolean copy) {
+      Preconditions.checkNotNull(expr);
+      if (copy) {
+        ListExpression listExpression = new ListExpression();
+        listExpression.addAll(expressions);
+        listExpression.add(expr);
+        return listExpression;
+      }
+      return add(expr);
+    }
+
     public ListExpression add(Expression expr) {
       Preconditions.checkNotNull(expr);
       this.expressions.add(expr);
@@ -1685,7 +1700,9 @@ public interface Expression {
       this.predicate = predicate;
       this.trueExpr = trueExpr;
       this.falseExpr = falseExpr;
-
+      if (ExpressionUtils.isReturn(trueExpr) && ExpressionUtils.isReturn(falseExpr)) {
+        type = PRIMITIVE_VOID_TYPE;
+      }
       if (trueExpr.type() == falseExpr.type()) {
         if (trueExpr.type() != null && !PRIMITIVE_VOID_TYPE.equals(trueExpr.type())) {
           type = trueExpr.type();
@@ -1746,7 +1763,7 @@ public interface Expression {
       }
       TypeRef<?> type = this.type;
       if (!PRIMITIVE_VOID_TYPE.equals(type.unwrap())) {
-        if (trueExpr instanceof Return && falseExpr instanceof Return) {
+        if (ExpressionUtils.isReturn(trueExpr) && ExpressionUtils.isReturn(falseExpr)) {
           type = PRIMITIVE_VOID_TYPE;
         }
       }
@@ -2651,7 +2668,7 @@ public interface Expression {
         codeBuilder.append(targetExprCode.code()).append('\n');
       }
       codeBuilder.append("return ").append(targetExprCode.value()).append(';');
-      return new ExprCode(codeBuilder.toString(), null, null);
+      return new ExprCode(codeBuilder.toString(), null, targetExprCode.value());
     }
 
     @Override
