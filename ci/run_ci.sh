@@ -162,6 +162,18 @@ jdk17_plus_tests() {
   echo "Executing latest_jdk_tests succeeds"
 }
 
+kotlin_tests() {
+  echo "Executing fury kotlin tests"
+  cd "$ROOT/kotlin"
+  set +e
+  mvn -T16 --batch-mode --no-transfer-progress test -DfailIfNoTests=false
+  testcode=$?
+  if [[ $testcode -ne 0 ]]; then
+    exit $testcode
+  fi
+  echo "Executing fury kotlin tests succeeds"
+}
+
 windows_java21_test() {
   java -version
   echo "Executing fury java tests"
@@ -204,6 +216,9 @@ case $1 in
     ;;
     java21)
       jdk17_plus_tests
+    ;;
+    kotlin)
+      kotlin_tests
     ;;
     windows_java21)
       windows_java21_test
