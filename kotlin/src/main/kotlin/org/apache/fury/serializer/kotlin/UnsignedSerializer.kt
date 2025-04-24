@@ -22,6 +22,7 @@ package org.apache.fury.serializer.kotlin
 import org.apache.fury.Fury
 import org.apache.fury.memory.MemoryBuffer
 import org.apache.fury.serializer.Serializers
+import org.apache.fury.type.Type
 
 /**
  * UByteSerializer
@@ -34,6 +35,7 @@ public class UByteSerializer(
   Serializers.CrossLanguageCompatibleSerializer<UByte>(
     fury,
     UByte::class.java,
+    Type.UINT8.id,
     fury.isBasicTypesRefIgnored,
     true
   ) {
@@ -58,6 +60,7 @@ public class UShortSerializer(
   Serializers.CrossLanguageCompatibleSerializer<UShort>(
     fury,
     UShort::class.java,
+    Type.UINT16.id,
     fury.isBasicTypesRefIgnored,
     true
   ) {
@@ -81,6 +84,7 @@ public class UIntSerializer(
   Serializers.CrossLanguageCompatibleSerializer<UInt>(
     fury,
     UInt::class.java,
+    Type.UINT32.id,
     fury.isBasicTypesRefIgnored,
     true
   ) {
@@ -105,6 +109,7 @@ public class ULongSerializer(
   Serializers.CrossLanguageCompatibleSerializer<ULong>(
     fury,
     ULong::class.java,
+    Type.UINT64.id,
     fury.isBasicTypesRefIgnored,
     true
   ) {
