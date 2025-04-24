@@ -20,34 +20,25 @@
 // @Skip()
 library;
 
-import 'package:fury/fury.dart' show FixedNum, Float32, Int16, Int32, Int8;
+import 'package:fury/fury.dart' show FixedNum, Float32, Int16, Int32, Int8, NumType;
 import 'package:test/test.dart';
 
 void main() {
   group('FixedNum factory & comparability', () {
     test('creates correct subtype via FixedNum.from', () {
-      expect(FixedNum.from(42, type: 'int8'), isA<Int8>());
-      expect(FixedNum.from(42, type: 'int16'), isA<Int16>());
-      expect(FixedNum.from(42, type: 'int32'), isA<Int32>());
-      expect(FixedNum.from(42, type: 'float32'), isA<Float32>());
+      expect(FixedNum.from(42, NumType.int8), isA<Int8>());
+      expect(FixedNum.from(42, NumType.int16), isA<Int16>());
+      expect(FixedNum.from(42, NumType.int32), isA<Int32>());
+      expect(FixedNum.from(42, NumType.float32), isA<Float32>());
 
       // Default type should be int32
       expect(FixedNum.from(42), isA<Int32>());
     });
 
-    test('handles case-insensitive type names', () {
-      expect(FixedNum.from(42, type: 'INT8'), isA<Int8>());
-      expect(FixedNum.from(42, type: 'Int16'), isA<Int16>());
-    });
-
-    test('throws on unsupported type name', () {
-      expect(() => FixedNum.from(42, type: 'invalid'), throwsArgumentError);
-    });
-
     test('compares values across types', () {
-      var a = FixedNum.from(10, type: 'int8');
-      var b = FixedNum.from(20, type: 'int8');
-      var c = FixedNum.from(10, type: 'int16');
+      var a = FixedNum.from(10, NumType.int8);
+      var b = FixedNum.from(20, NumType.int8);
+      var c = FixedNum.from(10, NumType.int16);
 
       expect(a.compareTo(b) < 0, isTrue);
       expect(b.compareTo(a) > 0, isTrue);
@@ -263,7 +254,7 @@ void main() {
         var a = Int8(42);
         var b = Int8(42);
         var c = Int8(43);
-        var d = FixedNum.from(42, type: 'int16');
+        var d = FixedNum.from(42, NumType.int16);
 
         expect(a == b, isTrue);
         expect(a == c, isFalse);
