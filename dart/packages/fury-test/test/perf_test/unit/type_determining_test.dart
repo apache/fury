@@ -46,7 +46,7 @@ void testDeterminingDartType() {
     Int8List(10),
     Float32List(10),
     HashSet<int>.from([1, 2, 3]),
-    LinkedHashSet<int>.from([4, 5, 6]),
+    [4, 5, 6],
     TestFuriable(),
   ];
 
@@ -99,7 +99,7 @@ void testDeterminingDartType() {
 }
 
 void main(){
-  test('testDeterminingDartType', () {
+  test('test determining dartType', () {
     testDeterminingDartType();
   });
 }

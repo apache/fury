@@ -26,14 +26,14 @@ import 'package:fury_test/util/test_process_util.dart';
 
 final class CrossLangUtil{
   static const String pythonExecutable = "C:/Users/86511/.conda/envs/pyfury_dev6/python.exe";
-  static const String pythonMudule= "pyfury.tests.test_cross_language";
+  static const String pythonModule= "pyfury.tests.test_cross_language";
   static const Map<String,String> env = {'ENABLE_CROSS_LANGUAGE_TESTS': 'true'};
 
   static bool executeWithPython(String testName, String filePath, [int waitingSec = 30]){
     List<String> command = [
       pythonExecutable,
       "-m",
-      pythonMudule,
+      pythonModule,
       testName,
       filePath
     ];

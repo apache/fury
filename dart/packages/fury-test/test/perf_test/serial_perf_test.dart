@@ -86,27 +86,26 @@ void _testPerfDeser(Fury fury, Object? obj,  int times, String testName){
 }
 
 void main() {
-  group('Test Performance of Serialization and Deserialization', () {
-
-    test('test serialize simple struct perf', () {
+  group('Serialization & Deserialization Performance', () {
+    test('Serialize simple struct', () {
       Fury fury = Fury(
         refTracking: true,
       );
       fury.register($ComplexObject2, "test.ComplexObject2");
       ComplexObject2 o = ComplexObject2(true,{Int8(-1):Int32(2)});
-      _testPerfSer(fury, o, 1000000, 'test serialize simple struct perf');
+      _testPerfSer(fury, o, 1000000, 'Serialize simple struct');
     });
 
-    test('test deserialize simple struct perf', () {
+    test('Deserialize simple struct', () {
       Fury fury = Fury(
         refTracking: true,
       );
       fury.register($ComplexObject2, "test.ComplexObject2");
       ComplexObject2 o = ComplexObject2(true,{Int8(-1):Int32(2)});
-      _testPerfDeser(fury, o, 1000000, 'test deserialize simple struct perf');
+      _testPerfDeser(fury, o, 1000000, 'Deserialize simple struct');
     });
 
-    test('test serialize medium complex struct perf', () {
+    test('Serialize medium complex struct', () {
       Fury fury = Fury(
         refTracking: true,
       );
@@ -126,10 +125,10 @@ void main() {
       obj.f10 = 1 / 3.0;
       obj.f11 = Int16List.fromList([1, 2]);
       obj.f12 = [Int16(-1),Int16(4)];
-      _testPerfSer(fury, obj, 1000000, 'test deserialize medium complex struct perf');
+      _testPerfSer(fury, obj, 1000000, 'Serialize medium complex struct');
     });
 
-    test('test deserialize medium complex struct perf', () {
+    test('Deserialize medium complex struct', () {
       Fury fury = Fury(
         refTracking: true,
       );
@@ -149,7 +148,7 @@ void main() {
       obj.f10 = 1 / 3.0;
       obj.f11 = Int16List.fromList([1, 2]);
       obj.f12 = [Int16(-1),Int16(4)];
-      _testPerfDeser(fury, obj, 1000000, 'test serialize medium complex struct perf');
+      _testPerfDeser(fury, obj, 1000000, 'Deserialize medium complex struct');
     });
 
     // test('test json serialize medium complex struct perf', () {
