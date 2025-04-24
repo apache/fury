@@ -136,6 +136,26 @@ jobs:
         shell: bash
         run: ./ci/run_ci.sh graalvm_test
 
+  kotlin:
+    name: Kotlin CI
+    runs-on: ubuntu-latest
+    env:
+      MY_VAR: "PATH"
+    strategy:
+      matrix:
+        java-version: ["8"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK ${{ matrix.java-version }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ matrix.java-version }}
+          distribution: "temurin"
+      - name: Install fury java
+        run: cd java && mvn -T10 --no-transfer-progress clean install -DskipTests && cd -
+      - name: Run Kotlin CI
+        run: ./ci/run_ci.sh kotlin
+
   scala:
     name: Scala CI
     runs-on: ubuntu-latest
