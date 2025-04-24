@@ -657,16 +657,4 @@ public class MemoryBufferTest {
       assertEquals(buffer.readBytesAsInt64(2), (20 << 8) | 10);
     }
   }
-
-  @Test
-  public void testReadVarUint36Small() {
-    for (MemoryBuffer buffer :
-      new MemoryBuffer[] {
-        MemoryUtils.buffer(16), MemoryUtils.wrap(ByteBuffer.allocateDirect(32)),
-      }) {
-      buffer.writeByte(10);
-      buffer.writeByte(20);
-      assertEquals(buffer.readBytesAsInt64(2), (20 << 8) | 10);
-    }
-  }
 }
