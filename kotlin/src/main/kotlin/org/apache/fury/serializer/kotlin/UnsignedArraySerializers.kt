@@ -24,7 +24,6 @@ package org.apache.fury.serializer.kotlin
 import org.apache.fury.Fury
 import org.apache.fury.memory.MemoryBuffer
 import org.apache.fury.serializer.Serializer
-import org.apache.fury.type.Type
 
 public abstract class AbstractDelegatingArraySerializer<T, T_Delegate>(
   fury: Fury,
@@ -38,10 +37,6 @@ public abstract class AbstractDelegatingArraySerializer<T, T_Delegate>(
   protected abstract fun toDelegateClass(value: T): T_Delegate
 
   protected abstract fun fromDelegateClass(value: T_Delegate): T
-
-  override fun getXtypeId(): Short {
-    return (-Type.LIST.id).toShort()
-  }
 
   override fun xwrite(buffer: MemoryBuffer, value: T) {
     write(buffer, value)
