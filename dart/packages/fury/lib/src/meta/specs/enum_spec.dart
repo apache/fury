@@ -40,4 +40,13 @@ class EnumSpec extends CustomTypeSpec{
         dartType == other.dartType &&
         values.equals(other.values);
   }
+
+  @override
+  int get hashCode =>
+    Object.hash(
+      runtimeType,
+      dartType,
+      values,
+    );
+
 }

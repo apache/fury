@@ -52,8 +52,8 @@ final class ComplexObject1Serializer extends Serializer<ComplexObject1>{
 }
 
 void main() {
-  group('Test Registering Serializer', () {
-    test('testRegisterSerializer', () {
+  group('Serializer registration', () {
+    test('registers serializer & round-trips ComplexObject1', () {
       Fury fury = Fury(
         refTracking: true,
       );
