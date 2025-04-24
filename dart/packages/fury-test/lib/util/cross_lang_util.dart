@@ -21,11 +21,12 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:checks/checks.dart';
 import 'package:fury/fury.dart';
+import 'package:fury_test/test_config.dart';
 import 'package:fury_test/util/test_file_util.dart';
 import 'package:fury_test/util/test_process_util.dart';
 
 final class CrossLangUtil{
-  static const String pythonExecutable = "C:/Users/86511/.conda/envs/pyfury_dev6/python.exe";
+  static final String pythonExecutable = TestConfig.I.pythonExecutable;
   static const String pythonModule= "pyfury.tests.test_cross_language";
   static const Map<String,String> env = {'ENABLE_CROSS_LANGUAGE_TESTS': 'true'};
 
