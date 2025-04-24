@@ -31,9 +31,8 @@ import 'package:fury_test/util/test_file_util.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('serialization algorithm test', () {
-
-    test('testMurmurHash3', () {
+  group('Cross-language hash algorithms', () {
+    test('MurmurHash3 (128x64) cross-language match', () {
       Uint8List bytes = Uint8List(16);
       bytes[0] = 0x01;
       bytes[1] = 0x02;
@@ -47,7 +46,7 @@ void main() {
       check(exeRes).isTrue();
     });
 
-    test('testStructHash', () {
+    test('struct hash cross-language match', () {
       Fury fury = Fury(
         refTracking: true,
       );
