@@ -29,6 +29,7 @@ import com.google.common.collect.ImmutableMap;
 import java.io.Serializable;
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -1003,5 +1004,22 @@ public class MapSerializersTest extends FuryTestBase {
     obj.map.put("obj", ofHashMap("obj", 1, "b", ofArrayList(10)));
     Fury fury = Fury.builder().requireClassRegistration(false).withCodegen(enableCodegen).build();
     fury.deserialize(fury.serialize(obj));
+  }
+
+  @Data
+  public static class NestedStringLongListMap {
+    public Map<String, List<Long>> stringInt64ListMap;
+  }
+
+  @Test(dataProvider = "enableCodegen")
+  public void testNestedStringLongListMap(boolean enableCodegen) {
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).withCodegen(enableCodegen).build();
+    fury.register(NestedStringLongListMap.class);
+    NestedStringLongListMap pojo = new NestedStringLongListMap();
+    pojo.stringInt64ListMap = new HashMap<>();
+    pojo.stringInt64ListMap.put("a", Arrays.asList(100L, 200L, 300L));
+    pojo.stringInt64ListMap.put("b", null);
+    serDeCheck(fury, pojo);
+    fury.serialize(pojo);
   }
 }
