@@ -28,4 +28,5 @@ public enum Language {
   GO,
   JAVASCRIPT,
   RUST,
+  DART,
 }

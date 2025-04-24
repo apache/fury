@@ -141,6 +141,7 @@ pub enum Language {
     Go = 4,
     Javascript = 5,
     Rust = 6,
+    Dart = 7,
 }
 
 #[derive(PartialEq)]

@@ -219,6 +219,7 @@ export enum Language {
   GO = 4,
   JAVASCRIPT = 5,
   RUST = 6,
+  DART = 7,
 }
 
 export const MAGIC_NUMBER = 0x62D4;
