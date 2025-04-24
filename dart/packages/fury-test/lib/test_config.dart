@@ -17,27 +17,26 @@
  * under the License.
  */
 
-// @Skip()
-library;
+import 'dart:io';
 
-import 'package:checks/checks.dart';
-import 'package:fury/fury.dart';
-import 'package:fury_test/entity/enum_foo.dart';
-import 'package:test/test.dart';
+import 'package:yaml/yaml.dart';
 
-void main(){
-  group('Simple Enum Code Generation', () {
-    test('test enum spec generation', () async {
-      EnumSpec enumSpec = EnumSpec(
-        EnumFoo,
-        [EnumFoo.A, EnumFoo.B]
-      );
-      EnumSpec enumSubClassSpec = EnumSpec(
-        EnumSubClass,
-        [EnumSubClass.A, EnumSubClass.B]
-      );
-      check($EnumFoo).equals(enumSpec);
-      check($EnumSubClass).equals(enumSubClassSpec);
-    });
-  });
+class TestConfig {
+  static const String configName = 'test_config.yaml';
+  static final TestConfig I = _loadConfig();
+  final String pythonExecutable;
+
+  TestConfig({required this.pythonExecutable});
+
+  static TestConfig _loadConfig() {
+    final String configPath = '${Directory.current.path}/$configName';
+    final File configFile = File(configPath);
+    if (!configFile.existsSync()) {
+      throw ArgumentError('Config file not found: $configPath');
+    }
+    final config = loadYaml(configFile.readAsStringSync());
+    return TestConfig(
+      pythonExecutable: (config['python'] ? ['executable'] as String?) ?? 'python',
+    );
+  }
 }

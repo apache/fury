@@ -27,9 +27,8 @@ import 'package:fury/fury.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('test var int RW', () {
-
-    test('Test VarInt32', () {
+  group('VarInt read/write', () {
+    test('VarInt32 encode/decode', () {
       ByteWriter bw = ByteWriter();
 
       // Basic values
@@ -70,7 +69,7 @@ void main() {
       check(br.readVarInt32()).equals(268435455);
     });
 
-    test('Test VarInt64', () {
+    test('VarInt64 encode/decode', () {
       ByteWriter bw = ByteWriter();
 
       // Basic values
@@ -115,7 +114,7 @@ void main() {
       check(br.readVarInt64()).equals(-281474976710656);
     });
 
-    test('Test VarUint32', () {
+    test('VarUint32 encode/decode', () {
       ByteWriter bw = ByteWriter();
 
       // Basic values
@@ -152,7 +151,7 @@ void main() {
       check(br.readVarUint32()).equals(268435455);
     });
 
-    test('Test VarUint32Small7', () {
+    test('VarUint32Small7 encode/decode', () {
       ByteWriter bw = ByteWriter();
 
       // Basic values
@@ -203,7 +202,7 @@ void main() {
       check(br.readVarUint32Small7()).equals(4294967295);
     });
 
-    test('Test VarUint36Small', () {
+    test('VarUint36Small encode/decode', () {
       ByteWriter bw = ByteWriter();
 
       // Basic values
@@ -260,7 +259,7 @@ void main() {
       check(br.readVarUint36Small()).equals(68719476735);
     });
 
-    test('Round-trip testing with random values', () {
+    test('Random round‑trip values', () {
       final random = Random();
       ByteWriter bw = ByteWriter();
 
@@ -300,7 +299,7 @@ void main() {
       }
     });
 
-    test('Test encoding size efficiency', () {
+    test('Encoding size efficiency', () {
       // Test that numbers are encoded with minimum number of bytes
       ByteWriter bw = ByteWriter();
 
@@ -315,7 +314,7 @@ void main() {
       check(bytes.length).equals(10);
     });
 
-    test('Test consecutive reads and writes', () {
+    test('Consecutive read/write sequence', () {
       // Test the ability to handle sequences of writes followed by sequences of reads
       ByteWriter bw = ByteWriter();
 
