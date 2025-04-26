@@ -165,7 +165,13 @@ public final class MapRefResolver implements RefResolver {
     return nextReadRefId;
   }
 
-  @Override
+    @Override
+    public int preserveRefId(int refId) {
+        readRefIds.add(refId);
+        return refId;
+    }
+
+    @Override
   public int tryPreserveRefId(MemoryBuffer buffer) {
     byte headFlag = buffer.readByte();
     if (headFlag == Fury.REF_FLAG) {
