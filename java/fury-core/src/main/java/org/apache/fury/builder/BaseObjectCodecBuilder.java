@@ -333,11 +333,6 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     ctx.addImports(AbstractCollectionSerializer.class, AbstractMapSerializer.class);
   }
 
-  protected Expression serializeForNullable(
-      Expression inputObject, Expression buffer, TypeRef<?> typeRef, boolean nullable) {
-    return serializeForNullable(inputObject, buffer, typeRef, null, false, nullable);
-  }
-
   /**
    * Returns an expression that serialize an nullable <code>inputObject</code> to <code>buffer
    * </code>.
