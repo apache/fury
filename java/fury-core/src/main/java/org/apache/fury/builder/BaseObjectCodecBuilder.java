@@ -372,6 +372,11 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
   }
 
   protected Expression serializeForNullable(
+      Expression inputObject, Expression buffer, TypeRef<?> typeRef, boolean nullable) {
+    return serializeForNullable(inputObject, buffer, typeRef, null, false, nullable);
+  }
+
+  protected Expression serializeForNullable(
       Expression inputObject,
       Expression buffer,
       TypeRef<?> typeRef,
