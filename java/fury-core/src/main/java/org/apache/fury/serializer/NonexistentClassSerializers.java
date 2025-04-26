@@ -211,13 +211,13 @@ public final class NonexistentClassSerializers {
       }
       for (ObjectSerializer.GenericTypeField fieldInfo : fieldsInfo.otherFields) {
         Object fieldValue =
-            AbstractObjectSerializer.readOtherFieldValue(binding, fieldInfo, buffer);
+            AbstractObjectSerializer.readOtherFieldValue(binding, refResolver, fieldInfo, buffer);
         entries.add(new MapEntry(fieldInfo.qualifiedFieldName, fieldValue));
       }
       Generics generics = fury.getGenerics();
       for (ObjectSerializer.GenericTypeField fieldInfo : fieldsInfo.containerFields) {
         Object fieldValue =
-            AbstractObjectSerializer.readContainerFieldValue(binding, generics, fieldInfo, buffer);
+            AbstractObjectSerializer.readContainerFieldValue(binding, refResolver, generics, fieldInfo, buffer);
         entries.add(new MapEntry(fieldInfo.qualifiedFieldName, fieldValue));
       }
       obj.setEntries(entries);

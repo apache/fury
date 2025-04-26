@@ -290,12 +290,12 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
       }
     }
     for (GenericTypeField fieldInfo : otherFields) {
-      Object fieldValue = readOtherFieldValue(binding, fieldInfo, buffer);
+      Object fieldValue = readOtherFieldValue(binding, refResolver, fieldInfo, buffer);
       fieldValues[counter++] = fieldValue;
     }
     Generics generics = fury.getGenerics();
     for (GenericTypeField fieldInfo : containerFields) {
-      Object fieldValue = readContainerFieldValue(binding, generics, fieldInfo, buffer);
+      Object fieldValue = readContainerFieldValue(binding, refResolver, generics, fieldInfo, buffer);
       fieldValues[counter++] = fieldValue;
     }
     return fieldValues;
@@ -329,13 +329,13 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
       }
     }
     for (GenericTypeField fieldInfo : otherFields) {
-      Object fieldValue = readOtherFieldValue(binding, fieldInfo, buffer);
+      Object fieldValue = readOtherFieldValue(binding, refResolver, fieldInfo, buffer);
       FieldAccessor fieldAccessor = fieldInfo.fieldAccessor;
       fieldAccessor.putObject(obj, fieldValue);
     }
     Generics generics = fury.getGenerics();
     for (GenericTypeField fieldInfo : containerFields) {
-      Object fieldValue = readContainerFieldValue(binding, generics, fieldInfo, buffer);
+      Object fieldValue = readContainerFieldValue(binding, refResolver, generics, fieldInfo, buffer);
       FieldAccessor fieldAccessor = fieldInfo.fieldAccessor;
       fieldAccessor.putObject(obj, fieldValue);
     }
