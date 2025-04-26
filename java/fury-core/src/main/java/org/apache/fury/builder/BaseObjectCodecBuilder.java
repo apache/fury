@@ -333,8 +333,9 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     ctx.addImports(AbstractCollectionSerializer.class, AbstractMapSerializer.class);
   }
 
-  protected Expression serializeFor(Expression inputObject, Expression buffer, TypeRef<?> typeRef) {
-    return serializeFor(inputObject, buffer, typeRef, false);
+  protected Expression serializeForNullable(
+      Expression inputObject, Expression buffer, TypeRef<?> typeRef, boolean nullable) {
+    return serializeForNullable(inputObject, buffer, typeRef, null, false, nullable);
   }
 
   /**
@@ -372,6 +373,40 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
           eqNull(inputObject),
           new Invoke(buffer, "writeByte", new Literal(Fury.NULL_FLAG, PRIMITIVE_BYTE_TYPE)),
           action);
+    }
+  }
+
+  protected Expression serializeForNullable(
+      Expression inputObject,
+      Expression buffer,
+      TypeRef<?> typeRef,
+      Expression serializer,
+      boolean generateNewMethod,
+      boolean nullable) {
+    if (needWriteRef(typeRef)) {
+      return new If(
+          not(writeRefOrNull(buffer, inputObject)),
+          serializeForNotNull(inputObject, buffer, typeRef, serializer, generateNewMethod));
+    } else {
+      // if typeToken is not final, ref tracking of subclass will be ignored too.
+      if (typeRef.isPrimitive()) {
+        return serializeForNotNull(inputObject, buffer, typeRef, serializer, generateNewMethod);
+      }
+      if (nullable) {
+        Expression action =
+            new ListExpression(
+                new Invoke(
+                    buffer,
+                    "writeByte",
+                    new Literal(Fury.NOT_NULL_VALUE_FLAG, PRIMITIVE_BYTE_TYPE)),
+                serializeForNotNull(inputObject, buffer, typeRef, serializer, generateNewMethod));
+        return new If(
+            eqNull(inputObject),
+            new Invoke(buffer, "writeByte", new Literal(Fury.NULL_FLAG, PRIMITIVE_BYTE_TYPE)),
+            action);
+      } else {
+        return serializeForNotNull(inputObject, buffer, typeRef, serializer, generateNewMethod);
+      }
     }
   }
 
@@ -1377,11 +1412,6 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         refResolverRef, "tryPreserveRefId", "refId", PRIMITIVE_INT_TYPE, false, buffer);
   }
 
-  protected Expression deserializeFor(
-      Expression buffer, TypeRef<?> typeRef, Function<Expression, Expression> callback) {
-    return deserializeFor(buffer, typeRef, callback, null);
-  }
-
   /**
    * Returns an expression that deserialize a nullable <code>inputObject</code> from <code>buffer
    * </code>.
@@ -1403,6 +1433,24 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       }
       return readNullable(
           buffer, typeRef, callback, () -> deserializeForNotNull(buffer, typeRef, invokeHint));
+    }
+  }
+
+  protected Expression deserializeForNullable(
+      Expression buffer,
+      TypeRef<?> typeRef,
+      Function<Expression, Expression> callback,
+      boolean nullable) {
+    if (visitFury(f -> f.getClassResolver().needToWriteRef(typeRef))) {
+      return readRef(buffer, callback, () -> deserializeForNotNull(buffer, typeRef, null));
+    } else {
+      if (typeRef.isPrimitive()) {
+        Expression value = deserializeForNotNull(buffer, typeRef, null);
+        // Should put value expr ahead to avoid generated code in wrong scope.
+        return new ListExpression(value, callback.apply(value));
+      }
+      return readNullable(
+          buffer, typeRef, callback, () -> deserializeForNotNull(buffer, typeRef, null), nullable);
     }
   }
 
@@ -1439,6 +1487,26 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     Expression value = deserializeForNotNull.get();
     // use false to ignore null.
     return new If(notNull, callback.apply(value), callback.apply(nullValue(typeRef)), false);
+  }
+
+  private Expression readNullable(
+      Expression buffer,
+      TypeRef<?> typeRef,
+      Function<Expression, Expression> callback,
+      Supplier<Expression> deserializeForNotNull,
+      boolean nullable) {
+    if (nullable) {
+      Expression notNull =
+          neq(
+              inlineInvoke(buffer, "readByte", PRIMITIVE_BYTE_TYPE),
+              new Literal(Fury.NULL_FLAG, PRIMITIVE_BYTE_TYPE));
+      Expression value = deserializeForNotNull.get();
+      // use false to ignore null.
+      return new If(notNull, callback.apply(value), callback.apply(nullValue(typeRef)), false);
+    } else {
+      Expression value = deserializeForNotNull.get();
+      return callback.apply(value);
+    }
   }
 
   protected Expression deserializeForNotNull(

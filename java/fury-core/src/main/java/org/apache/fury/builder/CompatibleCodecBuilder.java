@@ -341,9 +341,13 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
       Expression bean, Expression buffer, FieldInfo fieldInfo) {
     Descriptor descriptor = createDescriptor(fieldInfo);
     walkPath.add(descriptor.getDeclaringClass() + descriptor.getName());
+    boolean nullable = false;
+    if (!descriptor.getTypeRef().isPrimitive()) {
+      nullable = descriptor.getFuryField() == null || descriptor.getFuryField().nullable();
+    }
     Expression fieldValue = getFieldValue(bean, descriptor);
     walkPath.removeLast();
-    return serializeFor(fieldValue, buffer, descriptor.getTypeRef());
+    return serializeForNullable(fieldValue, buffer, descriptor.getTypeRef(), nullable);
   }
 
   @Override
@@ -501,11 +505,16 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
 
   private Expression readEmbedTypes4(
       Expression bean, Expression buffer, Descriptor descriptor, Expression partFieldInfo) {
+    boolean nullable = false;
+    if (!descriptor.getTypeRef().isPrimitive()) {
+      nullable = descriptor.getFuryField() == null || descriptor.getFuryField().nullable();
+    }
     Expression deserializeAction =
-        deserializeFor(
+        deserializeForNullable(
             buffer,
             descriptor.getTypeRef(),
-            expr -> setFieldValue(bean, descriptor, tryInlineCast(expr, descriptor.getTypeRef())));
+            expr -> setFieldValue(bean, descriptor, tryInlineCast(expr, descriptor.getTypeRef())),
+            nullable);
     return new ListExpression(
         deserializeAction,
         new Assign(partFieldInfo, inlineInvoke(buffer, readIntFunc(), PRIMITIVE_LONG_TYPE)));
@@ -706,11 +715,16 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
 
   private Expression readEmbedTypes8Field(
       Expression bean, Expression buffer, Descriptor descriptor, Expression partFieldInfo) {
+    boolean nullable = false;
+    if (!descriptor.getTypeRef().isPrimitive()) {
+      nullable = descriptor.getFuryField() == null || descriptor.getFuryField().nullable();
+    }
     Expression deserializeAction =
-        deserializeFor(
+        deserializeForNullable(
             buffer,
             descriptor.getTypeRef(),
-            expr -> setFieldValue(bean, descriptor, tryInlineCast(expr, descriptor.getTypeRef())));
+            expr -> setFieldValue(bean, descriptor, tryInlineCast(expr, descriptor.getTypeRef())),
+            nullable);
     return new ListExpression(
         deserializeAction,
         new Assign(partFieldInfo, inlineInvoke(buffer, readLongFunc(), PRIMITIVE_LONG_TYPE)));
