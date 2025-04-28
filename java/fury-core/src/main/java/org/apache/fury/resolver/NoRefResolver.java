@@ -65,12 +65,12 @@ public final class NoRefResolver implements RefResolver {
     return -1;
   }
 
-    @Override
-    public int preserveRefId(int refId) {
-        return -1;
-    }
+  @Override
+  public int preserveRefId(int refId) {
+    return -1;
+  }
 
-    @Override
+  @Override
   public int tryPreserveRefId(MemoryBuffer buffer) {
     // `NOT_NULL_VALUE_FLAG` can be used as stub reference id because we use
     // `refId >= NOT_NULL_VALUE_FLAG` to read data.

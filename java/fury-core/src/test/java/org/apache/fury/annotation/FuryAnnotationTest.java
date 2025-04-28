@@ -20,7 +20,6 @@
 package org.apache.fury.annotation;
 
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertThrows;
 
 import com.google.common.collect.Lists;
 import java.util.List;
@@ -134,7 +133,7 @@ public class FuryAnnotationTest extends FuryTestBase {
   @Data
   public static class BeanM1 {
 
-    @FuryField private BeanN beanN;
+    @FuryField private BeanN beanN = new BeanN();
   }
 
   @Test(dataProvider = "basicMultiConfigFury")
@@ -168,10 +167,6 @@ public class FuryAnnotationTest extends FuryTestBase {
             .withCodegen(false)
             .build();
     BeanM1 o1 = new BeanM1();
-    if (referenceTracking) {
-      assertEquals(serDe(fury, o1), o1);
-    } else {
-      assertThrows(NullPointerException.class, () -> fury.serialize(o1));
-    }
+    assertEquals(serDe(fury, o1), o1);
   }
 }

@@ -91,7 +91,7 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
       if (!fieldInfo.trackingRef) {
         return binding.readNullable(buffer, serializer, nullable);
       }
-        refResolver.preserveRefId(-1);
+      refResolver.preserveRefId(-1);
       // whether tracking ref is recorded in `fieldInfo.serializer`, so it's still
       // consistent with jit serializer.
       fieldValue = binding.readRef(buffer, serializer);
@@ -121,14 +121,17 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
   }
 
   static Object readOtherFieldValue(
-      SerializationBinding binding, RefResolver refResolver, GenericTypeField fieldInfo, MemoryBuffer buffer) {
+      SerializationBinding binding,
+      RefResolver refResolver,
+      GenericTypeField fieldInfo,
+      MemoryBuffer buffer) {
     Object fieldValue;
     boolean nullable = fieldInfo.nullable;
     if (fieldInfo.trackingRef) {
       fieldValue = binding.readRef(buffer, fieldInfo);
     } else {
-        refResolver.preserveRefId(-1);
-        if (nullable) {
+      refResolver.preserveRefId(-1);
+      if (nullable) {
         byte headFlag = buffer.readByte();
         if (headFlag == Fury.NULL_FLAG) {
           return null;
@@ -151,8 +154,8 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
       fieldValue = binding.readContainerFieldValueRef(buffer, fieldInfo);
       generics.popGenericType();
     } else {
-        refResolver.preserveRefId(-1);
-        boolean nullable = fieldInfo.nullable;
+      refResolver.preserveRefId(-1);
+      boolean nullable = fieldInfo.nullable;
       if (nullable) {
         byte headFlag = buffer.readByte();
         if (headFlag == Fury.NULL_FLAG) {
