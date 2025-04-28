@@ -119,113 +119,118 @@ void _basicTypeTest(bool refTracking) {
 }
 
 void main() {
-  group('test cross language datatype serialization', () {
+  group('Cross-language data type serialization', () {
+    test(
+      'serializes various datatypes via ByteWriter',
+      () {
+        Fury fury = Fury(
+          refTracking: true,
+        );
+        ByteWriter bw = ByteWriter();
+        fury.toFuryWithWriter(true,bw);
+        fury.toFuryWithWriter(false, bw);
+        fury.toFuryWithWriter(Int32(-1),bw);
+        fury.toFuryWithWriter(Int8.maxValue, bw);
+        fury.toFuryWithWriter(Int8.minValue, bw);
+        fury.toFuryWithWriter(Int16.maxValue, bw);
+        fury.toFuryWithWriter(Int16.minValue, bw);
+        fury.toFuryWithWriter(Int32.maxValue, bw);
+        fury.toFuryWithWriter(Int32.minValue, bw);
+        fury.toFuryWithWriter(0x7fffffffffffffff, bw);
+        fury.toFuryWithWriter(0x8000000000000000, bw);
+        fury.toFuryWithWriter(Float32(-1.0), bw);
+        fury.toFuryWithWriter(-1.0, bw);
+        fury.toFuryWithWriter('str', bw);
 
-    test('testCrossLanguageSerializer', () {
-      Fury fury = Fury(
-        refTracking: true,
-      );
-      ByteWriter bw = ByteWriter();
-      fury.toFuryWithWriter(true,bw);
-      fury.toFuryWithWriter(false, bw);
-      fury.toFuryWithWriter(Int32(-1),bw);
-      fury.toFuryWithWriter(Int8.maxValue, bw);
-      fury.toFuryWithWriter(Int8.minValue, bw);
-      fury.toFuryWithWriter(Int16.maxValue, bw);
-      fury.toFuryWithWriter(Int16.minValue, bw);
-      fury.toFuryWithWriter(Int32.maxValue, bw);
-      fury.toFuryWithWriter(Int32.minValue, bw);
-      fury.toFuryWithWriter(0x7fffffffffffffff, bw);
-      fury.toFuryWithWriter(0x8000000000000000, bw);
-      fury.toFuryWithWriter(Float32(-1.0), bw);
-      fury.toFuryWithWriter(-1.0, bw);
-      fury.toFuryWithWriter('str', bw);
+        LocalDate day = LocalDate(2021, 11, 23);
+        fury.toFuryWithWriter(day, bw);
 
-      LocalDate day = LocalDate(2021, 11, 23);
-      fury.toFuryWithWriter(day, bw);
+        TimeStamp ts = TimeStamp.fromSecondsSinceEpoch(100);
+        fury.toFuryWithWriter(ts, bw);
 
-      TimeStamp ts = TimeStamp.fromSecondsSinceEpoch(100);
-      fury.toFuryWithWriter(ts, bw);
+        List<Object> list = ['a', Int32(1), -1.0, ts,day];
+        fury.toFuryWithWriter(list, bw);
 
-      List<Object> list = ['a', Int32(1), -1.0, ts,day];
-      fury.toFuryWithWriter(list, bw);
+        Map<Object, Object> map = HashMap();
+        for (int i = 0; i < list.length; ++i) {
+          map['k$i'] = list[i];
+          map[list[i]] = list[i];
+        }
+        fury.toFuryWithWriter(map, bw);
 
-      Map<Object, Object> map = HashMap();
-      for (int i = 0; i < list.length; ++i) {
-        map['k$i'] = list[i];
-        map[list[i]] = list[i];
-      }
-      fury.toFuryWithWriter(map, bw);
+        Set<Object> set = HashSet.of(list);
+        fury.toFuryWithWriter(set, bw);
 
-      Set<Object> set = HashSet.of(list);
-      fury.toFuryWithWriter(set, bw);
+        BoolList blist = BoolList.of([true, false]);
+        fury.toFuryWithWriter(blist, bw);
 
-      BoolList blist = BoolList.of([true, false]);
-      fury.toFuryWithWriter(blist, bw);
+        Int16List i16list = Int16List.fromList([1,32767]);
+        fury.toFuryWithWriter(i16list, bw);
 
-      Int16List i16list = Int16List.fromList([1,32767]);
-      fury.toFuryWithWriter(i16list, bw);
+        Int32List i32list = Int32List.fromList([1, 0x7fffffff]);
+        fury.toFuryWithWriter(i32list, bw);
 
-      Int32List i32list = Int32List.fromList([1, 0x7fffffff]);
-      fury.toFuryWithWriter(i32list, bw);
+        Int64List i64list = Int64List.fromList([1, 0x7fffffffffffffff]);
+        fury.toFuryWithWriter(i64list, bw);
 
-      Int64List i64list = Int64List.fromList([1, 0x7fffffffffffffff]);
-      fury.toFuryWithWriter(i64list, bw);
+        Float32List f32list = Float32List.fromList([1.0, 2.0]);
+        fury.toFuryWithWriter(f32list, bw);
 
-      Float32List f32list = Float32List.fromList([1.0, 2.0]);
-      fury.toFuryWithWriter(f32list, bw);
+        Float64List f64list = Float64List.fromList([1.0, 2.0]);
+        fury.toFuryWithWriter(f64list, bw);
 
-      Float64List f64list = Float64List.fromList([1.0, 2.0]);
-      fury.toFuryWithWriter(f64list, bw);
+        Uint8List bytes1 = bw.takeBytes();
 
-      Uint8List bytes1 = bw.takeBytes();
+        testFunc(Uint8List bytes) {
+          ByteReader br = ByteReader.forBytes(bytes);
+          check(fury.fromFury(bytes, br) as bool).isTrue();
+          check(fury.fromFury(bytes, br) as bool).isFalse();
+          check(Int32(-1) == fury.fromFury(bytes, br)).isTrue();
+          check(Int8.maxValue == fury.fromFury(bytes, br)).isTrue();
+          check(Int8.minValue == fury.fromFury(bytes, br)).isTrue();
+          check(Int16.maxValue == fury.fromFury(bytes, br)).isTrue();
+          check(Int16.minValue == fury.fromFury(bytes, br)).isTrue();
+          check(Int32.maxValue == fury.fromFury(bytes, br)).isTrue();
+          check(Int32.minValue == fury.fromFury(bytes, br)).isTrue();
+          check(fury.fromFury(bytes, br) as int).equals(0x7fffffffffffffff);
+          check(fury.fromFury(bytes, br) as int).equals(0x8000000000000000);
+          check(Float32(-1.0) == fury.fromFury(bytes, br)).isTrue();
+          check(fury.fromFury(bytes, br) as double).equals(-1.0);
+          check(fury.fromFury(bytes, br) as String).equals('str');
 
-      testFunc(Uint8List bytes) {
-        ByteReader br = ByteReader.forBytes(bytes);
-        check(fury.fromFury(bytes, br) as bool).isTrue();
-        check(fury.fromFury(bytes, br) as bool).isFalse();
-        check(Int32(-1) == fury.fromFury(bytes, br)).isTrue();
-        check(Int8.maxValue == fury.fromFury(bytes, br)).isTrue();
-        check(Int8.minValue == fury.fromFury(bytes, br)).isTrue();
-        check(Int16.maxValue == fury.fromFury(bytes, br)).isTrue();
-        check(Int16.minValue == fury.fromFury(bytes, br)).isTrue();
-        check(Int32.maxValue == fury.fromFury(bytes, br)).isTrue();
-        check(Int32.minValue == fury.fromFury(bytes, br)).isTrue();
-        check(fury.fromFury(bytes, br) as int).equals(0x7fffffffffffffff);
-        check(fury.fromFury(bytes, br) as int).equals(0x8000000000000000);
-        check(Float32(-1.0) == fury.fromFury(bytes, br)).isTrue();
-        check(fury.fromFury(bytes, br) as double).equals(-1.0);
-        check(fury.fromFury(bytes, br) as String).equals('str');
+          check(fury.fromFury(bytes, br) as LocalDate).equals(day);
+          check(fury.fromFury(bytes, br) as TimeStamp).equals(ts);
+          check((fury.fromFury(bytes, br) as List).strEquals(list)).isTrue();
+          check((fury.fromFury(bytes, br) as Map).equals(map)).isTrue();
+          check((fury.fromFury(bytes, br) as Set).equals(set)).isTrue();
+          check((fury.fromFury(bytes, br) as BoolList).equals(blist)).isTrue();
+          check((fury.fromFury(bytes, br) as Int16List).equals(i16list)).isTrue();
+          check((fury.fromFury(bytes, br) as Int32List).equals(i32list)).isTrue();
+          check((fury.fromFury(bytes, br) as Int64List).equals(i64list)).isTrue();
+          check((fury.fromFury(bytes, br) as Float32List).equals(f32list)).isTrue();
+          check((fury.fromFury(bytes, br) as Float64List).equals(f64list)).isTrue();
+        }
+        testFunc(bytes1);
 
-        check(fury.fromFury(bytes, br) as LocalDate).equals(day);
-        check(fury.fromFury(bytes, br) as TimeStamp).equals(ts);
-        check((fury.fromFury(bytes, br) as List).strEquals(list)).isTrue();
-        check((fury.fromFury(bytes, br) as Map).equals(map)).isTrue();
-        check((fury.fromFury(bytes, br) as Set).equals(set)).isTrue();
-        check((fury.fromFury(bytes, br) as BoolList).equals(blist)).isTrue();
-        check((fury.fromFury(bytes, br) as Int16List).equals(i16list)).isTrue();
-        check((fury.fromFury(bytes, br) as Int32List).equals(i32list)).isTrue();
-        check((fury.fromFury(bytes, br) as Int64List).equals(i64list)).isTrue();
-        check((fury.fromFury(bytes, br) as Float32List).equals(f32list)).isTrue();
-        check((fury.fromFury(bytes, br) as Float64List).equals(f64list)).isTrue();
-      }
-      testFunc(bytes1);
+        File file = TestFileUtil.getWriteFile('test_cross_language_serializer', bytes1);
+        bool exeRes = CrossLangUtil.executeWithPython('test_cross_language_serializer', file.path);
+        check(exeRes).isTrue();
+        Uint8List bytes2 = file.readAsBytesSync();
+        testFunc(bytes2);
+      });
 
-      File file = TestFileUtil.getWriteFile('test_cross_language_serializer', bytes1);
-      bool exeRes = CrossLangUtil.executeWithPython('test_cross_language_serializer', file.path);
-      check(exeRes).isTrue();
-      Uint8List bytes2 = file.readAsBytesSync();
-      testFunc(bytes2);
-    });
+    test(
+      'round-trips basic types with/without refTracking',
+      () {
+        _basicTypeTest(true);
+        _basicTypeTest(false);
+      });
 
-    test('Test Basic Types Serialization', () {
-      _basicTypeTest(true);
-      _basicTypeTest(false);
-    });
-
-    test('Test Array and Collection Types Serialization', () {
-      _testArrayCollection(true);
-      _testArrayCollection(false);
-    });
+    test(
+      'round-trips arrays & collections with/without refTracking',
+      () {
+        _testArrayCollection(true);
+        _testArrayCollection(false);
+      });
   });
 }

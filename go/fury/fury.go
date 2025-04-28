@@ -84,6 +84,7 @@ const (
 	GO
 	JAVASCRIPT
 	RUST
+	DART
 )
 
 const (

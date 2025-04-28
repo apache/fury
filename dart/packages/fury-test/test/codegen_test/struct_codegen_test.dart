@@ -26,9 +26,8 @@ import 'package:fury_test/entity/complex_obj_2.dart';
 import 'package:test/test.dart';
 
 void main(){
-  group('Simple Struct Code Generation', () {
-
-    test('test struct spec generation', () async {
+  group('Struct codegen for ComplexObject2', () {
+    test('generates ClassSpec for ComplexObject2', () async {
       ClassSpec spec = ClassSpec(
         ComplexObject2,
         true, false,

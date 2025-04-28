@@ -44,6 +44,7 @@ import org.apache.fury.codegen.Expression.ListExpression;
 import org.apache.fury.codegen.Expression.LogicalAnd;
 import org.apache.fury.codegen.Expression.LogicalOr;
 import org.apache.fury.codegen.Expression.Null;
+import org.apache.fury.codegen.Expression.Return;
 import org.apache.fury.codegen.Expression.Variable;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeRef;
@@ -59,6 +60,13 @@ public class ExpressionUtils {
 
   public static Expression newObjectArray(Expression... expressions) {
     return new NewArray(TypeRef.of(Object[].class), expressions);
+  }
+
+  public static boolean isReturn(Expression expr) {
+    if (expr instanceof ListExpression) {
+      expr = ((ListExpression) expr).last();
+    }
+    return expr instanceof Return;
   }
 
   public static Expression ofInt(String name, int v) {
@@ -98,7 +106,7 @@ public class ExpressionUtils {
   public static LogicalOr or(Expression left, Expression right, Expression... expressions) {
     LogicalOr logicalOr = new LogicalOr(left, right);
     for (Expression expression : expressions) {
-      logicalOr = new LogicalOr(left, expression);
+      logicalOr = new LogicalOr(logicalOr, expression);
     }
     return logicalOr;
   }

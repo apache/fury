@@ -1799,6 +1799,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
                   new Assign(
                       chunkHeader, cast(bitand(sizeAndHeader, ofInt(0xff)), PRIMITIVE_INT_TYPE)),
                   new Assign(size, cast(shift(">>>", sizeAndHeader, 8), PRIMITIVE_INT_TYPE)));
+              exprs.add(new If(eq(size, ofInt(0)), new Break()));
               Expression sizeAndHeader2 =
                   readChunk(buffer, newMap, size, keyType, valueType, chunkHeader);
               if (inline) {

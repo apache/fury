@@ -30,8 +30,8 @@ import 'package:checks/checks.dart';
 import 'package:test/test.dart';
 
 void main(){
-  group('Simple Struct Code Generation Tests', () {
-    test('should verify code generation for a simple enum', () async {
+  group('Simple struct codegen', () {
+    test('generates EnumSpecs from enum_foo.dart', () async {
       // await runBuild();
       AssetId inputId = AssetId('fury-test', 'lib/entity/enum_foo.dart');
       var lib = await resolveAsset(inputId, (resolver) async {
@@ -52,7 +52,7 @@ void main(){
       check(variables.equals(['\$EnumFoo', '\$EnumSubClass'])).isTrue();
     });
 
-    test('should validate code presence for a simple struct', () async {
+    test('generates ClassSpec and mixin from time_obj.dart', () async {
       // await runBuild();
       AssetId inputId = AssetId('fury-test', 'lib/entity/time_obj.dart');
       var lib = await resolveAsset(inputId, (resolver) async {
