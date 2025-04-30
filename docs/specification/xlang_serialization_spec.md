@@ -214,14 +214,30 @@ not-null by default, or using schema-evolution mode to carry the not-null fields
 
 ## Type Meta
 
-For every type to be serialized, it must be registered with an optional ID first. The registered type will have a
-user-provided or an auto-growing unsigned int i.e. `type_id`. The registration can be used for security check and type
-identification. The id of user registered type will be added by `64` to make space for Fury internal data types.
+For every type to be serialized, it have a type id to indicate its type.
 
-Depending on whether meta share mode and registration is enabled for current type, Fury will write type meta
+- basic types: the type id
+- enum:
+  - `Type.ENUM` + registered id
+  - `Type.NAMED_ENUM` + registered namespace+typename
+- list: `Type.List`
+- set: `Type.SET`
+- map: `Type.MAP`
+- ext:
+  - `Type.EXT` + registered id
+  - `Type.NAMED_EXT` + registered namespace+typename
+- struct:
+  - `Type.STRUCT` + struct meta
+  - `Type.NAMED_STRUCT` + struct meta
+
+
+Every type must be registered with an ID or name first. The registration can be used for security check and type
+identification.
+
+Struct is a special type, depending whether schema compatibility is enabled, Fury will write struct meta
 differently.
 
-### Schema consistent
+### Struct Schema consistent
 
 - If schema consistent mode is enabled globally when creating fury, type meta will be written as a fury unsigned varint
   of `type_id`. Schema evolution related meta will be ignored.
@@ -231,7 +247,7 @@ differently.
       registering type.
   - Get index of the meta in `captured_type_defs`, write that index as `| unsigned varint: index |`.
 
-### Schema evolution
+### Struct Schema evolution
 
 If schema evolution mode is enabled globally when creating fury, and enabled for current type, type meta will be written
 using one of the following mode. Which mode to use is configured when creating fury.
@@ -291,12 +307,115 @@ using one of the following mode. Which mode to use is configured when creating f
 Here we mainly describe the meta layout for schema evolution mode:
 
 ```
-|      8 bytes meta header      |   variable bytes   |  variable bytes   | variable bytes |
-+-------------------------------+--------------------+-------------------+----------------+
-| 7 bytes hash + 1 bytes header |  current type meta |  parent type meta |      ...       |
+|    8 bytes header    |   variable bytes   |  variable bytes   |
++----------------------+--------------------+-------------------+
+| global binary header |    meta header     |    fields meta    |
+```
+For languages which support inheritance, if parent class and subclass has fields with same name, using field in
+subclass.
+
+##### Global binary header
+
+50 bits hash + 1bit compress flag + 13 bits meta size. Right is the lower bits.
+
+When meta size is equal to or greater than 8192, then write `meta size - 8192` as a varuint32 value later.
+
+##### Meta header
+
+Meta header is a 8 bits number value.
+
+- Lowest 5 digits `0b00000~0b11110` are used to record num fields. `0b11111` is preserved to indicate that Fury need to
+  read more bytes for length using Fury unsigned int encoding. Note that num_fields is the number of compatible fields.
+  Users can use tag id to mark some fields as compatible fields in schema consistent context. In such cases, schema
+  consistent fields will be serialized first, then compatible fields will be serialized next. At deserialization,
+  Fury will use fields info of those fields which aren't annotated by tag id for deserializing schema consistent
+  fields, then use fields info in meta for deserializing compatible fields.
+- The 6th bit: 0 for registered by id, 1 for registered by name.
+- Remaining 2 bits are reserved for future extension.
+
+##### Fields meta
+
+Format:
+
+```
+|   field info: variable bytes    | variable bytes  | ... |
++---------------------------------+-----------------+-----+
+| header + type info + field name | next field info | ... |
 ```
 
-Type meta are encoded from parent type to leaf type, only type with serializable fields will be encoded.
+###### Field Header
+
+Field Header is 8 bits, annotation can be used to provide more specific info. If annotation not exists, fury will infer
+those info automatically.
+
+The format for field header is:
+
+```
+2 bits field name encoding + 4 bits size + nullability flag + ref tracking flag
+```
+
+Detailed spec:
+- 2 bits field name encoding:
+  - encoding: `UTF8/ALL_TO_LOWER_SPECIAL/LOWER_UPPER_DIGIT_SPECIAL/TAG_ID`
+  - If tag id is used, field name will be written by an unsigned varint tag id, and 2 bits encoding will be `11`.
+- size of field name:
+  - The `4 bits size: 0~14`  will be used to indicate length `1~15`, the value `15` indicates to read more bytes,
+          the encoding will encode `size - 15` as a varint next.
+  - If encoding is `TAG_ID`, then num_bytes of field name will be used to store tag id.
+- ref tracking: when set to 1, ref tracking will be enabled for this field.
+- nullability: when set to 1, this field can be null.
+
+###### Field Type Info
+
+Field type info is written as unsigned int8. Detailed id spec is:
+- For struct registered by id, it will be `Type.STRUCT`.
+- For struct registered by name, it will be `Type.NAMED_STRUCT`.
+- For enum registered by id, it will be `Type.ENUM`.
+- For enum registered by name, it will be `Type.NAMED_ENUM`.
+- For ext type registered by id, it will be `Type.EXT`.
+- For ext type registered by name, it will be `Type.NAMED_EXT`.
+- For other types supported by fury, it will be fury type id for that type.
+- For list/set type, it will be written as `Type.LIST/SET`, then write element type recursively.
+- For map type, it will be written as `Type.MAP`, then write key and value type recursively.
+
+Polymorphism spec:
+- `struct/named_struct/ext/named_ext` are taken as polymorphic, the meta for those types are written separately
+  instead of inlining here to reduce meta space cost if object of this type is serialized in current object graph
+  multiple times, and the field value may be null too.
+- `enum` is taken as morphic, if deserialization doesn't have this field, or the type is not enum, enum value
+  will be skipped.
+- `list/map/set` are taken as morphic, when serializing values of those type, the concrete types won't be written
+  again.
+- Other types that fury supported are taken as morphic too.
+
+###### Field Name
+
+If tag id is set, tag id will be used instead. Otherwise meta string of field name will  be written instead.
+
+###### Field order
+
+Field order are left as implementation details, which is not exposed to specification, the deserialization need to
+resort fields based on Fury fields sort algorithms. In this way, fury can compute statistics for field names or types and
+using a more compact encoding.
+
+## Extended Type Meta with Inheritance support
+
+If one want to support inheritance for struct, one can implement following spec.
+
+### Schema consistent
+
+Fields are serialized from parent type to leaf type. Fields are sorted using fury struct fields sort algorithms.
+
+
+### Schema Evolution
+
+Meta layout for schema evolution mode:
+
+```
+|    8 bytes header    | variable bytes | variable bytes |   variable bytes   |   variable bytes   |
++----------------------+----------------+----------------+--------------------+--------------------+
+| global binary header |  meta header   |  fields meta   | parent meta header | parent fields meta |
+```
 
 ##### Meta header
 
@@ -316,44 +435,6 @@ Meta header is a 64 bits number value encoded in little endian order.
 +-----------------+----------+-------------------------------+-----------------+-----+
 |   num_fields    | type id  | header + type id + field name | next field info | ... |
 ```
-
-- num fields: encode `num fields` as unsigned varint.
-  - If the current type is schema consistent, then num_fields will be `0` to flag it.
-  - If the current type isn't schema consistent, then num_fields will be the number of compatible fields. For example,
-      users can use tag id to mark some fields as compatible fields in schema consistent context. In such cases, schema
-      consistent fields will be serialized first, then compatible fields will be serialized next. At deserialization,
-      Fury will use fields info of those fields which aren't annotated by tag id for deserializing schema consistent
-      fields, then use fields info in meta for deserializing compatible fields.
-- type id: the registered id for the current type, which will be written as an unsigned varint.
-- field info:
-  - header(8
-      bits): `4 bits size + 2 bits field name encoding + nullability flag + ref tracking flag`.
-      Users can use annotation to provide those info.
-    - 2 bits field name encoding:
-      - encoding: `UTF8/ALL_TO_LOWER_SPECIAL/LOWER_UPPER_DIGIT_SPECIAL/TAG_ID`
-      - If tag id is used, i.e. field name is written by an unsigned varint tag id. 2 bits encoding will be `11`.
-    - size of field name:
-      - The `4 bits size: 0~14`  will be used to indicate length `1~15`, the value `15` indicates to read more bytes,
-              the encoding will encode `size - 15` as a varint next.
-      - If encoding is `TAG_ID`, then num_bytes of field name will be used to store tag id.
-    - ref tracking: when set to 1, ref tracking will be enabled for this field.
-    - nullability: when set to 1, this field can be null.
-  - field name: If tag id is set, tag id will be used instead. Otherwise meta string encoding `[length]` and data will
-      be written instead.
-  - type id:
-    - Format: `id << 1 | polymorphic flag`. If field type is polymorphic, this flag is set to `0b1`, otherwise it's
-      `0b0`
-    - For registered type-consistent classes, it will be the registered type id.
-    - For struct type it will be written as `STRUCT`.
-    - The meta for struct type is written separately instead of inlining here is to reduce meta space cost if object of
-      this type is serialized in current object graph multiple times, and the field value may be null too.
-    - For enum type, it will be written as `ENUM`.
-    - For collection type, it will be written as `COLLECTION`, then write element type recursively.
-    - For map type, it will be written as `MAP`, then write key and value type recursively.
-
-Field order are left as implementation details, which is not exposed to specification, the deserialization need to
-resort fields based on Fury field comparator. In this way, fury can compute statistics for field names or types and
-using a more compact encoding.
 
 ##### Other layers type meta
 
@@ -500,7 +581,7 @@ Which encoding to choose:
 Format:
 
 ```
-| unsigned varint64: length << 4 `bitor` 4 bits elements header | elements data |
+| unsigned varint64: length | 1 byte elements header | elements data |
 ```
 
 #### elements header
@@ -664,12 +745,31 @@ Depending on schema compatibility, structs will have different formats.
 
 Field will be ordered as following, every group of fields will have its own order:
 
-- primitive fields: larger size type first, smaller later, variable size type last.
-- boxed primitive fields: same order as primitive fields
-- final fields: same type together, then sorted by field name lexicographically.
-- list fields: same order as final fields
-- map fields: same order as final fields
-- other fields: same order as final fields
+- primitive fields:
+  - larger size type first, smaller later, variable size type last.
+  - when same size, sort by type id
+  - when same size and type id, sort by snake case field name
+  - types: bool/int8/int16/int32/varint32/int64/varint64/sliint64/float16/float32/float64
+- nullable primitive fields: same order as primitive fields
+- morphic fields: same type together, then sorted by field name lexicographically using snake case style.
+- unknown fields: same sort algorithms as morphic fields
+- list fields: same sort algorithms as morphic fields
+- set fields: same sort algorithms as morphic fields
+- map fields: same sort algorithms as morphic fields
+
+#### Field order
+
+Fields in a struct are sorted in a ascending order by:
+- primitive fields first: bool/int8/int16/int32/varint32/int64/varint64/sliint64/float16/float32/float64, sorted by
+  type id.
+- nullable primitive fields
+- morphic types except `list/set/map`
+- unknown types
+- list types
+- set types
+- map types
+
+If two fields have same type, then sort by snake_case styled field name.
 
 #### schema consistent
 
