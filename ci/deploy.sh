@@ -144,6 +144,7 @@ deploy_python() {
     # Ensure bazel select the right version of python
     bazel clean --expunge
     install_pyarrow
+    pip install pip==25.0.1 setuptools==79.0.1
     pip install --ignore-installed twine setuptools cython numpy
     pyarrow_dir=$(python -c "import importlib.util; import os; print(os.path.dirname(importlib.util.find_spec('pyarrow').origin))")
     # ensure pyarrow is clean
