@@ -171,6 +171,8 @@ func (f *Fury) Write(buffer *ByteBuffer, v interface{}) (err error) {
 	switch v := v.(type) {
 	case nil:
 		buffer.WriteInt8(NullFlag)
+	case bool:
+		f.WriteBool(buffer, v)
 	case int32:
 		f.WriteInt32(buffer, v)
 	case int64:
@@ -197,6 +199,12 @@ func (f *Fury) WriteInt16(buffer *ByteBuffer, v interface{}) {
 	buffer.WriteInt8(NotNullValueFlag)
 	buffer.WriteInt16(INT32)
 	buffer.WriteInt32(v.(int32))
+}
+
+func (f *Fury) WriteBool(buffer *ByteBuffer, v interface{}) {
+	buffer.WriteInt8(NotNullValueFlag)
+	buffer.WriteInt16(BOOL)
+	buffer.WriteBool(v.(bool))
 }
 
 func (f *Fury) WriteInt32(buffer *ByteBuffer, v interface{}) {
