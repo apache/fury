@@ -35,7 +35,7 @@ install_python() {
 install_pyfury() {
   echo "Python version $(python -V), path $(which python)"
   "$ROOT"/ci/deploy.sh install_pyarrow
-  pip install --no-upgrade Cython==3.0.12 wheel pytest
+  pip install Cython==3.0.12 wheel pytest
   pushd "$ROOT/python"
   pip list
   echo "Install pyfury"
