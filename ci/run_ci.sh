@@ -42,7 +42,7 @@ install_pyfury() {
   # Fix strange installed deps not found
   pip install setuptools -U
   bazel build //:cp_fury_so
-  pip install -v -e . --no-build-isolation
+  pip install -v -e .
   popd
 }
 
