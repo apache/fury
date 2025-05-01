@@ -35,14 +35,14 @@ install_python() {
 install_pyfury() {
   echo "Python version $(python -V), path $(which python)"
   "$ROOT"/ci/deploy.sh install_pyarrow
-  pip install Cython==3.0.12 wheel pytest
+  pip install Cython wheel pytest
   pushd "$ROOT/python"
   pip list
   echo "Install pyfury"
   # Fix strange installed deps not found
   # pip install setuptools -U
   bazel build //:cp_fury_so
-  pip install -v -e .
+  pip install -v -e . --no-use-pep517 --config-settings editable_mode=compat
   popd
 }
 
