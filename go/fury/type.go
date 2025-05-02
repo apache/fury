@@ -34,86 +34,125 @@ const (
 	// NA A NullFlag type having no physical storage
 	NA TypeId = iota // NA = 0
 	// BOOL Boolean as 1 bit LSB bit-packed ordering
-	BOOL
-	// UINT8 Unsigned 8-bit little-endian integer
-	UINT8
+	BOOL = 1
 	// INT8 Signed 8-bit little-endian integer
-	INT8
-	// UINT16 Unsigned 16-bit little-endian integer
-	UINT16
+	INT8 = 2
 	// INT16 Signed 16-bit little-endian integer
-	INT16
-	// UINT32 Unsigned 32-bit little-endian integer
-	UINT32
+	INT16 = 3
 	// INT32 Signed 32-bit little-endian integer
-	INT32
-	// UINT64 Unsigned 64-bit little-endian integer
-	UINT64
+	INT32 = 4
+	// VAR_INT32 a 32-bit signed integer which uses fury var_int32 encoding
+	VAR_INT32 = 5
 	// INT64 Signed 64-bit little-endian integer
-	INT64
+	INT64 = 6
+	// VAR_INT64 a 64-bit signed integer which uses fury PVL encoding
+	VAR_INT64 = 7
+	// SLI_INT64 a 64-bit signed integer which uses fury SLI encoding
+	SLI_INT64 = 8
 	// HALF_FLOAT 2-byte floating point value
-	HALF_FLOAT
+	HALF_FLOAT = 9
 	// FLOAT 4-byte floating point value
-	FLOAT
+	FLOAT = 10
 	// DOUBLE 8-byte floating point value
-	DOUBLE
+	DOUBLE = 11
 	// STRING UTF8 variable-length string as List<Char>
-	STRING
-	// BINARY Variable-length bytes (no guarantee of UTF8-ness)
-	BINARY
-	// FIXED_SIZE_BINARY Fixed-size binary. Each value occupies the same number of bytes
-	FIXED_SIZE_BINARY
-	// DATE32 int32_t days since the UNIX epoch
-	DATE32
-	// DATE64 int64_t milliseconds since the UNIX epoch
-	DATE64
-	// TIMESTAMP Exact timestamp encoded with int64 since UNIX epoch
-	// Default unit millisecond
-	TIMESTAMP
-	// TIME32 Time as signed 32-bit integer representing either seconds or
-	// milliseconds since midnight
-	TIME32
-	// TIME64 Time as signed 64-bit integer representing either microseconds or
-	// nanoseconds since midnight
-	TIME64
-	// INTERVAL_MONTHS YEAR_MONTH interval in SQL style
-	INTERVAL_MONTHS
-	// INTERVAL_DAY_TIME DAY_TIME interval in SQL style
-	INTERVAL_DAY_TIME
-	// DECIMAL128 Precision- and scale-based decimal type with 128 bits.
-	DECIMAL128
-	// DECIMAL256 Precision- and scale-based decimal type with 256 bits.
-	DECIMAL256
+	STRING = 12
+	// ENUM a data type consisting of a set of named values
+	ENUM = 13
+	// NAMED_ENUM an enum whose value will be serialized as the registered name
+	NAMED_ENUM = 14
+	// STRUCT a morphic(final) type serialized by Fury Struct serializer
+	STRUCT = 15
+	// COMPATIBLE_STRUCT a morphic(final) type serialized by Fury compatible Struct serializer
+	COMPATIBLE_STRUCT = 16
+	// NAMED_STRUCT a struct whose type mapping will be encoded as a name
+	NAMED_STRUCT = 17
+	// NAMED_COMPATIBLE_STRUCT a compatible_struct whose type mapping will be encoded as a name
+	NAMED_COMPATIBLE_STRUCT = 18
+	// EXTENSION a type which will be serialized by a customized serializer
+	EXTENSION = 19
+	// NAMED_EXT an ext type whose type mapping will be encoded as a name
+	NAMED_EXT = 20
 	// LIST A list of some logical data type
-	LIST
-	// STRUCT Struct of logical types
-	STRUCT
-	// SPARSE_UNION Sparse unions of logical types
-	SPARSE_UNION
-	// DENSE_UNION Dense unions of logical types
-	DENSE_UNION
-	// DICTIONARY Dictionary-encoded type also called "categorical" or "factor"
-	// in other programming languages. Holds the dictionary value
-	// type but not the dictionary itself which is part of the
-	// ArrayData struct
-	DICTIONARY
+	LIST = 21
+	// SET an unordered set of unique elements
+	SET = 22
 	// MAP Map a repeated struct logical type
-	MAP
-	// EXTENSION Custom data type implemented by user
-	EXTENSION
-	// FIXED_SIZE_LIST Fixed size list of some logical type
-	FIXED_SIZE_LIST
+	MAP = 23
 	// DURATION Measure of elapsed time in either seconds milliseconds microseconds
-	// or nanoseconds.
-	DURATION
+	DURATION = 24
+	// TIMESTAMP Exact timestamp encoded with int64 since UNIX epoch
+	TIMESTAMP = 25
+	// LOCAL_DATE a naive date without timezone
+	LOCAL_DATE = 26
+	// DECIMAL128 Precision- and scale-based decimal type with 128 bits.
+	DECIMAL128 = 27
+	// BINARY Variable-length bytes (no guarantee of UTF8-ness)
+	BINARY = 28
+	// ARRAY a multidimensional array which every sub-array can have different sizes but all have the same type
+	ARRAY = 29
+	// BOOL_ARRAY one dimensional bool array
+	BOOL_ARRAY = 30
+	// INT8_ARRAY one dimensional int8 array
+	INT8_ARRAY = 31
+	// INT16_ARRAY one dimensional int16 array
+	INT16_ARRAY = 32
+	// INT32_ARRAY one dimensional int32 array
+	INT32_ARRAY = 33
+	// INT64_ARRAY one dimensional int64 array
+	INT64_ARRAY = 34
+	// FLOAT16_ARRAY one dimensional half_float_16 array
+	FLOAT16_ARRAY = 35
+	// FLOAT32_ARRAY one dimensional float32 array
+	FLOAT32_ARRAY = 36
+	// FLOAT64_ARRAY one dimensional float64 array
+	FLOAT64_ARRAY = 37
+	// ARROW_RECORD_BATCH an arrow record batch object
+	ARROW_RECORD_BATCH = 38
+	// ARROW_TABLE an arrow table object
+	ARROW_TABLE = 39
+
+	// UINT8 Unsigned 8-bit little-endian integer
+	UINT8 = 100 // Not in mapping table, assign a higher value
+	// UINT16 Unsigned 16-bit little-endian integer
+	UINT16 = 101
+	// UINT32 Unsigned 32-bit little-endian integer
+	UINT32 = 102
+	// UINT64 Unsigned 64-bit little-endian integer
+	UINT64 = 103
+	// FIXED_SIZE_BINARY Fixed-size binary. Each value occupies the same number of bytes
+	FIXED_SIZE_BINARY = 104
+	// DATE32 int32_t days since the UNIX epoch
+	DATE32 = 105
+	// DATE64 int64_t milliseconds since the UNIX epoch
+	DATE64 = 106
+	// TIME32 Time as signed 32-bit integer representing either seconds or milliseconds since midnight
+	TIME32 = 107
+	// TIME64 Time as signed 64-bit integer representing either microseconds or nanoseconds since midnight
+	TIME64 = 108
+	// INTERVAL_MONTHS YEAR_MONTH interval in SQL style
+	INTERVAL_MONTHS = 109
+	// INTERVAL_DAY_TIME DAY_TIME interval in SQL style
+	INTERVAL_DAY_TIME = 110
+	// DECIMAL256 Precision- and scale-based decimal type with 256 bits.
+	DECIMAL256 = 111
+	// SPARSE_UNION Sparse unions of logical types
+	SPARSE_UNION = 112
+	// DENSE_UNION Dense unions of logical types
+	DENSE_UNION = 113
+	// DICTIONARY Dictionary-encoded type also called "categorical" or "factor"
+	DICTIONARY = 114
+	// FIXED_SIZE_LIST Fixed size list of some logical type
+	FIXED_SIZE_LIST = 115
 	// LARGE_STRING Like STRING but with 64-bit offsets
-	LARGE_STRING
+	LARGE_STRING = 116
 	// LARGE_BINARY Like BINARY but with 64-bit offsets
-	LARGE_BINARY
+	LARGE_BINARY = 117
 	// LARGE_LIST Like LIST but with 64-bit offsets
-	LARGE_LIST
+	LARGE_LIST = 118
 	// MAX_ID Leave this at the end
-	MAX_ID
+	MAX_ID = 119
+
 	DECIMAL = DECIMAL128
 
 	// Fury added type for cross-language serialization.
@@ -132,6 +171,19 @@ const (
 	FURY_ARROW_RECORD_BATCH     = 267
 	FURY_ARROW_TABLE            = 268
 )
+
+var namedTypes = map[TypeId]struct{}{
+	NAMED_EXT:               {},
+	NAMED_ENUM:              {},
+	NAMED_STRUCT:            {},
+	NAMED_COMPATIBLE_STRUCT: {},
+}
+
+// IsNamespacedType 检查给定的类型 ID 是否为命名空间类型
+func IsNamespacedType(typeID TypeId) bool {
+	_, exists := namedTypes[typeID]
+	return exists
+}
 
 const (
 	NotSupportCrossLanguage = 0
@@ -170,6 +222,27 @@ var (
 	genericSetType     = reflect.TypeOf((*GenericSet)(nil)).Elem()
 )
 
+type TypeInfo struct {
+	Type          reflect.Type
+	FullNameBytes []byte
+	PkgPathBytes  *MetaStringBytes
+	NameBytes     *MetaStringBytes
+	IsDynamic     bool
+	TypeID        int32
+	LocalID       int16
+	Serializer    Serializer
+	NeedWriteDef  bool
+	hashValue     uint64
+}
+type (
+	namedTypeKey [2]string
+)
+
+type nsTypeKey struct {
+	Namespace int64
+	TypeName  int64
+}
+
 type typeResolver struct {
 	typeTagToSerializers map[string]Serializer
 	typeToSerializers    map[reflect.Type]Serializer
@@ -180,9 +253,38 @@ type typeResolver struct {
 	dynamicStringToId    map[string]int16
 	dynamicIdToString    map[int16]string
 	dynamicStringId      int16
+
+	fury *Fury
+	//metaStringResolver  MetaStringResolver
+	language            Language
+	metaStringResolver  *MetaStringResolver
+	requireRegistration bool
+
+	// String mappings
+	metaStrToStr     map[string]string
+	metaStrToClass   map[string]reflect.Type
+	hashToMetaString map[uint64]string
+	hashToClassInfo  map[uint64]TypeInfo
+
+	// Type tracking
+	dynamicWrittenMetaStr []string
+	typeIDToClassInfo     map[int32]TypeInfo
+	typeIDCounter         int32
+	dynamicWriteStringID  int32
+
+	// Class registries
+	classesInfo          map[string]TypeInfo
+	nsTypeToClassInfo    map[nsTypeKey]TypeInfo
+	namedTypeToClassInfo map[namedTypeKey]TypeInfo
+
+	// Encoders/Decoders
+	namespaceEncoder *meta.Encoder
+	namespaceDecoder *meta.Decoder
+	typeNameEncoder  *meta.Encoder
+	typeNameDecoder  *meta.Decoder
 }
 
-func newTypeResolver() *typeResolver {
+func newTypeResolver(fury *Fury) *typeResolver {
 	r := &typeResolver{
 		typeTagToSerializers: map[string]Serializer{},
 		typeToSerializers:    map[reflect.Type]Serializer{},
@@ -191,6 +293,30 @@ func newTypeResolver() *typeResolver {
 		typeInfoToType:       map[string]reflect.Type{},
 		dynamicStringToId:    map[string]int16{},
 		dynamicIdToString:    map[int16]string{},
+		fury:                 fury,
+
+		language:            fury.language,
+		metaStringResolver:  NewMetaStringResolver(),
+		requireRegistration: false,
+
+		metaStrToStr:     make(map[string]string),
+		metaStrToClass:   make(map[string]reflect.Type),
+		hashToMetaString: make(map[uint64]string),
+		hashToClassInfo:  make(map[uint64]TypeInfo),
+
+		dynamicWrittenMetaStr: make([]string, 0),
+		typeIDToClassInfo:     make(map[int32]TypeInfo),
+		typeIDCounter:         64,
+		dynamicWriteStringID:  0,
+
+		classesInfo:          make(map[string]TypeInfo),
+		nsTypeToClassInfo:    make(map[nsTypeKey]TypeInfo),
+		namedTypeToClassInfo: make(map[namedTypeKey]TypeInfo),
+
+		namespaceEncoder: meta.NewEncoder('.', '_'),
+		namespaceDecoder: meta.NewDecoder('.', '_'),
+		typeNameEncoder:  meta.NewEncoder('$', '_'),
+		typeNameDecoder:  meta.NewDecoder('$', '_'),
 	}
 	// base type info for encode/decode types.
 	// composite types info will be constructed dynamically.
@@ -220,36 +346,39 @@ func newTypeResolver() *typeResolver {
 func (r *typeResolver) initialize() {
 	serializers := []struct {
 		reflect.Type
+		int32
 		Serializer
-	}{{stringType, stringSerializer{}},
-		{stringPtrType, ptrToStringSerializer{}},
-		{stringSliceType, stringSliceSerializer{}},
-		{byteSliceType, byteSliceSerializer{}},
-		{boolSliceType, boolSliceSerializer{}},
-		{int16SliceType, int16SliceSerializer{}},
-		{int32SliceType, int32SliceSerializer{}},
-		{int64SliceType, int64SliceSerializer{}},
-		{float32SliceType, float32SliceSerializer{}},
-		{float64SliceType, float64SliceSerializer{}},
-		{interfaceSliceType, sliceSerializer{}},
-		{interfaceMapType, mapSerializer{}},
-		{boolType, boolSerializer{}},
-		{byteType, byteSerializer{}},
-		{int8Type, int8Serializer{}},
-		{int16Type, int16Serializer{}},
-		{int32Type, int32Serializer{}},
-		{int64Type, int64Serializer{}},
-		{intType, intSerializer{}},
-		{float32Type, float32Serializer{}},
-		{float64Type, float64Serializer{}},
-		{dateType, dateSerializer{}},
-		{timestampType, timeSerializer{}},
-		{genericSetType, setSerializer{}},
+	}{
+		{stringType, STRING, stringSerializer{}},
+		{stringPtrType, STRING, ptrToStringSerializer{}},
+		{stringSliceType, LIST, stringSliceSerializer{}},
+		{byteSliceType, BINARY, byteSliceSerializer{}},
+		{boolSliceType, LIST, boolSliceSerializer{}},
+		{int16SliceType, LIST, int16SliceSerializer{}},
+		{int32SliceType, LIST, int32SliceSerializer{}},
+		{int64SliceType, LIST, int64SliceSerializer{}},
+		{float32SliceType, LIST, float32SliceSerializer{}},
+		{float64SliceType, LIST, float64SliceSerializer{}},
+		{interfaceSliceType, LIST, sliceSerializer{}},
+		{interfaceMapType, MAP, mapSerializer{}},
+		{boolType, BOOL, boolSerializer{}},
+		{byteType, INT8, byteSerializer{}},
+		{int8Type, INT8, int8Serializer{}},
+		{int16Type, INT16, int16Serializer{}},
+		{int32Type, INT32, int32Serializer{}},
+		{int64Type, INT64, int64Serializer{}},
+		{intType, INT64, intSerializer{}},
+		{float32Type, FLOAT, float32Serializer{}},
+		{float64Type, DOUBLE, float64Serializer{}},
+		{dateType, LOCAL_DATE, dateSerializer{}},
+		{timestampType, TIMESTAMP, timeSerializer{}},
+		{genericSetType, SET, setSerializer{}},
 	}
 	for _, elem := range serializers {
 		if err := r.RegisterSerializer(elem.Type, elem.Serializer); err != nil {
 			panic(fmt.Errorf("impossible error: %s", err))
 		}
+		r.registerType(elem.Type, elem.int32, "", "", elem.Serializer, true)
 	}
 }
 
@@ -316,6 +445,169 @@ func (r *typeResolver) getSerializerByTypeTag(typeTag string) (Serializer, error
 	} else {
 		return serializer, nil
 	}
+}
+
+func (r *typeResolver) getTypeInfo(value reflect.Value, create bool) (TypeInfo, error) {
+	// Check cache first
+	if info, ok := r.classesInfo[value.Type().Name()]; ok {
+		if info.Serializer == nil {
+			serializer, err := r.createSerializer(value.Type())
+			if err != nil {
+				fmt.Errorf("failed to create serializer: %w", err)
+			}
+			info.Serializer = serializer
+		}
+		return info, nil
+	}
+	var internal = false
+
+	if !create {
+		fmt.Errorf("type %v not registered and create=false", value.Type())
+	}
+	typ := value.Type()
+	// Auto-register unregistered types
+	pkgPath := typ.PkgPath()
+	typeName := typ.Name()
+
+	// Handle special types
+	switch {
+	case typ.Kind() == reflect.Ptr:
+		fmt.Errorf("pointer types must be registered explicitly")
+	case typ.Kind() == reflect.Interface:
+		fmt.Errorf("interface types must be registered explicitly")
+	case pkgPath == "" && typeName == "":
+		fmt.Errorf("anonymous types must be registered explicitly")
+	}
+
+	// Determine type ID and registration strategy
+	var typeID int32
+	switch {
+	case r.language == XLANG && !r.requireRegistration:
+		// Auto-assign IDs for Python-compatible types
+		typeID = r.allocateTypeID()
+	default:
+		fmt.Errorf("type %v must be registered explicitly", typ)
+	}
+
+	// Create full type metadata
+	return r.registerType(
+		typ,
+		typeID,
+		pkgPath,
+		typeName,
+		nil, // serializer will be created in registerType
+		internal,
+	), nil
+}
+
+func (r *typeResolver) registerType(
+	typ reflect.Type,
+	typeID int32,
+	namespace string,
+	typeName string,
+	serializer Serializer,
+	internal bool,
+) TypeInfo {
+	// Validate input
+	if typ == nil {
+		panic("nil type")
+	}
+	if typeName == "" && namespace != "" {
+		panic("namespace provided without typeName")
+	}
+
+	dynamicType := typeID < 0
+
+	// Create serializer if needed (with proper error handling)
+	if !internal && serializer == nil {
+		var err error
+		if serializer, err = r.createSerializer(typ); err != nil {
+			panic(fmt.Sprintf("failed to create serializer: %v", err))
+		}
+	}
+
+	// Encode meta strings (with nil checks)
+	var nsBytes, typeBytes *MetaStringBytes
+	if typeName != "" {
+		if namespace == "" {
+			if lastDot := strings.LastIndex(typeName, "."); lastDot != -1 {
+				namespace = typeName[:lastDot]
+				typeName = typeName[lastDot+1:]
+			}
+		}
+
+		nsMeta, _ := r.namespaceEncoder.Encode(typeName)
+		if nsBytes = r.metaStringResolver.GetMetaStrBytes(nsMeta); nsBytes == nil {
+			panic("failed to encode namespace")
+		}
+
+		typeMeta, _ := r.typeNameEncoder.Encode(typeName)
+		if typeBytes = r.metaStringResolver.GetMetaStrBytes(typeMeta); typeBytes == nil {
+			panic("failed to encode type name")
+		}
+	}
+
+	// Build complete type info
+
+	typeInfo := TypeInfo{
+		Type:         typ,
+		TypeID:       typeID,
+		Serializer:   serializer,
+		PkgPathBytes: nsBytes,
+		NameBytes:    typeBytes,
+		IsDynamic:    dynamicType,
+		hashValue:    calcTypeHash(typ),
+	}
+
+	r.classesInfo[typ.Name()] = typeInfo
+	if typeName != "" {
+		r.namedTypeToClassInfo[[2]string{namespace, typeName}] = typeInfo
+		r.nsTypeToClassInfo[nsTypeKey{nsBytes.Hashcode, typeBytes.Hashcode}] = typeInfo
+	}
+	if typeID > 0 && (r.language == XLANG || !IsNamespacedType(TypeId(typeID))) {
+		r.typeIDToClassInfo[typeID] = typeInfo
+	}
+
+	return typeInfo
+}
+
+// Helper functions
+func (r *typeResolver) allocateTypeID() int32 {
+	r.typeIDCounter++
+	return r.typeIDCounter
+}
+
+func calcTypeHash(typ reflect.Type) uint64 {
+	// Implement proper hash calculation based on type
+	h := fnv.New64a()
+	h.Write([]byte(typ.PkgPath()))
+	h.Write([]byte(typ.Name()))
+	h.Write([]byte(typ.Kind().String()))
+	return h.Sum64()
+}
+
+func (r *typeResolver) writeTypeInfo(buffer *ByteBuffer, typeInfo TypeInfo) error {
+	if typeInfo.IsDynamic {
+		return nil
+	}
+
+	typeID := typeInfo.TypeID
+	internalTypeID := typeID & 0xFF
+
+	if err := buffer.WriteVarUint32(uint32(typeID)); err != nil {
+		return err
+	}
+
+	if IsNamespacedType(TypeId(internalTypeID)) {
+		if err := r.metaStringResolver.WriteMetaStringBytes(buffer, typeInfo.PkgPathBytes); err != nil {
+			return err
+		}
+		if err := r.metaStringResolver.WriteMetaStringBytes(buffer, typeInfo.NameBytes); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (r *typeResolver) createSerializer(type_ reflect.Type) (s Serializer, err error) {

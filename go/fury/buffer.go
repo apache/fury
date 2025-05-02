@@ -89,6 +89,21 @@ func (b *ByteBuffer) WriteInt32(value int32) {
 	binary.LittleEndian.PutUint32(b.data[b.writerIndex:], uint32(value))
 	b.writerIndex += 4
 }
+func (b *ByteBuffer) WriteVarUint32(value uint32) error {
+	// Ensure enough capacity (max 5 bytes for varint32)
+	b.grow(5)
+
+	// Varint encoding
+	for value >= 0x80 {
+		b.data[b.writerIndex] = byte(value) | 0x80
+		b.writerIndex++
+		value >>= 7
+	}
+	b.data[b.writerIndex] = byte(value)
+	b.writerIndex++
+
+	return nil
+}
 
 func (b *ByteBuffer) WriteLength(value int) {
 	b.grow(4)

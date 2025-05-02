@@ -26,12 +26,12 @@ import (
 
 func NewFury(referenceTracking bool) *Fury {
 	fury := &Fury{
-		typeResolver:      newTypeResolver(),
 		refResolver:       newRefResolver(referenceTracking),
 		referenceTracking: referenceTracking,
 		language:          XLANG,
 		buffer:            NewByteBuffer(nil),
 	}
+	fury.typeResolver = newTypeResolver(fury)
 	return fury
 }
 
@@ -94,6 +94,13 @@ const (
 	isOutOfBandFlag
 )
 
+const (
+	NilFlag          = 0
+	LittleEndianFlag = 2
+	XLangFlag        = 4
+	CallBackFlag     = 8
+)
+
 const MAGIC_NUMBER int16 = 0x62D4
 
 type Fury struct {
@@ -134,34 +141,38 @@ func (f *Fury) Serialize(buf *ByteBuffer, v interface{}, callback BufferCallback
 	}
 	var bitmap byte = 0
 	if isNil(reflect.ValueOf(v)) {
-		bitmap |= isNilFlag
+		bitmap |= NilFlag
 	}
 	if nativeEndian == binary.LittleEndian {
-		bitmap |= isLittleEndianFlag
+		bitmap |= LittleEndianFlag
 	}
 	// set reader as x_lang.
 	if f.language == XLANG {
-		bitmap |= isCrossLanguageFlag
+		bitmap |= XLangFlag
 	} else {
 		return fmt.Errorf("%d language is not supported", f.language)
 	}
 	if callback != nil {
-		bitmap |= isOutOfBandFlag
+		bitmap |= CallBackFlag
 	}
 	if err := buffer.WriteByte(bitmap); err != nil {
 		return err
 	}
 	if f.language != XLANG {
 		return fmt.Errorf("%d language is not supported", f.language)
+		buffer.WriteInt8(int8(GO))
 	} else {
 		if err := buffer.WriteByte(GO); err != nil {
 			return err
 		}
-		buffer.WriteInt32(0) // preserve 4-byte for nativeObjects start offsets.
-		buffer.WriteInt32(0)
+		//buffer.WriteInt32(0) // preserve 4-byte for nativeObjects start offsets.
+		//buffer.WriteInt32(0)
 		if err := f.Write(buffer, v); err != nil {
 			return err
 		}
+		//if err := f.XSerializeRef(buffer, v, nil); err != nil {
+		//	return err
+		//}
 	}
 	return nil
 }
@@ -271,29 +282,14 @@ func (f *Fury) writeValue(buffer *ByteBuffer, value reflect.Value, serializer Se
 			return err
 		}
 	}
-	typeId := serializer.TypeId()
-	buffer.WriteInt16(typeId)
-	if typeId != NotSupportCrossLanguage {
-		if typeId == FURY_TYPE_TAG {
-			var typeTag string
-			if value.Kind() == reflect.Ptr {
-				typeTag = serializer.(*ptrToStructSerializer).typeTag
-			} else {
-				typeTag = serializer.(*structSerializer).typeTag
-			}
-			if err := f.typeResolver.writeTypeTag(buffer, typeTag); err != nil {
-				return err
-			}
-		}
-		if typeId < NotSupportCrossLanguage {
-			if err := f.typeResolver.writeType(buffer, type_); err != nil {
-				return err
-			}
-		}
-		return serializer.Write(f, buffer, value)
-	} else {
-		return fmt.Errorf("type %v not supported", type_)
+	typeInfo, err := f.typeResolver.getTypeInfo(value, true)
+
+	err = f.typeResolver.writeTypeInfo(buffer, typeInfo)
+	if err != nil {
+		return err
 	}
+	return typeInfo.Serializer.Write(f, buffer, value)
+
 }
 
 func (f *Fury) WriteBufferObject(buffer *ByteBuffer, bufferObject BufferObject) error {
