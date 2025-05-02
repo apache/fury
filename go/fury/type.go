@@ -828,8 +828,70 @@ func (r *typeResolver) readTypeByReadTag(buffer *ByteBuffer) (reflect.Type, erro
 	return r.typeTagToSerializers[metaString].(*ptrToStructSerializer).type_, err
 }
 
-func (r *typeResolver) readTypeInfo(buffer *ByteBuffer) (string, error) {
-	return r.readMetaString(buffer)
+func (r *typeResolver) readTypeInfo(buffer *ByteBuffer) (TypeInfo, error) {
+	// Read variable-length type ID
+	typeID := buffer.ReadVarInt32()
+
+	internalTypeID := typeID & 0xFF // Extract lower 8 bits for internal type ID
+
+	if IsNamespacedType(TypeId(internalTypeID)) {
+		// Read namespace and type name metadata bytes
+		nsBytes, err := r.metaStringResolver.ReadMetaStringBytes(buffer)
+		if err != nil {
+			fmt.Errorf("failed to read namespace bytes: %w", err)
+		}
+
+		typeBytes, err := r.metaStringResolver.ReadMetaStringBytes(buffer)
+		if err != nil {
+			fmt.Errorf("failed to read type bytes: %w", err)
+		}
+
+		compositeKey := nsTypeKey{nsBytes.Hashcode, typeBytes.Hashcode}
+		var typeInfo TypeInfo
+		if typeInfo, exists := r.nsTypeToClassInfo[compositeKey]; exists {
+			return typeInfo, nil
+		}
+
+		// If not found, decode the bytes to strings and try again
+		ns, err := r.namespaceDecoder.Decode(nsBytes.Data, nsBytes.Encoding)
+		if err != nil {
+			fmt.Errorf("namespace decode failed: %w", err)
+		}
+
+		typeName, err := r.typeNameDecoder.Decode(typeBytes.Data, typeBytes.Encoding)
+		if err != nil {
+			fmt.Errorf("typename decode failed: %w", err)
+		}
+
+		nameKey := [2]string{ns, typeName}
+		if typeInfo, exists := r.namedTypeToClassInfo[nameKey]; exists {
+			r.nsTypeToClassInfo[compositeKey] = typeInfo
+			return typeInfo, nil
+		}
+
+		_ = typeName
+		if ns != "" {
+			_ = ns + "." + typeName
+		}
+
+		return typeInfo, nil
+	}
+
+	// Handle simple type IDs (non-namespaced types)
+	if typeInfo, exists := r.typeIDToClassInfo[typeID]; exists {
+		return typeInfo, nil
+	}
+
+	return TypeInfo{}, nil
+}
+
+// TypeUnregisteredError indicates when a requested type is not registered
+type TypeUnregisteredError struct {
+	TypeName string
+}
+
+func (e *TypeUnregisteredError) Error() string {
+	return fmt.Sprintf("type %s not registered", e.TypeName)
 }
 
 func (r *typeResolver) getTypeById(id int16) (reflect.Type, error) {

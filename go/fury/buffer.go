@@ -336,6 +336,35 @@ func (b *ByteBuffer) ReadVarInt32() int32 {
 	return result
 }
 
+func (b *ByteBuffer) ReadVarUint32() uint32 {
+	readerIndex := b.readerIndex
+	byte_ := uint32(b.data[readerIndex])
+	readerIndex++
+	result := byte_ & 0x7F
+	if (byte_ & 0x80) != 0 {
+		byte_ = uint32(b.data[readerIndex])
+		readerIndex++
+		result |= (byte_ & 0x7F) << 7
+		if (byte_ & 0x80) != 0 {
+			byte_ = uint32(b.data[readerIndex])
+			readerIndex++
+			result |= (byte_ & 0x7F) << 14
+			if (byte_ & 0x80) != 0 {
+				byte_ = uint32(b.data[readerIndex])
+				readerIndex++
+				result |= (byte_ & 0x7F) << 21
+				if (byte_ & 0x80) != 0 {
+					byte_ = uint32(b.data[readerIndex])
+					readerIndex++
+					result |= (byte_ & 0x7F) << 28
+				}
+			}
+		}
+	}
+	b.readerIndex = readerIndex
+	return result
+}
+
 type BufferObject interface {
 	TotalBytes() int
 	WriteTo(buf *ByteBuffer)

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"github.com/apache/fury/go/fury/meta"
 	"github.com/spaolacci/murmur3"
 )
 
@@ -17,7 +18,7 @@ type Encoding int8
 type MetaStringBytes struct {
 	Data                 []byte
 	Length               int16
-	Encoding             Encoding
+	Encoding             meta.Encoding
 	Hashcode             int64
 	DynamicWriteStringID int16
 }
@@ -27,7 +28,7 @@ func NewMetaStringBytes(data []byte, hashcode int64) *MetaStringBytes {
 		Data:                 data,
 		Length:               int16(len(data)),
 		Hashcode:             hashcode,
-		Encoding:             Encoding(hashcode & 0xFF),
+		Encoding:             meta.Encoding(hashcode & 0xFF),
 		DynamicWriteStringID: DefaultDynamicWriteMetaStrID,
 	}
 }

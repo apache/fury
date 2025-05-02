@@ -35,8 +35,8 @@ func Test1(t *testing.T) {
 		fmt.Println("Error reading file:", err)
 		return
 	}
-	var newValue interface{}
-	if err := fury.Unmarshal(bytes, &newValue); err != nil {
+	var newValue string
+	if err := fury.Unmarshal(bytes, newValue); err != nil {
 		panic(err)
 	}
 	fmt.Println(newValue)

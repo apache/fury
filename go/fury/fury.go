@@ -329,21 +329,21 @@ func (f *Fury) Deserialize(buf *ByteBuffer, v interface{}, buffers []*ByteBuffer
 		return fmt.Errorf("%d language is not supported", f.language)
 	}
 	var bitmap = buf.ReadByte_()
-	if bitmap&isNilFlag == isNilFlag {
+	if bitmap&NilFlag != NilFlag {
 		return nil
 	}
-	isLittleEndian := bitmap&isLittleEndianFlag == isLittleEndianFlag
+	isLittleEndian := bitmap&LittleEndianFlag == LittleEndianFlag
 	if !isLittleEndian {
 		return fmt.Errorf("big endian is not supported for now, please ensure peer machine is little endian")
 	}
-	isCrossLanguage := bitmap&isCrossLanguageFlag == isCrossLanguageFlag
-	if isCrossLanguage {
+	isXLangFlag := bitmap&XLangFlag == XLangFlag
+	if isXLangFlag {
 		f.peerLanguage = buf.ReadByte_()
 	} else {
 		f.peerLanguage = GO
 	}
-	isOutOfBandEnabled := bitmap&isOutOfBandFlag == isOutOfBandFlag
-	if isOutOfBandEnabled {
+	isCallBackFlag := bitmap&CallBackFlag == CallBackFlag
+	if isCallBackFlag {
 		if buffers == nil {
 			return fmt.Errorf("uffers shouldn't be null when the serialized stream is " +
 				"produced with buffer_callback not null")
@@ -355,14 +355,7 @@ func (f *Fury) Deserialize(buf *ByteBuffer, v interface{}, buffers []*ByteBuffer
 				"produced with buffer_callback null")
 		}
 	}
-	if isCrossLanguage {
-		buf.ReadInt32() // nativeObjectsStartOffset
-		nativeObjectsSize := buf.ReadInt32()
-		if f.peerLanguage == GO {
-			if nativeObjectsSize > 0 {
-				return fmt.Errorf("native serialization for golang is not supported currently")
-			}
-		}
+	if isXLangFlag {
 		return f.ReadReferencable(buf, reflect.ValueOf(v).Elem())
 	} else {
 		return fmt.Errorf("native serialization for golang is not supported currently")
@@ -402,71 +395,16 @@ func (f *Fury) readReferencableBySerializer(buf *ByteBuffer, value reflect.Value
 }
 
 func (f *Fury) readData(buffer *ByteBuffer, value reflect.Value, serializer Serializer) (err error) {
-	typeId := buffer.ReadInt16()
-	if typeId != NotSupportCrossLanguage {
-		var type_ reflect.Type
-		if typeId == FURY_TYPE_TAG {
-			type_, err = f.typeResolver.readTypeByReadTag(buffer)
-			if err != nil {
-				return err
-			}
-		}
-		if typeId < NotSupportCrossLanguage {
-			if f.peerLanguage != GO {
-				// skip peer language specific type info
-				_, err = f.typeResolver.readTypeInfo(buffer)
-				if err != nil {
-					return err
-				}
-				type_, err = f.typeResolver.getTypeById(-typeId)
-				if err != nil {
-					return err
-				}
-			} else {
-				type_, err = f.typeResolver.readType(buffer)
-				if err != nil {
-					return err
-				}
-			}
-		} else {
-			if typeId != FURY_TYPE_TAG {
-				type_, err = f.typeResolver.getTypeById(typeId)
-				if err != nil {
-					return err
-				}
-			}
-		}
-		if serializer == nil {
-			serializer, err = f.typeResolver.getSerializerByType(type_)
-			if err != nil {
-				return err
-			}
-		}
-		// `type_` may be more concrete than `value.Type()`. For example, `value.Type()` may be interface type.
-		// in serializers.
-		if value.Kind() == reflect.Interface {
-			// interfaceValue.Elem is not addressable, so we don't invoke `Elem` on interface. We create a new
-			// addressable concreate value to populate instead. Otherwise, we will need to handle interface in
-			// every serializers.
-			newValue := reflect.New(type_).Elem()
-			err := serializer.Read(f, buffer, type_, newValue)
-			if err != nil {
-				return err
-			}
-			value.Set(newValue)
-			return nil
-		} else {
-			// handle value nil in the serializers since default value of most types are not nil
-			// and for nil, those values are composite values, check is cheap.
-			return serializer.Read(f, buffer, type_, value)
-		}
-	} else {
-		typeInfo, err := f.typeResolver.readTypeInfo(buffer)
+	var typeInfo TypeInfo
+	if serializer == nil {
+		typeInfo, err = f.typeResolver.readTypeInfo(buffer)
 		if err != nil {
 			return err
 		}
-		return fmt.Errorf("native objects of type %s not supported for now", typeInfo)
 	}
+
+	return typeInfo.Serializer.Read(f, buffer, typeInfo.Type, value)
+
 }
 
 func (f *Fury) ReadBufferObject(buffer *ByteBuffer) (*ByteBuffer, error) {
