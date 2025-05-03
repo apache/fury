@@ -200,7 +200,7 @@ func (f *Fury) Write(buffer *ByteBuffer, v interface{}) (err error) {
 
 func (f *Fury) WriteByte_(buffer *ByteBuffer, v interface{}) {
 	buffer.WriteInt8(NotNullValueFlag)
-	buffer.WriteInt16(UINT8)
+	buffer.WriteInt8(UINT8)
 	buffer.WriteByte_(v.(byte))
 }
 
@@ -275,20 +275,19 @@ func (f *Fury) writeValue(buffer *ByteBuffer, value reflect.Value, serializer Se
 	if value.Kind() == reflect.Interface {
 		value = value.Elem()
 	}
-	type_ := value.Type()
+	typeInfo, err := f.typeResolver.getTypeInfo(value, true)
+	type_ := typeInfo.Type
 	if serializer == nil {
 		serializer, err = f.typeResolver.getSerializerByType(type_)
 		if err != nil {
 			return err
 		}
 	}
-	typeInfo, err := f.typeResolver.getTypeInfo(value, true)
-
 	err = f.typeResolver.writeTypeInfo(buffer, typeInfo)
 	if err != nil {
 		return err
 	}
-	return typeInfo.Serializer.Write(f, buffer, value)
+	return serializer.Write(f, buffer, value)
 
 }
 

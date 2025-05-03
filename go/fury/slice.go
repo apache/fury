@@ -141,7 +141,7 @@ type boolSliceSerializer struct {
 }
 
 func (s boolSliceSerializer) TypeId() TypeId {
-	return FURY_PRIMITIVE_BOOL_ARRAY
+	return BOOL_ARRAY
 }
 
 func (s boolSliceSerializer) Write(f *Fury, buf *ByteBuffer, value reflect.Value) error {
@@ -171,7 +171,7 @@ type int16SliceSerializer struct {
 }
 
 func (s int16SliceSerializer) TypeId() TypeId {
-	return FURY_PRIMITIVE_SHORT_ARRAY
+	return INT16_ARRAY
 }
 
 func (s int16SliceSerializer) Write(f *Fury, buf *ByteBuffer, value reflect.Value) error {
@@ -201,7 +201,7 @@ type int32SliceSerializer struct {
 }
 
 func (s int32SliceSerializer) TypeId() TypeId {
-	return FURY_PRIMITIVE_INT_ARRAY
+	return INT32_ARRAY
 }
 
 func (s int32SliceSerializer) Write(f *Fury, buf *ByteBuffer, value reflect.Value) error {
@@ -231,7 +231,7 @@ type int64SliceSerializer struct {
 }
 
 func (s int64SliceSerializer) TypeId() TypeId {
-	return FURY_PRIMITIVE_LONG_ARRAY
+	return INT64_ARRAY
 }
 
 func (s int64SliceSerializer) Write(f *Fury, buf *ByteBuffer, value reflect.Value) error {
@@ -261,7 +261,7 @@ type float32SliceSerializer struct {
 }
 
 func (s float32SliceSerializer) TypeId() TypeId {
-	return FURY_PRIMITIVE_FLOAT_ARRAY
+	return FLOAT32_ARRAY
 }
 
 func (s float32SliceSerializer) Write(f *Fury, buf *ByteBuffer, value reflect.Value) error {
@@ -291,7 +291,7 @@ type float64SliceSerializer struct {
 }
 
 func (s float64SliceSerializer) TypeId() TypeId {
-	return FURY_PRIMITIVE_DOUBLE_ARRAY
+	return FLOAT64_ARRAY
 }
 
 func (s float64SliceSerializer) Write(f *Fury, buf *ByteBuffer, value reflect.Value) error {

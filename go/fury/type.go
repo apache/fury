@@ -346,39 +346,43 @@ func newTypeResolver(fury *Fury) *typeResolver {
 func (r *typeResolver) initialize() {
 	serializers := []struct {
 		reflect.Type
-		int32
+
 		Serializer
 	}{
-		{stringType, STRING, stringSerializer{}},
-		{stringPtrType, STRING, ptrToStringSerializer{}},
-		{stringSliceType, LIST, stringSliceSerializer{}},
-		{byteSliceType, BINARY, byteSliceSerializer{}},
-		{boolSliceType, LIST, boolSliceSerializer{}},
-		{int16SliceType, LIST, int16SliceSerializer{}},
-		{int32SliceType, LIST, int32SliceSerializer{}},
-		{int64SliceType, LIST, int64SliceSerializer{}},
-		{float32SliceType, LIST, float32SliceSerializer{}},
-		{float64SliceType, LIST, float64SliceSerializer{}},
-		{interfaceSliceType, LIST, sliceSerializer{}},
-		{interfaceMapType, MAP, mapSerializer{}},
-		{boolType, BOOL, boolSerializer{}},
-		{byteType, INT8, byteSerializer{}},
-		{int8Type, INT8, int8Serializer{}},
-		{int16Type, INT16, int16Serializer{}},
-		{int32Type, INT32, int32Serializer{}},
-		{int64Type, INT64, int64Serializer{}},
-		{intType, INT64, intSerializer{}},
-		{float32Type, FLOAT, float32Serializer{}},
-		{float64Type, DOUBLE, float64Serializer{}},
-		{dateType, LOCAL_DATE, dateSerializer{}},
-		{timestampType, TIMESTAMP, timeSerializer{}},
-		{genericSetType, SET, setSerializer{}},
+		{stringType, stringSerializer{}},
+		{stringPtrType, ptrToStringSerializer{}},
+		{stringSliceType, stringSliceSerializer{}},
+		{byteSliceType, byteSliceSerializer{}},
+		{boolSliceType, boolSliceSerializer{}},
+		{int16SliceType, int16SliceSerializer{}},
+		{int32SliceType, int32SliceSerializer{}},
+		{int64SliceType, int64SliceSerializer{}},
+		{float32SliceType, float32SliceSerializer{}},
+		{float64SliceType, float64SliceSerializer{}},
+		{interfaceSliceType, sliceSerializer{}},
+		{interfaceMapType, mapSerializer{}},
+		{boolType, boolSerializer{}},
+		{byteType, byteSerializer{}},
+		{int8Type, int8Serializer{}},
+		{int16Type, int16Serializer{}},
+		{int32Type, int32Serializer{}},
+		{int64Type, int64Serializer{}},
+		{intType, intSerializer{}},
+		{float32Type, float32Serializer{}},
+		{float64Type, float64Serializer{}},
+		{dateType, dateSerializer{}},
+		{timestampType, timeSerializer{}},
+		{genericSetType, setSerializer{}},
 	}
 	for _, elem := range serializers {
 		if err := r.RegisterSerializer(elem.Type, elem.Serializer); err != nil {
 			panic(fmt.Errorf("impossible error: %s", err))
 		}
-		r.registerType(elem.Type, elem.int32, "", "", elem.Serializer, true)
+
+		_, err := r.registerType(elem.Type, int32(elem.Serializer.TypeId()), "", "", elem.Serializer, true)
+		if err != nil {
+			fmt.Errorf("init type error: %v", err)
+		}
 	}
 }
 
@@ -496,8 +500,7 @@ func (r *typeResolver) getTypeInfo(value reflect.Value, create bool) (TypeInfo, 
 		pkgPath,
 		typeName,
 		nil, // serializer will be created in registerType
-		internal,
-	), nil
+		internal)
 }
 
 func (r *typeResolver) registerType(
@@ -507,7 +510,7 @@ func (r *typeResolver) registerType(
 	typeName string,
 	serializer Serializer,
 	internal bool,
-) TypeInfo {
+) (TypeInfo, error) {
 	// Validate input
 	if typ == nil {
 		panic("nil type")
@@ -568,7 +571,7 @@ func (r *typeResolver) registerType(
 		r.typeIDToClassInfo[typeID] = typeInfo
 	}
 
-	return typeInfo
+	return typeInfo, fmt.Errorf("registerType error")
 }
 
 // Helper functions
