@@ -112,6 +112,7 @@ const (
 	// ARROW_TABLE an arrow table object
 	ARROW_TABLE = 39
 
+	INT = 99
 	// UINT8 Unsigned 8-bit little-endian integer
 	UINT8 = 100 // Not in mapping table, assign a higher value
 	// UINT16 Unsigned 16-bit little-endian integer
