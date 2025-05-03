@@ -20,45 +20,10 @@ package fury
 import (
 	"fmt"
 	"github.com/stretchr/testify/require"
-	"os"
 	"reflect"
 	"testing"
 	"unsafe"
 )
-
-func Test1(t *testing.T) {
-	fury := NewFury(false)
-
-	bytes, err := os.ReadFile("D:\\code\\fury\\fury\\python\\pyfury\\tests\\x.fury")
-
-	if err != nil {
-		fmt.Println("Error reading file:", err)
-		return
-	}
-	var newValue string
-	if err := fury.Unmarshal(bytes, newValue); err != nil {
-		panic(err)
-	}
-	fmt.Println(newValue)
-}
-
-func Test2(t *testing.T) {
-	fury := NewFury(false)
-	//data := map[string]int{
-	//	"a": 1,
-	//	"b": 2,
-	//	"c": 3,
-	//}
-	data := "123"
-	bytes, err := fury.Marshal(data)
-	print(bytes)
-	err = os.WriteFile("D:\\code\\fury\\fury\\python\\pyfury\\tests\\x.fury", bytes, 0644)
-
-	if err != nil {
-		fmt.Println("Error reading file:", err)
-		return
-	}
-}
 
 func primitiveData() []interface{} {
 	return []interface{}{

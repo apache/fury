@@ -402,9 +402,25 @@ func (f *Fury) readData(buffer *ByteBuffer, value reflect.Value, serializer Seri
 			return err
 		}
 	}
-
-	return typeInfo.Serializer.Read(f, buffer, typeInfo.Type, value)
-
+	type_ := typeInfo.Type
+	// `type_` may be more concrete than `value.Type()`. For example, `value.Type()` may be interface type.
+	// in serializers.
+	if value.Kind() == reflect.Interface {
+		// interfaceValue.Elem is not addressable, so we don't invoke `Elem` on interface. We create a new
+		// addressable concreate value to populate instead. Otherwise, we will need to handle interface in
+		// every serializers.
+		newValue := reflect.New(type_).Elem()
+		err := typeInfo.Serializer.Read(f, buffer, type_, newValue)
+		if err != nil {
+			return err
+		}
+		value.Set(newValue)
+		return nil
+	} else {
+		// handle value nil in the serializers since default value of most types are not nil
+		// and for nil, those values are composite values, check is cheap.
+		return typeInfo.Serializer.Read(f, buffer, typeInfo.Type, value)
+	}
 }
 
 func (f *Fury) ReadBufferObject(buffer *ByteBuffer) (*ByteBuffer, error) {
