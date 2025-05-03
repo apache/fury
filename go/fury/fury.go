@@ -206,31 +206,31 @@ func (f *Fury) WriteByte_(buffer *ByteBuffer, v interface{}) {
 
 func (f *Fury) WriteInt16(buffer *ByteBuffer, v interface{}) {
 	buffer.WriteInt8(NotNullValueFlag)
-	buffer.WriteInt16(INT32)
+	buffer.WriteInt8(INT32)
 	buffer.WriteInt32(v.(int32))
 }
 
 func (f *Fury) WriteInt32(buffer *ByteBuffer, v interface{}) {
 	buffer.WriteInt8(NotNullValueFlag)
-	buffer.WriteInt16(INT32)
+	buffer.WriteInt8(INT32)
 	buffer.WriteInt32(v.(int32))
 }
 
 func (f *Fury) WriteInt64(buffer *ByteBuffer, v interface{}) {
 	buffer.WriteInt8(NotNullValueFlag)
-	buffer.WriteInt16(INT64)
+	buffer.WriteInt8(INT64)
 	buffer.WriteInt64(v.(int64))
 }
 
 func (f *Fury) WriteFloat32(buffer *ByteBuffer, v interface{}) {
 	buffer.WriteInt8(NotNullValueFlag)
-	buffer.WriteInt16(FLOAT)
+	buffer.WriteInt8(FLOAT)
 	buffer.WriteFloat32(v.(float32))
 }
 
 func (f *Fury) WriteFloat64(buffer *ByteBuffer, v interface{}) {
 	buffer.WriteInt8(NotNullValueFlag)
-	buffer.WriteInt16(DOUBLE)
+	buffer.WriteInt8(DOUBLE)
 	buffer.WriteFloat64(v.(float64))
 }
 
