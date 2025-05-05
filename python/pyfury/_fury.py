@@ -71,6 +71,7 @@ class Language(enum.Enum):
     GO = 4
     JAVA_SCRIPT = 5
     RUST = 6
+    DART = 7
 
 
 class BufferObject(ABC):
