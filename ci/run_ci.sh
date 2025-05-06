@@ -43,7 +43,7 @@ install_pyfury() {
   export PATH=~/bin:$PATH
   echo "Install pyfury"
   # Fix strange installed deps not found
-  pip install setuptools
+  pip install setuptools -U
   pip install -v -e .
   popd
 }
