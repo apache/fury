@@ -50,7 +50,7 @@ type MetaStringResolver struct {
 	hashToMetaStrBytes       map[int64]*MetaStringBytes
 	smallHashToMetaStrBytes  map[pair]*MetaStringBytes
 	enumStrSet               map[*MetaStringBytes]struct{}
-	metaStrToMetaStrBytes    map[interface{}]*MetaStringBytes
+	metaStrToMetaStrBytes    map[*meta.MetaString]*MetaStringBytes
 }
 
 func NewMetaStringResolver() *MetaStringResolver {
@@ -58,7 +58,7 @@ func NewMetaStringResolver() *MetaStringResolver {
 		hashToMetaStrBytes:      make(map[int64]*MetaStringBytes),
 		smallHashToMetaStrBytes: make(map[pair]*MetaStringBytes),
 		enumStrSet:              make(map[*MetaStringBytes]struct{}),
-		metaStrToMetaStrBytes:   make(map[interface{}]*MetaStringBytes),
+		metaStrToMetaStrBytes:   make(map[*meta.MetaString]*MetaStringBytes),
 	}
 }
 
@@ -171,13 +171,13 @@ func (r *MetaStringResolver) ReadMetaStringBytes(buf *ByteBuffer) (*MetaStringBy
 	return m, nil
 }
 
-func (r *MetaStringResolver) GetMetaStrBytes(metastr interface{}) *MetaStringBytes {
+func (r *MetaStringResolver) GetMetaStrBytes(metastr *meta.MetaString) *MetaStringBytes {
 	if m, exists := r.metaStrToMetaStrBytes[metastr]; exists {
 		return m
 	}
 
 	var hashcode int64
-	data := metastr.(interface{ GetEncodedData() []byte }).GetEncodedData()
+	data := metastr.GetEncodedBytes()
 	length := len(data)
 
 	if length <= SmallStringThreshold {
@@ -188,13 +188,13 @@ func (r *MetaStringResolver) GetMetaStrBytes(metastr interface{}) *MetaStringByt
 			binary.Read(bytes.NewReader(data[:8]), binary.LittleEndian, &v1)
 			v2 = bytesToInt64(data[8:])
 		}
-		hashcode = ((v1*31 + v2) >> 8 << 8) | int64(uint8(metastr.(interface{ GetEncoding() Encoding }).GetEncoding()))
+		hashcode = ((v1*31 + v2) >> 8 << 8) | int64(metastr.GetEncodedBytes()[0])
 	} else {
 		hash := murmur3.New128()
 		hash.Write(data)
 		h1, h2 := hash.Sum128()
 		hashcode = (int64(h1)<<32 | int64(h2)) >> 8 << 8
-		hashcode |= int64(uint8(metastr.(interface{ GetEncoding() Encoding }).GetEncoding()))
+		hashcode |= int64(metastr.GetEncodedBytes()[0])
 	}
 
 	m := NewMetaStringBytes(data, hashcode)

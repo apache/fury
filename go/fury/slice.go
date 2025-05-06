@@ -74,10 +74,24 @@ func (s *sliceConcreteValueSerializer) Write(f *Fury, buf *ByteBuffer, value ref
 	if err := f.writeLength(buf, length); err != nil {
 		return err
 	}
+
+	var prevType reflect.Type
 	for i := 0; i < length; i++ {
-		if err := writeBySerializer(f, buf, value.Index(i), s.elemSerializer, s.referencable); err != nil {
+		elem := value.Index(i)
+		elemType := elem.Type()
+
+		var elemSerializer Serializer
+		if i == 0 || elemType != prevType {
+			elemSerializer = nil
+		} else {
+			elemSerializer = s.elemSerializer
+		}
+
+		if err := writeBySerializer(f, buf, elem, elemSerializer, s.referencable); err != nil {
 			return err
 		}
+
+		prevType = elemType
 	}
 	return nil
 }
@@ -90,8 +104,19 @@ func (s *sliceConcreteValueSerializer) Read(f *Fury, buf *ByteBuffer, type_ refl
 		value.Set(value.Slice(0, length))
 	}
 	f.refResolver.Reference(value)
+	var prevType reflect.Type
 	for i := 0; i < length; i++ {
-		if err := readBySerializer(f, buf, value.Index(i), s.elemSerializer, s.referencable); err != nil {
+
+		elem := value.Index(i)
+		elemType := elem.Type()
+
+		var elemSerializer Serializer
+		if i == 0 || elemType != prevType {
+			elemSerializer = nil
+		} else {
+			elemSerializer = s.elemSerializer
+		}
+		if err := readBySerializer(f, buf, value.Index(i), elemSerializer, s.referencable); err != nil {
 			return err
 		}
 	}

@@ -136,7 +136,7 @@ type intSerializer struct {
 }
 
 func (s intSerializer) TypeId() TypeId {
-	return INT
+	return -INT64
 }
 
 func (s intSerializer) Write(f *Fury, buf *ByteBuffer, value reflect.Value) error {

@@ -395,13 +395,17 @@ func (f *Fury) readReferencableBySerializer(buf *ByteBuffer, value reflect.Value
 
 func (f *Fury) readData(buffer *ByteBuffer, value reflect.Value, serializer Serializer) (err error) {
 	var typeInfo TypeInfo
+	var type_ reflect.Type
+	typeInfo, err = f.typeResolver.readTypeInfo(buffer)
 	if serializer == nil {
-		typeInfo, err = f.typeResolver.readTypeInfo(buffer)
-		if err != nil {
-			return err
-		}
+		serializer = typeInfo.Serializer
 	}
-	type_ := typeInfo.Type
+	if typeInfo.Type == nil {
+		type_ = value.Type()
+	} else {
+		type_ = typeInfo.Type
+	}
+
 	// `type_` may be more concrete than `value.Type()`. For example, `value.Type()` may be interface type.
 	// in serializers.
 	if value.Kind() == reflect.Interface {
@@ -409,7 +413,7 @@ func (f *Fury) readData(buffer *ByteBuffer, value reflect.Value, serializer Seri
 		// addressable concreate value to populate instead. Otherwise, we will need to handle interface in
 		// every serializers.
 		newValue := reflect.New(type_).Elem()
-		err := typeInfo.Serializer.Read(f, buffer, type_, newValue)
+		err := serializer.Read(f, buffer, type_, newValue)
 		if err != nil {
 			return err
 		}
@@ -418,7 +422,7 @@ func (f *Fury) readData(buffer *ByteBuffer, value reflect.Value, serializer Seri
 	} else {
 		// handle value nil in the serializers since default value of most types are not nil
 		// and for nil, those values are composite values, check is cheap.
-		return typeInfo.Serializer.Read(f, buffer, typeInfo.Type, value)
+		return serializer.Read(f, buffer, typeInfo.Type, value)
 	}
 }
 

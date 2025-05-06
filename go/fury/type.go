@@ -112,7 +112,6 @@ const (
 	// ARROW_TABLE an arrow table object
 	ARROW_TABLE = 39
 
-	INT = 99
 	// UINT8 Unsigned 8-bit little-endian integer
 	UINT8 = 100 // Not in mapping table, assign a higher value
 	// UINT16 Unsigned 16-bit little-endian integer
@@ -307,7 +306,7 @@ func newTypeResolver(fury *Fury) *typeResolver {
 
 		dynamicWrittenMetaStr: make([]string, 0),
 		typeIDToClassInfo:     make(map[int32]TypeInfo),
-		typeIDCounter:         64,
+		typeIDCounter:         300,
 		dynamicWriteStringID:  0,
 
 		classesInfo:          make(map[string]TypeInfo),
@@ -347,7 +346,6 @@ func newTypeResolver(fury *Fury) *typeResolver {
 func (r *typeResolver) initialize() {
 	serializers := []struct {
 		reflect.Type
-
 		Serializer
 	}{
 		{stringType, stringSerializer{}},
@@ -454,7 +452,7 @@ func (r *typeResolver) getSerializerByTypeTag(typeTag string) (Serializer, error
 
 func (r *typeResolver) getTypeInfo(value reflect.Value, create bool) (TypeInfo, error) {
 	// Check cache first
-	if info, ok := r.classesInfo[value.Type().Name()]; ok {
+	if info, ok := r.classesInfo[value.Type().String()]; ok {
 		if info.Serializer == nil {
 			serializer, err := r.createSerializer(value.Type())
 			if err != nil {
@@ -541,12 +539,12 @@ func (r *typeResolver) registerType(
 		}
 
 		nsMeta, _ := r.namespaceEncoder.Encode(typeName)
-		if nsBytes = r.metaStringResolver.GetMetaStrBytes(nsMeta); nsBytes == nil {
+		if nsBytes = r.metaStringResolver.GetMetaStrBytes(&nsMeta); nsBytes == nil {
 			panic("failed to encode namespace")
 		}
 
 		typeMeta, _ := r.typeNameEncoder.Encode(typeName)
-		if typeBytes = r.metaStringResolver.GetMetaStrBytes(typeMeta); typeBytes == nil {
+		if typeBytes = r.metaStringResolver.GetMetaStrBytes(&typeMeta); typeBytes == nil {
 			panic("failed to encode type name")
 		}
 	}
@@ -562,13 +560,13 @@ func (r *typeResolver) registerType(
 		IsDynamic:    dynamicType,
 		hashValue:    calcTypeHash(typ),
 	}
-
-	r.classesInfo[typ.Name()] = typeInfo
+	tname := typ.String()
+	r.classesInfo[tname] = typeInfo
 	if typeName != "" {
 		r.namedTypeToClassInfo[[2]string{namespace, typeName}] = typeInfo
 		r.nsTypeToClassInfo[nsTypeKey{nsBytes.Hashcode, typeBytes.Hashcode}] = typeInfo
 	}
-	if typeID > 0 && (r.language == XLANG || !IsNamespacedType(TypeId(typeID))) {
+	if r.language == XLANG || !IsNamespacedType(TypeId(typeID)) {
 		r.typeIDToClassInfo[typeID] = typeInfo
 	}
 
@@ -591,9 +589,6 @@ func calcTypeHash(typ reflect.Type) uint64 {
 }
 
 func (r *typeResolver) writeTypeInfo(buffer *ByteBuffer, typeInfo TypeInfo) error {
-	if typeInfo.IsDynamic {
-		return nil
-	}
 
 	typeID := typeInfo.TypeID
 	internalTypeID := typeID & 0xFF
@@ -682,6 +677,8 @@ func (r *typeResolver) createSerializer(type_ reflect.Type) (s Serializer, err e
 		} else {
 			return mapSerializer{}, nil
 		}
+	case reflect.Struct:
+		return r.typeToSerializers[type_], nil
 	}
 	return nil, fmt.Errorf("type %s not supported", type_.String())
 }
