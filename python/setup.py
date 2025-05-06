@@ -17,10 +17,9 @@
 
 import os
 import subprocess
-import sys
 from os.path import abspath, join as pjoin
 
-from setuptools import setup, find_packages
+from setuptools import setup
 from setuptools.dist import Distribution
 
 DEBUG = os.environ.get("FURY_DEBUG", "False").lower() == "true"
