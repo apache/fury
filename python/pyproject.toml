@@ -1,0 +1,71 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+[build-system]
+requires = [
+    "setuptools>=45",
+    "wheel",
+    "Cython>=0.29",
+    "numpy",
+    "pyarrow==15.0.0; python_version<'3.13'",
+    "pyarrow==18.0.0; python_version>='3.13'",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyfury"
+dynamic = ["version"]
+description = "Apache Fury™(incubating) is a blazingly fast multi-language serialization framework powered by jit and zero-copy"
+authors = [
+    {name = "chaokunyang", email = "shawn.ck.yang@gmail.com"},
+]
+maintainers = [
+    {name = "https://github.com/chaokunyang", email = "shawn.ck.yang@gmail.com"},
+]
+readme = "README.md"
+license = {file = "LICENSE"}
+classifiers = [
+    "License :: OSI Approved :: Apache Software License",
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: Implementation :: CPython",
+]
+keywords = ["fury", "serialization", "multi-language", "fast", "row-format", "jit", "codegen", "polymorphic", "zero-copy"]
+dependencies = [
+    "cloudpickle",
+]
+
+[project.optional-dependencies]
+format = ["pyarrow"]
+all = ["pyarrow"]
+
+[tool.setuptools]
+packages = ["pyfury", "pyfury.format", "pyfury.lib.mmh3"]
+include-package-data = true
+zip-safe = false
+
+[tool.setuptools.package-data]
+"pyfury" = ["**/*.pxd", "**/*.pyx", "**/*.pxd", "*.so", "*.dylib", "*.dll", "*.pyd"]
+"pyfury.format" = ["**/*.pxd", "**/*.pyx", "**/*.pxd", "*.so", "*.dylib", "*.dll", "*.pyd"]
+"pyfury.lib.mmh3" = ["**/*.pxd", "**/*.pyx", "**/*.pxd", "*.so", "*.dylib", "*.dll", "*.pyd"]
+
+[tool.setuptools.dynamic]
+version = {attr = "pyfury.__version__"}
