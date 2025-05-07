@@ -275,23 +275,31 @@ func (f *Fury) writeNonReferencableBySerializer(
 }
 
 func (f *Fury) writeValue(buffer *ByteBuffer, value reflect.Value, serializer Serializer) (err error) {
+	// Handle interface values by getting their concrete element
 	if value.Kind() == reflect.Interface {
 		value = value.Elem()
 	}
+
+	// Get type information for the value
 	typeInfo, err := f.typeResolver.getTypeInfo(value, true)
 	type_ := typeInfo.Type
+
+	// If no serializer provided, get one for the type
 	if serializer == nil {
 		serializer, err = f.typeResolver.getSerializerByType(type_)
 		if err != nil {
 			return err
 		}
 	}
+
+	// Write type information to buffer
 	err = f.typeResolver.writeTypeInfo(buffer, typeInfo)
 	if err != nil {
 		return err
 	}
-	return serializer.Write(f, buffer, value)
 
+	// Serialize the actual value using the serializer
+	return serializer.Write(f, buffer, value)
 }
 
 func (f *Fury) WriteBufferObject(buffer *ByteBuffer, bufferObject BufferObject) error {
@@ -399,32 +407,34 @@ func (f *Fury) readReferencableBySerializer(buf *ByteBuffer, value reflect.Value
 func (f *Fury) readData(buffer *ByteBuffer, value reflect.Value, serializer Serializer) (err error) {
 	var typeInfo TypeInfo
 	var type_ reflect.Type
+
+	// Read type information from the buffer
 	typeInfo, err = f.typeResolver.readTypeInfo(buffer)
 	if serializer == nil {
-		serializer = typeInfo.Serializer
+		serializer = typeInfo.Serializer // Use serializer from type info if none provided
 	}
+
+	// Determine concrete type (use value's type if type info is nil)
 	if typeInfo.Type == nil {
 		type_ = value.Type()
 	} else {
 		type_ = typeInfo.Type
 	}
 
-	// `type_` may be more concrete than `value.Type()`. For example, `value.Type()` may be interface type.
-	// in serializers.
+	// Handle interface types specially
 	if value.Kind() == reflect.Interface {
-		// interfaceValue.Elem is not addressable, so we don't invoke `Elem` on interface. We create a new
-		// addressable concreate value to populate instead. Otherwise, we will need to handle interface in
-		// every serializers.
+		// Create a new concrete value since interface elements aren't addressable
 		newValue := reflect.New(type_).Elem()
 		err := serializer.Read(f, buffer, type_, newValue)
 		if err != nil {
 			return err
 		}
+		// Set the populated concrete value into the interface
 		value.Set(newValue)
 		return nil
 	} else {
-		// handle value nil in the serializers since default value of most types are not nil
-		// and for nil, those values are composite values, check is cheap.
+		// For non-interface types, read directly into the value
+		// (nil checks are handled by individual serializers)
 		return serializer.Read(f, buffer, typeInfo.Type, value)
 	}
 }

@@ -180,7 +180,7 @@ var namedTypes = map[TypeId]struct{}{
 	NAMED_COMPATIBLE_STRUCT: {},
 }
 
-// IsNamespacedType 检查给定的类型 ID 是否为命名空间类型
+// IsNamespacedType checks whether the given type ID is a namespace type
 func IsNamespacedType(typeID TypeId) bool {
 	_, exists := namedTypes[typeID]
 	return exists
@@ -452,9 +452,10 @@ func (r *typeResolver) getSerializerByTypeTag(typeTag string) (Serializer, error
 }
 
 func (r *typeResolver) getTypeInfo(value reflect.Value, create bool) (TypeInfo, error) {
-	// Check cache first
+	// First check if type info exists in cache
 	if info, ok := r.classesInfo[value.Type().String()]; ok {
 		if info.Serializer == nil {
+			// Lazy initialize serializer if not created yet
 			serializer, err := r.createSerializer(value.Type())
 
 			if err != nil {
@@ -464,17 +465,20 @@ func (r *typeResolver) getTypeInfo(value reflect.Value, create bool) (TypeInfo, 
 		}
 		return info, nil
 	}
+
 	var internal = false
 
+	// Early return if type registration is required but not allowed
 	if !create {
 		fmt.Errorf("type %v not registered and create=false", value.Type())
 	}
+
 	typ := value.Type()
-	// Auto-register unregistered types
+	// Get package path and type name for registration
 	pkgPath := typ.PkgPath()
 	typeName := typ.Name()
 
-	// Handle special types
+	// Handle special types that require explicit registration
 	switch {
 	case typ.Kind() == reflect.Ptr:
 		fmt.Errorf("pointer types must be registered explicitly")
@@ -488,19 +492,19 @@ func (r *typeResolver) getTypeInfo(value reflect.Value, create bool) (TypeInfo, 
 	var typeID int32
 	switch {
 	case r.language == XLANG && !r.requireRegistration:
-		// Auto-assign IDs for Python-compatible types
+		// Auto-assign IDs
 		typeID = r.allocateTypeID()
 	default:
 		fmt.Errorf("type %v must be registered explicitly", typ)
 	}
 
-	// Create full type metadata
+	// Register the type with full metadata
 	return r.registerType(
 		typ,
 		typeID,
 		pkgPath,
 		typeName,
-		nil, // serializer will be created in registerType
+		nil, // serializer will be created during registration
 		internal)
 }
 
@@ -512,7 +516,7 @@ func (r *typeResolver) registerType(
 	serializer Serializer,
 	internal bool,
 ) (TypeInfo, error) {
-	// Validate input
+	// Input validation
 	if typ == nil {
 		panic("nil type")
 	}
@@ -520,22 +524,25 @@ func (r *typeResolver) registerType(
 		panic("namespace provided without typeName")
 	}
 
-	// Create serializer if needed (with proper error handling)
+	// Serializer initialization
 	if !internal && serializer == nil {
 		var err error
-		serializer = r.typeToSerializers[typ]
+		serializer = r.typeToSerializers[typ] // Check pre-registered serializers
 		if serializer == nil {
+			// Create new serializer if not found
 			if serializer, err = r.createSerializer(typ); err != nil {
 				panic(fmt.Sprintf("failed to create serializer: %v", err))
 			}
 		}
 	}
-	//typeID = int32(serializer.TypeId())
+
+	// Determine if this is a dynamic type (negative typeID)
 	dynamicType := typeID < 0
 
-	// Encode meta strings (with nil checks)
+	// Encode type metadata strings
 	var nsBytes, typeBytes *MetaStringBytes
 	if typeName != "" {
+		// Handle namespace extraction from typeName if needed
 		if namespace == "" {
 			if lastDot := strings.LastIndex(typeName, "."); lastDot != -1 {
 				namespace = typeName[:lastDot]
@@ -554,23 +561,29 @@ func (r *typeResolver) registerType(
 		}
 	}
 
-	// Build complete type info
-
+	// Build complete type information structure
 	typeInfo := TypeInfo{
 		Type:         typ,
 		TypeID:       typeID,
 		Serializer:   serializer,
-		PkgPathBytes: nsBytes,
-		NameBytes:    typeBytes,
+		PkgPathBytes: nsBytes,   // Encoded namespace bytes
+		NameBytes:    typeBytes, // Encoded type name bytes
 		IsDynamic:    dynamicType,
-		hashValue:    calcTypeHash(typ),
+		hashValue:    calcTypeHash(typ), // Precomputed hash for fast lookups
 	}
+
+	// Update resolver caches:
 	tname := typ.String()
-	r.classesInfo[tname] = typeInfo
+	r.classesInfo[tname] = typeInfo // Cache by type string
+
 	if typeName != "" {
+		// Cache by namespace/name pair
 		r.namedTypeToClassInfo[[2]string{namespace, typeName}] = typeInfo
+		// Cache by hashed namespace/name bytes
 		r.nsTypeToClassInfo[nsTypeKey{nsBytes.Hashcode, typeBytes.Hashcode}] = typeInfo
 	}
+
+	// Cache by type ID (for cross-language support)
 	if r.language == XLANG || !IsNamespacedType(TypeId(typeID)) {
 		r.typeIDToClassInfo[typeID] = typeInfo
 	}
@@ -578,7 +591,7 @@ func (r *typeResolver) registerType(
 	return typeInfo, fmt.Errorf("registerType error")
 }
 
-// Helper functions
+// allocateTypeID
 func (r *typeResolver) allocateTypeID() int32 {
 	r.typeIDCounter++
 	return r.typeIDCounter
@@ -594,18 +607,22 @@ func calcTypeHash(typ reflect.Type) uint64 {
 }
 
 func (r *typeResolver) writeTypeInfo(buffer *ByteBuffer, typeInfo TypeInfo) error {
-
+	// Extract the internal type ID (lower 8 bits)
 	typeID := typeInfo.TypeID
 	internalTypeID := typeID & 0xFF
 
+	// Write the type ID to buffer (variable-length encoding)
 	if err := buffer.WriteVarUint32(uint32(typeID)); err != nil {
 		return err
 	}
 
+	// For namespaced types, write additional metadata:
 	if IsNamespacedType(TypeId(internalTypeID)) {
+		// Write package path (namespace) metadata
 		if err := r.metaStringResolver.WriteMetaStringBytes(buffer, typeInfo.PkgPathBytes); err != nil {
 			return err
 		}
+		// Write type name metadata
 		if err := r.metaStringResolver.WriteMetaStringBytes(buffer, typeInfo.NameBytes); err != nil {
 			return err
 		}

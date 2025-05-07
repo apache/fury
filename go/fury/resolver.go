@@ -25,9 +25,10 @@ import (
 	"github.com/spaolacci/murmur3"
 )
 
+// Constants for string handling
 const (
-	SmallStringThreshold         = 8
-	DefaultDynamicWriteMetaStrID = -1
+	SmallStringThreshold         = 8  // Maximum length for "small" strings
+	DefaultDynamicWriteMetaStrID = -1 // Default ID for dynamic strings
 )
 
 type Encoding int8
@@ -61,13 +62,13 @@ func (a *MetaStringBytes) Hash() int64 {
 type pair [2]int64
 
 type MetaStringResolver struct {
-	dynamicWriteStringID     int16
-	dynamicWrittenEnumString []*MetaStringBytes
-	dynamicIDToEnumString    []*MetaStringBytes
-	hashToMetaStrBytes       map[int64]*MetaStringBytes
-	smallHashToMetaStrBytes  map[pair]*MetaStringBytes
-	enumStrSet               map[*MetaStringBytes]struct{}
-	metaStrToMetaStrBytes    map[*meta.MetaString]*MetaStringBytes
+	dynamicWriteStringID     int16                                 // Counter for dynamic string IDs
+	dynamicWrittenEnumString []*MetaStringBytes                    // Cache of written strings
+	dynamicIDToEnumString    []*MetaStringBytes                    // Cache of read strings by ID
+	hashToMetaStrBytes       map[int64]*MetaStringBytes            // Large string lookup
+	smallHashToMetaStrBytes  map[pair]*MetaStringBytes             // Small string lookup
+	enumStrSet               map[*MetaStringBytes]struct{}         // String set for deduplication
+	metaStrToMetaStrBytes    map[*meta.MetaString]*MetaStringBytes // Conversion cache
 }
 
 func NewMetaStringResolver() *MetaStringResolver {
@@ -81,18 +82,22 @@ func NewMetaStringResolver() *MetaStringResolver {
 
 func (r *MetaStringResolver) WriteMetaStringBytes(buf *ByteBuffer, m *MetaStringBytes) error {
 	if m.DynamicWriteStringID == DefaultDynamicWriteMetaStrID {
+		// First occurrence: write full string data
 		m.DynamicWriteStringID = r.dynamicWriteStringID
 		r.dynamicWriteStringID++
 		r.dynamicWrittenEnumString = append(r.dynamicWrittenEnumString, m)
 
+		// Write header with length and encoding info
 		header := uint32(m.Length) << 1
 		if err := writeVarUint32(buf, header); err != nil {
 			return err
 		}
 
+		// Small strings store encoding in header
 		if m.Length <= SmallStringThreshold {
 			buf.WriteByte(byte(m.Encoding))
 		} else {
+			// Large strings include full hash
 			err := binary.Write(buf, binary.LittleEndian, m.Hashcode)
 			if err != nil {
 				return err
@@ -100,6 +105,7 @@ func (r *MetaStringResolver) WriteMetaStringBytes(buf *ByteBuffer, m *MetaString
 		}
 		buf.Write(m.Data)
 	} else {
+		// Subsequent occurrence: write reference ID only
 		header := uint32((m.DynamicWriteStringID+1)<<1) | 1
 		err := writeVarUint32(buf, header)
 		if err != nil {
@@ -109,7 +115,9 @@ func (r *MetaStringResolver) WriteMetaStringBytes(buf *ByteBuffer, m *MetaString
 	return nil
 }
 
+// ReadMetaStringBytes reads a string from buffer, handling dynamic references
 func (r *MetaStringResolver) ReadMetaStringBytes(buf *ByteBuffer) (*MetaStringBytes, error) {
+	// Read header containing length/reference info
 	header, err := readVarUint32(buf)
 	if err != nil {
 		return nil, err
@@ -131,7 +139,9 @@ func (r *MetaStringResolver) ReadMetaStringBytes(buf *ByteBuffer) (*MetaStringBy
 		encoding Encoding
 	)
 
+	// Small string optimization
 	if length <= SmallStringThreshold {
+		// Read encoding and data
 		encByte, _ := buf.ReadByte()
 		encoding = Encoding(encByte)
 
@@ -141,6 +151,7 @@ func (r *MetaStringResolver) ReadMetaStringBytes(buf *ByteBuffer) (*MetaStringBy
 			return nil, err
 		}
 
+		// Compute composite hash key
 		if length <= 8 {
 			key[0] = bytesToInt64(data)
 		} else {
@@ -152,6 +163,7 @@ func (r *MetaStringResolver) ReadMetaStringBytes(buf *ByteBuffer) (*MetaStringBy
 		}
 		hashcode = ((key[0]*31 + key[1]) >> 8 << 8) | int64(encoding)
 	} else {
+		// Large string handling
 		err := binary.Read(buf, binary.LittleEndian, &hashcode)
 		if err != nil {
 			return nil, err
@@ -164,6 +176,7 @@ func (r *MetaStringResolver) ReadMetaStringBytes(buf *ByteBuffer) (*MetaStringBy
 		}
 	}
 
+	// Check string caches for existing instance
 	if length <= SmallStringThreshold {
 		if m, ok := r.smallHashToMetaStrBytes[key]; ok {
 			r.dynamicIDToEnumString = append(r.dynamicIDToEnumString, m)
@@ -176,6 +189,7 @@ func (r *MetaStringResolver) ReadMetaStringBytes(buf *ByteBuffer) (*MetaStringBy
 		}
 	}
 
+	// Create and cache new string instance
 	m := NewMetaStringBytes(data, hashcode)
 	if length <= SmallStringThreshold {
 		r.smallHashToMetaStrBytes[key] = m
@@ -188,16 +202,20 @@ func (r *MetaStringResolver) ReadMetaStringBytes(buf *ByteBuffer) (*MetaStringBy
 	return m, nil
 }
 
+// GetMetaStrBytes converts MetaString to optimized MetaStringBytes
 func (r *MetaStringResolver) GetMetaStrBytes(metastr *meta.MetaString) *MetaStringBytes {
+	// Check cache first
 	if m, exists := r.metaStrToMetaStrBytes[metastr]; exists {
 		return m
 	}
 
+	// Compute hash based on string size
 	var hashcode int64
 	data := metastr.GetEncodedBytes()
 	length := len(data)
 
 	if length <= SmallStringThreshold {
+		// Small string: use direct bytes as hash components
 		var v1, v2 int64
 		if length <= 8 {
 			v1 = bytesToInt64(data)
@@ -207,6 +225,7 @@ func (r *MetaStringResolver) GetMetaStrBytes(metastr *meta.MetaString) *MetaStri
 		}
 		hashcode = ((v1*31 + v2) >> 8 << 8) | int64(metastr.GetEncodedBytes()[0])
 	} else {
+		// Large string: use MurmurHash3
 		hash := murmur3.New128()
 		hash.Write(data)
 		h1, h2 := hash.Sum128()
@@ -214,6 +233,7 @@ func (r *MetaStringResolver) GetMetaStrBytes(metastr *meta.MetaString) *MetaStri
 		hashcode |= int64(metastr.GetEncodedBytes()[0])
 	}
 
+	// Create and cache new instance
 	m := NewMetaStringBytes(data, hashcode)
 	r.metaStrToMetaStrBytes[metastr] = m
 	return m
