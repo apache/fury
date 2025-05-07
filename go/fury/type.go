@@ -173,6 +173,7 @@ const (
 )
 
 var namedTypes = map[TypeId]struct{}{
+	FURY_TYPE_TAG:           {},
 	NAMED_EXT:               {},
 	NAMED_ENUM:              {},
 	NAMED_STRUCT:            {},
@@ -455,6 +456,7 @@ func (r *typeResolver) getTypeInfo(value reflect.Value, create bool) (TypeInfo, 
 	if info, ok := r.classesInfo[value.Type().String()]; ok {
 		if info.Serializer == nil {
 			serializer, err := r.createSerializer(value.Type())
+
 			if err != nil {
 				fmt.Errorf("failed to create serializer: %w", err)
 			}
@@ -518,15 +520,18 @@ func (r *typeResolver) registerType(
 		panic("namespace provided without typeName")
 	}
 
-	dynamicType := typeID < 0
-
 	// Create serializer if needed (with proper error handling)
 	if !internal && serializer == nil {
 		var err error
-		if serializer, err = r.createSerializer(typ); err != nil {
-			panic(fmt.Sprintf("failed to create serializer: %v", err))
+		serializer = r.typeToSerializers[typ]
+		if serializer == nil {
+			if serializer, err = r.createSerializer(typ); err != nil {
+				panic(fmt.Sprintf("failed to create serializer: %v", err))
+			}
 		}
 	}
+	//typeID = int32(serializer.TypeId())
+	dynamicType := typeID < 0
 
 	// Encode meta strings (with nil checks)
 	var nsBytes, typeBytes *MetaStringBytes
@@ -879,6 +884,7 @@ func (r *typeResolver) readTypeInfo(buffer *ByteBuffer) (TypeInfo, error) {
 	}
 
 	// Handle simple type IDs (non-namespaced types)
+
 	if typeInfo, exists := r.typeIDToClassInfo[typeID]; exists {
 		return typeInfo, nil
 	}
