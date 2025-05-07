@@ -1200,9 +1200,9 @@ cdef class TimestampSerializer(CrossLanguageCompatibleSerializer):
     cdef inline _get_timestamp(self, value):
         seconds_offset = 0
         if self.win_platform and value.tzinfo is None:
-          is_dst = time.daylight and time.localtime().tm_isdst > 0
-          seconds_offset = time.altzone if is_dst else time.timezone
-          value = value.replace(tzinfo = datetime.timezone.utc)
+            is_dst = time.daylight and time.localtime().tm_isdst > 0
+            seconds_offset = time.altzone if is_dst else time.timezone
+            value = value.replace(tzinfo = datetime.timezone.utc)
         return int((value.timestamp() + seconds_offset) * 1000000)
 
     cpdef inline write(self, Buffer buffer, value):
