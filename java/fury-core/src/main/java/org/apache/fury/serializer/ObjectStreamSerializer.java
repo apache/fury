@@ -894,7 +894,8 @@ public class ObjectStreamSerializer extends AbstractObjectSerializer {
         throw new IndexOutOfBoundsException();
       }
       int remaining = buffer.remaining();
-      if (remaining < length) {
+      // When remaining = 0, also force to refill buffer to avoid getting stuck
+      if (remaining > 0 && remaining < length) {
         buffer.readBytes(buf, offset, remaining);
         return remaining;
       } else {
