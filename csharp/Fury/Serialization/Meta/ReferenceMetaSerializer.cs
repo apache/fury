@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 using Fury.Collections;
@@ -9,231 +9,234 @@ using Fury.Meta;
 
 namespace Fury.Serialization.Meta;
 
-internal struct ReferenceMetaSerializer(bool referenceTracking)
+internal sealed class ReferenceMetaSerializer
 {
+    private bool _referenceTracking;
+
     private readonly HashSet<object> _objectsBeingSerialized = [];
     private readonly AutoIncrementIdDictionary<object> _writtenRefIds = new();
     private bool _hasWrittenRefId;
-    private RefId? _lastUncompletedRefId;
     private bool _hasWrittenRefFlag;
-    private ReferenceFlag _lastUncompletedReferenceFlag;
+    private RefMetadata? _cachedRefMetadata;
 
-    public void Reset(bool clearContext)
+    public void Reset()
+    {
+        ResetCurrent();
+
+        _objectsBeingSerialized.Clear();
+        _writtenRefIds.Clear();
+    }
+
+    public void Initialize(bool referenceTracking)
+    {
+        _referenceTracking = referenceTracking;
+    }
+
+    public void ResetCurrent()
     {
         _hasWrittenRefId = false;
-        _lastUncompletedRefId = null;
         _hasWrittenRefFlag = false;
-        if (clearContext)
-        {
-            _objectsBeingSerialized.Clear();
-            _writtenRefIds.Clear();
-        }
+        _cachedRefMetadata = null;
     }
 
-    public bool Write<TTarget>(ref BatchWriter writer, in TTarget? value, out bool needWriteValue)
-        where TTarget : notnull
+    public bool Write<TTarget>(ref SerializationWriterRef writerRef, in TTarget? value, out RefFlag writtenFlag)
     {
-        var completed = true;
         if (value is null)
         {
-            needWriteValue = false;
-            completed = TryWriteReferenceFlag(ref writer, ReferenceFlag.Null, ref _hasWrittenRefFlag);
+            writtenFlag = RefFlag.Null;
+            WriteRefFlag(ref writerRef, writtenFlag);
+            return _hasWrittenRefFlag;
         }
-        else if (TypeHelper<TTarget>.IsValueType)
+
+        if (typeof(TTarget).IsValueType)
         {
             // Objects declared as ValueType are not possible to be referenced
+            writtenFlag = RefFlag.NotNullValue;
 
-            needWriteValue = true;
-            completed =
-                completed && TryWriteReferenceFlag(ref writer, ReferenceFlag.NotNullValue, ref _hasWrittenRefFlag);
+            WriteRefFlag(ref writerRef, writtenFlag);
+            return _hasWrittenRefFlag;
         }
-        else if (referenceTracking)
+
+        if (_referenceTracking)
         {
-            var refId = _lastUncompletedRefId;
-            var refFlag = _lastUncompletedReferenceFlag;
-            if (refId is null)
+            if (_cachedRefMetadata is null)
             {
-                // Last write was completed
                 var id = _writtenRefIds.AddOrGet(value, out var exists);
-                refId = new RefId(id);
-                refFlag = exists ? ReferenceFlag.Ref : ReferenceFlag.RefValue;
+                var flag = exists ? RefFlag.Ref : RefFlag.RefValue;
+                _cachedRefMetadata = new RefMetadata(flag, id);
             }
-            completed = completed && TryWriteReferenceFlag(ref writer, refFlag, ref _hasWrittenRefFlag);
-            if (refFlag is ReferenceFlag.Ref)
+            writtenFlag = _cachedRefMetadata.Value.RefFlag;
+            var refId = _cachedRefMetadata.Value.RefId;
+            WriteRefFlag(ref writerRef, writtenFlag);
+            if (!_hasWrittenRefFlag)
+            {
+                return false;
+            }
+            if (writtenFlag is RefFlag.Ref)
             {
                 // A referenceable object has been recorded
-                needWriteValue = false;
-                completed = completed && writer.TryWrite7BitEncodedUint((uint)refId.Value.Value, ref _hasWrittenRefId);
-            }
-            else
-            {
-                // A new referenceable object
-                needWriteValue = true;
-                Debug.Assert(refFlag is ReferenceFlag.RefValue);
+                if (_hasWrittenRefId)
+                {
+                    // This should not happen, but if it does, nothing will be written.
+                    Debug.Fail($"Redundant call to {nameof(Write)}.");
+                    return true;
+                }
+                _hasWrittenRefId = writerRef.Write7BitEncodedUint((uint)refId);
+                return _hasWrittenRefId;
             }
 
-            if (completed)
-            {
-                _lastUncompletedRefId = null;
-            }
-            else
-            {
-                _lastUncompletedRefId = refId;
-                _lastUncompletedReferenceFlag = refFlag;
-            }
+            // A new referenceable object
+            Debug.Assert(writtenFlag is RefFlag.RefValue);
+            return true;
         }
-        else
+
+        // Add the object to the set to mark it as being serialized.
+        // When reference tracking is disabled, the same object can be serialized multiple times,
+        // so we need a mechanism to detect circular dependencies.
+
+        if (!_objectsBeingSerialized.Add(value))
         {
-            if (!_objectsBeingSerialized.Add(value))
-            {
-                ThrowHelper.ThrowBadSerializationInputException_CircularDependencyDetected();
-            }
-
-            completed =
-                completed && TryWriteReferenceFlag(ref writer, ReferenceFlag.NotNullValue, ref _hasWrittenRefFlag);
-            needWriteValue = true;
-
-            _objectsBeingSerialized.Remove(value);
+            ThrowBadSerializationInputException_CircularDependencyDetected();
         }
 
-        return completed;
+        writtenFlag = RefFlag.NotNullValue;
+        WriteRefFlag(ref writerRef, writtenFlag);
+        return _hasWrittenRefFlag;
     }
 
-    public bool Write<TTarget>(ref BatchWriter writer, TTarget? value, out bool needWriteValue)
-        where TTarget : struct
+    private void WriteRefFlag(ref SerializationWriterRef writerRef, RefFlag flag)
     {
-        var completed = true;
-        if (value is null)
+        if (_hasWrittenRefFlag)
         {
-            needWriteValue = false;
-            completed = TryWriteReferenceFlag(ref writer, ReferenceFlag.Null, ref _hasWrittenRefFlag);
-        }
-        else
-        {
-            // Objects declared as ValueType are not possible to be referenced
-
-            needWriteValue = true;
-            completed =
-                completed && TryWriteReferenceFlag(ref writer, ReferenceFlag.NotNullValue, ref _hasWrittenRefFlag);
+            return;
         }
 
-        return completed;
+        _hasWrittenRefFlag = writerRef.Write((sbyte)flag);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool TryWriteReferenceFlag(ref BatchWriter writer, ReferenceFlag flag, ref bool hasWritten)
+    public void HandleWriteValueCompleted<TValue>(in TValue value)
     {
-        if (!hasWritten)
+        if (!_referenceTracking && !typeof(TValue).IsValueType)
         {
-            hasWritten = writer.TryWrite((sbyte)flag);
+            // Remove the object from the set to mark it as completed.
+            _objectsBeingSerialized.Remove(value!);
         }
+    }
 
-        return hasWritten;
+    [DoesNotReturn]
+    private static void ThrowBadSerializationInputException_CircularDependencyDetected()
+    {
+        throw new BadSerializationInputException("Circular dependency detected.");
     }
 }
 
-internal struct ReferenceMetaDeserializer()
+internal sealed class ReferenceMetaDeserializer
 {
-    private readonly AutoIncrementIdDictionary<Box> _readValues = new();
-    private ReferenceFlag? _lastUncompletedReferenceFlag;
-    private RefId? _currentRefId;
+    private readonly AutoIncrementIdDictionary<object> _readValues = new();
+    private readonly AutoIncrementIdDictionary<IDeserializer> _inProgressDeserializers = new();
+    private RefFlag? _refFlag;
+    private int? _refId;
 
-    public void Reset(bool clearContext)
+    public void Reset()
     {
-        _lastUncompletedReferenceFlag = null;
-        _currentRefId = null;
-        if (clearContext)
-        {
-            _readValues.Clear();
-        }
+        ResetCurrent();
+        _readValues.Clear();
+        _inProgressDeserializers.Clear();
     }
 
-    public ReadResult Read(BatchReader reader)
+    public void ResetCurrent()
     {
-        bool completed;
-        ReferenceFlag referenceFlag;
-        if (_lastUncompletedReferenceFlag is null)
+        _refFlag = null;
+        _refId = null;
+    }
+
+    private async ValueTask ReadRefFlag(DeserializationReader reader, bool isAsync, CancellationToken cancellationToken)
+    {
+        if (_refFlag is not null)
         {
-            completed = reader.TryReadReferenceFlag(out referenceFlag);
-            _lastUncompletedReferenceFlag = completed ? referenceFlag : null;
-            if (completed)
-            {
-                _lastUncompletedReferenceFlag = referenceFlag;
-            }
-            else
-            {
-                return new ReadResult(Completed: false);
-            }
-        }
-        else
-        {
-            referenceFlag = _lastUncompletedReferenceFlag.Value;
+            return;
         }
 
-        ReadResult result;
-        switch (referenceFlag)
+        var sbyteResult = await reader.ReadInt8(isAsync, cancellationToken);
+        if (!sbyteResult.IsSuccess)
         {
-            case ReferenceFlag.Null:
-            case ReferenceFlag.NotNullValue:
-            case ReferenceFlag.RefValue:
-                result = new ReadResult(ReferenceFlag: _lastUncompletedReferenceFlag.Value);
-                break;
-            case ReferenceFlag.Ref:
-                completed = reader.TryReadRefId(out var id);
-                _currentRefId = completed ? id : null;
-                result = new ReadResult(
-                    Completed: completed,
-                    RefId: id,
-                    ReferenceFlag: _lastUncompletedReferenceFlag.Value
-                );
-                break;
+            return;
+        }
+
+        _refFlag = (RefFlag)sbyteResult.Value;
+    }
+
+    private async ValueTask ReadRefId(DeserializationReader reader, bool isAsync, CancellationToken cancellationToken)
+    {
+        if (_refId is not null)
+        {
+            return;
+        }
+        var uintResult = await reader.Read7BitEncodedUint(isAsync, cancellationToken);
+
+        if (!uintResult.IsSuccess)
+        {
+            return;
+        }
+        _refId = (int)uintResult.Value;
+    }
+
+    public async ValueTask<ReadValueResult<RefMetadata>> Read(
+        DeserializationReader reader,
+        bool isAsync,
+        CancellationToken cancellationToken
+    )
+    {
+        await ReadRefFlag(reader, isAsync, cancellationToken);
+        switch (_refFlag)
+        {
+            case null:
+                return ReadValueResult<RefMetadata>.Failed;
+            case RefFlag.Null:
+            case RefFlag.NotNullValue:
+            case RefFlag.RefValue:
+                return ReadValueResult<RefMetadata>.FromValue(new RefMetadata(_refFlag.Value));
+            case RefFlag.Ref:
+                await ReadRefId(reader, isAsync, cancellationToken);
+                if (_refId is not { } refId)
+                {
+                    return ReadValueResult<RefMetadata>.Failed;
+                }
+                return ReadValueResult<RefMetadata>.FromValue(new RefMetadata(_refFlag.Value, refId));
             default:
-                result = ThrowHelper.ThrowUnreachableException<ReadResult>();
-                break;
+                return ThrowHelper.ThrowUnreachableException<ReadValueResult<RefMetadata>>();
         }
-
-        return result;
     }
 
-    public async ValueTask<ReadResult> ReadAsync(BatchReader reader, CancellationToken cancellationToken = default)
+    public void GetReadValue(int refId, out object value)
     {
-        _lastUncompletedReferenceFlag ??= await reader.ReadReferenceFlagAsync(cancellationToken);
-        ReadResult result;
-        switch (_lastUncompletedReferenceFlag)
+        if (_readValues.TryGetValue(refId, out value))
         {
-            case ReferenceFlag.Null:
-            case ReferenceFlag.NotNullValue:
-            case ReferenceFlag.RefValue:
-                result = new ReadResult(ReferenceFlag: _lastUncompletedReferenceFlag.Value);
-                break;
-            case ReferenceFlag.Ref:
-                _currentRefId ??= await reader.ReadRefIdAsync(cancellationToken);
-                result = new ReadResult(RefId: _currentRefId.Value, ReferenceFlag: _lastUncompletedReferenceFlag.Value);
-                break;
-            default:
-                result = ThrowHelper.ThrowUnreachableException<ReadResult>();
-                break;
+            return;
         }
 
-        return result;
-    }
-
-    public void GetReadValue(RefId refId, out Box value)
-    {
-        if (!_readValues.TryGetValue(refId.Value, out value))
+        if (!_inProgressDeserializers.TryGetValue(refId, out var deserializer))
         {
-            ThrowHelper.ThrowBadDeserializationInputException_ReferencedObjectNotFound(refId);
+            ThrowBadDeserializationInputException_ReferencedObjectNotFound(refId);
         }
+
+        value = deserializer.ReferenceableObject;
+        _readValues[refId] = value;
     }
 
-    public void AddReadValue(RefId refId, Box value)
+    public void AddReadValue(int refId, object value)
     {
-        _readValues[refId.Value] = value;
+        _readValues[refId] = value;
     }
 
-    public record struct ReadResult(
-        bool Completed = true,
-        RefId RefId = default,
-        ReferenceFlag ReferenceFlag = default
-    );
+    public void AddInProgressDeserializer(int refId, IDeserializer deserializer)
+    {
+        _inProgressDeserializers[refId] = deserializer;
+    }
+
+    [DoesNotReturn]
+    private static void ThrowBadDeserializationInputException_ReferencedObjectNotFound(int refId)
+    {
+        throw new BadDeserializationInputException($"Referenced object not found for ref kind '{refId}'.");
+    }
 }

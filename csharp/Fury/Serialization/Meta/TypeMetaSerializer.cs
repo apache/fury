@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 using Fury.Collections;
@@ -9,189 +7,233 @@ using Fury.Meta;
 
 namespace Fury.Serialization.Meta;
 
-internal struct TypeMetaSerializer
+internal sealed class TypeMetaSerializer
 {
-    private readonly AutoIncrementIdDictionary<MetaString> _sharedMetaStringContext;
-    private MetaStringSerializer _nameMetaStringSerializer;
-    private MetaStringSerializer _namespaceMetaStringSerializer;
+    private readonly MetaStringSerializer _nameMetaStringSerializer = new();
+    private readonly MetaStringSerializer _namespaceMetaStringSerializer = new();
 
     private bool _hasWrittenTypeKind;
 
-    public TypeMetaSerializer()
-    {
-        _sharedMetaStringContext = new AutoIncrementIdDictionary<MetaString>();
-        _nameMetaStringSerializer = new MetaStringSerializer(_sharedMetaStringContext);
-        _namespaceMetaStringSerializer = new MetaStringSerializer(_sharedMetaStringContext);
-    }
-
-    public void Reset(bool clearContext)
+    public void Reset()
     {
         _hasWrittenTypeKind = false;
         _nameMetaStringSerializer.Reset();
         _namespaceMetaStringSerializer.Reset();
-        if (clearContext)
-        {
-            _sharedMetaStringContext.Clear();
-        }
     }
 
-    public bool Write(ref BatchWriter writer, TypeRegistration registration)
+    public void Initialize(AutoIncrementIdDictionary<MetaString> metaStringContext)
+    {
+        _nameMetaStringSerializer.Initialize(metaStringContext);
+        _namespaceMetaStringSerializer.Initialize(metaStringContext);
+    }
+
+    public bool Write(ref SerializationWriterRef writerRef, TypeRegistration registration)
     {
         var typeKind = registration.InternalTypeKind;
-
-        var completed = true;
-        completed = completed && writer.TryWrite7BitEncodedUint((uint)typeKind, ref _hasWrittenTypeKind);
-        if (typeKind.IsNamed())
-        {
-            completed = completed && _namespaceMetaStringSerializer.Write(ref writer, registration.NamespaceMetaString);
-            completed = completed && _nameMetaStringSerializer.Write(ref writer, registration.NameMetaString);
-        }
-
-        return completed;
-    }
-}
-
-internal struct TypeMetaDeserializer
-{
-    private readonly TypeRegistry _typeRegistry;
-    private readonly AutoIncrementIdDictionary<MetaString> _sharedMetaStringContext;
-    private MetaStringDeserializer _nameMetaStringDeserializer;
-    private MetaStringDeserializer _namespaceMetaStringDeserializer;
-
-    private uint? _compositeIdValue;
-    private MetaString? _namespaceMetaString;
-    private MetaString? _nameMetaString;
-
-    public TypeMetaDeserializer(TypeRegistry registry)
-    {
-        _typeRegistry = registry;
-        _sharedMetaStringContext = new AutoIncrementIdDictionary<MetaString>();
-        _nameMetaStringDeserializer = new MetaStringDeserializer(
-            _sharedMetaStringContext,
-            registry.MetaStringStorage,
-            MetaStringStorage.EncodingPolicy.Name
-        );
-        _namespaceMetaStringDeserializer = new MetaStringDeserializer(
-            _sharedMetaStringContext,
-            registry.MetaStringStorage,
-            MetaStringStorage.EncodingPolicy.Namespace
-        );
-    }
-
-    public void Reset(bool clearContext)
-    {
-        _compositeIdValue = null;
-        _namespaceMetaString = null;
-        _nameMetaString = null;
-        _nameMetaStringDeserializer.Reset();
-        _namespaceMetaStringDeserializer.Reset();
-        if (clearContext)
-        {
-            _sharedMetaStringContext.Clear();
-        }
-    }
-
-    public bool Read(BatchReader reader, Type declaredType, [NotNullWhen(true)] out TypeRegistration? registration)
-    {
-        var completed = reader.TryRead7BitEncodedUint(ref _compositeIdValue);
-        registration = null;
-        if (_compositeIdValue is null || !completed)
+        WriteTypeKind(ref writerRef, typeKind);
+        if (!_hasWrittenTypeKind)
         {
             return false;
         }
-
-        var compositeId = CompositeTypeKind.FromUint(_compositeIdValue.Value);
-        var (internalTypeKind, typeId) = compositeId;
-        if (internalTypeKind.TryToBeTypeKind(out var typeKind))
+        if (typeKind.IsNamed())
         {
-            registration = GetRegistrationByTypeKind(typeKind, declaredType);
+            if (!_namespaceMetaStringSerializer.Write(ref writerRef, registration.NamespaceMetaString!))
+            {
+                return false;
+            }
+
+            if (!_nameMetaStringSerializer.Write(ref writerRef, registration.NameMetaString!))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void WriteTypeKind(ref SerializationWriterRef writerRef, InternalTypeKind typeKind)
+    {
+        if (_hasWrittenTypeKind)
+        {
+            return;
+        }
+
+        _hasWrittenTypeKind = writerRef.Write7BitEncodedUint((uint)typeKind);
+    }
+}
+
+internal sealed class TypeMetaDeserializer(
+    TypeRegistry registry,
+    MetaStringStorage metaStringStorage
+)
+{
+    private MetaStringDeserializer _nameMetaStringDeserializer = new(
+        metaStringStorage,
+        MetaStringStorage.EncodingPolicy.Name
+    );
+    private MetaStringDeserializer _namespaceMetaStringDeserializer = new(
+        metaStringStorage,
+        MetaStringStorage.EncodingPolicy.Namespace
+    );
+
+    private TypeMetadata? _typeMetadata;
+    private MetaString? _namespaceMetaString;
+    private MetaString? _nameMetaString;
+    private TypeRegistration? _registration;
+
+    public void Reset()
+    {
+        ResetCurrent();
+    }
+
+    public void Initialize(AutoIncrementIdDictionary<MetaString> metaStringContext)
+    {
+        _nameMetaStringDeserializer.Initialize(metaStringContext);
+        _namespaceMetaStringDeserializer.Initialize(metaStringContext);
+    }
+
+    public void ResetCurrent()
+    {
+        _typeMetadata = null;
+        _namespaceMetaString = null;
+        _nameMetaString = null;
+        _registration = null;
+        _nameMetaStringDeserializer.Reset();
+        _namespaceMetaStringDeserializer.Reset();
+    }
+
+    public async ValueTask<ReadValueResult<TypeRegistration>> Read(
+        DeserializationReader reader,
+        Type declaredType,
+        TypeRegistration? registrationHint,
+        bool isAsync,
+        CancellationToken cancellationToken
+    )
+    {
+        await ReadTypeMeta(reader, isAsync, cancellationToken);
+        if (_typeMetadata is not var (internalTypeKind, typeId))
+        {
+            return ReadValueResult<TypeRegistration>.Failed;
+        }
+
+        if (internalTypeKind.TryToBePublic(out var typeKind))
+        {
+            if (
+                registrationHint is not null
+                && registrationHint.TypeKind == typeKind
+                && declaredType.IsAssignableFrom(registrationHint.TargetType)
+            )
+            {
+                _registration = registrationHint;
+            }
+            else
+            {
+                _registration = registry.GetTypeRegistration(typeKind, declaredType);
+            }
         }
         else
         {
             if (internalTypeKind.IsNamed())
             {
-                completed = completed && _namespaceMetaStringDeserializer.Read(reader, ref _namespaceMetaString);
-                completed = completed && _nameMetaStringDeserializer.Read(reader, ref _nameMetaString);
-                if (completed)
+                await ReadNamespaceMetaString(reader, isAsync, cancellationToken);
+                if (_namespaceMetaString is not { } namespaceMetaString)
                 {
-                    registration = GetRegistrationByName();
+                    return ReadValueResult<TypeRegistration>.Failed;
+                }
+                await ReadNameMetaString(reader, isAsync, cancellationToken);
+                if (_nameMetaString is not { } nameMetaString)
+                {
+                    return ReadValueResult<TypeRegistration>.Failed;
+                }
+
+                if (
+                    registrationHint is not null
+                    && registrationHint.InternalTypeKind == internalTypeKind
+                    && StringHelper.AreStringsEqualOrEmpty(registrationHint.Name, nameMetaString.Value)
+                    && StringHelper.AreStringsEqualOrEmpty(registrationHint.Namespace, namespaceMetaString.Value)
+                    && declaredType.IsAssignableFrom(registrationHint.TargetType)
+                )
+                {
+                    _registration = registrationHint;
+                }
+                else
+                {
+                    _registration = registry.GetTypeRegistration(namespaceMetaString.Value, nameMetaString.Value);
                 }
             }
             else
             {
-                registration = GetRegistrationById();
+                if (
+                    registrationHint is not null
+                    && registrationHint.InternalTypeKind == internalTypeKind
+                    && registrationHint.Id == typeId
+                    && declaredType.IsAssignableFrom(registrationHint.TargetType)
+                )
+                {
+                    _registration = registrationHint;
+                }
+                else
+                {
+                    _registration = registry.GetTypeRegistration(typeId);
+                }
             }
         }
 
-        return completed;
+        return ReadValueResult<TypeRegistration>.FromValue(_registration);
     }
 
-    public async ValueTask<TypeRegistration> ReadAsync(
-        BatchReader reader,
-        Type declaredType,
-        CancellationToken cancellationToken = default
+    private async ValueTask ReadTypeMeta(
+        DeserializationReader reader,
+        bool isAsync,
+        CancellationToken cancellationToken
     )
     {
-        _compositeIdValue ??= await reader.Read7BitEncodedUintAsync(cancellationToken);
-        var compositeId = CompositeTypeKind.FromUint(_compositeIdValue.Value);
-        var (internalTypeKind, typeId) = compositeId;
-        TypeRegistration registration;
-        if (internalTypeKind.TryToBeTypeKind(out var typeKind))
+        if (_typeMetadata is not null)
         {
-            registration = GetRegistrationByTypeKind(typeKind, declaredType);
-        }
-        else
-        {
-            if (internalTypeKind.IsNamed())
-            {
-                _namespaceMetaString ??= await _namespaceMetaStringDeserializer.ReadAsync(reader, cancellationToken);
-                _nameMetaString ??= await _nameMetaStringDeserializer.ReadAsync(reader, cancellationToken);
-
-                registration = GetRegistrationByName();
-            }
-            else
-            {
-                registration = GetRegistrationById();
-            }
+            return;
         }
 
-        return registration;
+        var varIntResult = await reader.Read7BitEncodedUint(isAsync, cancellationToken);
+        if (!varIntResult.IsSuccess)
+        {
+            return;
+        }
+
+        _typeMetadata = TypeMetadata.FromUint(varIntResult.Value);
     }
 
-    private TypeRegistration GetRegistrationByTypeKind(TypeKind typeKind, Type declaredType)
+    private async ValueTask ReadNamespaceMetaString(
+        DeserializationReader reader,
+        bool isAsync,
+        CancellationToken cancellationToken
+    )
     {
-        if (!_typeRegistry.TryGetTypeRegistration(typeKind, declaredType, out var registration))
+        if (_namespaceMetaString is not null)
         {
-            ThrowHelper.ThrowInvalidTypeRegistrationException_CannotFindRegistrationByTypeKind(typeKind, declaredType);
+            return;
         }
 
-        return registration;
+        var metaStringResult = await _namespaceMetaStringDeserializer.Read(reader, isAsync, cancellationToken);
+        if (metaStringResult.IsSuccess)
+        {
+            _namespaceMetaString = metaStringResult.Value;
+        }
     }
 
-    private TypeRegistration GetRegistrationByName()
+    private async ValueTask ReadNameMetaString(
+        DeserializationReader reader,
+        bool isAsync,
+        CancellationToken cancellationToken
+    )
     {
-        Debug.Assert(_namespaceMetaString is not null);
-        Debug.Assert(_nameMetaString is not null);
-
-        var ns = _namespaceMetaString?.Value;
-        var name = _nameMetaString!.Value;
-        if (!_typeRegistry.TryGetTypeRegistration(ns, name, out var registration))
+        if (_nameMetaString is not null)
         {
-            ThrowHelper.ThrowInvalidTypeRegistrationException_CannotFindRegistrationByName(StringHelper.ToFullName(ns, name));
+            return;
         }
 
-        return registration;
-    }
-
-    private TypeRegistration GetRegistrationById()
-    {
-        Debug.Assert(_compositeIdValue is not null);
-        var typeId = CompositeTypeKind.FromUint(_compositeIdValue.Value).TypeId;
-        if (!_typeRegistry.TryGetTypeRegistration(typeId, out var registration))
+        var metaStringResult = await _nameMetaStringDeserializer.Read(reader, isAsync, cancellationToken);
+        if (metaStringResult.IsSuccess)
         {
-            ThrowHelper.ThrowInvalidTypeRegistrationException_CannotFindRegistrationById(typeId);
+            _nameMetaString = metaStringResult.Value;
         }
-
-        return registration;
     }
 }

@@ -24,13 +24,6 @@ internal sealed class MetaStringStorage
     public static MetaString EmptyFieldMetaString { get; } =
         new(string.Empty, MetaString.Encoding.Utf8, FieldSpecialChar1, FieldSpecialChar2, []);
 
-    private static readonly HybridMetaStringEncoding NamespaceEncoding = new(
-        NamespaceSpecialChar1,
-        NamespaceSpecialChar2
-    );
-    private static readonly HybridMetaStringEncoding NameEncoding = new(NameSpecialChar1, NameSpecialChar2);
-    private static readonly HybridMetaStringEncoding FieldEncoding = new(FieldSpecialChar1, FieldSpecialChar2);
-
     private static readonly MetaString.Encoding[] CandidateNamespaceEncodings =
     [
         MetaString.Encoding.Utf8,
@@ -51,6 +44,23 @@ internal sealed class MetaStringStorage
         MetaString.Encoding.AllToLowerSpecial,
     ];
 
+    public static readonly HybridMetaStringEncoding NamespaceEncoding = new(
+        NamespaceSpecialChar1,
+        NamespaceSpecialChar2,
+        CandidateNamespaceEncodings
+    );
+
+    public static readonly HybridMetaStringEncoding NameEncoding = new(
+        NameSpecialChar1,
+        NameSpecialChar2,
+        CandidateNameEncodings
+    );
+    public static readonly HybridMetaStringEncoding FieldEncoding = new(
+        FieldSpecialChar1,
+        FieldSpecialChar2,
+        CandidateFieldEncodings
+    );
+
     private readonly ConcurrentDictionary<string, MetaString> _namespaceMetaStrings = new();
     private readonly ConcurrentDictionary<string, MetaString> _nameMetaStrings = new();
     private readonly ConcurrentDictionary<string, MetaString> _fieldMetaStrings = new();
@@ -58,17 +68,6 @@ internal sealed class MetaStringStorage
     private readonly ConcurrentDictionary<ulong, MetaString> _hashCodeToNamespaceMetaString = new();
     private readonly ConcurrentDictionary<ulong, MetaString> _hashCodeToNameMetaString = new();
     private readonly ConcurrentDictionary<ulong, MetaString> _hashCodeToFieldMetaString = new();
-
-    public (char SpecialChar1, char SpecialChar2) GetSpecialChars(EncodingPolicy policy)
-    {
-        return policy switch
-        {
-            EncodingPolicy.Namespace => (NamespaceSpecialChar1, NamespaceSpecialChar2),
-            EncodingPolicy.Name => (NameSpecialChar1, NameSpecialChar2),
-            EncodingPolicy.Field => (FieldSpecialChar1, FieldSpecialChar2),
-            _ => ThrowHelper.ThrowUnreachableException<(char, char)>(),
-        };
-    }
 
     [Pure]
     public static MetaString GetEmptyMetaString(EncodingPolicy policy)
@@ -89,9 +88,8 @@ internal sealed class MetaStringStorage
             return GetEmptyMetaString(policy);
         }
         var hybridEncoding = GetHybridEncoding(policy);
-        var candidateEncodings = GetCandidateEncodings(policy);
         var metaStrings = GetMetaStrings(policy);
-        var encoding = hybridEncoding.SelectEncoding(chars, candidateEncodings);
+        var encoding = hybridEncoding.SelectEncoding(chars);
         var metaString = metaStrings.GetOrAdd(
             chars,
             str =>
@@ -109,43 +107,16 @@ internal sealed class MetaStringStorage
         return metaString;
     }
 
-    public MetaString GetBigMetaString(
+    public MetaString GetMetaString(
         ulong hashCode,
         in ReadOnlySequence<byte> bytesSequence,
         EncodingPolicy policy,
-        ref CreateFromBytesDelegateCache? cache
+        ref MetaStringFactory? cache
     )
     {
         Debug.Assert(bytesSequence.Length > MetaString.SmallStringThreshold);
-        cache ??= new CreateFromBytesDelegateCache();
-        var metaStringFactory = cache.GetBigMetaStringFactory(in bytesSequence, policy);
-        var hashCodeToMetaString = GetHashCodeToMetaString(policy);
-        var metaString = hashCodeToMetaString.GetOrAdd(hashCode, metaStringFactory);
-        if (metaString.HashCode != hashCode)
-        {
-            hashCodeToMetaString.TryRemove(hashCode, out _);
-            ThrowHelper.ThrowBadDeserializationInputException_BadMetaStringHashCodeOrBytes();
-        }
-
-        return metaString;
-    }
-
-    public MetaString GetSmallMetaString(
-        ulong hashCode,
-        ulong v1,
-        ulong v2,
-        int length,
-        EncodingPolicy policy,
-        ref CreateFromBytesDelegateCache? cache
-    )
-    {
-        if (length == 0)
-        {
-            return GetEmptyMetaString(policy);
-        }
-        Debug.Assert(length <= MetaString.SmallStringThreshold);
-        cache ??= new CreateFromBytesDelegateCache();
-        var metaStringFactory = cache.GetSmallMetaStringFactory(v1, v2, length, policy);
+        cache ??= new MetaStringFactory();
+        var metaStringFactory = cache.GetMetaStringFactory(in bytesSequence, policy);
         var hashCodeToMetaString = GetHashCodeToMetaString(policy);
         var metaString = hashCodeToMetaString.GetOrAdd(hashCode, metaStringFactory);
         if (metaString.HashCode != hashCode)
@@ -165,17 +136,6 @@ internal sealed class MetaStringStorage
             EncodingPolicy.Name => NameEncoding,
             EncodingPolicy.Field => FieldEncoding,
             _ => ThrowHelper.ThrowUnreachableException<HybridMetaStringEncoding>(),
-        };
-    }
-
-    private static MetaString.Encoding[] GetCandidateEncodings(EncodingPolicy policy)
-    {
-        return policy switch
-        {
-            EncodingPolicy.Namespace => CandidateNamespaceEncodings,
-            EncodingPolicy.Name => CandidateNameEncodings,
-            EncodingPolicy.Field => CandidateFieldEncodings,
-            _ => ThrowHelper.ThrowUnreachableException<MetaString.Encoding[]>(),
         };
     }
 
@@ -208,58 +168,31 @@ internal sealed class MetaStringStorage
         Field,
     }
 
-    public sealed class CreateFromBytesDelegateCache
+    // A delegate cache to avoid allocations on every call to ConcurrentDictionary.GetOrAdd
+    public sealed class MetaStringFactory
     {
         private ReadOnlySequence<byte> _bytes;
-        private ulong _v1;
-        private ulong _v2;
-        private int _smallStringLength;
         private EncodingPolicy _policy;
 
-        private readonly Func<ulong, MetaString> _cachedBigMetaStringFactory;
-        private readonly Func<ulong, MetaString> _cachedSmallMetaStringFactory;
+        private readonly Func<ulong, MetaString> _cachedMetaStringFactory;
 
-        public CreateFromBytesDelegateCache()
+        public MetaStringFactory()
         {
             // Cache the factory delegate to avoid allocations on every call to ConcurrentDictionary.GetOrAdd
-            _cachedBigMetaStringFactory = CreateBigMetaString;
-            _cachedSmallMetaStringFactory = CreateSmallMetaString;
+            _cachedMetaStringFactory = CreateMetaString;
         }
 
-        public Func<ulong, MetaString> GetBigMetaStringFactory(in ReadOnlySequence<byte> bytes, EncodingPolicy policy)
+        public Func<ulong, MetaString> GetMetaStringFactory(in ReadOnlySequence<byte> bytes, EncodingPolicy policy)
         {
             _bytes = bytes;
             _policy = policy;
-            return _cachedBigMetaStringFactory;
+            return _cachedMetaStringFactory;
         }
 
-        public Func<ulong, MetaString> GetSmallMetaStringFactory(ulong v1, ulong v2, int length, EncodingPolicy policy)
-        {
-            _v1 = v1;
-            _v2 = v2;
-            _smallStringLength = length;
-            _policy = policy;
-            return _cachedSmallMetaStringFactory;
-        }
-
-        private MetaString CreateBigMetaString(ulong hashCode)
+        private MetaString CreateMetaString(ulong hashCode)
         {
             var bytes = _bytes.ToArray();
-            return CreateMetaStringCore(hashCode, bytes);
-        }
 
-        private MetaString CreateSmallMetaString(ulong hashCode)
-        {
-            Span<byte> bytes = stackalloc byte[MetaString.SmallStringThreshold];
-            var ulongSpan = MemoryMarshal.Cast<byte, ulong>(bytes);
-            ulongSpan[0] = _v1;
-            ulongSpan[1] = _v2;
-            bytes = bytes.Slice(0, _smallStringLength);
-            return CreateMetaStringCore(hashCode, bytes.ToArray());
-        }
-
-        private MetaString CreateMetaStringCore(ulong hashCode, byte[] bytes)
-        {
             var metaEncoding = MetaString.GetEncodingFromHashCode(hashCode);
             var hybridEncoding = GetHybridEncoding(_policy);
             var encoding = hybridEncoding.GetEncoding(metaEncoding);
@@ -272,7 +205,7 @@ internal sealed class MetaStringStorage
         {
             var (encoding, bytes) = state;
             var charsWritten = encoding.GetChars(bytes, chars);
-            Debug.Assert(charsWritten == chars.Length - 1); // -1 for null terminator
+            Debug.Assert(charsWritten == chars.Length);
         }
     }
 }

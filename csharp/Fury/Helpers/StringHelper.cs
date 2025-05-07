@@ -3,7 +3,7 @@ using System.Buffers;
 
 namespace Fury;
 
-internal sealed class StringHelper
+internal static class StringHelper
 {
     public static string Create<TState>(int length, in TState state, SpanAction<char, TState> action)
     {
@@ -11,37 +11,40 @@ internal sealed class StringHelper
         {
             return string.Empty;
         }
-#if NET8_0_OR_GREATER
+#if NET5_0_OR_GREATER || NETSTANDARD2_1
         return string.Create(length, state, action);
 #else
-        if (length <= StaticConfigs.CharStackAllocLimit)
+        var result = new string(' ', length);
+        unsafe
         {
-            Span<char> chars = stackalloc char[length];
-            action(chars, state);
-            return chars.ToString();
-        }
-        else
-        {
-            var chars = ArrayPool<char>.Shared.Rent(length);
-            try
+            fixed (char* pChar = result)
             {
+                var chars = new Span<char>(pChar, result.Length);
                 action(chars, state);
-                return new string(chars, 0, length);
-            }
-            finally
-            {
-                ArrayPool<char>.Shared.Return(chars);
             }
         }
+
+        return result;
 #endif
     }
 
-    public static string ToFullName(string? ns, string name)
+    public static string ToFullName(string? ns, string? name)
     {
-        if (ns is null)
+        name = ToStringOrNull(name);
+        if (string.IsNullOrWhiteSpace(ns))
         {
             return name;
         }
         return ns + "." + name;
+    }
+
+    public static bool AreStringsEqualOrEmpty(string? str1, string? str2)
+    {
+        return string.IsNullOrEmpty(str1) && string.IsNullOrEmpty(str2) || str1 == str2;
+    }
+
+    public static string ToStringOrNull<T>(in T obj)
+    {
+        return obj?.ToString() ?? "null";
     }
 }

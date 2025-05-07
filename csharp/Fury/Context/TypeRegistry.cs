@@ -1,262 +1,536 @@
 ﻿using System;
-using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Threading;
+using Fury.Collections;
 using Fury.Meta;
 using Fury.Serialization;
+using JetBrains.Annotations;
 
 namespace Fury.Context;
 
-public sealed class TypeRegistry
+internal readonly struct TypeRegistrationCreateInfo(Type targetType)
 {
-    private record struct CompositeDeclaredType(TypeKind TypeKind, Type DeclaredType);
-    private record struct CompositeName(string? Namespace, string Name);
+    public Type TargetType { get; } = targetType;
+    public string? Namespace { get; init; } = null;
+    public string? Name { get; init; } = null;
+    public InternalTypeKind? TypeKind { get; init; }
+    public int? Id { get; init; }
+    public Func<ISerializer>? SerializerFactory { get; init; }
+    public Func<IDeserializer>? DeserializerFactory { get; init; }
 
-    private readonly ConcurrentDictionary<Type, TypeRegistration> _typeToRegistrations = new();
-    private readonly ConcurrentDictionary<CompositeDeclaredType, TypeRegistration> _declaredTypeToRegistrations = new();
-    private readonly ConcurrentDictionary<CompositeName, TypeRegistration> _nameToRegistrations = new();
-    private readonly ConcurrentDictionary<int, TypeRegistration> _typeIdToRegistrations = new();
+    internal bool CustomSerialization { get; init; } = false;
+}
 
-    private readonly HybridProvider _builtInProvider = new();
-    private readonly ISerializationProvider _customProvider;
+[MustDisposeResource]
+public sealed class TypeRegistry : IDisposable
+{
+    private readonly TimeSpan _timeout;
 
-    internal MetaStringStorage MetaStringStorage { get; } = new();
+    private readonly MetaStringStorage _metaStringStorage;
 
-    internal TypeRegistry(ISerializationProvider customProvider)
+    private readonly Dictionary<Type, TypeRegistration> _typeToRegistrations = new();
+    private readonly Dictionary<(TypeKind TypeKind, Type DeclaredType), TypeRegistration> _declaredTypeToRegistrations =
+        new();
+    private readonly Dictionary<(string? Namespace, string Name), TypeRegistration> _nameToRegistrations = new();
+    private readonly Dictionary<int, TypeRegistration> _idToRegistrations = new();
+    private int _idGenerator;
+
+    private readonly ReaderWriterLockSlim _registrationLock = new(LockRecursionPolicy.SupportsRecursion);
+    private readonly ReaderWriterLockSlim _declaredTypeLock = new(LockRecursionPolicy.SupportsRecursion);
+
+    private readonly ITypeRegistrationProvider _registrationProvider;
+
+    internal TypeRegistry(MetaStringStorage metaStringStorage, ITypeRegistrationProvider provider, TimeSpan timeout)
     {
-        _customProvider = customProvider;
+        _metaStringStorage = metaStringStorage;
+        _registrationProvider = provider;
+        _timeout = timeout;
+
+        Initialize();
+    }
+
+    public void Dispose()
+    {
+        _registrationLock.Dispose();
+        _declaredTypeLock.Dispose();
+    }
+
+    private void Initialize()
+    {
+        RegisterPrimitive<bool>(InternalTypeKind.Bool, TypeKind.BoolArray);
+        RegisterPrimitive<byte>(InternalTypeKind.Int8, TypeKind.Int8Array);
+        RegisterPrimitive<sbyte>(InternalTypeKind.Int8, TypeKind.Int8Array);
+        RegisterPrimitive<ushort>(InternalTypeKind.Int16, TypeKind.Int16Array);
+        RegisterPrimitive<short>(InternalTypeKind.Int16, TypeKind.Int16Array);
+        RegisterPrimitive<uint>(InternalTypeKind.Int32, TypeKind.Int32Array);
+        RegisterPrimitive<int>(InternalTypeKind.Int32, TypeKind.Int32Array);
+        RegisterPrimitive<ulong>(InternalTypeKind.Int64, TypeKind.Int64Array);
+        RegisterPrimitive<long>(InternalTypeKind.Int64, TypeKind.Int64Array);
+#if NET5_0_OR_GREATER
+        // Technically, this is not a primitive type, but we register it here for convenience.
+        RegisterPrimitive<Half>(InternalTypeKind.Float16, TypeKind.Float16Array);
+#endif
+        RegisterPrimitive<float>(InternalTypeKind.Float32, TypeKind.Float32Array);
+        RegisterPrimitive<double>(InternalTypeKind.Float64, TypeKind.Float64Array);
+
+        RegisterGeneral<string>(InternalTypeKind.String, () => new StringSerializer(), () => new StringDeserializer());
+        RegisterGeneral<TimeSpan>(
+            InternalTypeKind.Duration,
+            () => new StandardTimeSpanSerializer(),
+            () => new StandardTimeSpanDeserializer()
+        );
+#if NET6_0_OR_GREATER
+        RegisterGeneral<DateOnly>(
+            InternalTypeKind.LocalDate,
+            () => new StandardDateOnlySerializer(),
+            () => new StandardDateOnlyDeserializer()
+        );
+#endif
+        RegisterGeneral<DateTime>(
+            InternalTypeKind.Timestamp,
+            () => StandardDateTimeSerializer.Instance,
+            () => StandardDateTimeDeserializer.Instance
+        );
+        return;
+
+        void RegisterPrimitive<T>(InternalTypeKind typeKind, TypeKind arrayTypeKind)
+            where T : unmanaged
+        {
+            var createInfo = new TypeRegistrationCreateInfo(typeof(T))
+            {
+                TypeKind = typeKind,
+                SerializerFactory = () => PrimitiveSerializer<T>.Instance,
+                DeserializerFactory = () => PrimitiveDeserializer<T>.Instance,
+            };
+            var registration = Register(createInfo);
+
+            Register(
+                typeof(T[]),
+                arrayTypeKind,
+                () => new PrimitiveArraySerializer<T>(),
+                () => new PrimitiveArrayDeserializer<T>()
+            );
+            RegisterCollections<T>(registration);
+        }
+
+        void RegisterGeneral<T>(
+            InternalTypeKind typeKind,
+            Func<ISerializer> serializerFactory,
+            Func<IDeserializer> deserializerFactory
+        )
+        {
+            var createInfo = new TypeRegistrationCreateInfo(typeof(T))
+            {
+                TypeKind = typeKind,
+                SerializerFactory = serializerFactory,
+                DeserializerFactory = deserializerFactory,
+            };
+            var registration = Register(createInfo);
+
+            Register(
+                typeof(T[]),
+                TypeKind.List,
+                () => new ArraySerializer<T>(registration),
+                () => new ArrayDeserializer<T>(registration)
+            );
+            RegisterCollections<T>(registration);
+        }
+
+        void RegisterCollections<T>(TypeRegistration elementRegistration)
+        {
+            Register(
+                typeof(List<T>),
+                TypeKind.List,
+                () => new ListSerializer<T>(elementRegistration),
+                () => new ListDeserializer<T>(elementRegistration)
+            );
+
+            Register(
+                typeof(HashSet<T>),
+                TypeKind.Set,
+                () => new HashSetSerializer<T>(elementRegistration),
+                () => new HashSetDeserializer<T>(elementRegistration)
+            );
+        }
+    }
+
+    #region Public Register Methods
+
+    public TypeRegistration Register(
+        Type targetType,
+        Func<ISerializer>? serializerFactory,
+        Func<IDeserializer>? deserializerFactory
+    )
+    {
+        // We need lock here to ensure that the auto-generated id is unique.
+        if (!_registrationLock.TryEnterReadLock(_timeout))
+        {
+            ThrowTimeoutException_RegisterTypeTimeout();
+        }
+
+        try
+        {
+            while (_idToRegistrations.ContainsKey(_idGenerator))
+            {
+                _idGenerator++;
+            }
+            var createInfo = new TypeRegistrationCreateInfo(targetType)
+            {
+                Id = _idGenerator++,
+                SerializerFactory = serializerFactory,
+                DeserializerFactory = deserializerFactory,
+            };
+            return Register(createInfo);
+        }
+        finally
+        {
+            _registrationLock.ExitReadLock();
+        }
+    }
+
+    public TypeRegistration Register(
+        Type targetType,
+        string? @namespace,
+        string name,
+        Func<ISerializer> serializerFactory,
+        Func<IDeserializer> deserializerFactory
+    )
+    {
+        var createInfo = new TypeRegistrationCreateInfo(targetType)
+        {
+            Namespace = @namespace,
+            Name = name,
+            SerializerFactory = serializerFactory,
+            DeserializerFactory = deserializerFactory,
+        };
+        return Register(createInfo);
+    }
+
+    public TypeRegistration Register(
+        Type targetType,
+        TypeKind targetTypeKind,
+        Func<ISerializer> serializerFactory,
+        Func<IDeserializer> deserializerFactory
+    )
+    {
+        var createInfo = new TypeRegistrationCreateInfo(targetType)
+        {
+            TypeKind = targetTypeKind.ToInternal(),
+            SerializerFactory = serializerFactory,
+            DeserializerFactory = deserializerFactory,
+        };
+        return Register(createInfo);
+    }
+
+    public TypeRegistration Register(
+        Type targetType,
+        int id,
+        Func<ISerializer> serializerFactory,
+        Func<IDeserializer> deserializerFactory
+    )
+    {
+        var createInfo = new TypeRegistrationCreateInfo(targetType)
+        {
+            Id = id,
+            SerializerFactory = serializerFactory,
+            DeserializerFactory = deserializerFactory,
+        };
+        return Register(createInfo);
+    }
+
+    public void Register(Type declaredType, TypeRegistration registration)
+    {
+        if (!_declaredTypeLock.TryEnterWriteLock(_timeout))
+        {
+            ThrowTimeoutException_RegisterTypeTimeout();
+        }
+
+        try
+        {
+            if (registration.TypeKind is not { } typeKind)
+            {
+                ThrowArgumentException_NoTypeKindRegistered(nameof(registration), registration);
+                return;
+            }
+            if (_declaredTypeToRegistrations.TryGetValue((typeKind, declaredType), out var existingRegistration))
+            {
+                ThrowArgumentException_DuplicateTypeKindDeclaredType(
+                    $"{nameof(declaredType)}, {nameof(registration)}",
+                    declaredType,
+                    existingRegistration
+                );
+            }
+
+            _declaredTypeToRegistrations.Add((typeKind, declaredType), registration);
+        }
+        finally
+        {
+            _declaredTypeLock.ExitWriteLock();
+        }
+    }
+
+    #endregion
+
+    private TypeRegistration Register(TypeRegistrationCreateInfo createInfo)
+    {
+        if (!_registrationLock.TryEnterWriteLock(_timeout))
+        {
+            ThrowTimeoutException_RegisterTypeTimeout();
+        }
+
+        try
+        {
+            var registration = _typeToRegistrations.GetOrAdd(
+                createInfo.TargetType,
+                static (_, tuple) => tuple.Register.CreateTypeRegistration(tuple.CreateInfo),
+                (Register: this, CreateInfo: createInfo),
+                out var exists
+            );
+
+            if (exists)
+            {
+                ThrowInvalidOperationException_DuplicateRegistration(registration);
+            }
+
+            if (createInfo.TypeKind is not null)
+            {
+                Register(registration.TargetType, registration);
+            }
+
+            if (createInfo.Id is { } id)
+            {
+                var registered = _idToRegistrations.GetOrAdd(id, registration, out exists);
+                if (exists)
+                {
+                    Debug.Assert(registered.Id == createInfo.Id);
+                    _typeToRegistrations.Remove(createInfo.TargetType);
+                    ThrowInvalidOperationException_DuplicateTypeId(registered);
+                }
+            }
+            if (createInfo.Name is not null)
+            {
+                var registered = _nameToRegistrations.GetOrAdd(
+                    (createInfo.Namespace, createInfo.Name),
+                    registration,
+                    out exists
+                );
+                if (exists)
+                {
+                    Debug.Assert(registered.Name == createInfo.Name);
+                    Debug.Assert(registered.Namespace == createInfo.Namespace);
+                    _typeToRegistrations.Remove(createInfo.TargetType);
+                    ThrowInvalidOperationException_DuplicateTypeName(registered);
+                }
+            }
+
+            return registration;
+        }
+        finally
+        {
+            _registrationLock.ExitWriteLock();
+        }
+    }
+
+    private TypeRegistration CreateTypeRegistration(in TypeRegistrationCreateInfo createInfo)
+    {
+        var targetType = createInfo.TargetType;
+        var serializerFactory = createInfo.SerializerFactory;
+        var deserializerFactory = createInfo.DeserializerFactory;
+
+        if (serializerFactory is null && deserializerFactory is null)
+        {
+            ThrowInvalidOperationException_NoSerializationProviderSupport(targetType);
+        }
+
+        MetaString? namespaceMetaString = null;
+        MetaString? nameMetaString = null;
+        if (createInfo.Namespace is { } ns)
+        {
+            namespaceMetaString = _metaStringStorage.GetMetaString(ns, MetaStringStorage.EncodingPolicy.Namespace);
+        }
+
+        var isNamed = false;
+        if (createInfo.Name is { } name)
+        {
+            nameMetaString = _metaStringStorage.GetMetaString(name, MetaStringStorage.EncodingPolicy.Name);
+            isNamed = true;
+        }
+        if (createInfo.TypeKind is not { } typeKind)
+        {
+            // Other prefixes, such as "Polymorphic" or "Compatible", depend on configuration and object being serialized.
+            // We can't determine them here, so we'll just use the "Struct" and "Ext" and handle them in the serialization code.
+            if (targetType.IsEnum)
+            {
+                typeKind = isNamed ? InternalTypeKind.NamedEnum : InternalTypeKind.Enum;
+            }
+            else if (createInfo.CustomSerialization)
+            {
+                typeKind = isNamed ? InternalTypeKind.NamedExt : InternalTypeKind.Ext;
+            }
+            else
+            {
+                typeKind = isNamed ? InternalTypeKind.NamedStruct : InternalTypeKind.Struct;
+            }
+        }
+        var newRegistration = new TypeRegistration(
+            targetType,
+            typeKind,
+            namespaceMetaString,
+            nameMetaString,
+            createInfo.Id,
+            serializerFactory,
+            deserializerFactory
+        );
+
+        return newRegistration;
+    }
+
+    private static void ThrowInvalidOperationException_NoSerializationProviderSupport(Type targetType)
+    {
+        throw new InvalidOperationException(
+            $"Type `{targetType}` is not supported by either built-in or custom serialization provider."
+        );
     }
 
     public TypeRegistration GetTypeRegistration(Type type)
     {
-        var typeRegistration = _typeToRegistrations.GetOrAdd(
-            type,
-            t =>
+        if (!_registrationLock.TryEnterUpgradeableReadLock(_timeout))
+        {
+            ThrowTimeoutException_RegisterTypeTimeout();
+        }
+
+        try
+        {
+            if (!_typeToRegistrations.TryGetValue(type, out var registration))
             {
-                var useCustomSerialization =
-                    TryGetSerializerFactoryFromProvider(t, ProviderSource.Custom, out var serializerFactory)
-                    | TryGetDeserializerFactoryFromProvider(t, ProviderSource.Custom, out var deserializerFactory);
-                Debug.Assert(!useCustomSerialization == (serializerFactory is null && deserializerFactory is null));
-                if (!useCustomSerialization)
-                {
-                    var success = TryGetSerializerFactoryFromProvider(t, ProviderSource.BuiltIn, out serializerFactory);
-                    Debug.Assert(success && serializerFactory is not null);
-                    success = TryGetDeserializerFactoryFromProvider(t, ProviderSource.BuiltIn, out deserializerFactory);
-                    Debug.Assert(success && deserializerFactory is not null);
-                }
-                var isNamed = TryGetTypeNameFromProvider(t, ProviderSource.Custom, out var ns, out var name);
-                Debug.Assert(!isNamed == name is null);
-                if (!isNamed)
-                {
-                    var success = TryGetTypeNameFromProvider(t, ProviderSource.BuiltIn, out ns, out name);
-                    Debug.Assert(success && name is not null);
-                }
-                var internalTypeKind = GetTypeKind(t, useCustomSerialization, isNamed);
-                var newRegistration = new TypeRegistration(
-                    this,
-                    t,
-                    internalTypeKind,
-                    ns,
-                    name!,
-                    isNamed,
-                    serializerFactory!,
-                    deserializerFactory!,
-                    useCustomSerialization
-                );
-                if (newRegistration.TypeKind is { } typeKind)
-                {
-                    _declaredTypeToRegistrations[new CompositeDeclaredType(typeKind, newRegistration.TargetType)] =
-                        newRegistration;
-                }
-
-                var registered = _nameToRegistrations.GetOrAdd(new CompositeName(ns, name!), newRegistration);
-                if (registered != newRegistration)
-                {
-                    ThrowHelper.ThrowInvalidOperationException_TypeNameCollision(
-                        newRegistration.TargetType,
-                        registered.TargetType,
-                        ns,
-                        name!
-                    );
-                }
-
-                return newRegistration;
+                registration = _registrationProvider.RegisterType(this, type);
             }
+            return registration;
+        }
+        finally
+        {
+            _registrationLock.ExitUpgradeableReadLock();
+        }
+    }
+
+    public TypeRegistration GetTypeRegistration(string ns, string name)
+    {
+        if (!_registrationLock.TryEnterUpgradeableReadLock(_timeout))
+        {
+            ThrowTimeoutException_RegisterTypeTimeout();
+        }
+
+        try
+        {
+            if (!_nameToRegistrations.TryGetValue((ns, name), out var registration))
+            {
+                registration = _registrationProvider.GetTypeRegistration(this, ns, name);
+            }
+            return registration;
+        }
+        finally
+        {
+            _registrationLock.ExitUpgradeableReadLock();
+        }
+    }
+
+    public TypeRegistration GetTypeRegistration(TypeKind typeKind, Type declaredType)
+    {
+        if (!_registrationLock.TryEnterUpgradeableReadLock(_timeout))
+        {
+            ThrowTimeoutException_RegisterTypeTimeout();
+        }
+
+        try
+        {
+            if (!_declaredTypeToRegistrations.TryGetValue((typeKind, declaredType), out var registration))
+            {
+                registration = _registrationProvider.GetTypeRegistration(this, typeKind, declaredType);
+            }
+            return registration;
+        }
+        finally
+        {
+            _registrationLock.ExitUpgradeableReadLock();
+        }
+    }
+
+    public TypeRegistration GetTypeRegistration(int id)
+    {
+        if (!_registrationLock.TryEnterUpgradeableReadLock(_timeout))
+        {
+            ThrowTimeoutException_RegisterTypeTimeout();
+        }
+
+        try
+        {
+            if (!_idToRegistrations.TryGetValue(id, out var registration))
+            {
+                registration = _registrationProvider.GetTypeRegistration(this, id);
+            }
+
+            return registration;
+        }
+        finally
+        {
+            _registrationLock.ExitUpgradeableReadLock();
+        }
+    }
+
+    [DoesNotReturn]
+    private static void ThrowTimeoutException_RegisterTypeTimeout()
+    {
+        throw new TimeoutException("It took too long to register the type.");
+    }
+
+    [DoesNotReturn]
+    private static void ThrowInvalidOperationException_DuplicateRegistration(TypeRegistration registration)
+    {
+        throw new InvalidOperationException($"Type `{registration.TargetType}` is already registered.");
+    }
+
+    [DoesNotReturn]
+    private static void ThrowInvalidOperationException_DuplicateTypeName(TypeRegistration registration)
+    {
+        var fullName = StringHelper.ToFullName(registration.Namespace, registration.Name);
+        throw new InvalidOperationException(
+            $"Type name `{fullName}` is already registered for type `{registration.TargetType}`."
         );
-
-        return typeRegistration;
     }
 
-    public bool TryGetTypeRegistration(string? ns, string name, [NotNullWhen(true)] out TypeRegistration? registration)
+    [DoesNotReturn]
+    private static void ThrowInvalidOperationException_DuplicateTypeId(TypeRegistration existent)
     {
-        return _nameToRegistrations.TryGetValue(new CompositeName(ns, name), out registration);
+        throw new InvalidOperationException(
+            $"Type id `{existent.Id}` is already registered for type `{existent.TargetType}`."
+        );
     }
 
-    public bool TryGetTypeRegistration(
-        TypeKind typeKind,
+    [DoesNotReturn]
+    private static void ThrowArgumentException_DuplicateTypeKindDeclaredType(
+        [InvokerParameterName] string parameterName,
         Type declaredType,
-        [NotNullWhen(true)] out TypeRegistration? registration
+        TypeRegistration registration
     )
     {
-        if (_declaredTypeToRegistrations.TryGetValue(new CompositeDeclaredType(typeKind, declaredType), out registration))
-        {
-            return true;
-        }
-
-        if (!TryGetTypeFromProvider(typeKind, declaredType, ProviderSource.Both, out var targetType))
-        {
-            return false;
-        }
-
-        registration = GetTypeRegistration(targetType);
-        return true;
+        var typeKind = registration.TypeKind;
+        throw new ArgumentException(
+            $"Declared type `{declaredType}` and type kind `{typeKind}` are already registered.",
+            parameterName
+        );
     }
 
-    public bool TryGetTypeRegistration(int typeId, [NotNullWhen(true)] out TypeRegistration? registration)
-    {
-        return _typeIdToRegistrations.TryGetValue(typeId, out registration);
-    }
-
-    private InternalTypeKind GetTypeKind(Type targetType, bool useCustomSerialization, bool isNamed)
-    {
-        InternalTypeKind internalTypeKind;
-        if (TryGetTypeKindFromProvider(targetType, ProviderSource.Both, out var typeKind))
-        {
-            internalTypeKind = typeKind.ToInternal();
-        }
-        else
-        {
-            // Other prefixes, such as "Polymorphic" or "Compatible", depend on configuration and object being serialized.
-            // We can't determine them here, so we'll just use the "Struct" and "Ext" and handle them in the serialization code.
-
-            if (targetType.IsEnum)
-            {
-                internalTypeKind = isNamed ? InternalTypeKind.NamedEnum : InternalTypeKind.Enum;
-            }
-            else if (useCustomSerialization)
-            {
-                internalTypeKind = isNamed ? InternalTypeKind.NamedExt : InternalTypeKind.Ext;
-            }
-            else
-            {
-                internalTypeKind = isNamed ? InternalTypeKind.NamedStruct : InternalTypeKind.Struct;
-            }
-        }
-
-        return internalTypeKind;
-    }
-
-    private bool TryGetTypeNameFromProvider(
-        Type targetType,
-        ProviderSource source,
-        out string? ns,
-        [NotNullWhen(true)] out string? name
+    [DoesNotReturn]
+    private static void ThrowArgumentException_NoTypeKindRegistered(
+        [InvokerParameterName] string parameterName,
+        TypeRegistration registration
     )
     {
-        var success = false;
-        ns = null;
-        name = null;
-        if (source.HasFlag(ProviderSource.Custom))
-        {
-            success = _customProvider.TryGetTypeName(targetType, out ns, out name);
-        }
-        if (!success && source.HasFlag(ProviderSource.BuiltIn))
-        {
-            success = _builtInProvider.TryGetTypeName(targetType, out ns, out name);
-        }
-        return success;
-    }
-
-    private bool TryGetTypeFromProvider(
-        string? ns,
-        string? name,
-        ProviderSource source,
-        [NotNullWhen(true)] out Type? targetType
-    )
-    {
-        var success = false;
-        targetType = null;
-        if (source.HasFlag(ProviderSource.Custom))
-        {
-            success = _customProvider.TryGetType(ns, name, out targetType);
-        }
-        if (!success && source.HasFlag(ProviderSource.BuiltIn))
-        {
-            success = _builtInProvider.TryGetType(ns, name, out targetType);
-        }
-        return success;
-    }
-
-    private bool TryGetTypeFromProvider(
-        TypeKind typeKind,
-        Type declaredType,
-        ProviderSource source,
-        [NotNullWhen(true)] out Type? targetType
-    )
-    {
-        var success = false;
-        targetType = null;
-        if (source.HasFlag(ProviderSource.Custom))
-        {
-            success = _customProvider.TryGetType(typeKind, declaredType, out targetType);
-        }
-        if (!success && source.HasFlag(ProviderSource.BuiltIn))
-        {
-            success = _builtInProvider.TryGetType(typeKind, declaredType, out targetType);
-        }
-        return success;
-    }
-
-    private bool TryGetTypeKindFromProvider(Type targetType, ProviderSource source, out TypeKind targetTypeKind)
-    {
-        var success = false;
-        targetTypeKind = default;
-        if (source.HasFlag(ProviderSource.Custom))
-        {
-            success = _customProvider.TryGetTypeKind(targetType, out targetTypeKind);
-        }
-        if (!success && source.HasFlag(ProviderSource.BuiltIn))
-        {
-            success = _builtInProvider.TryGetTypeKind(targetType, out targetTypeKind);
-        }
-        return success;
-    }
-
-    internal bool TryGetSerializerFactoryFromProvider(
-        Type targetType,
-        ProviderSource source,
-        [NotNullWhen(true)] out Func<ISerializer>? serializerFactory
-    )
-    {
-        var success = false;
-        serializerFactory = null;
-        if (source.HasFlag(ProviderSource.Custom))
-        {
-            success = _customProvider.TryGetSerializerFactory(this, targetType, out serializerFactory);
-        }
-        if (!success && source.HasFlag(ProviderSource.BuiltIn))
-        {
-            success = _builtInProvider.TryGetSerializerFactory(this, targetType, out serializerFactory);
-        }
-        return success;
-    }
-
-    internal bool TryGetDeserializerFactoryFromProvider(
-        Type targetType,
-        ProviderSource source,
-        [NotNullWhen(true)] out Func<IDeserializer>? deserializerFactory
-    )
-    {
-        var success = false;
-        deserializerFactory = null;
-        if (source.HasFlag(ProviderSource.Custom))
-        {
-            success = _customProvider.TryGetDeserializerFactory(this, targetType, out deserializerFactory);
-        }
-        if (!success && source.HasFlag(ProviderSource.BuiltIn))
-        {
-            success = _builtInProvider.TryGetDeserializerFactory(this, targetType, out deserializerFactory);
-        }
-        return success;
+        throw new ArgumentException(
+            $"Type `{registration.TargetType}` was not registered with a {nameof(TypeKind)}",
+            parameterName
+        );
     }
 }

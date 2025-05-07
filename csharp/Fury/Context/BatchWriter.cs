@@ -1,116 +1,93 @@
 ﻿using System;
+using System.Buffers;
+using System.Diagnostics.CodeAnalysis;
 using System.IO.Pipelines;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
+using JetBrains.Annotations;
 
 namespace Fury.Context;
 
 // This is used to reduce the virtual call overhead of the PipeWriter
 
-[StructLayout(LayoutKind.Auto)]
-public ref partial struct BatchWriter
+internal sealed class BatchWriter : IBufferWriter<byte>, IDisposable
 {
-    private readonly Context _context;
+    private PipeWriter _innerWriter = null!;
+    private Memory<byte> _cachedMemory;
 
-    private Span<byte> _cachedBuffer = Span<byte>.Empty;
-    private int _version;
+    public int Version { get; private set; }
+    internal int Consumed { get; private set; }
+    internal Memory<byte> Buffer => _cachedMemory;
 
-    internal BatchWriter(Context context)
+    public Memory<byte> UnconsumedBuffer => _cachedMemory.Slice(Consumed);
+    public Memory<byte> UnflushedConsumedBuffer => _cachedMemory.Slice(0, Consumed);
+
+    [MemberNotNull(nameof(_innerWriter))]
+    internal void Initialize(PipeWriter writer)
     {
-        _context = context;
-        UpdateVersion();
+        _innerWriter = writer;
+        Consumed = 0;
+        Version = 0;
     }
 
-    public void Advance(int count)
+    internal void Reset()
     {
-        EnsureVersion();
-        if (count > _cachedBuffer.Length)
-        {
-            ThrowHelper.ThrowArgumentOutOfRangeException_AttemptedToAdvanceFurtherThanBufferLength(
-                nameof(count),
-                _cachedBuffer.Length,
-                count
-            );
-        }
-        _context.Consume(count);
-        _version = _context.Version;
-        _cachedBuffer = _cachedBuffer.Slice(count);
-    }
-
-    public Span<byte> GetSpan(int sizeHint = 0)
-    {
-        EnsureVersion();
-        if (_cachedBuffer.Length < sizeHint)
-        {
-            _context.AdvanceConsumed();
-            UpdateVersion(sizeHint);
-        }
-
-        return _cachedBuffer;
+        _innerWriter = null!;
+        Consumed = 0;
+        Version = 0;
     }
 
     public void Flush()
     {
-        _context.AdvanceConsumed();
-        EnsureVersion();
-    }
-
-    public bool TryGetSpan(int sizeHint, out Span<byte> span)
-    {
-        EnsureVersion();
-        span = GetSpan();
-        return span.Length >= sizeHint;
-    }
-
-    private void EnsureVersion()
-    {
-        if (_context.Version != _version)
+        if (Consumed > 0)
         {
-            UpdateVersion();
-        }
-    }
-
-    private void UpdateVersion(int sizeHint = 0)
-    {
-        _version = _context.Version;
-        _cachedBuffer = _context.Writer.GetSpan(sizeHint);
-    }
-
-    internal sealed class Context
-    {
-        public PipeWriter Writer;
-        public int Consumed { get; private set; }
-        public int Version { get; private set; }
-
-        public void Initialize(PipeWriter writer)
-        {
-            Writer = writer;
+            _innerWriter.Advance(Consumed);
             Consumed = 0;
-            Version = 0;
+        }
+        _cachedMemory = Memory<byte>.Empty;
+        Version++;
+    }
+
+    public void Advance(int bytes)
+    {
+        if (bytes + Consumed > _cachedMemory.Length)
+        {
+            ThrowHelper.ThrowArgumentOutOfRangeException_AttemptedToAdvanceFurtherThanBufferLength(
+                nameof(bytes),
+                _cachedMemory.Length,
+                bytes
+            );
         }
 
-        public void AdvanceConsumed()
-        {
-            Writer.Advance(Consumed);
-            Consumed = 0;
-            PumpVersion();
-        }
+        Consumed += bytes;
+        Version++;
+    }
 
-        public void Consume(int count)
+    [MustUseReturnValue]
+    public Memory<byte> GetMemory(int sizeHint = 0)
+    {
+        var result = UnconsumedBuffer;
+        if (result.Length < sizeHint)
         {
-            Consumed += count;
-            PumpVersion();
-        }
-
-        private void PumpVersion()
-        {
+            if (Consumed > 0)
+            {
+                _innerWriter.Advance(Consumed);
+                Consumed = 0;
+            }
+            _cachedMemory = _innerWriter.GetMemory(sizeHint);
             Version++;
+            result = UnconsumedBuffer;
         }
 
-        public void Reset()
-        {
-            Consumed = 0;
-            Version = 0;
-        }
+        return result;
+    }
+
+    [MustUseReturnValue]
+    public Span<byte> GetSpan(int sizeHint = 0)
+    {
+        return GetMemory(sizeHint).Span;
+    }
+
+    public void Dispose()
+    {
+        Flush();
     }
 }

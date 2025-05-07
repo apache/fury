@@ -5,7 +5,7 @@ using System.Diagnostics;
 
 namespace Fury.Collections;
 
-internal sealed partial class SpannableList<T> : IList<T>, IReadOnlyList<T>
+internal sealed class SpannableList<T> : IList<T>, IReadOnlyList<T>
 {
     private static readonly bool NeedsClear = TypeHelper<T>.IsReferenceOrContainsReferences;
 
@@ -26,17 +26,6 @@ internal sealed partial class SpannableList<T> : IList<T>, IReadOnlyList<T>
     IEnumerator<T> IEnumerable<T>.GetEnumerator() => GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
-    private void SetCountUnsafe(int newCount)
-    {
-        Debug.Assert(newCount >= 0);
-        EnsureCapacity(newCount);
-        if (NeedsClear && newCount < Count)
-        {
-            Array.Clear(_items, newCount - 1, Count - newCount);
-        }
-        Count = newCount;
-    }
 
     private void EnsureCapacity(int requiredCapacity)
     {
@@ -120,10 +109,13 @@ internal sealed partial class SpannableList<T> : IList<T>, IReadOnlyList<T>
         }
 
         Count--;
-        Array.Copy(_items, index + 1, _items, index, Count - index);
+        if (index < Count)
+        {
+            Array.Copy(_items, index + 1, _items, index, Count - index);
+        }
     }
 
-    public T this[int index]
+    public ref T this[int index]
     {
         get
         {
@@ -132,24 +124,16 @@ internal sealed partial class SpannableList<T> : IList<T>, IReadOnlyList<T>
                 ThrowHelper.ThrowIndexOutOfRangeException();
             }
 
-            return _items[index];
+            return ref _items[index];
         }
-        set
-        {
-            if (index < 0 || index > Count)
-            {
-                ThrowHelper.ThrowIndexOutOfRangeException();
-            }
+    }
 
-            if (index == Count)
-            {
-                Add(value);
-            }
-            else
-            {
-                _items[index] = value;
-            }
-        }
+    T IReadOnlyList<T>.this[int index] => this[index];
+
+    T IList<T>.this[int index]
+    {
+        get => this[index];
+        set => this[index] = value;
     }
 
     public Span<T> AsSpan() => new(_items, 0, Count);
@@ -158,7 +142,8 @@ internal sealed partial class SpannableList<T> : IList<T>, IReadOnlyList<T>
     {
         private int _index = -1;
         private readonly SpannableList<T> _list;
-        public T Current => _list[_index];
+        T IEnumerator<T>.Current => _list[_index];
+        public ref T Current => ref _list[_index];
 
         internal Enumerator(SpannableList<T> list)
             : this()
@@ -181,7 +166,6 @@ internal sealed partial class SpannableList<T> : IList<T>, IReadOnlyList<T>
 
         public void Dispose()
         {
-            throw new System.NotImplementedException();
         }
     }
 }

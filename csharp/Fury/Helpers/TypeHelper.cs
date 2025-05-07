@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -8,13 +9,49 @@ namespace Fury;
 internal static class TypeHelper<T>
 {
     public static readonly bool IsSealed = typeof(T).IsSealed;
-    public static readonly bool IsValueType = typeof(T).IsValueType;
-    public static readonly int Size = Unsafe.SizeOf<T>();
     public static readonly bool IsReferenceOrContainsReferences = TypeHelper.IsReferenceOrContainsReferences<T>();
 }
 
 internal static class TypeHelper
 {
+    public static bool GetGenericBaseTypeArguments(
+        Type targetType,
+        Type genericBaseType,
+        [NotNullWhen(true)] out Type[]? argument
+    )
+    {
+        Debug.Assert(genericBaseType.IsGenericType);
+        genericBaseType = genericBaseType.GetGenericTypeDefinition();
+
+        if (genericBaseType.IsInterface)
+        {
+            foreach (var @interface in targetType.GetInterfaces())
+            {
+                if (@interface.IsGenericType && @interface.GetGenericTypeDefinition() == genericBaseType)
+                {
+                    argument = @interface.GenericTypeArguments;
+                    return true;
+                }
+            }
+        }
+        else
+        {
+            var baseType = targetType;
+            while (baseType is not null)
+            {
+                if (baseType.IsGenericType && baseType.GetGenericTypeDefinition() == genericBaseType)
+                {
+                    argument = baseType.GenericTypeArguments;
+                    return true;
+                }
+                baseType = targetType.BaseType;
+            }
+        }
+
+        argument = null;
+        return false;
+    }
+
     public static bool TryGetUnderlyingElementType(
         Type arrayType,
         [NotNullWhen(true)] out Type? elementType,
@@ -68,26 +105,5 @@ internal static class TypeHelper
 #else
         return IsReferenceOrContainsReferences(typeof(T));
 #endif
-    }
-
-    public static bool IsNewable(Type type)
-    {
-        return type.IsValueType || TryGetNoParameterConstructor(type, out _);
-    }
-
-    public static bool TryGetNoParameterConstructor(Type type, [NotNullWhen(true)] out ConstructorInfo? constructorInfo)
-    {
-        if (type.IsAbstract)
-        {
-            constructorInfo = null;
-            return false;
-        }
-        constructorInfo = type.GetConstructor(
-            BindingFlags.Instance | BindingFlags.Public,
-            null,
-            [],
-            []
-        );
-        return constructorInfo is not null;
     }
 }

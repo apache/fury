@@ -1,75 +1,63 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using Fury.Buffers;
 using Fury.Meta;
 using Fury.Serialization;
-using JetBrains.Annotations;
 
 namespace Fury.Context;
 
-public class TypeRegistration
+public sealed class TypeRegistration
 {
-    private readonly TypeRegistry _registry;
-
     private readonly ObjectPool<ISerializer>? _serializerPool;
     private readonly ObjectPool<IDeserializer>? _deserializerPool;
 
-    [PublicAPI]
-    public Func<ISerializer>? SerializerFactory { get; private set; }
+    public Func<ISerializer>? SerializerFactory { get; }
 
-    [PublicAPI]
-    public Func<IDeserializer>? DeserializerFactory { get; private set; }
+    public Func<IDeserializer>? DeserializerFactory { get; }
 
-    internal MetaString NameMetaString { get; }
-    internal MetaString NamespaceMetaString { get; }
+    internal MetaString? NamespaceMetaString { get; }
+    internal MetaString? NameMetaString { get; }
 
-    public bool UseCustomSerialization { get; }
-
-    public bool IsNamed { get; }
-    public string? Namespace { get; }
-    public string Name { get; }
+    public string? Namespace => NamespaceMetaString?.Value;
+    public string? Name => NameMetaString?.Value;
 
     public Type TargetType { get; }
     public TypeKind? TypeKind { get; }
+    public int? Id { get; }
     internal InternalTypeKind InternalTypeKind { get; }
 
     internal TypeRegistration(
-        TypeRegistry registry,
         Type targetType,
         InternalTypeKind internalTypeKind,
-        string? ns,
-        string name,
-        bool isNamed,
+        MetaString? ns,
+        MetaString? name,
+        int? id,
         Func<ISerializer>? serializerFactory,
-        Func<IDeserializer>? deserializerFactory,
-        bool useCustomSerialization
+        Func<IDeserializer>? deserializerFactory
     )
     {
-        _registry = registry;
         TargetType = targetType;
 
         SerializerFactory = serializerFactory;
         DeserializerFactory = deserializerFactory;
-        UseCustomSerialization = useCustomSerialization;
         if (serializerFactory is not null)
         {
-            _serializerPool = new ObjectPool<ISerializer>(_ => serializerFactory());
+            _serializerPool = new ObjectPool<ISerializer>(serializerFactory);
         }
 
         if (deserializerFactory is not null)
         {
-            _deserializerPool = new ObjectPool<IDeserializer>(_ => deserializerFactory());
+            _deserializerPool = new ObjectPool<IDeserializer>(deserializerFactory);
         }
 
-        Namespace = ns;
-        Name = name;
-        IsNamed = isNamed;
-        GetMetaStrings(out var namespaceMetaString, out var nameMetaString);
-        NamespaceMetaString = namespaceMetaString;
-        NameMetaString = nameMetaString;
+        NamespaceMetaString = ns;
+        NameMetaString = name;
+
+        Id = id;
 
         InternalTypeKind = internalTypeKind;
-        if (internalTypeKind.TryToBeTypeKind(out var typeKind))
+        if (internalTypeKind.TryToBePublic(out var typeKind))
         {
             TypeKind = typeKind;
         }
@@ -81,72 +69,49 @@ public class TypeRegistration
 
     internal ISerializer RentSerializer()
     {
-        CheckPool(true);
-        Debug.Assert(_serializerPool is not null);
-        return _serializerPool.Rent();
+        if (_serializerPool is null)
+        {
+            ThrowInvalidOperationException_NoSerializerPool();
+        }
+        return _serializerPool!.Rent();
     }
 
     internal void ReturnSerializer(ISerializer serializer)
     {
-        CheckPool(true);
-        Debug.Assert(_serializerPool is not null);
-        _serializerPool.Return(serializer);
+        if (_serializerPool is null)
+        {
+            ThrowInvalidOperationException_NoSerializerPool();
+        }
+        _serializerPool!.Return(serializer);
     }
 
     internal IDeserializer RentDeserializer()
     {
-        CheckPool(false);
-        Debug.Assert(_deserializerPool is not null);
-        return _deserializerPool.Rent();
+        if (_deserializerPool is null)
+        {
+            ThrowInvalidOperationException_NoDeserializerPool();
+        }
+        return _deserializerPool!.Rent();
     }
 
     internal void ReturnDeserializer(IDeserializer deserializer)
     {
-        CheckPool(false);
-        Debug.Assert(_deserializerPool is not null);
-        _deserializerPool.Return(deserializer);
+        if (_deserializerPool is null)
+        {
+            ThrowInvalidOperationException_NoDeserializerPool();
+        }
+        _deserializerPool!.Return(deserializer);
     }
 
-    private void GetMetaStrings(out MetaString namespaceMetaString, out MetaString nameMetaString)
+    [DoesNotReturn]
+    private void ThrowInvalidOperationException_NoSerializerPool()
     {
-        var storage = _registry.MetaStringStorage;
-        namespaceMetaString = storage.GetMetaString(Name, MetaStringStorage.EncodingPolicy.Namespace);
-        nameMetaString = storage.GetMetaString(Namespace, MetaStringStorage.EncodingPolicy.Name);
+        throw new InvalidOperationException($"Can not get serializer for type '{TargetType}'.");
     }
 
-    private void CheckPool(bool isSerializer)
+    [DoesNotReturn]
+    private void ThrowInvalidOperationException_NoDeserializerPool()
     {
-        if (isSerializer)
-        {
-            if (_serializerPool is not null)
-            {
-                return;
-            }
-
-            if (UseCustomSerialization)
-            {
-                ThrowHelper.ThrowInvalidTypeRegistrationException_NoCustomSerializer(TargetType);
-            }
-            else
-            {
-                ThrowHelper.ThrowNotSupportedException_NotSupportedBuiltInSerializer(TargetType);
-            }
-        }
-        else
-        {
-            if (_deserializerPool is not null)
-            {
-                return;
-            }
-
-            if (UseCustomSerialization)
-            {
-                ThrowHelper.ThrowInvalidTypeRegistrationException_NoCustomDeserializer(TargetType);
-            }
-            else
-            {
-                ThrowHelper.ThrowNotSupportedException_NotSupportedBuiltInDeserializer(TargetType);
-            }
-        }
+        throw new InvalidOperationException($"Can not get deserializer for type '{TargetType}'.");
     }
 }

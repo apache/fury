@@ -1,8 +1,10 @@
 ﻿using System;
-using System.ComponentModel;
+using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
+using System.Linq;
 using System.Reflection;
 using Fury.Context;
 using Fury.Meta;
@@ -15,22 +17,11 @@ internal static class ArraySerializationProvider
         nameof(CreateArraySerializer),
         BindingFlags.NonPublic | BindingFlags.Static
     )!;
-    private static readonly MethodInfo CreateNullableArraySerializerMethod =
-        typeof(ArraySerializationProvider).GetMethod(
-            nameof(CreateNullableArraySerializer),
-            BindingFlags.NonPublic | BindingFlags.Static
-        )!;
 
     private static readonly MethodInfo CreateArrayDeserializerMethod = typeof(ArraySerializationProvider).GetMethod(
         nameof(CreateArrayDeserializer),
         BindingFlags.NonPublic | BindingFlags.Static
     )!;
-
-    private static readonly MethodInfo CreateNullableArrayDeserializerMethod =
-        typeof(ArraySerializationProvider).GetMethod(
-            nameof(CreateNullableArrayDeserializer),
-            BindingFlags.NonPublic | BindingFlags.Static
-        )!;
 
     public static bool TryGetType(TypeKind targetTypeKind, Type declaredType, [NotNullWhen(true)] out Type? targetType)
     {
@@ -198,25 +189,10 @@ internal static class ArraySerializationProvider
             return false;
         }
 
-        var underlyingType = Nullable.GetUnderlyingType(elementType);
-        Func<TypeRegistration?, ISerializer> createMethod;
-        if (underlyingType is null)
-        {
-            createMethod =
-                (Func<TypeRegistration?, ISerializer>)
-                    CreateArraySerializerMethod
-                        .MakeGenericMethod(elementType)
-                        .CreateDelegate(typeof(Func<TypeRegistration?, ISerializer>));
-        }
-        else
-        {
-            elementType = underlyingType;
-            createMethod =
-                (Func<TypeRegistration?, ISerializer>)
-                    CreateNullableArraySerializerMethod
-                        .MakeGenericMethod(elementType)
-                        .CreateDelegate(typeof(Func<TypeRegistration?, ISerializer>));
-        }
+        Func<TypeRegistration?, ISerializer> createMethod = (Func<TypeRegistration?, ISerializer>)
+            CreateArraySerializerMethod
+                .MakeGenericMethod(elementType)
+                .CreateDelegate(typeof(Func<TypeRegistration?, ISerializer>));
 
         if (elementType.IsSealed)
         {
@@ -237,37 +213,16 @@ internal static class ArraySerializationProvider
         return new ArraySerializer<TElement>(elementRegistration);
     }
 
-    private static ISerializer CreateNullableArraySerializer<TElement>(TypeRegistration? elementRegistration)
-        where TElement : struct
-    {
-        return new NullableArraySerializer<TElement>(elementRegistration);
-    }
-
     private static bool TryGetDeserializerFactoryCommon(
         TypeRegistry registry,
         Type elementType,
         [NotNullWhen(true)] out Func<IDeserializer>? deserializerFactory
     )
     {
-        var underlyingType = Nullable.GetUnderlyingType(elementType);
-        Func<TypeRegistration?, IDeserializer> createMethod;
-        if (underlyingType is null)
-        {
-            createMethod =
-                (Func<TypeRegistration?, IDeserializer>)
-                    CreateArrayDeserializerMethod
-                        .MakeGenericMethod(elementType)
-                        .CreateDelegate(typeof(Func<TypeRegistration?, IDeserializer>));
-        }
-        else
-        {
-            elementType = underlyingType;
-            createMethod =
-                (Func<TypeRegistration?, IDeserializer>)
-                    CreateNullableArrayDeserializerMethod
-                        .MakeGenericMethod(elementType)
-                        .CreateDelegate(typeof(Func<TypeRegistration?, IDeserializer>));
-        }
+        var createMethod = (Func<TypeRegistration?, IDeserializer>)
+            CreateArrayDeserializerMethod
+                .MakeGenericMethod(elementType)
+                .CreateDelegate(typeof(Func<TypeRegistration?, IDeserializer>));
 
         if (elementType.IsSealed)
         {
@@ -302,10 +257,149 @@ internal static class ArraySerializationProvider
     {
         return new ArrayDeserializer<TElement>(elementRegistration);
     }
+}
 
-    private static IDeserializer CreateNullableArrayDeserializer<TElement>(TypeRegistration? elementRegistration)
-        where TElement : struct
+internal static class ArrayTypeRegistrationProvider
+{
+    // Supported types:
+    // CustomType[]
+
+    // Unsupported types:
+    // any array with more than 1 dimension, e.g. CustomType[,]
+    // PrimitiveType[] (supported by builtin serializers and deserializers directly)
+
+    private static readonly MethodInfo CreateArraySerializerMethod = typeof(ArraySerializationProvider).GetMethod(
+        nameof(CreateArraySerializer),
+        BindingFlags.NonPublic | BindingFlags.Static
+    )!;
+
+    private static readonly MethodInfo CreateArrayDeserializerMethod = typeof(ArraySerializationProvider).GetMethod(
+        nameof(CreateArrayDeserializer),
+        BindingFlags.NonPublic | BindingFlags.Static
+    )!;
+
+    public static bool TryRegisterType(TypeRegistry registry, Type targetType, [NotNullWhen(true)] out TypeRegistration? registration)
     {
-        return new NullableArrayDeserializer<TElement>(elementRegistration);
+        if (!TryGetElementType(targetType, out var elementType))
+        {
+            registration = null;
+            return false;
+        }
+        return TryRegisterTypeCommon(registry, elementType, out registration);
+    }
+
+    private static bool TryRegisterTypeCommon(TypeRegistry registry, Type elementType,
+        [NotNullWhen(true)] out TypeRegistration? registration)
+    {
+
+        var serializerFactory = CreateArraySerializerMethod.MakeGenericMethod(elementType)
+            .CreateDelegate<Func<ISerializer>>();
+        var deserializerFactory = CreateArrayDeserializerMethod.MakeGenericMethod(elementType)
+            .CreateDelegate<Func<IDeserializer>>();
+
+        registration = registry.Register(elementType.MakeArrayType(), TypeKind.List, serializerFactory, deserializerFactory);
+        return true;
+    }
+
+    private static bool TryGetElementType(Type type, [NotNullWhen(true)] out Type? elementType)
+    {
+        if (!type.IsArray)
+        {
+            elementType = null;
+            return false;
+        }
+
+        if (type.GetArrayRank() > 1)
+        {
+            // Variable bound arrays are not supported yet.
+            elementType = null;
+            return false;
+        }
+
+        elementType = type.GetElementType();
+        return elementType is not null;
+    }
+
+    private static bool TryGetElementTypeByDeclaredType(Type declaredType, [NotNullWhen(true)] out Type? elementType)
+    {
+        if (declaredType.IsArray)
+        {
+            if (declaredType.GetArrayRank() > 1)
+            {
+                // Variable bound arrays are not supported yet.
+                elementType = null;
+                return false;
+            }
+
+            elementType = declaredType.GetElementType();
+            return elementType is not null;
+        }
+
+        var interfaces = declaredType.GetInterfaces();
+        var genericEnumerableInterfaces = interfaces
+            .Where(t => t.IsGenericType && t.GetGenericTypeDefinition() == typeof(IEnumerable<>)).ToList();
+        if (genericEnumerableInterfaces.Count > 1)
+        {
+            // Ambiguous type
+            elementType = null;
+            return false;
+        }
+
+        if (genericEnumerableInterfaces.Count == 0)
+        {
+            var enumerableInterface = interfaces.FirstOrDefault(t => t == typeof(IEnumerable));
+            if (enumerableInterface is not null)
+            {
+                elementType = typeof(object);
+                return true;
+            }
+
+            elementType = null;
+            return false;
+        }
+
+        elementType = genericEnumerableInterfaces[0].GenericTypeArguments[0];
+        return true;
+    }
+
+    private static bool TryMakeGenericCreateMethod<TDelegate>(Type elementType, MethodInfo createMethod,
+        MethodInfo nullableCreateMethod,  [NotNullWhen(true)]out TDelegate? factory)
+    where TDelegate : Delegate
+    {
+        MethodInfo method;
+        if (Nullable.GetUnderlyingType(elementType) is {} underlyingType)
+        {
+#if NET5_0_OR_GREATER
+            if (underlyingType.IsPrimitive || underlyingType == typeof(Half))
+#else
+            if (underlyingType.IsPrimitive)
+#endif
+            {
+                // Fury does not support nullable primitive types
+                factory = null;
+                return false;
+            }
+            elementType = underlyingType;
+            method = createMethod;
+        }
+        else
+        {
+            method = nullableCreateMethod;
+        }
+
+        factory = method.MakeGenericMethod(elementType).CreateDelegate<TDelegate>();
+        return true;
+    }
+
+    private static ISerializer CreateArraySerializer<TElement>(TypeRegistration? elementRegistration)
+        where TElement : notnull
+    {
+        return new ArraySerializer<TElement>(elementRegistration);
+    }
+
+    private static IDeserializer CreateArrayDeserializer<TElement>(TypeRegistration? elementRegistration)
+        where TElement : notnull
+    {
+        return new ArrayDeserializer<TElement>(elementRegistration);
     }
 }

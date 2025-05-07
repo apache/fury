@@ -1,130 +1,224 @@
-﻿using System;
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-using System.Runtime.InteropServices;
+﻿using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Fury.Collections;
 using Fury.Context;
 using Fury.Meta;
+using JetBrains.Annotations;
 
 namespace Fury.Serialization.Meta;
 
-internal struct MetaStringSerializer(AutoIncrementIdDictionary<MetaString> sharedMetaStringContext)
+internal sealed class MetaStringSerializer
 {
-    private int? _lastUncompletedId;
+    private int? _cachedMetaStringId;
     private bool _shouldWriteId;
     private bool _hasWrittenHeader;
     private bool _hasWrittenHashCodeOrEncoding;
-    private bool _hasWrittenBytes;
+    private int _writtenBytesCount;
+    private AutoIncrementIdDictionary<MetaString> _metaStringContext = null!;
 
     public void Reset()
     {
-        _lastUncompletedId = null;
+        _cachedMetaStringId = null;
         _shouldWriteId = false;
         _hasWrittenHeader = false;
         _hasWrittenHashCodeOrEncoding = false;
-        _hasWrittenBytes = false;
+        _writtenBytesCount = 0;
     }
 
-    public bool Write(ref BatchWriter writer, MetaString metaString)
+    public void Initialize(AutoIncrementIdDictionary<MetaString> metaStringContext)
     {
-        _lastUncompletedId ??= sharedMetaStringContext.AddOrGet(metaString, out _shouldWriteId);
-        var completed = true;
+        _metaStringContext = metaStringContext;
+    }
+
+    [MustUseReturnValue]
+    public bool Write(ref SerializationWriterRef writerRef, MetaString metaString)
+    {
+        _cachedMetaStringId ??= _metaStringContext.AddOrGet(metaString, out _shouldWriteId);
         if (_shouldWriteId)
         {
-            var header = (uint)((_lastUncompletedId.Value + 1) << 1 | 1);
-            completed = completed && writer.TryWrite7BitEncodedUint(header, ref _hasWrittenHeader);
+            var header = MetaStringHeader.FromId(_cachedMetaStringId.Value);
+            WriteHeader(ref writerRef, header.Value);
+            return _hasWrittenHeader;
         }
         else
         {
             var length = metaString.Bytes.Length;
-            var header = (uint)(length << 1);
-            completed = completed && writer.TryWrite7BitEncodedUint(header, ref _hasWrittenHeader);
-            if (length > MetaString.SmallStringThreshold)
+            var header = MetaStringHeader.FromLength(length);
+            WriteHeader(ref writerRef, header.Value);
+            if (!_hasWrittenHeader)
             {
-                completed = completed && writer.TryWrite(metaString.HashCode, ref _hasWrittenHashCodeOrEncoding);
+                return false;
+            }
+            if (metaString.IsSmallString)
+            {
+                WriteEncoding(ref writerRef, metaString.MetaEncoding);
             }
             else
             {
-                completed =
-                    completed && writer.TryWrite((byte)metaString.MetaEncoding, ref _hasWrittenHashCodeOrEncoding);
+                WriteHashCode(ref writerRef, metaString.HashCode);
             }
 
-            completed = completed && writer.TryWrite(metaString.Bytes, ref _hasWrittenBytes);
+            if (!_hasWrittenHashCodeOrEncoding)
+            {
+                return false;
+            }
+
+            return WriteMetaStringBytes(ref writerRef, metaString);
+        }
+    }
+
+    private void WriteHeader(ref SerializationWriterRef writerRef, uint header)
+    {
+        if (_hasWrittenHeader)
+        {
+            return;
         }
 
-        return completed;
+        _hasWrittenHeader = writerRef.Write7BitEncodedUint(header);
+    }
+
+    private void WriteEncoding(ref SerializationWriterRef writerRef, MetaString.Encoding encoding)
+    {
+        if (_hasWrittenHashCodeOrEncoding)
+        {
+            return;
+        }
+
+        _hasWrittenHashCodeOrEncoding = writerRef.Write((byte)encoding);
+    }
+
+    private void WriteHashCode(ref SerializationWriterRef writerRef, ulong hashCode)
+    {
+        if (_hasWrittenHashCodeOrEncoding)
+        {
+            return;
+        }
+
+        _hasWrittenHashCodeOrEncoding = writerRef.Write(hashCode);
+    }
+
+    private bool WriteMetaStringBytes(ref SerializationWriterRef writerRef, MetaString metaString)
+    {
+        var bytes = metaString.Bytes;
+        if (_writtenBytesCount == bytes.Length)
+        {
+            return true;
+        }
+
+        var unwrittenBytes = bytes.Slice(_writtenBytesCount);
+        var writtenBytes = writerRef.Write(unwrittenBytes);
+        _writtenBytesCount += writtenBytes;
+        Debug.Assert(_writtenBytesCount <= bytes.Length);
+        return _writtenBytesCount == bytes.Length;
     }
 }
 
 internal struct MetaStringDeserializer(
-    AutoIncrementIdDictionary<MetaString> sharedMetaStringContext,
     MetaStringStorage sharedMetaStringStorage,
     MetaStringStorage.EncodingPolicy encodingPolicy
 )
 {
-    private uint? _header;
+    private MetaStringHeader? _header;
     private ulong? _hashCode;
     private MetaString.Encoding? _metaEncoding;
-    private ulong? _v1;
-    private ulong? _v2;
+    private MetaString? _metaString;
 
-    private MetaStringStorage.CreateFromBytesDelegateCache? _cache;
+    private MetaStringStorage.MetaStringFactory? _cache;
+    private AutoIncrementIdDictionary<MetaString> _metaStringContext;
 
     public void Reset()
     {
         _header = null;
         _hashCode = null;
-        _metaEncoding = null;
-        _v1 = null;
-        _v2 = null;
+        _metaString = null;
     }
 
-    public bool Read(BatchReader reader, [NotNullWhen(true)] ref MetaString? metaString)
+    public void Initialize(AutoIncrementIdDictionary<MetaString> metaStringContext)
     {
-        if (metaString is not null)
+        _metaStringContext = metaStringContext;
+    }
+
+    public async ValueTask<ReadValueResult<MetaString>> Read(
+        DeserializationReader reader,
+        bool isAsync,
+        CancellationToken cancellationToken
+    )
+    {
+        if (_metaString is not null)
         {
-            return true;
-        }
-        var completed = reader.TryRead7BitEncodedUint(ref _header);
-        if (_header is null || !completed)
-        {
-            return false;
+            return ReadValueResult<MetaString>.FromValue(_metaString);
         }
 
-        var isId = (_header.Value & 1) == 1;
-        if (isId)
+        await ReadHeader(reader, isAsync, cancellationToken);
+        if (_header is null)
         {
-            metaString = GetMetaStringById();
-            completed = true;
+            return ReadValueResult<MetaString>.Failed;
+        }
+
+        await ReadMetaString(reader, isAsync, cancellationToken);
+        if (_metaString is null)
+        {
+            return ReadValueResult<MetaString>.Failed;
+        }
+
+        return ReadValueResult<MetaString>.FromValue(_metaString);
+    }
+
+    private async ValueTask ReadHeader(DeserializationReader reader, bool isAsync, CancellationToken cancellationToken)
+    {
+        if (_header is not null)
+        {
+            return;
+        }
+
+        ReadValueResult<uint> uintResult;
+        if (isAsync)
+        {
+            uintResult = await reader.Read7BitEncodedUintAsync(cancellationToken);
         }
         else
         {
-            completed = GetMetaStringByHashCodeAndBytes(reader, out metaString);
+            // ReSharper disable once MethodHasAsyncOverloadWithCancellation
+            uintResult = reader.Read7BitEncodedUint();
         }
 
-        Debug.Assert(completed);
-        return completed;
+        if (!uintResult.IsSuccess)
+        {
+            return;
+        }
+
+        var header = new MetaStringHeader(uintResult.Value);
+        _header = header;
     }
 
-    public async ValueTask<MetaString> ReadAsync(BatchReader reader, CancellationToken cancellationToken = default)
+    private async ValueTask ReadMetaString(
+        DeserializationReader reader,
+        bool isAsync,
+        CancellationToken cancellationToken
+    )
     {
-        _header = await reader.Read7BitEncodedUintAsync(cancellationToken);
-        var isId = (_header.Value & 1) == 1;
-        if (isId)
+        if (_metaString is not null)
         {
-            return GetMetaStringById();
+            return;
         }
 
-        return await GetMetaStringByHashCodeAndBytesAsync(reader, cancellationToken);
+        Debug.Assert(_header is not null);
+        var header = _header.Value;
+        if (header.IsId)
+        {
+            _metaString = GetMetaStringById();
+        }
+        else
+        {
+            await ReadMetaStringBytes(reader, isAsync, cancellationToken);
+        }
     }
 
     private MetaString GetMetaStringById()
     {
-        Debug.Assert(_header is not null);
-        var id = (int)(_header!.Value >> 1) - 1;
-        if (!sharedMetaStringContext.TryGetValue(id, out var metaString))
+        var id = _header!.Value.Id;
+        if (!_metaStringContext.TryGetValue(id, out var metaString))
         {
             ThrowHelper.ThrowBadDeserializationInputException_UnknownMetaStringId(id);
         }
@@ -132,146 +226,145 @@ internal struct MetaStringDeserializer(
         return metaString;
     }
 
-    private bool GetMetaStringByHashCodeAndBytes(BatchReader reader, [NotNullWhen(true)] out MetaString? metaString)
-    {
-        Debug.Assert(_header is not null);
-        metaString = null;
-        var completed = true;
-        var length = (int)(_header!.Value >> 1);
-        if (length > MetaString.SmallStringThreshold)
-        {
-            // big meta string
-            completed = completed && reader.TryRead(ref _hashCode);
-            if (_hashCode is null)
-            {
-                return false;
-            }
-
-            if (!reader.TryReadAtLeast(length, out var readResult))
-            {
-                return false;
-            }
-
-            var buffer = readResult.Buffer;
-            if (buffer.Length > length)
-            {
-                buffer = buffer.Slice(0, length);
-            }
-
-            metaString = sharedMetaStringStorage.GetBigMetaString(
-                _hashCode.Value,
-                in buffer,
-                encodingPolicy,
-                ref _cache
-            );
-        }
-        else
-        {
-            // small meta string
-            completed = completed && reader.TryRead(ref _metaEncoding);
-            if (_metaEncoding is null)
-            {
-                return false;
-            }
-
-            Span<ulong> v = stackalloc ulong[2];
-            if (length <= 8)
-            {
-                completed = completed && reader.TryReadAs(length, ref _v1);
-                if (_v1 is null)
-                {
-                    return false;
-                }
-
-                _v2 = 0;
-                v[0] = _v1.Value;
-            }
-            else
-            {
-                completed = completed && reader.TryReadAs(8, ref _v1);
-                completed = completed && reader.TryReadAs(length - 8, ref _v2);
-                if (_v1 is null || _v2 is null)
-                {
-                    return false;
-                }
-                v[0] = _v1.Value;
-                v[1] = _v2.Value;
-            }
-
-            var bytes = MemoryMarshal.AsBytes(v).Slice(0, length);
-            var hashCode = MetaString.GetHashCode(bytes, _metaEncoding.Value);
-            metaString = sharedMetaStringStorage.GetSmallMetaString(
-                hashCode,
-                _v1.Value,
-                _v2.Value,
-                length,
-                encodingPolicy,
-                ref _cache
-            );
-        }
-
-        return completed;
-    }
-
-    private async ValueTask<MetaString> GetMetaStringByHashCodeAndBytesAsync(
-        BatchReader reader,
-        CancellationToken cancellationToken = default
+    private async ValueTask ReadMetaStringBytes(
+        DeserializationReader reader,
+        bool isAsync,
+        CancellationToken cancellationToken
     )
     {
-        Debug.Assert(_header is not null);
-        MetaString metaString;
-        var length = (int)(_header!.Value >> 1);
+        var length = _header!.Value.Length;
+        ulong hashCode = 0;
+        MetaString.Encoding metaEncoding = default;
         if (length > MetaString.SmallStringThreshold)
         {
             // big meta string
-            _hashCode = await reader.ReadAsync<ulong>(cancellationToken);
-            var readResult = await reader.ReadAtLeastOrThrowIfLessAsync(length, cancellationToken);
-            var buffer = readResult.Buffer;
-            if (buffer.Length > length)
-            {
-                buffer = buffer.Slice(0, length);
-            }
 
-            metaString = sharedMetaStringStorage.GetBigMetaString(
-                _hashCode.Value,
-                in buffer,
-                encodingPolicy,
-                ref _cache
-            );
+            await ReadHashCode(reader, isAsync, cancellationToken);
+            if (!_hashCode.HasValue)
+            {
+                return;
+            }
+            hashCode = _hashCode.Value;
         }
         else
         {
             // small meta string
-            _metaEncoding = await reader.ReadAsync<MetaString.Encoding>(cancellationToken);
-            if (length == 0)
-            {
-                metaString = MetaStringStorage.GetEmptyMetaString(encodingPolicy);
-            }
-            else
-            {
-                if (length <= 8)
-                {
-                    _v1 = await reader.ReadAsAsync<ulong>(length, cancellationToken);
-                    _v2 = 0;
-                }
-                else
-                {
-                    _v1 = await reader.ReadAsAsync<ulong>(8, cancellationToken);
-                    _v2 = await reader.ReadAsAsync<ulong>(length - 8, cancellationToken);
-                }
 
-                var hashCode = MetaString.GetHashCode(length, _v1.Value, _v2.Value, _metaEncoding.Value);
-                metaString = sharedMetaStringStorage.GetSmallMetaString(
-                    hashCode,
-                    _v1.Value,
-                    _v2.Value,
-                    length,
-                    encodingPolicy,
-                    ref _cache
-                );
+            await ReadMetaEncoding(reader, isAsync, cancellationToken);
+            if (!_metaEncoding.HasValue)
+            {
+                return;
             }
+            metaEncoding = _metaEncoding.Value;
         }
 
-        return metaString;
+        // Maybe we can use the hash code to get the meta string and skip reading the bytes
+        // if a meta string can be found by the hash code.
+
+        var bytesResult = await reader.Read(length, isAsync, cancellationToken);
+        var buffer = bytesResult.Buffer;
+        var bufferLength = buffer.Length;
+        if (bufferLength < length)
+        {
+            reader.AdvanceTo(buffer.Start, buffer.End);
+            return;
+        }
+
+        if (bufferLength > length)
+        {
+            buffer = buffer.Slice(0, length);
+        }
+
+        if (length <= MetaString.SmallStringThreshold)
+        {
+            hashCode = MetaString.GetHashCode(buffer, metaEncoding);
+        }
+
+        _metaString = sharedMetaStringStorage.GetMetaString(hashCode, in buffer, encodingPolicy, ref _cache);
+
+        reader.AdvanceTo(buffer.End);
     }
+
+    private async ValueTask ReadHashCode(
+        DeserializationReader reader,
+        bool isAsync,
+        CancellationToken cancellationToken
+    )
+    {
+        if (_hashCode is not null)
+        {
+            return;
+        }
+
+        ReadValueResult<ulong> ulongResult;
+        if (isAsync)
+        {
+            ulongResult = await reader.ReadUInt64Async(cancellationToken);
+        }
+        else
+        {
+            // ReSharper disable once MethodHasAsyncOverloadWithCancellation
+            ulongResult = reader.ReadUInt64();
+        }
+
+        if (ulongResult.IsSuccess)
+        {
+            _hashCode = ulongResult.Value;
+        }
+    }
+
+    private async ValueTask ReadMetaEncoding(
+        DeserializationReader reader,
+        bool isAsync,
+        CancellationToken cancellationToken
+    )
+    {
+        if (_metaEncoding is not null)
+        {
+            return;
+        }
+
+        ReadValueResult<byte> byteResult;
+        if (isAsync)
+        {
+            byteResult = await reader.ReadUInt8Async(cancellationToken);
+        }
+        else
+        {
+            // ReSharper disable once MethodHasAsyncOverloadWithCancellation
+            byteResult = reader.ReadUInt8();
+        }
+
+        if (byteResult.IsSuccess)
+        {
+            _metaEncoding = (MetaString.Encoding)byteResult.Value;
+        }
+    }
+}
+
+file readonly struct MetaStringHeader(uint value)
+{
+    public uint Value { get; } = value;
+    public bool IsId => (Value & 1) == 1;
+    public int Length
+    {
+        get
+        {
+            Debug.Assert(!IsId);
+            return (int)(Value >> 1);
+        }
+    }
+
+    public int Id
+    {
+        get
+        {
+            Debug.Assert(IsId);
+            return (int)(Value >> 1) - 1;
+        }
+    }
+
+    public static MetaStringHeader FromLength(int length) => new((uint)length << 1);
+
+    public static MetaStringHeader FromId(int id) => new((uint)(id + 1) << 1 | 1);
 }

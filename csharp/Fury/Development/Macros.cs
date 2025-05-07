@@ -20,7 +20,7 @@ internal static class Macros
         /*$
         if ($registration$ is null && TypeHelper<$TTarget$>.IsSealed)
         {
-            $registration$ = context.Fury.TypeRegistry.GetOrRegisterType(typeof($TTarget$));
+            $registration$ = context.TypeRegistry.GetOrRegisterType(typeof($TTarget$));
         }
         */
     }

@@ -11,6 +11,26 @@ namespace Fury.Collections;
 
 internal static class EnumerableExtensions
 {
+#if !NET8_0_OR_GREATER
+    public static bool TryGetNonEnumeratedCount<T>([NoEnumeration] this IEnumerable<T> enumerable, out int count)
+    {
+        switch (enumerable)
+        {
+            case ICollection<T> typedCollection:
+                count = typedCollection.Count;
+                return true;
+            case ICollection collection:
+                count = collection.Count;
+                return true;
+            case IReadOnlyCollection<T> readOnlyCollection:
+                count = readOnlyCollection.Count;
+                return true;
+            default:
+                count = 0;
+                return false;
+        }
+    }
+#endif
     public static bool TryGetSpan<T>([NoEnumeration] this IEnumerable<T> enumerable, out Span<T> span)
     {
         switch (enumerable)

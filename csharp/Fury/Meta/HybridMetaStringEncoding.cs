@@ -4,11 +4,13 @@ using System.Linq;
 
 namespace Fury.Meta;
 
-internal sealed class HybridMetaStringEncoding(char specialChar1, char specialChar2)
+internal sealed class HybridMetaStringEncoding(char specialChar1, char specialChar2, MetaString.Encoding[] candidateEncodings)
 {
     public LowerUpperDigitSpecialEncoding LowerUpperDigit { get; } = new(specialChar1, specialChar2);
     public char SpecialChar1 { get; } = specialChar1;
     public char SpecialChar2 { get; } = specialChar2;
+
+    private MetaString.Encoding[] _candidateEncodings = candidateEncodings;
 
     public MetaStringEncoding GetEncoding(MetaString.Encoding encoding)
     {
@@ -34,10 +36,10 @@ internal sealed class HybridMetaStringEncoding(char specialChar1, char specialCh
         return new MetaString(chars, encoding, SpecialChar1, SpecialChar2, bytes);
     }
 
-    public MetaStringEncoding SelectEncoding(string chars, MetaString.Encoding[] candidateEncodings)
+    public MetaStringEncoding SelectEncoding(string chars)
     {
         var statistics = GetStatistics(chars);
-        if (statistics.LowerSpecialCompatible && candidateEncodings.Contains(MetaString.Encoding.LowerSpecial))
+        if (statistics.LowerSpecialCompatible && _candidateEncodings.Contains(MetaString.Encoding.LowerSpecial))
         {
             return LowerSpecialEncoding.Instance;
         }
@@ -49,7 +51,7 @@ internal sealed class HybridMetaStringEncoding(char specialChar1, char specialCh
                 if (
                     statistics.UpperCount == 1
                     && char.IsUpper(chars[0])
-                    && candidateEncodings.Contains(MetaString.Encoding.FirstToLowerSpecial)
+                    && _candidateEncodings.Contains(MetaString.Encoding.FirstToLowerSpecial)
                 )
                 {
                     return FirstToLowerSpecialEncoding.Instance;
@@ -59,14 +61,14 @@ internal sealed class HybridMetaStringEncoding(char specialChar1, char specialCh
                 var bitCountWithLowerUpperDigit = LowerUpperDigitSpecialEncoding.GetBitCount(chars.Length);
                 if (
                     bitCountWithAllToLower < bitCountWithLowerUpperDigit
-                    && candidateEncodings.Contains(MetaString.Encoding.AllToLowerSpecial)
+                    && _candidateEncodings.Contains(MetaString.Encoding.AllToLowerSpecial)
                 )
                 {
                     return AllToLowerSpecialEncoding.Instance;
                 }
             }
 
-            if (candidateEncodings.Contains(MetaString.Encoding.LowerUpperDigitSpecial))
+            if (_candidateEncodings.Contains(MetaString.Encoding.LowerUpperDigitSpecial))
             {
                 return LowerUpperDigit;
             }

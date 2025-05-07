@@ -18,6 +18,7 @@ internal sealed class MetaString : IEquatable<MetaString>
     public char SpecialChar2 { get; }
     private readonly byte[] _bytes;
     public ReadOnlySpan<byte> Bytes => new(_bytes);
+    public bool IsSmallString => _bytes.Length <= SmallStringThreshold;
 
     public MetaString(string value, Encoding metaEncoding, char specialChar1, char specialChar2, byte[] bytes)
     {

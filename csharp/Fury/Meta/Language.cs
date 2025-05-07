@@ -9,5 +9,6 @@ public enum Language : byte
     Go,
     Javascript,
     Rust,
+    Dart,
     Csharp,
 }

@@ -1,6 +1,10 @@
 ﻿using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 
+#if NET6_0_OR_GREATER
+using System.Runtime.Intrinsics.X86;
+#endif
+
 namespace Fury;
 
 internal static class BitHelper
@@ -11,7 +15,15 @@ internal static class BitHelper
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static uint GetBitMaskU32(int bitsCount) => (1u << bitsCount) - 1;
+
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static long GetBitMask64(int bitsCount) => (1L << bitsCount) - 1;
+
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ulong GetBitMaskU64(int bitsCount) => (1uL << bitsCount) - 1;
 
     [Pure]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -45,6 +57,7 @@ internal static class BitHelper
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static byte ReadBits(byte b1, int bitOffset, int bitCount)
     {
+
         return (byte)((b1 >>> (8 - bitCount - bitOffset)) & GetBitMask32(bitCount));
     }
 
@@ -55,5 +68,18 @@ internal static class BitHelper
         var byteFromB1 = b1 << (bitOffset + bitCount - 8);
         var byteFromB2 = b2 >>> (8 * 2 - bitCount - bitOffset);
         return (byte)((byteFromB1 | byteFromB2) & GetBitMask32(bitCount));
+    }
+
+    [Pure]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ulong BitFieldExtract(ulong value, byte bitOffset, byte bitCount)
+    {
+#if NET6_0_OR_GREATER
+        if (Bmi1.X64.IsSupported)
+        {
+            return Bmi1.X64.BitFieldExtract(value, bitOffset, bitCount);
+        }
+#endif
+        return (value >>> bitOffset) & GetBitMaskU64(bitCount);
     }
 }

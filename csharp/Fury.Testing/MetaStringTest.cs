@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using Bogus;
+using Fury.Context;
 using Fury.Meta;
 
 namespace Fury.Testing;
@@ -24,14 +25,14 @@ public sealed class MetaStringTest
 
     private static readonly string TypeNameLowerUpperDigitSpecialChars = Enumerable
         .Range(0, 1 << LowerUpperDigitSpecialEncoding.BitsPerChar)
-        .Select(i => (Encodings.TypeNameEncoding.LowerUpperDigit.TryDecodeByte((byte)i, out var c), c))
+        .Select(i => (MetaStringStorage.NameEncoding.LowerUpperDigit.TryDecodeByte((byte)i, out var c), c))
         .Where(t => t.Item1 && char.IsLetterOrDigit(t.c))
         .Aggregate(new StringBuilder(), (builder, t) => builder.Append(t.c))
         .ToString();
 
     private static readonly string NamespaceLowerUpperDigitSpecialChars = Enumerable
         .Range(0, 1 << LowerUpperDigitSpecialEncoding.BitsPerChar)
-        .Select(i => (Encodings.NamespaceEncoding.LowerUpperDigit.TryDecodeByte((byte)i, out var c), c))
+        .Select(i => (MetaStringStorage.NamespaceEncoding.LowerUpperDigit.TryDecodeByte((byte)i, out var c), c))
         .Where(t => t.Item1 && char.IsLetterOrDigit(t.c))
         .Aggregate(new StringBuilder(), (builder, t) => builder.Append(t.c))
         .ToString();
@@ -177,10 +178,10 @@ public sealed class MetaStringTest
         var faker = new Faker();
         var stubString = faker.Random.String2(length, TypeNameLowerUpperDigitSpecialChars);
 
-        var bufferLength = Encodings.TypeNameEncoding.LowerUpperDigit.GetByteCount(stubString);
+        var bufferLength = MetaStringStorage.NameEncoding.LowerUpperDigit.GetByteCount(stubString);
         Span<byte> buffer = stackalloc byte[bufferLength];
-        Encodings.TypeNameEncoding.LowerUpperDigit.GetBytes(stubString, buffer);
-        var output = Encodings.TypeNameEncoding.LowerUpperDigit.GetString(buffer);
+        MetaStringStorage.NameEncoding.LowerUpperDigit.GetBytes(stubString, buffer);
+        var output = MetaStringStorage.NameEncoding.LowerUpperDigit.GetString(buffer);
 
         Assert.Equal(stubString, output);
     }
@@ -192,11 +193,11 @@ public sealed class MetaStringTest
         var faker = new Faker();
         var stubString = faker.Random.String2(length, TypeNameLowerUpperDigitSpecialChars);
 
-        var bufferLength = Encodings.TypeNameEncoding.LowerUpperDigit.GetByteCount(stubString);
+        var bufferLength = MetaStringStorage.NameEncoding.LowerUpperDigit.GetByteCount(stubString);
         Span<byte> bytes = stackalloc byte[bufferLength];
         Span<char> chars = stackalloc char[stubString.Length];
-        Encodings.TypeNameEncoding.LowerUpperDigit.GetBytes(stubString, bytes);
-        var decoder = Encodings.TypeNameEncoding.LowerUpperDigit.GetDecoder();
+        MetaStringStorage.NameEncoding.LowerUpperDigit.GetBytes(stubString, bytes);
+        var decoder = MetaStringStorage.NameEncoding.LowerUpperDigit.GetDecoder();
         var emptyChars = chars;
         for (var i = 0; i < bytes.Length; i++)
         {
@@ -217,10 +218,10 @@ public sealed class MetaStringTest
         var faker = new Faker();
         var stubString = faker.Random.String2(length, NamespaceLowerUpperDigitSpecialChars);
 
-        var bufferLength = Encodings.NamespaceEncoding.LowerUpperDigit.GetByteCount(stubString);
+        var bufferLength = MetaStringStorage.NamespaceEncoding.LowerUpperDigit.GetByteCount(stubString);
         Span<byte> buffer = stackalloc byte[bufferLength];
-        Encodings.NamespaceEncoding.LowerUpperDigit.GetBytes(stubString, buffer);
-        var output = Encodings.NamespaceEncoding.LowerUpperDigit.GetString(buffer);
+        MetaStringStorage.NamespaceEncoding.LowerUpperDigit.GetBytes(stubString, buffer);
+        var output = MetaStringStorage.NamespaceEncoding.LowerUpperDigit.GetString(buffer);
 
         Assert.Equal(stubString, output);
     }
@@ -232,11 +233,11 @@ public sealed class MetaStringTest
         var faker = new Faker();
         var stubString = faker.Random.String2(length, NamespaceLowerUpperDigitSpecialChars);
 
-        var bufferLength = Encodings.NamespaceEncoding.LowerUpperDigit.GetByteCount(stubString);
+        var bufferLength = MetaStringStorage.NamespaceEncoding.LowerUpperDigit.GetByteCount(stubString);
         Span<byte> bytes = stackalloc byte[bufferLength];
         Span<char> chars = stackalloc char[stubString.Length];
-        Encodings.NamespaceEncoding.LowerUpperDigit.GetBytes(stubString, bytes);
-        var decoder = Encodings.NamespaceEncoding.LowerUpperDigit.GetDecoder();
+        MetaStringStorage.NamespaceEncoding.LowerUpperDigit.GetBytes(stubString, bytes);
+        var decoder = MetaStringStorage.NamespaceEncoding.LowerUpperDigit.GetDecoder();
         var emptyChars = chars;
         for (var i = 0; i < bytes.Length; i++)
         {

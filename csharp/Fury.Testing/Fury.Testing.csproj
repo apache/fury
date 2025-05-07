@@ -26,4 +26,8 @@
       <ProjectReference Include="..\Fury\Fury.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Fakes\" />
+    </ItemGroup>
+
 </Project>

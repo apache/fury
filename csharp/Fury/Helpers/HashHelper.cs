@@ -153,7 +153,7 @@ internal static class HashHelper
             return;
         }
 
-        // TODO: Maybe a ReadOnlySequence specialised version would be faster than copying to an array
+        // Maybe a ReadOnlySequence specialised version would be faster than copying to an array?
         var buffer = ArrayPool<byte>.Shared.Rent(length);
         try
         {
