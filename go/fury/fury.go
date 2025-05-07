@@ -165,14 +165,9 @@ func (f *Fury) Serialize(buf *ByteBuffer, v interface{}, callback BufferCallback
 		if err := buffer.WriteByte(GO); err != nil {
 			return err
 		}
-		//buffer.WriteInt32(0) // preserve 4-byte for nativeObjects start offsets.
-		//buffer.WriteInt32(0)
 		if err := f.Write(buffer, v); err != nil {
 			return err
 		}
-		//if err := f.XSerializeRef(buffer, v, nil); err != nil {
-		//	return err
-		//}
 	}
 	return nil
 }
