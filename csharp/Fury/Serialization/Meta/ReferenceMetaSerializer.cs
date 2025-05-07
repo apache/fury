@@ -61,7 +61,7 @@ internal sealed class ReferenceMetaSerializer
         {
             if (_cachedRefMetadata is null)
             {
-                var id = _writtenRefIds.AddOrGet(value, out var exists);
+                var id = _writtenRefIds.GetOrAdd(value, out var exists);
                 var flag = exists ? RefFlag.Ref : RefFlag.RefValue;
                 _cachedRefMetadata = new RefMetadata(flag, id);
             }

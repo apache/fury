@@ -34,7 +34,7 @@ internal sealed class MetaStringSerializer
     [MustUseReturnValue]
     public bool Write(ref SerializationWriterRef writerRef, MetaString metaString)
     {
-        _cachedMetaStringId ??= _metaStringContext.AddOrGet(metaString, out _shouldWriteId);
+        _cachedMetaStringId ??= _metaStringContext.GetOrAdd(metaString, out _shouldWriteId);
         if (_shouldWriteId)
         {
             var header = MetaStringHeader.FromId(_cachedMetaStringId.Value);
