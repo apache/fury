@@ -18,7 +18,7 @@ internal abstract class AbstractLowerSpecialEncoding(MetaString.Encoding encodin
             '_' => (true, NumberOfEnglishLetters + 1),
             '$' => (true, NumberOfEnglishLetters + 2),
             '|' => (true, NumberOfEnglishLetters + 3),
-            _ => (false, default),
+            _ => (false, default)
         };
         b = (byte)encoded;
         return success;
@@ -43,7 +43,7 @@ internal abstract class AbstractLowerSpecialEncoding(MetaString.Encoding encodin
             NumberOfEnglishLetters + 1 => (true, '_'),
             NumberOfEnglishLetters + 2 => (true, '$'),
             NumberOfEnglishLetters + 3 => (true, '|'),
-            _ => (false, default),
+            _ => (false, default)
         };
         return success;
     }

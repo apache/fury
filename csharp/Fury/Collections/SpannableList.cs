@@ -164,6 +164,8 @@ internal sealed class SpannableList<T> : IList<T>, IReadOnlyList<T>
 
         object? IEnumerator.Current => Current;
 
-        public void Dispose() { }
+        public void Dispose()
+        {
+        }
     }
 }

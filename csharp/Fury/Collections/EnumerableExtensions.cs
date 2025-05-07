@@ -31,7 +31,6 @@ internal static class EnumerableExtensions
         }
     }
 #endif
-
     public static bool TryGetSpan<T>([NoEnumeration] this IEnumerable<T> enumerable, out Span<T> span)
     {
         switch (enumerable)

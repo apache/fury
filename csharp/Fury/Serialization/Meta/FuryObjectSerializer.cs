@@ -1,3 +1,6 @@
 namespace Fury.Serialization.Meta;
 
-internal sealed class FuryObjectSerializer { }
+internal sealed class FuryObjectSerializer
+{
+    
+}

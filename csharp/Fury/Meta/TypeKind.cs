@@ -82,7 +82,7 @@ internal static class TypeKindHelper
 #endif
             TypeCode.Single => TypeKind.Float32Array,
             TypeCode.Double => TypeKind.Float64Array,
-            _ => TypeKind.List,
+            _ => TypeKind.List
         };
     }
 }

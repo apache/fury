@@ -40,7 +40,7 @@ public sealed class DeserializationReader
     }
 
     public TypeRegistry TypeRegistry { get; }
-    private readonly MetaStringStorage _metaStringStorage;
+    private MetaStringStorage _metaStringStorage;
 
     public DeserializationConfig Config { get; private set; } = DeserializationConfig.Default;
     private readonly BatchReader _innerReader = new();

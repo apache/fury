@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
+
 #if NET6_0_OR_GREATER
 using System.Runtime.Intrinsics.X86;
 #endif
@@ -56,6 +57,7 @@ internal static class BitHelper
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static byte ReadBits(byte b1, int bitOffset, int bitCount)
     {
+
         return (byte)((b1 >>> (8 - bitCount - bitOffset)) & GetBitMask32(bitCount));
     }
 
