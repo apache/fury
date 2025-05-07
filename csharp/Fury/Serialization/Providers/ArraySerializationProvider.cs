@@ -189,10 +189,11 @@ internal static class ArraySerializationProvider
             return false;
         }
 
-        Func<TypeRegistration?, ISerializer> createMethod = (Func<TypeRegistration?, ISerializer>)
-            CreateArraySerializerMethod
-                .MakeGenericMethod(elementType)
-                .CreateDelegate(typeof(Func<TypeRegistration?, ISerializer>));
+        Func<TypeRegistration?, ISerializer> createMethod =
+            (Func<TypeRegistration?, ISerializer>)
+                CreateArraySerializerMethod
+                    .MakeGenericMethod(elementType)
+                    .CreateDelegate(typeof(Func<TypeRegistration?, ISerializer>));
 
         if (elementType.IsSealed)
         {
@@ -219,10 +220,11 @@ internal static class ArraySerializationProvider
         [NotNullWhen(true)] out Func<IDeserializer>? deserializerFactory
     )
     {
-        var createMethod = (Func<TypeRegistration?, IDeserializer>)
-            CreateArrayDeserializerMethod
-                .MakeGenericMethod(elementType)
-                .CreateDelegate(typeof(Func<TypeRegistration?, IDeserializer>));
+        var createMethod =
+            (Func<TypeRegistration?, IDeserializer>)
+                CreateArrayDeserializerMethod
+                    .MakeGenericMethod(elementType)
+                    .CreateDelegate(typeof(Func<TypeRegistration?, IDeserializer>));
 
         if (elementType.IsSealed)
         {
@@ -278,7 +280,11 @@ internal static class ArrayTypeRegistrationProvider
         BindingFlags.NonPublic | BindingFlags.Static
     )!;
 
-    public static bool TryRegisterType(TypeRegistry registry, Type targetType, [NotNullWhen(true)] out TypeRegistration? registration)
+    public static bool TryRegisterType(
+        TypeRegistry registry,
+        Type targetType,
+        [NotNullWhen(true)] out TypeRegistration? registration
+    )
     {
         if (!TryGetElementType(targetType, out var elementType))
         {
@@ -288,16 +294,25 @@ internal static class ArrayTypeRegistrationProvider
         return TryRegisterTypeCommon(registry, elementType, out registration);
     }
 
-    private static bool TryRegisterTypeCommon(TypeRegistry registry, Type elementType,
-        [NotNullWhen(true)] out TypeRegistration? registration)
+    private static bool TryRegisterTypeCommon(
+        TypeRegistry registry,
+        Type elementType,
+        [NotNullWhen(true)] out TypeRegistration? registration
+    )
     {
-
-        var serializerFactory = CreateArraySerializerMethod.MakeGenericMethod(elementType)
+        var serializerFactory = CreateArraySerializerMethod
+            .MakeGenericMethod(elementType)
             .CreateDelegate<Func<ISerializer>>();
-        var deserializerFactory = CreateArrayDeserializerMethod.MakeGenericMethod(elementType)
+        var deserializerFactory = CreateArrayDeserializerMethod
+            .MakeGenericMethod(elementType)
             .CreateDelegate<Func<IDeserializer>>();
 
-        registration = registry.Register(elementType.MakeArrayType(), TypeKind.List, serializerFactory, deserializerFactory);
+        registration = registry.Register(
+            elementType.MakeArrayType(),
+            TypeKind.List,
+            serializerFactory,
+            deserializerFactory
+        );
         return true;
     }
 
@@ -337,7 +352,8 @@ internal static class ArrayTypeRegistrationProvider
 
         var interfaces = declaredType.GetInterfaces();
         var genericEnumerableInterfaces = interfaces
-            .Where(t => t.IsGenericType && t.GetGenericTypeDefinition() == typeof(IEnumerable<>)).ToList();
+            .Where(t => t.IsGenericType && t.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+            .ToList();
         if (genericEnumerableInterfaces.Count > 1)
         {
             // Ambiguous type
@@ -362,12 +378,16 @@ internal static class ArrayTypeRegistrationProvider
         return true;
     }
 
-    private static bool TryMakeGenericCreateMethod<TDelegate>(Type elementType, MethodInfo createMethod,
-        MethodInfo nullableCreateMethod,  [NotNullWhen(true)]out TDelegate? factory)
-    where TDelegate : Delegate
+    private static bool TryMakeGenericCreateMethod<TDelegate>(
+        Type elementType,
+        MethodInfo createMethod,
+        MethodInfo nullableCreateMethod,
+        [NotNullWhen(true)] out TDelegate? factory
+    )
+        where TDelegate : Delegate
     {
         MethodInfo method;
-        if (Nullable.GetUnderlyingType(elementType) is {} underlyingType)
+        if (Nullable.GetUnderlyingType(elementType) is { } underlyingType)
         {
 #if NET5_0_OR_GREATER
             if (underlyingType.IsPrimitive || underlyingType == typeof(Half))

@@ -38,7 +38,7 @@ internal static partial class ThrowHelper
 
     public static void ThrowArgumentOutOfRangeExceptionIfNegative(
         int value,
-        [InvokerParameterName]string paramName,
+        [InvokerParameterName] string paramName,
         string? message = null
     )
     {

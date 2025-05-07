@@ -4,7 +4,8 @@ using Fury.Meta;
 
 namespace Fury;
 
-public class BadDeserializationInputException(string? message = null, Exception? innerException = null) : Exception(message, innerException);
+public class BadDeserializationInputException(string? message = null, Exception? innerException = null)
+    : Exception(message, innerException);
 
 internal static partial class ThrowHelper
 {

@@ -14,5 +14,5 @@ public enum CompatibleMode
     /// Class schema can be different between serialization peer and deserialization peer. They can
     /// add/delete fields independently.
     /// </summary>
-    Compatible
+    Compatible,
 }

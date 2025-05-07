@@ -6,7 +6,6 @@ namespace Fury;
 
 internal static partial class ThrowHelper
 {
-
     [DoesNotReturn]
     public static void ThrowArgumentOutOfRangeException_AttemptedToAdvanceFurtherThanBufferLength(
         string paramName,

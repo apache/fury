@@ -4,7 +4,11 @@ using System.Linq;
 
 namespace Fury.Meta;
 
-internal sealed class HybridMetaStringEncoding(char specialChar1, char specialChar2, MetaString.Encoding[] candidateEncodings)
+internal sealed class HybridMetaStringEncoding(
+    char specialChar1,
+    char specialChar2,
+    MetaString.Encoding[] candidateEncodings
+)
 {
     public LowerUpperDigitSpecialEncoding LowerUpperDigit { get; } = new(specialChar1, specialChar2);
     public char SpecialChar1 { get; } = specialChar1;

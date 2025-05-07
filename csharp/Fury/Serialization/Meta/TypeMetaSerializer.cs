@@ -61,10 +61,7 @@ internal sealed class TypeMetaSerializer
     }
 }
 
-internal sealed class TypeMetaDeserializer(
-    TypeRegistry registry,
-    MetaStringStorage metaStringStorage
-)
+internal sealed class TypeMetaDeserializer(TypeRegistry registry, MetaStringStorage metaStringStorage)
 {
     private MetaStringDeserializer _nameMetaStringDeserializer = new(
         metaStringStorage,

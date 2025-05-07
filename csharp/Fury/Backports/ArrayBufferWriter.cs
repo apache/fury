@@ -243,7 +243,9 @@ internal sealed class ArrayBufferWriter<T> : IBufferWriter<T>
 
     private static void ThrowInvalidOperationException_AdvancedTooFar(int capacity)
     {
-        throw new InvalidOperationException($"Cannot advance past the end of the underlying buffer which has a capacity of {capacity}.");
+        throw new InvalidOperationException(
+            $"Cannot advance past the end of the underlying buffer which has a capacity of {capacity}."
+        );
     }
 
     private static void ThrowOutOfMemoryException(uint capacity)

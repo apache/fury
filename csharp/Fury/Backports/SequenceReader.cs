@@ -16,7 +16,6 @@ public ref struct SequenceReader<T>
     private SequencePosition _currentPosition;
     private SequencePosition _nextPosition;
     private bool _moreData;
-    private readonly long _length;
 
     /// <summary>
     /// Create a <see cref="SequenceReader{T}"/> over the given <see cref="ReadOnlySequence{T}"/>.
@@ -28,7 +27,7 @@ public ref struct SequenceReader<T>
         Consumed = 0;
         Sequence = sequence;
         _currentPosition = sequence.Start;
-        _length = -1;
+        Length = -1;
 
         CurrentSpan = sequence.First.Span;
         _nextPosition = sequence.GetPosition(CurrentSpan.Length);
@@ -100,12 +99,12 @@ public ref struct SequenceReader<T>
     {
         get
         {
-            if (_length < 0)
+            if (field < 0)
             {
                 // Cast-away readonly to initialize lazy field
-                Unsafe.AsRef(in _length) = Sequence.Length;
+                Unsafe.AsRef(in field) = Sequence.Length;
             }
-            return _length;
+            return field;
         }
     }
 

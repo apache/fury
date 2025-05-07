@@ -93,8 +93,7 @@ public sealed class Fury : IDisposable
         }
 
         var completedOrFailed = false;
-        var writer = uncompletedResult.Writer;
-        Debug.Assert(writer is not null);
+        var writer = uncompletedResult.Writer!;
         try
         {
             if (!writer.WriteHeader(value is null))
@@ -134,8 +133,7 @@ public sealed class Fury : IDisposable
         }
 
         var completedOrFailed = false;
-        var writer = uncompletedResult.Writer;
-        Debug.Assert(writer is not null);
+        var writer = uncompletedResult.Writer!;
         try
         {
             if (!writer.WriteHeader(value is null))
@@ -271,8 +269,7 @@ public sealed class Fury : IDisposable
         }
 
         var completedOrFailed = false;
-        var reader = uncompletedResult.Reader;
-        Debug.Assert(reader is not null);
+        var reader = uncompletedResult.Reader!;
         try
         {
             var headerResult = await reader.ReadHeader(isAsync, cancellationToken);
@@ -327,8 +324,7 @@ public sealed class Fury : IDisposable
         }
 
         var completedOrFailed = false;
-        var reader = uncompletedResult.Reader;
-        Debug.Assert(reader is not null);
+        var reader = uncompletedResult.Reader!;
         try
         {
             var headerResult = await reader.ReadHeader(isAsync, cancellationToken);

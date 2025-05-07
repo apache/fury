@@ -5,7 +5,6 @@ namespace Fury;
 
 internal static partial class ThrowHelper
 {
-
     [DoesNotReturn]
     public static void ThrowArgumentException_InsufficientSpaceInTheOutputBuffer(string? paramName = null)
     {

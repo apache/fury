@@ -32,7 +32,11 @@ public sealed class BuiltInTypeRegistrationProvider : ITypeRegistrationProvider
         throw new NotImplementedException();
     }
 
-    public bool TryRegisterType(TypeRegistry registry, Type targetType, [NotNullWhen(true)] out TypeRegistration? registration)
+    public bool TryRegisterType(
+        TypeRegistry registry,
+        Type targetType,
+        [NotNullWhen(true)] out TypeRegistration? registration
+    )
     {
         if (EnumTypeRegistrationProvider.TryRegisterType(registry, targetType, out registration))
         {
@@ -50,6 +54,8 @@ public sealed class BuiltInTypeRegistrationProvider : ITypeRegistrationProvider
     [DoesNotReturn]
     private void ThrowNotSupportedException_TypeNotSupported(Type targetType)
     {
-        throw new NotSupportedException($"Type `{targetType}` is not supported by built-in type registration provider.");
+        throw new NotSupportedException(
+            $"Type `{targetType}` is not supported by built-in type registration provider."
+        );
     }
 }
