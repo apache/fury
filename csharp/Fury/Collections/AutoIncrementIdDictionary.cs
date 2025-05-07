@@ -47,7 +47,7 @@ internal sealed class AutoIncrementIdDictionary<TValue>
     private void ThrowArgumentException_ValueAlreadyExists(TValue value)
     {
         ThrowHelper.ThrowArgumentException(
-            $"The value '{value}' already exists in the {nameof(AutoIncrementIdDictionary<>)}.",
+            $"The value '{value}' already exists in the {nameof(AutoIncrementIdDictionary<TValue>)}.",
             nameof(value)
         );
     }

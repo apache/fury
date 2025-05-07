@@ -26,7 +26,7 @@ internal sealed class PrimitiveArraySerializer<TElement> : AbstractSerializer<TE
     public override bool Serialize(SerializationWriter writer, in TElement[] value)
     {
         var writerRef = writer.ByrefWriter;
-        var bytes = MemoryMarshal.AsBytes(value).Slice(_writtenByteCount);
+        var bytes = MemoryMarshal.AsBytes(value.AsSpan()).Slice(_writtenByteCount);
         var byteCount = bytes.Length;
         if (_hasWrittenLength)
         {

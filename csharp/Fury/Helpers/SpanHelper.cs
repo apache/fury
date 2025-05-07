@@ -22,6 +22,17 @@ internal static class SpanHelper
 #endif
     }
 
+    public static int CopyUpTo<T>(this Span<T> source, Span<T> destination)
+    {
+        if (source.Length > destination.Length)
+        {
+            source = source.Slice(0, destination.Length);
+        }
+
+        source.CopyTo(destination);
+        return source.Length;
+    }
+
     public static int CopyUpTo<T>(this ReadOnlySpan<T> source, Span<T> destination)
     {
         if (source.Length > destination.Length)
