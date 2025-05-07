@@ -1211,7 +1211,7 @@ cdef class TimestampSerializer(CrossLanguageCompatibleSerializer):
                 "{} should be {} instead of {}".format(value, datetime, type(value))
             )
         # TimestampType represent micro seconds
-        buffer.write_int64(self._get_timestamp(value)
+        buffer.write_int64(self._get_timestamp(value))
 
     cpdef inline read(self, Buffer buffer):
         ts = buffer.read_int64() / 1000000
