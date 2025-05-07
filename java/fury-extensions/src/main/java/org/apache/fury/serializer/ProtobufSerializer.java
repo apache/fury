@@ -86,6 +86,7 @@ public class ProtobufSerializer extends Serializer<Message> {
           ByteBuffer buf = buffer.sliceAsByteBuffer(buffer._unsafeHeapWriterIndex(), size);
           CodedOutputStream stream = CodedOutputStream.newInstance(buf);
           value.writeTo(stream);
+          buffer.increaseWriterIndex(size);
         }
       }
     } catch (IOException e) {
