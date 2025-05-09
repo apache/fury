@@ -107,7 +107,6 @@ func (s *mapConcreteKeyValueSerializer) Write(f *Fury, buf *ByteBuffer, value re
 	}
 	return nil
 }
-
 func (s *mapConcreteKeyValueSerializer) Read(f *Fury, buf *ByteBuffer, type_ reflect.Type, value reflect.Value) error {
 	if value.IsNil() {
 		value.Set(reflect.MakeMap(s.type_))

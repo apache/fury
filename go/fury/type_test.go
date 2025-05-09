@@ -25,7 +25,13 @@ import (
 )
 
 func TestTypeResolver(t *testing.T) {
-	typeResolver := newTypeResolver()
+	fury := &Fury{
+		refResolver:       newRefResolver(false),
+		referenceTracking: false,
+		language:          XLANG,
+		buffer:            NewByteBuffer(nil),
+	}
+	typeResolver := newTypeResolver(fury)
 	type A struct {
 		F1 string
 	}

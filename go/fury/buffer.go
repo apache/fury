@@ -89,6 +89,21 @@ func (b *ByteBuffer) WriteInt32(value int32) {
 	binary.LittleEndian.PutUint32(b.data[b.writerIndex:], uint32(value))
 	b.writerIndex += 4
 }
+func (b *ByteBuffer) WriteVarUint32(value uint32) error {
+	// Ensure enough capacity (max 5 bytes for varint32)
+	b.grow(5)
+
+	// Varint encoding
+	for value >= 0x80 {
+		b.data[b.writerIndex] = byte(value) | 0x80
+		b.writerIndex++
+		value >>= 7
+	}
+	b.data[b.writerIndex] = byte(value)
+	b.writerIndex++
+
+	return nil
+}
 
 func (b *ByteBuffer) WriteLength(value int) {
 	b.grow(4)
@@ -311,6 +326,35 @@ func (b *ByteBuffer) ReadVarInt32() int32 {
 				result |= (byte_ & 0x7F) << 21
 				if (byte_ & 0x80) != 0 {
 					byte_ = int32(b.data[readerIndex])
+					readerIndex++
+					result |= (byte_ & 0x7F) << 28
+				}
+			}
+		}
+	}
+	b.readerIndex = readerIndex
+	return result
+}
+
+func (b *ByteBuffer) ReadVarUint32() uint32 {
+	readerIndex := b.readerIndex
+	byte_ := uint32(b.data[readerIndex])
+	readerIndex++
+	result := byte_ & 0x7F
+	if (byte_ & 0x80) != 0 {
+		byte_ = uint32(b.data[readerIndex])
+		readerIndex++
+		result |= (byte_ & 0x7F) << 7
+		if (byte_ & 0x80) != 0 {
+			byte_ = uint32(b.data[readerIndex])
+			readerIndex++
+			result |= (byte_ & 0x7F) << 14
+			if (byte_ & 0x80) != 0 {
+				byte_ = uint32(b.data[readerIndex])
+				readerIndex++
+				result |= (byte_ & 0x7F) << 21
+				if (byte_ & 0x80) != 0 {
+					byte_ = uint32(b.data[readerIndex])
 					readerIndex++
 					result |= (byte_ & 0x7F) << 28
 				}
