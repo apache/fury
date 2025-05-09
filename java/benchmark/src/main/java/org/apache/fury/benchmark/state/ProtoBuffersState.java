@@ -180,6 +180,10 @@ public class ProtoBuffersState {
   }
 
   public static byte[] serializeSample(Sample sample) {
+    return buildSample(sample).toByteArray();
+  }
+
+  public static ProtoMessage.Sample buildSample(Sample sample) {
     ProtoMessage.Sample.Builder builder = ProtoMessage.Sample.newBuilder();
     builder.setIntValue(sample.intValue);
     builder.setLongValue(sample.longValue);
@@ -219,7 +223,7 @@ public class ProtoBuffersState {
       builder.addBooleanArray(sample.booleanArray[i]);
     }
     builder.setString(sample.string);
-    return builder.build().toByteArray();
+    return builder.build();
   }
 
   public static Sample deserializeSample(byte[] bytes) {
