@@ -137,17 +137,17 @@ class ClassDefEncoder {
     MemoryBuffer classDefBuf = MemoryBuffer.newHeapBuffer(128);
     for (Map.Entry<String, List<FieldInfo>> entry : classLayers.entrySet()) {
       String className = entry.getKey();
+      Class<?> currentType = getType(type, className);
       List<FieldInfo> fields = entry.getValue();
       // | num fields + register flag | header + package name | header + class name
       // | header + type id + field name | next field info | ... |
       int currentClassHeader = (fields.size() << 1);
-      if (classResolver.isRegistered(type)) {
+      if (classResolver.isRegistered(currentType)) {
         currentClassHeader |= 1;
         classDefBuf.writeVarUint32Small7(currentClassHeader);
-        classDefBuf.writeVarUint32Small7(classResolver.getRegisteredClassId(type));
+        classDefBuf.writeVarUint32Small7(classResolver.getRegisteredClassId(currentType));
       } else {
         classDefBuf.writeVarUint32Small7(currentClassHeader);
-        Class<?> currentType = getType(type, className);
         Tuple2<String, String> encoded = Encoders.encodePkgAndClass(currentType);
         writePkgName(classDefBuf, encoded.f0);
         writeTypeName(classDefBuf, encoded.f1);
