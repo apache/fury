@@ -153,6 +153,7 @@ import org.apache.fury.serializer.collection.UnmodifiableSerializers;
 import org.apache.fury.serializer.scala.SingletonCollectionSerializer;
 import org.apache.fury.serializer.scala.SingletonMapSerializer;
 import org.apache.fury.serializer.scala.SingletonObjectSerializer;
+import org.apache.fury.serializer.shim.ProtobufDispatcher;
 import org.apache.fury.serializer.shim.ShimDispatcher;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.DescriptorGrouper;
@@ -960,6 +961,10 @@ public class ClassResolver implements TypeResolver {
       }
       if (shimDispatcher.contains(cls)) {
         return shimDispatcher.getSerializer(cls).getClass();
+      }
+      serializerClass = ProtobufDispatcher.getSerializerClass(cls);
+      if (serializerClass != null) {
+        return serializerClass;
       }
       if (fury.getConfig().checkJdkClassSerializable()) {
         if (cls.getName().startsWith("java") && !(Serializable.class.isAssignableFrom(cls))) {
