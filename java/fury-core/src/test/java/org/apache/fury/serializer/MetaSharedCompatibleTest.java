@@ -880,4 +880,63 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
       Assert.assertEquals(f3.toString(), "C{f2=1000}");
     }
   }
+
+  @Test
+  public void testInheritance() throws Exception {
+    // See issue https://github.com/apache/fury/issues/2210
+    CompileUnit u1 =
+        new CompileUnit(
+            "example.test",
+            "Parent",
+            (""
+                + "package example.test;\n"
+                + "public class Parent {\n"
+                + "  public Integer f1;\n"
+                + "  public Integer f2;\n"
+                + "}"));
+    CompileUnit u2 =
+        new CompileUnit(
+            "example.test",
+            "Child",
+            (""
+                + "package example.test;\n"
+                + "public class Child extends Parent {\n"
+                + "  public Integer f3;\n"
+                + "}"));
+    ClassLoader classLoader1 =
+        JaninoUtils.compile(Thread.currentThread().getContextClassLoader(), u1, u2);
+    Object o = classLoader1.loadClass("example.test.Child").newInstance();
+    ReflectionUtils.setObjectFieldValue(o, "f1", 10);
+    ReflectionUtils.setObjectFieldValue(o, "f2", 20);
+    ReflectionUtils.setObjectFieldValue(o, "f3", 30);
+    Fury fury =
+        builder()
+            .withCompatibleMode(CompatibleMode.COMPATIBLE)
+            .withClassLoader(classLoader1)
+            .build();
+    fury.register(classLoader1.loadClass("example.test.Child"));
+    fury.register(classLoader1.loadClass("example.test.Parent"));
+    byte[] serialized = fury.serialize(o);
+    CompileUnit u11 =
+        new CompileUnit(
+            "example.test",
+            "Parent",
+            (""
+                + "package example.test;\n"
+                + "public class Parent {\n"
+                + "  public Integer f2;\n"
+                + "}"));
+    ClassLoader classLoader2 = JaninoUtils.compile(getClass().getClassLoader(), u11, u2);
+    Fury fury2 =
+        builder()
+            .withCompatibleMode(CompatibleMode.COMPATIBLE)
+            .withClassLoader(classLoader2)
+            .build();
+    fury2.register(classLoader2.loadClass("example.test.Child"));
+    fury2.register(classLoader2.loadClass("example.test.Parent"));
+    Object o1 = fury2.deserialize(serialized);
+    Assert.assertNull(getObjectFieldValue(o1, "f1"));
+    Assert.assertEquals(ReflectionUtils.getObjectFieldValue(o1, "f2"), 20);
+    Assert.assertEquals(ReflectionUtils.getObjectFieldValue(o1, "f3"), 30);
+  }
 }
