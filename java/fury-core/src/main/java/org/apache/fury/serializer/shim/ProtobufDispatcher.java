@@ -19,7 +19,6 @@
 
 package org.apache.fury.serializer.shim;
 
-import org.apache.fury.exception.FuryException;
 import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.reflect.ReflectionUtils;
@@ -64,8 +63,8 @@ public class ProtobufDispatcher {
       return null;
     }
     if (pbMessageSerializerClass == null) {
-      throw new FuryException(
-          "ProtobufSerializer can't be loaded, please add fury-extensions dependencies");
+      LOG.warn("ProtobufSerializer not loaded, please add fury-extensions dependency.");
+      return null;
     }
     if (pbMessageClass.isAssignableFrom(type)) {
       return pbMessageSerializerClass;

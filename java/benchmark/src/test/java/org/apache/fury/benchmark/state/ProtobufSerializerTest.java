@@ -42,7 +42,7 @@ public class ProtobufSerializerTest {
   public void testByteString() {
     Fury fury = Fury.builder().requireClassRegistration(false).build();
     Assert.assertEquals(fury.deserialize(fury.serialize(ByteString.empty())), ByteString.empty());
-    ByteString bytes = ByteString.copyFrom(new byte[]{1, 2, 3});
+    ByteString bytes = ByteString.copyFrom(new byte[] {1, 2, 3});
     Assert.assertEquals(fury.deserialize(fury.serialize(bytes)), bytes);
   }
 }
