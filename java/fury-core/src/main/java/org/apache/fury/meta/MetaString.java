@@ -55,7 +55,14 @@ public class MetaString {
       }
       throw new IllegalArgumentException("Encoding flag not recognized: " + value);
     }
+
+    public static Encoding forEmptyStr() {
+      return UTF_8;
+    }
   }
+
+  public static final MetaString EMPTY =
+      new MetaString("", Encoding.forEmptyStr(), '\0', '\0', new byte[0]);
 
   private final String string;
   private final Encoding encoding;
