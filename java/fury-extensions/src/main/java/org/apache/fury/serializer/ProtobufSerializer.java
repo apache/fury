@@ -19,6 +19,7 @@
 
 package org.apache.fury.serializer;
 
+import com.google.protobuf.CodedInputStream;
 import com.google.protobuf.CodedOutputStream;
 import com.google.protobuf.ExtensionRegistryLite;
 import com.google.protobuf.Message;
@@ -44,9 +45,7 @@ public class ProtobufSerializer extends Serializer<Message> {
             MethodHandles.Lookup lookup = _JDKAccess._trustedLookup(type);
             MethodHandle parseFrom1 =
                 lookup.findStatic(
-                    type,
-                    "parseFrom",
-                    MethodType.methodType(type, byte[].class, ExtensionRegistryLite.class));
+                    type, "parseFrom", MethodType.methodType(type, CodedInputStream.class));
             MethodHandle parseFrom2 =
                 lookup.findStatic(type, "parseFrom", MethodType.methodType(type, ByteBuffer.class));
             return new MethodHandle[] {parseFrom1, parseFrom2};
@@ -55,14 +54,14 @@ public class ProtobufSerializer extends Serializer<Message> {
           }
         }
       };
-  private final MethodHandle parseFroByteArray;
+  private final MethodHandle parseFromStream;
   private final ExtensionRegistryLite emptyRegistry;
   private final MethodHandle parseFromByteBuffer;
 
   public ProtobufSerializer(Fury fury, Class type) {
     super(fury, type, true);
     MethodHandle[] methodHandles = parseFromMethodCache.get(type);
-    this.parseFroByteArray = methodHandles[0];
+    this.parseFromStream = methodHandles[0];
     this.parseFromByteBuffer = methodHandles[0];
     emptyRegistry = ExtensionRegistryLite.getEmptyRegistry();
   }
@@ -101,12 +100,14 @@ public class ProtobufSerializer extends Serializer<Message> {
     byte[] heapMemory = buffer.getHeapMemory();
     try {
       if (heapMemory != null) {
+        CodedInputStream stream =
+            CodedInputStream.newInstance(heapMemory, buffer._unsafeHeapReaderIndex(), size);
         buffer.increaseReaderIndex(size);
-        return (Message) parseFroByteArray.invoke(buffer, emptyRegistry);
+        return (Message) parseFromStream.invoke(stream);
       } else {
         if (size < SMALL_BYTES_THRESHOLD) {
           byte[] bytes = buffer.readBytes(size);
-          return (Message) parseFroByteArray.invoke(bytes, emptyRegistry);
+          return (Message) parseFromStream.invoke(bytes, emptyRegistry);
         } else {
           ByteBuffer byteBuffer = buffer.sliceAsByteBuffer(buffer.readerIndex(), size);
           buffer.increaseReaderIndex(size);

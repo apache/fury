@@ -19,34 +19,30 @@
 
 package org.apache.fury.benchmark.state;
 
-import org.apache.fury.benchmark.data.MediaContent;
+import com.google.protobuf.ByteString;
+import org.apache.fury.Fury;
 import org.apache.fury.benchmark.data.Sample;
-import org.apache.fury.benchmark.state.ProtoBuffersState.ProtoBuffersUserTypeState;
+import org.apache.fury.integration_tests.state.generated.ProtoMessage;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-public class ProtoBuffersStateTest {
+public class ProtobufSerializerTest {
   @Test
   public void testSample() {
     Sample object = new Sample().populate(false);
-    byte[] data = ProtoBuffersState.serializeSample(object);
-    Sample sample = ProtoBuffersState.deserializeSample(data);
-    Assert.assertEquals(sample, object);
+    ProtoMessage.Sample samplePb = ProtoBuffersState.buildSample(object);
+    Fury fury = Fury.builder().requireClassRegistration(false).build();
+    fury.register(ProtoMessage.Sample.class);
+    byte[] bytes = fury.serialize(samplePb);
+    Object newObj = fury.deserialize(bytes);
+    Assert.assertEquals(newObj, samplePb);
   }
 
   @Test
-  public void testMediaContent() {
-    MediaContent object = new MediaContent().populate(false);
-    byte[] data = ProtoBuffersState.serializeMediaContent(object);
-    MediaContent mediaContent = ProtoBuffersState.deserializeMediaContent(data);
-    Assert.assertEquals(mediaContent, object);
-  }
-
-  @Test
-  public void testProtoBuffersUserTypeState() {
-    ProtoBuffersUserTypeState state = new ProtoBuffersUserTypeState();
-    state.objectType = ObjectType.SAMPLE;
-    state.bufferType = BufferType.array;
-    state.setup();
+  public void testByteString() {
+    Fury fury = Fury.builder().requireClassRegistration(false).build();
+    Assert.assertEquals(fury.deserialize(fury.serialize(ByteString.empty())), ByteString.empty());
+    ByteString bytes = ByteString.copyFrom(new byte[]{1, 2, 3});
+    Assert.assertEquals(fury.deserialize(fury.serialize(bytes)), bytes);
   }
 }
