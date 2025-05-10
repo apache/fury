@@ -71,17 +71,17 @@ also introduce more complexities compared to static serialization frameworks. So
 - local_date: a naive date without timezone. The count is days relative to an epoch at UTC midnight on Jan 1, 1970.
 - decimal: exact decimal value represented as an integer value in two's complement.
 - binary: an variable-length array of bytes.
-- array: only allow numeric components. Other arrays will be taken as List. The implementation should support the
+- array: only allow 1d numeric components. Other arrays will be taken as List. The implementation should support the
   interoperability between array and list.
-- array: multidimensional array which every sub-array can have different sizes but all have same type.
-- bool_array: one dimensional int16 array.
-- int8_array: one dimensional int8 array.
-- int16_array: one dimensional int16 array.
-- int32_array: one dimensional int32 array.
-- int64_array: one dimensional int64 array.
-- float16_array: one dimensional half_float_16 array.
-- float32_array: one dimensional float32 array.
-- float64_array: one dimensional float64 array.
+  - bool_array: one dimensional int16 array.
+  - int8_array: one dimensional int8 array.
+  - int16_array: one dimensional int16 array.
+  - int32_array: one dimensional int32 array.
+  - int64_array: one dimensional int64 array.
+  - float16_array: one dimensional half_float_16 array.
+  - float32_array: one dimensional float32 array.
+  - float64_array: one dimensional float64 array.
+- tensor: multidimensional array which every sub-array have same size and type.
 - arrow record batch: an arrow [record batch](https://arrow.apache.org/docs/cpp/tables.html#record-batches) object.
 - arrow table: an arrow [table](https://arrow.apache.org/docs/cpp/tables.html#tables) object.
 
@@ -374,9 +374,14 @@ Field type info is written as unsigned int8. Detailed id spec is:
 - For enum registered by name, it will be `Type.NAMED_ENUM`.
 - For ext type registered by id, it will be `Type.EXT`.
 - For ext type registered by name, it will be `Type.NAMED_EXT`.
-- For other types supported by fury, it will be fury type id for that type.
 - For list/set type, it will be written as `Type.LIST/SET`, then write element type recursively.
+- For 1D primitive array type, it will be written as `Type.XXX_ARRAY`.
+- For multi-dimensional primitive array type with same size on each dim, it will be written as `Type.TENSOR`.
+- For other array type, it will be written as `Type.LIST`, then write element type recursively.
 - For map type, it will be written as `Type.MAP`, then write key and value type recursively.
+- For other types supported by fury directly, it will be fury type id for that type.
+- For other types not determined at compile time, write `Type.UNKNOWN` instead. For such types, actual type
+  will be written when serializing such field values.
 
 Polymorphism spec:
 - `struct/named_struct/ext/named_ext` are taken as polymorphic, the meta for those types are written separately
@@ -387,6 +392,14 @@ Polymorphism spec:
 - `list/map/set` are taken as morphic, when serializing values of those type, the concrete types won't be written
   again.
 - Other types that fury supported are taken as morphic too.
+
+List/Set/Map nested type spec:
+- `list`: `| list type id | nested type id << 2 + nullability flag + ref tracking flag | ... multi-layer type info |`
+- `set`: `| set type id | nested type id << 2 + nullability flag + ref tracking flag | ... multi-layer type info |`
+- `map`: `| set type id | key type info | value type info |`
+  - Key type format: `| nested type id << 2 + nullability flag + ref tracking flag | ... multi-layer type info |`
+  - Value type format: `| nested type id << 2 + nullability flag + ref tracking flag | ... multi-layer type info |`
+
 
 ###### Field Name
 
@@ -653,6 +666,17 @@ then copy the whole buffer into the stream.
 Such serialization won't compress the array. If users want to compress primitive array, users need to register custom
 serializers for such types or mark it as list type.
 
+#### Tensor
+
+Tensor is a special primitive multi-dimensional array which all dimensions have same size and type. The serialization
+format is:
+
+```
+| num_dims(unsigned varint) | shape[0](unsigned varint) | shape[...] | shape[N] | element type | data |
+```
+
+The data is continuous to reduce copy and may zero-copy in some cases.
+
 #### object array
 
 Object array is serialized using the list format. Object component type will be taken as list element
@@ -660,9 +684,7 @@ generic type.
 
 ### map
 
-> All Map serializers must extend `AbstractMapSerializer`.
-
-Format:
+Map uses a chunk by chunk based Format:
 
 ```
 | length(unsigned varint) | key value chunk data | ... | key value chunk data |
