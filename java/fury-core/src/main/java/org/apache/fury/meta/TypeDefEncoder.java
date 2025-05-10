@@ -19,6 +19,9 @@
 
 package org.apache.fury.meta;
 
+import static org.apache.fury.meta.ClassDefEncoder.buildFieldsInfo;
+import static org.apache.fury.meta.ClassDefEncoder.writePkgName;
+import static org.apache.fury.meta.ClassDefEncoder.writeTypeName;
 import static org.apache.fury.meta.Encoders.fieldNameEncodingsList;
 import static org.apache.fury.meta.Encoders.pkgEncodingsList;
 import static org.apache.fury.meta.Encoders.typeNameEncodingsList;
@@ -31,6 +34,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.meta.ClassDef.FieldInfo;
@@ -38,6 +42,7 @@ import org.apache.fury.meta.ClassDef.FieldType;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassResolver;
+import org.apache.fury.resolver.TypeResolver;
 import org.apache.fury.resolver.XtypeResolver;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.DescriptorGrouper;
@@ -51,44 +56,29 @@ import org.apache.fury.util.Preconditions;
  * href="https://fury.apache.org/docs/specification/fury_xlang_serialization_spec">...</a>
  */
 class TypeDefEncoder {
-
-  static List<FieldInfo> buildFieldsInfo(ClassResolver resolver, List<Field> fields) {
-    List<FieldInfo> fieldInfos = new ArrayList<>();
-    for (Field field : fields) {
-      FieldInfo fieldInfo =
-        new FieldInfo(
-          field.getDeclaringClass().getName(),
-          field.getName(),
-          ClassDef.buildFieldType(resolver, field));
-      fieldInfos.add(fieldInfo);
-    }
-    return fieldInfos;
-  }
-
   /**
    * Build class definition from fields of class.
    */
   static ClassDef buildTypeDef(
-    ClassResolver classResolver, Class<?> type) {
+    Fury fury, Class<?> type) {
     DescriptorGrouper descriptorGrouper =
-      classResolver
+      fury.getClassResolver()
         .createDescriptorGrouper(
-          classResolver.getAllDescriptorsMap(type, true).values(),
+          fury.getClassResolver().getAllDescriptorsMap(type, true).values(),
           false,
           Function.identity());
     List<Field> fields = descriptorGrouper.getSortedDescriptors().stream()
       .map(Descriptor::getField).collect(Collectors.toList());
     return buildClassDefWithFieldInfos(
-      classResolver, type, buildFieldsInfo(classResolver, fields));
+      fury.getXtypeResolver(), type, buildFieldsInfo(fury.getXtypeResolver(), fields));
   }
 
   static ClassDef buildClassDefWithFieldInfos(
-    XtypeResolver classResolver,
+    XtypeResolver resolver,
     Class<?> type,
     List<FieldInfo> fieldInfos) {
-    Map<String, FieldInfo> fieldInfoMap = getClassFields(type, fieldInfos);
-    fieldInfos = new ArrayList<>(fieldInfoMap.values());
-    MemoryBuffer encodeClassDef = encodeClassDef(classResolver, type, fieldInfos);
+    fieldInfos = new ArrayList<>(getClassFields(type, fieldInfos).values());
+    MemoryBuffer encodeClassDef = encodeClassDef(resolver, type, fieldInfos);
     byte[] classDefBytes = encodeClassDef.getBytes(0, encodeClassDef.writerIndex());
     return new ClassDef(
       Encoders.buildClassSpec(type),
@@ -131,7 +121,7 @@ class TypeDefEncoder {
       writeTypeName(buffer, typename);
     }
     buffer.putByte(0, currentClassHeader);
-    writeFieldsInfo(buffer, fields);
+    writeFieldsInfo(resolver, buffer, fields);
 
     byte[] compressed =
       resolver
@@ -183,78 +173,41 @@ class TypeDefEncoder {
 
   /**
    * Write field type and name info.
+   * Every field info format: `header + type info + field name`
    */
-  static void writeFieldsInfo(MemoryBuffer buffer, List<FieldInfo> fields) {
+  static void writeFieldsInfo(XtypeResolver resolver, MemoryBuffer buffer, List<FieldInfo> fields) {
     for (FieldInfo fieldInfo : fields) {
       FieldType fieldType = fieldInfo.getFieldType();
-      // `3 bits size + 2 bits field name encoding + polymorphism flag + nullability flag + ref
-      // tracking flag`
-      int header = ((fieldType.isMonomorphic() ? 1 : 0) << 2);
-      header |= ((fieldType.trackingRef() ? 1 : 0));
-
-      // Encoding `UTF8/ALL_TO_LOWER_SPECIAL/LOWER_UPPER_DIGIT_SPECIAL/TAG_ID`
-      MetaString metaString = Encoders.encodeFieldName(fieldInfo.getFieldName());
-      int encodingFlags = fieldNameEncodingsList.indexOf(metaString.getEncoding());
-      byte[] encoded = metaString.getBytes();
-      int size = (encoded.length - 1);
+      // header: 2 bits field name encoding + 4 bits size + nullability flag + ref tracking flag
+      int header = ((fieldType.trackingRef() ? 1 : 0));
+      header |= fieldType.nullable() ? 1 : 0;
+      int size, encodingFlags;
+      byte[] encoded = null;
       if (fieldInfo.hasTag()) {
         size = fieldInfo.getTag();
         encodingFlags = 3;
+      } else {
+        MetaString metaString = Encoders.encodeFieldName(fieldInfo.getFieldName());
+        // Encoding `UTF8/ALL_TO_LOWER_SPECIAL/LOWER_UPPER_DIGIT_SPECIAL/TAG_ID`
+        encodingFlags = fieldNameEncodingsList.indexOf(metaString.getEncoding());
+        encoded = metaString.getBytes();
+        size = (encoded.length - 1);
       }
-      header |= (byte) (encodingFlags << 3);
+      header |= (byte) (encodingFlags << 6);
       boolean bigSize = size >= 7;
       if (bigSize) {
-        header |= 0b11100000;
+        header |= 0b00111100;
         buffer.writeByte(header);
         buffer.writeVarUint32Small7(size - 7);
       } else {
-        header |= (size << 5);
+        header |= (size << 2);
         buffer.writeByte(header);
       }
+      fieldType.xwrite(buffer, false);
+      // write field name
       if (!fieldInfo.hasTag()) {
         buffer.writeBytes(encoded);
       }
-      fieldType.write(buffer, false);
     }
-  }
-
-  private static void writePkgName(MemoryBuffer buffer, String pkg) {
-    // - Package name encoding(omitted when class is registered):
-    //    - encoding algorithm: `UTF8/ALL_TO_LOWER_SPECIAL/LOWER_UPPER_DIGIT_SPECIAL`
-    //    - Header: `6 bits size | 2 bits encoding flags`.
-    //      The `6 bits size: 0~63`  will be used to indicate size `0~62`,
-    //      the value `63` the size need more byte to read, the encoding will encode `size - 62` as
-    // a varint next.
-    MetaString pkgMetaString = Encoders.encodePackage(pkg);
-    byte[] encoded = pkgMetaString.getBytes();
-    writeName(buffer, encoded, pkgEncodingsList.indexOf(pkgMetaString.getEncoding()));
-  }
-
-  private static void writeTypeName(MemoryBuffer buffer, String typeName) {
-    // - Class name encoding(omitted when class is registered):
-    //     - encoding algorithm:
-    // `UTF8/LOWER_UPPER_DIGIT_SPECIAL/FIRST_TO_LOWER_SPECIAL/ALL_TO_LOWER_SPECIAL`
-    //     - header: `6 bits size | 2 bits encoding flags`.
-    //       The `6 bits size: 0~63`  will be used to indicate size `1~64`,
-    //       the value `63` the size need more byte to read, the encoding will encode `size - 63` as
-    // a varint next.
-    MetaString metaString = Encoders.encodeTypeName(typeName);
-    byte[] encoded = metaString.getBytes();
-    writeName(buffer, encoded, typeNameEncodingsList.indexOf(metaString.getEncoding()));
-  }
-
-  static final int BIG_NAME_THRESHOLD = 0b111111;
-
-  private static void writeName(MemoryBuffer buffer, byte[] encoded, int encoding) {
-    boolean bigSize = encoded.length >= BIG_NAME_THRESHOLD;
-    if (bigSize) {
-      int header = (BIG_NAME_THRESHOLD << 2) | encoding;
-      buffer.writeByte(header);
-      buffer.writeVarUint32Small7(encoded.length - BIG_NAME_THRESHOLD);
-    } else {
-      int header = (encoded.length << 2) | encoding;
-      buffer.writeByte(header);
-    }
-    buffer.writeBytes(encoded);
   }
 }
