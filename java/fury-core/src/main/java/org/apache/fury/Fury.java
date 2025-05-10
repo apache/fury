@@ -43,6 +43,7 @@ import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.meta.MetaCompressor;
 import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassInfoHolder;
 import org.apache.fury.resolver.ClassResolver;
@@ -1715,6 +1716,10 @@ public final class Fury implements BaseFury {
 
   public boolean compressLong() {
     return config.compressLong();
+  }
+
+  public MetaCompressor getMetaCompressor() {
+    return config.getMetaCompressor();
   }
 
   public static FuryBuilder builder() {
