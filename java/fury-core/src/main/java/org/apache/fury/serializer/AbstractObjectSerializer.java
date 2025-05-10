@@ -30,6 +30,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.fury.Fury;
+import org.apache.fury.annotation.FuryField;
 import org.apache.fury.collection.Tuple2;
 import org.apache.fury.collection.Tuple3;
 import org.apache.fury.memory.MemoryBuffer;
@@ -94,6 +95,7 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
       if (!fieldInfo.trackingRef) {
         return binding.readNullable(buffer, serializer, nullable);
       }
+      refResolver.preserveRefId(-1);
       // whether tracking ref is recorded in `fieldInfo.serializer`, so it's still
       // consistent with jit serializer.
       fieldValue = binding.readRef(buffer, serializer);
@@ -108,6 +110,7 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
           fieldValue = refResolver.getReadObject();
         }
       } else {
+        refResolver.preserveRefId(-1);
         if (nullable) {
           byte headFlag = buffer.readByte();
           if (headFlag == Fury.NULL_FLAG) {
@@ -122,12 +125,16 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
   }
 
   static Object readOtherFieldValue(
-      SerializationBinding binding, GenericTypeField fieldInfo, MemoryBuffer buffer) {
+      SerializationBinding binding,
+      RefResolver refResolver,
+      GenericTypeField fieldInfo,
+      MemoryBuffer buffer) {
     Object fieldValue;
     boolean nullable = fieldInfo.nullable;
     if (fieldInfo.trackingRef) {
       fieldValue = binding.readRef(buffer, fieldInfo);
     } else {
+      refResolver.preserveRefId(-1);
       if (nullable) {
         byte headFlag = buffer.readByte();
         if (headFlag == Fury.NULL_FLAG) {
@@ -141,6 +148,7 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
 
   static Object readContainerFieldValue(
       SerializationBinding binding,
+      RefResolver refResolver,
       Generics generics,
       GenericTypeField fieldInfo,
       MemoryBuffer buffer) {
@@ -150,6 +158,7 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
       fieldValue = binding.readContainerFieldValueRef(buffer, fieldInfo);
       generics.popGenericType();
     } else {
+      refResolver.preserveRefId(-1);
       boolean nullable = fieldInfo.nullable;
       if (nullable) {
         byte headFlag = buffer.readByte();
@@ -984,14 +993,22 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
     protected final String qualifiedFieldName;
     protected final FieldAccessor fieldAccessor;
     protected boolean nullable;
+    protected boolean trackingRef;
 
-    private InternalFieldInfo(Descriptor d, short classId) {
+    private InternalFieldInfo(Fury fury, Descriptor d, short classId) {
       this.typeRef = d.getTypeRef();
       this.classId = classId;
       this.qualifiedFieldName = d.getDeclaringClass() + "." + d.getName();
       this.fieldAccessor = d.getField() != null ? FieldAccessor.createAccessor(d.getField()) : null;
+      FuryField furyField = d.getFuryField();
       if (!typeRef.isPrimitive()) {
-        nullable = d.getFuryField() == null || d.getFuryField().nullable();
+        nullable = furyField == null || furyField.nullable();
+      }
+      if (fury.trackingRef()) {
+        trackingRef =
+            furyField != null
+                ? furyField.trackingRef()
+                : fury.getClassResolver().needToWriteRef(typeRef);
       }
     }
 
@@ -1014,10 +1031,9 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
 
   static final class FinalTypeField extends InternalFieldInfo {
     final ClassInfo classInfo;
-    final boolean trackingRef;
 
     private FinalTypeField(Fury fury, Descriptor d) {
-      super(d, getRegisteredClassId(fury, d.getTypeRef().getRawType()));
+      super(fury, d, getRegisteredClassId(fury, d.getTypeRef().getRawType()));
       // invoke `copy` to avoid ObjectSerializer construct clear serializer by `clearSerializer`.
       if (typeRef.getRawType() == FinalObjectTypeStub.class) {
         // `FinalObjectTypeStub` has no fields, using its `classInfo`
@@ -1026,19 +1042,17 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
       } else {
         classInfo = SerializationUtils.getClassInfo(fury, typeRef.getRawType());
       }
-      trackingRef = fury.getClassResolver().needToWriteRef(typeRef);
     }
   }
 
   static final class GenericTypeField extends InternalFieldInfo {
     final GenericType genericType;
     final ClassInfoHolder classInfoHolder;
-    final boolean trackingRef;
     final boolean isArray;
     final ClassInfo containerClassInfo;
 
     private GenericTypeField(Fury fury, Descriptor d) {
-      super(d, getRegisteredClassId(fury, getRawType(d.getTypeRef())));
+      super(fury, d, getRegisteredClassId(fury, getRawType(d.getTypeRef())));
       // TODO support generics <T> in Pojo<T>, see ComplexObjectSerializer.getGenericTypes
       ClassResolver classResolver = fury.getClassResolver();
       GenericType t = classResolver.buildGenericType(typeRef);
@@ -1052,7 +1066,6 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
       }
       genericType = t;
       classInfoHolder = classResolver.nilClassInfoHolder();
-      trackingRef = classResolver.needToWriteRef(typeRef);
       isArray = cls.isArray();
       if (!fury.isCrossLanguage()) {
         containerClassInfo = null;
