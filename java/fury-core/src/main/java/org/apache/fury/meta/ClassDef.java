@@ -179,16 +179,12 @@ public class ClassDef implements Serializable {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
+    if (o == null || getClass() != o.getClass()) return false;
     ClassDef classDef = (ClassDef) o;
-    return Objects.equals(classSpec.entireClassName, classSpec.entireClassName)
-        && Objects.equals(fieldsInfo, fieldsInfo)
-        && Objects.equals(id, id);
+    return hasFieldsMeta == classDef.hasFieldsMeta
+        && id == classDef.id
+        && Objects.equals(classSpec, classDef.classSpec)
+        && Objects.equals(fieldsInfo, classDef.fieldsInfo);
   }
 
   @Override
