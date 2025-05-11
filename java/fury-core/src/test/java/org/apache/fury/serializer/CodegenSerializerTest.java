@@ -56,7 +56,7 @@ public class CodegenSerializerTest extends FuryTestBase {
 
   @Test
   public void testSimpleBean() {
-    Fury fury = Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
+    Fury fury = builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
     // serDe(fury, new A());
     B b = new B();
     b.f1 = "str1";
@@ -83,7 +83,7 @@ public class CodegenSerializerTest extends FuryTestBase {
   public void testSerializeCircularReference() {
     Cyclic cyclic = Cyclic.create(true);
     Fury fury =
-        Fury.builder()
+        builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(true)
             .requireClassRegistration(false)
@@ -129,7 +129,7 @@ public class CodegenSerializerTest extends FuryTestBase {
     circular2.circular1 = circular1;
     circular2.circular2 = circular2;
     Fury fury =
-        Fury.builder()
+        builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(true)
             .requireClassRegistration(false)
@@ -178,7 +178,7 @@ public class CodegenSerializerTest extends FuryTestBase {
 
   @Test
   public void testCacheNonFinalClassInfo() {
-    Fury fury = Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
+    Fury fury = builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
     TestCacheNonFinalClassInfo obj = new TestCacheNonFinalClassInfo();
     obj.finalList = new ArrayList<>(ImmutableList.of("a", "b"));
     obj.nonFinalPublicList =
@@ -213,7 +213,7 @@ public class CodegenSerializerTest extends FuryTestBase {
     pojo.f7 = 2;
     pojo.f8 = 2L;
     int length =
-        Fury.builder()
+        builder()
             .withLanguage(Language.JAVA)
             .withNumberCompressed(false)
             .withCompatibleMode(CompatibleMode.SCHEMA_CONSISTENT)
@@ -222,7 +222,7 @@ public class CodegenSerializerTest extends FuryTestBase {
             .serialize(pojo)
             .length;
     Fury fury =
-        Fury.builder()
+        builder()
             .withLanguage(Language.JAVA)
             .withNumberCompressed(true)
             .withCompatibleMode(CompatibleMode.SCHEMA_CONSISTENT)
@@ -232,7 +232,7 @@ public class CodegenSerializerTest extends FuryTestBase {
     byte[] bytes = fury.serialize(pojo);
     {
       Fury fury1 =
-          Fury.builder()
+          builder()
               .withLanguage(Language.JAVA)
               .withIntCompressed(true)
               .withLongCompressed(false)
@@ -248,7 +248,7 @@ public class CodegenSerializerTest extends FuryTestBase {
     }
     {
       Fury fury1 =
-          Fury.builder()
+          builder()
               .withLanguage(Language.JAVA)
               .withIntCompressed(false)
               .withLongCompressed(true)
@@ -286,7 +286,7 @@ public class CodegenSerializerTest extends FuryTestBase {
   @Test
   public void testFinalTypeField() {
     Fury fury =
-        Fury.builder()
+        builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(false)
             .requireClassRegistration(true)
@@ -318,7 +318,7 @@ public class CodegenSerializerTest extends FuryTestBase {
 
   @Test
   public void testAnonymousClass() {
-    Fury fury = Fury.builder().requireClassRegistration(false).build();
+    Fury fury = builder().requireClassRegistration(false).build();
     // anonymous class never static
     serDeCheckSerializer(fury, subclassObject, "Serializer");
   }
@@ -330,7 +330,7 @@ public class CodegenSerializerTest extends FuryTestBase {
     }
     A a = new A();
     a.f1 = 10;
-    Fury fury = Fury.builder().requireClassRegistration(false).build();
+    Fury fury = builder().requireClassRegistration(false).build();
     A o = serDe(fury, a);
     assertEquals(o.f1, a.f1);
     // local class never static

@@ -100,7 +100,7 @@ public class MetaSharedCompatibleTest extends FuryTestBase {
   }
 
   private static FuryBuilder furyBuilder() {
-    return Fury.builder()
+    return builder()
         .withLanguage(Language.JAVA)
         .withMetaShare(true)
         .withCompatibleMode(CompatibleMode.COMPATIBLE)
