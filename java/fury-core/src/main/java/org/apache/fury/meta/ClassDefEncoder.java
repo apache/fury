@@ -53,7 +53,6 @@ import org.apache.fury.util.MurmurHash3;
  */
 class ClassDefEncoder {
   // a flag to mark a type is not struct.
-  static final int STRUCT_TYPE_FLAG = 0b100_0000;
   static final int NUM_CLASS_THRESHOLD = 0b1111;
 
   static List<Field> buildFields(Fury fury, Class<?> cls, boolean resolveParent) {
@@ -202,7 +201,6 @@ class ClassDefEncoder {
     header |= metaSize;
     MemoryBuffer result = MemoryUtils.buffer(metaSize + 8);
     result.writeInt64(header);
-    result.writeByte(metaSize);
     if (metaSize > META_SIZE_MASKS) {
       result.writeVarUint32(metaSize - META_SIZE_MASKS);
     }
