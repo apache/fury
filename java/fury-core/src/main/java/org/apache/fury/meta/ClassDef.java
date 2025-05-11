@@ -572,7 +572,7 @@ public class ClassDef implements Serializable {
         LOG.warn("Class {} not registered, take it as Struct type for deserialization.", classId);
         cls = NonexistentClass.NonexistentMetaShared.class;
       }
-      return TypeRef.of(cls, new TypeExtMeta(trackingRef));
+      return TypeRef.of(cls, new TypeExtMeta(nullable, trackingRef));
     }
 
     @Override
@@ -638,7 +638,8 @@ public class ClassDef implements Serializable {
       // TODO support preserve element TypeExtMeta
       TypeRef<? extends Collection<?>> collectionTypeRef =
           collectionOf(
-              elementType.toTypeToken(classResolver, declared), new TypeExtMeta(trackingRef));
+              elementType.toTypeToken(classResolver, declared),
+              new TypeExtMeta(nullable, trackingRef));
       if (declared == null) {
         return collectionTypeRef;
       }
@@ -735,7 +736,7 @@ public class ClassDef implements Serializable {
       return mapOf(
           keyType.toTypeToken(classResolver, declared),
           valueType.toTypeToken(classResolver, declared),
-          new TypeExtMeta(trackingRef));
+          new TypeExtMeta(nullable, trackingRef));
     }
 
     @Override
@@ -815,11 +816,11 @@ public class ClassDef implements Serializable {
             // here.
             NonexistentClass.getNonexistentClass(
                 componentType instanceof EnumFieldType, dimensions, true),
-            new TypeExtMeta(trackingRef));
+            new TypeExtMeta(nullable, trackingRef));
       } else {
         return TypeRef.of(
             Array.newInstance(componentRawType, new int[dimensions]).getClass(),
-            new TypeExtMeta(trackingRef));
+            new TypeExtMeta(nullable, trackingRef));
       }
     }
 
@@ -876,8 +877,8 @@ public class ClassDef implements Serializable {
     @Override
     public TypeRef<?> toTypeToken(ClassResolver classResolver, TypeRef<?> declared) {
       return isMonomorphic()
-          ? TypeRef.of(FinalObjectTypeStub.class, new TypeExtMeta(trackingRef))
-          : TypeRef.of(Object.class, new TypeExtMeta(trackingRef));
+          ? TypeRef.of(FinalObjectTypeStub.class, new TypeExtMeta(nullable, trackingRef))
+          : TypeRef.of(Object.class, new TypeExtMeta(nullable, trackingRef));
     }
 
     @Override
