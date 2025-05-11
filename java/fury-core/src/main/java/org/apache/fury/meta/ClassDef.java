@@ -506,11 +506,10 @@ public class ClassDef implements Serializable {
           ((CollectionFieldType) this).getElementType().xwrite(buffer, true);
           break;
         case Types.MAP:
-          {
-            MapFieldType mapFieldType = (MapFieldType) this;
-            mapFieldType.getKeyType().xwrite(buffer, true);
-            mapFieldType.getValueType().xwrite(buffer, true);
-          }
+          MapFieldType mapFieldType = (MapFieldType) this;
+          mapFieldType.getKeyType().xwrite(buffer, true);
+          mapFieldType.getValueType().xwrite(buffer, true);
+          break;
         default:
           {
           }
