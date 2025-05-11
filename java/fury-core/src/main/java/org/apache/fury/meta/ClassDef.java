@@ -326,7 +326,8 @@ public class ClassDef implements Serializable {
      * reflection should be used to get the descriptor.
      */
     Descriptor toDescriptor(ClassResolver classResolver, Descriptor descriptor) {
-      TypeRef<?> typeRef = fieldType.toTypeToken(classResolver, descriptor.getTypeRef());
+      TypeRef<?> declared = descriptor != null ? descriptor.getTypeRef() : null;
+      TypeRef<?> typeRef = fieldType.toTypeToken(classResolver, declared);
       // This field doesn't exist in peer class, so any legal modifier will be OK.
       int stubModifiers = ReflectionUtils.getField(getClass(), "fieldName").getModifiers();
       return new Descriptor(typeRef, fieldName, stubModifiers, definedClass);
