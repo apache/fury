@@ -218,7 +218,7 @@ public class ClassResolver implements TypeResolver {
   // use a lower load factor to minimize hash collision
   private static final float furyMapLoadFactor = 0.25f;
   private static final int estimatedNumRegistered = 150;
-  private static final String SET_META__CONTEXT_MSG =
+  static final String SET_META__CONTEXT_MSG =
       "Meta context must be set before serialization, "
           + "please set meta context by SerializationContext.setMetaContext";
   static final ClassInfo NIL_CLASS_INFO =
@@ -551,6 +551,7 @@ public class ClassResolver implements TypeResolver {
     return extRegistry.registeredClasses.containsKey(name);
   }
 
+  @Override
   public boolean isRegisteredByName(Class<?> cls) {
     return extRegistry.registeredClasses.inverse().containsKey(cls);
   }
@@ -569,6 +570,7 @@ public class ClassResolver implements TypeResolver {
     }
   }
 
+  @Override
   public boolean isRegisteredById(Class<?> cls) {
     return extRegistry.registeredClassIdMap.get(cls) != null;
   }
@@ -615,6 +617,7 @@ public class ClassResolver implements TypeResolver {
    * a class is registered but not an inner class with inner serializer, it will still be taken as
    * non-final to write class def, so that it can be deserialized by the peer still.
    */
+  @Override
   public boolean isMonomorphic(Class<?> clz) {
     if (fury.isCrossLanguage()) {
       if (TypeUtils.unwrap(clz).isPrimitive() || clz.isEnum() || clz == String.class) {
@@ -1515,7 +1518,7 @@ public class ClassResolver implements TypeResolver {
     return classInfo;
   }
 
-  private ClassInfo readClassInfoWithMetaShare(MetaContext metaContext, int index) {
+  ClassInfo readClassInfoWithMetaShare(MetaContext metaContext, int index) {
     ClassDef classDef = metaContext.readClassDefs.get(index);
     Tuple2<ClassDef, ClassInfo> classDefTuple = extRegistry.classIdToDef.get(classDef.getId());
     ClassInfo classInfo;
@@ -2116,6 +2119,7 @@ public class ClassResolver implements TypeResolver {
     }
   }
 
+  @Override
   public Fury getFury() {
     return fury;
   }

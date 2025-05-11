@@ -43,6 +43,7 @@ import org.apache.fury.meta.ClassDef.FieldInfo;
 import org.apache.fury.meta.ClassDef.FieldType;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.resolver.ClassResolver;
+import org.apache.fury.resolver.TypeResolver;
 import org.apache.fury.type.DescriptorGrouper;
 import org.apache.fury.util.MurmurHash3;
 
@@ -83,7 +84,7 @@ class ClassDefEncoder {
     return buildFieldsInfo(resolver, buildFields(resolver.getFury(), cls, true));
   }
 
-  static List<FieldInfo> buildFieldsInfo(ClassResolver resolver, List<Field> fields) {
+  static List<FieldInfo> buildFieldsInfo(TypeResolver resolver, List<Field> fields) {
     List<FieldInfo> fieldInfos = new ArrayList<>();
     for (Field field : fields) {
       FieldInfo fieldInfo =
@@ -259,8 +260,8 @@ class ClassDefEncoder {
       int encodingFlags = fieldNameEncodingsList.indexOf(metaString.getEncoding());
       byte[] encoded = metaString.getBytes();
       int size = (encoded.length - 1);
-      if (fieldInfo.hasTypeTag()) {
-        size = fieldInfo.getTypeTag();
+      if (fieldInfo.hasTag()) {
+        size = fieldInfo.getTag();
         encodingFlags = 3;
       }
       header |= (byte) (encodingFlags << 3);
@@ -273,14 +274,14 @@ class ClassDefEncoder {
         header |= (size << 5);
         buffer.writeByte(header);
       }
-      if (!fieldInfo.hasTypeTag()) {
+      if (!fieldInfo.hasTag()) {
         buffer.writeBytes(encoded);
       }
       fieldType.write(buffer, false);
     }
   }
 
-  private static void writePkgName(MemoryBuffer buffer, String pkg) {
+  static void writePkgName(MemoryBuffer buffer, String pkg) {
     // - Package name encoding(omitted when class is registered):
     //    - encoding algorithm: `UTF8/ALL_TO_LOWER_SPECIAL/LOWER_UPPER_DIGIT_SPECIAL`
     //    - Header: `6 bits size | 2 bits encoding flags`.
@@ -292,7 +293,7 @@ class ClassDefEncoder {
     writeName(buffer, encoded, pkgEncodingsList.indexOf(pkgMetaString.getEncoding()));
   }
 
-  private static void writeTypeName(MemoryBuffer buffer, String typeName) {
+  static void writeTypeName(MemoryBuffer buffer, String typeName) {
     // - Class name encoding(omitted when class is registered):
     //     - encoding algorithm:
     // `UTF8/LOWER_UPPER_DIGIT_SPECIAL/FIRST_TO_LOWER_SPECIAL/ALL_TO_LOWER_SPECIAL`

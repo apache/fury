@@ -776,4 +776,13 @@ public class TypeUtils {
       return pkg + "." + className;
     }
   }
+
+  public static Class<?> getConcreteCollectionSubClass(Class<?> clz) {
+    if (clz.isAssignableFrom(ArrayList.class)) {
+      return ArrayList.class;
+    } else if (clz.isAssignableFrom(HashSet.class)) {
+      return HashSet.class;
+    }
+    throw new IllegalArgumentException(clz + " has no concrete subclass");
+  }
 }

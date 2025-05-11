@@ -23,8 +23,6 @@ import static org.apache.fury.meta.ClassDefEncoder.buildFieldsInfo;
 import static org.apache.fury.meta.ClassDefEncoder.writePkgName;
 import static org.apache.fury.meta.ClassDefEncoder.writeTypeName;
 import static org.apache.fury.meta.Encoders.fieldNameEncodingsList;
-import static org.apache.fury.meta.Encoders.pkgEncodingsList;
-import static org.apache.fury.meta.Encoders.typeNameEncodingsList;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -33,7 +31,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
@@ -41,8 +38,6 @@ import org.apache.fury.meta.ClassDef.FieldInfo;
 import org.apache.fury.meta.ClassDef.FieldType;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.resolver.ClassInfo;
-import org.apache.fury.resolver.ClassResolver;
-import org.apache.fury.resolver.TypeResolver;
 import org.apache.fury.resolver.XtypeResolver;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.DescriptorGrouper;
@@ -56,36 +51,29 @@ import org.apache.fury.util.Preconditions;
  * href="https://fury.apache.org/docs/specification/fury_xlang_serialization_spec">...</a>
  */
 class TypeDefEncoder {
-  /**
-   * Build class definition from fields of class.
-   */
-  static ClassDef buildTypeDef(
-    Fury fury, Class<?> type) {
+  /** Build class definition from fields of class. */
+  static ClassDef buildTypeDef(Fury fury, Class<?> type) {
     DescriptorGrouper descriptorGrouper =
-      fury.getClassResolver()
-        .createDescriptorGrouper(
-          fury.getClassResolver().getAllDescriptorsMap(type, true).values(),
-          false,
-          Function.identity());
-    List<Field> fields = descriptorGrouper.getSortedDescriptors().stream()
-      .map(Descriptor::getField).collect(Collectors.toList());
+        fury.getClassResolver()
+            .createDescriptorGrouper(
+                fury.getClassResolver().getAllDescriptorsMap(type, true).values(),
+                false,
+                Function.identity());
+    List<Field> fields =
+        descriptorGrouper.getSortedDescriptors().stream()
+            .map(Descriptor::getField)
+            .collect(Collectors.toList());
     return buildClassDefWithFieldInfos(
-      fury.getXtypeResolver(), type, buildFieldsInfo(fury.getXtypeResolver(), fields));
+        fury.getXtypeResolver(), type, buildFieldsInfo(fury.getXtypeResolver(), fields));
   }
 
   static ClassDef buildClassDefWithFieldInfos(
-    XtypeResolver resolver,
-    Class<?> type,
-    List<FieldInfo> fieldInfos) {
+      XtypeResolver resolver, Class<?> type, List<FieldInfo> fieldInfos) {
     fieldInfos = new ArrayList<>(getClassFields(type, fieldInfos).values());
     MemoryBuffer encodeClassDef = encodeClassDef(resolver, type, fieldInfos);
     byte[] classDefBytes = encodeClassDef.getBytes(0, encodeClassDef.writerIndex());
     return new ClassDef(
-      Encoders.buildClassSpec(type),
-      fieldInfos,
-      true,
-      encodeClassDef.getInt64(0),
-      classDefBytes);
+        Encoders.buildClassSpec(type), fieldInfos, true, encodeClassDef.getInt64(0), classDefBytes);
   }
 
   static final int SMALL_NUM_FIELDS_THRESHOLD = 0b11111;
@@ -97,12 +85,10 @@ class TypeDefEncoder {
   // see spec documentation: docs/specification/xlang_serialization_spec.md
   // https://fury.apache.org/docs/specification/fury_xlang_serialization_spec
   static MemoryBuffer encodeClassDef(
-    XtypeResolver resolver,
-    Class<?> type,
-    List<FieldInfo> fields) {
+      XtypeResolver resolver, Class<?> type, List<FieldInfo> fields) {
     ClassInfo classInfo = resolver.getClassInfo(type);
-    Preconditions.checkArgument(Types.isStructType(classInfo.getXtypeId()),
-      "%s is not a struct", type);
+    Preconditions.checkArgument(
+        Types.isStructType(classInfo.getXtypeId()), "%s is not a struct", type);
     MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(128);
     buffer.writeByte(-1); // placeholder for header, update later
     int currentClassHeader = fields.size();
@@ -124,10 +110,10 @@ class TypeDefEncoder {
     writeFieldsInfo(resolver, buffer, fields);
 
     byte[] compressed =
-      resolver
-        .getFury()
-        .getMetaCompressor()
-        .compress(buffer.getHeapMemory(), 0, buffer.writerIndex());
+        resolver
+            .getFury()
+            .getMetaCompressor()
+            .compress(buffer.getHeapMemory(), 0, buffer.writerIndex());
     boolean isCompressed = false;
     if (compressed.length < buffer.writerIndex()) {
       isCompressed = true;
@@ -138,9 +124,7 @@ class TypeDefEncoder {
     if (metaSize > META_SIZE_THRESHOLD) {
       throw new UnsupportedOperationException("Too big metadata size: " + metaSize);
     }
-    long hash =
-      MurmurHash3.murmurhash3_x64_128(
-        buffer.getHeapMemory(), 0, metaSize, 47)[0];
+    long hash = MurmurHash3.murmurhash3_x64_128(buffer.getHeapMemory(), 0, metaSize, 47)[0];
     long header = 0;
     hash <<= 14;
     // this id will be part of generated codec, a negative number won't be allowed in class name.
@@ -171,10 +155,7 @@ class TypeDefEncoder {
     return sortedClassFields;
   }
 
-  /**
-   * Write field type and name info.
-   * Every field info format: `header + type info + field name`
-   */
+  /** Write field type and name info. Every field info format: `header + type info + field name` */
   static void writeFieldsInfo(XtypeResolver resolver, MemoryBuffer buffer, List<FieldInfo> fields) {
     for (FieldInfo fieldInfo : fields) {
       FieldType fieldType = fieldInfo.getFieldType();

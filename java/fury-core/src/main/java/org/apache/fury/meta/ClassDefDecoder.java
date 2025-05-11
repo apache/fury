@@ -100,7 +100,8 @@ class ClassDefDecoder {
           classSpec = new ClassSpec(cls);
         }
       }
-      List<ClassDef.FieldInfo> fieldInfos = readFieldsInfo(classDefBuf, className, numFields);
+      List<ClassDef.FieldInfo> fieldInfos =
+          readFieldsInfo(classDefBuf, classResolver, className, numFields);
       classFields.addAll(fieldInfos);
     }
     Preconditions.checkNotNull(classSpec);
@@ -110,7 +111,7 @@ class ClassDefDecoder {
   }
 
   private static List<ClassDef.FieldInfo> readFieldsInfo(
-      MemoryBuffer buffer, String className, int numFields) {
+      MemoryBuffer buffer, ClassResolver resolver, String className, int numFields) {
     List<ClassDef.FieldInfo> fieldInfos = new ArrayList<>(numFields);
     for (int i = 0; i < numFields; i++) {
       int header = buffer.readByte() & 0xff;
@@ -131,7 +132,7 @@ class ClassDefDecoder {
       boolean isMonomorphic = (header & 0b100) != 0;
       boolean trackingRef = (header & 0b001) != 0;
       int typeId = buffer.readVarUint32Small14();
-      FieldType fieldType = FieldType.read(buffer, isMonomorphic, trackingRef, typeId);
+      FieldType fieldType = FieldType.read(buffer, resolver, isMonomorphic, trackingRef, typeId);
       fieldInfos.add(new ClassDef.FieldInfo(className, fieldName, fieldType));
     }
     return fieldInfos;
