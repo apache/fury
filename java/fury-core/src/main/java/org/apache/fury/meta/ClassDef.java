@@ -955,7 +955,7 @@ public class ClassDef implements Serializable {
           && resolver.isRegisteredById(rawType)) {
         return new RegisteredFieldType(isMonomorphic, nullable, trackingRef, xtypeId);
       } else if (!isXlang && resolver.isRegisteredById(rawType)) {
-        short classId = resolver.getClassInfo(rawType).getClassId();
+        Short classId = ((ClassResolver) resolver).getRegisteredClassId(rawType);
         return new RegisteredFieldType(isMonomorphic, nullable, trackingRef, classId);
       } else {
         if (rawType.isEnum()) {
