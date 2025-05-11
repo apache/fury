@@ -311,8 +311,9 @@ public class XtypeResolver implements TypeResolver {
       case Types.NAMED_STRUCT:
       case Types.NAMED_EXT:
         return false;
+      default:
+        return true;
     }
-    return true;
   }
 
   @Override
@@ -331,8 +332,9 @@ public class XtypeResolver implements TypeResolver {
       case Types.NAMED_STRUCT:
       case Types.NAMED_EXT:
         return true;
+      default:
+        return false;
     }
-    return false;
   }
 
   @Override

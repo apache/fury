@@ -179,7 +179,9 @@ public class ClassDef implements Serializable {
 
   @Override
   public boolean equals(Object o) {
-    if (o == null || getClass() != o.getClass()) return false;
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     ClassDef classDef = (ClassDef) o;
     return hasFieldsMeta == classDef.hasFieldsMeta
         && id == classDef.id
@@ -508,6 +510,9 @@ public class ClassDef implements Serializable {
             MapFieldType mapFieldType = (MapFieldType) this;
             mapFieldType.getKeyType().xwrite(buffer, true);
             mapFieldType.getValueType().xwrite(buffer, true);
+          }
+        default:
+          {
           }
       }
     }
