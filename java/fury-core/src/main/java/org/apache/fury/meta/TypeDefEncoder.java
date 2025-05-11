@@ -79,8 +79,11 @@ class TypeDefEncoder {
   static final int SMALL_NUM_FIELDS_THRESHOLD = 0b11111;
   static final int REGISTER_BY_NAME_FLAG = 0b100000;
   static final int COMPRESS_META_FLAG = 0b1 << 13;
-  static final int META_SIZE_THRESHOLD = 0b1 << 12;
+  static final int META_SIZE_NUMBITS = 12;
+  static final int META_SIZE_MASKS = 0b1111_1111_1111;
+  static final int META_SIZE_THRESHOLD = 0b1 << META_SIZE_NUMBITS;
   static final int NUM_HASH_BITS = 50;
+  static final int FIELD_NAME_SIZE_THRESHOLD = 0b1111;
 
   // see spec documentation: docs/specification/xlang_serialization_spec.md
   // https://fury.apache.org/docs/specification/fury_xlang_serialization_spec
@@ -175,11 +178,11 @@ class TypeDefEncoder {
         size = (encoded.length - 1);
       }
       header |= (byte) (encodingFlags << 6);
-      boolean bigSize = size >= 7;
+      boolean bigSize = size >= FIELD_NAME_SIZE_THRESHOLD;
       if (bigSize) {
         header |= 0b00111100;
         buffer.writeByte(header);
-        buffer.writeVarUint32Small7(size - 7);
+        buffer.writeVarUint32Small7(size - FIELD_NAME_SIZE_THRESHOLD);
       } else {
         header |= (size << 2);
         buffer.writeByte(header);

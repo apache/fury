@@ -84,10 +84,7 @@ import org.apache.fury.util.Preconditions;
 public class ClassDef implements Serializable {
   private static final Logger LOG = LoggerFactory.getLogger(ClassDef.class);
 
-  static final int SCHEMA_COMPATIBLE_FLAG = 0b10000;
   public static final int SIZE_TWO_BYTES_FLAG = 0b100000;
-  static final int OBJECT_TYPE_FLAG = 0b1000000;
-  static final int COMPRESSION_FLAG = 0b10000000;
   // TODO use field offset to sort field, which will hit l1-cache more. Since
   // `objectFieldOffset` is not part of jvm-specification, it may change between different jdk
   // vendor. But the deserialization peer use the class definition to create deserializer, it's OK
@@ -114,7 +111,7 @@ public class ClassDef implements Serializable {
 
   private final ClassSpec classSpec;
   private final List<FieldInfo> fieldsInfo;
-  private final boolean isObjectType;
+  private final boolean isStructType;
   // Unique id for class def. If class def are same between processes, then the id will
   // be same too.
   private final long id;
@@ -124,12 +121,12 @@ public class ClassDef implements Serializable {
   ClassDef(
       ClassSpec classSpec,
       List<FieldInfo> fieldsInfo,
-      boolean isObjectType,
+      boolean isStructType,
       long id,
       byte[] encoded) {
     this.classSpec = classSpec;
     this.fieldsInfo = fieldsInfo;
-    this.isObjectType = isObjectType;
+    this.isStructType = isStructType;
     this.id = id;
     this.encoded = encoded;
   }
@@ -153,8 +150,8 @@ public class ClassDef implements Serializable {
   }
 
   /** Returns ext meta for the class. */
-  public boolean isObjectType() {
-    return isObjectType;
+  public boolean isStructType() {
+    return isStructType;
   }
 
   /**
@@ -196,8 +193,8 @@ public class ClassDef implements Serializable {
         + '\''
         + ", fieldsInfo="
         + fieldsInfo
-        + ", isObjectType="
-        + isObjectType
+        + ", isStructType="
+        + isStructType
         + ", id="
         + id
         + '}';
@@ -534,8 +531,8 @@ public class ClassDef implements Serializable {
           return new EnumFieldType(nullable, xtypeId);
         default:
           {
-            if (!Types.isUserDefinedType(xtypeId)) {
-              ClassInfo classInfo = resolver.getClassInfo(xtypeId);
+            if (!Types.isUserDefinedType((byte) xtypeId)) {
+              ClassInfo classInfo = resolver.getUserTypeInfo(xtypeId);
               Class<?> cls = classInfo.getCls();
               if (Types.isPrimitiveArray(xtypeId)) {
                 FieldType type = buildFieldType(resolver, resolver.buildGenericType(cls));
@@ -945,7 +942,9 @@ public class ClassDef implements Serializable {
                   ? GenericType.build(Object.class)
                   : genericType.getTypeParameter1()));
     } else {
-      if (isXlang && !Types.isUserDefinedType(xtypeId) && resolver.isRegisteredById(rawType)) {
+      if (isXlang
+          && !Types.isUserDefinedType((byte) xtypeId)
+          && resolver.isRegisteredById(rawType)) {
         return new RegisteredFieldType(isMonomorphic, nullable, trackingRef, xtypeId);
       } else if (!isXlang && resolver.isRegisteredById(rawType)) {
         short classId = resolver.getClassInfo(rawType).getClassId();
@@ -994,8 +993,8 @@ public class ClassDef implements Serializable {
   }
 
   public static ClassDef buildClassDef(
-      ClassResolver classResolver, Class<?> type, List<Field> fields, boolean isObjectType) {
-    return ClassDefEncoder.buildClassDef(classResolver, type, fields, isObjectType);
+      ClassResolver classResolver, Class<?> type, List<Field> fields, boolean isStructType) {
+    return ClassDefEncoder.buildClassDef(classResolver, type, fields, isStructType);
   }
 
   public ClassDef replaceRootClassTo(ClassResolver classResolver, Class<?> targetCls) {
@@ -1012,6 +1011,6 @@ public class ClassDef implements Serializable {
                 })
             .collect(Collectors.toList());
     return ClassDefEncoder.buildClassDefWithFieldInfos(
-        classResolver, targetCls, fieldInfos, isObjectType);
+        classResolver, targetCls, fieldInfos, isStructType);
   }
 }

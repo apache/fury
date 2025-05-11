@@ -19,9 +19,6 @@
 
 package org.apache.fury.meta;
 
-import static org.apache.fury.meta.ClassDef.COMPRESSION_FLAG;
-import static org.apache.fury.meta.ClassDef.OBJECT_TYPE_FLAG;
-import static org.apache.fury.meta.ClassDef.SCHEMA_COMPATIBLE_FLAG;
 import static org.apache.fury.meta.ClassDef.SIZE_TWO_BYTES_FLAG;
 import static org.apache.fury.meta.Encoders.fieldNameEncodingsList;
 import static org.apache.fury.meta.Encoders.pkgEncodingsList;
@@ -53,6 +50,11 @@ import org.apache.fury.util.MurmurHash3;
  * href="https://fury.apache.org/docs/specification/fury_java_serialization_spec">...</a>
  */
 class ClassDefEncoder {
+  static final int SCHEMA_COMPATIBLE_FLAG = 0b10000;
+  static final int COMPRESSION_FLAG = 0b10000000;
+  // a flag to mark a type is not struct.
+  static final int STRUCT_TYPE_FLAG = 0b1000000;
+
   static List<Field> buildFields(Fury fury, Class<?> cls, boolean resolveParent) {
     DescriptorGrouper descriptorGrouper =
         fury.getClassResolver()
@@ -99,25 +101,25 @@ class ClassDefEncoder {
 
   /** Build class definition from fields of class. */
   static ClassDef buildClassDef(
-      ClassResolver classResolver, Class<?> type, List<Field> fields, boolean isObjectType) {
+      ClassResolver classResolver, Class<?> type, List<Field> fields, boolean isStructType) {
     return buildClassDefWithFieldInfos(
-        classResolver, type, buildFieldsInfo(classResolver, fields), isObjectType);
+        classResolver, type, buildFieldsInfo(classResolver, fields), isStructType);
   }
 
   static ClassDef buildClassDefWithFieldInfos(
       ClassResolver classResolver,
       Class<?> type,
       List<ClassDef.FieldInfo> fieldInfos,
-      boolean isObjectType) {
+      boolean isStructType) {
     Map<String, List<FieldInfo>> classLayers = getClassFields(type, fieldInfos);
     fieldInfos = new ArrayList<>(fieldInfos.size());
     classLayers.values().forEach(fieldInfos::addAll);
-    MemoryBuffer encodeClassDef = encodeClassDef(classResolver, type, classLayers, isObjectType);
+    MemoryBuffer encodeClassDef = encodeClassDef(classResolver, type, classLayers, isStructType);
     byte[] classDefBytes = encodeClassDef.getBytes(0, encodeClassDef.writerIndex());
     return new ClassDef(
         Encoders.buildClassSpec(type),
         fieldInfos,
-        isObjectType,
+        isStructType,
         encodeClassDef.getInt64(0),
         classDefBytes);
   }
@@ -128,7 +130,7 @@ class ClassDefEncoder {
       ClassResolver classResolver,
       Class<?> type,
       Map<String, List<FieldInfo>> classLayers,
-      boolean isObjectType) {
+      boolean isStructType) {
     MemoryBuffer classDefBuf = MemoryBuffer.newHeapBuffer(128);
     for (Map.Entry<String, List<FieldInfo>> entry : classLayers.entrySet()) {
       String className = entry.getKey();
@@ -180,9 +182,10 @@ class ClassDefEncoder {
     } else {
       header = numClasses;
     }
+    // TODO when a type is schema consistent, skip meta of class layers.
     header |= SCHEMA_COMPATIBLE_FLAG;
-    if (isObjectType) {
-      header |= OBJECT_TYPE_FLAG;
+    if (isStructType) {
+      header |= STRUCT_TYPE_FLAG;
     }
     if (isCompressed) {
       header |= COMPRESSION_FLAG;

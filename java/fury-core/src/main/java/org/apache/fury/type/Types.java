@@ -180,7 +180,7 @@ public class Types {
     return value == ENUM || value == NAMED_ENUM;
   }
 
-  public static boolean isUserDefinedType(int typeId) {
+  public static boolean isUserDefinedType(byte typeId) {
     return isStructType(typeId) || isExtType(typeId) || isEnumType(typeId);
   }
 

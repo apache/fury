@@ -178,14 +178,14 @@ public class ClassDefTest extends FuryTestBase {
     Fury fury = Fury.builder().withMetaShare(true).build();
     ClassDef classDef = ClassDef.buildClassDef(fury, Map.class);
     assertTrue(classDef.getFieldsInfo().isEmpty());
-    assertTrue(classDef.isObjectType());
+    assertTrue(classDef.isStructType());
   }
 
   @Test
   public void testTypeExtInfo() {
     Fury fury = Fury.builder().withMetaShare(true).build();
     ClassResolver classResolver = fury.getClassResolver();
-    assertTrue(classResolver.needToWriteRef(TypeRef.of(Foo.class, new TypeExtMeta(true))));
-    assertFalse(classResolver.needToWriteRef(TypeRef.of(Foo.class, new TypeExtMeta(false))));
+    assertTrue(classResolver.needToWriteRef(TypeRef.of(Foo.class, new TypeExtMeta(true, true))));
+    assertFalse(classResolver.needToWriteRef(TypeRef.of(Foo.class, new TypeExtMeta(true, false))));
   }
 }

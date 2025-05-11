@@ -301,7 +301,7 @@ public class XtypeResolver implements TypeResolver {
     if (classInfo == null) {
       return false;
     }
-    int xtypeId = classInfo.xtypeId;
+    byte xtypeId = (byte) classInfo.xtypeId;
     if (xtypeId <= 0) {
       return false;
     }
@@ -321,7 +321,7 @@ public class XtypeResolver implements TypeResolver {
     if (classInfo == null) {
       return false;
     }
-    int xtypeId = classInfo.xtypeId;
+    byte xtypeId = (byte) classInfo.xtypeId;
     if (xtypeId <= 0) {
       return false;
     }
@@ -370,11 +370,14 @@ public class XtypeResolver implements TypeResolver {
     return classInfo;
   }
 
-  public ClassInfo getClassInfo(int xtypeId) {
-    if (Types.isUserDefinedType(xtypeId)) {
-      throw new IllegalArgumentException(xtypeId + " has no type");
-    }
-    return xtypeIdToClassMap.get(xtypeId);
+  public ClassInfo getUserTypeInfo(String namespace, String typeName) {
+    String name = qualifiedName(namespace, typeName);
+    return qualifiedType2ClassInfo.get(name);
+  }
+
+  public ClassInfo getUserTypeInfo(int userTypeId) {
+    Preconditions.checkArgument((byte) (userTypeId) < Types.UNKNOWN);
+    return xtypeIdToClassMap.get(userTypeId);
   }
 
   @Override

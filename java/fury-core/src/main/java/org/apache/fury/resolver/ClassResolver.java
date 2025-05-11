@@ -1559,7 +1559,7 @@ public class ClassResolver implements TypeResolver {
       classDef = classDefTuple.f0;
     }
     Class<?> cls = loadClass(classDef.getClassSpec());
-    if (!classDef.isObjectType()) {
+    if (!classDef.isStructType()) {
       classInfo = getClassInfo(cls);
     } else {
       classInfo = getMetaSharedClassInfo(classDef, cls);

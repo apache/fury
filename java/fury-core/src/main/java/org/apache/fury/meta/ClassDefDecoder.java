@@ -19,9 +19,9 @@
 
 package org.apache.fury.meta;
 
-import static org.apache.fury.meta.ClassDef.COMPRESSION_FLAG;
 import static org.apache.fury.meta.ClassDef.SIZE_TWO_BYTES_FLAG;
 import static org.apache.fury.meta.ClassDefEncoder.BIG_NAME_THRESHOLD;
+import static org.apache.fury.meta.ClassDefEncoder.COMPRESSION_FLAG;
 import static org.apache.fury.meta.Encoders.fieldNameEncodings;
 import static org.apache.fury.meta.Encoders.pkgEncodings;
 import static org.apache.fury.meta.Encoders.typeNameEncodings;
@@ -105,9 +105,9 @@ class ClassDefDecoder {
       classFields.addAll(fieldInfos);
     }
     Preconditions.checkNotNull(classSpec);
-    boolean isObjectType = (header & ClassDef.OBJECT_TYPE_FLAG) != 0;
+    boolean isStructType = (header & ClassDefEncoder.STRUCT_TYPE_FLAG) != 0;
     return new ClassDef(
-        classSpec, classFields, isObjectType, id, encoded.getBytes(0, encoded.writerIndex()));
+        classSpec, classFields, isStructType, id, encoded.getBytes(0, encoded.writerIndex()));
   }
 
   private static List<ClassDef.FieldInfo> readFieldsInfo(
@@ -138,7 +138,7 @@ class ClassDefDecoder {
     return fieldInfos;
   }
 
-  private static String readPkgName(MemoryBuffer buffer) {
+  static String readPkgName(MemoryBuffer buffer) {
     // - Package name encoding(omitted when class is registered):
     //    - encoding algorithm: `UTF8/ALL_TO_LOWER_SPECIAL/LOWER_UPPER_DIGIT_SPECIAL`
     //    - Header: `6 bits size | 2 bits encoding flags`.
@@ -148,7 +148,7 @@ class ClassDefDecoder {
     return readName(Encoders.PACKAGE_DECODER, buffer, pkgEncodings);
   }
 
-  private static String readTypeName(MemoryBuffer buffer) {
+  static String readTypeName(MemoryBuffer buffer) {
     // - Class name encoding(omitted when class is registered):
     //     - encoding algorithm:
     // `UTF8/LOWER_UPPER_DIGIT_SPECIAL/FIRST_TO_LOWER_SPECIAL/ALL_TO_LOWER_SPECIAL`
