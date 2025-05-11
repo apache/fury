@@ -213,14 +213,19 @@ public class ClassDef implements Serializable {
   }
 
   /** Read class definition from buffer. */
-  public static ClassDef readClassDef(ClassResolver classResolver, MemoryBuffer buffer) {
-    return ClassDefDecoder.decodeClassDef(classResolver, buffer, buffer.readInt64());
+  public static ClassDef readClassDef(Fury fury, MemoryBuffer buffer) {
+    if (fury.isCrossLanguage()) {
+      return TypeDefDecoder.decodeClassDef(fury.getXtypeResolver(), buffer, buffer.readInt64());
+    }
+    return ClassDefDecoder.decodeClassDef(fury.getClassResolver(), buffer, buffer.readInt64());
   }
 
   /** Read class definition from buffer. */
-  public static ClassDef readClassDef(
-      ClassResolver classResolver, MemoryBuffer buffer, long header) {
-    return ClassDefDecoder.decodeClassDef(classResolver, buffer, header);
+  public static ClassDef readClassDef(Fury fury, MemoryBuffer buffer, long header) {
+    if (fury.isCrossLanguage()) {
+      return TypeDefDecoder.decodeClassDef(fury.getXtypeResolver(), buffer, header);
+    }
+    return ClassDefDecoder.decodeClassDef(fury.getClassResolver(), buffer, header);
   }
 
   /**
@@ -537,10 +542,13 @@ public class ClassDef implements Serializable {
         case Types.ENUM:
         case Types.NAMED_ENUM:
           return new EnumFieldType(nullable, xtypeId);
+        case Types.UNKNOWN:
+          return new ObjectFieldType(xtypeId, false, nullable, trackingRef);
         default:
           {
             if (!Types.isUserDefinedType((byte) xtypeId)) {
-              ClassInfo classInfo = resolver.getUserTypeInfo(xtypeId);
+              ClassInfo classInfo = resolver.getXtypeInfo(xtypeId);
+              Preconditions.checkNotNull(classInfo);
               Class<?> cls = classInfo.getCls();
               if (Types.isPrimitiveArray(xtypeId)) {
                 FieldType type = buildFieldType(resolver, resolver.buildGenericType(cls));
@@ -990,13 +998,15 @@ public class ClassDef implements Serializable {
   }
 
   public static ClassDef buildClassDef(Fury fury, Class<?> cls, boolean resolveParent) {
+    if (fury.isCrossLanguage()) {
+      return TypeDefEncoder.buildTypeDef(fury, cls);
+    }
     return ClassDefEncoder.buildClassDef(
         fury.getClassResolver(), cls, buildFields(fury, cls, resolveParent), true);
   }
 
   /** Build class definition from fields of class. */
-  public static ClassDef buildClassDef(
-      ClassResolver classResolver, Class<?> type, List<Field> fields) {
+  static ClassDef buildClassDef(ClassResolver classResolver, Class<?> type, List<Field> fields) {
     return buildClassDef(classResolver, type, fields, true);
   }
 

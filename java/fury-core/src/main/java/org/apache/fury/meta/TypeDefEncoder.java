@@ -19,7 +19,6 @@
 
 package org.apache.fury.meta;
 
-import static org.apache.fury.meta.ClassDefEncoder.buildFieldsInfo;
 import static org.apache.fury.meta.ClassDefEncoder.prependHeader;
 import static org.apache.fury.meta.ClassDefEncoder.writePkgName;
 import static org.apache.fury.meta.ClassDefEncoder.writeTypeName;
@@ -38,6 +37,7 @@ import org.apache.fury.meta.ClassDef.FieldInfo;
 import org.apache.fury.meta.ClassDef.FieldType;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.resolver.ClassInfo;
+import org.apache.fury.resolver.TypeResolver;
 import org.apache.fury.resolver.XtypeResolver;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.DescriptorGrouper;
@@ -63,7 +63,16 @@ class TypeDefEncoder {
             .map(Descriptor::getField)
             .collect(Collectors.toList());
     return buildClassDefWithFieldInfos(
-        fury.getXtypeResolver(), type, buildFieldsInfo(fury.getXtypeResolver(), fields));
+        fury.getXtypeResolver(), type, buildFieldsInfo(fury.getXtypeResolver(), type, fields));
+  }
+
+  static List<FieldInfo> buildFieldsInfo(TypeResolver resolver, Class<?> type, List<Field> fields) {
+    return fields.stream()
+        .map(
+            field ->
+                new FieldInfo(
+                    type.getName(), field.getName(), ClassDef.buildFieldType(resolver, field)))
+        .collect(Collectors.toList());
   }
 
   static ClassDef buildClassDefWithFieldInfos(
@@ -140,7 +149,7 @@ class TypeDefEncoder {
       FieldType fieldType = fieldInfo.getFieldType();
       // header: 2 bits field name encoding + 4 bits size + nullability flag + ref tracking flag
       int header = ((fieldType.trackingRef() ? 1 : 0));
-      header |= fieldType.nullable() ? 1 : 0;
+      header |= fieldType.nullable() ? 0b10 : 0b00;
       int size, encodingFlags;
       byte[] encoded = null;
       if (fieldInfo.hasTag()) {

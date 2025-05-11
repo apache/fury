@@ -370,6 +370,10 @@ public class XtypeResolver implements TypeResolver {
     return classInfo;
   }
 
+  public ClassInfo getXtypeInfo(int typeId) {
+    return xtypeIdToClassMap.get(typeId);
+  }
+
   public ClassInfo getUserTypeInfo(String namespace, String typeName) {
     String name = qualifiedName(namespace, typeName);
     return qualifiedType2ClassInfo.get(name);
@@ -382,7 +386,11 @@ public class XtypeResolver implements TypeResolver {
 
   @Override
   public boolean needToWriteRef(TypeRef<?> typeRef) {
-    return getClassInfo(typeRef.getRawType()).serializer.needToWriteRef();
+    ClassInfo classInfo = classInfoMap.get(typeRef.getRawType());
+    if (classInfo == null) {
+      return fury.trackingRef();
+    }
+    return classInfo.serializer.needToWriteRef();
   }
 
   @Override

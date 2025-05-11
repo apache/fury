@@ -1683,7 +1683,7 @@ public class ClassResolver implements TypeResolver {
   }
 
   private Tuple2<ClassDef, ClassInfo> readClassDef(MemoryBuffer buffer, long header) {
-    ClassDef readClassDef = ClassDef.readClassDef(this, buffer, header);
+    ClassDef readClassDef = ClassDef.readClassDef(fury, buffer, header);
     Tuple2<ClassDef, ClassInfo> tuple2 = extRegistry.classIdToDef.get(readClassDef.getId());
     if (tuple2 == null) {
       tuple2 = putClassDef(readClassDef, null);

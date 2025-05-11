@@ -86,10 +86,11 @@ class TypeDefDecoder {
       byte header = buffer.readByte();
       int encodingFlags = (header >>> 6) & 0b11;
       boolean useTagID = encodingFlags == 3;
-      int fieldNameSize = (header >>> 4) & 0b1111;
+      int fieldNameSize = (header >>> 2) & 0b1111;
       if (fieldNameSize == FIELD_NAME_SIZE_THRESHOLD) {
         fieldNameSize += buffer.readVarUint32Small7();
       }
+      fieldNameSize += 1;
       boolean nullable = (header & 0b10) != 0;
       boolean trackingRef = (header & 0b1) != 0;
       int typeId = buffer.readVarUint32Small14();
