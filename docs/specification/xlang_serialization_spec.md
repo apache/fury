@@ -230,7 +230,6 @@ For every type to be serialized, it have a type id to indicate its type.
   - `Type.STRUCT` + struct meta
   - `Type.NAMED_STRUCT` + struct meta
 
-
 Every type must be registered with an ID or name first. The registration can be used for security check and type
 identification.
 
@@ -311,14 +310,20 @@ Here we mainly describe the meta layout for schema evolution mode:
 +----------------------+--------------------+-------------------+
 | global binary header |    meta header     |    fields meta    |
 ```
+
 For languages which support inheritance, if parent class and subclass has fields with same name, using field in
 subclass.
 
 ##### Global binary header
 
-50 bits hash + 1bit compress flag + 13 bits meta size. Right is the lower bits.
+`50 bits hash + 1bit compress flag + write fields meta + 12 bits meta size`. Right is the lower bits.
 
-When meta size is equal to or greater than 8192, then write `meta size - 8192` as a varuint32 value later.
+- lower 12 bits are used to encode meta size. If meta size `>= 0b111_1111_1111`, then write
+  `meta_ size - 0b111_1111_1111` next.
+- 13rd bit is used to indicate whether to write fields meta. When this class is schema-consistent or use registered
+  serializer, fields meta will be skipped. Class Meta will be used for share namespace + type name only.
+- 14rd bit is used to indicate whether meta is compressed.
+- Other 50 bits is used to store the unique hash of `flags + all layers class meta`.
 
 ##### Meta header
 
@@ -355,6 +360,7 @@ The format for field header is:
 ```
 
 Detailed spec:
+
 - 2 bits field name encoding:
   - encoding: `UTF8/ALL_TO_LOWER_SPECIAL/LOWER_UPPER_DIGIT_SPECIAL/TAG_ID`
   - If tag id is used, field name will be written by an unsigned varint tag id, and 2 bits encoding will be `11`.
@@ -368,6 +374,7 @@ Detailed spec:
 ###### Field Type Info
 
 Field type info is written as unsigned int8. Detailed id spec is:
+
 - For struct registered by id, it will be `Type.STRUCT`.
 - For struct registered by name, it will be `Type.NAMED_STRUCT`.
 - For enum registered by id, it will be `Type.ENUM`.
@@ -384,6 +391,7 @@ Field type info is written as unsigned int8. Detailed id spec is:
   will be written when serializing such field values.
 
 Polymorphism spec:
+
 - `struct/named_struct/ext/named_ext` are taken as polymorphic, the meta for those types are written separately
   instead of inlining here to reduce meta space cost if object of this type is serialized in current object graph
   multiple times, and the field value may be null too.
@@ -394,12 +402,12 @@ Polymorphism spec:
 - Other types that fury supported are taken as morphic too.
 
 List/Set/Map nested type spec:
+
 - `list`: `| list type id | nested type id << 2 + nullability flag + ref tracking flag | ... multi-layer type info |`
 - `set`: `| set type id | nested type id << 2 + nullability flag + ref tracking flag | ... multi-layer type info |`
 - `map`: `| set type id | key type info | value type info |`
   - Key type format: `| nested type id << 2 + nullability flag + ref tracking flag | ... multi-layer type info |`
   - Value type format: `| nested type id << 2 + nullability flag + ref tracking flag | ... multi-layer type info |`
-
 
 ###### Field Name
 
@@ -418,7 +426,6 @@ If one want to support inheritance for struct, one can implement following spec.
 ### Schema consistent
 
 Fields are serialized from parent type to leaf type. Fields are sorted using fury struct fields sort algorithms.
-
 
 ### Schema Evolution
 
@@ -782,6 +789,7 @@ Field will be ordered as following, every group of fields will have its own orde
 #### Field order
 
 Fields in a struct are sorted in a ascending order by:
+
 - primitive fields first: bool/int8/int16/int32/varint32/int64/varint64/sliint64/float16/float32/float64, sorted by
   type id.
 - nullable primitive fields
