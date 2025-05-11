@@ -20,6 +20,7 @@
 package org.apache.fury.meta;
 
 import static org.apache.fury.meta.ClassDefEncoder.buildFieldsInfo;
+import static org.apache.fury.meta.ClassDefEncoder.prependHeader;
 import static org.apache.fury.meta.ClassDefEncoder.writePkgName;
 import static org.apache.fury.meta.ClassDefEncoder.writeTypeName;
 import static org.apache.fury.meta.Encoders.fieldNameEncodingsList;
@@ -33,7 +34,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.meta.ClassDef.FieldInfo;
 import org.apache.fury.meta.ClassDef.FieldType;
 import org.apache.fury.reflect.ReflectionUtils;
@@ -42,7 +42,6 @@ import org.apache.fury.resolver.XtypeResolver;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.DescriptorGrouper;
 import org.apache.fury.type.Types;
-import org.apache.fury.util.MurmurHash3;
 import org.apache.fury.util.Preconditions;
 
 /**
@@ -78,11 +77,6 @@ class TypeDefEncoder {
 
   static final int SMALL_NUM_FIELDS_THRESHOLD = 0b11111;
   static final int REGISTER_BY_NAME_FLAG = 0b100000;
-  static final int COMPRESS_META_FLAG = 0b1 << 13;
-  static final int META_SIZE_NUMBITS = 12;
-  static final int META_SIZE_MASKS = 0b1111_1111_1111;
-  static final int META_SIZE_THRESHOLD = 0b1 << META_SIZE_NUMBITS;
-  static final int NUM_HASH_BITS = 50;
   static final int FIELD_NAME_SIZE_THRESHOLD = 0b1111;
 
   // see spec documentation: docs/specification/xlang_serialization_spec.md
@@ -123,25 +117,7 @@ class TypeDefEncoder {
       buffer = MemoryBuffer.fromByteArray(compressed);
       buffer.writerIndex(compressed.length);
     }
-    int metaSize = buffer.writerIndex();
-    if (metaSize > META_SIZE_THRESHOLD) {
-      throw new UnsupportedOperationException("Too big metadata size: " + metaSize);
-    }
-    long hash = MurmurHash3.murmurhash3_x64_128(buffer.getHeapMemory(), 0, metaSize, 47)[0];
-    long header = 0;
-    hash <<= 14;
-    // this id will be part of generated codec, a negative number won't be allowed in class name.
-    header |= Math.abs(hash);
-    if (isCompressed) {
-      header |= COMPRESS_META_FLAG;
-    }
-    header |= metaSize;
-
-    MemoryBuffer result = MemoryUtils.buffer(metaSize + 8);
-    result.writeInt64(header);
-    result.writeByte(metaSize);
-    result.writeBytes(buffer.getHeapMemory(), 0, metaSize);
-    return result;
+    return prependHeader(buffer, isCompressed, true);
   }
 
   static Map<String, FieldInfo> getClassFields(Class<?> type, List<FieldInfo> fieldsInfo) {

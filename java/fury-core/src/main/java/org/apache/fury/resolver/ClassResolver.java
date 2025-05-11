@@ -20,7 +20,6 @@
 package org.apache.fury.resolver;
 
 import static org.apache.fury.Fury.NOT_SUPPORT_XLANG;
-import static org.apache.fury.meta.ClassDef.SIZE_TWO_BYTES_FLAG;
 import static org.apache.fury.meta.Encoders.GENERIC_ENCODER;
 import static org.apache.fury.meta.Encoders.PACKAGE_DECODER;
 import static org.apache.fury.meta.Encoders.PACKAGE_ENCODER;
@@ -1559,7 +1558,7 @@ public class ClassResolver implements TypeResolver {
       classDef = classDefTuple.f0;
     }
     Class<?> cls = loadClass(classDef.getClassSpec());
-    if (!classDef.isStructType()) {
+    if (!classDef.hasFieldsMeta()) {
       classInfo = getClassInfo(cls);
     } else {
       classInfo = getMetaSharedClassInfo(classDef, cls);
@@ -1669,11 +1668,7 @@ public class ClassResolver implements TypeResolver {
       long id = buffer.readInt64();
       Tuple2<ClassDef, ClassInfo> tuple2 = extRegistry.classIdToDef.get(id);
       if (tuple2 != null) {
-        int size =
-            (id & SIZE_TWO_BYTES_FLAG) == 0
-                ? buffer.readByte() & 0xff
-                : buffer.readInt16() & 0xffff;
-        buffer.increaseReaderIndex(size);
+        ClassDef.skipClassDef(buffer, id);
       } else {
         tuple2 = readClassDef(buffer, id);
       }

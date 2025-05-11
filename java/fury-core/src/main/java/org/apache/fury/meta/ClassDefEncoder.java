@@ -19,11 +19,13 @@
 
 package org.apache.fury.meta;
 
-import static org.apache.fury.meta.ClassDef.SIZE_TWO_BYTES_FLAG;
+import static org.apache.fury.meta.ClassDef.COMPRESS_META_FLAG;
+import static org.apache.fury.meta.ClassDef.HAS_FIELDS_META_FLAG;
+import static org.apache.fury.meta.ClassDef.META_SIZE_MASKS;
+import static org.apache.fury.meta.ClassDef.NUM_HASH_BITS;
 import static org.apache.fury.meta.Encoders.fieldNameEncodingsList;
 import static org.apache.fury.meta.Encoders.pkgEncodingsList;
 import static org.apache.fury.meta.Encoders.typeNameEncodingsList;
-import static org.apache.fury.util.MathUtils.toInt;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -50,10 +52,9 @@ import org.apache.fury.util.MurmurHash3;
  * href="https://fury.apache.org/docs/specification/fury_java_serialization_spec">...</a>
  */
 class ClassDefEncoder {
-  static final int SCHEMA_COMPATIBLE_FLAG = 0b10000;
-  static final int COMPRESSION_FLAG = 0b10000000;
   // a flag to mark a type is not struct.
-  static final int STRUCT_TYPE_FLAG = 0b1000000;
+  static final int STRUCT_TYPE_FLAG = 0b100_0000;
+  static final int NUM_CLASS_THRESHOLD = 0b1111;
 
   static List<Field> buildFields(Fury fury, Class<?> cls, boolean resolveParent) {
     DescriptorGrouper descriptorGrouper =
@@ -101,25 +102,25 @@ class ClassDefEncoder {
 
   /** Build class definition from fields of class. */
   static ClassDef buildClassDef(
-      ClassResolver classResolver, Class<?> type, List<Field> fields, boolean isStructType) {
+      ClassResolver classResolver, Class<?> type, List<Field> fields, boolean hasFieldsMeta) {
     return buildClassDefWithFieldInfos(
-        classResolver, type, buildFieldsInfo(classResolver, fields), isStructType);
+        classResolver, type, buildFieldsInfo(classResolver, fields), hasFieldsMeta);
   }
 
   static ClassDef buildClassDefWithFieldInfos(
       ClassResolver classResolver,
       Class<?> type,
       List<ClassDef.FieldInfo> fieldInfos,
-      boolean isStructType) {
+      boolean hasFieldsMeta) {
     Map<String, List<FieldInfo>> classLayers = getClassFields(type, fieldInfos);
     fieldInfos = new ArrayList<>(fieldInfos.size());
     classLayers.values().forEach(fieldInfos::addAll);
-    MemoryBuffer encodeClassDef = encodeClassDef(classResolver, type, classLayers, isStructType);
+    MemoryBuffer encodeClassDef = encodeClassDef(classResolver, type, classLayers, hasFieldsMeta);
     byte[] classDefBytes = encodeClassDef.getBytes(0, encodeClassDef.writerIndex());
     return new ClassDef(
         Encoders.buildClassSpec(type),
         fieldInfos,
-        isStructType,
+        hasFieldsMeta,
         encodeClassDef.getInt64(0),
         classDefBytes);
   }
@@ -130,8 +131,15 @@ class ClassDefEncoder {
       ClassResolver classResolver,
       Class<?> type,
       Map<String, List<FieldInfo>> classLayers,
-      boolean isStructType) {
+      boolean hasFieldsMeta) {
     MemoryBuffer classDefBuf = MemoryBuffer.newHeapBuffer(128);
+    int numClasses = classLayers.size() - 1; // num class must be greater than 0
+    if (numClasses >= NUM_CLASS_THRESHOLD) {
+      classDefBuf.writeByte(NUM_CLASS_THRESHOLD);
+      classDefBuf.writeVarUint32Small7(numClasses - NUM_CLASS_THRESHOLD);
+    } else {
+      classDefBuf.writeByte(numClasses);
+    }
     for (Map.Entry<String, List<FieldInfo>> entry : classLayers.entrySet()) {
       String className = entry.getKey();
       List<FieldInfo> fields = entry.getValue();
@@ -172,42 +180,34 @@ class ClassDefEncoder {
       classDefBuf = MemoryBuffer.fromByteArray(compressed);
       classDefBuf.writerIndex(compressed.length);
     }
-    long hash =
-        MurmurHash3.murmurhash3_x64_128(
-            classDefBuf.getHeapMemory(), 0, classDefBuf.writerIndex(), 47)[0];
-    long header;
-    int numClasses = classLayers.size() - 1; // num class must be greater than 0
-    if (numClasses > 0b1110) {
-      header = 0b1111;
-    } else {
-      header = numClasses;
-    }
-    // TODO when a type is schema consistent, skip meta of class layers.
-    header |= SCHEMA_COMPATIBLE_FLAG;
-    if (isStructType) {
-      header |= STRUCT_TYPE_FLAG;
-    }
-    if (isCompressed) {
-      header |= COMPRESSION_FLAG;
-    }
+    return prependHeader(classDefBuf, isCompressed, hasFieldsMeta);
+  }
+
+  static MemoryBuffer prependHeader(
+      MemoryBuffer buffer, boolean isCompressed, boolean hasFieldsMeta) {
+    int metaSize = buffer.writerIndex();
+    long hash = MurmurHash3.murmurhash3_x64_128(buffer.getHeapMemory(), 0, metaSize, 47)[0];
+    hash <<= (64 - NUM_HASH_BITS);
     // this id will be part of generated codec, a negative number won't be allowed in class name.
-    hash <<= 8;
-    header |= Math.abs(hash);
-    MemoryBuffer buffer = MemoryUtils.buffer(classDefBuf.writerIndex() + 10);
-    int len = classDefBuf.writerIndex() + toInt(numClasses > 0b1110);
-    if (len > 255) {
-      header |= SIZE_TWO_BYTES_FLAG;
-      buffer.writeInt64(header);
-      buffer.writeInt16((short) len);
-    } else {
-      buffer.writeInt64(header);
-      buffer.writeByte(len);
+    long header = Math.abs(hash);
+    if (isCompressed) {
+      header |= COMPRESS_META_FLAG;
     }
-    if (numClasses > 0b1110) {
-      buffer.writeVarUint32Small7(numClasses - 0b1110);
+    if (hasFieldsMeta) {
+      header |= HAS_FIELDS_META_FLAG;
     }
-    buffer.writeBytes(classDefBuf.getHeapMemory(), 0, classDefBuf.writerIndex());
-    return buffer;
+    if (metaSize > META_SIZE_MASKS) {
+      header |= META_SIZE_MASKS;
+    }
+    header |= metaSize;
+    MemoryBuffer result = MemoryUtils.buffer(metaSize + 8);
+    result.writeInt64(header);
+    result.writeByte(metaSize);
+    if (metaSize > META_SIZE_MASKS) {
+      result.writeVarUint32(metaSize - META_SIZE_MASKS);
+    }
+    result.writeBytes(buffer.getHeapMemory(), 0, metaSize);
+    return result;
   }
 
   private static Class<?> getType(Class<?> cls, String type) {

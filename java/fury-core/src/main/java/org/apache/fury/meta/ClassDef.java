@@ -82,9 +82,12 @@ import org.apache.fury.util.Preconditions;
  * @see ReflectionUtils#getFieldOffset
  */
 public class ClassDef implements Serializable {
+  static final int COMPRESS_META_FLAG = 0b1 << 13;
+  static final int HAS_FIELDS_META_FLAG = 0b1 << 12;
+  static final int META_SIZE_MASKS = 0b111_1111_1111;
+  static final int NUM_HASH_BITS = 50;
   private static final Logger LOG = LoggerFactory.getLogger(ClassDef.class);
 
-  public static final int SIZE_TWO_BYTES_FLAG = 0b100000;
   // TODO use field offset to sort field, which will hit l1-cache more. Since
   // `objectFieldOffset` is not part of jvm-specification, it may change between different jdk
   // vendor. But the deserialization peer use the class definition to create deserializer, it's OK
@@ -111,7 +114,7 @@ public class ClassDef implements Serializable {
 
   private final ClassSpec classSpec;
   private final List<FieldInfo> fieldsInfo;
-  private final boolean isStructType;
+  private final boolean hasFieldsMeta;
   // Unique id for class def. If class def are same between processes, then the id will
   // be same too.
   private final long id;
@@ -121,14 +124,22 @@ public class ClassDef implements Serializable {
   ClassDef(
       ClassSpec classSpec,
       List<FieldInfo> fieldsInfo,
-      boolean isStructType,
+      boolean hasFieldsMeta,
       long id,
       byte[] encoded) {
     this.classSpec = classSpec;
     this.fieldsInfo = fieldsInfo;
-    this.isStructType = isStructType;
+    this.hasFieldsMeta = hasFieldsMeta;
     this.id = id;
     this.encoded = encoded;
+  }
+
+  public static void skipClassDef(MemoryBuffer buffer, long id) {
+    int size = (int) (id & META_SIZE_MASKS);
+    if (size == META_SIZE_MASKS) {
+      size += buffer.readVarUint32Small14();
+    }
+    buffer.increaseReaderIndex(size);
   }
 
   /**
@@ -150,8 +161,8 @@ public class ClassDef implements Serializable {
   }
 
   /** Returns ext meta for the class. */
-  public boolean isStructType() {
-    return isStructType;
+  public boolean hasFieldsMeta() {
+    return hasFieldsMeta;
   }
 
   /**
@@ -193,8 +204,8 @@ public class ClassDef implements Serializable {
         + '\''
         + ", fieldsInfo="
         + fieldsInfo
-        + ", isStructType="
-        + isStructType
+        + ", hasFieldsMeta="
+        + hasFieldsMeta
         + ", id="
         + id
         + '}';
@@ -993,8 +1004,8 @@ public class ClassDef implements Serializable {
   }
 
   public static ClassDef buildClassDef(
-      ClassResolver classResolver, Class<?> type, List<Field> fields, boolean isStructType) {
-    return ClassDefEncoder.buildClassDef(classResolver, type, fields, isStructType);
+      ClassResolver classResolver, Class<?> type, List<Field> fields, boolean hasFieldsMeta) {
+    return ClassDefEncoder.buildClassDef(classResolver, type, fields, hasFieldsMeta);
   }
 
   public ClassDef replaceRootClassTo(ClassResolver classResolver, Class<?> targetCls) {
@@ -1011,6 +1022,6 @@ public class ClassDef implements Serializable {
                 })
             .collect(Collectors.toList());
     return ClassDefEncoder.buildClassDefWithFieldInfos(
-        classResolver, targetCls, fieldInfos, isStructType);
+        classResolver, targetCls, fieldInfos, hasFieldsMeta);
   }
 }

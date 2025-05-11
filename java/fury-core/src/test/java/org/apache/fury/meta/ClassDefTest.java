@@ -178,7 +178,7 @@ public class ClassDefTest extends FuryTestBase {
     Fury fury = Fury.builder().withMetaShare(true).build();
     ClassDef classDef = ClassDef.buildClassDef(fury, Map.class);
     assertTrue(classDef.getFieldsInfo().isEmpty());
-    assertTrue(classDef.isStructType());
+    assertTrue(classDef.hasFieldsMeta());
   }
 
   @Test

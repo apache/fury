@@ -19,18 +19,18 @@
 
 package org.apache.fury.meta;
 
+import static org.apache.fury.meta.ClassDef.HAS_FIELDS_META_FLAG;
+import static org.apache.fury.meta.ClassDefDecoder.decodeClassDefBuf;
 import static org.apache.fury.meta.ClassDefDecoder.readPkgName;
 import static org.apache.fury.meta.ClassDefDecoder.readTypeName;
 import static org.apache.fury.meta.Encoders.fieldNameEncodings;
-import static org.apache.fury.meta.TypeDefEncoder.COMPRESS_META_FLAG;
 import static org.apache.fury.meta.TypeDefEncoder.FIELD_NAME_SIZE_THRESHOLD;
-import static org.apache.fury.meta.TypeDefEncoder.META_SIZE_MASKS;
-import static org.apache.fury.meta.TypeDefEncoder.META_SIZE_THRESHOLD;
 import static org.apache.fury.meta.TypeDefEncoder.REGISTER_BY_NAME_FLAG;
 import static org.apache.fury.meta.TypeDefEncoder.SMALL_NUM_FIELDS_THRESHOLD;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.fury.collection.Tuple2;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.meta.ClassDef.FieldType;
 import org.apache.fury.meta.MetaString.Encoding;
@@ -44,31 +44,18 @@ import org.apache.fury.serializer.NonexistentClass;
  * href="https://fury.apache.org/docs/specification/fury_xlang_serialization_spec">...</a>
  */
 class TypeDefDecoder {
-  public static ClassDef decodeClassDef(XtypeResolver resolver, MemoryBuffer buffer, long id) {
-    boolean sizeTwoBytes = (id & META_SIZE_THRESHOLD) != 0;
-    if (sizeTwoBytes) {
-      throw new UnsupportedOperationException("Too big metadata size not supported for now");
-    }
-    MemoryBuffer encoded = MemoryBuffer.newHeapBuffer(32);
-    encoded.writeInt64(id);
-    int size = (int) (id & META_SIZE_MASKS);
-    byte[] encodedClassDef = buffer.readBytes(size);
-    encoded.writeBytes(encodedClassDef);
-
-    if ((id & COMPRESS_META_FLAG) != 0) {
-      encodedClassDef =
-          resolver.getFury().getConfig().getMetaCompressor().decompress(encodedClassDef, 0, size);
-    }
-    MemoryBuffer classDefBuf = MemoryBuffer.fromByteArray(encodedClassDef);
-    byte header = classDefBuf.readByte();
+  public static ClassDef decodeClassDef(XtypeResolver resolver, MemoryBuffer inputBuffer, long id) {
+    Tuple2<byte[], byte[]> decoded = decodeClassDefBuf(inputBuffer, resolver, id);
+    MemoryBuffer buffer = MemoryBuffer.fromByteArray(decoded.f0);
+    byte header = buffer.readByte();
     int numFields = header & SMALL_NUM_FIELDS_THRESHOLD;
     if (numFields == SMALL_NUM_FIELDS_THRESHOLD) {
       numFields += buffer.readVarUint32Small7() + SMALL_NUM_FIELDS_THRESHOLD;
     }
     ClassSpec classSpec;
     if ((header & REGISTER_BY_NAME_FLAG) != 0) {
-      String namespace = readPkgName(classDefBuf);
-      String typeName = readTypeName(classDefBuf);
+      String namespace = readPkgName(buffer);
+      String typeName = readTypeName(buffer);
       ClassInfo userTypeInfo = resolver.getUserTypeInfo(namespace, typeName);
       if (userTypeInfo == null) {
         classSpec = new ClassSpec(NonexistentClass.NonexistentMetaShared.class);
@@ -85,10 +72,9 @@ class TypeDefDecoder {
       }
     }
     List<ClassDef.FieldInfo> classFields =
-        readFieldsInfo(classDefBuf, resolver, classSpec.entireClassName, numFields);
-    boolean isStructType = (header & ClassDefEncoder.STRUCT_TYPE_FLAG) != 0;
-    return new ClassDef(
-        classSpec, classFields, isStructType, id, encoded.getBytes(0, encoded.writerIndex()));
+        readFieldsInfo(buffer, resolver, classSpec.entireClassName, numFields);
+    boolean hasFieldsMeta = (id & HAS_FIELDS_META_FLAG) != 0;
+    return new ClassDef(classSpec, classFields, hasFieldsMeta, id, decoded.f1);
   }
 
   // | header + type info + field name | ... | header + type info + field name |
