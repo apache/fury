@@ -437,7 +437,7 @@ Meta layout for schema evolution mode:
 | global binary header |  meta header   |  fields meta   | parent meta header | parent fields meta |
 ```
 
-##### Meta header
+#### Meta header
 
 Meta header is a 64 bits number value encoded in little endian order.
 
@@ -448,7 +448,7 @@ Meta header is a 64 bits number value encoded in little endian order.
 - The 5th bit is used to indicate whether this type needs schema evolution.
 - Other 56 bits are used to store the unique hash of `flags + all layers type meta`.
 
-##### Single layer type meta
+#### Single layer type meta
 
 ```
 | unsigned varint | var uint |  field info: variable bytes   | variable bytes  | ... |
@@ -456,7 +456,7 @@ Meta header is a 64 bits number value encoded in little endian order.
 |   num_fields    | type id  | header + type id + field name | next field info | ... |
 ```
 
-##### Other layers type meta
+#### Other layers type meta
 
 Same encoding algorithm as the previous layer.
 

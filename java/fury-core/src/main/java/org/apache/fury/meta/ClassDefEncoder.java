@@ -142,20 +142,20 @@ class ClassDefEncoder {
     }
     for (Map.Entry<String, List<FieldInfo>> entry : classLayers.entrySet()) {
       String className = entry.getKey();
+      Class<?> currentType = getType(type, className);
       List<FieldInfo> fields = entry.getValue();
       // | num fields + register flag | header + package name | header + class name
       // | header + type id + field name | next field info | ... |
       int currentClassHeader = (fields.size() << 1);
-      if (classResolver.isRegisteredById(type)) {
+      if (classResolver.isRegisteredById(currentType)) {
         currentClassHeader |= 1;
         classDefBuf.writeVarUint32Small7(currentClassHeader);
-        classDefBuf.writeVarUint32Small7(classResolver.getRegisteredClassId(type));
+        classDefBuf.writeVarUint32Small7(classResolver.getRegisteredClassId(currentType));
       } else {
         classDefBuf.writeVarUint32Small7(currentClassHeader);
-        Class<?> currentType = getType(type, className);
         String ns, typename;
-        if (classResolver.isRegisteredByName(type)) {
-          Tuple2<String, String> nameTuple = classResolver.getRegisteredNameTuple(type);
+        if (classResolver.isRegisteredByName(currentType)) {
+          Tuple2<String, String> nameTuple = classResolver.getRegisteredNameTuple(currentType);
           ns = nameTuple.f0;
           typename = nameTuple.f1;
         } else {

@@ -22,6 +22,8 @@
 import datetime
 import logging
 import os
+import platform
+import time
 import warnings
 from typing import TypeVar, Union, Iterable
 
@@ -1189,14 +1191,27 @@ cdef class DateSerializer(CrossLanguageCompatibleSerializer):
 
 @cython.final
 cdef class TimestampSerializer(CrossLanguageCompatibleSerializer):
+    cdef bint win_platform
+
+    def __init__(self, fury, type_: Union[type, TypeVar]):
+        super().__init__(fury, type_)
+        self.win_platform = platform.system() == "Windows"
+
+    cdef inline _get_timestamp(self, value):
+        seconds_offset = 0
+        if self.win_platform and value.tzinfo is None:
+            is_dst = time.daylight and time.localtime().tm_isdst > 0
+            seconds_offset = time.altzone if is_dst else time.timezone
+            value = value.replace(tzinfo=datetime.timezone.utc)
+        return int((value.timestamp() + seconds_offset) * 1000000)
+
     cpdef inline write(self, Buffer buffer, value):
         if type(value) is not datetime.datetime:
             raise TypeError(
                 "{} should be {} instead of {}".format(value, datetime, type(value))
             )
         # TimestampType represent micro seconds
-        timestamp = int(value.timestamp() * 1000000)
-        buffer.write_int64(timestamp)
+        buffer.write_int64(self._get_timestamp(value))
 
     cpdef inline read(self, Buffer buffer):
         ts = buffer.read_int64() / 1000000
