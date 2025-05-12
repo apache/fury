@@ -30,4 +30,7 @@ public @interface FuryField {
 
   /** Whether field is nullable, default false. */
   boolean nullable() default false;
+
+  /** Whether field need trackingRef, default false. */
+  boolean trackingRef() default false;
 }

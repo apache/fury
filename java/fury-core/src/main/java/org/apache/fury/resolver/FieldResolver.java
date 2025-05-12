@@ -749,7 +749,8 @@ public class FieldResolver {
     protected final ClassResolver classResolver;
     private final FieldAccessor fieldAccessor;
     private final ClassInfoHolder classInfoHolder;
-    private boolean nullable;
+    private final boolean nullable;
+    private boolean trackingRef;
 
     public FieldInfo(
         Fury fury,
@@ -776,6 +777,13 @@ public class FieldResolver {
       }
       FuryField furyField = field == null ? null : field.getAnnotation(FuryField.class);
       this.nullable = furyField == null || furyField.nullable();
+      if (fury.trackingRef()) {
+        trackingRef =
+            furyField != null
+                ? furyField.trackingRef()
+                // todo question TypeRef.of(type)?
+                : classResolver.needToWriteRef(TypeRef.of(type));
+      }
     }
 
     public static FieldInfo of(
