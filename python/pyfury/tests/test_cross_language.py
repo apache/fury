@@ -18,6 +18,7 @@
 import array
 import datetime
 import math
+import logging
 import os
 import typing
 
@@ -616,12 +617,23 @@ def test_oob_buffer(in_band_file_path, out_of_band_file_path):
         f.write(out_of_band_buffer.to_bytes(0, out_of_band_buffer.writer_index))
 
 
+_LOGGER_FORMAT = (
+    "%(asctime)s\t%(levelname)s %(filename)s:%(lineno)s -- %(process)d -- %(message)s"
+)
+
+
 if __name__ == "__main__":
     import sys
 
-    args = sys.argv[1:]
-    assert len(args) > 0
-    func = getattr(sys.modules[__name__], args[0])
-    if not func:
-        raise Exception("Unknown args {}".format(args))
-    func(*args[1:])
+    logging.basicConfig(format=_LOGGER_FORMAT, level=logging.INFO)
+    print(f"Execute {sys.argv}")
+    try:
+        args = sys.argv[1:]
+        assert len(args) > 0
+        func = getattr(sys.modules[__name__], args[0])
+        if not func:
+            raise Exception("Unknown args {}".format(args))
+        func(*args[1:])
+    except BaseException as e:
+        logging.exception("Execute %s failed with %s", args, e)
+        raise
