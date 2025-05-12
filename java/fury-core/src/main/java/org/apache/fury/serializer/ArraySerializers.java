@@ -111,7 +111,7 @@ public class ArraySerializers {
         list.setArray(arr);
         fury.incDepth(1);
         this.collectionSerializer.write(buffer, list);
-        fury.incDepth(1);
+        fury.incDepth(-1);
         fury.getGenerics().popGenericType();
         this.list = list;
       } else {
