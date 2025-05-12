@@ -51,14 +51,22 @@ import org.testng.annotations.DataProvider;
 public abstract class FuryTestBase {
   private static final ThreadLocal<Fury> javaFuryLocal =
       ThreadLocal.withInitial(
-          () -> Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build());
+          () ->
+              Fury.builder()
+                  .withLanguage(Language.JAVA)
+                  .requireClassRegistration(false)
+                  .suppressClassRegistrationWarnings(true)
+                  .build());
 
   public static Fury getJavaFury() {
     return javaFuryLocal.get();
   }
 
   public static FuryBuilder builder() {
-    return Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false);
+    return Fury.builder()
+        .withLanguage(Language.JAVA)
+        .suppressClassRegistrationWarnings(true)
+        .requireClassRegistration(false);
   }
 
   @DataProvider
@@ -97,6 +105,7 @@ public abstract class FuryTestBase {
             .withRefTracking(true)
             .withCodegen(false)
             .requireClassRegistration(false)
+            .suppressClassRegistrationWarnings(true)
             .build()
       },
       {
@@ -105,6 +114,7 @@ public abstract class FuryTestBase {
             .withRefTracking(false)
             .withCodegen(false)
             .requireClassRegistration(false)
+            .suppressClassRegistrationWarnings(true)
             .build()
       }
     };
@@ -174,6 +184,7 @@ public abstract class FuryTestBase {
             .withRefTracking(true)
             .withCodegen(false)
             .requireClassRegistration(false)
+            .suppressClassRegistrationWarnings(true)
             .build()
       },
       {
@@ -182,6 +193,7 @@ public abstract class FuryTestBase {
             .withRefTracking(false)
             .withCodegen(false)
             .requireClassRegistration(false)
+            .suppressClassRegistrationWarnings(true)
             .build()
       },
       {
@@ -190,6 +202,7 @@ public abstract class FuryTestBase {
             .withRefTracking(true)
             .withCodegen(true)
             .requireClassRegistration(false)
+            .suppressClassRegistrationWarnings(true)
             .build()
       },
       {
@@ -198,6 +211,7 @@ public abstract class FuryTestBase {
             .withRefTracking(false)
             .withCodegen(true)
             .requireClassRegistration(false)
+            .suppressClassRegistrationWarnings(true)
             .build()
       },
     };
@@ -210,6 +224,7 @@ public abstract class FuryTestBase {
             Fury.builder()
                 .withLanguage(Language.JAVA)
                 .requireClassRegistration(false)
+                .suppressClassRegistrationWarnings(true)
                 .withScopedMetaShare(false);
     return new Object[][] {
       {

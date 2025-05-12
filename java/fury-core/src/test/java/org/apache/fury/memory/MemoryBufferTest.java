@@ -633,6 +633,17 @@ public class MemoryBufferTest {
       buf._unsafePutVarUint36Small(index, 0b1000000000000000000000000000000000000L);
       assertEquals(buf.readVarUint36Small(), 0); // overflow
     }
+    {
+      // With buffer size 9
+      MemoryBuffer buf1 = MemoryBuffer.newHeapBuffer(9);
+      // With buffer size 8
+      MemoryBuffer buf2 = MemoryBuffer.newHeapBuffer(8);
+      long uint36Max = 0b111111111111111111111111111111111111L;
+      buf1._unsafePutVarUint36Small(0, uint36Max);
+      buf2._unsafePutVarUint36Small(0, uint36Max);
+      assertEquals(buf1.readVarUint36Small(), uint36Max);
+      assertEquals(buf2.readVarUint36Small(), uint36Max);
+    }
   }
 
   @Test

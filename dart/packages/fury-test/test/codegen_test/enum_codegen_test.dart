@@ -27,7 +27,6 @@ import 'package:test/test.dart';
 
 void main(){
   group('Simple Enum Code Generation', () {
-
     test('test enum spec generation', () async {
       EnumSpec enumSpec = EnumSpec(
         EnumFoo,

@@ -68,7 +68,7 @@ public class NonexistentClassSerializersTest extends FuryTestBase {
   }
 
   private FuryBuilder furyBuilder(boolean scoped) {
-    return Fury.builder()
+    return builder()
         .withLanguage(Language.JAVA)
         .withCompatibleMode(CompatibleMode.COMPATIBLE)
         .requireClassRegistration(false)

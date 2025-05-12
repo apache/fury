@@ -20,7 +20,6 @@
 package org.apache.fury.resolver;
 
 import static org.apache.fury.Fury.NOT_SUPPORT_XLANG;
-import static org.apache.fury.meta.ClassDef.SIZE_TWO_BYTES_FLAG;
 import static org.apache.fury.meta.Encoders.GENERIC_ENCODER;
 import static org.apache.fury.meta.Encoders.PACKAGE_DECODER;
 import static org.apache.fury.meta.Encoders.PACKAGE_ENCODER;
@@ -153,6 +152,7 @@ import org.apache.fury.serializer.collection.UnmodifiableSerializers;
 import org.apache.fury.serializer.scala.SingletonCollectionSerializer;
 import org.apache.fury.serializer.scala.SingletonMapSerializer;
 import org.apache.fury.serializer.scala.SingletonObjectSerializer;
+import org.apache.fury.serializer.shim.ProtobufDispatcher;
 import org.apache.fury.serializer.shim.ShimDispatcher;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.DescriptorGrouper;
@@ -218,7 +218,7 @@ public class ClassResolver implements TypeResolver {
   // use a lower load factor to minimize hash collision
   private static final float furyMapLoadFactor = 0.25f;
   private static final int estimatedNumRegistered = 150;
-  private static final String SET_META__CONTEXT_MSG =
+  static final String SET_META__CONTEXT_MSG =
       "Meta context must be set before serialization, "
           + "please set meta context by SerializationContext.setMetaContext";
   static final ClassInfo NIL_CLASS_INFO =
@@ -551,6 +551,7 @@ public class ClassResolver implements TypeResolver {
     return extRegistry.registeredClasses.containsKey(name);
   }
 
+  @Override
   public boolean isRegisteredByName(Class<?> cls) {
     return extRegistry.registeredClasses.inverse().containsKey(cls);
   }
@@ -569,6 +570,7 @@ public class ClassResolver implements TypeResolver {
     }
   }
 
+  @Override
   public boolean isRegisteredById(Class<?> cls) {
     return extRegistry.registeredClassIdMap.get(cls) != null;
   }
@@ -615,6 +617,7 @@ public class ClassResolver implements TypeResolver {
    * a class is registered but not an inner class with inner serializer, it will still be taken as
    * non-final to write class def, so that it can be deserialized by the peer still.
    */
+  @Override
   public boolean isMonomorphic(Class<?> clz) {
     if (fury.isCrossLanguage()) {
       if (TypeUtils.unwrap(clz).isPrimitive() || clz.isEnum() || clz == String.class) {
@@ -960,6 +963,10 @@ public class ClassResolver implements TypeResolver {
       }
       if (shimDispatcher.contains(cls)) {
         return shimDispatcher.getSerializer(cls).getClass();
+      }
+      serializerClass = ProtobufDispatcher.getSerializerClass(cls);
+      if (serializerClass != null) {
+        return serializerClass;
       }
       if (fury.getConfig().checkJdkClassSerializable()) {
         if (cls.getName().startsWith("java") && !(Serializable.class.isAssignableFrom(cls))) {
@@ -1515,7 +1522,7 @@ public class ClassResolver implements TypeResolver {
     return classInfo;
   }
 
-  private ClassInfo readClassInfoWithMetaShare(MetaContext metaContext, int index) {
+  ClassInfo readClassInfoWithMetaShare(MetaContext metaContext, int index) {
     ClassDef classDef = metaContext.readClassDefs.get(index);
     Tuple2<ClassDef, ClassInfo> classDefTuple = extRegistry.classIdToDef.get(classDef.getId());
     ClassInfo classInfo;
@@ -1556,7 +1563,7 @@ public class ClassResolver implements TypeResolver {
       classDef = classDefTuple.f0;
     }
     Class<?> cls = loadClass(classDef.getClassSpec());
-    if (!classDef.isObjectType()) {
+    if (!classDef.hasFieldsMeta()) {
       classInfo = getClassInfo(cls);
     } else {
       classInfo = getMetaSharedClassInfo(classDef, cls);
@@ -1666,11 +1673,7 @@ public class ClassResolver implements TypeResolver {
       long id = buffer.readInt64();
       Tuple2<ClassDef, ClassInfo> tuple2 = extRegistry.classIdToDef.get(id);
       if (tuple2 != null) {
-        int size =
-            (id & SIZE_TWO_BYTES_FLAG) == 0
-                ? buffer.readByte() & 0xff
-                : buffer.readInt16() & 0xffff;
-        buffer.increaseReaderIndex(size);
+        ClassDef.skipClassDef(buffer, id);
       } else {
         tuple2 = readClassDef(buffer, id);
       }
@@ -1680,7 +1683,7 @@ public class ClassResolver implements TypeResolver {
   }
 
   private Tuple2<ClassDef, ClassInfo> readClassDef(MemoryBuffer buffer, long header) {
-    ClassDef readClassDef = ClassDef.readClassDef(this, buffer, header);
+    ClassDef readClassDef = ClassDef.readClassDef(fury, buffer, header);
     Tuple2<ClassDef, ClassInfo> tuple2 = extRegistry.classIdToDef.get(readClassDef.getId());
     if (tuple2 == null) {
       tuple2 = putClassDef(readClassDef, null);
@@ -2116,6 +2119,7 @@ public class ClassResolver implements TypeResolver {
     }
   }
 
+  @Override
   public Fury getFury() {
     return fury;
   }

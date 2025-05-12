@@ -26,12 +26,12 @@ import (
 
 func NewFury(referenceTracking bool) *Fury {
 	fury := &Fury{
-		typeResolver:      newTypeResolver(),
 		refResolver:       newRefResolver(referenceTracking),
 		referenceTracking: referenceTracking,
 		language:          XLANG,
 		buffer:            NewByteBuffer(nil),
 	}
+	fury.typeResolver = newTypeResolver(fury)
 	return fury
 }
 
@@ -84,6 +84,7 @@ const (
 	GO
 	JAVASCRIPT
 	RUST
+	DART
 )
 
 const (
@@ -91,6 +92,13 @@ const (
 	isLittleEndianFlag
 	isCrossLanguageFlag
 	isOutOfBandFlag
+)
+
+const (
+	NilFlag          = 0
+	LittleEndianFlag = 2
+	XLangFlag        = 4
+	CallBackFlag     = 8
 )
 
 const MAGIC_NUMBER int16 = 0x62D4
@@ -133,31 +141,30 @@ func (f *Fury) Serialize(buf *ByteBuffer, v interface{}, callback BufferCallback
 	}
 	var bitmap byte = 0
 	if isNil(reflect.ValueOf(v)) {
-		bitmap |= isNilFlag
+		bitmap |= NilFlag
 	}
 	if nativeEndian == binary.LittleEndian {
-		bitmap |= isLittleEndianFlag
+		bitmap |= LittleEndianFlag
 	}
 	// set reader as x_lang.
 	if f.language == XLANG {
-		bitmap |= isCrossLanguageFlag
+		bitmap |= XLangFlag
 	} else {
 		return fmt.Errorf("%d language is not supported", f.language)
 	}
 	if callback != nil {
-		bitmap |= isOutOfBandFlag
+		bitmap |= CallBackFlag
 	}
 	if err := buffer.WriteByte(bitmap); err != nil {
 		return err
 	}
 	if f.language != XLANG {
 		return fmt.Errorf("%d language is not supported", f.language)
+		buffer.WriteInt8(int8(GO))
 	} else {
 		if err := buffer.WriteByte(GO); err != nil {
 			return err
 		}
-		buffer.WriteInt32(0) // preserve 4-byte for nativeObjects start offsets.
-		buffer.WriteInt32(0)
 		if err := f.Write(buffer, v); err != nil {
 			return err
 		}
@@ -170,6 +177,8 @@ func (f *Fury) Write(buffer *ByteBuffer, v interface{}) (err error) {
 	switch v := v.(type) {
 	case nil:
 		buffer.WriteInt8(NullFlag)
+	case bool:
+		f.WriteBool(buffer, v)
 	case int32:
 		f.WriteInt32(buffer, v)
 	case int64:
@@ -188,37 +197,43 @@ func (f *Fury) Write(buffer *ByteBuffer, v interface{}) (err error) {
 
 func (f *Fury) WriteByte_(buffer *ByteBuffer, v interface{}) {
 	buffer.WriteInt8(NotNullValueFlag)
-	buffer.WriteInt16(UINT8)
+	buffer.WriteInt8(UINT8)
 	buffer.WriteByte_(v.(byte))
 }
 
 func (f *Fury) WriteInt16(buffer *ByteBuffer, v interface{}) {
 	buffer.WriteInt8(NotNullValueFlag)
-	buffer.WriteInt16(INT32)
+	buffer.WriteInt8(INT32)
 	buffer.WriteInt32(v.(int32))
+}
+
+func (f *Fury) WriteBool(buffer *ByteBuffer, v interface{}) {
+	buffer.WriteInt8(NotNullValueFlag)
+	buffer.WriteInt8(BOOL)
+	buffer.WriteBool(v.(bool))
 }
 
 func (f *Fury) WriteInt32(buffer *ByteBuffer, v interface{}) {
 	buffer.WriteInt8(NotNullValueFlag)
-	buffer.WriteInt16(INT32)
+	buffer.WriteInt8(INT32)
 	buffer.WriteInt32(v.(int32))
 }
 
 func (f *Fury) WriteInt64(buffer *ByteBuffer, v interface{}) {
 	buffer.WriteInt8(NotNullValueFlag)
-	buffer.WriteInt16(INT64)
+	buffer.WriteInt8(INT64)
 	buffer.WriteInt64(v.(int64))
 }
 
 func (f *Fury) WriteFloat32(buffer *ByteBuffer, v interface{}) {
 	buffer.WriteInt8(NotNullValueFlag)
-	buffer.WriteInt16(FLOAT)
+	buffer.WriteInt8(FLOAT)
 	buffer.WriteFloat32(v.(float32))
 }
 
 func (f *Fury) WriteFloat64(buffer *ByteBuffer, v interface{}) {
 	buffer.WriteInt8(NotNullValueFlag)
-	buffer.WriteInt16(DOUBLE)
+	buffer.WriteInt8(DOUBLE)
 	buffer.WriteFloat64(v.(float64))
 }
 
@@ -260,39 +275,31 @@ func (f *Fury) writeNonReferencableBySerializer(
 }
 
 func (f *Fury) writeValue(buffer *ByteBuffer, value reflect.Value, serializer Serializer) (err error) {
+	// Handle interface values by getting their concrete element
 	if value.Kind() == reflect.Interface {
 		value = value.Elem()
 	}
-	type_ := value.Type()
+
+	// Get type information for the value
+	typeInfo, err := f.typeResolver.getTypeInfo(value, true)
+	type_ := typeInfo.Type
+
+	// If no serializer provided, get one for the type
 	if serializer == nil {
 		serializer, err = f.typeResolver.getSerializerByType(type_)
 		if err != nil {
 			return err
 		}
 	}
-	typeId := serializer.TypeId()
-	buffer.WriteInt16(typeId)
-	if typeId != NotSupportCrossLanguage {
-		if typeId == FURY_TYPE_TAG {
-			var typeTag string
-			if value.Kind() == reflect.Ptr {
-				typeTag = serializer.(*ptrToStructSerializer).typeTag
-			} else {
-				typeTag = serializer.(*structSerializer).typeTag
-			}
-			if err := f.typeResolver.writeTypeTag(buffer, typeTag); err != nil {
-				return err
-			}
-		}
-		if typeId < NotSupportCrossLanguage {
-			if err := f.typeResolver.writeType(buffer, type_); err != nil {
-				return err
-			}
-		}
-		return serializer.Write(f, buffer, value)
-	} else {
-		return fmt.Errorf("type %v not supported", type_)
+
+	// Write type information to buffer
+	err = f.typeResolver.writeTypeInfo(buffer, typeInfo)
+	if err != nil {
+		return err
 	}
+
+	// Serialize the actual value using the serializer
+	return serializer.Write(f, buffer, value)
 }
 
 func (f *Fury) WriteBufferObject(buffer *ByteBuffer, bufferObject BufferObject) error {
@@ -332,21 +339,21 @@ func (f *Fury) Deserialize(buf *ByteBuffer, v interface{}, buffers []*ByteBuffer
 		return fmt.Errorf("%d language is not supported", f.language)
 	}
 	var bitmap = buf.ReadByte_()
-	if bitmap&isNilFlag == isNilFlag {
+	if bitmap&NilFlag != NilFlag {
 		return nil
 	}
-	isLittleEndian := bitmap&isLittleEndianFlag == isLittleEndianFlag
+	isLittleEndian := bitmap&LittleEndianFlag == LittleEndianFlag
 	if !isLittleEndian {
 		return fmt.Errorf("big endian is not supported for now, please ensure peer machine is little endian")
 	}
-	isCrossLanguage := bitmap&isCrossLanguageFlag == isCrossLanguageFlag
-	if isCrossLanguage {
+	isXLangFlag := bitmap&XLangFlag == XLangFlag
+	if isXLangFlag {
 		f.peerLanguage = buf.ReadByte_()
 	} else {
 		f.peerLanguage = GO
 	}
-	isOutOfBandEnabled := bitmap&isOutOfBandFlag == isOutOfBandFlag
-	if isOutOfBandEnabled {
+	isCallBackFlag := bitmap&CallBackFlag == CallBackFlag
+	if isCallBackFlag {
 		if buffers == nil {
 			return fmt.Errorf("uffers shouldn't be null when the serialized stream is " +
 				"produced with buffer_callback not null")
@@ -358,14 +365,7 @@ func (f *Fury) Deserialize(buf *ByteBuffer, v interface{}, buffers []*ByteBuffer
 				"produced with buffer_callback null")
 		}
 	}
-	if isCrossLanguage {
-		buf.ReadInt32() // nativeObjectsStartOffset
-		nativeObjectsSize := buf.ReadInt32()
-		if f.peerLanguage == GO {
-			if nativeObjectsSize > 0 {
-				return fmt.Errorf("native serialization for golang is not supported currently")
-			}
-		}
+	if isXLangFlag {
 		return f.ReadReferencable(buf, reflect.ValueOf(v).Elem())
 	} else {
 		return fmt.Errorf("native serialization for golang is not supported currently")
@@ -405,70 +405,37 @@ func (f *Fury) readReferencableBySerializer(buf *ByteBuffer, value reflect.Value
 }
 
 func (f *Fury) readData(buffer *ByteBuffer, value reflect.Value, serializer Serializer) (err error) {
-	typeId := buffer.ReadInt16()
-	if typeId != NotSupportCrossLanguage {
-		var type_ reflect.Type
-		if typeId == FURY_TYPE_TAG {
-			type_, err = f.typeResolver.readTypeByReadTag(buffer)
-			if err != nil {
-				return err
-			}
-		}
-		if typeId < NotSupportCrossLanguage {
-			if f.peerLanguage != GO {
-				// skip peer language specific type info
-				_, err = f.typeResolver.readTypeInfo(buffer)
-				if err != nil {
-					return err
-				}
-				type_, err = f.typeResolver.getTypeById(-typeId)
-				if err != nil {
-					return err
-				}
-			} else {
-				type_, err = f.typeResolver.readType(buffer)
-				if err != nil {
-					return err
-				}
-			}
-		} else {
-			if typeId != FURY_TYPE_TAG {
-				type_, err = f.typeResolver.getTypeById(typeId)
-				if err != nil {
-					return err
-				}
-			}
-		}
-		if serializer == nil {
-			serializer, err = f.typeResolver.getSerializerByType(type_)
-			if err != nil {
-				return err
-			}
-		}
-		// `type_` may be more concrete than `value.Type()`. For example, `value.Type()` may be interface type.
-		// in serializers.
-		if value.Kind() == reflect.Interface {
-			// interfaceValue.Elem is not addressable, so we don't invoke `Elem` on interface. We create a new
-			// addressable concreate value to populate instead. Otherwise, we will need to handle interface in
-			// every serializers.
-			newValue := reflect.New(type_).Elem()
-			err := serializer.Read(f, buffer, type_, newValue)
-			if err != nil {
-				return err
-			}
-			value.Set(newValue)
-			return nil
-		} else {
-			// handle value nil in the serializers since default value of most types are not nil
-			// and for nil, those values are composite values, check is cheap.
-			return serializer.Read(f, buffer, type_, value)
-		}
+	var typeInfo TypeInfo
+	var type_ reflect.Type
+
+	// Read type information from the buffer
+	typeInfo, err = f.typeResolver.readTypeInfo(buffer)
+	if serializer == nil {
+		serializer = typeInfo.Serializer // Use serializer from type info if none provided
+	}
+
+	// Determine concrete type (use value's type if type info is nil)
+	if typeInfo.Type == nil {
+		type_ = value.Type()
 	} else {
-		typeInfo, err := f.typeResolver.readTypeInfo(buffer)
+		type_ = typeInfo.Type
+	}
+
+	// Handle interface types specially
+	if value.Kind() == reflect.Interface {
+		// Create a new concrete value since interface elements aren't addressable
+		newValue := reflect.New(type_).Elem()
+		err := serializer.Read(f, buffer, type_, newValue)
 		if err != nil {
 			return err
 		}
-		return fmt.Errorf("native objects of type %s not supported for now", typeInfo)
+		// Set the populated concrete value into the interface
+		value.Set(newValue)
+		return nil
+	} else {
+		// For non-interface types, read directly into the value
+		// (nil checks are handled by individual serializers)
+		return serializer.Read(f, buffer, typeInfo.Type, value)
 	}
 }
 

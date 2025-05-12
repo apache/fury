@@ -582,9 +582,14 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     // Preconditions.checkArgument(isMonomorphic(cls), cls);
     Reference serializerRef = serializerMap.get(cls);
     if (serializerRef == null) {
-      // potential recursive call for seq codec generation is handled in `getSerializerClass`.
-      Class<? extends Serializer> serializerClass =
-          visitFury(f -> f.getClassResolver().getSerializerClass(cls));
+      Class<? extends Serializer> serializerClass;
+      if (fury.isCrossLanguage()) {
+        // xlang will take all map/collection interface as monomorphic
+        serializerClass = visitFury(f -> f.getXtypeResolver().getSerializer(cls)).getClass();
+      } else {
+        // potential recursive call for seq codec generation is handled in `getSerializerClass`.
+        serializerClass = visitFury(f -> f.getClassResolver().getSerializerClass(cls));
+      }
       Preconditions.checkNotNull(serializerClass, "Unsupported for class " + cls);
       if (!ReflectionUtils.isPublic(serializerClass)) {
         // TODO(chaokunyang) add jdk17+ unexported class check.
@@ -1867,6 +1872,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
                   new Assign(
                       chunkHeader, cast(bitand(sizeAndHeader, ofInt(0xff)), PRIMITIVE_INT_TYPE)),
                   new Assign(size, cast(shift(">>>", sizeAndHeader, 8), PRIMITIVE_INT_TYPE)));
+              exprs.add(new If(eq(size, ofInt(0)), new Break()));
               Expression sizeAndHeader2 =
                   readChunk(buffer, newMap, size, keyType, valueType, chunkHeader);
               if (inline) {

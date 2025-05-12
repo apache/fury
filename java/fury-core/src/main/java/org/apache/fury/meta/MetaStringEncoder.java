@@ -20,8 +20,6 @@
 package org.apache.fury.meta;
 
 import java.nio.charset.StandardCharsets;
-import java.util.HashSet;
-import org.apache.fury.collection.Collections;
 import org.apache.fury.meta.MetaString.Encoding;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.StringUtils;
@@ -55,7 +53,7 @@ public class MetaStringEncoder {
 
   public MetaString encode(String input, Encoding[] encodings) {
     if (input.isEmpty()) {
-      return new MetaString(input, Encoding.UTF_8, specialChar1, specialChar2, new byte[0]);
+      return MetaString.EMPTY;
     }
     if (!StringUtils.isLatin(input.toCharArray())) {
       return new MetaString(
@@ -83,7 +81,7 @@ public class MetaStringEncoder {
       throw new IllegalArgumentException("Non-ASCII characters in meta string are not allowed");
     }
     if (input.isEmpty()) {
-      return new MetaString(input, Encoding.UTF_8, specialChar1, specialChar2, new byte[0]);
+      return MetaString.EMPTY;
     }
     byte[] bytes;
     switch (encoding) {
@@ -107,42 +105,39 @@ public class MetaStringEncoder {
     }
   }
 
-  public Encoding computeEncoding(String input) {
-    return computeEncoding(input, Encoding.values());
-  }
-
   public Encoding computeEncoding(String input, Encoding[] encodings) {
-    HashSet<Encoding> encodingSet = Collections.ofHashSet(encodings);
     if (input.isEmpty()) {
-      if (encodingSet.contains(Encoding.LOWER_SPECIAL)) {
-        return Encoding.LOWER_SPECIAL;
-      }
+      return Encoding.forEmptyStr();
+    }
+    boolean[] encodingFlags = new boolean[Encoding.values().length];
+    for (Encoding encoding : encodings) {
+      encodingFlags[encoding.ordinal()] = true;
     }
     char[] chars = input.toCharArray();
     StringStatistics statistics = computeStatistics(chars);
     if (statistics.canLowerSpecialEncoded) {
-      if (encodingSet.contains(Encoding.LOWER_SPECIAL)) {
+      if (encodingFlags[Encoding.LOWER_SPECIAL.ordinal()]) {
         return Encoding.LOWER_SPECIAL;
       }
     }
     if (statistics.canLowerUpperDigitSpecialEncoded) {
       if (statistics.digitCount != 0) {
-        if (encodingSet.contains(Encoding.LOWER_UPPER_DIGIT_SPECIAL)) {
+        if (encodingFlags[Encoding.LOWER_UPPER_DIGIT_SPECIAL.ordinal()]) {
           return Encoding.LOWER_UPPER_DIGIT_SPECIAL;
         }
       }
       int upperCount = statistics.upperCount;
       if (upperCount == 1 && Character.isUpperCase(chars[0])) {
-        if (encodingSet.contains(Encoding.FIRST_TO_LOWER_SPECIAL)) {
+        if (encodingFlags[Encoding.FIRST_TO_LOWER_SPECIAL.ordinal()]) {
           return Encoding.FIRST_TO_LOWER_SPECIAL;
         }
       }
       if ((chars.length + upperCount) * 5 < (chars.length * 6)) {
-        if (encodingSet.contains(Encoding.ALL_TO_LOWER_SPECIAL)) {
+        if (encodingFlags[Encoding.ALL_TO_LOWER_SPECIAL.ordinal()]) {
           return Encoding.ALL_TO_LOWER_SPECIAL;
         }
       }
-      if (encodingSet.contains(Encoding.LOWER_UPPER_DIGIT_SPECIAL)) {
+      if (encodingFlags[Encoding.LOWER_UPPER_DIGIT_SPECIAL.ordinal()]) {
         return Encoding.LOWER_UPPER_DIGIT_SPECIAL;
       }
     }

@@ -162,6 +162,8 @@ public class Types {
   /** An (arrow table) object. */
   public static final int ARROW_TABLE = 39;
 
+  public static final int UNKNOWN = 63;
+
   // Helper methods
   public static boolean isStructType(int value) {
     return value == STRUCT
@@ -178,6 +180,10 @@ public class Types {
     return value == ENUM || value == NAMED_ENUM;
   }
 
+  public static boolean isUserDefinedType(byte typeId) {
+    return isStructType(typeId) || isExtType(typeId) || isEnumType(typeId);
+  }
+
   private static final Map<Class, Integer> PRIMITIVE_TYPE_ID_MAP =
       ofHashMap(
           boolean.class, BOOL,
@@ -191,5 +197,61 @@ public class Types {
   public static int getPrimitiveTypeId(Class<?> cls) {
     Preconditions.checkArgument(cls.isPrimitive(), "Class %s is not primitive", cls);
     return PRIMITIVE_TYPE_ID_MAP.getOrDefault(cls, -1);
+  }
+
+  public static boolean isPrimitiveType(int typeId) {
+    // noinspection Duplicates
+    switch (typeId) {
+      case BOOL:
+      case INT8:
+      case INT16:
+      case INT32:
+      case INT64:
+      case FLOAT32:
+      case FLOAT64:
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  public static boolean isPrimitiveArray(int typeId) {
+    // noinspection Duplicates
+    switch (typeId) {
+      case BOOL_ARRAY:
+      case INT8_ARRAY:
+      case INT16_ARRAY:
+      case INT32_ARRAY:
+      case INT64_ARRAY:
+      case FLOAT32_ARRAY:
+      case FLOAT64_ARRAY:
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  public static int getPrimitiveArrayTypeId(int typeId) {
+    switch (typeId) {
+      case BOOL:
+        return BOOL_ARRAY;
+      case INT8:
+        return INT8_ARRAY;
+      case INT16:
+        return INT16_ARRAY;
+      case INT32:
+        return INT32_ARRAY;
+      case INT64:
+        return INT64_ARRAY;
+      case FLOAT16:
+        return FLOAT16_ARRAY;
+      case FLOAT32:
+        return FLOAT32_ARRAY;
+      case FLOAT64:
+        return FLOAT64_ARRAY;
+      default:
+        throw new IllegalArgumentException(
+            String.format("Type id %d is not a primitive id", typeId));
+    }
   }
 }

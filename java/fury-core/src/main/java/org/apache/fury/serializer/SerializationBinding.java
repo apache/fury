@@ -88,6 +88,8 @@ interface SerializationBinding {
 
   Object readContainerFieldValueRef(MemoryBuffer buffer, GenericTypeField fieldInfo);
 
+  int preserveRefId(int refId);
+
   static SerializationBinding createBinding(Fury fury) {
     if (fury.isCrossLanguage()) {
       return new XlangSerializationBinding(fury);
@@ -99,10 +101,12 @@ interface SerializationBinding {
   final class JavaSerializationBinding implements SerializationBinding {
     private final Fury fury;
     private final ClassResolver classResolver;
+    private final RefResolver refResolver;
 
     JavaSerializationBinding(Fury fury) {
       this.fury = fury;
       classResolver = fury.getClassResolver();
+      refResolver = fury.getRefResolver();
     }
 
     @Override
@@ -278,6 +282,11 @@ interface SerializationBinding {
     public void writeContainerFieldValue(
         MemoryBuffer buffer, Object fieldValue, ClassInfo classInfo) {
       fury.writeNonRef(buffer, fieldValue, classInfo);
+    }
+
+    @Override
+    public int preserveRefId(int refId) {
+      return refResolver.preserveRefId(refId);
     }
   }
 
@@ -478,6 +487,11 @@ interface SerializationBinding {
     public void writeContainerFieldValue(
         MemoryBuffer buffer, Object fieldValue, ClassInfo classInfo) {
       fury.xwriteData(buffer, classInfo, fieldValue);
+    }
+
+    @Override
+    public int preserveRefId(int refId) {
+      return refResolver.preserveRefId(refId);
     }
   }
 }

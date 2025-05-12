@@ -85,7 +85,7 @@ final class FuryHeaderSerializer {
     }
     // callback must be null
     bd.writeInt8(bitmap);
-    bd.writeInt8(Language.JAVA.index);
+    bd.writeInt8(Language.dart.index);
     // Next is xWriteRef, handed over to the outside
   }
 }

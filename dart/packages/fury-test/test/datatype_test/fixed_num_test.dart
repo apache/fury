@@ -20,34 +20,25 @@
 // @Skip()
 library;
 
-import 'package:fury/fury.dart' show FixedNum, Float32, Int16, Int32, Int8;
+import 'package:fury/fury.dart' show FixedNum, Float32, Int16, Int32, Int8, NumType;
 import 'package:test/test.dart';
 
 void main() {
-  group('FixedNum Base Class Tests', () {
-    test('FixedNum.from() creates the correct type', () {
-      expect(FixedNum.from(42, type: 'int8'), isA<Int8>());
-      expect(FixedNum.from(42, type: 'int16'), isA<Int16>());
-      expect(FixedNum.from(42, type: 'int32'), isA<Int32>());
-      expect(FixedNum.from(42, type: 'float32'), isA<Float32>());
+  group('FixedNum factory & comparability', () {
+    test('creates correct subtype via FixedNum.from', () {
+      expect(FixedNum.from(42, NumType.int8), isA<Int8>());
+      expect(FixedNum.from(42, NumType.int16), isA<Int16>());
+      expect(FixedNum.from(42, NumType.int32), isA<Int32>());
+      expect(FixedNum.from(42, NumType.float32), isA<Float32>());
 
       // Default type should be int32
       expect(FixedNum.from(42), isA<Int32>());
     });
 
-    test('FixedNum.from() handles case insensitivity', () {
-      expect(FixedNum.from(42, type: 'INT8'), isA<Int8>());
-      expect(FixedNum.from(42, type: 'Int16'), isA<Int16>());
-    });
-
-    test('FixedNum.from() throws on invalid type', () {
-      expect(() => FixedNum.from(42, type: 'invalid'), throwsArgumentError);
-    });
-
-    test('FixedNum instances are comparable', () {
-      var a = FixedNum.from(10, type: 'int8');
-      var b = FixedNum.from(20, type: 'int8');
-      var c = FixedNum.from(10, type: 'int16');
+    test('compares values across types', () {
+      var a = FixedNum.from(10, NumType.int8);
+      var b = FixedNum.from(20, NumType.int8);
+      var c = FixedNum.from(10, NumType.int16);
 
       expect(a.compareTo(b) < 0, isTrue);
       expect(b.compareTo(a) > 0, isTrue);
@@ -55,9 +46,9 @@ void main() {
     });
   });
 
-  group('Int8 Tests', () {
-    group('Construction and Range Handling', () {
-      test('Constructor handles values within range', () {
+  group('Int8 behaviors', () {
+    group('range & conversion', () {
+      test('preserves in-range values', () {
         var a = Int8(127);
         var b = Int8(-128);
 
@@ -65,7 +56,7 @@ void main() {
         expect(b.value, -128);
       });
 
-      test('Constructor handles overflow and underflow', () {
+      test('wraps on overflow/underflow', () {
         var a = Int8(128);  // Overflow
         var b = Int8(255);  // Overflow to -1
         var c = Int8(256);  // Overflow to 0
@@ -77,7 +68,7 @@ void main() {
         expect(d.value, 127);
       });
 
-      test('Constructor handles floating point values', () {
+      test('truncates float inputs', () {
         var a = Int8(42.7);
         var b = Int8(-42.7);
 
@@ -85,7 +76,7 @@ void main() {
         expect(b.value, -42);
       });
 
-      test('Min and Max values are correct', () {
+      test('min/max constants and instances', () {
         expect(Int8.MIN_VALUE, -128);
         expect(Int8.MAX_VALUE, 127);
         expect(Int8.minValue.value, -128);
@@ -93,8 +84,8 @@ void main() {
       });
     });
 
-    group('Arithmetic Operators', () {
-      test('Addition works with overflow handling', () {
+    group('arithmetic operators with overflow', () {
+      test('addition with overflow', () {
         var a = Int8(100);
         var b = Int8(50);
         var result = a + b;
@@ -103,7 +94,7 @@ void main() {
         expect(result.value, -106); // 100 + 50 = 150, which overflows to -106
       });
 
-      test('Addition works with FixedNum and raw numbers', () {
+      test('addition with FixedNum & num', () {
         var a = Int8(100);
         var b = Int8(50);
 
@@ -111,7 +102,7 @@ void main() {
         expect((a + 50).value, -106);
       });
 
-      test('Subtraction works with underflow handling', () {
+      test('subtraction with underflow', () {
         var a = Int8(-100);
         var b = Int8(50);
         var result = a - b;
@@ -120,7 +111,7 @@ void main() {
         expect(result.value, 106); // -100 - 50 = -150, which underflows to 106
       });
 
-      test('Multiplication works with overflow handling', () {
+      test('multiplication with overflow', () {
         var a = Int8(20);
         var b = Int8(10);
         var result = a * b;
@@ -129,7 +120,7 @@ void main() {
         expect(result.value, -56); // 20 * 10 = 200, which overflows to -56
       });
 
-      test('Division returns double', () {
+      test('division returns double', () {
         var a = Int8(100);
         var b = Int8(25);
         var result = a / b;
@@ -138,7 +129,7 @@ void main() {
         expect(result, 4.0);
       });
 
-      test('Integer division works with overflow handling', () {
+      test('integer division with overflow', () {
         var a = Int8(100);
         var b = Int8(3);
         var result = a ~/ b;
@@ -147,7 +138,7 @@ void main() {
         expect(result.value, 33);
       });
 
-      test('Modulo works correctly', () {
+      test('modulo operation', () {
         var a = Int8(100);
         var b = Int8(30);
         var result = a % b;
@@ -156,7 +147,7 @@ void main() {
         expect(result.value, 10);
       });
 
-      test('Negation works with overflow handling', () {
+      test('negation with overflow', () {
         var a = Int8(127);
         var b = Int8(-128);
 
@@ -165,8 +156,8 @@ void main() {
       });
     });
 
-    group('Bitwise Operators', () {
-      test('Bitwise AND works correctly', () {
+    group('bitwise operators', () {
+      test('bitwise AND', () {
         var a = Int8(170); // 10101010 in binary
         var b = Int8(240); // 11110000 in binary
         var result = a & b;
@@ -175,7 +166,7 @@ void main() {
         expect(result.value, Int8(160)); // 10100000 in binary
       });
 
-      test('Bitwise OR works correctly', () {
+      test('bitwise OR', () {
         var a = Int8(170); // 10101010 in binary
         var b = Int8(240); // 11110000 in binary
         var result = a | b;
@@ -184,7 +175,7 @@ void main() {
         expect(result.value, Int8(250)); // 11111010 in binary
       });
 
-      test('Bitwise XOR works correctly', () {
+      test('bitwise XOR', () {
         var a = Int8(170); // 10101010 in binary
         var b = Int8(240); // 11110000 in binary
         var result = a ^ b;
@@ -193,7 +184,7 @@ void main() {
         expect(result.value, 90); // 01011010 in binary
       });
 
-      test('Bitwise NOT works correctly', () {
+      test('bitwise NOT', () {
         var a = Int8(170); // 10101010 in binary
         var result = ~a;
 
@@ -201,7 +192,7 @@ void main() {
         expect(result.value, 85); // 01010101 in binary
       });
 
-      test('Left shift works correctly', () {
+      test('left shift', () {
         var a = Int8(10); // 00001010 in binary
         var result = a << 2;
 
@@ -209,7 +200,7 @@ void main() {
         expect(result.value, 40); // 00101000 in binary
       });
 
-      test('Right shift works correctly', () {
+      test('arithmetic right shift', () {
         var a = Int8(-96); // 10100000 in binary
         var result = a >> 3;
 
@@ -218,8 +209,8 @@ void main() {
       });
     });
 
-    group('Comparison Operators', () {
-      test('Less than works correctly', () {
+    group('comparison operators', () {
+      test('less than', () {
         var a = Int8(10);
         var b = Int8(20);
 
@@ -228,7 +219,7 @@ void main() {
         expect(a < 20, isTrue);
       });
 
-      test('Less than or equal works correctly', () {
+      test('less or equal', () {
         var a = Int8(10);
         var b = Int8(20);
         var c = Int8(10);
@@ -238,7 +229,7 @@ void main() {
         expect(b <= a, isFalse);
       });
 
-      test('Greater than works correctly', () {
+      test('greater than', () {
         var a = Int8(20);
         var b = Int8(10);
 
@@ -247,7 +238,7 @@ void main() {
         expect(a > 10, isTrue);
       });
 
-      test('Greater than or equal works correctly', () {
+      test('greater or equal', () {
         var a = Int8(20);
         var b = Int8(10);
         var c = Int8(20);
@@ -258,12 +249,12 @@ void main() {
       });
     });
 
-    group('Equality and Hash Code', () {
-      test('Equality works with FixedNum and raw numbers', () {
+    group('equality & hashCode', () {
+      test('equality across types & raw numbers', () {
         var a = Int8(42);
         var b = Int8(42);
         var c = Int8(43);
-        var d = FixedNum.from(42, type: 'int16');
+        var d = FixedNum.from(42, NumType.int16);
 
         expect(a == b, isTrue);
         expect(a == c, isFalse);
@@ -272,7 +263,7 @@ void main() {
         expect(a == d, isTrue); // Different types but same value
       });
 
-      test('Hash code is consistent with equals', () {
+      test('hashCode consistency', () {
         var a = Int8(42);
         var b = Int8(42);
         var c = Int8(43);
@@ -282,8 +273,8 @@ void main() {
       });
     });
 
-    group('Common Methods', () {
-      test('abs() works correctly', () {
+    group('common methods', () {
+      test('abs value', () {
         var a = Int8(42);
         var b = Int8(-42);
 
@@ -291,7 +282,7 @@ void main() {
         expect(b.abs(), 42);
       });
 
-      test('sign works correctly', () {
+      test('sign property', () {
         var a = Int8(42);
         var b = Int8(-42);
         var c = Int8(0);
@@ -301,7 +292,7 @@ void main() {
         expect(c.sign, 0);
       });
 
-      test('isNegative works correctly', () {
+      test('isNegative flag', () {
         var a = Int8(42);
         var b = Int8(-42);
         var c = Int8(0);
@@ -312,8 +303,8 @@ void main() {
       });
     });
 
-    group('Type Conversions', () {
-      test('toInt() works correctly', () {
+    group('type conversions', () {
+      test('toInt conversion', () {
         var a = Int8(42);
         var b = Int8(-42);
 
@@ -321,7 +312,7 @@ void main() {
         expect(b.toInt(), -42);
       });
 
-      test('toDouble() works correctly', () {
+      test('toDouble conversion', () {
         var a = Int8(42);
         var b = Int8(-42);
 
@@ -329,7 +320,7 @@ void main() {
         expect(b.toDouble(), -42.0);
       });
 
-      test('Conversion to other fixed types works', () {
+      test('conversion to other fixed types', () {
         var a = Int8(42);
 
         expect(a.toInt16(), isA<Int16>());
@@ -342,7 +333,7 @@ void main() {
         expect(a.toFloat32().value, 42.0);
       });
 
-      test('toString() works correctly', () {
+      test('toString representation', () {
         var a = Int8(42);
         var b = Int8(-42);
 
@@ -351,8 +342,8 @@ void main() {
       });
     });
 
-    group('Edge Cases and Random Tests', () {
-      test('Test with random values for overflow behavior', () {
+    group('edge & random tests', () {
+      test('random overflow behavior', () {
         // Instead of property-based testing, we'll use a set of random values
         final random = [
           27, 99, 128, 129, 255, 256, 300, -1, -127, -128, -129, -200, -256
@@ -365,7 +356,7 @@ void main() {
         }
       });
 
-      test('Test arithmetic operations with random values', () {
+      test('random arithmetic correctness', () {
         final values = [10, 50, 100, 127, -10, -50, -100, -128];
 
         for (final a in values) {

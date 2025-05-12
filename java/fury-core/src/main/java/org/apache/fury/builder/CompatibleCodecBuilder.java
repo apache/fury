@@ -128,6 +128,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
 
   @Override
   protected boolean isMonomorphic(Class<?> clz) {
+    Preconditions.checkArgument(!fury.isCrossLanguage());
     return ReflectionUtils.isMonomorphic(clz);
   }
 
