@@ -44,7 +44,7 @@ github:
     - multiple-language
   enabled_merge_buttons:
     squash: true
-    merge: true
+    merge: false
     rebase: true
   protected_branches:
     main:
