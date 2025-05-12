@@ -51,6 +51,7 @@ public class ArraySerializers {
     private final Class<T> innerType;
     private final Serializer componentTypeSerializer;
     private final FuryArrayAsListSerializer collectionSerializer;
+    private ArrayAsList list;
     private final GenericType collectionGenericType;
     private final ClassInfoHolder classInfoHolder;
     private final int[] stubDims;
@@ -80,13 +81,8 @@ public class ArraySerializers {
           this.collectionGenericType = null;
         } else {
           this.componentTypeSerializer = fury.getClassResolver().getSerializer(componentType);
-          if (dimension > 1) {
-            this.collectionSerializer = new FuryArrayAsListSerializer(fury);
-            this.collectionGenericType = buildCollectionGenericType(dimension);
-          } else {
-            this.collectionSerializer = null;
-            this.collectionGenericType = null;
-          }
+          this.collectionSerializer = new FuryArrayAsListSerializer(fury);
+          this.collectionGenericType = buildCollectionGenericType(dimension);
         }
       } else {
         // TODO add ClassInfo cache for non-final component type.
@@ -95,6 +91,7 @@ public class ArraySerializers {
         this.collectionGenericType = null;
       }
       this.stubDims = new int[dimension];
+      this.list = null;
       classInfoHolder = fury.getClassResolver().nilClassInfoHolder();
     }
 
@@ -105,10 +102,18 @@ public class ArraySerializers {
       Serializer componentSerializer = this.componentTypeSerializer;
       if (this.collectionSerializer != null) {
         fury.getGenerics().pushGenericType(this.collectionGenericType);
-        ArrayAsList list = new ArrayAsList(0);
+        ArrayAsList list = this.list;
+        if (list == null) {
+          list = new ArrayAsList(0);
+        } else {
+          this.list = null;
+        }
         list.setArray(arr);
+        fury.incDepth(1);
         this.collectionSerializer.write(buffer, list);
+        fury.incDepth(1);
         fury.getGenerics().popGenericType();
+        this.list = list;
       } else {
         int header = componentSerializer != null ? 0b1 : 0b0;
         buffer.writeVarUint32Small7(len << 1 | header);

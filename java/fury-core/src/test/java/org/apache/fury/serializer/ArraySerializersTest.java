@@ -76,7 +76,6 @@ public class ArraySerializersTest extends FuryTestBase {
         fury1, fury2, new Object[] {false, true, (byte) 1, (byte) 1, (float) 1.0, (float) 1.1});
     serDeCheckTyped(fury1, fury2, new String[] {"str", "str"});
     serDeCheckTyped(fury1, fury2, new Object[] {"str", 1});
-    serDeCheckTyped(fury1, fury2, new String[][] {{"str", "str"}, {"abc", "def"}});
   }
 
   @Test(dataProvider = "furyCopyConfig")
@@ -120,6 +119,7 @@ public class ArraySerializersTest extends FuryTestBase {
           {false, true, (byte) 1, (byte) 1, (float) 1.0, (float) 1.1}
         });
     serDeCheckTyped(fury1, fury2, new Integer[][] {{1, 2}, {1, 2}});
+    serDeCheckTyped(fury1, fury2, new String[][][] {{{"str", "str"}, {"str", "str"}}});
   }
 
   @Test(dataProvider = "furyCopyConfig")
