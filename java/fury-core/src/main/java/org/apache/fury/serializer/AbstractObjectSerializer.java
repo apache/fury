@@ -95,7 +95,6 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
       if (!fieldInfo.trackingRef) {
         return binding.readNullable(buffer, serializer, nullable);
       }
-      refResolver.preserveRefId(-1);
       // whether tracking ref is recorded in `fieldInfo.serializer`, so it's still
       // consistent with jit serializer.
       fieldValue = binding.readRef(buffer, serializer);
@@ -110,7 +109,6 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
           fieldValue = refResolver.getReadObject();
         }
       } else {
-        refResolver.preserveRefId(-1);
         if (nullable) {
           byte headFlag = buffer.readByte();
           if (headFlag == Fury.NULL_FLAG) {
