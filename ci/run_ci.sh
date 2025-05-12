@@ -34,6 +34,8 @@ install_python() {
 
 install_pyfury() {
   echo "Python version $(python -V), path $(which python)"
+  export PATH=~/bin:$PATH
+  echo "$HOME/bin/bazel version: $(~/bin/bazel version)"
   "$ROOT"/ci/deploy.sh install_pyarrow
   pip install Cython wheel "numpy<2.0.0" pytest
   pushd "$ROOT/python"
@@ -50,6 +52,7 @@ install_bazel() {
   if command -v bazel >/dev/null; then
     echo "existing bazel location $(which bazel)"
     echo "existing bazel version $(bazel version)"
+    rm -rf "$(which bazel)"
   fi
   # GRPC support bazel 6.3.2 https://grpc.github.io/grpc/core/md_doc_bazel_support.html
   UNAME_OUT="$(uname -s)"
