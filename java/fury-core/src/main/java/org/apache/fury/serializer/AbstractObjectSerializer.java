@@ -124,7 +124,6 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
 
   static Object readOtherFieldValue(
       SerializationBinding binding,
-      RefResolver refResolver,
       GenericTypeField fieldInfo,
       MemoryBuffer buffer) {
     Object fieldValue;
@@ -132,7 +131,7 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
     if (fieldInfo.trackingRef) {
       fieldValue = binding.readRef(buffer, fieldInfo);
     } else {
-      refResolver.preserveRefId(-1);
+      binding.preserveRefId(-1);
       if (nullable) {
         byte headFlag = buffer.readByte();
         if (headFlag == Fury.NULL_FLAG) {
