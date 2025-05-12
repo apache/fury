@@ -395,14 +395,11 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       if (nullable) {
         Expression action =
             new ListExpression(
-                new Invoke(
-                    buffer,
-                    "writeByte",
-                    new Literal(Fury.NOT_NULL_VALUE_FLAG, PRIMITIVE_BYTE_TYPE)),
+                new Invoke(buffer, "writeByte", Literal.ofByte(Fury.NOT_NULL_VALUE_FLAG)),
                 serializeForNotNull(inputObject, buffer, typeRef, serializer, generateNewMethod));
         return new If(
             eqNull(inputObject),
-            new Invoke(buffer, "writeByte", new Literal(Fury.NULL_FLAG, PRIMITIVE_BYTE_TYPE)),
+            new Invoke(buffer, "writeByte", Literal.ofByte(Fury.NULL_FLAG)),
             action);
       } else {
         return serializeForNotNull(inputObject, buffer, typeRef, serializer, generateNewMethod);
@@ -1499,7 +1496,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
       Expression notNull =
           neq(
               inlineInvoke(buffer, "readByte", PRIMITIVE_BYTE_TYPE),
-              new Literal(Fury.NULL_FLAG, PRIMITIVE_BYTE_TYPE));
+              Literal.ofByte(Fury.NULL_FLAG));
       Expression value = deserializeForNotNull.get();
       // use false to ignore null.
       return new If(notNull, callback.apply(value), callback.apply(nullValue(typeRef)), false);

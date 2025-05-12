@@ -341,10 +341,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
       Expression bean, Expression buffer, FieldInfo fieldInfo) {
     Descriptor descriptor = createDescriptor(fieldInfo);
     walkPath.add(descriptor.getDeclaringClass() + descriptor.getName());
-    boolean nullable = false;
-    if (!descriptor.getTypeRef().isPrimitive()) {
-      nullable = descriptor.getFuryField() == null || descriptor.getFuryField().nullable();
-    }
+    boolean nullable = descriptor.isNullable();
     Expression fieldValue = getFieldValue(bean, descriptor);
     walkPath.removeLast();
     return serializeForNullable(fieldValue, buffer, descriptor.getTypeRef(), nullable);
@@ -505,10 +502,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
 
   private Expression readEmbedTypes4(
       Expression bean, Expression buffer, Descriptor descriptor, Expression partFieldInfo) {
-    boolean nullable = false;
-    if (!descriptor.getTypeRef().isPrimitive()) {
-      nullable = descriptor.getFuryField() == null || descriptor.getFuryField().nullable();
-    }
+    boolean nullable = descriptor.isNullable();
     Expression deserializeAction =
         deserializeForNullable(
             buffer,
@@ -715,10 +709,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
 
   private Expression readEmbedTypes8Field(
       Expression bean, Expression buffer, Descriptor descriptor, Expression partFieldInfo) {
-    boolean nullable = false;
-    if (!descriptor.getTypeRef().isPrimitive()) {
-      nullable = descriptor.getFuryField() == null || descriptor.getFuryField().nullable();
-    }
+    boolean nullable = descriptor.isNullable();
     Expression deserializeAction =
         deserializeForNullable(
             buffer,

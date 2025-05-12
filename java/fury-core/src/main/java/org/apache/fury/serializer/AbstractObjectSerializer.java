@@ -995,9 +995,7 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
       this.qualifiedFieldName = d.getDeclaringClass() + "." + d.getName();
       this.fieldAccessor = d.getField() != null ? FieldAccessor.createAccessor(d.getField()) : null;
       FuryField furyField = d.getFuryField();
-      if (!typeRef.isPrimitive()) {
-        nullable = furyField == null || furyField.nullable();
-      }
+      nullable = d.isNullable();
       if (fury.trackingRef()) {
         trackingRef =
             furyField != null

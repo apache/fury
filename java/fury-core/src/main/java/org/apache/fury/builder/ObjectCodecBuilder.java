@@ -204,10 +204,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
             // `bean` will be replaced by `Reference` to cut-off expr dependency.
             Expression fieldValue = getFieldValue(bean, d);
             walkPath.add(d.getDeclaringClass() + d.getName());
-            boolean nullable = false;
-            if (!d.getTypeRef().isPrimitive()) {
-              nullable = d.getFuryField() == null || d.getFuryField().nullable();
-            }
+            boolean nullable = d.isNullable();
             Expression fieldExpr =
                 serializeForNullable(fieldValue, buffer, d.getTypeRef(), nullable);
             walkPath.removeLast();
@@ -559,10 +556,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
           for (Descriptor d : group) {
             ExpressionVisitor.ExprHolder exprHolder = ExpressionVisitor.ExprHolder.of("bean", bean);
             walkPath.add(d.getDeclaringClass() + d.getName());
-            boolean nullable = false;
-            if (!d.getTypeRef().isPrimitive()) {
-              nullable = d.getFuryField() == null || d.getFuryField().nullable();
-            }
+            boolean nullable = d.isNullable();
             Expression action =
                 deserializeForNullable(
                     buffer,
@@ -590,10 +584,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     ListExpression groupExpressions = new ListExpression();
     // use Reference to cut-off expr dependency.
     for (Descriptor d : group) {
-      boolean nullable = false;
-      if (!d.getTypeRef().isPrimitive()) {
-        nullable = d.getFuryField() == null || d.getFuryField().nullable();
-      }
+      boolean nullable = d.isNullable();
       Expression v = deserializeForNullable(buffer, d.getTypeRef(), expr -> expr, nullable);
       Expression action = setFieldValue(bean, d, tryInlineCast(v, d.getTypeRef()));
       groupExpressions.add(action);
