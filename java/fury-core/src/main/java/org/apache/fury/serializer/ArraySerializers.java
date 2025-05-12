@@ -22,7 +22,6 @@ package org.apache.fury.serializer;
 import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.IdentityHashMap;
-import java.util.List;
 import org.apache.fury.Fury;
 import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.memory.MemoryBuffer;
@@ -252,28 +251,12 @@ public class ArraySerializers {
       return value;
     }
 
-    private GenericType buildCollectionGenericType(int dimensions) {
-      GenericType genericType;
-      switch (dimensions) {
-        case 1:
-          genericType = GenericType.build(new TypeRef<List<T>>() {});
-          break;
-        case 2:
-          genericType = GenericType.build(new TypeRef<List<List<T>>>() {});
-          break;
-        case 3:
-          genericType = GenericType.build(new TypeRef<List<List<List<T>>>>() {});
-          break;
-        case 4:
-          genericType = GenericType.build(new TypeRef<List<List<List<List<T>>>>>() {});
-          break;
-        case 5:
-          genericType = GenericType.build(new TypeRef<List<List<List<List<List<T>>>>>>() {});
-          break;
-        default:
-          throw new IllegalStateException("Unexpected value: " + dimensions);
+    private GenericType buildCollectionGenericType(int dims) {
+      TypeRef arrayType = TypeRef.of(this.innerType);
+      for (int i = 0; i < dims; i++) {
+        arrayType = TypeUtils.collectionOf(arrayType);
       }
-      return genericType;
+      return GenericType.build(arrayType);
     }
   }
 
