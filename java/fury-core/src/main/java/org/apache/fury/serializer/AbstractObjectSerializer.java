@@ -148,7 +148,6 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
 
   static Object readContainerFieldValue(
       SerializationBinding binding,
-      RefResolver refResolver,
       Generics generics,
       GenericTypeField fieldInfo,
       MemoryBuffer buffer) {
@@ -158,7 +157,7 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
       fieldValue = binding.readContainerFieldValueRef(buffer, fieldInfo);
       generics.popGenericType();
     } else {
-      refResolver.preserveRefId(-1);
+      binding.preserveRefId(-1);
       boolean nullable = fieldInfo.nullable;
       if (nullable) {
         byte headFlag = buffer.readByte();

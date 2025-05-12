@@ -24,11 +24,7 @@ import static org.apache.fury.serializer.AbstractObjectSerializer.GenericTypeFie
 
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.resolver.ClassInfo;
-import org.apache.fury.resolver.ClassInfoHolder;
-import org.apache.fury.resolver.ClassResolver;
-import org.apache.fury.resolver.RefResolver;
-import org.apache.fury.resolver.XtypeResolver;
+import org.apache.fury.resolver.*;
 
 // This polymorphic interface has cost, do not expose it as a public class
 // If it's used in other packages in fury, duplicate it in those packages.
@@ -54,6 +50,8 @@ interface SerializationBinding {
   void writeNullable(MemoryBuffer buffer, Object obj, ClassInfoHolder classInfoHolder);
 
   void writeNullable(MemoryBuffer buffer, Object obj, ClassInfo classInfo);
+
+  int preserveRefId(int refId);
 
   void writeNullable(
       MemoryBuffer buffer, Object obj, ClassInfoHolder classInfoHolder, boolean nullable);
@@ -99,10 +97,12 @@ interface SerializationBinding {
   final class JavaSerializationBinding implements SerializationBinding {
     private final Fury fury;
     private final ClassResolver classResolver;
+    private final RefResolver refResolver;
 
     JavaSerializationBinding(Fury fury) {
       this.fury = fury;
       classResolver = fury.getClassResolver();
+      refResolver = fury.getRefResolver();
     }
 
     @Override
@@ -252,6 +252,11 @@ interface SerializationBinding {
         buffer.writeByte(NOT_NULL_VALUE_FLAG);
         fury.writeNonRef(buffer, obj, classInfo);
       }
+    }
+
+    @Override
+    public int preserveRefId(int refId) {
+      return refResolver.preserveRefId(refId);
     }
 
     @Override
@@ -452,6 +457,11 @@ interface SerializationBinding {
         buffer.writeByte(NOT_NULL_VALUE_FLAG);
         fury.xwriteNonRef(buffer, obj, classInfo);
       }
+    }
+
+    @Override
+    public int preserveRefId(int refId) {
+      return refResolver.preserveRefId(refId);
     }
 
     @Override
