@@ -24,7 +24,11 @@ import static org.apache.fury.serializer.AbstractObjectSerializer.GenericTypeFie
 
 import org.apache.fury.Fury;
 import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.resolver.*;
+import org.apache.fury.resolver.ClassInfo;
+import org.apache.fury.resolver.ClassInfoHolder;
+import org.apache.fury.resolver.ClassResolver;
+import org.apache.fury.resolver.RefResolver;
+import org.apache.fury.resolver.XtypeResolver;
 
 // This polymorphic interface has cost, do not expose it as a public class
 // If it's used in other packages in fury, duplicate it in those packages.
@@ -50,8 +54,6 @@ interface SerializationBinding {
   void writeNullable(MemoryBuffer buffer, Object obj, ClassInfoHolder classInfoHolder);
 
   void writeNullable(MemoryBuffer buffer, Object obj, ClassInfo classInfo);
-
-  int preserveRefId(int refId);
 
   void writeNullable(
       MemoryBuffer buffer, Object obj, ClassInfoHolder classInfoHolder, boolean nullable);
@@ -85,6 +87,8 @@ interface SerializationBinding {
   Object readContainerFieldValue(MemoryBuffer buffer, GenericTypeField field);
 
   Object readContainerFieldValueRef(MemoryBuffer buffer, GenericTypeField fieldInfo);
+
+  int preserveRefId(int refId);
 
   static SerializationBinding createBinding(Fury fury) {
     if (fury.isCrossLanguage()) {
@@ -255,11 +259,6 @@ interface SerializationBinding {
     }
 
     @Override
-    public int preserveRefId(int refId) {
-      return refResolver.preserveRefId(refId);
-    }
-
-    @Override
     public void writeNullable(
         MemoryBuffer buffer, Object obj, ClassInfoHolder classInfoHolder, boolean nullable) {
       if (nullable) {
@@ -283,6 +282,11 @@ interface SerializationBinding {
     public void writeContainerFieldValue(
         MemoryBuffer buffer, Object fieldValue, ClassInfo classInfo) {
       fury.writeNonRef(buffer, fieldValue, classInfo);
+    }
+
+    @Override
+    public int preserveRefId(int refId) {
+      return refResolver.preserveRefId(refId);
     }
   }
 
@@ -460,11 +464,6 @@ interface SerializationBinding {
     }
 
     @Override
-    public int preserveRefId(int refId) {
-      return refResolver.preserveRefId(refId);
-    }
-
-    @Override
     public void writeNullable(
         MemoryBuffer buffer, Object obj, ClassInfoHolder classInfoHolder, boolean nullable) {
       if (nullable) {
@@ -488,6 +487,11 @@ interface SerializationBinding {
     public void writeContainerFieldValue(
         MemoryBuffer buffer, Object fieldValue, ClassInfo classInfo) {
       fury.xwriteData(buffer, classInfo, fieldValue);
+    }
+
+    @Override
+    public int preserveRefId(int refId) {
+      return refResolver.preserveRefId(refId);
     }
   }
 }
