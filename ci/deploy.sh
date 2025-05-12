@@ -113,7 +113,7 @@ deploy_python() {
     pyarrow_dir=$(python -c "import importlib.util; import os; print(os.path.dirname(importlib.util.find_spec('pyarrow').origin))")
     # ensure pyarrow is clean
     rm -rf "$pyarrow_dir"
-    pip install --ignore-installed pyarrow==$pyarrow_version
+    install_pyarrow
     python setup.py clean
     python setup.py bdist_wheel
     mv dist/pyfury*.whl "$WHEEL_DIR"
@@ -126,14 +126,8 @@ deploy_python() {
 }
 
 install_pyarrow() {
-  pyversion=$(python -V | cut -d' ' -f2)
-  if [[ $pyversion  ==  3.7* ]]; then
-    pyarrow_version=12.0.0
-    sed -i -E "s/pyarrow_version = .*/pyarrow_version = \"12.0.0\"/" "$ROOT"/python/setup.py
-  else
-    pyarrow_version=14.0.0
-  fi
-  pip install pyarrow==$pyarrow_version
+  pip install --ignore-installed "pyarrow==15.0.0; python_version<'3.13'"
+  pip install --ignore-installed "pyarrow==18.0.0; python_version>='3.13'"
 }
 
 deploy_scala() {
