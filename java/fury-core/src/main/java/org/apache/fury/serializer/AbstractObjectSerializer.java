@@ -123,9 +123,7 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
   }
 
   static Object readOtherFieldValue(
-      SerializationBinding binding,
-      GenericTypeField fieldInfo,
-      MemoryBuffer buffer) {
+      SerializationBinding binding, GenericTypeField fieldInfo, MemoryBuffer buffer) {
     Object fieldValue;
     boolean nullable = fieldInfo.nullable;
     if (fieldInfo.trackingRef) {

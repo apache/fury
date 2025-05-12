@@ -174,8 +174,7 @@ public class MetaSharedSerializer<T> extends AbstractObjectSerializer<T> {
       }
     }
     for (ObjectSerializer.GenericTypeField fieldInfo : otherFields) {
-      Object fieldValue =
-          AbstractObjectSerializer.readOtherFieldValue(binding, fieldInfo, buffer);
+      Object fieldValue = AbstractObjectSerializer.readOtherFieldValue(binding, fieldInfo, buffer);
       FieldAccessor fieldAccessor = fieldInfo.fieldAccessor;
       if (fieldAccessor != null) {
         fieldAccessor.putObject(obj, fieldValue);
@@ -184,8 +183,7 @@ public class MetaSharedSerializer<T> extends AbstractObjectSerializer<T> {
     Generics generics = fury.getGenerics();
     for (ObjectSerializer.GenericTypeField fieldInfo : containerFields) {
       Object fieldValue =
-          AbstractObjectSerializer.readContainerFieldValue(
-              binding, generics, fieldInfo, buffer);
+          AbstractObjectSerializer.readContainerFieldValue(binding, generics, fieldInfo, buffer);
       FieldAccessor fieldAccessor = fieldInfo.fieldAccessor;
       if (fieldAccessor != null) {
         fieldAccessor.putObject(obj, fieldValue);
@@ -232,15 +230,13 @@ public class MetaSharedSerializer<T> extends AbstractObjectSerializer<T> {
       }
     }
     for (ObjectSerializer.GenericTypeField fieldInfo : otherFields) {
-      Object fieldValue =
-          AbstractObjectSerializer.readOtherFieldValue(binding, fieldInfo, buffer);
+      Object fieldValue = AbstractObjectSerializer.readOtherFieldValue(binding, fieldInfo, buffer);
       fields[counter++] = fieldValue;
     }
     Generics generics = fury.getGenerics();
     for (ObjectSerializer.GenericTypeField fieldInfo : containerFields) {
       Object fieldValue =
-          AbstractObjectSerializer.readContainerFieldValue(
-              binding, generics, fieldInfo, buffer);
+          AbstractObjectSerializer.readContainerFieldValue(binding, generics, fieldInfo, buffer);
       fields[counter++] = fieldValue;
     }
   }
