@@ -94,4 +94,31 @@ public class DescriptorTest {
     Descriptor.clearDescriptorCache();
     Descriptor.getAllDescriptorsMap(BeanA.class);
   }
+
+  @Test
+  public void testDescriptorBuilder() {
+    Descriptor descriptor = new Descriptor(TypeRef.of(A.class), "c", -1, "TestClass");
+    // test copyBuilder
+    Descriptor descriptor1 = descriptor.copyBuilder().build();
+    Assert.assertEquals(descriptor.getTypeRef(), descriptor1.getTypeRef());
+    Assert.assertEquals(descriptor.getName(), descriptor1.getName());
+    Assert.assertEquals(descriptor.getDeclaringClass(), descriptor1.getDeclaringClass());
+    Assert.assertEquals(descriptor.getModifier(), descriptor1.getModifier());
+    // test copyWithTypeName
+    Descriptor descriptor2 = descriptor.copyWithTypeName("test");
+    Assert.assertEquals(descriptor2.getTypeName(), "test");
+    // test builder
+    final Descriptor descriptor3 =
+        new DescriptorBuilder(descriptor)
+            .nullable(true)
+            .trackingRef(false)
+            .declaringClass("test1")
+            .build();
+    Assert.assertEquals(descriptor3.getTypeRef(), descriptor1.getTypeRef());
+    Assert.assertEquals(descriptor3.getName(), descriptor1.getName());
+    Assert.assertEquals(descriptor3.getDeclaringClass(), "test1");
+    Assert.assertEquals(descriptor3.getModifier(), descriptor1.getModifier());
+    Assert.assertTrue(descriptor3.isNullable());
+    Assert.assertFalse(descriptor3.isTrackingRef());
+  }
 }

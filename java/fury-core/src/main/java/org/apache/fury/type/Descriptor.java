@@ -161,6 +161,10 @@ public class Descriptor {
     this.furyField = builder.furyField;
   }
 
+  public DescriptorBuilder copyBuilder() {
+    return new DescriptorBuilder(this);
+  }
+
   public Descriptor copy(Method readMethod, Method writeMethod) {
     return new DescriptorBuilder(this).readMethod(readMethod).writeMethod(writeMethod).build();
   }
