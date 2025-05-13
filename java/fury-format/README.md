@@ -11,3 +11,6 @@ Fury row format is heavily inspired by spark tungsten row format, but with chang
 - Support adding fields without breaking compatibility.
 
 The initial fury java row data structure implementation is modified from spark unsafe row/writer.
+
+It is possible to register custom type handling and collection factories for the row format -
+see Encoders.registerCustomCodec and Encoders.registerCustomCollectionFactory.
