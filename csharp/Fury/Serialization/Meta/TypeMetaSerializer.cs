@@ -57,7 +57,7 @@ internal sealed class TypeMetaSerializer
             return;
         }
 
-        _hasWrittenTypeKind = writerRef.Write7BitEncodedUint((uint)typeKind);
+        _hasWrittenTypeKind = writerRef.Write7BitEncodedUInt32((uint)typeKind);
     }
 }
 

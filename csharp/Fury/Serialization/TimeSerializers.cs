@@ -24,7 +24,7 @@ public abstract class TimeSpanSerializer<TTimeSpan> : AbstractSerializer<TTimeSp
         var writerRef = writer.ByrefWriter;
         if (!_hasWrittenSecond)
         {
-            _hasWrittenSecond = writerRef.Write(seconds);
+            _hasWrittenSecond = writerRef.WriteUInt64(seconds);
             if (!_hasWrittenSecond)
             {
                 return false;
@@ -33,7 +33,7 @@ public abstract class TimeSpanSerializer<TTimeSpan> : AbstractSerializer<TTimeSp
 
         if (!_hasWrittenNanosecond)
         {
-            _hasWrittenNanosecond = writerRef.Write(nanoseconds);
+            _hasWrittenNanosecond = writerRef.WriteInt32(nanoseconds);
             if (!_hasWrittenNanosecond)
             {
                 return false;
@@ -154,7 +154,7 @@ public abstract class DateOnlySerializer<TDate> : AbstractSerializer<TDate>
         var writerRef = writer.ByrefWriter;
         if (!_hasWrittenYear)
         {
-            _hasWrittenYear = writerRef.Write(year);
+            _hasWrittenYear = writerRef.WriteInt32(year);
             if (!_hasWrittenYear)
             {
                 return false;
@@ -163,7 +163,7 @@ public abstract class DateOnlySerializer<TDate> : AbstractSerializer<TDate>
 
         if (!_hasWrittenMonth)
         {
-            _hasWrittenMonth = writerRef.Write(month);
+            _hasWrittenMonth = writerRef.WriteUInt8(month);
             if (!_hasWrittenMonth)
             {
                 return false;
@@ -172,7 +172,7 @@ public abstract class DateOnlySerializer<TDate> : AbstractSerializer<TDate>
 
         if (!_hasWrittenDay)
         {
-            _hasWrittenDay = writerRef.Write(day);
+            _hasWrittenDay = writerRef.WriteUInt8(day);
             if (!_hasWrittenDay)
             {
                 return false;
@@ -290,7 +290,7 @@ public abstract class DateTimeSerializer<TDateTime> : AbstractSerializer<TDateTi
     public sealed override bool Serialize(SerializationWriter writer, in TDateTime value)
     {
         var millisecond = GetMillisecond(value);
-        return writer.Write(millisecond);
+        return writer.WriteUInt64(millisecond);
     }
 
     protected abstract long GetMillisecond(in TDateTime value);

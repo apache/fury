@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -14,138 +13,12 @@ using Fury.Serialization.Meta;
 namespace Fury.Serialization;
 
 [Flags]
-public enum CollectionHeaderFlags : byte
+internal enum CollectionHeaderFlags : byte
 {
     TrackingRef = 0b1,
     HasNull = 0b10,
     NotDeclElementType = 0b100,
     NotSameType = 0b1000,
-}
-
-file static class CollectionSerializationHelper
-{
-    public static int GetSizeFactor<T>()
-    {
-        return typeof(T) switch
-        {
-            { } t when t == typeof(byte) => sizeof(byte),
-            { } t when t == typeof(sbyte) => sizeof(sbyte),
-            { } t when t == typeof(ushort) => sizeof(ushort),
-            { } t when t == typeof(short) => sizeof(short),
-            { } t when t == typeof(uint) => sizeof(uint),
-            { } t when t == typeof(int) => sizeof(int),
-            { } t when t == typeof(ulong) => sizeof(ulong),
-            { } t when t == typeof(long) => sizeof(long),
-#if NET5_0_OR_GREATER
-            { } t when t == typeof(Half) => Unsafe.SizeOf<Half>(),
-#endif
-            { } t when t == typeof(float) => sizeof(float),
-            { } t when t == typeof(double) => sizeof(double),
-            { } t when t == typeof(bool) => sizeof(bool),
-            _ => 1,
-        };
-    }
-
-    public static bool TryGetByteSpan<TElement>(Span<TElement> elementSpan, out Span<byte> bytes)
-    {
-        switch (elementSpan)
-        {
-            case Span<byte> byteSpan:
-                bytes = byteSpan;
-                break;
-            case Span<sbyte> sbyteSpan:
-                bytes = MemoryMarshal.AsBytes(sbyteSpan);
-                break;
-            case Span<ushort> ushortSpan:
-                bytes = MemoryMarshal.AsBytes(ushortSpan);
-                break;
-            case Span<short> shortSpan:
-                bytes = MemoryMarshal.AsBytes(shortSpan);
-                break;
-            case Span<uint> uintSpan:
-                bytes = MemoryMarshal.AsBytes(uintSpan);
-                break;
-            case Span<int> intSpan:
-                bytes = MemoryMarshal.AsBytes(intSpan);
-                break;
-            case Span<ulong> ulongSpan:
-                bytes = MemoryMarshal.AsBytes(ulongSpan);
-                break;
-            case Span<long> longSpan:
-                bytes = MemoryMarshal.AsBytes(longSpan);
-                break;
-
-#if NET5_0_OR_GREATER
-            case Span<Half> halfSpan:
-                bytes = MemoryMarshal.AsBytes(halfSpan);
-                break;
-#endif
-            case Span<float> floatSpan:
-                bytes = MemoryMarshal.AsBytes(floatSpan);
-                break;
-            case Span<double> doubleSpan:
-                bytes = MemoryMarshal.AsBytes(doubleSpan);
-                break;
-            case Span<bool> boolSpan:
-                bytes = MemoryMarshal.AsBytes(boolSpan);
-                break;
-            default:
-                bytes = Span<byte>.Empty;
-                return false;
-        }
-
-        return true;
-    }
-
-    public static bool TryGetByteSpan<TElement>(ReadOnlySpan<TElement> elementSpan, out ReadOnlySpan<byte> bytes)
-    {
-        switch (elementSpan)
-        {
-            case ReadOnlySpan<byte> byteSpan:
-                bytes = byteSpan;
-                break;
-            case ReadOnlySpan<sbyte> sbyteSpan:
-                bytes = MemoryMarshal.AsBytes(sbyteSpan);
-                break;
-            case ReadOnlySpan<ushort> ushortSpan:
-                bytes = MemoryMarshal.AsBytes(ushortSpan);
-                break;
-            case ReadOnlySpan<short> shortSpan:
-                bytes = MemoryMarshal.AsBytes(shortSpan);
-                break;
-            case ReadOnlySpan<uint> uintSpan:
-                bytes = MemoryMarshal.AsBytes(uintSpan);
-                break;
-            case ReadOnlySpan<int> intSpan:
-                bytes = MemoryMarshal.AsBytes(intSpan);
-                break;
-            case ReadOnlySpan<ulong> ulongSpan:
-                bytes = MemoryMarshal.AsBytes(ulongSpan);
-                break;
-            case ReadOnlySpan<long> longSpan:
-                bytes = MemoryMarshal.AsBytes(longSpan);
-                break;
-#if NET5_0_OR_GREATER
-            case ReadOnlySpan<Half> halfSpan:
-                bytes = MemoryMarshal.AsBytes(halfSpan);
-                break;
-#endif
-            case ReadOnlySpan<float> floatSpan:
-                bytes = MemoryMarshal.AsBytes(floatSpan);
-                break;
-            case ReadOnlySpan<double> doubleSpan:
-                bytes = MemoryMarshal.AsBytes(doubleSpan);
-                break;
-            case ReadOnlySpan<bool> boolSpan:
-                bytes = MemoryMarshal.AsBytes(boolSpan);
-                break;
-            default:
-                bytes = ReadOnlySpan<byte>.Empty;
-                return false;
-        }
-
-        return true;
-    }
 }
 
 // IReadOnlyCollection<TElement> is not inherited from ICollection<TElement>, so we use IEnumerable<TElement> instead.
@@ -163,7 +36,6 @@ public abstract class CollectionSerializer<TElement, TCollection>(TypeRegistrati
     private TypeRegistration? _cachedElementRegistration;
     private TypeMetaSerializer? _elementTypeMetaSerializer;
     private bool _hasWrittenCount;
-    private int _currentIndex;
 
     protected TypeRegistration? ElementRegistration { get; set; } = elementRegistration;
 
@@ -171,7 +43,6 @@ public abstract class CollectionSerializer<TElement, TCollection>(TypeRegistrati
     {
         _hasWrittenHeader = false;
         _hasWrittenCount = false;
-        _currentIndex = 0;
 
         _hasInitializedTypeMetaSerializer = false;
         _cachedElementRegistration = null;
@@ -194,6 +65,7 @@ public abstract class CollectionSerializer<TElement, TCollection>(TypeRegistrati
         return WriteElements(ref writerRef, in value);
     }
 
+    // TODO: Implement this method
     private bool WriteElementsHeader(ref SerializationWriterRef writerRef, in TCollection collection)
     {
         // For value types:
@@ -281,6 +153,20 @@ public abstract class CollectionSerializer<TElement, TCollection>(TypeRegistrati
         WriteHeader(ref writerRef, flags);
     }
 
+    /// <summary>
+    /// Depending on the <paramref name="options"/>, this method will check if the elements in the collection
+    /// contain null values or if they are of the same type.
+    /// </summary>
+    /// <param name="collection">
+    /// The collection to check.
+    /// </param>
+    /// <param name="options">
+    /// Which checks to perform.
+    /// </param>
+    /// <returns>
+    /// A <see cref="CollectionCheckResult"/> indicating the result of the checks.
+    /// </returns>
+    /// <seealso cref="CheckElementsState{T}"/>
     protected virtual CollectionCheckResult CheckElementsState(
         in TCollection collection,
         CollectionCheckOptions options
@@ -292,35 +178,59 @@ public abstract class CollectionSerializer<TElement, TCollection>(TypeRegistrati
             return default;
         }
 
+        return CheckElementsState(enumerable.GetEnumerator(), options);
+    }
+
+    /// <summary>
+    /// A default implementation of <see cref="CheckElementsState"/>.
+    /// </summary>
+    /// <param name="enumerator">
+    /// An enumerator for the collection to check.
+    /// </param>
+    /// <param name="options">
+    /// Which checks to perform.
+    /// </param>
+    /// <returns>
+    /// A <see cref="CollectionCheckResult"/> indicating the result of the checks.
+    /// </returns>
+    protected CollectionCheckResult CheckElementsState<TEnumerator>(
+        in TEnumerator enumerator,
+        CollectionCheckOptions options
+    )
+        where TEnumerator : IEnumerator<TElement>
+    {
+        // We create this separate method to avoid boxing the enumerator.
+
         if ((options & CollectionCheckOptions.Nullability) != 0)
         {
             if ((options & CollectionCheckOptions.TypeConsistency) != 0)
             {
-                return CheckElementsNullabilityAndTypeConsistency(enumerable);
+                return CheckElementsNullabilityAndTypeConsistency(enumerator);
             }
 
-            return CheckElementsNullability(enumerable);
+            return CheckElementsNullability(enumerator);
         }
 
         if ((options & CollectionCheckOptions.TypeConsistency) != 0)
         {
-            return CheckElementsTypeConsistency(enumerable);
+            return CheckElementsTypeConsistency(enumerator);
         }
 
         Debug.Fail("Invalid options");
         return new CollectionCheckResult(true, null);
     }
 
-    private CollectionCheckResult CheckElementsNullability(IEnumerable<TElement> enumerable)
+    private static CollectionCheckResult CheckElementsNullability<TEnumerator>(TEnumerator enumerator)
+        where TEnumerator : IEnumerator<TElement>
     {
         if (typeof(TElement).IsValueType && !NullableHelper.IsNullable(typeof(TElement)))
         {
             return CollectionCheckResult.FromNullability(false);
         }
 
-        foreach (var element in enumerable)
+        while (enumerator.MoveNext())
         {
-            if (element is null)
+            if (enumerator.Current is null)
             {
                 return CollectionCheckResult.FromNullability(true);
             }
@@ -329,15 +239,17 @@ public abstract class CollectionSerializer<TElement, TCollection>(TypeRegistrati
         return CollectionCheckResult.FromNullability(false);
     }
 
-    private CollectionCheckResult CheckElementsTypeConsistency(IEnumerable<TElement> enumerable)
+    private static CollectionCheckResult CheckElementsTypeConsistency<TEnumerator>(TEnumerator enumerator)
+        where TEnumerator : IEnumerator<TElement>
     {
         if (typeof(TElement).IsSealed)
         {
             return CollectionCheckResult.FromElementType(typeof(TElement));
         }
         Type? elementType = null;
-        foreach (var element in enumerable)
+        while (enumerator.MoveNext())
         {
+            var element = enumerator.Current;
             if (element is null)
             {
                 continue;
@@ -355,18 +267,20 @@ public abstract class CollectionSerializer<TElement, TCollection>(TypeRegistrati
         return CollectionCheckResult.FromElementType(elementType ?? typeof(void));
     }
 
-    private CollectionCheckResult CheckElementsNullabilityAndTypeConsistency(IEnumerable<TElement> enumerable)
+    private static CollectionCheckResult CheckElementsNullabilityAndTypeConsistency<TEnumerator>(TEnumerator enumerator)
+        where TEnumerator : IEnumerator<TElement>
     {
         var hasNull = false;
         var hasDifferentType = false;
         if (typeof(TElement).IsSealed)
         {
-            return CheckElementsNullability(enumerable);
+            return CheckElementsNullability(enumerator);
         }
 
         Type? elementType = null;
-        foreach (var element in enumerable)
+        while (enumerator.MoveNext())
         {
+            var element = enumerator.Current;
             if (element is null)
             {
                 hasNull = true;
@@ -399,7 +313,7 @@ public abstract class CollectionSerializer<TElement, TCollection>(TypeRegistrati
             return;
         }
 
-        _hasWrittenHeader = writerRef.Write((byte)flags);
+        _hasWrittenHeader = writerRef.WriteUInt8((byte)flags);
     }
 
     private void WriteCount(ref SerializationWriterRef writerRef, in TCollection collection)
@@ -409,108 +323,13 @@ public abstract class CollectionSerializer<TElement, TCollection>(TypeRegistrati
             return;
         }
 
-        // Primitives have special handling in Fury.
-        // The length of primitive collection should be serialized as the number of bytes.
-
-        var sizeFactor = CollectionSerializationHelper.GetSizeFactor<TElement>();
-        var count = GetCount(in collection) * sizeFactor;
-        _hasWrittenCount = writerRef.Write7BitEncodedUint((uint)count);
+        var count = GetCount(in collection);
+        _hasWrittenCount = writerRef.Write7BitEncodedUInt32((uint)count);
     }
 
-    private bool WriteElements(ref SerializationWriterRef writer, in TCollection collection)
-    {
-        if (TryGetSpan(in collection, out var elementSpan))
-        {
-            if (CollectionSerializationHelper.TryGetByteSpan(elementSpan, out var byteSpan))
-            {
-                _currentIndex += writer.Write(byteSpan);
-                return _currentIndex == byteSpan.Length;
-            }
-
-            for (; _currentIndex < elementSpan.Length; _currentIndex++)
-            {
-                if (!writer.Serialize(in elementSpan[_currentIndex], ElementRegistration))
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        if (TryGetSequence(in collection, out var elementSequence))
-        {
-            var skipCount = 0;
-            foreach (var elementMemory in elementSequence)
-            {
-                elementSpan = elementMemory.Span;
-                if (CollectionSerializationHelper.TryGetByteSpan(elementSpan, out var byteSpan))
-                {
-                    if (byteSpan.Length <= _currentIndex - skipCount)
-                    {
-                        skipCount += byteSpan.Length;
-                        continue;
-                    }
-
-                    byteSpan = byteSpan.Slice(_currentIndex - skipCount);
-                    var writtenByteCount = writer.Write(byteSpan);
-                    _currentIndex += writtenByteCount;
-                    skipCount = _currentIndex;
-                    if (writtenByteCount < byteSpan.Length)
-                    {
-                        return false;
-                    }
-                }
-                else
-                {
-                    if (elementSpan.Length <= _currentIndex - skipCount)
-                    {
-                        skipCount += elementSpan.Length;
-                        continue;
-                    }
-
-                    elementSpan = elementSpan.Slice(_currentIndex - skipCount);
-                    for (var i = 0; i < elementSpan.Length; i++)
-                    {
-                        if (!writer.Serialize(in elementSpan[i], ElementRegistration))
-                        {
-                            return false;
-                        }
-                        _currentIndex++;
-                        skipCount = _currentIndex;
-                    }
-                }
-            }
-        }
-
-        if (collection is not IEnumerable<TElement> enumerableCollection)
-        {
-            ThrowNotSupportedException_TCollectionNotSupported();
-            return false;
-        }
-        foreach (var element in enumerableCollection)
-        {
-            if (!writer.Serialize(in element, ElementRegistration))
-            {
-                return false;
-            }
-        }
-        return true;
-    }
+    protected abstract bool WriteElements(ref SerializationWriterRef writer, in TCollection collection);
 
     protected abstract int GetCount(in TCollection collection);
-
-    protected virtual bool TryGetSpan(in TCollection collection, out ReadOnlySpan<TElement> elementSpan)
-    {
-        elementSpan = ReadOnlySpan<TElement>.Empty;
-        return false;
-    }
-
-    protected virtual bool TryGetSequence(in TCollection collection, out ReadOnlySequence<TElement> elementSequence)
-    {
-        elementSequence = ReadOnlySequence<TElement>.Empty;
-        return false;
-    }
 
     private void ThrowNotSupportedException_TCollectionNotSupported([CallerMemberName] string methodName = "")
     {
@@ -541,42 +360,26 @@ public abstract class CollectionDeserializer<TElement, TCollection>(TypeRegistra
     where TCollection : notnull
 {
     private int? _count;
-    private int _currentIndex;
+    private CollectionHeaderFlags? _headerFlags;
 
-    private object? _untypedCollection;
-    private TCollection? _collection;
+    protected TCollection? Collection;
     private TypeRegistration? _elementRegistration = elementRegistration;
-
-    public sealed override object ReferenceableObject
-    {
-        get
-        {
-            if (_collection is null)
-            {
-                ThrowInvalidOperationException_ObjectNotCreated();
-            }
-
-            _untypedCollection ??= _collection;
-            return _untypedCollection;
-        }
-    }
 
     public override void Reset()
     {
         _count = null;
-        _currentIndex = 0;
-        _untypedCollection = null;
-        _collection = default;
+        _headerFlags = null;
+        Collection = default;
     }
 
-    public override ReadValueResult<TCollection> Deserialize(DeserializationReader reader)
+    public sealed override ReadValueResult<TCollection> Deserialize(DeserializationReader reader)
     {
         var task = Deserialize(reader, false, CancellationToken.None);
         Debug.Assert(task.IsCompleted);
         return task.Result;
     }
 
-    public override ValueTask<ReadValueResult<TCollection>> DeserializeAsync(
+    public sealed override ValueTask<ReadValueResult<TCollection>> DeserializeAsync(
         DeserializationReader reader,
         CancellationToken cancellationToken = default
     )
@@ -605,303 +408,76 @@ public abstract class CollectionDeserializer<TElement, TCollection>(TypeRegistra
 
             var count = (int)countResult.Value;
             _count = count;
-            var sizeFactor = CollectionSerializationHelper.GetSizeFactor<TElement>();
-            if (count % sizeFactor != 0)
-            {
-                ThrowBadDeserializationInputException_InvalidByteCount(count);
-            }
 
-            _collection = CreateCollection(count / sizeFactor);
+            CreateCollection(count);
         }
         else
         {
-            Debug.Assert(_collection is not null);
+            Debug.Assert(Collection is not null);
         }
 
-        var fillSuccess = false;
-        try
+        // TODO: Read header
+
+        bool fillSuccess;
+        if (isAsync)
         {
-            ref var collectionRef = ref Unsafe.NullRef<TCollection>();
-            if (typeof(TCollection).IsValueType && _untypedCollection is null)
-            {
-                collectionRef = ref _collection!;
-            }
-            else
-            {
-                _untypedCollection ??= _collection;
-                collectionRef = ref ReferenceHelper.UnboxOrGetInputRef<TCollection>(ref _untypedCollection);
-            }
-            if (TryGetMemory(ref collectionRef, out var elementMemory))
-            {
-                fillSuccess = await FillcollectionByMemory(reader, elementMemory, isAsync, cancellationToken);
-            }
-            else if (CanAddElement)
-            {
-                fillSuccess = await FillcollectionByAddElement(reader, isAsync, cancellationToken);
-            }
-            else if (_collection is ICollection<TElement>)
-            {
-                _untypedCollection ??= _collection;
-                var collection = (ICollection<TElement>)_untypedCollection;
-                fillSuccess = await FillcollectionByCollectionInterface(reader, collection, isAsync, cancellationToken);
-            }
-            else
-            {
-                ThrowNotSupportedException_TcollectionNotSupported();
-            }
+            fillSuccess = await ReadElementsAsync(reader, cancellationToken);
         }
-        finally
+        else
         {
-            // Copy the modified collection to the boxed collection if Tcollection is a value type.
-            if (typeof(TCollection).IsValueType && _untypedCollection is not null)
-            {
-                ref var collectionRef = ref ReferenceHelper.UnboxOrGetNullRef<TCollection>(_untypedCollection);
-                Debug.Assert(!Unsafe.IsNullRef(ref collectionRef));
-                collectionRef = _collection;
-            }
+            // ReSharper disable once MethodHasAsyncOverloadWithCancellation
+            fillSuccess = ReadElements(reader);
         }
 
         if (!fillSuccess)
         {
             return ReadValueResult<TCollection>.Failed;
         }
-        return ReadValueResult<TCollection>.FromValue(_collection);
+        return ReadValueResult<TCollection>.FromValue(Collection);
     }
 
-    private async ValueTask<bool> FillcollectionByMemory(
-        DeserializationReader reader,
-        Memory<TElement> elementMemory,
-        bool isAsync,
-        CancellationToken cancellationToken
-    )
-    {
-        var count = _count!.Value;
-        var unreadCount = count - _currentIndex;
-        var elementSpan = elementMemory.Span;
-        if (CollectionSerializationHelper.TryGetByteSpan(elementSpan, out var byteSpan))
-        {
-            if (byteSpan.Length < count)
-            {
-                ThrowInvalidOperationException_SpanTooSmall(
-                    elementSpan.Length,
-                    count / CollectionSerializationHelper.GetSizeFactor<TElement>()
-                );
-            }
+    protected ReadValueResult<TElement> ReadElement(DeserializationReader reader) { }
 
-            var readResult = await reader.Read(count - _currentIndex, isAsync, cancellationToken);
-            var buffer = readResult.Buffer;
-            elementSpan = elementMemory.Span;
-            CollectionSerializationHelper.TryGetByteSpan(elementSpan, out byteSpan);
-            byteSpan = byteSpan.Slice(_currentIndex);
-            var bufferLength = buffer.Length;
-            if (unreadCount < bufferLength)
-            {
-                buffer = buffer.Slice(0, unreadCount);
-                bufferLength = unreadCount;
-            }
-            buffer.CopyTo(byteSpan);
-            reader.AdvanceTo(buffer.End);
-            _currentIndex += (int)bufferLength;
-            return _currentIndex == _count;
-        }
+    protected ValueTask<ReadValueResult<TElement>> ReadElementAsync(DeserializationReader reader, CancellationToken cancellationToken = default) { }
 
-        if (isAsync)
-        {
-            for (; _currentIndex < elementMemory.Length; _currentIndex++)
-            {
-                var readResult = await reader.DeserializeAsync<TElement>(_elementRegistration, cancellationToken);
-                if (!readResult.IsSuccess)
-                {
-                    return false;
-                }
-                elementMemory.Span[_currentIndex] = readResult.Value!;
-            }
-        }
-        else
-        {
-            for (; _currentIndex < elementMemory.Length; _currentIndex++)
-            {
-                var readResult = reader.Deserialize<TElement>(_elementRegistration);
-                if (!readResult.IsSuccess)
-                {
-                    return false;
-                }
-                elementSpan[_currentIndex] = readResult.Value!;
-            }
-        }
-
-        return true;
-    }
-
-    private async ValueTask<bool> FillcollectionByAddElement(
+    private protected async ValueTask<ReadValueResult<TElement?>> ReadElement(
         DeserializationReader reader,
         bool isAsync,
         CancellationToken cancellationToken
     )
     {
-        Debug.Assert(_collection is not null);
-        var count = _count!.Value;
-        if (typeof(TCollection).IsValueType && _untypedCollection is null)
+        if (_headerFlags is not { } headerFlags)
         {
-            for (; _currentIndex < count; _currentIndex++)
-            {
-                var readResult = await reader.Deserialize<TElement>(_elementRegistration, isAsync, cancellationToken);
-                if (!readResult.IsSuccess)
-                {
-                    return false;
-                }
-
-                AddElement(ref _collection, readResult.Value!);
-            }
-        }
-        else
-        {
-            _untypedCollection ??= _collection;
-            for (; _currentIndex < count; _currentIndex++)
-            {
-                var readResult = await reader.Deserialize<TElement>(_elementRegistration, isAsync, cancellationToken);
-                if (!readResult.IsSuccess)
-                {
-                    return false;
-                }
-
-                AddElement(_untypedCollection, readResult.Value!);
-            }
+            ThrowInvalidOperationException_HeaderNotRead();
+            return ReadValueResult<TElement>.Failed;
         }
 
-        return true;
+        var needReadRefMeta =
+            (headerFlags & (CollectionHeaderFlags.TrackingRef | CollectionHeaderFlags.HasNull)) != 0;
+        var needReadTypeMeta = (headerFlags & CollectionHeaderFlags.NotSameType) != 0;
+
+        if (needReadRefMeta && needReadTypeMeta)
+        {
+            return await reader.Deserialize<TElement>(_elementRegistration, isAsync, cancellationToken);
+        }
     }
 
-    private async ValueTask<bool> FillcollectionByCollectionInterface(
+    protected abstract bool ReadElements(DeserializationReader reader);
+
+    protected abstract ValueTask<bool> ReadElementsAsync(
         DeserializationReader reader,
-        ICollection<TElement> collection,
-        bool isAsync,
         CancellationToken cancellationToken
-    )
-    {
-        var count = _count!.Value;
-        for (; _currentIndex < count; _currentIndex++)
-        {
-            var readResult = await reader.Deserialize<TElement>(_elementRegistration, isAsync, cancellationToken);
-            if (!readResult.IsSuccess)
-            {
-                return false;
-            }
+    );
 
-            collection.Add(readResult.Value!);
-        }
-        return true;
-    }
-
-    protected abstract TCollection CreateCollection(int count);
-
-    /// <summary>
-    /// Try to get the <see cref="Memory{T}"/> which represents the elements in the collection.
-    /// </summary>
-    /// <param name="collection">
-    /// The collection to which the element will be added.
-    /// </param>
-    /// <param name="elementMemory">
-    /// The <see cref="Memory{T}"/> which represents the elements in the collection.
-    /// </param>
-    /// <returns>
-    /// True if the <see cref="Memory{T}"/> was successfully obtained, false otherwise.
-    /// </returns>
-    /// <remarks>
-    /// When this method returns false, the <see cref="CanAddElement"/> property will be checked.
-    /// </remarks>
-    protected virtual bool TryGetMemory(ref TCollection collection, out Memory<TElement> elementMemory)
-    {
-        elementMemory = Memory<TElement>.Empty;
-        return false;
-    }
-
-    /// <summary>
-    /// Indicates if the <see cref="AddElement(object, in TElement)"/> and <see cref="AddElement(ref TCollection,in TElement)"/>
-    /// can be used to add elements to the collection.
-    /// </summary>
-    /// <remarks>
-    /// If true, the <see cref="AddElement(object, in TElement)"/> and <see cref="AddElement(ref TCollection,in TElement)"/>
-    /// must be overridden.
-    /// </remarks>
-    protected virtual bool CanAddElement => false;
-
-    /// <inheritdoc cref="AddElement(object,in TElement)"/>
-    /// <remarks>
-    /// <para>
-    /// This method will not be called if <see cref="CanAddElement"/> is false.
-    /// </para>
-    /// <para>
-    /// This method is designed to avoid boxing when <typeparamref name="TCollection"/> is a value type.
-    /// If the collection is boxed, the <see cref="AddElement(object, in TElement)"/> method will be called instead.
-    /// </para>
-    /// </remarks>
-    protected virtual void AddElement(ref TCollection collection, in TElement element)
-    {
-        ThrowNotSupportedException_AddElementNotOverridden();
-    }
-
-    /// <summary>
-    /// Adds an element to the collection.
-    /// </summary>
-    /// <param name="collection">
-    /// The collection to which the element will be added.
-    /// </param>
-    /// <param name="element">
-    /// The element to add.
-    /// </param>
-    /// <exception cref="InvalidOperationException">
-    /// Thrown if not overridden.
-    /// </exception>
-    /// <remarks>
-    /// <para>
-    /// This method will not be called if <see cref="CanAddElement"/> is false.
-    /// </para>
-    /// </remarks>
-    protected virtual void AddElement(object collection, in TElement element)
-    {
-        // Unlike TryGetMemory, AddElement is called once for each element.
-        // Since ref local variables can't be accessed across an await boundary,
-        // if the collection is a value type and has already been boxed,
-        // each call needs to obtain a ref to Tcollection from _untypedCollection via unsafe means,
-        // which could result in a large number of virtual calls.
-        // Therefore, we provide an overload that accepts an object type to optionally allow users to avoid this issue.
-
-        ref var collectionRef = ref ReferenceHelper.UnboxOrGetInputRef<TCollection>(ref collection);
-        AddElement(ref collectionRef, in element);
-    }
+    [MemberNotNull(nameof(Collection))]
+    protected abstract void CreateCollection(int count);
 
     [DoesNotReturn]
-    private static void ThrowBadDeserializationInputException_InvalidByteCount(int count)
-    {
-        throw new BadDeserializationInputException(
-            $"{count} is not a valid byte count for {typeof(TCollection).Name}, "
-                + $"it should be a multiple of {CollectionSerializationHelper.GetSizeFactor<TElement>()}."
-        );
-    }
-
-    [DoesNotReturn]
-    private static void ThrowInvalidOperationException_SpanTooSmall(int providedCount, int requiredCount)
+    private void ThrowInvalidOperationException_HeaderNotRead()
     {
         throw new InvalidOperationException(
-            $"The provided span is too small. " + $"Expected {requiredCount} elements, but got {providedCount}."
-        );
-    }
-
-    [DoesNotReturn]
-    private static void ThrowNotSupportedException_TcollectionNotSupported()
-    {
-        throw new NotSupportedException(
-            $"{nameof(TryGetMemory)} or {nameof(CanAddElement)} is not overridden, "
-                + $"or {typeof(TCollection).Name} does not implement {nameof(ICollection<TElement>)}"
-        );
-    }
-
-    [DoesNotReturn]
-    private static void ThrowNotSupportedException_AddElementNotOverridden()
-    {
-        throw new InvalidOperationException(
-            $"Unable to add element. {nameof(AddElement)} must be overridden if {nameof(CanAddElement)} is true."
+            $"Header not read yet. Call {nameof(ReadElement)} in {nameof(ReadElements)} " +
+            $"or {nameof(ReadElementAsync)} in {nameof(ReadElementsAsync)}."
         );
     }
 }
@@ -911,35 +487,68 @@ public abstract class CollectionDeserializer<TElement, TCollection>(TypeRegistra
 internal sealed class ListSerializer<TElement>(TypeRegistration? elementRegistration)
     : CollectionSerializer<TElement, List<TElement>>(elementRegistration)
 {
+    private int _writtenCount;
+
+    public override void Reset()
+    {
+        base.Reset();
+        _writtenCount = 0;
+    }
+
     protected override int GetCount(in List<TElement> list) => list.Count;
 
-    protected override bool TryGetSpan(in List<TElement> list, out ReadOnlySpan<TElement> elementSpan)
+    protected override bool WriteElements(ref SerializationWriterRef writer, in List<TElement> collection)
     {
 #if NET5_0_OR_GREATER
-        elementSpan = CollectionsMarshal.AsSpan(list);
+        var elementSpan = CollectionsMarshal.AsSpan(collection);
+        for (; _writtenCount < elementSpan.Length; _writtenCount++)
+        {
+            if (!writer.Serialize(in elementSpan[_writtenCount]))
+            {
+                return false;
+            }
+        }
+
         return true;
 #else
-        elementSpan = ReadOnlySpan<TElement>.Empty;
-        return false;
+        foreach (var element in collection)
+        {
+            if (!writer.Serialize(in element))
+            {
+                return false;
+            }
+        }
+
+        return true;
 #endif
+    }
+
+    protected override CollectionCheckResult CheckElementsState(
+        in List<TElement> collection,
+        CollectionCheckOptions options
+    )
+    {
+        return base.CheckElementsState(collection.GetEnumerator(), options);
     }
 }
 
 internal sealed class ListDeserializer<TElement>(TypeRegistration? elementRegistration)
     : CollectionDeserializer<TElement, List<TElement>>(elementRegistration)
 {
-#if NET5_0_OR_GREATER
-    private readonly ListMemoryManager<TElement> _listMemoryManager = new();
+    protected override void CreateCollection(int count) => new(count);
 
-    protected override bool TryGetMemory(ref List<TElement> list, out Memory<TElement> elementMemory)
-    {
-        _listMemoryManager.List = _listMemoryManager.List;
-        elementMemory = _listMemoryManager.Memory;
-        return true;
-    }
-#endif
+    protected override bool ReadElements(DeserializationReader reader) { }
 
-    protected override List<TElement> CreateCollection(int count) => new(count);
+    protected override ValueTask<bool> ReadElementsAsync(
+        DeserializationReader reader,
+        CancellationToken cancellationToken
+    ) { }
+
+    private async ValueTask<bool> ReadElements(
+        DeserializationReader reader,
+        bool isAsync,
+        CancellationToken cancellationToken
+    ) { }
 }
 
 internal sealed class ArraySerializer<TElement>(TypeRegistration? elementRegistration)
@@ -957,7 +566,7 @@ internal sealed class ArraySerializer<TElement>(TypeRegistration? elementRegistr
 internal sealed class ArrayDeserializer<TElement>(TypeRegistration? elementRegistration)
     : CollectionDeserializer<TElement, TElement[]>(elementRegistration)
 {
-    protected override TElement[] CreateCollection(int count) => new TElement[count];
+    protected override void CreateCollection(int count) => new TElement[count];
 
     protected override bool TryGetMemory(ref TElement[] list, out Memory<TElement> elementMemory)
     {
@@ -978,7 +587,7 @@ internal sealed class HashSetSerializer<TElement>(TypeRegistration? elementRegis
 internal sealed class HashSetDeserializer<TElement>(TypeRegistration? elementRegistration)
     : CollectionDeserializer<TElement, HashSet<TElement>>(elementRegistration)
 {
-    protected override HashSet<TElement> CreateCollection(int count)
+    protected override void CreateCollection(int count)
     {
 #if NETSTANDARD2_0
         return [];

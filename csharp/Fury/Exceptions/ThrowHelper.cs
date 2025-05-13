@@ -18,6 +18,12 @@ internal static partial class ThrowHelper
         throw new ArgumentException(message, paramName);
     }
 
+    [DoesNotReturn]
+    public static void ThrowArgumentNullException([InvokerParameterName] string? paramName = null)
+    {
+        throw new ArgumentNullException(paramName);
+    }
+
     public static void ThrowArgumentNullExceptionIfNull<T>(in T value, [InvokerParameterName] string? paramName = null)
     {
         if (value is null)

@@ -81,7 +81,7 @@ internal sealed class ReferenceMetaSerializer
                     Debug.Fail($"Redundant call to {nameof(Write)}.");
                     return true;
                 }
-                _hasWrittenRefId = writerRef.Write7BitEncodedUint((uint)refId);
+                _hasWrittenRefId = writerRef.Write7BitEncodedUInt32((uint)refId);
                 return _hasWrittenRefId;
             }
 
@@ -111,7 +111,7 @@ internal sealed class ReferenceMetaSerializer
             return;
         }
 
-        _hasWrittenRefFlag = writerRef.Write((sbyte)flag);
+        _hasWrittenRefFlag = writerRef.WriteUInt64((sbyte)flag);
     }
 
     public void HandleWriteValueCompleted<TValue>(in TValue value)

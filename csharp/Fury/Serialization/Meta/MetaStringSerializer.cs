@@ -75,7 +75,7 @@ internal sealed class MetaStringSerializer
             return;
         }
 
-        _hasWrittenHeader = writerRef.Write7BitEncodedUint(header);
+        _hasWrittenHeader = writerRef.Write7BitEncodedUInt32(header);
     }
 
     private void WriteEncoding(ref SerializationWriterRef writerRef, MetaString.Encoding encoding)
@@ -85,7 +85,7 @@ internal sealed class MetaStringSerializer
             return;
         }
 
-        _hasWrittenHashCodeOrEncoding = writerRef.Write((byte)encoding);
+        _hasWrittenHashCodeOrEncoding = writerRef.WriteUInt8((byte)encoding);
     }
 
     private void WriteHashCode(ref SerializationWriterRef writerRef, ulong hashCode)
@@ -95,7 +95,7 @@ internal sealed class MetaStringSerializer
             return;
         }
 
-        _hasWrittenHashCodeOrEncoding = writerRef.Write(hashCode);
+        _hasWrittenHashCodeOrEncoding = writerRef.WriteInt64(hashCode);
     }
 
     private bool WriteMetaStringBytes(ref SerializationWriterRef writerRef, MetaString metaString)
@@ -107,7 +107,7 @@ internal sealed class MetaStringSerializer
         }
 
         var unwrittenBytes = bytes.Slice(_writtenBytesCount);
-        var writtenBytes = writerRef.Write(unwrittenBytes);
+        var writtenBytes = writerRef.WriteBytes(unwrittenBytes);
         _writtenBytesCount += writtenBytes;
         Debug.Assert(_writtenBytesCount <= bytes.Length);
         return _writtenBytesCount == bytes.Length;
@@ -342,7 +342,7 @@ internal struct MetaStringDeserializer(
     }
 }
 
-file readonly struct MetaStringHeader(uint value)
+internal readonly struct MetaStringHeader(uint value)
 {
     public uint Value { get; } = value;
     public bool IsId => (Value & 1) == 1;

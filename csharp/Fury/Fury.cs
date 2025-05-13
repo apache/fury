@@ -102,7 +102,7 @@ public sealed class Fury : IDisposable
                 return uncompletedResult;
             }
 
-            if (value is not null && !writer.Serialize(in value, uncompletedResult.RootTypeRegistrationHint))
+            if (value is not null && !writer.Write(in value, uncompletedResult.RootTypeRegistrationHint))
             {
                 return uncompletedResult;
             }
@@ -143,7 +143,7 @@ public sealed class Fury : IDisposable
                 return uncompletedResult;
             }
 
-            if (value is not null && !writer.Serialize(value.Value, uncompletedResult.RootTypeRegistrationHint))
+            if (value is not null && !writer.Write(value.Value, uncompletedResult.RootTypeRegistrationHint))
             {
                 return uncompletedResult;
             }

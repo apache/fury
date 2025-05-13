@@ -38,7 +38,7 @@ internal sealed class HeaderSerializer
     {
         if (!_hasWrittenMagicNumber)
         {
-            _hasWrittenMagicNumber = writerRef.Write(HeaderHelper.MagicNumber);
+            _hasWrittenMagicNumber = writerRef.WriteInt16(HeaderHelper.MagicNumber);
             if (!_hasWrittenMagicNumber)
             {
                 return false;
@@ -53,7 +53,7 @@ internal sealed class HeaderSerializer
                 flag |= HeaderFlag.NullRootObject;
             }
 
-            _hasWrittenHeaderFlag = writerRef.Write((byte)flag);
+            _hasWrittenHeaderFlag = writerRef.WriteUInt8((byte)flag);
             if (!_hasWrittenMagicNumber)
             {
                 return false;
@@ -62,7 +62,7 @@ internal sealed class HeaderSerializer
 
         if (!_hasWrittenLanguage)
         {
-            _hasWrittenLanguage = writerRef.Write((byte)Language.Csharp);
+            _hasWrittenLanguage = writerRef.WriteUInt8((byte)Language.Csharp);
         }
 
         return _hasWrittenLanguage;

@@ -35,7 +35,7 @@ public ref struct SerializationWriterRef
     public bool Serialize<TTarget>(in TTarget? value, TypeRegistration? registrationHint = null)
     {
         _version--; // make sure the version is out of date
-        return InnerWriter.Serialize(in value, registrationHint);
+        return InnerWriter.Write(in value, registrationHint);
     }
 
     [MustUseReturnValue]
@@ -99,7 +99,7 @@ public ref struct SerializationWriterRef
     /// The number of bytes written.
     /// </returns>
     [MustUseReturnValue]
-    public int Write(scoped ReadOnlySpan<byte> bytes)
+    public int WriteBytes(scoped ReadOnlySpan<byte> bytes)
     {
         var destination = GetSpan(bytes.Length);
         var consumed = bytes.CopyUpTo(destination);
@@ -128,37 +128,37 @@ public ref struct SerializationWriterRef
     }
 
     [MustUseReturnValue]
-    public bool Write(byte value) => WriteUnmanaged(value);
+    public bool WriteUInt8(byte value) => WriteUnmanaged(value);
 
     [MustUseReturnValue]
-    public bool Write(sbyte value) => WriteUnmanaged(value);
+    public bool WriteInt8(sbyte value) => WriteUnmanaged(value);
 
     [MustUseReturnValue]
-    public bool Write(ushort value) => WriteUnmanaged(value);
+    public bool WriteUInt16(ushort value) => WriteUnmanaged(value);
 
     [MustUseReturnValue]
-    public bool Write(short value) => WriteUnmanaged(value);
+    public bool WriteInt16(short value) => WriteUnmanaged(value);
 
     [MustUseReturnValue]
-    public bool Write(uint value) => WriteUnmanaged(value);
+    public bool WriteUInt32(uint value) => WriteUnmanaged(value);
 
     [MustUseReturnValue]
-    public bool Write(int value) => WriteUnmanaged(value);
+    public bool WriteInt32(int value) => WriteUnmanaged(value);
 
     [MustUseReturnValue]
-    public bool Write(ulong value) => WriteUnmanaged(value);
+    public bool WriteInt64(ulong value) => WriteUnmanaged(value);
 
     [MustUseReturnValue]
-    public bool Write(long value) => WriteUnmanaged(value);
+    public bool WriteUInt64(long value) => WriteUnmanaged(value);
 
     [MustUseReturnValue]
-    public bool Write(float value) => WriteUnmanaged(value);
+    public bool WriteFloat32(float value) => WriteUnmanaged(value);
 
     [MustUseReturnValue]
-    public bool Write(double value) => WriteUnmanaged(value);
+    public bool WriteFloat64(double value) => WriteUnmanaged(value);
 
     [MustUseReturnValue]
-    public bool Write(bool value) => WriteUnmanaged(value);
+    public bool WriteBool(bool value) => WriteUnmanaged(value);
 
     private bool TryGetSpan(int sizeHint, out Span<byte> span)
     {
@@ -167,20 +167,20 @@ public ref struct SerializationWriterRef
     }
 
     [MustUseReturnValue]
-    public bool Write7BitEncodedInt(int value)
+    public bool Write7BitEncodedInt32(int value)
     {
         var zigzag = BitOperations.RotateLeft((uint)value, 1);
-        return Write7BitEncodedUint(zigzag);
+        return Write7BitEncodedUInt32(zigzag);
     }
 
     [MustUseReturnValue]
-    public bool Write7BitEncodedUint(uint value)
+    public bool Write7BitEncodedUInt32(uint value)
     {
         Span<byte> buffer;
         switch (value)
         {
             case < 1u << 7:
-                return Write((byte)value);
+                return WriteUInt8((byte)value);
             case < 1u << 14:
             {
                 const int size = 2;
@@ -239,19 +239,19 @@ public ref struct SerializationWriterRef
     }
 
     [MustUseReturnValue]
-    public bool Write7BitEncodedLong(long value)
+    public bool Write7BitEncodedInt64(long value)
     {
         var zigzag = BitOperations.RotateLeft((ulong)value, 1);
-        return Write7BitEncodedUlong(zigzag);
+        return Write7BitEncodedUInt64(zigzag);
     }
 
     [MustUseReturnValue]
-    public bool Write7BitEncodedUlong(ulong value)
+    public bool Write7BitEncodedUInt64(ulong value)
     {
         switch (value)
         {
             case < 1ul << 7:
-                return Write((byte)value);
+                return WriteUInt8((byte)value);
             case < 1ul << 14:
             {
                 const int size = 2;

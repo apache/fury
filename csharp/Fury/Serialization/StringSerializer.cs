@@ -132,7 +132,7 @@ internal sealed class StringSerializer : AbstractSerializer<string>
             length = _byteCount;
         }
         var header = StringSerializationHelper.GetHeader(length, _selectedStringEncoding);
-        _hasWrittenHeader = writerRef.Write7BitEncodedUint(header);
+        _hasWrittenHeader = writerRef.Write7BitEncodedUInt32(header);
     }
 
     private void WriteUtf8ByteCount(ref SerializationWriterRef writerRef)
@@ -146,7 +146,7 @@ internal sealed class StringSerializer : AbstractSerializer<string>
         {
             // When WriteUtf16ByteCountForUtf8Encoding is true,
             // the true byte length of the UTF-8 string is written as Int32 after the header.
-            _hasWrittenUtf16ByteCount = writerRef.Write(_byteCount);
+            _hasWrittenUtf16ByteCount = writerRef.WriteInt32(_byteCount);
         }
         else
         {

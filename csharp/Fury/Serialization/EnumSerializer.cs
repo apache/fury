@@ -31,7 +31,7 @@ internal sealed class EnumSerializer<TEnum> : AbstractSerializer<TEnum>
         {
             ThrowNotSupportedException_TooLong();
         }
-        return writer.Write7BitEncodedUint((uint)underlyingValue64);
+        return writer.Write7BitEncodedUInt32((uint)underlyingValue64);
     }
 
     public override void Reset() { }

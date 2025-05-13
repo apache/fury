@@ -40,7 +40,7 @@ internal static class ReferenceHelper
 
 file static class ReferenceHelper<T>
 {
-    private delegate ref T UnboxDelegate(object box);
+    internal delegate ref T UnboxDelegate(object box);
 
     internal static readonly UnboxDelegate? Unbox;
 

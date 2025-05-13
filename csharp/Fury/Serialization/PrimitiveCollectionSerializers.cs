@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
@@ -30,7 +31,7 @@ internal sealed class PrimitiveArraySerializer<TElement> : AbstractSerializer<TE
         var byteCount = bytes.Length;
         if (_hasWrittenLength)
         {
-            _hasWrittenLength = writerRef.Write7BitEncodedUint((uint)byteCount);
+            _hasWrittenLength = writerRef.Write7BitEncodedUInt32((uint)byteCount);
             if (_hasWrittenLength)
             {
                 return false;
@@ -126,4 +127,27 @@ internal sealed class PrimitiveArrayDeserializer<TElement> : AbstractDeserialize
             $"Invalid byte count: {byteCount}. Expected a multiple of {ElementSize}."
         );
     }
+}
+
+internal sealed class PrimitiveListSerializer<TElement> : CollectionSerializer<TElement, List<TElement>>
+    where TElement : unmanaged
+{
+    private int writtenByteCount;
+
+    public override void Reset()
+    {
+        base.Reset();
+        writtenByteCount = 0;
+    }
+
+#if NET5_0_OR_GREATER
+    protected override bool WriteElements(ref SerializationWriterRef writer, in List<TElement> collection)
+    {
+        var span = MemoryMarshal.AsBytes(CollectionsMarshal.AsSpan(collection));
+        writtenByteCount += writer.WriteBytes(span.Slice(writtenByteCount));
+        return writtenByteCount == span.Length;
+    }
+#endif
+
+
 }

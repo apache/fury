@@ -105,7 +105,17 @@ public sealed class SerializationWriter : IDisposable
     }
 
     [MustUseReturnValue]
-    public bool Serialize<TTarget>(in TTarget? value, TypeRegistration? registrationHint = null)
+    public bool Write<TTarget>(in TTarget? value, TypeRegistration? registrationHint = null)
+    {
+        return Write(in value, ObjectMetaOption.ReferenceMeta | ObjectMetaOption.TypeMeta, registrationHint);
+    }
+
+    [MustUseReturnValue]
+    internal bool Write<TTarget>(
+        in TTarget? value,
+        ObjectMetaOption metaOption,
+        TypeRegistration? registrationHint = null
+    )
     {
         _frameStack.MoveNext();
 
@@ -113,20 +123,32 @@ public sealed class SerializationWriter : IDisposable
         try
         {
             var writer = ByrefWriter;
-            isSuccess = WriteRefMeta(ref writer, in value, out var needWriteValue);
-            if (!isSuccess)
+            if ((metaOption & ObjectMetaOption.ReferenceMeta) != 0)
             {
-                return false;
+                isSuccess = WriteRefMeta(ref writer, in value, out var needWriteValue);
+                if (!isSuccess)
+                {
+                    return false;
+                }
+                if (!needWriteValue)
+                {
+                    return true;
+                }
             }
-            if (!needWriteValue)
+
+            if (value is null)
             {
-                return true;
+                ThrowHelper.ThrowArgumentNullExceptionIfNull(nameof(value));
             }
-            Debug.Assert(value is not null);
-            isSuccess = WriteTypeMeta(ref writer, in value, registrationHint);
-            if (!isSuccess)
+
+            PopulateTypeRegistrationToCurrentFrame(in value, registrationHint);
+            if ((metaOption & ObjectMetaOption.TypeMeta) != 0)
             {
-                return false;
+                isSuccess = WriteTypeMeta(ref writer);
+                if (!isSuccess)
+                {
+                    return false;
+                }
             }
             isSuccess = WriteValue(ref writer, in value);
         }
@@ -139,6 +161,17 @@ public sealed class SerializationWriter : IDisposable
 
     [MustUseReturnValue]
     public bool Serialize<TTarget>(in TTarget? value, TypeRegistration? registrationHint = null)
+        where TTarget : struct
+    {
+        return Serialize(in value, ObjectMetaOption.ReferenceMeta | ObjectMetaOption.TypeMeta, registrationHint);
+    }
+
+    [MustUseReturnValue]
+    internal bool Serialize<TTarget>(
+        in TTarget? value,
+        ObjectMetaOption metaOption,
+        TypeRegistration? registrationHint = null
+    )
         where TTarget : struct
     {
         _frameStack.MoveNext();
@@ -157,7 +190,7 @@ public sealed class SerializationWriter : IDisposable
                 return true;
             }
             Debug.Assert(value is not null);
-            isSuccess = WriteTypeMeta(ref writer, in value, registrationHint);
+            isSuccess = WriteTypeMeta(ref writer);
             if (!isSuccess)
             {
                 return false;
@@ -201,27 +234,31 @@ public sealed class SerializationWriter : IDisposable
         return true;
     }
 
-    private bool WriteTypeMeta<TTarget>(
-        ref SerializationWriterRef writerRef,
-        in TTarget value,
-        TypeRegistration? registrationHint
-    )
+    private void PopulateTypeRegistrationToCurrentFrame<TTarget>(in TTarget value, TypeRegistration? registrationHint)
+    {
+        var currentFrame = _frameStack.CurrentFrame;
+        if (currentFrame.Registration is null)
+        {
+            var desiredType = value!.GetType();
+            if (registrationHint?.TargetType != desiredType)
+            {
+                Debug.WriteLine("Type registration hint does not match the actual type.");
+                registrationHint = null;
+            }
+            currentFrame.Registration = registrationHint ?? TypeRegistry.GetTypeRegistration(desiredType);
+        }
+        Debug.Assert(currentFrame.Registration.TargetType == value!.GetType());
+    }
+
+    private bool WriteTypeMeta(ref SerializationWriterRef writerRef)
     {
         if (!_frameStack.IsCurrentTheLastFrame)
         {
             return true;
         }
 
-        var desiredType = value!.GetType();
-        if (registrationHint?.TargetType != desiredType)
-        {
-            Debug.WriteLine("Type registration hint does not match the actual type.");
-            registrationHint = null;
-        }
-
         var currentFrame = _frameStack.CurrentFrame;
-        currentFrame.Registration = registrationHint ?? TypeRegistry.GetTypeRegistration(desiredType);
-        Debug.Assert(currentFrame.Registration.TargetType == desiredType);
+        Debug.Assert(currentFrame is { Registration: not null });
         return _typeMetaSerializer.Write(ref writerRef, currentFrame.Registration);
     }
 
@@ -262,68 +299,68 @@ public sealed class SerializationWriter : IDisposable
     internal bool WriteUnmanaged<T>(T value)
         where T : unmanaged => ByrefWriter.WriteUnmanaged(value);
 
-    /// <inheritdoc cref="SerializationWriterRef.Write(ReadOnlySpan{byte})"/>
+    /// <inheritdoc cref="SerializationWriterRef.WriteBytes"/>
     [MustUseReturnValue]
-    public int Write(scoped ReadOnlySpan<byte> bytes) => ByrefWriter.Write(bytes);
+    public int WriteBytes(scoped ReadOnlySpan<byte> bytes) => ByrefWriter.WriteBytes(bytes);
 
-    /// <inheritdoc cref="SerializationWriterRef.Write(byte)"/>
+    /// <inheritdoc cref="SerializationWriterRef.WriteUInt8"/>
     [MustUseReturnValue]
-    public bool Write(byte value) => ByrefWriter.Write(value);
+    public bool WriteUInt8(byte value) => ByrefWriter.WriteUInt8(value);
 
-    /// <inheritdoc cref="SerializationWriterRef.Write(sbyte)"/>
+    /// <inheritdoc cref="SerializationWriterRef.WriteInt8"/>
     [MustUseReturnValue]
-    public bool Write(sbyte value) => ByrefWriter.Write(value);
+    public bool WriteInt8(sbyte value) => ByrefWriter.WriteInt8(value);
 
-    /// <inheritdoc cref="SerializationWriterRef.Write(sbyte)"/>
+    /// <inheritdoc cref="SerializationWriterRef.WriteUInt16"/>
     [MustUseReturnValue]
-    public bool Write(ushort value) => ByrefWriter.Write(value);
+    public bool WriteUInt16(ushort value) => ByrefWriter.WriteUInt16(value);
 
-    /// <inheritdoc cref="SerializationWriterRef.Write(sbyte)"/>
+    /// <inheritdoc cref="SerializationWriterRef.WriteInt16"/>
     [MustUseReturnValue]
-    public bool Write(short value) => ByrefWriter.Write(value);
+    public bool WriteInt16(short value) => ByrefWriter.WriteInt32((int)value);
 
-    /// <inheritdoc cref="SerializationWriterRef.Write(sbyte)"/>
+    /// <inheritdoc cref="SerializationWriterRef.WriteUInt32"/>
     [MustUseReturnValue]
-    public bool Write(uint value) => ByrefWriter.Write(value);
+    public bool WriteUInt32(uint value) => ByrefWriter.WriteUInt32(value);
 
-    /// <inheritdoc cref="SerializationWriterRef.Write(sbyte)"/>
+    /// <inheritdoc cref="SerializationWriterRef.WriteInt32"/>
     [MustUseReturnValue]
-    public bool Write(int value) => ByrefWriter.Write(value);
+    public bool WriteInt32(int value) => ByrefWriter.WriteInt32(value);
 
-    /// <inheritdoc cref="SerializationWriterRef.Write(sbyte)"/>
+    /// <inheritdoc cref="SerializationWriterRef.WriteInt64"/>
     [MustUseReturnValue]
-    public bool Write(ulong value) => ByrefWriter.Write(value);
+    public bool WriteInt64(ulong value) => ByrefWriter.WriteInt64(value);
 
-    /// <inheritdoc cref="SerializationWriterRef.Write(sbyte)"/>
+    /// <inheritdoc cref="SerializationWriterRef.WriteUInt64"/>
     [MustUseReturnValue]
-    public bool Write(long value) => ByrefWriter.Write(value);
+    public bool WriteUInt64(long value) => ByrefWriter.WriteUInt64(value);
 
-    /// <inheritdoc cref="SerializationWriterRef.Write(sbyte)"/>
+    /// <inheritdoc cref="SerializationWriterRef.WriteFloat32"/>
     [MustUseReturnValue]
-    public bool Write(float value) => ByrefWriter.Write(value);
+    public bool WriteFloat32(float value) => ByrefWriter.WriteFloat32(value);
 
-    /// <inheritdoc cref="SerializationWriterRef.Write(sbyte)"/>
+    /// <inheritdoc cref="SerializationWriterRef.WriteFloat64"/>
     [MustUseReturnValue]
-    public bool Write(double value) => ByrefWriter.Write(value);
+    public bool WriteFloat64(double value) => ByrefWriter.WriteFloat64(value);
 
-    /// <inheritdoc cref="SerializationWriterRef.Write(sbyte)"/>
+    /// <inheritdoc cref="SerializationWriterRef.WriteBool"/>
     [MustUseReturnValue]
-    public bool Write(bool value) => ByrefWriter.Write(value);
+    public bool WriteBool(bool value) => ByrefWriter.WriteBool(value);
 
-    /// <inheritdoc cref="SerializationWriterRef.Write7BitEncodedInt"/>
+    /// <inheritdoc cref="SerializationWriterRef.Write7BitEncodedInt32"/>
     [MustUseReturnValue]
-    public bool Write7BitEncodedInt(int value) => ByrefWriter.Write7BitEncodedInt(value);
+    public bool Write7BitEncodedInt32(int value) => ByrefWriter.Write7BitEncodedInt32(value);
 
-    /// <inheritdoc cref="SerializationWriterRef.Write7BitEncodedUint"/>
+    /// <inheritdoc cref="SerializationWriterRef.Write7BitEncodedUInt32"/>
     [MustUseReturnValue]
-    public bool Write7BitEncodedUint(uint value) => ByrefWriter.Write7BitEncodedUint(value);
+    public bool Write7BitEncodedUInt32(uint value) => ByrefWriter.Write7BitEncodedUInt32(value);
 
-    /// <inheritdoc cref="SerializationWriterRef.Write7BitEncodedLong"/>
+    /// <inheritdoc cref="SerializationWriterRef.Write7BitEncodedInt64"/>
     [MustUseReturnValue]
-    public bool Write7BitEncodedLong(long value) => ByrefWriter.Write7BitEncodedLong(value);
+    public bool Write7BitEncodedInt64(long value) => ByrefWriter.Write7BitEncodedInt64(value);
 
-    /// <inheritdoc cref="SerializationWriterRef.Write7BitEncodedUlong"/>
+    /// <inheritdoc cref="SerializationWriterRef.Write7BitEncodedUInt64"/>
     [MustUseReturnValue]
-    public bool Write7BitEncodedUlong(ulong value) => ByrefWriter.Write7BitEncodedUlong(value);
+    public bool Write7BitEncodedUInt64(ulong value) => ByrefWriter.Write7BitEncodedUInt64(value);
     #endregion
 }
