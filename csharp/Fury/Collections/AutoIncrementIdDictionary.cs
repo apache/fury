@@ -1,16 +1,11 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace Fury.Collections;
 
 internal sealed class AutoIncrementIdDictionary<TValue>
-    : ICollection<TValue>,
-        IReadOnlyDictionary<TValue, int>,
-        IReadOnlyDictionary<int, TValue>
     where TValue : notnull
 {
     private readonly Dictionary<TValue, int> _valueToId = new();
@@ -52,20 +47,6 @@ internal sealed class AutoIncrementIdDictionary<TValue>
         );
     }
 
-    IEnumerable<TValue> IReadOnlyDictionary<TValue, int>.Keys => _valueToId.Keys;
-
-    IEnumerable<int> IReadOnlyDictionary<int, TValue>.Keys => Enumerable.Range(0, _idToValue.Count);
-
-    public ICollection<int> Values => _valueToId.Values;
-
-    IEnumerable<int> IReadOnlyDictionary<TValue, int>.Values => _valueToId.Values;
-
-    IEnumerable<TValue> IReadOnlyDictionary<int, TValue>.Values => _idToValue;
-
-    public int Count => _valueToId.Count;
-
-    public bool IsReadOnly => false;
-
     public int GetOrAdd(in TValue value, out bool exists)
     {
         var nextId = _idToValue.Count;
@@ -76,11 +57,6 @@ internal sealed class AutoIncrementIdDictionary<TValue>
         }
 
         return id;
-    }
-
-    void ICollection<TValue>.Add(TValue item)
-    {
-        GetOrAdd(item, out _);
     }
 
     public bool Remove(TValue item)
@@ -95,8 +71,6 @@ internal sealed class AutoIncrementIdDictionary<TValue>
         _idToValue.Clear();
     }
 
-    bool ICollection<TValue>.Contains(TValue item) => ContainsKey(item);
-
     public bool ContainsKey(TValue key)
     {
         return _valueToId.ContainsKey(key);
@@ -110,11 +84,6 @@ internal sealed class AutoIncrementIdDictionary<TValue>
     public void CopyTo(TValue[] array, int arrayIndex)
     {
         _idToValue.CopyTo(array, arrayIndex);
-    }
-
-    IEnumerator<KeyValuePair<TValue, int>> IEnumerable<KeyValuePair<TValue, int>>.GetEnumerator()
-    {
-        return _valueToId.GetEnumerator();
     }
 
     public bool TryGetValue(TValue key, out int value)
@@ -148,24 +117,6 @@ internal sealed class AutoIncrementIdDictionary<TValue>
     public Enumerator GetEnumerator()
     {
         return new Enumerator(this);
-    }
-
-    IEnumerator<TValue> IEnumerable<TValue>.GetEnumerator()
-    {
-        ThrowHelper.ThrowNotSupportedException();
-        return null!;
-    }
-
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        ThrowHelper.ThrowNotSupportedException();
-        return null!;
-    }
-
-    IEnumerator<KeyValuePair<int, TValue>> IEnumerable<KeyValuePair<int, TValue>>.GetEnumerator()
-    {
-        ThrowHelper.ThrowNotSupportedException();
-        return null!;
     }
 
     public ref struct Enumerator(AutoIncrementIdDictionary<TValue> idDictionary)
