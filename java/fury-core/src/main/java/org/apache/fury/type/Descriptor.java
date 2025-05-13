@@ -158,7 +158,6 @@ public class Descriptor {
     this.nullable = builder.nullable;
     this.trackingRef = builder.trackingRef;
     this.type = builder.type;
-    this.snakeCaseName = builder.snakeCaseName;
     this.furyField = builder.furyField;
   }
 

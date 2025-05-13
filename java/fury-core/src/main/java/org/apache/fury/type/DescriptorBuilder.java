@@ -30,7 +30,6 @@ public class DescriptorBuilder {
   Class<?> type;
   String typeName;
   String name;
-  String snakeCaseName;
   int modifier;
   String declaringClass;
   Field field;
@@ -45,7 +44,6 @@ public class DescriptorBuilder {
     this.type = descriptor.getType();
     this.typeName = descriptor.getTypeName();
     this.name = descriptor.getName();
-    this.snakeCaseName = descriptor.getSnakeCaseName();
     this.modifier = descriptor.getModifier();
     this.declaringClass = descriptor.getDeclaringClass();
     this.field = descriptor.getField();
@@ -73,11 +71,6 @@ public class DescriptorBuilder {
 
   public DescriptorBuilder name(String name) {
     this.name = name;
-    return this;
-  }
-
-  public DescriptorBuilder snakeCaseName(String snakeCaseName) {
-    this.snakeCaseName = snakeCaseName;
     return this;
   }
 
