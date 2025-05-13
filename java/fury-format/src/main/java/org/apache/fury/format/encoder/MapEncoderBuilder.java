@@ -53,6 +53,7 @@ public class MapEncoderBuilder extends BaseBinaryEncoderBuilder {
   private static final String ROOT_VALUE_WRITER_NAME = "valueArrayWriter";
 
   private static final TypeRef<Field> ARROW_FIELD_TYPE = TypeRef.of(Field.class);
+  private static final Expression MAP_TYPE_EXPR = Expression.Literal.ofClass(Map.class);
   private final TypeRef<?> mapToken;
 
   public MapEncoderBuilder(Class<?> mapCls, Class<?> keyClass) {
@@ -180,7 +181,7 @@ public class MapEncoderBuilder extends BaseBinaryEncoderBuilder {
     expressions.add(
         new Expression.Invoke(keyArrayWriter, "writeDirectly", Expression.Literal.ofInt(-1)));
     Expression keySerializationExpr =
-        serializeForArrayByWriter(keySet, keyArrayWriter, keySetType, keyFieldExpr);
+        serializeForArrayByWriter(MAP_TYPE_EXPR, keySet, keyArrayWriter, keySetType, keyFieldExpr);
     Expression.Invoke keyArray =
         new Expression.Invoke(keyArrayWriter, "toArray", TypeRef.of(BinaryArray.class));
     expressions.add(map);
@@ -195,7 +196,7 @@ public class MapEncoderBuilder extends BaseBinaryEncoderBuilder {
 
     Expression.Invoke values = new Expression.Invoke(map, "values", valuesType);
     Expression valueSerializationExpr =
-        serializeForArrayByWriter(values, valArrayWriter, valuesType, valFieldExpr);
+        serializeForArrayByWriter(MAP_TYPE_EXPR, values, valArrayWriter, valuesType, valFieldExpr);
     Expression.Invoke valArray =
         new Expression.Invoke(valArrayWriter, "toArray", TypeRef.of(BinaryArray.class));
 
@@ -237,14 +238,14 @@ public class MapEncoderBuilder extends BaseBinaryEncoderBuilder {
     Expression keyJavaArray;
     Expression valueJavaArray;
     if (TypeUtils.ITERABLE_TYPE.isSupertypeOf(keysType)) {
-      keyJavaArray = deserializeForCollection(keyArrayRef, keysType);
+      keyJavaArray = deserializeForCollection(MAP_TYPE_EXPR, keyArrayRef, keysType);
     } else {
-      keyJavaArray = deserializeForArray(keyArrayRef, keysType);
+      keyJavaArray = deserializeForArray(MAP_TYPE_EXPR, keyArrayRef, keysType);
     }
     if (TypeUtils.ITERABLE_TYPE.isSupertypeOf(valuesType)) {
-      valueJavaArray = deserializeForCollection(valArrayRef, valuesType);
+      valueJavaArray = deserializeForCollection(MAP_TYPE_EXPR, valArrayRef, valuesType);
     } else {
-      valueJavaArray = deserializeForArray(valArrayRef, valuesType);
+      valueJavaArray = deserializeForArray(MAP_TYPE_EXPR, valArrayRef, valuesType);
     }
 
     Expression.ZipForEach put =

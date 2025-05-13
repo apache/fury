@@ -72,7 +72,7 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
 
   public RowEncoderBuilder(TypeRef<?> beanType) {
     super(new CodegenContext(), beanType);
-    Preconditions.checkArgument(TypeUtils.isBean(beanType));
+    Preconditions.checkArgument(TypeUtils.isBean(beanType.getType(), customTypeHandler));
     this.schema = TypeInference.inferSchema(getRawType(beanType));
     this.descriptorsMap = Descriptor.getDescriptorsMap(beanClass);
     ctx.reserveName(ROOT_ROW_WRITER_NAME);
@@ -169,7 +169,7 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
       Expression.StaticInvoke field =
           new Expression.StaticInvoke(
               DataTypes.class, "fieldOfSchema", ARROW_FIELD_TYPE, false, schemaExpr, ordinal);
-      Expression fieldExpr = serializeFor(ordinal, fieldValue, writer, fieldType, field);
+      Expression fieldExpr = serializeFor(bean, ordinal, fieldValue, writer, fieldType, field);
       expressions.add(fieldExpr);
     }
     expressions.add(
@@ -182,6 +182,7 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
    * Returns an expression that deserialize <code>row</code> as a java bean of type {@link
    * CodecBuilder#beanClass}.
    */
+  @Override
   public Expression buildDecodeExpression() {
     Reference row = new Reference(ROOT_ROW_NAME, binaryRowTypeToken, false);
     Expression bean = newBean();
@@ -196,8 +197,16 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
       TypeRef<?> fieldType = d.getTypeRef();
       Expression.Invoke isNullAt =
           new Expression.Invoke(row, "isNullAt", TypeUtils.PRIMITIVE_BOOLEAN_TYPE, ordinal);
-      String columnAccessMethodName = BinaryUtils.getElemAccessMethodName(fieldType);
-      TypeRef<?> colType = BinaryUtils.getElemReturnType(fieldType);
+      CustomCodec<?, ?> customEncoder =
+          customTypeHandler.findCodec(beanClass, fieldType.getRawType());
+      TypeRef<?> columnAccessType;
+      if (customEncoder == null) {
+        columnAccessType = fieldType;
+      } else {
+        columnAccessType = TypeRef.of(customEncoder.encodedType());
+      }
+      String columnAccessMethodName = BinaryUtils.getElemAccessMethodName(columnAccessType);
+      TypeRef<?> colType = BinaryUtils.getElemReturnType(columnAccessType);
       Expression.Invoke columnValue =
           new Expression.Invoke(
               row,
@@ -206,7 +215,7 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
               colType,
               false,
               ordinal);
-      Expression value = deserializeFor(columnValue, fieldType);
+      Expression value = deserializeFor(bean, columnValue, fieldType);
       Expression setActionExpr = setFieldValue(bean, d, value);
       Expression action = new Expression.If(ExpressionUtils.not(isNullAt), setActionExpr);
       expressions.add(action);

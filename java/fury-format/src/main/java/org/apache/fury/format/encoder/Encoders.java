@@ -40,6 +40,8 @@ import org.apache.fury.format.row.binary.BinaryMap;
 import org.apache.fury.format.row.binary.BinaryRow;
 import org.apache.fury.format.row.binary.writer.BinaryArrayWriter;
 import org.apache.fury.format.row.binary.writer.BinaryRowWriter;
+import org.apache.fury.format.type.CustomTypeEncoderRegistry;
+import org.apache.fury.format.type.CustomTypeRegistration;
 import org.apache.fury.format.type.DataTypes;
 import org.apache.fury.format.type.TypeInference;
 import org.apache.fury.logging.Logger;
@@ -216,6 +218,40 @@ public class Encoders {
       String msg = String.format("Create encoder failed, \nbeanClass: %s", beanClass);
       throw new EncoderException(msg, e);
     }
+  }
+
+  /**
+   * Register a custom codec handling a given type, when it is enclosed in the given beanType.
+   *
+   * @param beanType the enclosing type to limit this custom codec to
+   * @param type the type of field to handle
+   * @param codec the codec to use
+   */
+  public static <T> void registerCustomCodec(
+      Class<?> beanType, Class<T> type, CustomCodec<T, ?> codec) {
+    TypeInference.registerCustomCodec(new CustomTypeRegistration(beanType, type), codec);
+  }
+
+  /**
+   * Register a custom codec handling a given type.
+   *
+   * @param type the type of field to handle
+   * @param codec the codec to use
+   */
+  public static <T> void registerCustomCodec(Class<T> type, CustomCodec<T, ?> codec) {
+    registerCustomCodec(Object.class, type, codec);
+  }
+
+  /**
+   * Register a custom collection factory for a given collection and element type.
+   *
+   * @param collectionType the type of collection to handle
+   * @param elementType the type of element in the collection
+   * @param factory the factory to use
+   */
+  public static <E, C extends Collection<E>> void registerCustomCollectionFactory(
+      Class<?> collectionType, Class<E> elementType, CustomCollectionFactory<E, C> factory) {
+    TypeInference.registerCustomCollectionFactory(collectionType, elementType, factory);
   }
 
   /**
@@ -631,7 +667,9 @@ public class Encoders {
   }
 
   public static Class<?> loadOrGenRowCodecClass(Class<?> beanClass) {
-    Set<Class<?>> classes = TypeUtils.listBeansRecursiveInclusive(beanClass);
+    Set<Class<?>> classes =
+        TypeUtils.listBeansRecursiveInclusive(
+            beanClass, CustomTypeEncoderRegistry.customTypeHandler());
     LOG.info("Create RowCodec for classes {}", classes);
     CompileUnit[] compileUnits =
         classes.stream()
