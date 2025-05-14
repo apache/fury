@@ -106,12 +106,12 @@ func (s int32Serializer) TypeId() TypeId {
 }
 
 func (s int32Serializer) Write(f *Fury, buf *ByteBuffer, value reflect.Value) error {
-	buf.WriteInt32(int32(value.Int()))
+	buf.WriteVarint32(int32(value.Int()))
 	return nil
 }
 
 func (s int32Serializer) Read(f *Fury, buf *ByteBuffer, type_ reflect.Type, value reflect.Value) error {
-	value.Set(reflect.ValueOf(buf.ReadInt32()))
+	value.Set(reflect.ValueOf(buf.ReadVarint32()))
 	return nil
 }
 
@@ -123,12 +123,12 @@ func (s int64Serializer) TypeId() TypeId {
 }
 
 func (s int64Serializer) Write(f *Fury, buf *ByteBuffer, value reflect.Value) error {
-	buf.WriteInt64(value.Int())
+	buf.WriteVarint64(value.Int())
 	return nil
 }
 
 func (s int64Serializer) Read(f *Fury, buf *ByteBuffer, type_ reflect.Type, value reflect.Value) error {
-	value.Set(reflect.ValueOf(buf.ReadInt64()))
+	value.Set(reflect.ValueOf(buf.ReadVarint64()))
 	return nil
 }
 

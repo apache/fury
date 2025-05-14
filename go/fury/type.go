@@ -612,9 +612,7 @@ func (r *typeResolver) writeTypeInfo(buffer *ByteBuffer, typeInfo TypeInfo) erro
 	internalTypeID := typeID & 0xFF
 
 	// Write the type ID to buffer (variable-length encoding)
-	if err := buffer.WriteVarUint32(uint32(typeID)); err != nil {
-		return err
-	}
+	buffer.WriteVarUint32(uint32(typeID))
 
 	// For namespaced types, write additional metadata:
 	if IsNamespacedType(TypeId(internalTypeID)) {
