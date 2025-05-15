@@ -2,6 +2,21 @@
 title: Fury Xlang Serialization Format
 sidebar_position: 0
 id: fury_xlang_serialization_spec
+license: |
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
 ---
 
 ## Cross-language Serialization Specification
@@ -42,18 +57,11 @@ also introduce more complexities compared to static serialization frameworks. So
 - named_enum: an enum whose value will be serialized as the registered name.
 - struct: a morphic(final) type serialized by Fury Struct serializer. i.e. it doesn't have subclasses. Suppose we're
   deserializing `List<SomeClass>`, we can save dynamic serializer dispatch since `SomeClass` is morphic(final).
-- polymorphic_struct: a type which is not morphic(not final). i.e. it has subclasses. Suppose we're deserializing
-  `List<SomeClass>`, we must dispatch serializer dynamically since `SomeClass` is morphic(final).
 - compatible_struct: a morphic(final) type serialized by Fury compatible Struct serializer.
-- polymorphic_compatible_struct: a non-morphic(non-final) type serialized by Fury compatible Struct serializer.
 - named_struct: a `struct` whose type mapping will be encoded as a name.
-- named_polymorphic_struct: a `polymorphic_struct` whose type mapping will be encoded as a name.
 - named_compatible_struct: a `compatible_struct` whose type mapping will be encoded as a name.
-- named_polymorphic_compatible_struct: a `polymorphic_compatible_struct` whose type mapping will be encoded as a name.
 - ext: a type which will be serialized by a customized serializer.
-- polymorphic_ext: an `ext` type which is not morphic(not final).
 - named_ext: an `ext` type whose type mapping will be encoded as a name.
-- named_polymorphic_ext: an `polymorphic_ext` type whose type mapping will be encoded as a name.
 - list: a sequence of objects.
 - set: an unordered set of unique elements.
 - map: a map of key-value pairs. Mutable types such as `list/map/set/array/tensor/arrow` are not allowed as key of map.
@@ -63,17 +71,17 @@ also introduce more complexities compared to static serialization frameworks. So
 - local_date: a naive date without timezone. The count is days relative to an epoch at UTC midnight on Jan 1, 1970.
 - decimal: exact decimal value represented as an integer value in two's complement.
 - binary: an variable-length array of bytes.
-- array: only allow numeric components. Other arrays will be taken as List. The implementation should support the
+- array: only allow 1d numeric components. Other arrays will be taken as List. The implementation should support the
   interoperability between array and list.
-- array: multidimensional array which every sub-array can have different sizes but all have same type.
-- bool_array: one dimensional int16 array.
-- int8_array: one dimensional int8 array.
-- int16_array: one dimensional int16 array.
-- int32_array: one dimensional int32 array.
-- int64_array: one dimensional int64 array.
-- float16_array: one dimensional half_float_16 array.
-- float32_array: one dimensional float32 array.
-- float64_array: one dimensional float64 array.
+  - bool_array: one dimensional int16 array.
+  - int8_array: one dimensional int8 array.
+  - int16_array: one dimensional int16 array.
+  - int32_array: one dimensional int32 array.
+  - int64_array: one dimensional int64 array.
+  - float16_array: one dimensional half_float_16 array.
+  - float32_array: one dimensional float32 array.
+  - float64_array: one dimensional float64 array.
+- tensor: multidimensional array which every sub-array have same size and type.
 - arrow record batch: an arrow [record batch](https://arrow.apache.org/docs/cpp/tables.html#record-batches) object.
 - arrow table: an arrow [table](https://arrow.apache.org/docs/cpp/tables.html#tables) object.
 
@@ -118,14 +126,13 @@ Users can also provide meta hints for fields of a type, or the type whole. Here 
 annotation to provide such information.
 
 ```java
-
-@TypeInfo(fieldsNullable = false, trackingRef = false, polymorphic = false)
+@FuryObject(fieldsNullable = false, trackingRef = false)
 class Foo {
-  @FieldInfo(trackingRef = false)
+  @FuryField(trackingRef = false)
   int[] intArray;
-  @FieldInfo(polymorphic = true)
+  @FuryField(polymorphic = true)
   Object object;
-  @FieldInfo(tagId = 1, nullable = true)
+  @FuryField(tagId = 1, nullable = true)
   List<Object> objectList;
 }
 ```
@@ -207,14 +214,29 @@ not-null by default, or using schema-evolution mode to carry the not-null fields
 
 ## Type Meta
 
-For every type to be serialized, it must be registered with an optional ID first. The registered type will have a
-user-provided or an auto-growing unsigned int i.e. `type_id`. The registration can be used for security check and type
-identification. The id of user registered type will be added by `64` to make space for Fury internal data types.
+For every type to be serialized, it have a type id to indicate its type.
 
-Depending on whether meta share mode and registration is enabled for current type, Fury will write type meta
+- basic types: the type id
+- enum:
+  - `Type.ENUM` + registered id
+  - `Type.NAMED_ENUM` + registered namespace+typename
+- list: `Type.List`
+- set: `Type.SET`
+- map: `Type.MAP`
+- ext:
+  - `Type.EXT` + registered id
+  - `Type.NAMED_EXT` + registered namespace+typename
+- struct:
+  - `Type.STRUCT` + struct meta
+  - `Type.NAMED_STRUCT` + struct meta
+
+Every type must be registered with an ID or name first. The registration can be used for security check and type
+identification.
+
+Struct is a special type, depending whether schema compatibility is enabled, Fury will write struct meta
 differently.
 
-### Schema consistent
+### Struct Schema consistent
 
 - If schema consistent mode is enabled globally when creating fury, type meta will be written as a fury unsigned varint
   of `type_id`. Schema evolution related meta will be ignored.
@@ -224,7 +246,7 @@ differently.
       registering type.
   - Get index of the meta in `captured_type_defs`, write that index as `| unsigned varint: index |`.
 
-### Schema evolution
+### Struct Schema evolution
 
 If schema evolution mode is enabled globally when creating fury, and enabled for current type, type meta will be written
 using one of the following mode. Which mode to use is configured when creating fury.
@@ -284,14 +306,138 @@ using one of the following mode. Which mode to use is configured when creating f
 Here we mainly describe the meta layout for schema evolution mode:
 
 ```
-|      8 bytes meta header      |   variable bytes   |  variable bytes   | variable bytes |
-+-------------------------------+--------------------+-------------------+----------------+
-| 7 bytes hash + 1 bytes header |  current type meta |  parent type meta |      ...       |
+|    8 bytes header    |   variable bytes   |  variable bytes   |
++----------------------+--------------------+-------------------+
+| global binary header |    meta header     |    fields meta    |
 ```
 
-Type meta are encoded from parent type to leaf type, only type with serializable fields will be encoded.
+For languages which support inheritance, if parent class and subclass has fields with same name, using field in
+subclass.
+
+##### Global binary header
+
+`50 bits hash + 1bit compress flag + write fields meta + 12 bits meta size`. Right is the lower bits.
+
+- lower 12 bits are used to encode meta size. If meta size `>= 0b111_1111_1111`, then write
+  `meta_ size - 0b111_1111_1111` next.
+- 13rd bit is used to indicate whether to write fields meta. When this class is schema-consistent or use registered
+  serializer, fields meta will be skipped. Class Meta will be used for share namespace + type name only.
+- 14rd bit is used to indicate whether meta is compressed.
+- Other 50 bits is used to store the unique hash of `flags + all layers class meta`.
 
 ##### Meta header
+
+Meta header is a 8 bits number value.
+
+- Lowest 5 digits `0b00000~0b11110` are used to record num fields. `0b11111` is preserved to indicate that Fury need to
+  read more bytes for length using Fury unsigned int encoding. Note that num_fields is the number of compatible fields.
+  Users can use tag id to mark some fields as compatible fields in schema consistent context. In such cases, schema
+  consistent fields will be serialized first, then compatible fields will be serialized next. At deserialization,
+  Fury will use fields info of those fields which aren't annotated by tag id for deserializing schema consistent
+  fields, then use fields info in meta for deserializing compatible fields.
+- The 6th bit: 0 for registered by id, 1 for registered by name.
+- Remaining 2 bits are reserved for future extension.
+
+##### Fields meta
+
+Format:
+
+```
+|   field info: variable bytes    | variable bytes  | ... |
++---------------------------------+-----------------+-----+
+| header + type info + field name | next field info | ... |
+```
+
+###### Field Header
+
+Field Header is 8 bits, annotation can be used to provide more specific info. If annotation not exists, fury will infer
+those info automatically.
+
+The format for field header is:
+
+```
+2 bits field name encoding + 4 bits size + nullability flag + ref tracking flag
+```
+
+Detailed spec:
+
+- 2 bits field name encoding:
+  - encoding: `UTF8/ALL_TO_LOWER_SPECIAL/LOWER_UPPER_DIGIT_SPECIAL/TAG_ID`
+  - If tag id is used, field name will be written by an unsigned varint tag id, and 2 bits encoding will be `11`.
+- size of field name:
+  - The `4 bits size: 0~14`  will be used to indicate length `1~15`, the value `15` indicates to read more bytes,
+          the encoding will encode `size - 15` as a varint next.
+  - If encoding is `TAG_ID`, then num_bytes of field name will be used to store tag id.
+- ref tracking: when set to 1, ref tracking will be enabled for this field.
+- nullability: when set to 1, this field can be null.
+
+###### Field Type Info
+
+Field type info is written as unsigned int8. Detailed id spec is:
+
+- For struct registered by id, it will be `Type.STRUCT`.
+- For struct registered by name, it will be `Type.NAMED_STRUCT`.
+- For enum registered by id, it will be `Type.ENUM`.
+- For enum registered by name, it will be `Type.NAMED_ENUM`.
+- For ext type registered by id, it will be `Type.EXT`.
+- For ext type registered by name, it will be `Type.NAMED_EXT`.
+- For list/set type, it will be written as `Type.LIST/SET`, then write element type recursively.
+- For 1D primitive array type, it will be written as `Type.XXX_ARRAY`.
+- For multi-dimensional primitive array type with same size on each dim, it will be written as `Type.TENSOR`.
+- For other array type, it will be written as `Type.LIST`, then write element type recursively.
+- For map type, it will be written as `Type.MAP`, then write key and value type recursively.
+- For other types supported by fury directly, it will be fury type id for that type.
+- For other types not determined at compile time, write `Type.UNKNOWN` instead. For such types, actual type
+  will be written when serializing such field values.
+
+Polymorphism spec:
+
+- `struct/named_struct/ext/named_ext` are taken as polymorphic, the meta for those types are written separately
+  instead of inlining here to reduce meta space cost if object of this type is serialized in current object graph
+  multiple times, and the field value may be null too.
+- `enum` is taken as morphic, if deserialization doesn't have this field, or the type is not enum, enum value
+  will be skipped.
+- `list/map/set` are taken as morphic, when serializing values of those type, the concrete types won't be written
+  again.
+- Other types that fury supported are taken as morphic too.
+
+List/Set/Map nested type spec:
+
+- `list`: `| list type id | nested type id << 2 + nullability flag + ref tracking flag | ... multi-layer type info |`
+- `set`: `| set type id | nested type id << 2 + nullability flag + ref tracking flag | ... multi-layer type info |`
+- `map`: `| set type id | key type info | value type info |`
+  - Key type format: `| nested type id << 2 + nullability flag + ref tracking flag | ... multi-layer type info |`
+  - Value type format: `| nested type id << 2 + nullability flag + ref tracking flag | ... multi-layer type info |`
+
+###### Field Name
+
+If tag id is set, tag id will be used instead. Otherwise meta string of field name will  be written instead.
+
+###### Field order
+
+Field order are left as implementation details, which is not exposed to specification, the deserialization need to
+resort fields based on Fury fields sort algorithms. In this way, fury can compute statistics for field names or types and
+using a more compact encoding.
+
+## Extended Type Meta with Inheritance support
+
+If one want to support inheritance for struct, one can implement following spec.
+
+### Schema consistent
+
+Fields are serialized from parent type to leaf type. Fields are sorted using fury struct fields sort algorithms.
+
+### Schema Evolution
+
+Meta layout for schema evolution mode:
+
+```
+|    8 bytes header    | variable bytes | variable bytes |   variable bytes   |   variable bytes   |
++----------------------+----------------+----------------+--------------------+--------------------+
+| global binary header |  meta header   |  fields meta   | parent meta header | parent fields meta |
+```
+
+#### Meta header
 
 Meta header is a 64 bits number value encoded in little endian order.
 
@@ -302,7 +448,7 @@ Meta header is a 64 bits number value encoded in little endian order.
 - The 5th bit is used to indicate whether this type needs schema evolution.
 - Other 56 bits are used to store the unique hash of `flags + all layers type meta`.
 
-##### Single layer type meta
+#### Single layer type meta
 
 ```
 | unsigned varint | var uint |  field info: variable bytes   | variable bytes  | ... |
@@ -310,40 +456,7 @@ Meta header is a 64 bits number value encoded in little endian order.
 |   num_fields    | type id  | header + type id + field name | next field info | ... |
 ```
 
-- num fields: encode `num fields` as unsigned varint.
-  - If the current type is schema consistent, then num_fields will be `0` to flag it.
-  - If the current type isn't schema consistent, then num_fields will be the number of compatible fields. For example,
-      users can use tag id to mark some fields as compatible fields in schema consistent context. In such cases, schema
-      consistent fields will be serialized first, then compatible fields will be serialized next. At deserialization,
-      Fury will use fields info of those fields which aren't annotated by tag id for deserializing schema consistent
-      fields, then use fields info in meta for deserializing compatible fields.
-- type id: the registered id for the current type, which will be written as an unsigned varint.
-- field info:
-  - header(8
-      bits): `4 bits size + 2 bits field name encoding + nullability flag + ref tracking flag`.
-      Users can use annotation to provide those info.
-    - 2 bits field name encoding:
-      - encoding: `UTF8/ALL_TO_LOWER_SPECIAL/LOWER_UPPER_DIGIT_SPECIAL/TAG_ID`
-      - If tag id is used, i.e. field name is written by an unsigned varint tag id. 2 bits encoding will be `11`.
-    - size of field name:
-      - The `4 bits size: 0~14`  will be used to indicate length `1~15`, the value `15` indicates to read more bytes,
-              the encoding will encode `size - 15` as a varint next.
-      - If encoding is `TAG_ID`, then num_bytes of field name will be used to store tag id.
-    - ref tracking: when set to 1, ref tracking will be enabled for this field.
-    - nullability: when set to 1, this field can be null.
-  - field name: If tag id is set, tag id will be used instead. Otherwise meta string encoding `[length]` and data will
-      be written instead.
-  - type id:
-    - For registered type-consistent classes, it will be the registered type id.
-    - Otherwise it will be encoded as `OBJECT_ID` if it isn't `final` and `FINAL_OBJECT_ID` if it's `final`. The
-          meta for such types is written separately instead of inlining here is to reduce meta space cost if object of
-          this type is serialized in current object graph multiple times, and the field value may be null too.
-
-Field order are left as implementation details, which is not exposed to specification, the deserialization need to
-resort fields based on Fury field comparator. In this way, fury can compute statistics for field names or types and
-using a more compact encoding.
-
-##### Other layers type meta
+#### Other layers type meta
 
 Same encoding algorithm as the previous layer.
 
@@ -488,7 +601,7 @@ Which encoding to choose:
 Format:
 
 ```
-| unsigned varint64: length << 4 `bitor` 4 bits elements header | elements data |
+| unsigned varint64: length | 1 byte elements header | elements data |
 ```
 
 #### elements header
@@ -560,6 +673,17 @@ then copy the whole buffer into the stream.
 Such serialization won't compress the array. If users want to compress primitive array, users need to register custom
 serializers for such types or mark it as list type.
 
+#### Tensor
+
+Tensor is a special primitive multi-dimensional array which all dimensions have same size and type. The serialization
+format is:
+
+```
+| num_dims(unsigned varint) | shape[0](unsigned varint) | shape[...] | shape[N] | element type | data |
+```
+
+The data is continuous to reduce copy and may zero-copy in some cases.
+
 #### object array
 
 Object array is serialized using the list format. Object component type will be taken as list element
@@ -567,9 +691,7 @@ generic type.
 
 ### map
 
-> All Map serializers must extend `AbstractMapSerializer`.
-
-Format:
+Map uses a chunk by chunk based Format:
 
 ```
 | length(unsigned varint) | key value chunk data | ... | key value chunk data |
@@ -587,7 +709,7 @@ Fury will serialize the map chunk by chunk, every chunk has 255 pairs at most.
 ```
 |    1 byte      |     1 byte     | variable bytes  |
 +----------------+----------------+-----------------+
-| chunk size: N  |    KV header   |   N*2 objects   |
+|    KV header   | chunk size: N  |   N*2 objects   |
 ```
 
 KV header:
@@ -595,13 +717,13 @@ KV header:
 - If track key ref, use the first bit `0b1` of the header to flag it.
 - If the key has null, use the second bit `0b10` of the header to flag it. If ref tracking is enabled for this
   key type, this flag is invalid.
-- If the key types of map are different, use the 3rd bit `0b100` of the header to flag it.
-- If the actual key type of the map is not the declared key type, use the 4rd bit `0b1000` of the header to flag it.
-- If track value ref, use the 5th bit `0b10000` of the header to flag it.
-- If the value has null, use the 6th bit `0b100000` of the header to flag it. If ref tracking is enabled for this
+- If the actual key type of map is not the declared key type, use the 3rd bit `0b100` of the header to flag it.
+- If track value ref, use the 4th bit `0b1000` of the header to flag it.
+- If the value has null, use the 5th bit `0b10000` of the header to flag it. If ref tracking is enabled for this
   value type, this flag is invalid.
-- If the value types of the map are different, use the 7rd bit `0b1000000` header to flag it.
-- If the value type of map is not the declared value type, use the 8rd bit `0b10000000` of the header to flag it.
+- If the value type of map is not the declared value type, use the 6rd bit `0b100000` of the header to flag it.
+- If key or value is null, that key and value will be written as a separate chunk, and chunk size writing will be
+  skipped too.
 
 If streaming write is enabled, which means Fury can't update written `chunk size`. In such cases, map key-value data
 format will be:
@@ -652,12 +774,32 @@ Depending on schema compatibility, structs will have different formats.
 
 Field will be ordered as following, every group of fields will have its own order:
 
-- primitive fields: larger size type first, smaller later, variable size type last.
-- boxed primitive fields: same order as primitive fields
-- final fields: same type together, then sorted by field name lexicographically.
-- list fields: same order as final fields
-- map fields: same order as final fields
-- other fields: same order as final fields
+- primitive fields:
+  - larger size type first, smaller later, variable size type last.
+  - when same size, sort by type id
+  - when same size and type id, sort by snake case field name
+  - types: bool/int8/int16/int32/varint32/int64/varint64/sliint64/float16/float32/float64
+- nullable primitive fields: same order as primitive fields
+- morphic fields: same type together, then sorted by field name lexicographically using snake case style.
+- unknown fields: same sort algorithms as morphic fields
+- list fields: same sort algorithms as morphic fields
+- set fields: same sort algorithms as morphic fields
+- map fields: same sort algorithms as morphic fields
+
+#### Field order
+
+Fields in a struct are sorted in a ascending order by:
+
+- primitive fields first: bool/int8/int16/int32/varint32/int64/varint64/sliint64/float16/float32/float64, sorted by
+  type id.
+- nullable primitive fields
+- morphic types except `list/set/map`
+- unknown types
+- list types
+- set types
+- map types
+
+If two fields have same type, then sort by snake_case styled field name.
 
 #### schema consistent
 

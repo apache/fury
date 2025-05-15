@@ -44,7 +44,7 @@ public class ClassDefEncoderTest {
     MemoryBuffer buffer =
         ClassDefEncoder.encodeClassDef(
             fury.getClassResolver(), type, getClassFields(type, fieldsInfo), true);
-    ClassDef classDef = ClassDef.readClassDef(fury.getClassResolver(), buffer);
+    ClassDef classDef = ClassDef.readClassDef(fury, buffer);
     Assert.assertEquals(classDef.getClassName(), type.getName());
     Assert.assertEquals(classDef.getFieldsInfo().size(), type.getDeclaredFields().length);
     Assert.assertEquals(classDef.getFieldsInfo(), fieldsInfo);
@@ -59,8 +59,7 @@ public class ClassDefEncoderTest {
       Fury fury = Fury.builder().withMetaShare(true).build();
       ClassDef classDef = ClassDef.buildClassDef(fury, type);
       ClassDef classDef1 =
-          ClassDef.readClassDef(
-              fury.getClassResolver(), MemoryBuffer.fromByteArray(classDef.getEncoded()));
+          ClassDef.readClassDef(fury, MemoryBuffer.fromByteArray(classDef.getEncoded()));
       Assert.assertEquals(classDef1, classDef);
     }
   }
@@ -77,8 +76,7 @@ public class ClassDefEncoderTest {
     Fury fury = Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(true).build();
     ClassDef classDef = ClassDef.buildClassDef(fury, Foo2.class);
     ClassDef classDef1 =
-        ClassDef.readClassDef(
-            fury.getClassResolver(), MemoryBuffer.fromByteArray(classDef.getEncoded()));
+        ClassDef.readClassDef(fury, MemoryBuffer.fromByteArray(classDef.getEncoded()));
     Assert.assertEquals(classDef, classDef1);
   }
 
@@ -91,8 +89,7 @@ public class ClassDefEncoderTest {
             TestClassLengthTestClassLengthTestClassLengthTestClassLengthTestClassLengthTestClassLengthTestClassLength
                 .InnerClassTestLengthInnerClassTestLengthInnerClassTestLength.class);
     ClassDef classDef1 =
-        ClassDef.readClassDef(
-            fury.getClassResolver(), MemoryBuffer.fromByteArray(classDef.getEncoded()));
+        ClassDef.readClassDef(fury, MemoryBuffer.fromByteArray(classDef.getEncoded()));
     Assert.assertEquals(classDef1, classDef);
   }
 

@@ -171,29 +171,46 @@ public class StringSerializerTest extends FuryTestBase {
   }
 
   /** Test for <a href="https://github.com/apache/fury/issues/1984">#1984</a> */
-  @Test
-  public void testJavaCompressedString() {
+  @Test(dataProvider = "oneBoolOption")
+  public void testJavaCompressedString(boolean b) {
     Fury fury =
         Fury.builder()
             .withStringCompressed(true)
+            .withWriteNumUtf16BytesForUtf8Encoding(b)
             .withLanguage(Language.JAVA)
             .requireClassRegistration(false)
             .build();
-
     Simple a =
         new Simple(
             "STG@ON DEMAND Solutions@GeoComputing Switch/ Hub@Digi Edgeport/216 – 16 port Serial Hub");
-
-    byte[] bytes = fury.serialize(a);
-
-    Simple b = (Simple) fury.deserialize(bytes);
-    assertEquals(a, b);
+    serDeCheck(fury, a);
   }
 
-  @Test(dataProvider = "stringCompress")
-  public void testJavaString(boolean stringCompress) {
+  @Test
+  public void testCompressedStringEstimatedWrongSize() {
     Fury fury =
-        Fury.builder().withStringCompressed(stringCompress).requireClassRegistration(false).build();
+        Fury.builder()
+            .withStringCompressed(true)
+            .withWriteNumUtf16BytesForUtf8Encoding(false)
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(false)
+            .build();
+    // estimated 41 bytes, header needs 2 byte.
+    // encoded utf8 is 31 bytes, took 1 byte for header.
+    serDeCheck(fury, StringUtils.random(25, 47) + "你好");
+    // estimated 31 bytes, header needs 1 byte.
+    // encoded utf8 is 32 bytes, took 2 byte for header.
+    serDeCheck(fury, "hello, world. 你好，世界。");
+  }
+
+  @Test(dataProvider = "twoBoolOptions")
+  public void testJavaString(boolean stringCompress, boolean writeNumUtf16BytesForUtf8Encoding) {
+    Fury fury =
+        Fury.builder()
+            .withStringCompressed(stringCompress)
+            .withWriteNumUtf16BytesForUtf8Encoding(writeNumUtf16BytesForUtf8Encoding)
+            .requireClassRegistration(false)
+            .build();
     MemoryBuffer buffer = MemoryUtils.buffer(32);
     StringSerializer serializer = new StringSerializer(fury);
 
@@ -211,10 +228,15 @@ public class StringSerializerTest extends FuryTestBase {
         new String[] {"你好, Fury" + StringUtils.random(64), "你好, Fury" + StringUtils.random(64)});
   }
 
-  @Test(dataProvider = "stringCompress")
-  public void testJavaStringOffHeap(boolean stringCompress) {
+  @Test(dataProvider = "twoBoolOptions")
+  public void testJavaStringOffHeap(
+      boolean stringCompress, boolean writeNumUtf16BytesForUtf8Encoding) {
     Fury fury =
-        Fury.builder().withStringCompressed(stringCompress).requireClassRegistration(false).build();
+        Fury.builder()
+            .withStringCompressed(stringCompress)
+            .withWriteNumUtf16BytesForUtf8Encoding(writeNumUtf16BytesForUtf8Encoding)
+            .requireClassRegistration(false)
+            .build();
     MemoryBuffer buffer = MemoryUtils.wrap(ByteBuffer.allocateDirect(1024));
     Object o1 = "你好, Fury" + StringUtils.random(64);
     Object o2 =
@@ -331,9 +353,14 @@ public class StringSerializerTest extends FuryTestBase {
     }
   }
 
-  @Test
-  public void testReadUtf8String() {
-    Fury fury = Fury.builder().withStringCompressed(true).requireClassRegistration(false).build();
+  @Test(dataProvider = "oneBoolOption")
+  public void testReadUtf8String(boolean writeNumUtf16BytesForUtf8Encoding) {
+    Fury fury =
+        Fury.builder()
+            .withStringCompressed(true)
+            .withWriteNumUtf16BytesForUtf8Encoding(writeNumUtf16BytesForUtf8Encoding)
+            .requireClassRegistration(false)
+            .build();
     for (MemoryBuffer buffer :
         new MemoryBuffer[] {
           MemoryUtils.buffer(32), MemoryUtils.wrap(ByteBuffer.allocateDirect(2048))
@@ -343,8 +370,12 @@ public class StringSerializerTest extends FuryTestBase {
       assertEquals(serializer.read(buffer), "abc你好");
       byte[] bytes = "abc你好".getBytes(StandardCharsets.UTF_8);
       byte UTF8 = 2;
-      buffer.writeVarUint64(((long) "abc你好".length() << 1) << 2 | UTF8);
-      buffer.writeInt32(bytes.length);
+      if (writeNumUtf16BytesForUtf8Encoding) {
+        buffer.writeVarUint64(((long) "abc你好".length() << 1) << 2 | UTF8);
+        buffer.writeInt32(bytes.length);
+      } else {
+        buffer.writeVarUint64((((long) bytes.length) << 2 | UTF8));
+      }
       buffer.writeBytes(bytes);
       assertEquals(serializer.read(buffer), "abc你好");
       assertEquals(buffer.readerIndex(), buffer.writerIndex());

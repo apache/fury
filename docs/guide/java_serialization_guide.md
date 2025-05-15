@@ -2,6 +2,21 @@
 title: Java Serialization Guide
 sidebar_position: 0
 id: java_object_graph_guide
+license: |
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
 ---
 
 ## Java object graph serialization
@@ -102,7 +117,7 @@ public class Example {
 | `compressLong`                      | Enables or disables long compression for smaller size.                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | `true`                                                         |
 | `compressString`                    | Enables or disables string compression for smaller size.                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | `false`                                                        |
 | `classLoader`                       | The classloader should not be updated; Fury caches class metadata. Use `LoaderBinding` or `ThreadSafeFury` for classloader updates.                                                                                                                                                                                                                                                                                                                                                                                               | `Thread.currentThread().getContextClassLoader()`               |
-| `compatibleMode`                    | Type forward/backward compatibility config. Also Related to `checkClassVersion` config. `SCHEMA_CONSISTENT`: Class schema must be consistent between serialization peer and deserialization peer. `COMPATIBLE`: Class schema can be different between serialization peer and deserialization peer. They can add/delete fields independently. [See more](#class-inconsistency-and-class-version-check).                                                                                                                             | `CompatibleMode.SCHEMA_CONSISTENT`                             |
+| `compatibleMode`                    | Type forward/backward compatibility config. Also Related to `checkClassVersion` config. `SCHEMA_CONSISTENT`: Class schema must be consistent between serialization peer and deserialization peer. `COMPATIBLE`: Class schema can be different between serialization peer and deserialization peer. They can add/delete fields independently. [See more](#class-inconsistency-and-class-version-check).                                                                                                                            | `CompatibleMode.SCHEMA_CONSISTENT`                             |
 | `checkClassVersion`                 | Determines whether to check the consistency of the class schema. If enabled, Fury checks, writes, and checks consistency using the `classVersionHash`. It will be automatically disabled when `CompatibleMode#COMPATIBLE` is enabled. Disabling is not recommended unless you can ensure the class won't evolve.                                                                                                                                                                                                                  | `false`                                                        |
 | `checkJdkClassSerializable`         | Enables or disables checking of `Serializable` interface for classes under `java.*`. If a class under `java.*` is not `Serializable`, Fury will throw an `UnsupportedOperationException`.                                                                                                                                                                                                                                                                                                                                         | `true`                                                         |
 | `registerGuavaTypes`                | Whether to pre-register Guava types such as `RegularImmutableMap`/`RegularImmutableList`. These types are not public API, but seem pretty stable.                                                                                                                                                                                                                                                                                                                                                                                 | `true`                                                         |
@@ -125,7 +140,7 @@ public class Example {
 Single thread fury:
 
 ```java
-Fury fury=Fury.builder()
+Fury fury = Fury.builder()
   .withLanguage(Language.JAVA)
   // enable reference tracking for shared/circular reference.
   // Disable it will have better performance if no duplicate reference.
@@ -137,14 +152,14 @@ Fury fury=Fury.builder()
   // enable async multi-threaded compilation.
   .withAsyncCompilation(true)
   .build();
-  byte[]bytes=fury.serialize(object);
-  System.out.println(fury.deserialize(bytes));
+byte[] bytes = fury.serialize(object);
+System.out.println(fury.deserialize(bytes));
 ```
 
 Thread-safe fury:
 
 ```java
-ThreadSafeFury fury=Fury.builder()
+ThreadSafeFury fury = Fury.builder()
   .withLanguage(Language.JAVA)
   // enable reference tracking for shared/circular reference.
   // Disable it will have better performance if no duplicate reference.
@@ -160,9 +175,44 @@ ThreadSafeFury fury=Fury.builder()
   // enable async multi-threaded compilation.
   .withAsyncCompilation(true)
   .buildThreadSafeFury();
-  byte[]bytes=fury.serialize(object);
-  System.out.println(fury.deserialize(bytes));
+byte[] bytes = fury.serialize(object);
+System.out.println(fury.deserialize(bytes));
 ```
+
+### Handling Class Schema Evolution in Serialization
+
+In many systems, the schema of a class used for serialization may change over time. For instance, fields within a class
+may be added or removed. When serialization and deserialization processes use different versions of jars, the schema of
+the class being deserialized may differ from the one used during serialization.
+
+By default, Fury serializes objects using the `CompatibleMode.SCHEMA_CONSISTENT` mode. This mode assumes that the
+deserialization process uses the same class schema as the serialization process, minimizing payload overhead.
+However, if there is a schema inconsistency, deserialization will fail.
+
+If the schema is expected to change, to make deserialization succeed, i.e. schema forward/backward compatibility.
+Users must configure Fury to use `CompatibleMode.COMPATIBLE`. This can be done using the
+`FuryBuilder#withCompatibleMode(CompatibleMode.COMPATIBLE)` method.
+In this compatible mode, deserialization can handle schema changes such as missing or extra fields, allowing it to
+succeed even when the serialization and deserialization processes have different class schemas.
+
+Here is an example of creating Fury to support schema evolution:
+
+```java
+Fury fury = Fury.builder()
+  .withCompatibleMode(CompatibleMode.COMPATIBLE)
+  .build();
+
+byte[] bytes = fury.serialize(object);
+System.out.println(fury.deserialize(bytes));
+```
+
+This compatible mode involves serializing class metadata into the serialized output. Despite Fury's use of
+sophisticated compression techniques to minimize overhead, there is still some additional space cost associated with
+class metadata.
+
+To further reduce metadata costs, Fury introduces a class metadata sharing mechanism, which allows the metadata to be
+sent to the deserialization process only once. For more details, please refer to the [Meta Sharing](#MetaSharing)
+section.
 
 ### Smaller size
 
@@ -184,9 +234,9 @@ For long compression, fury support two encoding:
   - Otherwise write as 9 bytes: `| 0b1 | little-endian 8bytes long |`
 - Fury PVL(Progressive Variable-length Long) Encoding:
   - First bit in every byte indicate whether has next byte. if first bit is set, then next byte will be read util
-  first bit of next byte is unset.
+      first bit of next byte is unset.
   - Negative number will be converted to positive number by `(v << 1) ^ (v >> 63)` to reduce cost of small negative
-    numbers.
+      numbers.
 
 If a number are `long` type, it can't be represented by smaller bytes mostly, the compression won't get good enough
 result,
@@ -199,22 +249,18 @@ space savings.
 Deep copy example:
 
 ```java
-Fury fury=Fury.builder()
-  ...
-  .withRefCopy(true).build();
-  SomeClass a=xxx;
-  SomeClass copied=fury.copy(a)
+Fury fury = Fury.builder().withRefCopy(true).build();
+SomeClass a = xxx;
+SomeClass copied = fury.copy(a);
 ```
 
 Make fury deep copy ignore circular and shared reference, this deep copy mode will ignore circular and shared reference.
 Same reference of an object graph will be copied into different objects in one `Fury#copy`.
 
 ```java
-Fury fury=Fury.builder()
-  ...
-  .withRefCopy(false).build();
-  SomeClass a=xxx;
-  SomeClass copied=fury.copy(a)
+Fury fury = Fury.builder().withRefCopy(false).build();
+SomeClass a = xxx;
+SomeClass copied = fury.copy(a);
 ```
 
 ### Implement a customized serializer
@@ -257,8 +303,8 @@ class FooSerializer extends Serializer<Foo> {
 Register serializer:
 
 ```java
-Fury fury=getFury();
-  fury.registerSerializer(Foo.class,new FooSerializer(fury));
+Fury fury = getFury();
+fury.registerSerializer(Foo.class, new FooSerializer(fury));
 ```
 
 ### Security & Class Registration
@@ -279,9 +325,9 @@ Note that class registration order is important, serialization and deserializati
 should have same registration order.
 
 ```java
-Fury fury=xxx;
-  fury.register(SomeClass.class);
-  fury.register(SomeClass1.class,200);
+Fury fury = xxx;
+fury.register(SomeClass.class);
+fury.register(SomeClass1.class, 200);
 ```
 
 If you invoke `FuryBuilder#requireClassRegistration(false)` to disable class registration check,
@@ -290,25 +336,41 @@ allowed
 for serialization. For example, you can allow classes started with `org.example.*` by:
 
 ```java
-Fury fury=xxx;
-  fury.getClassResolver().setClassChecker((classResolver,className)->className.startsWith("org.example."));
+Fury fury = xxx;
+fury.getClassResolver().setClassChecker(
+  (classResolver, className) -> className.startsWith("org.example."));
 ```
 
 ```java
-AllowListChecker checker=new AllowListChecker(AllowListChecker.CheckLevel.STRICT);
-  ThreadSafeFury fury=new ThreadLocalFury(classLoader->{
-  Fury f=Fury.builder().requireClassRegistration(true).withClassLoader(classLoader).build();
+AllowListChecker checker = new AllowListChecker(AllowListChecker.CheckLevel.STRICT);
+ThreadSafeFury fury = new ThreadLocalFury(classLoader -> {
+  Fury f = Fury.builder().requireClassRegistration(true).withClassLoader(classLoader).build();
   f.getClassResolver().setClassChecker(checker);
   checker.addListener(f.getClassResolver());
   return f;
-  });
-  checker.allowClass("org.example.*");
+});
+checker.allowClass("org.example.*");
 ```
 
 Fury also provided a `org.apache.fury.resolver.AllowListChecker` which is allowed/disallowed list based checker to
 simplify
 the customization of class check mechanism. You can use this checker or implement more sophisticated checker by
 yourself.
+
+### Register class by name
+
+Register class by id will have better performance and smaller space overhead. But in some cases, management for a bunch
+of type id is complex. In such cases, registering class by name using API
+`register(Class<?> cls, String namespace, String typeName)` is recommended.
+
+```java
+fury.register(Foo.class, "demo", "Foo");
+```
+
+If there are no duplicate name for type, `namespace` can be left as empty to reduce serialized size.
+
+**Do not use this API to register class since it will increase serialized size a lot compared to register
+class by id**
 
 ### Serializer Registration
 
@@ -360,30 +422,30 @@ forward/backward compatibility automatically.
 //   // share meta across serialization.
 //   .withMetaContextShare(true)
 // Not thread-safe fury.
-MetaContext context=xxx;
-  fury.getSerializationContext().setMetaContext(context);
-  byte[]bytes=fury.serialize(o);
+MetaContext context = xxx;
+fury.getSerializationContext().setMetaContext(context);
+byte[] bytes = fury.serialize(o);
 // Not thread-safe fury.
-  MetaContext context=xxx;
-  fury.getSerializationContext().setMetaContext(context);
-  fury.deserialize(bytes)
+MetaContext context = xxx;
+fury.getSerializationContext().setMetaContext(context);
+fury.deserialize(bytes);
 
 // Thread-safe fury
-  fury.setClassLoader(beanA.getClass().getClassLoader());
-  byte[]serialized=fury.execute(
-  f->{
-  f.getSerializationContext().setMetaContext(context);
-  return f.serialize(beanA);
+fury.setClassLoader(beanA.getClass().getClassLoader());
+byte[] serialized = fury.execute(
+  f -> {
+    f.getSerializationContext().setMetaContext(context);
+    return f.serialize(beanA);
   }
-  );
+);
 // thread-safe fury
-  fury.setClassLoader(beanA.getClass().getClassLoader());
-  Object newObj=fury.execute(
-  f->{
-  f.getSerializationContext().setMetaContext(context);
-  return f.deserialize(serialized);
+fury.setClassLoader(beanA.getClass().getClassLoader());
+Object newObj = fury.execute(
+  f -> {
+    f.getSerializationContext().setMetaContext(context);
+    return f.deserialize(serialized);
   }
-  );
+);
 ```
 
 ### Deserialize non-existent classes
@@ -404,10 +466,10 @@ Fury support mapping object from one type to another type.
 > Notes:
 >
 > 1. This mapping will execute a deep copy, all mapped fields are serialized into binary and
-deserialized from that binary to map into another type.
+     deserialized from that binary to map into another type.
 > 2. All struct types must be registered with same ID, otherwise Fury can not mapping to correct struct type.
-> Be careful when you use `Fury#register(Class)`, because fury will allocate an auto-grown ID which might be
-> inconsistent if you register classes with different order between Fury instance.
+     > Be careful when you use `Fury#register(Class)`, because fury will allocate an auto-grown ID which might be
+     > inconsistent if you register classes with different order between Fury instance.
 
 ```java
 public class StructMappingExample {
@@ -460,12 +522,12 @@ the binary are generated by jdk serialization, you use following pattern to make
 then upgrade serialization to fury in an async rolling-up way:
 
 ```java
-if(JavaSerializer.serializedByJDK(bytes)){
+if (JavaSerializer.serializedByJDK(bytes)) {
   ObjectInputStream objectInputStream=xxx;
   return objectInputStream.readObject();
-  }else{
+} else {
   return fury.deserialize(bytes);
-  }
+}
 ```
 
 ### Upgrade fury
@@ -482,18 +544,18 @@ serialized data
 using code like following to keep binary compatibility:
 
 ```java
-MemoryBuffer buffer=xxx;
-  buffer.writeVarInt32(2);
-  fury.serialize(buffer,obj);
+MemoryBuffer buffer = xxx;
+buffer.writeVarInt32(2);
+fury.serialize(buffer, obj);
 ```
 
 Then for deserialization, you need:
 
 ```java
-MemoryBuffer buffer=xxx;
-  int furyVersion=buffer.readVarInt32()
-  Fury fury=getFury(furyVersion);
-  fury.deserialize(buffer);
+MemoryBuffer buffer = xxx;
+int furyVersion = buffer.readVarInt32();
+Fury fury = getFury(furyVersion);
+fury.deserialize(buffer);
 ```
 
 `getFury` is a method to load corresponding fury, you can shade and relocate different version of fury to different
@@ -520,10 +582,37 @@ consistent between serialization and deserialization.
 
 ### Deserialize POJO into another type
 
-Fury allows you to serialize one POJO and deserialize it into a different POJO. To achieve this, configure Fury with
-`CompatibleMode` set to `org.apache.fury.config.CompatibleMode.COMPATIBLE`. Additionally, you only need to register the
-specific classes you want to serialize or deserialize to setup type mapping relationship; there's no need to register any nested classes within them.
-[See example here](/java/fury-core/src/test/java/org/apache/fury/serializer/compatible/DifferentPOJOCompatibleSerializerTest.java)
+Fury allows you to serialize one POJO and deserialize it into a different POJO. The different POJO means the schema inconsistency. Users must to configure Fury with
+`CompatibleMode` set to `org.apache.fury.config.CompatibleMode.COMPATIBLE`.
+
+```java
+public class DeserializeIntoType {
+  static class Struct1 {
+    int f1;
+    String f2;
+
+    public Struct1(int f1, String f2) {
+      this.f1 = f1;
+      this.f2 = f2;
+    }
+  }
+
+  static class Struct2 {
+    int f1;
+    String f2;
+    double f3;
+  }
+
+  static ThreadSafeFury fury = Fury.builder()
+    .withCompatibleMode(CompatibleMode.COMPATIBLE).buildThreadSafeFury();
+
+  public static void main(String[] args) {
+    Struct1 struct1 = new Struct1(10, "abc");
+    byte[] data = fury.serializeJavaObject(struct1);
+    Struct2 struct2 = (Struct2) fury.deserializeJavaObject(bytes, Struct2.class);
+  }
+}
+```
 
 ### Use wrong API for deserialization
 

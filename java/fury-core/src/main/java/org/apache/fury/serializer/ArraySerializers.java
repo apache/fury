@@ -67,7 +67,11 @@ public class ArraySerializers {
       Class<?> componentType = cls.getComponentType();
       componentGenericType = fury.getClassResolver().buildGenericType(componentType);
       if (fury.getClassResolver().isMonomorphic(componentType)) {
-        this.componentTypeSerializer = fury.getClassResolver().getSerializer(componentType);
+        if (fury.isCrossLanguage()) {
+          this.componentTypeSerializer = null;
+        } else {
+          this.componentTypeSerializer = fury.getClassResolver().getSerializer(componentType);
+        }
       } else {
         // TODO add ClassInfo cache for non-final component type.
         this.componentTypeSerializer = null;

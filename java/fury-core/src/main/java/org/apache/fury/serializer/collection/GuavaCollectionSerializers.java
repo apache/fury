@@ -29,11 +29,9 @@ import com.google.common.collect.ImmutableSortedSet;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import org.apache.fury.Fury;
@@ -54,10 +52,7 @@ public class GuavaCollectionSerializers {
 
     @Override
     public T xread(MemoryBuffer buffer) {
-      int size = buffer.readVarUint32Small7();
-      List list = new ArrayList<>();
-      xreadElements(fury, buffer, list, size);
-      return xnewInstance(list);
+      return read(buffer);
     }
 
     protected abstract T xnewInstance(Collection collection);
@@ -260,7 +255,7 @@ public class GuavaCollectionSerializers {
     public T xread(MemoryBuffer buffer) {
       int size = buffer.readVarUint32Small7();
       Map map = new HashMap();
-      xreadElements(fury, buffer, map, size);
+      readElements(buffer, size, map);
       return xnewInstance(map);
     }
 

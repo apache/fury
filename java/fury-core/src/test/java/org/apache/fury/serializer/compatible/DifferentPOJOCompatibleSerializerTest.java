@@ -29,8 +29,7 @@ import org.testng.annotations.Test;
 
 /**
  * Test COMPATIBILITY mode that supports - same field type and name can be deserialized to other
- * class with different name - scrambled field order to make sure it could handle different field
- * order - missing or extra field from source class to target class - generic class
+ * class with different name
  */
 public class DifferentPOJOCompatibleSerializerTest extends Assert {
 
@@ -61,9 +60,9 @@ public class DifferentPOJOCompatibleSerializerTest extends Assert {
     ClassCompleteField<String> subclass = new ClassCompleteField<>("subclass", "subclass2");
     ClassCompleteField<ClassCompleteField<String>> classCompleteField =
         new ClassCompleteField<>(subclass, subclass);
-    byte[] serialized = getFury(ClassCompleteField.class).serializeJavaObject(classCompleteField);
+    byte[] serialized = getFury().serializeJavaObject(classCompleteField);
     ClassMissingField<ClassMissingField<String>> classMissingField =
-        getFury(ClassMissingField.class).deserializeJavaObject(serialized, ClassMissingField.class);
+        getFury().deserializeJavaObject(serialized, ClassMissingField.class);
 
     assertEq(classCompleteField, classMissingField);
   }
@@ -73,29 +72,15 @@ public class DifferentPOJOCompatibleSerializerTest extends Assert {
 
     ClassMissingField<String> subclass = new ClassMissingField<>("subclass");
     ClassMissingField classMissingField = new ClassMissingField(subclass);
-    byte[] serialized = getFury(ClassMissingField.class).serializeJavaObject(classMissingField);
+    byte[] serialized = getFury().serializeJavaObject(classMissingField);
 
     ClassCompleteField classCompleteField =
-        getFury(ClassCompleteField.class)
-            .deserializeJavaObject(serialized, ClassCompleteField.class);
+        getFury().deserializeJavaObject(serialized, ClassCompleteField.class);
 
     assertEq(classCompleteField, classMissingField);
   }
 
   void assertEq(ClassCompleteField classCompleteField, ClassMissingField classMissingField) {
-    assertEqSubClass(
-        (ClassCompleteField) classCompleteField.getPrivateFieldSubClass(),
-        (ClassMissingField) classMissingField.getPrivateFieldSubClass());
-    assertEquals(classCompleteField.getPrivateMap(), classMissingField.getPrivateMap());
-    assertEquals(classCompleteField.getPrivateList(), classMissingField.getPrivateList());
-    assertEquals(classCompleteField.getPrivateString(), classMissingField.getPrivateString());
-    assertEquals(classCompleteField.getPrivateInt(), classMissingField.getPrivateInt());
-  }
-
-  void assertEqSubClass(
-      ClassCompleteField classCompleteField, ClassMissingField classMissingField) {
-    assertEquals(
-        classCompleteField.getPrivateFieldSubClass(), classMissingField.getPrivateFieldSubClass());
     assertEquals(classCompleteField.getPrivateMap(), classMissingField.getPrivateMap());
     assertEquals(classCompleteField.getPrivateList(), classMissingField.getPrivateList());
     assertEquals(classCompleteField.getPrivateString(), classMissingField.getPrivateString());

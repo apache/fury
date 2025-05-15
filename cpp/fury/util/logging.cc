@@ -51,9 +51,11 @@ std::string GetCallTrace() {
 }
 
 std::unordered_map<FuryLogLevel, std::string> log_level_to_str = {
-    {FuryLogLevel::DEBUG, "DEBUG"},     {FuryLogLevel::INFO, "INFO"},
-    {FuryLogLevel::WARNING, "WARNING"}, {FuryLogLevel::ERROR, "ERROR"},
-    {FuryLogLevel::FATAL, "FATAL"},
+    {FuryLogLevel::FURY_DEBUG, "DEBUG"},
+    {FuryLogLevel::FURY_INFO, "INFO"},
+    {FuryLogLevel::FURY_WARNING, "WARNING"},
+    {FuryLogLevel::FURY_ERROR, "ERROR"},
+    {FuryLogLevel::FURY_FATAL, "FATAL"},
 };
 
 std::string LogLevelAsString(FuryLogLevel level) {
@@ -65,26 +67,26 @@ std::string LogLevelAsString(FuryLogLevel level) {
 }
 
 FuryLogLevel FuryLog::GetLogLevel() {
-  FuryLogLevel severity_threshold = FuryLogLevel::INFO;
+  FuryLogLevel severity_threshold = FuryLogLevel::FURY_INFO;
   const char *var_value = std::getenv("FURY_LOG_LEVEL");
   if (var_value != nullptr) {
     std::string data = var_value;
     std::transform(data.begin(), data.end(), data.begin(), ::tolower);
     if (data == "debug") {
-      severity_threshold = FuryLogLevel::DEBUG;
+      severity_threshold = FuryLogLevel::FURY_DEBUG;
     } else if (data == "info") {
-      severity_threshold = FuryLogLevel::INFO;
+      severity_threshold = FuryLogLevel::FURY_INFO;
     } else if (data == "warning") {
-      severity_threshold = FuryLogLevel::WARNING;
+      severity_threshold = FuryLogLevel::FURY_WARNING;
     } else if (data == "error") {
-      severity_threshold = FuryLogLevel::ERROR;
+      severity_threshold = FuryLogLevel::FURY_ERROR;
     } else if (data == "fatal") {
-      severity_threshold = FuryLogLevel::FATAL;
+      severity_threshold = FuryLogLevel::FURY_FATAL;
     } else {
-      FURY_LOG_INTERNAL(WARNING)
+      FURY_LOG_INTERNAL(FURY_WARNING)
           << "Unrecognized setting of FuryLogLevel=" << var_value;
     }
-    FURY_LOG_INTERNAL(INFO)
+    FURY_LOG_INTERNAL(FURY_INFO)
         << "Set ray log level from environment variable RAY_BACKEND_LOG_LEVEL"
         << " to " << static_cast<int>(severity_threshold);
   }
@@ -99,7 +101,7 @@ FuryLog::FuryLog(const char *file_name, int line_number, FuryLogLevel severity)
 }
 
 FuryLog::~FuryLog() {
-  if (severity_ == FuryLogLevel::FATAL) {
+  if (severity_ == FuryLogLevel::FURY_FATAL) {
     Stream() << "\n*** StackTrace Information ***\n" << ::fury::GetCallTrace();
     Stream() << std::endl;
     std::_Exit(EXIT_FAILURE);

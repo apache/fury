@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import { TypeDescription } from "../description";
+import { TypeInfo } from "../typeInfo";
 import { CodecBuilder } from "./builder";
 import { BaseSerializerGenerator, RefState } from "./serializer";
 import { CodegenRegistry } from "./router";
@@ -25,11 +25,11 @@ import { InternalSerializerType } from "../type";
 import { Scope } from "./scope";
 
 class BinarySerializerGenerator extends BaseSerializerGenerator {
-  description: TypeDescription;
+  typeInfo: TypeInfo;
 
-  constructor(description: TypeDescription, builder: CodecBuilder, scope: Scope) {
-    super(description, builder, scope);
-    this.description = description;
+  constructor(typeInfo: TypeInfo, builder: CodecBuilder, scope: Scope) {
+    super(typeInfo, builder, scope);
+    this.typeInfo = typeInfo;
   }
 
   writeStmt(accessor: string): string {
@@ -48,6 +48,14 @@ class BinarySerializerGenerator extends BaseSerializerGenerator {
         ${this.maybeReference(result, refState)};
         ${accessor(result)}
         `;
+  }
+
+  getFixedSize(): number {
+    return 8;
+  }
+
+  needToWriteRef(): boolean {
+    return Boolean(this.builder.fury.config.refTracking);
   }
 }
 

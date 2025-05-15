@@ -19,6 +19,8 @@
 
 package org.apache.fury.format.encoder;
 
+import static org.apache.fury.format.encoder.CodecBuilderTest.testStreamingEncode;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -51,8 +53,10 @@ public class ArrayEncoderTest {
     byte[] bs = encoder.encode(bars);
     List<RowEncoderTest.Bar> bbars = encoder.decode(bs);
 
-    Assert.assertEquals(bs.length, 280);
+    Assert.assertEquals(bs.length, 224);
     Assert.assertEquals(bars, bbars);
+
+    testStreamingEncode(encoder, bars);
   }
 
   @Test
@@ -83,8 +87,10 @@ public class ArrayEncoderTest {
     byte[] bs = encoder.encode(bars);
     List<List<List<RowEncoderTest.Bar>>> bbars = encoder.decode(bs);
 
-    Assert.assertEquals(bs.length, 1632);
+    Assert.assertEquals(bs.length, 1576);
     Assert.assertEquals(bars, bbars);
+
+    testStreamingEncode(encoder, bars);
   }
 
   @Test
@@ -115,7 +121,9 @@ public class ArrayEncoderTest {
     byte[] bs = encoder.encode(lmap);
     List<List<Map<RowEncoderTest.Foo, List<RowEncoderTest.Bar>>>> blmap = encoder.decode(bs);
 
-    Assert.assertEquals(bs.length, 10920);
+    Assert.assertEquals(bs.length, 10824);
     Assert.assertEquals(lmap, blmap);
+
+    testStreamingEncode(encoder, lmap);
   }
 }

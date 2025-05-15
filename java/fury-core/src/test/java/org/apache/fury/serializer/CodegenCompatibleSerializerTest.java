@@ -58,7 +58,10 @@ public class CodegenCompatibleSerializerTest extends FuryTestBase {
   }
 
   private FuryBuilder furyBuilder() {
-    return Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false);
+    return Fury.builder()
+        .withLanguage(Language.JAVA)
+        .requireClassRegistration(false)
+        .suppressClassRegistrationWarnings(true);
   }
 
   @Test(dataProvider = "config")

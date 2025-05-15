@@ -22,6 +22,7 @@ package org.apache.fury.serializer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import org.apache.fury.Fury;
+import org.apache.fury.memory.ByteBufferUtil;
 import org.apache.fury.memory.MemoryBuffer;
 
 /** Serializers for buffer related classes. */
@@ -47,7 +48,7 @@ public class BufferSerializers {
     public ByteBuffer copy(ByteBuffer value) {
       ByteBuffer dst = ByteBuffer.allocate(value.remaining());
       dst.put(value.duplicate());
-      dst.rewind();
+      ByteBufferUtil.rewind(dst);
       return dst;
     }
 

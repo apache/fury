@@ -161,7 +161,7 @@ class MapRefResolver(RefResolver):
         head_flag = buffer.read_int8()
         if head_flag == REF_FLAG:
             # read reference id and get object from reference resolver
-            ref_id = buffer.read_varint32()
+            ref_id = buffer.read_varuint32()
             self.read_object = self.get_read_object(ref_id)
             return REF_FLAG
         else:
@@ -178,7 +178,7 @@ class MapRefResolver(RefResolver):
         head_flag = buffer.read_int8()
         if head_flag == REF_FLAG:
             # read reference id and get object from reference resolver
-            ref_id = buffer.read_varint32()
+            ref_id = buffer.read_varuint32()
             self.read_object = self.get_read_object(id_=ref_id)
         else:
             self.read_object = None
@@ -199,6 +199,8 @@ class MapRefResolver(RefResolver):
 
     def set_read_object(self, id_, obj):
         if id_ >= 0:
+            if id_ >= len(self.read_objects):
+                raise RuntimeError(f"Ref id {id_} invalid")
             self.read_objects[id_] = obj
 
     def reset(self):

@@ -69,6 +69,7 @@ public final class FuryBuilder {
   boolean compressInt = true;
   public LongEncoding longEncoding = LongEncoding.SLI;
   boolean compressString = false;
+  Boolean writeNumUtf16BytesForUtf8Encoding;
   CompatibleMode compatibleMode = CompatibleMode.SCHEMA_CONSISTENT;
   boolean checkJdkClassSerializable = true;
   Class<? extends Serializer> defaultJDKStreamSerializerType = ObjectStreamSerializer.class;
@@ -182,6 +183,17 @@ public final class FuryBuilder {
   /** Whether compress string for small size. */
   public FuryBuilder withStringCompressed(boolean stringCompressed) {
     this.compressString = stringCompressed;
+    return this;
+  }
+
+  /**
+   * Whether write num_bytes of utf16 for utf8 encoding. With this option enabled, fury will write
+   * the num_bytes of utf16 before write utf8 encoded data, so that the deserialization can create
+   * the appropriate utf16 array for store the data, thus save one copy.
+   */
+  public FuryBuilder withWriteNumUtf16BytesForUtf8Encoding(
+      boolean writeNumUtf16BytesForUtf8Encoding) {
+    this.writeNumUtf16BytesForUtf8Encoding = writeNumUtf16BytesForUtf8Encoding;
     return this;
   }
 
@@ -363,7 +375,9 @@ public final class FuryBuilder {
       }
     }
     if (language != Language.JAVA) {
-      stringRefIgnored = false;
+      stringRefIgnored = true;
+      longEncoding = LongEncoding.PVL;
+      compressInt = true;
     }
     if (ENABLE_CLASS_REGISTRATION_FORCIBLY) {
       if (!requireClassRegistration) {
@@ -378,6 +392,9 @@ public final class FuryBuilder {
               + "use {} instead, or implement a custom {}.",
           ObjectStreamSerializer.class,
           Serializer.class);
+    }
+    if (writeNumUtf16BytesForUtf8Encoding == null) {
+      writeNumUtf16BytesForUtf8Encoding = language == Language.JAVA;
     }
     if (compatibleMode == CompatibleMode.COMPATIBLE) {
       checkClassVersion = false;
@@ -406,6 +423,9 @@ public final class FuryBuilder {
       scopedMetaShareEnabled = false;
       if (metaShareEnabled == null) {
         metaShareEnabled = false;
+      }
+      if (language != Language.JAVA) {
+        checkClassVersion = true;
       }
     }
     if (!requireClassRegistration) {

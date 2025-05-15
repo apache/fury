@@ -36,6 +36,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -48,7 +49,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -64,8 +64,10 @@ import org.apache.fury.memory.MemoryUtils;
 import org.apache.fury.serializer.ArraySerializersTest;
 import org.apache.fury.serializer.BufferObject;
 import org.apache.fury.serializer.EnumSerializerTest;
+import org.apache.fury.serializer.ObjectSerializer;
 import org.apache.fury.serializer.Serializer;
-import org.apache.fury.serializer.StructSerializer;
+import org.apache.fury.test.TestUtils;
+import org.apache.fury.type.Descriptor;
 import org.apache.fury.util.DateTimeUtils;
 import org.apache.fury.util.MurmurHash3;
 import org.testng.Assert;
@@ -84,27 +86,8 @@ public class CrossLanguageTest extends FuryTestBase {
    * @return Whether the command succeeded.
    */
   private boolean executeCommand(List<String> command, int waitTimeoutSeconds) {
-    return executeCommand(
+    return TestUtils.executeCommand(
         command, waitTimeoutSeconds, ImmutableMap.of("ENABLE_CROSS_LANGUAGE_TESTS", "true"));
-  }
-
-  private boolean executeCommand(
-      List<String> command, int waitTimeoutSeconds, Map<String, String> env) {
-    try {
-      LOG.info("Executing command: {}", String.join(" ", command));
-      ProcessBuilder processBuilder =
-          new ProcessBuilder(command)
-              .redirectOutput(ProcessBuilder.Redirect.INHERIT)
-              .redirectError(ProcessBuilder.Redirect.INHERIT);
-      for (Map.Entry<String, String> entry : env.entrySet()) {
-        processBuilder.environment().put(entry.getKey(), entry.getValue());
-      }
-      Process process = processBuilder.start();
-      process.waitFor(waitTimeoutSeconds, TimeUnit.SECONDS);
-      return process.exitValue() == 0;
-    } catch (Exception e) {
-      throw new RuntimeException("Error executing command " + String.join(" ", command), e);
-    }
   }
 
   @Data
@@ -451,7 +434,7 @@ public class CrossLanguageTest extends FuryTestBase {
   public static class ComplexObject1 {
     Object f1;
     String f2;
-    List<Object> f3;
+    List<String> f3;
     Map<Byte, Integer> f4;
     Byte f5;
     Short f6;
@@ -478,10 +461,16 @@ public class CrossLanguageTest extends FuryTestBase {
             .requireClassRegistration(false)
             .build();
     fury.register(ComplexObject1.class, "test.ComplexObject1");
-    StructSerializer serializer = (StructSerializer) fury.getSerializer(ComplexObject1.class);
-    Method method = StructSerializer.class.getDeclaredMethod("computeStructHash");
+    fury.serialize(new ComplexObject1()); // trigger serializer update
+    ObjectSerializer serializer = (ObjectSerializer) fury.getSerializer(ComplexObject1.class);
+    Method method =
+        ObjectSerializer.class.getDeclaredMethod("computeStructHash", Fury.class, Collection.class);
     method.setAccessible(true);
-    Integer hash = (Integer) method.invoke(serializer);
+    Collection<Descriptor> descriptors =
+        fury.getClassResolver().getAllDescriptorsMap(ComplexObject1.class, true).values();
+    descriptors =
+        fury.getClassResolver().createDescriptorGrouper(descriptors, false).getSortedDescriptors();
+    Integer hash = (Integer) method.invoke(serializer, fury, descriptors);
     MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(4);
     buffer.writeInt32(hash);
     roundBytes("test_struct_hash", buffer.getBytes(0, 4));
@@ -576,7 +565,7 @@ public class CrossLanguageTest extends FuryTestBase {
       fury.getRefResolver().reference(obj);
       obj.f1 = fury.xreadRef(buffer);
       obj.f2 = (String) fury.xreadRef(buffer);
-      obj.f3 = (List<Object>) fury.xreadRef(buffer);
+      obj.f3 = (List<String>) fury.xreadRef(buffer);
       return obj;
     }
   }
@@ -776,5 +765,31 @@ public class CrossLanguageTest extends FuryTestBase {
     assertEquals(Collections.singleton("str"), serDe(fury1, fury2, Collections.singleton("str")));
     assertEquals(
         Collections.singletonMap("k", 1), serDe(fury1, fury2, Collections.singletonMap("k", 1)));
+  }
+
+  enum EnumTestClass {
+    FOO,
+    BAR
+  }
+
+  @Data
+  static class EnumFieldStruct {
+    EnumTestClass f1;
+    EnumTestClass f2;
+    String f3;
+  }
+
+  @Test
+  public void testEnumField() throws java.io.IOException {
+    Fury fury = Fury.builder().withLanguage(Language.XLANG).requireClassRegistration(true).build();
+    fury.register(EnumTestClass.class, "test.EnumTestClass");
+    fury.register(EnumFieldStruct.class, "test.EnumFieldStruct");
+
+    EnumFieldStruct a = new EnumFieldStruct();
+    a.f1 = EnumTestClass.FOO;
+    a.f2 = EnumTestClass.BAR;
+    a.f3 = "abc";
+    Assert.assertEquals(xserDe(fury, a), a);
+    structRoundBack(fury, a, "test_enum_field");
   }
 }

@@ -19,7 +19,6 @@
 
 package org.apache.fury.serializer;
 
-import org.apache.fury.Fury;
 import org.apache.fury.FuryTestBase;
 import org.apache.fury.ThreadSafeFury;
 import org.apache.fury.codegen.JaninoUtils;
@@ -50,7 +49,7 @@ public class MetaSharedObjectSerializerTest extends FuryTestBase {
     Class<?> cls1 = JaninoUtils.compileClass(getClass().getClassLoader(), "", "TestA", codeA);
     Class<?> cls2 = JaninoUtils.compileClass(getClass().getClassLoader(), "", "TestA", codeB);
     ThreadSafeFury fury1 =
-        Fury.builder()
+        builder()
             .withRefTracking(true)
             .requireClassRegistration(false)
             .withDeserializeNonexistentClass(true)
@@ -61,7 +60,7 @@ public class MetaSharedObjectSerializerTest extends FuryTestBase {
             .withClassLoader(cls1.getClassLoader())
             .buildThreadSafeFury();
     ThreadSafeFury fury2 =
-        Fury.builder()
+        builder()
             .withRefTracking(true)
             .requireClassRegistration(false)
             .withDeserializeNonexistentClass(true)
