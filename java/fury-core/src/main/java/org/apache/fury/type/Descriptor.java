@@ -605,8 +605,4 @@ public class Descriptor {
     // otherwise classes can't be gc.
     return descriptorMap;
   }
-
-  public boolean isNullable() {
-    return nullable;
-  }
 }
