@@ -128,7 +128,7 @@ public class Descriptor {
     this.typeRef = null;
     this.furyField = this.field.getAnnotation(FuryField.class);
     if (!field.getType().isPrimitive()) {
-        this.nullable = furyField == null || furyField.nullable();
+      this.nullable = furyField == null || furyField.nullable();
     }
   }
 
