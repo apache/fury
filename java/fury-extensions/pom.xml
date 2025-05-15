@@ -75,6 +75,7 @@
       <groupId>org.apache.fury</groupId>
       <artifactId>fury-test-core</artifactId>
       <version>${project.version}</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 
