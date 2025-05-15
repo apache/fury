@@ -1,6 +1,6 @@
 {
   "name": "@furyjs/hps",
-  "version": "0.10.2",
+  "version": "0.10.3",
   "description": "Apache Fury™(incubating) nodejs high-performance suite",
   "main": "dist/index.js",
   "files": [
