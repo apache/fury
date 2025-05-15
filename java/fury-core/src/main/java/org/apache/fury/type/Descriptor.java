@@ -99,6 +99,9 @@ public class Descriptor {
     this.writeMethod = writeMethod;
     this.typeRef = typeRef;
     this.furyField = this.field.getAnnotation(FuryField.class);
+    if (!typeRef.isPrimitive()) {
+      this.nullable = furyField == null || furyField.nullable();
+    }
   }
 
   public Descriptor(TypeRef<?> typeRef, String name, int modifier, String declaringClass) {
@@ -111,6 +114,7 @@ public class Descriptor {
     this.readMethod = null;
     this.writeMethod = null;
     this.furyField = null;
+    this.nullable = !typeRef.isPrimitive();
   }
 
   private Descriptor(Field field, Method readMethod) {
@@ -123,6 +127,9 @@ public class Descriptor {
     this.writeMethod = null;
     this.typeRef = null;
     this.furyField = this.field.getAnnotation(FuryField.class);
+    if (!field.getType().isPrimitive()) {
+      this.nullable = furyField == null || furyField.nullable();
+    }
   }
 
   private Descriptor(
@@ -143,6 +150,9 @@ public class Descriptor {
     this.readMethod = readMethod;
     this.writeMethod = writeMethod;
     this.furyField = this.field == null ? null : this.field.getAnnotation(FuryField.class);
+    if (!typeRef.isPrimitive()) {
+      this.nullable = furyField == null || furyField.nullable();
+    }
   }
 
   public Descriptor(DescriptorBuilder builder) {

@@ -204,7 +204,9 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
             // `bean` will be replaced by `Reference` to cut-off expr dependency.
             Expression fieldValue = getFieldValue(bean, d);
             walkPath.add(d.getDeclaringClass() + d.getName());
-            Expression fieldExpr = serializeFor(fieldValue, buffer, d.getTypeRef());
+            boolean nullable = d.isNullable();
+            Expression fieldExpr =
+                serializeForNullable(fieldValue, buffer, d.getTypeRef(), nullable);
             walkPath.removeLast();
             groupExpressions.add(fieldExpr);
           }
@@ -554,15 +556,17 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
           for (Descriptor d : group) {
             ExpressionVisitor.ExprHolder exprHolder = ExpressionVisitor.ExprHolder.of("bean", bean);
             walkPath.add(d.getDeclaringClass() + d.getName());
+            boolean nullable = d.isNullable();
             Expression action =
-                deserializeFor(
+                deserializeForNullable(
                     buffer,
                     d.getTypeRef(),
                     // `bean` will be replaced by `Reference` to cut-off expr
                     // dependency.
                     expr ->
                         setFieldValue(
-                            exprHolder.get("bean"), d, tryInlineCast(expr, d.getTypeRef())));
+                            exprHolder.get("bean"), d, tryInlineCast(expr, d.getTypeRef())),
+                    nullable);
             walkPath.removeLast();
             groupExpressions.add(action);
           }
@@ -580,7 +584,8 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     ListExpression groupExpressions = new ListExpression();
     // use Reference to cut-off expr dependency.
     for (Descriptor d : group) {
-      Expression v = deserializeFor(buffer, d.getTypeRef(), expr -> expr);
+      boolean nullable = d.isNullable();
+      Expression v = deserializeForNullable(buffer, d.getTypeRef(), expr -> expr, nullable);
       Expression action = setFieldValue(bean, d, tryInlineCast(v, d.getTypeRef()));
       groupExpressions.add(action);
     }
