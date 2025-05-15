@@ -114,6 +114,7 @@ public class Descriptor {
     this.readMethod = null;
     this.writeMethod = null;
     this.furyField = null;
+    this.nullable = true;
   }
 
   private Descriptor(Field field, Method readMethod) {
