@@ -127,7 +127,9 @@ public class Descriptor {
     this.writeMethod = null;
     this.typeRef = null;
     this.furyField = this.field.getAnnotation(FuryField.class);
-    this.nullable = furyField == null || furyField.nullable();
+    if (!field.getType().isPrimitive()) {
+        this.nullable = furyField == null || furyField.nullable();
+    }
   }
 
   private Descriptor(
