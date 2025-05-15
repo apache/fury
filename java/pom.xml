@@ -81,10 +81,11 @@
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
     <guava.version>32.1.2-jre</guava.version>
-    <janino.version>3.1.10</janino.version>
+    <janino.version>3.1.12</janino.version>
     <commons_codec.version>1.13</commons_codec.version>
     <fury.java.rootdir>${basedir}</fury.java.rootdir>
     <maven-spotless-plugin.version>2.41.1</maven-spotless-plugin.version>
+    <lombok.version>1.18.38</lombok.version>
   </properties>
 
   <dependencyManagement>
@@ -132,7 +133,7 @@
       <dependency>
         <groupId>org.projectlombok</groupId>
         <artifactId>lombok</artifactId>
-        <version>1.18.30</version>
+        <version>${lombok.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -143,7 +144,16 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.10.1</version>
+          <version>3.14.0</version>
+          <configuration>
+            <annotationProcessorPaths>
+              <path>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${lombok.version}</version>
+              </path>
+            </annotationProcessorPaths>
+          </configuration>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -207,7 +217,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.3</version>
         <configuration>
           <source>${maven.compiler.source}</source>
           <target>${maven.compiler.target}</target>
