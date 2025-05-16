@@ -130,9 +130,9 @@ public final class NonexistentClassSerializers {
             // whether tracking ref is recorded in `fieldInfo.serializer`, so it's still
             // consistent with jit serializer.
             Serializer<Object> serializer = classInfo.getSerializer();
-            fury.writeRef(buffer, fieldValue, serializer);
+            binding.writeRef(buffer, fieldValue, serializer);
           } else {
-            fury.writeRef(buffer, fieldValue, classInfo);
+            binding.writeRef(buffer, fieldValue, classInfo);
           }
         }
       }
@@ -140,7 +140,7 @@ public final class NonexistentClassSerializers {
         Object fieldValue = value.get(fieldInfo.qualifiedFieldName);
         boolean nullable = fieldInfo.nullable;
         if (fieldInfo.trackingRef) {
-          fury.writeRef(buffer, fieldValue, fieldInfo.classInfoHolder);
+          binding.writeRef(buffer, fieldValue, fieldInfo.classInfoHolder);
         } else {
           binding.writeNullable(buffer, fieldValue, fieldInfo.classInfoHolder, nullable);
         }
