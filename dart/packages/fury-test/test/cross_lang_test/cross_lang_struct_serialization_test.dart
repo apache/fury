@@ -34,9 +34,8 @@ import 'package:fury_test/util/test_file_util.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('cross lang struct serialization tests', () {
-
-    test('testSimpleStruct1', () {
+  group('Cross-language struct serialization', () {
+    test('round-trips SimpleStruct1', () {
       Fury fury = Fury(
         refTracking: true,
       );
@@ -48,7 +47,7 @@ void main() {
       check(obj2).equals(obj);
     });
 
-    test('testSerializeSimpleStruct', () {
+    test('round-trips ComplexObject2', () {
       Fury fury = Fury(
         refTracking: true,
       );
@@ -57,7 +56,7 @@ void main() {
       CrossLangUtil.structRoundBack(fury, o, "test_serialize_simple_struct");
     });
 
-    test('testSerializeComplexStruct', () {
+    test('round-trips ComplexObject1 with nested data', () {
       Fury fury = Fury(
         refTracking: true,
       );
@@ -80,7 +79,7 @@ void main() {
       CrossLangUtil.structRoundBack(fury, obj, "test_serialize_complex_struct");
     });
 
-    test('testCrossLanguageReference', () {
+    test('preserves cross-language references', () {
       Fury fury = Fury(
         refTracking: true,
       );
@@ -108,7 +107,7 @@ void main() {
       check(map1['k2']).identicalTo(list1);
     });
 
-    test('testNestedStructure', () {
+    test('round-trips ComplexObject3 with nested collections', () {
       Fury fury = Fury(
         refTracking: true,
       );

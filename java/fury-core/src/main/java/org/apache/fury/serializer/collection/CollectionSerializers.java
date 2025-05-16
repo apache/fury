@@ -97,7 +97,7 @@ public class CollectionSerializers {
     }
 
     public ArraysAsListSerializer(Fury fury, Class<List<?>> cls) {
-      super(fury, cls, false);
+      super(fury, cls, fury.isCrossLanguage());
     }
 
     @Override
@@ -122,12 +122,6 @@ public class CollectionSerializers {
     }
 
     @Override
-    public void xwrite(MemoryBuffer buffer, List<?> value) {
-      // FIXME this may cause array data got duplicated when reference tracking enabled.
-      super.xwrite(buffer, value);
-    }
-
-    @Override
     public List<?> read(MemoryBuffer buffer) {
       final Object[] array = (Object[]) fury.readRef(buffer);
       Preconditions.checkNotNull(array);
@@ -135,14 +129,22 @@ public class CollectionSerializers {
     }
 
     @Override
+    public void xwrite(MemoryBuffer buffer, List<?> value) {
+      super.write(buffer, value);
+    }
+
+    @Override
     public List<?> xread(MemoryBuffer buffer) {
+      return super.read(buffer);
+    }
+
+    @Override
+    public ArrayList newCollection(MemoryBuffer buffer) {
       int numElements = buffer.readVarUint32Small7();
-      Object[] arr = new Object[numElements];
-      for (int i = 0; i < numElements; i++) {
-        Object elem = fury.xreadRef(buffer);
-        arr[i] = elem;
-      }
-      return Arrays.asList(arr);
+      setNumElements(numElements);
+      ArrayList arrayList = new ArrayList(numElements);
+      fury.getRefResolver().reference(arrayList);
+      return arrayList;
     }
   }
 
@@ -193,13 +195,16 @@ public class CollectionSerializers {
     @Override
     public Collection onCollectionWrite(MemoryBuffer buffer, T value) {
       buffer.writeVarUint32Small7(value.size());
-      fury.writeRef(buffer, value.comparator());
+      if (!fury.isCrossLanguage()) {
+        fury.writeRef(buffer, value.comparator());
+      }
       return value;
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public T newCollection(MemoryBuffer buffer) {
+      assert !fury.isCrossLanguage();
       int numElements = buffer.readVarUint32Small7();
       setNumElements(numElements);
       T collection;
@@ -290,7 +295,7 @@ public class CollectionSerializers {
   public static final class EmptySetSerializer extends CollectionSerializer<Set<?>> {
 
     public EmptySetSerializer(Fury fury, Class<Set<?>> cls) {
-      super(fury, cls, false, true);
+      super(fury, cls, fury.isCrossLanguage(), true);
     }
 
     @Override
@@ -298,8 +303,7 @@ public class CollectionSerializers {
 
     @Override
     public void xwrite(MemoryBuffer buffer, Set<?> value) {
-      // write length
-      buffer.writeVarUint32Small7(0);
+      super.write(buffer, value);
     }
 
     @Override
@@ -309,15 +313,14 @@ public class CollectionSerializers {
 
     @Override
     public Set<?> xread(MemoryBuffer buffer) {
-      buffer.readVarUint32Small7();
-      return Collections.EMPTY_SET;
+      throw new UnsupportedOperationException();
     }
   }
 
   public static final class EmptySortedSetSerializer extends CollectionSerializer<SortedSet<?>> {
 
     public EmptySortedSetSerializer(Fury fury, Class<SortedSet<?>> cls) {
-      super(fury, cls, false, true);
+      super(fury, cls, fury.isCrossLanguage(), true);
     }
 
     @Override
@@ -327,13 +330,23 @@ public class CollectionSerializers {
     public SortedSet<?> read(MemoryBuffer buffer) {
       return Collections.emptySortedSet();
     }
+
+    @Override
+    public void xwrite(MemoryBuffer buffer, SortedSet<?> value) {
+      super.write(buffer, value);
+    }
+
+    @Override
+    public SortedSet<?> xread(MemoryBuffer buffer) {
+      throw new UnsupportedOperationException();
+    }
   }
 
   public static final class CollectionsSingletonListSerializer
       extends CollectionSerializer<List<?>> {
 
     public CollectionsSingletonListSerializer(Fury fury, Class<List<?>> cls) {
-      super(fury, cls, false);
+      super(fury, cls, fury.isCrossLanguage());
     }
 
     @Override
@@ -348,8 +361,7 @@ public class CollectionSerializers {
 
     @Override
     public void xwrite(MemoryBuffer buffer, List<?> value) {
-      buffer.writeVarUint32Small7(1);
-      fury.xwriteRef(buffer, value.get(0));
+      super.write(buffer, value);
     }
 
     @Override
@@ -359,15 +371,14 @@ public class CollectionSerializers {
 
     @Override
     public List<?> xread(MemoryBuffer buffer) {
-      buffer.readVarUint32Small7();
-      return Collections.singletonList(fury.xreadRef(buffer));
+      throw new UnsupportedOperationException();
     }
   }
 
   public static final class CollectionsSingletonSetSerializer extends CollectionSerializer<Set<?>> {
 
     public CollectionsSingletonSetSerializer(Fury fury, Class<Set<?>> cls) {
-      super(fury, cls, false);
+      super(fury, cls, fury.isCrossLanguage());
     }
 
     @Override
@@ -382,8 +393,7 @@ public class CollectionSerializers {
 
     @Override
     public void xwrite(MemoryBuffer buffer, Set<?> value) {
-      buffer.writeVarUint32Small7(1);
-      fury.xwriteRef(buffer, value.iterator().next());
+      super.write(buffer, value);
     }
 
     @Override
@@ -393,8 +403,7 @@ public class CollectionSerializers {
 
     @Override
     public Set<?> xread(MemoryBuffer buffer) {
-      buffer.readVarUint32Small7();
-      return Collections.singleton(fury.xreadRef(buffer));
+      throw new UnsupportedOperationException();
     }
   }
 
@@ -409,6 +418,7 @@ public class CollectionSerializers {
     public ConcurrentSkipListSet newCollection(MemoryBuffer buffer) {
       int numElements = buffer.readVarUint32Small7();
       setNumElements(numElements);
+      assert !fury.isCrossLanguage();
       RefResolver refResolver = fury.getRefResolver();
       int refId = refResolver.lastPreservedRefId();
       // It's possible that comparator/elements has circular ref to set.
@@ -475,6 +485,7 @@ public class CollectionSerializers {
 
     @Override
     public Collection newCollection(Collection originCollection) {
+      assert !fury.isCrossLanguage();
       Map<?, Boolean> map =
           (Map<?, Boolean>) Platform.getObject(originCollection, MAP_FIELD_OFFSET);
       AbstractMapSerializer mapSerializer =
@@ -647,7 +658,9 @@ public class CollectionSerializers {
 
     public Collection onCollectionWrite(MemoryBuffer buffer, PriorityQueue value) {
       buffer.writeVarUint32Small7(value.size());
-      fury.writeRef(buffer, value.comparator());
+      if (!fury.isCrossLanguage()) {
+        fury.writeRef(buffer, value.comparator());
+      }
       return value;
     }
 
@@ -659,6 +672,7 @@ public class CollectionSerializers {
 
     @Override
     public PriorityQueue newCollection(MemoryBuffer buffer) {
+      assert !fury.isCrossLanguage();
       int numElements = buffer.readVarUint32Small7();
       setNumElements(numElements);
       Comparator comparator = (Comparator) fury.readRef(buffer);

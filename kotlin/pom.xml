@@ -30,7 +30,7 @@
 
     <groupId>org.apache.fury</groupId>
     <artifactId>fury-kotlin</artifactId>
-    <version>0.10.0-SNAPSHOT</version>
+    <version>0.11.0-SNAPSHOT</version>
     <modelVersion>4.0.0</modelVersion>
 
     <properties>
@@ -95,7 +95,7 @@
                     <configuration>
                         <doclint>none</doclint>
                         <bottom>
-                            Copyright © 2023-2024, The Apache Software Foundation. Apache Fury™, Fury™, and Apache
+                            Copyright © 2023-2025, The Apache Software Foundation. Apache Fury™, Fury™, and Apache
                             are either registered trademarks or trademarks of the Apache Software Foundation.
                         </bottom>
                     </configuration>

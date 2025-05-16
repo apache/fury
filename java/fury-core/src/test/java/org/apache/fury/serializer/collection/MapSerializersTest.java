@@ -29,6 +29,7 @@ import com.google.common.collect.ImmutableMap;
 import java.io.Serializable;
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -70,7 +71,7 @@ public class MapSerializersTest extends FuryTestBase {
       boolean scopedMetaShare,
       CompatibleMode compatibleMode) {
     Fury fury =
-        Fury.builder()
+        builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(trackingRef)
             .requireClassRegistration(false)
@@ -194,7 +195,7 @@ public class MapSerializersTest extends FuryTestBase {
   @Test(dataProvider = "referenceTrackingConfig")
   public void testBasicMap(boolean referenceTrackingConfig) {
     Fury fury =
-        Fury.builder()
+        builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(referenceTrackingConfig)
             .requireClassRegistration(false)
@@ -226,7 +227,7 @@ public class MapSerializersTest extends FuryTestBase {
   @Test(dataProvider = "referenceTrackingConfig")
   public void testBasicMapNested(boolean referenceTrackingConfig) {
     Fury fury =
-        Fury.builder()
+        builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(referenceTrackingConfig)
             .requireClassRegistration(false)
@@ -248,7 +249,7 @@ public class MapSerializersTest extends FuryTestBase {
   @Test(dataProvider = "referenceTrackingConfig")
   public void testMapGenerics(boolean referenceTrackingConfig) {
     Fury fury =
-        Fury.builder()
+        builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(referenceTrackingConfig)
             .requireClassRegistration(false)
@@ -265,7 +266,7 @@ public class MapSerializersTest extends FuryTestBase {
   @Test(dataProvider = "referenceTrackingConfig")
   public void testSortedMap(boolean referenceTrackingConfig) {
     Fury fury =
-        Fury.builder()
+        builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(referenceTrackingConfig)
             .requireClassRegistration(false)
@@ -300,7 +301,7 @@ public class MapSerializersTest extends FuryTestBase {
   public void testTreeMap() {
     boolean referenceTracking = true;
     Fury fury =
-        Fury.builder()
+        builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(referenceTracking)
             .requireClassRegistration(false)
@@ -412,7 +413,7 @@ public class MapSerializersTest extends FuryTestBase {
 
   @Test
   public void testNoArgConstructor() {
-    Fury fury = Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
+    Fury fury = builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
     Map<String, Integer> map = newInnerMap();
     Assert.assertEquals(jdkDeserialize(jdkSerialize(map)), map);
     serDeCheck(fury, map);
@@ -426,7 +427,7 @@ public class MapSerializersTest extends FuryTestBase {
 
   @Test
   public void testMapNoJIT() {
-    Fury fury = Fury.builder().withLanguage(Language.JAVA).withCodegen(false).build();
+    Fury fury = builder().withLanguage(Language.JAVA).withCodegen(false).build();
     serDeCheck(fury, new HashMap<>(ImmutableMap.of("a", 1, "b", 2)));
     serDeCheck(fury, new HashMap<>(ImmutableMap.of("a", "v1", "b", "v2")));
     serDeCheck(fury, new HashMap<>(ImmutableMap.of(1, 2, 3, 4)));
@@ -531,7 +532,7 @@ public class MapSerializersTest extends FuryTestBase {
   @Test(dataProvider = "enableCodegen")
   public void testDefaultMapSerializer(boolean enableCodegen) {
     Fury fury =
-        Fury.builder()
+        builder()
             .withLanguage(Language.JAVA)
             .withCodegen(enableCodegen)
             .requireClassRegistration(false)
@@ -585,13 +586,13 @@ public class MapSerializersTest extends FuryTestBase {
   @Test
   public void testGenericMapBound() {
     Fury fury1 =
-        Fury.builder()
+        builder()
             .withLanguage(Language.JAVA)
             .requireClassRegistration(false)
             .withCodegen(false)
             .build();
     Fury fury2 =
-        Fury.builder()
+        builder()
             .withLanguage(Language.JAVA)
             .requireClassRegistration(false)
             .withCodegen(false)
@@ -774,11 +775,7 @@ public class MapSerializersTest extends FuryTestBase {
   @Test
   public void testMapChunkRefTracking() {
     Fury fury =
-        Fury.builder()
-            .withRefTracking(true)
-            .withCodegen(false)
-            .requireClassRegistration(false)
-            .build();
+        builder().withRefTracking(true).withCodegen(false).requireClassRegistration(false).build();
     Map<String, Integer> map = new HashMap<>();
     for (int i = 0; i < 1; i++) {
       map.put("k" + i, i);
@@ -790,11 +787,7 @@ public class MapSerializersTest extends FuryTestBase {
   @Test
   public void testMapChunkRefTrackingGenerics() {
     Fury fury =
-        Fury.builder()
-            .withRefTracking(true)
-            .withCodegen(false)
-            .requireClassRegistration(false)
-            .build();
+        builder().withRefTracking(true).withCodegen(false).requireClassRegistration(false).build();
 
     MapFields obj = new MapFields();
     Map<String, Integer> map = new HashMap<>();
@@ -809,7 +802,7 @@ public class MapSerializersTest extends FuryTestBase {
   @Test(dataProvider = "referenceTrackingConfig")
   public void testMapFieldsChunkSerializer(boolean referenceTrackingConfig) {
     Fury fury =
-        Fury.builder()
+        builder()
             .withRefTracking(referenceTrackingConfig)
             .withCodegen(false)
             .requireClassRegistration(false)
@@ -848,7 +841,7 @@ public class MapSerializersTest extends FuryTestBase {
   @Test(dataProvider = "referenceTrackingConfig")
   public void testMapFieldStructCodegen1(boolean referenceTrackingConfig) {
     Fury fury =
-        Fury.builder()
+        builder()
             .withRefTracking(referenceTrackingConfig)
             .withCodegen(true)
             .requireClassRegistration(false)
@@ -869,7 +862,7 @@ public class MapSerializersTest extends FuryTestBase {
   @Test(dataProvider = "referenceTrackingConfig")
   public void testMapFieldStructCodegen2(boolean referenceTrackingConfig) {
     Fury fury =
-        Fury.builder()
+        builder()
             .withRefTracking(referenceTrackingConfig)
             .withCodegen(true)
             .requireClassRegistration(false)
@@ -891,7 +884,7 @@ public class MapSerializersTest extends FuryTestBase {
   @Test(dataProvider = "referenceTrackingConfig")
   public void testMapFieldStructCodegen3(boolean referenceTrackingConfig) {
     Fury fury =
-        Fury.builder()
+        builder()
             .withRefTracking(referenceTrackingConfig)
             .withCodegen(true)
             .requireClassRegistration(false)
@@ -915,7 +908,7 @@ public class MapSerializersTest extends FuryTestBase {
   @Test(dataProvider = "referenceTrackingConfig")
   public void testNestedMapFieldStructCodegen(boolean referenceTrackingConfig) {
     Fury fury =
-        Fury.builder()
+        builder()
             .withRefTracking(referenceTrackingConfig)
             .withCodegen(true)
             .requireClassRegistration(false)
@@ -957,10 +950,7 @@ public class MapSerializersTest extends FuryTestBase {
   @Test(dataProvider = "referenceTrackingConfig")
   public void testWildcard(boolean referenceTrackingConfig) {
     Fury fury =
-        Fury.builder()
-            .withRefTracking(referenceTrackingConfig)
-            .requireClassRegistration(false)
-            .build();
+        builder().withRefTracking(referenceTrackingConfig).requireClassRegistration(false).build();
     MapWildcardFieldStruct1 struct = new MapWildcardFieldStruct1();
     struct.f0 = ofHashMap("k", 1);
     struct.f1 = ofHashMap("k1", new Wildcard<>());
@@ -981,10 +971,7 @@ public class MapSerializersTest extends FuryTestBase {
   @Test(dataProvider = "referenceTrackingConfig")
   public void testNestedListMap(boolean referenceTrackingConfig) {
     Fury fury =
-        Fury.builder()
-            .withRefTracking(referenceTrackingConfig)
-            .requireClassRegistration(false)
-            .build();
+        builder().withRefTracking(referenceTrackingConfig).requireClassRegistration(false).build();
     NestedListMap o = new NestedListMap();
     o.map1 = ofArrayList(ofHashMap("k1", "v"));
     o.map2 = ofArrayList(ofHashMap("k2", "2"));
@@ -1001,7 +988,24 @@ public class MapSerializersTest extends FuryTestBase {
     NestedMapCollectionGenericTestClass obj = new NestedMapCollectionGenericTestClass();
     obj.map = new LinkedHashMap<>();
     obj.map.put("obj", ofHashMap("obj", 1, "b", ofArrayList(10)));
-    Fury fury = Fury.builder().requireClassRegistration(false).withCodegen(enableCodegen).build();
+    Fury fury = builder().requireClassRegistration(false).withCodegen(enableCodegen).build();
     fury.deserialize(fury.serialize(obj));
+  }
+
+  @Data
+  public static class NestedStringLongListMap {
+    public Map<String, List<Long>> stringInt64ListMap;
+  }
+
+  @Test(dataProvider = "enableCodegen")
+  public void testNestedStringLongListMap(boolean enableCodegen) {
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).withCodegen(enableCodegen).build();
+    fury.register(NestedStringLongListMap.class);
+    NestedStringLongListMap pojo = new NestedStringLongListMap();
+    pojo.stringInt64ListMap = new HashMap<>();
+    pojo.stringInt64ListMap.put("a", Arrays.asList(100L, 200L, 300L));
+    pojo.stringInt64ListMap.put("b", null);
+    serDeCheck(fury, pojo);
+    fury.serialize(pojo);
   }
 }

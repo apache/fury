@@ -27,7 +27,7 @@ import org.testng.annotations.Test;
 
 public class ProtoBuffersStateTest {
   @Test
-  public void testMediaContent() {
+  public void testSample() {
     Sample object = new Sample().populate(false);
     byte[] data = ProtoBuffersState.serializeSample(object);
     Sample sample = ProtoBuffersState.deserializeSample(data);
@@ -35,7 +35,7 @@ public class ProtoBuffersStateTest {
   }
 
   @Test
-  public void testSample() {
+  public void testMediaContent() {
     MediaContent object = new MediaContent().populate(false);
     byte[] data = ProtoBuffersState.serializeMediaContent(object);
     MediaContent mediaContent = ProtoBuffersState.deserializeMediaContent(data);

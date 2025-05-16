@@ -43,6 +43,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import org.apache.fury.Fury;
+import org.apache.fury.annotation.FuryField;
 import org.apache.fury.collection.Tuple2;
 import org.apache.fury.exception.ClassNotCompatibleException;
 import org.apache.fury.memory.MemoryBuffer;
@@ -748,6 +749,8 @@ public class FieldResolver {
     protected final ClassResolver classResolver;
     private final FieldAccessor fieldAccessor;
     private final ClassInfoHolder classInfoHolder;
+    private final boolean nullable;
+    private boolean trackingRef;
 
     public FieldInfo(
         Fury fury,
@@ -771,6 +774,15 @@ public class FieldResolver {
         fieldAccessor = null;
       } else {
         fieldAccessor = FieldAccessor.createAccessor(field);
+      }
+      FuryField furyField = field == null ? null : field.getAnnotation(FuryField.class);
+      this.nullable = furyField == null || furyField.nullable();
+      if (fury.trackingRef()) {
+        trackingRef =
+            furyField != null
+                ? furyField.trackingRef()
+                // todo question TypeRef.of(type)?
+                : classResolver.needToWriteRef(TypeRef.of(type));
       }
     }
 
@@ -836,6 +848,10 @@ public class FieldResolver {
             encodedFieldInfo,
             NO_CLASS_ID);
       }
+    }
+
+    public boolean isNullable() {
+      return nullable;
     }
 
     public String getName() {
@@ -1020,10 +1036,5 @@ public class FieldResolver {
     public Class<?> getValueType() {
       return valueType;
     }
-  }
-
-  public static void main(String[] args) {
-    System.out.println(computeStringHash("list0") << 2);
-    System.out.println(computeStringHash("serializeListLast") << 2);
   }
 }

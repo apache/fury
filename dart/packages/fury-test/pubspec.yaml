@@ -28,6 +28,7 @@ dependencies:
   fury: 1.0.0
   checks: ^0.3.0
   path: ^1.9.1
+  yaml: ^3.1.3
 dev_dependencies:
   lints: ^5.0.0
   build_runner: any

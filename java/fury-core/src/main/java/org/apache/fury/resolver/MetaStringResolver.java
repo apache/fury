@@ -222,8 +222,12 @@ public final class MetaStringResolver {
   }
 
   private MetaStringBytes readSmallMetaStringBytes(MemoryBuffer buffer, int len) {
-    long v1, v2 = 0;
     byte encoding = buffer.readByte();
+    if (len == 0) {
+      assert encoding == MetaString.Encoding.UTF_8.getValue();
+      return MetaStringBytes.EMPTY;
+    }
+    long v1, v2 = 0;
     if (len <= 8) {
       v1 = buffer.readBytesAsInt64(len);
     } else {
@@ -239,8 +243,12 @@ public final class MetaStringResolver {
 
   private MetaStringBytes readSmallMetaStringBytes(
       MemoryBuffer buffer, MetaStringBytes cache, int len) {
-    long v1, v2 = 0;
     byte encoding = buffer.readByte();
+    if (len == 0) {
+      assert encoding == MetaString.Encoding.UTF_8.getValue();
+      return MetaStringBytes.EMPTY;
+    }
+    long v1, v2 = 0;
     if (len <= 8) {
       v1 = buffer.readBytesAsInt64(len);
     } else {

@@ -25,13 +25,13 @@ import 'package:test/test.dart';
 import 'package:checks/checks.dart'; // For more expressive assertions
 
 void main() {
-  group('TimeStamp constructors', () {
-    test('basic constructor', () {
+  group('Constructors', () {
+    test('sets microsecondsSinceEpoch', () {
       final ts = TimeStamp(1000000);
       check(ts.microsecondsSinceEpoch).equals(1000000);
     });
 
-    test('now() constructor creates timestamp close to current time', () {
+    test('now() near current time', () {
       final now = DateTime.now();
       final tsNow = TimeStamp.now();
       final diff = (tsNow.microsecondsSinceEpoch - now.microsecondsSinceEpoch).abs();
@@ -40,19 +40,19 @@ void main() {
       check(diff).isLessThan(50000);
     });
 
-    test('fromMillisecondsSinceEpoch constructor', () {
+    test('fromMillisecondsSinceEpoch() sets micros correctly', () {
       final ts = TimeStamp.fromMillisecondsSinceEpoch(1000);
       check(ts.microsecondsSinceEpoch).equals(1000 * 1000);
       check(ts.toMillisecondsSinceEpoch()).equals(1000);
     });
 
-    test('fromDateTime constructor', () {
+    test('fromDateTime() maps to microsSinceEpoch', () {
       final dt = DateTime(2025, 3, 19, 16, 38, 21);
       final ts = TimeStamp.fromDateTime(dt);
       check(ts.microsecondsSinceEpoch).equals(dt.microsecondsSinceEpoch);
     });
 
-    test('fromDateComponents constructor', () {
+    test('fromDateComponents() (local)', () {
       final ts = TimeStamp.fromDateComponents(
           year: 2025, month: 3, day: 19, hour: 16, minute: 38, second: 21);
 
@@ -66,7 +66,7 @@ void main() {
       check(dt.isUtc).isFalse(); // Should be local time
     });
 
-    test('fromUtcDateComponents constructor', () {
+    test('fromUtcDateComponents() (UTC)', () {
       final ts = TimeStamp.fromUtcDateComponents(
           year: 2025, month: 3, day: 19, hour: 16, minute: 38, second: 21);
 
@@ -81,18 +81,18 @@ void main() {
     });
   });
 
-  group('TimeStamp conversion methods', () {
-    test('toMillisecondsSinceEpoch', () {
+  group('Conversions', () {
+    test('toMillisecondsSinceEpoch()', () {
       final ts = TimeStamp(1234567000);
       check(ts.toMillisecondsSinceEpoch()).equals(1234567);
     });
 
-    test('toSecondsSinceEpoch', () {
+    test('toSecondsSinceEpoch()', () {
       final ts = TimeStamp(1234567000000);
       check(ts.toSecondsSinceEpoch()).equals(1234567);
     });
 
-    test('toDateTime and toUtcDateTime', () {
+    test('local vs UTC DateTime', () {
       final ts = TimeStamp(1714490301000000); // 2024-04-30 15:18:21 UTC
 
       final localDt = ts.toDateTime();
@@ -111,8 +111,8 @@ void main() {
     });
   });
 
-  group('TimeStamp arithmetic', () {
-    test('add duration', () {
+  group('Arithmetic', () {
+    test('add(Duration)', () {
       final ts = TimeStamp(1000000);
       final newTs = ts.add(Duration(seconds: 10));
 
@@ -120,7 +120,7 @@ void main() {
       check(newTs.toSecondsSinceEpoch() - ts.toSecondsSinceEpoch()).equals(10);
     });
 
-    test('subtract duration', () {
+    test('subtract(Duration)', () {
       final ts = TimeStamp(11000000);
       final newTs = ts.subtract(Duration(seconds: 10));
 
@@ -128,7 +128,7 @@ void main() {
       check(ts.toSecondsSinceEpoch() - newTs.toSecondsSinceEpoch()).equals(10);
     });
 
-    test('difference between timestamps', () {
+    test('difference()', () {
       final ts1 = TimeStamp(1000000);
       final ts2 = TimeStamp(11000000);
 
@@ -140,8 +140,8 @@ void main() {
     });
   });
 
-  group('TimeStamp comparison', () {
-    test('isBefore', () {
+  group('Comparison', () {
+    test('isBefore()', () {
       final earlier = TimeStamp(1000000);
       final later = TimeStamp(2000000);
 
@@ -150,7 +150,7 @@ void main() {
       check(earlier.isBefore(earlier)).isFalse();
     });
 
-    test('isAfter', () {
+    test('isAfter()', () {
       final earlier = TimeStamp(1000000);
       final later = TimeStamp(2000000);
 
@@ -159,7 +159,7 @@ void main() {
       check(earlier.isAfter(earlier)).isFalse();
     });
 
-    test('isAtSameMomentAs', () {
+    test('isAtSameMomentAs()', () {
       final ts1 = TimeStamp(1000000);
       final ts2 = TimeStamp(1000000);
       final ts3 = TimeStamp(2000000);
@@ -168,7 +168,7 @@ void main() {
       check(ts1.isAtSameMomentAs(ts3)).isFalse();
     });
 
-    test('equality operator', () {
+    test('== and hashCode', () {
       final ts1 = TimeStamp(1000000);
       final ts2 = TimeStamp(1000000);
       final ts3 = TimeStamp(2000000);
@@ -179,8 +179,8 @@ void main() {
     });
   });
 
-  group('TimeStamp formatting', () {
-    test('default format (ISO8601)', () {
+  group('Formatting', () {
+    test('default ISO8601 format', () {
       // 2025-03-19 16:38:21 UTC
       final ts = TimeStamp.fromUtcDateComponents(
           year: 2025, month: 3, day: 19, hour: 16, minute: 38, second: 21);
@@ -189,7 +189,7 @@ void main() {
       check(ts.toString()).equals('2025-03-19T16:38:21.000Z');
     });
 
-    test('custom format', () {
+    test('custom patterns', () {
       final ts = TimeStamp.fromUtcDateComponents(
           year: 2025, month: 3, day: 19, hour: 16, minute: 38, second: 21);
 
@@ -199,8 +199,8 @@ void main() {
     });
   });
 
-  group('Real-world scenarios', () {
-    test('creating timestamp for specific date and calculating difference', () {
+  group('Examples', () {
+    test('weekly difference calculation', () {
       // Current date from example: 2025-03-19 16:38:21
       final currentTime = TimeStamp.fromUtcDateComponents(
           year: 2025, month: 3, day: 19, hour: 16, minute: 38, second: 21);
@@ -213,7 +213,7 @@ void main() {
       check(difference.inDays).equals(7);
     });
 
-    test('recording event timestamps and calculating duration', () {
+    test('event duration calculation', () {
       // Simulate a sequence of events with timestamps
       final eventStart = TimeStamp.fromUtcDateComponents(
           year: 2025, month: 3, day: 19, hour: 16, minute: 0, second: 0);

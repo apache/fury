@@ -20,7 +20,6 @@
 package org.apache.fury.resolver;
 
 import static org.apache.fury.Fury.NOT_SUPPORT_XLANG;
-import static org.apache.fury.meta.ClassDef.SIZE_TWO_BYTES_FLAG;
 import static org.apache.fury.meta.Encoders.GENERIC_ENCODER;
 import static org.apache.fury.meta.Encoders.PACKAGE_DECODER;
 import static org.apache.fury.meta.Encoders.PACKAGE_ENCODER;
@@ -79,6 +78,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.fury.Fury;
@@ -152,11 +152,14 @@ import org.apache.fury.serializer.collection.UnmodifiableSerializers;
 import org.apache.fury.serializer.scala.SingletonCollectionSerializer;
 import org.apache.fury.serializer.scala.SingletonMapSerializer;
 import org.apache.fury.serializer.scala.SingletonObjectSerializer;
+import org.apache.fury.serializer.shim.ProtobufDispatcher;
 import org.apache.fury.serializer.shim.ShimDispatcher;
 import org.apache.fury.type.Descriptor;
+import org.apache.fury.type.DescriptorGrouper;
 import org.apache.fury.type.GenericType;
 import org.apache.fury.type.ScalaTypes;
 import org.apache.fury.type.TypeUtils;
+import org.apache.fury.type.Types;
 import org.apache.fury.util.GraalvmSupport;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.StringUtils;
@@ -215,13 +218,14 @@ public class ClassResolver implements TypeResolver {
   // use a lower load factor to minimize hash collision
   private static final float furyMapLoadFactor = 0.25f;
   private static final int estimatedNumRegistered = 150;
-  private static final String SET_META__CONTEXT_MSG =
+  static final String SET_META__CONTEXT_MSG =
       "Meta context must be set before serialization, "
           + "please set meta context by SerializationContext.setMetaContext";
   static final ClassInfo NIL_CLASS_INFO =
       new ClassInfo(null, null, null, null, false, null, NO_CLASS_ID, NOT_SUPPORT_XLANG);
 
   private final Fury fury;
+  XtypeResolver xtypeResolver;
   private ClassInfo[] registeredId2ClassInfo = new ClassInfo[] {};
 
   // IdentityMap has better lookup performance, when loadFactor is 0.05f, performance is better
@@ -272,13 +276,13 @@ public class ClassResolver implements TypeResolver {
     classInfoCache = NIL_CLASS_INFO;
     metaContextShareEnabled = fury.getConfig().isMetaShareEnabled();
     extRegistry = new ExtRegistry();
-    extRegistry.objectGenericType = buildGenericType(OBJECT_TYPE);
     shimDispatcher = new ShimDispatcher(fury);
     ClassResolver._addGraalvmClassRegistry(fury.getConfig().getConfigHash(), this);
   }
 
   @Override
   public void initialize() {
+    extRegistry.objectGenericType = buildGenericType(OBJECT_TYPE);
     register(LambdaSerializer.ReplaceStub.class, LAMBDA_STUB_ID);
     register(JdkProxySerializer.ReplaceStub.class, JDK_PROXY_STUB_ID);
     register(ReplaceResolveSerializer.ReplaceStub.class, REPLACE_STUB_ID);
@@ -537,6 +541,7 @@ public class ClassResolver implements TypeResolver {
     }
   }
 
+  @Override
   public boolean isRegistered(Class<?> cls) {
     return extRegistry.registeredClassIdMap.containsKey(cls)
         || extRegistry.registeredClasses.inverse().containsKey(cls);
@@ -546,6 +551,7 @@ public class ClassResolver implements TypeResolver {
     return extRegistry.registeredClasses.containsKey(name);
   }
 
+  @Override
   public boolean isRegisteredByName(Class<?> cls) {
     return extRegistry.registeredClasses.inverse().containsKey(cls);
   }
@@ -564,6 +570,7 @@ public class ClassResolver implements TypeResolver {
     }
   }
 
+  @Override
   public boolean isRegisteredById(Class<?> cls) {
     return extRegistry.registeredClassIdMap.get(cls) != null;
   }
@@ -610,7 +617,26 @@ public class ClassResolver implements TypeResolver {
    * a class is registered but not an inner class with inner serializer, it will still be taken as
    * non-final to write class def, so that it can be deserialized by the peer still.
    */
+  @Override
   public boolean isMonomorphic(Class<?> clz) {
+    if (fury.isCrossLanguage()) {
+      if (TypeUtils.unwrap(clz).isPrimitive() || clz.isEnum() || clz == String.class) {
+        return true;
+      }
+      if (clz.isArray() && TypeUtils.getArrayComponent(clz).isPrimitive()) {
+        return true;
+      }
+      ClassInfo classInfo = xtypeResolver.getClassInfo(clz, false);
+      if (classInfo != null) {
+        if (classInfo.serializer instanceof TimeSerializers.TimeSerializer) {
+          return true;
+        }
+        if (classInfo.serializer instanceof TimeSerializers.ImmutableTimeSerializer) {
+          return true;
+        }
+      }
+      return false;
+    }
     if (fury.getConfig().isMetaShareEnabled()) {
       // can't create final map/collection type using TypeUtils.mapOf(TypeToken<K>,
       // TypeToken<V>)
@@ -938,6 +964,10 @@ public class ClassResolver implements TypeResolver {
       if (shimDispatcher.contains(cls)) {
         return shimDispatcher.getSerializer(cls).getClass();
       }
+      serializerClass = ProtobufDispatcher.getSerializerClass(cls);
+      if (serializerClass != null) {
+        return serializerClass;
+      }
       if (fury.getConfig().checkJdkClassSerializable()) {
         if (cls.getName().startsWith("java") && !(Serializable.class.isAssignableFrom(cls))) {
           throw new UnsupportedOperationException(
@@ -1198,6 +1228,7 @@ public class ClassResolver implements TypeResolver {
   }
 
   // Invoked by fury JIT.
+  @Override
   public ClassInfo getClassInfo(Class<?> cls) {
     ClassInfo classInfo = classInfoMap.get(cls);
     if (classInfo == null || classInfo.serializer == null) {
@@ -1229,6 +1260,7 @@ public class ClassResolver implements TypeResolver {
    * @param createClassInfoIfNotFound whether create class info if not found.
    * @return Class info.
    */
+  @Override
   public ClassInfo getClassInfo(Class<?> cls, boolean createClassInfoIfNotFound) {
     if (createClassInfoIfNotFound) {
       return getOrUpdateClassInfo(cls);
@@ -1490,7 +1522,7 @@ public class ClassResolver implements TypeResolver {
     return classInfo;
   }
 
-  private ClassInfo readClassInfoWithMetaShare(MetaContext metaContext, int index) {
+  ClassInfo readClassInfoWithMetaShare(MetaContext metaContext, int index) {
     ClassDef classDef = metaContext.readClassDefs.get(index);
     Tuple2<ClassDef, ClassInfo> classDefTuple = extRegistry.classIdToDef.get(classDef.getId());
     ClassInfo classInfo;
@@ -1531,7 +1563,7 @@ public class ClassResolver implements TypeResolver {
       classDef = classDefTuple.f0;
     }
     Class<?> cls = loadClass(classDef.getClassSpec());
-    if (!classDef.isObjectType()) {
+    if (!classDef.hasFieldsMeta()) {
       classInfo = getClassInfo(cls);
     } else {
       classInfo = getMetaSharedClassInfo(classDef, cls);
@@ -1641,11 +1673,7 @@ public class ClassResolver implements TypeResolver {
       long id = buffer.readInt64();
       Tuple2<ClassDef, ClassInfo> tuple2 = extRegistry.classIdToDef.get(id);
       if (tuple2 != null) {
-        int size =
-            (id & SIZE_TWO_BYTES_FLAG) == 0
-                ? buffer.readByte() & 0xff
-                : buffer.readInt16() & 0xffff;
-        buffer.increaseReaderIndex(size);
+        ClassDef.skipClassDef(buffer, id);
       } else {
         tuple2 = readClassDef(buffer, id);
       }
@@ -1655,7 +1683,7 @@ public class ClassResolver implements TypeResolver {
   }
 
   private Tuple2<ClassDef, ClassInfo> readClassDef(MemoryBuffer buffer, long header) {
-    ClassDef readClassDef = ClassDef.readClassDef(this, buffer, header);
+    ClassDef readClassDef = ClassDef.readClassDef(fury, buffer, header);
     Tuple2<ClassDef, ClassInfo> tuple2 = extRegistry.classIdToDef.get(readClassDef.getId());
     if (tuple2 == null) {
       tuple2 = putClassDef(readClassDef, null);
@@ -1793,6 +1821,7 @@ public class ClassResolver implements TypeResolver {
    * reduce map lookup to load class from binary.
    */
   @CodegenInvoke
+  @Override
   public ClassInfo readClassInfo(MemoryBuffer buffer, ClassInfo classInfoCache) {
     if (metaContextShareEnabled) {
       return readClassInfoWithMetaShare(buffer, fury.getSerializationContext().getMetaContext());
@@ -2031,6 +2060,66 @@ public class ClassResolver implements TypeResolver {
     extRegistry.codeGeneratorMap.put(Arrays.asList(loaders), codeGenerator);
   }
 
+  public DescriptorGrouper createDescriptorGrouper(
+      Collection<Descriptor> descriptors, boolean descriptorsGroupedOrdered) {
+    return createDescriptorGrouper(descriptors, descriptorsGroupedOrdered, null);
+  }
+
+  public DescriptorGrouper createDescriptorGrouper(
+      Collection<Descriptor> descriptors,
+      boolean descriptorsGroupedOrdered,
+      Function<Descriptor, Descriptor> descriptorUpdator) {
+    if (fury.isCrossLanguage()) {
+      return DescriptorGrouper.createDescriptorGrouper(
+          this::isMonomorphic,
+          descriptors,
+          descriptorsGroupedOrdered,
+          descriptorUpdator,
+          fury.compressInt(),
+          fury.compressLong(),
+          (o1, o2) -> {
+            int xtypeId = getXtypeId(o1.getRawType());
+            int xtypeId2 = getXtypeId(o2.getRawType());
+            if (xtypeId == xtypeId2) {
+              return o1.getSnakeCaseName().compareTo(o2.getSnakeCaseName());
+            } else {
+              return xtypeId - xtypeId2;
+            }
+          });
+    }
+    return DescriptorGrouper.createDescriptorGrouper(
+        fury.getClassResolver()::isMonomorphic,
+        descriptors,
+        descriptorsGroupedOrdered,
+        descriptorUpdator,
+        fury.compressInt(),
+        fury.compressLong(),
+        DescriptorGrouper.COMPARATOR_BY_TYPE_AND_NAME);
+  }
+
+  private static final int UNKNOWN_TYPE_ID = -1;
+
+  private int getXtypeId(Class<?> cls) {
+    if (isCollection(cls)) {
+      return Types.LIST;
+    }
+    if (cls.isArray() && !cls.getComponentType().isPrimitive()) {
+      return Types.LIST;
+    }
+    if (isMap(cls)) {
+      return Types.MAP;
+    }
+    if (fury.getXtypeResolver().isRegistered(cls)) {
+      return fury.getXtypeResolver().getClassInfo(cls).getXtypeId();
+    } else {
+      if (ReflectionUtils.isMonomorphic(cls)) {
+        throw new UnsupportedOperationException(cls + " is not supported for xlang serialization");
+      }
+      return UNKNOWN_TYPE_ID;
+    }
+  }
+
+  @Override
   public Fury getFury() {
     return fury;
   }

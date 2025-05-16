@@ -129,12 +129,19 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
   private void readAndWriteFieldValue(
       MemoryBuffer buffer, FieldResolver.FieldInfo fieldInfo, Object targetObject) {
     FieldAccessor fieldAccessor = fieldInfo.getFieldAccessor();
+    boolean nullable = fieldInfo.isNullable();
     short classId = fieldInfo.getEmbeddedClassId();
-    if (ObjectSerializer.writePrimitiveFieldValueFailed(
+    if (AbstractObjectSerializer.writePrimitiveFieldValueFailed(
         fury, buffer, targetObject, fieldAccessor, classId)) {
       Object fieldValue;
       fieldValue = fieldAccessor.getObject(targetObject);
-      if (ObjectSerializer.writeBasicObjectFieldValueFailed(fury, buffer, fieldValue, classId)) {
+      boolean writeBasicObjectResult =
+          nullable
+              ? AbstractObjectSerializer.writeBasicNullableObjectFieldValueFailed(
+                  fury, buffer, fieldValue, classId)
+              : AbstractObjectSerializer.writeBasicObjectFieldValueFailed(
+                  fury, buffer, fieldValue, classId);
+      if (writeBasicObjectResult) {
         if (classId == ClassResolver.NO_CLASS_ID) { // SEPARATE_TYPES_HASH
           writeSeparateFieldValue(fieldInfo, buffer, fieldValue);
         } else {
@@ -558,10 +565,14 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
       FieldResolver.FieldInfo fieldInfo, MemoryBuffer buffer, Object targetObject) {
     FieldAccessor fieldAccessor = fieldInfo.getFieldAccessor();
     short classId = fieldInfo.getEmbeddedClassId();
-    if (ObjectSerializer.readPrimitiveFieldValueFailed(
+    boolean nullable = fieldInfo.isNullable();
+    if (AbstractObjectSerializer.readPrimitiveFieldValueFailed(
             fury, buffer, targetObject, fieldAccessor, classId)
-        && ObjectSerializer.readBasicObjectFieldValueFailed(
-            fury, buffer, targetObject, fieldAccessor, classId)) {
+        && (nullable
+            ? AbstractObjectSerializer.readBasicNullableObjectFieldValueFailed(
+                fury, buffer, targetObject, fieldAccessor, classId)
+            : AbstractObjectSerializer.readBasicObjectFieldValueFailed(
+                fury, buffer, targetObject, fieldAccessor, classId))) {
       if (classId == ClassResolver.NO_CLASS_ID) {
         // SEPARATE_TYPES_HASH
         Object fieldValue = fieldResolver.readObjectField(buffer, fieldInfo);

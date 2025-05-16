@@ -20,11 +20,13 @@
 package org.apache.fury.resolver;
 
 import static org.apache.fury.Fury.NOT_SUPPORT_XLANG;
+import static org.apache.fury.builder.Generated.GeneratedSerializer;
 import static org.apache.fury.meta.Encoders.GENERIC_ENCODER;
 import static org.apache.fury.meta.Encoders.PACKAGE_DECODER;
 import static org.apache.fury.meta.Encoders.PACKAGE_ENCODER;
 import static org.apache.fury.meta.Encoders.TYPE_NAME_DECODER;
 import static org.apache.fury.resolver.ClassResolver.NO_CLASS_ID;
+import static org.apache.fury.serializer.collection.MapSerializers.HashMapSerializer;
 import static org.apache.fury.type.TypeUtils.qualifiedName;
 
 import java.lang.reflect.Type;
@@ -41,12 +43,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.fury.Fury;
 import org.apache.fury.collection.IdentityMap;
+import org.apache.fury.collection.IdentityObjectIntMap;
 import org.apache.fury.collection.LongMap;
 import org.apache.fury.collection.ObjectMap;
 import org.apache.fury.config.Config;
@@ -56,17 +60,24 @@ import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
+import org.apache.fury.meta.ClassDef;
 import org.apache.fury.meta.Encoders;
 import org.apache.fury.meta.MetaString;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeRef;
+import org.apache.fury.serializer.ArraySerializers;
 import org.apache.fury.serializer.EnumSerializer;
+import org.apache.fury.serializer.LazySerializer;
 import org.apache.fury.serializer.NonexistentClass;
 import org.apache.fury.serializer.NonexistentClassSerializers;
+import org.apache.fury.serializer.ObjectSerializer;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.serializer.Serializers;
-import org.apache.fury.serializer.StructSerializer;
+import org.apache.fury.serializer.collection.AbstractCollectionSerializer;
+import org.apache.fury.serializer.collection.AbstractMapSerializer;
 import org.apache.fury.serializer.collection.CollectionSerializer;
+import org.apache.fury.serializer.collection.CollectionSerializers.ArrayListSerializer;
+import org.apache.fury.serializer.collection.CollectionSerializers.HashSetSerializer;
 import org.apache.fury.serializer.collection.MapSerializer;
 import org.apache.fury.type.GenericType;
 import org.apache.fury.type.Generics;
@@ -95,6 +106,8 @@ public class XtypeResolver implements TypeResolver {
       new ObjectMap<>(16, loadFactor);
   private final ObjectMap<String, ClassInfo> qualifiedType2ClassInfo =
       new ObjectMap<>(16, loadFactor);
+  private final Map<Class<?>, ClassDef> classDefMap = new HashMap<>();
+  private final boolean shareMeta;
   private int xtypeIdGenerator = 64;
 
   // Use ClassInfo[] or LongMap?
@@ -107,6 +120,8 @@ public class XtypeResolver implements TypeResolver {
     this.config = fury.getConfig();
     this.fury = fury;
     this.classResolver = fury.getClassResolver();
+    classResolver.xtypeResolver = this;
+    shareMeta = fury.getConfig().isMetaShareEnabled();
     this.generics = fury.getGenerics();
     this.metaStringResolver = fury.getMetaStringResolver();
   }
@@ -129,6 +144,10 @@ public class XtypeResolver implements TypeResolver {
     // We can relax this limit in the future.
     Preconditions.checkArgument(typeId < MAX_TYPE_ID, "Too big type id %s", typeId);
     ClassInfo classInfo = classInfoMap.get(type);
+    if (type.isArray()) {
+      buildClassInfo(type);
+      return;
+    }
     Serializer<?> serializer = null;
     if (classInfo != null) {
       serializer = classInfo.serializer;
@@ -150,7 +169,7 @@ public class XtypeResolver implements TypeResolver {
       xtypeId = (xtypeId << 8) + Types.ENUM;
     } else {
       if (serializer != null) {
-        if (serializer instanceof StructSerializer) {
+        if (isStructType(serializer)) {
           xtypeId = (xtypeId << 8) + Types.STRUCT;
         } else {
           xtypeId = (xtypeId << 8) + Types.EXT;
@@ -187,7 +206,7 @@ public class XtypeResolver implements TypeResolver {
     }
     short xtypeId;
     if (serializer != null) {
-      if (serializer instanceof StructSerializer) {
+      if (isStructType(serializer)) {
         xtypeId = Types.NAMED_STRUCT;
       } else if (serializer instanceof EnumSerializer) {
         xtypeId = Types.NAMED_ENUM;
@@ -212,12 +231,21 @@ public class XtypeResolver implements TypeResolver {
       if (type.isEnum()) {
         classInfo.serializer = new EnumSerializer(fury, (Class<Enum>) type);
       } else {
-        classInfo.serializer = new StructSerializer(fury, type);
+        classInfo.serializer =
+            new LazySerializer.LazyObjectSerializer(
+                fury, type, () -> new ObjectSerializer<>(fury, type));
       }
     }
     classInfoMap.put(type, classInfo);
     registeredTypeIds.add(xtypeId);
     xtypeIdToClassMap.put(xtypeId, classInfo);
+  }
+
+  private boolean isStructType(Serializer serializer) {
+    if (serializer instanceof ObjectSerializer || serializer instanceof GeneratedSerializer) {
+      return true;
+    }
+    return serializer instanceof LazySerializer.LazyObjectSerializer;
   }
 
   private ClassInfo newClassInfo(Class<?> type, Serializer<?> serializer, short xtypeId) {
@@ -262,12 +290,73 @@ public class XtypeResolver implements TypeResolver {
     return classInfo;
   }
 
+  @Override
+  public boolean isRegistered(Class<?> cls) {
+    return classInfoMap.get(cls) != null;
+  }
+
+  @Override
+  public boolean isRegisteredById(Class<?> cls) {
+    ClassInfo classInfo = classInfoMap.get(cls);
+    if (classInfo == null) {
+      return false;
+    }
+    byte xtypeId = (byte) classInfo.xtypeId;
+    if (xtypeId <= 0) {
+      return false;
+    }
+    switch (xtypeId) {
+      case Types.NAMED_COMPATIBLE_STRUCT:
+      case Types.NAMED_ENUM:
+      case Types.NAMED_STRUCT:
+      case Types.NAMED_EXT:
+        return false;
+      default:
+        return true;
+    }
+  }
+
+  @Override
+  public boolean isRegisteredByName(Class<?> cls) {
+    ClassInfo classInfo = classInfoMap.get(cls);
+    if (classInfo == null) {
+      return false;
+    }
+    byte xtypeId = (byte) classInfo.xtypeId;
+    if (xtypeId <= 0) {
+      return false;
+    }
+    switch (xtypeId) {
+      case Types.NAMED_COMPATIBLE_STRUCT:
+      case Types.NAMED_ENUM:
+      case Types.NAMED_STRUCT:
+      case Types.NAMED_EXT:
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  @Override
+  public boolean isMonomorphic(Class<?> clz) {
+    return classResolver.isMonomorphic(clz);
+  }
+
+  @Override
   public ClassInfo getClassInfo(Class<?> cls) {
     ClassInfo classInfo = classInfoMap.get(cls);
     if (classInfo == null) {
       classInfo = buildClassInfo(cls);
     }
     return classInfo;
+  }
+
+  @Override
+  public ClassInfo getClassInfo(Class<?> cls, boolean createIfAbsent) {
+    if (createIfAbsent) {
+      return getClassInfo(cls);
+    }
+    return classInfoMap.get(cls);
   }
 
   public ClassInfo getClassInfo(Class<?> cls, ClassInfoHolder classInfoHolder) {
@@ -283,9 +372,27 @@ public class XtypeResolver implements TypeResolver {
     return classInfo;
   }
 
+  public ClassInfo getXtypeInfo(int typeId) {
+    return xtypeIdToClassMap.get(typeId);
+  }
+
+  public ClassInfo getUserTypeInfo(String namespace, String typeName) {
+    String name = qualifiedName(namespace, typeName);
+    return qualifiedType2ClassInfo.get(name);
+  }
+
+  public ClassInfo getUserTypeInfo(int userTypeId) {
+    Preconditions.checkArgument((byte) (userTypeId) < Types.UNKNOWN);
+    return xtypeIdToClassMap.get(userTypeId);
+  }
+
   @Override
   public boolean needToWriteRef(TypeRef<?> typeRef) {
-    return getClassInfo(typeRef.getRawType()).serializer.needToWriteRef();
+    ClassInfo classInfo = classInfoMap.get(typeRef.getRawType());
+    if (classInfo == null) {
+      return fury.trackingRef();
+    }
+    return classInfo.serializer.needToWriteRef();
   }
 
   @Override
@@ -302,16 +409,41 @@ public class XtypeResolver implements TypeResolver {
     Serializer serializer;
     int xtypeId;
     if (classResolver.isSet(cls)) {
-      serializer = new CollectionSerializer(fury, cls);
+      if (cls.isAssignableFrom(HashSet.class)) {
+        cls = HashSet.class;
+        serializer = new HashSetSerializer(fury);
+      } else {
+        serializer = getCollectionSerializer(cls);
+      }
       xtypeId = Types.SET;
     } else if (classResolver.isCollection(cls)) {
-      serializer = new CollectionSerializer(fury, cls);
+      if (cls.isAssignableFrom(ArrayList.class)) {
+        cls = ArrayList.class;
+        serializer = new ArrayListSerializer(fury);
+      } else {
+        serializer = getCollectionSerializer(cls);
+      }
       xtypeId = Types.LIST;
     } else if (cls.isArray() && !TypeUtils.getArrayComponent(cls).isPrimitive()) {
-      serializer = classResolver.getSerializer(cls);
+      serializer = new ArraySerializers.ObjectArraySerializer(fury, cls);
       xtypeId = Types.LIST;
     } else if (classResolver.isMap(cls)) {
-      serializer = new MapSerializer(fury, cls);
+      if (cls.isAssignableFrom(HashMap.class)) {
+        cls = HashMap.class;
+        serializer = new HashMapSerializer(fury);
+      } else {
+        ClassInfo classInfo = classResolver.getClassInfo(cls, false);
+        if (classInfo != null && classInfo.serializer != null) {
+          if (classInfo.serializer instanceof AbstractMapSerializer
+              && ((AbstractMapSerializer) classInfo.serializer).supportCodegenHook()) {
+            serializer = classInfo.serializer;
+          } else {
+            serializer = new MapSerializer(fury, cls);
+          }
+        } else {
+          serializer = new MapSerializer(fury, cls);
+        }
+      }
       xtypeId = Types.MAP;
     } else {
       Class<Enum> enclosingClass = (Class<Enum>) cls.getEnclosingClass();
@@ -325,6 +457,17 @@ public class XtypeResolver implements TypeResolver {
     ClassInfo info = newClassInfo(cls, serializer, (short) xtypeId);
     classInfoMap.put(cls, info);
     return info;
+  }
+
+  private Serializer<?> getCollectionSerializer(Class<?> cls) {
+    ClassInfo classInfo = classResolver.getClassInfo(cls, false);
+    if (classInfo != null && classInfo.serializer != null) {
+      if (classInfo.serializer instanceof AbstractCollectionSerializer
+          && ((AbstractCollectionSerializer) (classInfo.serializer)).supportCodegenHook()) {
+        return classInfo.serializer;
+      }
+    }
+    return new CollectionSerializer(fury, cls);
   }
 
   private void registerDefaultTypes() {
@@ -389,6 +532,10 @@ public class XtypeResolver implements TypeResolver {
       case Types.NAMED_STRUCT:
       case Types.NAMED_COMPATIBLE_STRUCT:
       case Types.NAMED_EXT:
+        if (shareMeta) {
+          writeSharedClassMeta(buffer, classInfo);
+          return;
+        }
         assert classInfo.namespaceBytes != null;
         metaStringResolver.writeMetaStringBytes(buffer, classInfo.namespaceBytes);
         assert classInfo.typeNameBytes != null;
@@ -397,6 +544,31 @@ public class XtypeResolver implements TypeResolver {
       default:
         break;
     }
+  }
+
+  public void writeSharedClassMeta(MemoryBuffer buffer, ClassInfo classInfo) {
+    MetaContext metaContext = fury.getSerializationContext().getMetaContext();
+    assert metaContext != null : ClassResolver.SET_META__CONTEXT_MSG;
+    IdentityObjectIntMap<Class<?>> classMap = metaContext.classMap;
+    int newId = classMap.size;
+    int id = classMap.putOrGet(classInfo.cls, newId);
+    if (id >= 0) {
+      buffer.writeVarUint32(id);
+    } else {
+      buffer.writeVarUint32(newId);
+      ClassDef classDef = classInfo.classDef;
+      if (classDef == null) {
+        classDef = buildClassDef(classInfo);
+      }
+      metaContext.writingClassDefs.add(classDef);
+    }
+  }
+
+  private ClassDef buildClassDef(ClassInfo classInfo) {
+    ClassDef classDef =
+        classDefMap.computeIfAbsent(classInfo.cls, cls -> ClassDef.buildClassDef(fury, cls));
+    classInfo.classDef = classDef;
+    return classDef;
   }
 
   @Override
@@ -419,6 +591,12 @@ public class XtypeResolver implements TypeResolver {
     return readClassInfo(buffer);
   }
 
+  @Override
+  public ClassInfo readClassInfo(MemoryBuffer buffer, ClassInfo classInfoCache) {
+    // TODO support type cache to speed up lookup
+    return readClassInfo(buffer);
+  }
+
   public ClassInfo readClassInfo(MemoryBuffer buffer) {
     long xtypeId = buffer.readVarUint32Small14();
     byte internalTypeId = (byte) xtypeId;
@@ -427,6 +605,9 @@ public class XtypeResolver implements TypeResolver {
       case Types.NAMED_STRUCT:
       case Types.NAMED_COMPATIBLE_STRUCT:
       case Types.NAMED_EXT:
+        if (shareMeta) {
+          return readSharedClassMeta(buffer);
+        }
         MetaStringBytes packageBytes = metaStringResolver.readMetaStringBytes(buffer);
         MetaStringBytes simpleClassNameBytes = metaStringResolver.readMetaStringBytes(buffer);
         return loadBytesToClassInfo(internalTypeId, packageBytes, simpleClassNameBytes);
@@ -443,6 +624,17 @@ public class XtypeResolver implements TypeResolver {
     }
   }
 
+  private ClassInfo readSharedClassMeta(MemoryBuffer buffer) {
+    MetaContext metaContext = fury.getSerializationContext().getMetaContext();
+    assert metaContext != null : ClassResolver.SET_META__CONTEXT_MSG;
+    int id = buffer.readVarUint32Small14();
+    ClassInfo classInfo = metaContext.readClassInfos.get(id);
+    if (classInfo == null) {
+      classInfo = classResolver.readClassInfoWithMetaShare(metaContext, id);
+    }
+    return classInfo;
+  }
+
   private void throwUnexpectTypeIdException(long xtypeId) {
     throw new IllegalStateException(String.format("Type id %s not registered", xtypeId));
   }
@@ -452,10 +644,7 @@ public class XtypeResolver implements TypeResolver {
     GenericType genericType = generics.nextGenericType();
     fury.incDepth(-1);
     if (genericType != null) {
-      Class<?> cls = genericType.getCls();
-      if (cls.isArray()) {
-        return classResolver.getClassInfo(cls);
-      }
+      return getOrBuildClassInfo(genericType.getCls());
     }
     return xtypeIdToClassMap.get(Types.LIST);
   }
@@ -465,9 +654,18 @@ public class XtypeResolver implements TypeResolver {
     GenericType genericType = generics.nextGenericType();
     fury.incDepth(-1);
     if (genericType != null) {
-      return classResolver.getClassInfo(genericType.getCls());
+      return getOrBuildClassInfo(genericType.getCls());
     }
     return xtypeIdToClassMap.get(Types.TIMESTAMP);
+  }
+
+  private ClassInfo getOrBuildClassInfo(Class<?> cls) {
+    ClassInfo classInfo = classInfoMap.get(cls);
+    if (classInfo == null) {
+      classInfo = buildClassInfo(cls);
+      classInfoMap.put(cls, classInfo);
+    }
+    return classInfo;
   }
 
   private ClassInfo loadBytesToClassInfo(
@@ -536,5 +734,10 @@ public class XtypeResolver implements TypeResolver {
 
   private boolean isEnum(int internalTypeId) {
     return internalTypeId == Types.ENUM || internalTypeId == Types.NAMED_ENUM;
+  }
+
+  @Override
+  public Fury getFury() {
+    return fury;
   }
 }

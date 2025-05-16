@@ -20,10 +20,16 @@
 package org.apache.fury.meta;
 
 public class TypeExtMeta {
+  private final boolean nullable;
   private final boolean trackingRef;
 
-  TypeExtMeta(boolean trackingRef) {
+  TypeExtMeta(boolean nullable, boolean trackingRef) {
+    this.nullable = nullable;
     this.trackingRef = trackingRef;
+  }
+
+  public boolean nullable() {
+    return nullable;
   }
 
   public boolean trackingRef() {
@@ -32,6 +38,6 @@ public class TypeExtMeta {
 
   @Override
   public String toString() {
-    return "TypeExtMeta{" + "trackingRef=" + trackingRef + '}';
+    return "TypeExtMeta{" + "nullable=" + nullable + ", trackingRef=" + trackingRef + '}';
   }
 }

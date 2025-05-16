@@ -25,9 +25,8 @@ import 'package:fury/fury.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('ByteReader.readBytesAsInt64 tests', () {
-
-    test('Test reading different byte lengths', () {
+  group('ByteReader.readBytesAsInt64', () {
+    test('reads values for lengths 1 through 8', () {
       ByteWriter writer = ByteWriter(); // big endian
       // Write test values of different sizes
       writer.writeUint8(0xAB);                       // 1 byte: 0xAB
@@ -52,7 +51,7 @@ void main() {
       check(reader.readBytesAsInt64(8)).equals(0x1234567890ABCDEF);
     });
 
-    test('Test reading each byte individually', () {
+    test('reads each byte correctly', () {
       final testValue = 0x123456789ABCDEF0;
 
       ByteWriter writer = ByteWriter();

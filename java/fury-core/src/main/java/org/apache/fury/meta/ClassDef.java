@@ -31,6 +31,8 @@ import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -49,13 +51,17 @@ import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeRef;
+import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassResolver;
+import org.apache.fury.resolver.TypeResolver;
+import org.apache.fury.resolver.XtypeResolver;
 import org.apache.fury.serializer.CompatibleSerializer;
 import org.apache.fury.serializer.NonexistentClass;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.FinalObjectTypeStub;
 import org.apache.fury.type.GenericType;
 import org.apache.fury.type.TypeUtils;
+import org.apache.fury.type.Types;
 import org.apache.fury.util.Preconditions;
 
 /**
@@ -76,12 +82,12 @@ import org.apache.fury.util.Preconditions;
  * @see ReflectionUtils#getFieldOffset
  */
 public class ClassDef implements Serializable {
+  static final int COMPRESS_META_FLAG = 0b1 << 13;
+  static final int HAS_FIELDS_META_FLAG = 0b1 << 12;
+  static final int META_SIZE_MASKS = 0b111_1111_1111;
+  static final int NUM_HASH_BITS = 50;
   private static final Logger LOG = LoggerFactory.getLogger(ClassDef.class);
 
-  static final int SCHEMA_COMPATIBLE_FLAG = 0b10000;
-  public static final int SIZE_TWO_BYTES_FLAG = 0b100000;
-  static final int OBJECT_TYPE_FLAG = 0b1000000;
-  static final int COMPRESSION_FLAG = 0b10000000;
   // TODO use field offset to sort field, which will hit l1-cache more. Since
   // `objectFieldOffset` is not part of jvm-specification, it may change between different jdk
   // vendor. But the deserialization peer use the class definition to create deserializer, it's OK
@@ -108,7 +114,7 @@ public class ClassDef implements Serializable {
 
   private final ClassSpec classSpec;
   private final List<FieldInfo> fieldsInfo;
-  private final boolean isObjectType;
+  private final boolean hasFieldsMeta;
   // Unique id for class def. If class def are same between processes, then the id will
   // be same too.
   private final long id;
@@ -118,14 +124,22 @@ public class ClassDef implements Serializable {
   ClassDef(
       ClassSpec classSpec,
       List<FieldInfo> fieldsInfo,
-      boolean isObjectType,
+      boolean hasFieldsMeta,
       long id,
       byte[] encoded) {
     this.classSpec = classSpec;
     this.fieldsInfo = fieldsInfo;
-    this.isObjectType = isObjectType;
+    this.hasFieldsMeta = hasFieldsMeta;
     this.id = id;
     this.encoded = encoded;
+  }
+
+  public static void skipClassDef(MemoryBuffer buffer, long id) {
+    int size = (int) (id & META_SIZE_MASKS);
+    if (size == META_SIZE_MASKS) {
+      size += buffer.readVarUint32Small14();
+    }
+    buffer.increaseReaderIndex(size);
   }
 
   /**
@@ -147,8 +161,8 @@ public class ClassDef implements Serializable {
   }
 
   /** Returns ext meta for the class. */
-  public boolean isObjectType() {
-    return isObjectType;
+  public boolean hasFieldsMeta() {
+    return hasFieldsMeta;
   }
 
   /**
@@ -165,16 +179,14 @@ public class ClassDef implements Serializable {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
     ClassDef classDef = (ClassDef) o;
-    return Objects.equals(classSpec.entireClassName, classDef.classSpec.entireClassName)
-        && Objects.equals(fieldsInfo, classDef.fieldsInfo)
-        && Objects.equals(id, classDef.id);
+    return hasFieldsMeta == classDef.hasFieldsMeta
+        && id == classDef.id
+        && Objects.equals(classSpec, classDef.classSpec)
+        && Objects.equals(fieldsInfo, classDef.fieldsInfo);
   }
 
   @Override
@@ -190,8 +202,8 @@ public class ClassDef implements Serializable {
         + '\''
         + ", fieldsInfo="
         + fieldsInfo
-        + ", isObjectType="
-        + isObjectType
+        + ", hasFieldsMeta="
+        + hasFieldsMeta
         + ", id="
         + id
         + '}';
@@ -203,14 +215,19 @@ public class ClassDef implements Serializable {
   }
 
   /** Read class definition from buffer. */
-  public static ClassDef readClassDef(ClassResolver classResolver, MemoryBuffer buffer) {
-    return ClassDefDecoder.decodeClassDef(classResolver, buffer, buffer.readInt64());
+  public static ClassDef readClassDef(Fury fury, MemoryBuffer buffer) {
+    if (fury.isCrossLanguage()) {
+      return TypeDefDecoder.decodeClassDef(fury.getXtypeResolver(), buffer, buffer.readInt64());
+    }
+    return ClassDefDecoder.decodeClassDef(fury.getClassResolver(), buffer, buffer.readInt64());
   }
 
   /** Read class definition from buffer. */
-  public static ClassDef readClassDef(
-      ClassResolver classResolver, MemoryBuffer buffer, long header) {
-    return ClassDefDecoder.decodeClassDef(classResolver, buffer, header);
+  public static ClassDef readClassDef(Fury fury, MemoryBuffer buffer, long header) {
+    if (fury.isCrossLanguage()) {
+      return TypeDefDecoder.decodeClassDef(fury.getXtypeResolver(), buffer, header);
+    }
+    return ClassDefDecoder.decodeClassDef(fury.getClassResolver(), buffer, header);
   }
 
   /**
@@ -233,10 +250,10 @@ public class ClassDef implements Serializable {
         }
       }
       descriptors = new ArrayList<>(fieldsInfo.size());
-      for (ClassDef.FieldInfo fieldInfo : fieldsInfo) {
+      for (FieldInfo fieldInfo : fieldsInfo) {
         Descriptor descriptor =
             descriptorsMap.get(fieldInfo.getDefinedClass() + "." + fieldInfo.getFieldName());
-        Descriptor newDesc = fieldInfo.toDescriptor(resolver);
+        Descriptor newDesc = fieldInfo.toDescriptor(resolver, descriptor);
         Class<?> rawType = newDesc.getRawType();
         FieldType fieldType = fieldInfo.getFieldType();
         if (fieldType instanceof RegisteredFieldType) {
@@ -295,11 +312,13 @@ public class ClassDef implements Serializable {
       return fieldName;
     }
 
-    public boolean hasTypeTag() {
+    /** Returns whether field is annotated by an unsigned int id. */
+    public boolean hasTag() {
       return false;
     }
 
-    public short getTypeTag() {
+    /** Returns annotated tag id for the field. */
+    public short getTag() {
       return -1;
     }
 
@@ -313,8 +332,9 @@ public class ClassDef implements Serializable {
      * null. Don't invoke this method if class does have <code>fieldName</code> field. In such case,
      * reflection should be used to get the descriptor.
      */
-    Descriptor toDescriptor(ClassResolver classResolver) {
-      TypeRef<?> typeRef = fieldType.toTypeToken(classResolver);
+    Descriptor toDescriptor(ClassResolver classResolver, Descriptor descriptor) {
+      TypeRef<?> declared = descriptor != null ? descriptor.getTypeRef() : null;
+      TypeRef<?> typeRef = fieldType.toTypeToken(classResolver, declared);
       // This field doesn't exist in peer class, so any legal modifier will be OK.
       int stubModifiers = ReflectionUtils.getField(getClass(), "fieldName").getModifiers();
       return new Descriptor(typeRef, fieldName, stubModifiers, definedClass);
@@ -355,13 +375,17 @@ public class ClassDef implements Serializable {
   }
 
   public abstract static class FieldType implements Serializable {
-    public FieldType(boolean isMonomorphic, boolean trackingRef) {
+    protected final int xtypeId;
+    protected final boolean isMonomorphic;
+    protected final boolean nullable;
+    protected final boolean trackingRef;
+
+    public FieldType(int xtypeId, boolean isMonomorphic, boolean nullable, boolean trackingRef) {
       this.isMonomorphic = isMonomorphic;
       this.trackingRef = trackingRef;
+      this.nullable = nullable;
+      this.xtypeId = xtypeId;
     }
-
-    protected final boolean isMonomorphic;
-    protected final boolean trackingRef;
 
     public boolean isMonomorphic() {
       return isMonomorphic;
@@ -371,6 +395,10 @@ public class ClassDef implements Serializable {
       return trackingRef;
     }
 
+    public boolean nullable() {
+      return nullable;
+    }
+
     /**
      * Convert a serializable field type to type token. If field type is a generic type with
      * generics, the generics will be built up recursively. The final leaf object type will be built
@@ -378,7 +406,7 @@ public class ClassDef implements Serializable {
      *
      * @see FinalObjectTypeStub
      */
-    public abstract TypeRef<?> toTypeToken(ClassResolver classResolver);
+    public abstract TypeRef<?> toTypeToken(ClassResolver classResolver, TypeRef<?> declared);
 
     @Override
     public boolean equals(Object o) {
@@ -399,28 +427,28 @@ public class ClassDef implements Serializable {
       byte header = (byte) ((isMonomorphic ? 1 : 0) << 1);
       // header of nested generic fields in collection/map will be written independently
       header |= (byte) (trackingRef ? 1 : 0);
-      if (this instanceof ClassDef.RegisteredFieldType) {
-        short classId = ((ClassDef.RegisteredFieldType) this).getClassId();
+      if (this instanceof RegisteredFieldType) {
+        short classId = ((RegisteredFieldType) this).getClassId();
         buffer.writeVarUint32Small7(writeHeader ? ((5 + classId) << 2) | header : 5 + classId);
-      } else if (this instanceof ClassDef.EnumFieldType) {
+      } else if (this instanceof EnumFieldType) {
         buffer.writeVarUint32Small7(writeHeader ? ((4) << 2) | header : 4);
-      } else if (this instanceof ClassDef.ArrayFieldType) {
-        ClassDef.ArrayFieldType arrayFieldType = (ClassDef.ArrayFieldType) this;
+      } else if (this instanceof ArrayFieldType) {
+        ArrayFieldType arrayFieldType = (ArrayFieldType) this;
         buffer.writeVarUint32Small7(writeHeader ? ((3) << 2) | header : 3);
         buffer.writeVarUint32Small7(arrayFieldType.getDimensions());
         (arrayFieldType).getComponentType().write(buffer);
-      } else if (this instanceof ClassDef.CollectionFieldType) {
+      } else if (this instanceof CollectionFieldType) {
         buffer.writeVarUint32Small7(writeHeader ? ((2) << 2) | header : 2);
         // TODO remove it when new collection deserialization jit finished.
-        ((ClassDef.CollectionFieldType) this).getElementType().write(buffer);
-      } else if (this instanceof ClassDef.MapFieldType) {
+        ((CollectionFieldType) this).getElementType().write(buffer);
+      } else if (this instanceof MapFieldType) {
         buffer.writeVarUint32Small7(writeHeader ? ((1) << 2) | header : 1);
         // TODO remove it when new map deserialization jit finished.
-        ClassDef.MapFieldType mapFieldType = (ClassDef.MapFieldType) this;
+        MapFieldType mapFieldType = (MapFieldType) this;
         mapFieldType.getKeyType().write(buffer);
         mapFieldType.getValueType().write(buffer);
       } else {
-        Preconditions.checkArgument(this instanceof ClassDef.ObjectFieldType);
+        Preconditions.checkArgument(this instanceof ObjectFieldType);
         buffer.writeVarUint32Small7(writeHeader ? header : 0);
       }
     }
@@ -429,29 +457,113 @@ public class ClassDef implements Serializable {
       write(buffer, true);
     }
 
-    public static FieldType read(MemoryBuffer buffer) {
+    public static FieldType read(MemoryBuffer buffer, TypeResolver resolver) {
       int header = buffer.readVarUint32Small7();
       boolean isMonomorphic = (header & 0b10) != 0;
       boolean trackingRef = (header & 0b1) != 0;
-      return read(buffer, isMonomorphic, trackingRef, header >>> 2);
+      return read(buffer, resolver, isMonomorphic, trackingRef, header >>> 2);
     }
 
     /** Read field type info. */
     public static FieldType read(
-        MemoryBuffer buffer, boolean isFinal, boolean trackingRef, int typeId) {
+        MemoryBuffer buffer,
+        TypeResolver resolver,
+        boolean isFinal,
+        boolean trackingRef,
+        int typeId) {
       if (typeId == 0) {
-        return new ObjectFieldType(isFinal, trackingRef);
+        return new ObjectFieldType(-1, isFinal, true, trackingRef);
       } else if (typeId == 1) {
-        return new MapFieldType(isFinal, trackingRef, read(buffer), read(buffer));
+        return new MapFieldType(
+            -1, isFinal, true, trackingRef, read(buffer, resolver), read(buffer, resolver));
       } else if (typeId == 2) {
-        return new CollectionFieldType(isFinal, trackingRef, read(buffer));
+        return new CollectionFieldType(-1, isFinal, true, trackingRef, read(buffer, resolver));
       } else if (typeId == 3) {
         int dims = buffer.readVarUint32Small7();
-        return new ArrayFieldType(isFinal, trackingRef, read(buffer), dims);
+        return new ArrayFieldType(isFinal, trackingRef, read(buffer, resolver), dims);
       } else if (typeId == 4) {
-        return EnumFieldType.getInstance();
+        return new EnumFieldType(true, -1);
       } else {
-        return new RegisteredFieldType(isFinal, trackingRef, (short) (typeId - 5));
+        boolean nullable = ((ClassResolver) resolver).isPrimitive((short) typeId);
+        return new RegisteredFieldType(isFinal, nullable, trackingRef, (typeId - 5));
+      }
+    }
+
+    public final void xwrite(MemoryBuffer buffer, boolean writeFlags) {
+      int xtypeId = this.xtypeId;
+      if (writeFlags) {
+        xtypeId = (xtypeId << 2);
+        if (nullable) {
+          xtypeId |= 0b10;
+        }
+        if (trackingRef) {
+          xtypeId |= 0b1;
+        }
+      }
+      buffer.writeVarUint32Small7(xtypeId);
+      switch (xtypeId) {
+        case Types.LIST:
+          ((CollectionFieldType) this).getElementType().xwrite(buffer, true);
+          break;
+        case Types.MAP:
+          MapFieldType mapFieldType = (MapFieldType) this;
+          mapFieldType.getKeyType().xwrite(buffer, true);
+          mapFieldType.getValueType().xwrite(buffer, true);
+          break;
+        default:
+          {
+          }
+      }
+    }
+
+    public static FieldType xread(MemoryBuffer buffer, XtypeResolver resolver) {
+      int xtypeId = buffer.readVarUint32Small7();
+      boolean trackingRef = (xtypeId & 0b1) != 0;
+      boolean nullable = (xtypeId & 0b10) != 0;
+      xtypeId = xtypeId >>> 2;
+      return xread(buffer, resolver, xtypeId, nullable, trackingRef);
+    }
+
+    public static FieldType xread(
+        MemoryBuffer buffer,
+        XtypeResolver resolver,
+        int xtypeId,
+        boolean nullable,
+        boolean trackingRef) {
+      switch (xtypeId) {
+        case Types.LIST:
+        case Types.SET:
+          return new CollectionFieldType(
+              xtypeId, true, nullable, trackingRef, xread(buffer, resolver));
+        case Types.MAP:
+          return new MapFieldType(
+              xtypeId,
+              true,
+              nullable,
+              trackingRef,
+              xread(buffer, resolver),
+              xread(buffer, resolver));
+        case Types.ENUM:
+        case Types.NAMED_ENUM:
+          return new EnumFieldType(nullable, xtypeId);
+        case Types.UNKNOWN:
+          return new ObjectFieldType(xtypeId, false, nullable, trackingRef);
+        default:
+          {
+            if (!Types.isUserDefinedType((byte) xtypeId)) {
+              ClassInfo classInfo = resolver.getXtypeInfo(xtypeId);
+              Preconditions.checkNotNull(classInfo);
+              Class<?> cls = classInfo.getCls();
+              if (Types.isPrimitiveArray(xtypeId)) {
+                FieldType type = buildFieldType(resolver, resolver.buildGenericType(cls));
+                return new ArrayFieldType(xtypeId, true, nullable, trackingRef, type, 1);
+              }
+              return new RegisteredFieldType(
+                  resolver.isMonomorphic(cls), nullable, trackingRef, xtypeId);
+            } else {
+              return new ObjectFieldType(xtypeId, false, nullable, trackingRef);
+            }
+          }
       }
     }
   }
@@ -460,9 +572,10 @@ public class ClassDef implements Serializable {
   public static class RegisteredFieldType extends FieldType {
     private final short classId;
 
-    public RegisteredFieldType(boolean isFinal, boolean trackingRef, short classId) {
-      super(isFinal, trackingRef);
-      this.classId = classId;
+    public RegisteredFieldType(
+        boolean isFinal, boolean nullable, boolean trackingRef, int classId) {
+      super(classId, isFinal, nullable, trackingRef);
+      this.classId = (short) classId;
     }
 
     public short getClassId() {
@@ -470,13 +583,13 @@ public class ClassDef implements Serializable {
     }
 
     @Override
-    public TypeRef<?> toTypeToken(ClassResolver classResolver) {
+    public TypeRef<?> toTypeToken(ClassResolver classResolver, TypeRef<?> declared) {
       Class<?> cls = classResolver.getRegisteredClass(classId);
       if (cls == null) {
         LOG.warn("Class {} not registered, take it as Struct type for deserialization.", classId);
         cls = NonexistentClass.NonexistentMetaShared.class;
       }
-      return TypeRef.of(cls, new TypeExtMeta(trackingRef));
+      return TypeRef.of(cls, new TypeExtMeta(nullable, trackingRef));
     }
 
     @Override
@@ -523,8 +636,13 @@ public class ClassDef implements Serializable {
   public static class CollectionFieldType extends FieldType {
     private final FieldType elementType;
 
-    public CollectionFieldType(boolean isFinal, boolean trackingRef, FieldType elementType) {
-      super(isFinal, trackingRef);
+    public CollectionFieldType(
+        int xtypeId,
+        boolean isFinal,
+        boolean nullable,
+        boolean trackingRef,
+        FieldType elementType) {
+      super(xtypeId, isFinal, nullable, trackingRef);
       this.elementType = elementType;
     }
 
@@ -533,9 +651,35 @@ public class ClassDef implements Serializable {
     }
 
     @Override
-    public TypeRef<?> toTypeToken(ClassResolver classResolver) {
+    public TypeRef<?> toTypeToken(ClassResolver classResolver, TypeRef<?> declared) {
       // TODO support preserve element TypeExtMeta
-      return collectionOf(elementType.toTypeToken(classResolver), new TypeExtMeta(trackingRef));
+      TypeRef<? extends Collection<?>> collectionTypeRef =
+          collectionOf(
+              elementType.toTypeToken(classResolver, declared),
+              new TypeExtMeta(nullable, trackingRef));
+      if (declared == null) {
+        return collectionTypeRef;
+      }
+      Class<?> declaredClass = declared.getRawType();
+      if (!declaredClass.isArray()) {
+        return collectionTypeRef;
+      }
+      Tuple2<Class<?>, Integer> info = TypeUtils.getArrayComponentInfo(declaredClass);
+      List<TypeRef<?>> typeRefs = new ArrayList<>(info.f1 + 1);
+      typeRefs.add(collectionTypeRef);
+      for (int i = 0; i < info.f1; i++) {
+        typeRefs.add(TypeUtils.getElementType(typeRefs.get(i)));
+      }
+      Collections.reverse(typeRefs);
+      for (int i = 1; i < typeRefs.size(); i++) {
+        TypeRef<?> arrayType = typeRefs.get(i - 1);
+        TypeRef<?> typeRef =
+            TypeRef.of(
+                Array.newInstance(arrayType.getRawType(), 1).getClass(),
+                typeRefs.get(i).getExtInfo());
+        typeRefs.set(i, typeRef);
+      }
+      return typeRefs.get(typeRefs.size() - 1);
     }
 
     @Override
@@ -584,8 +728,13 @@ public class ClassDef implements Serializable {
     private final FieldType valueType;
 
     public MapFieldType(
-        boolean isFinal, boolean trackingRef, FieldType keyType, FieldType valueType) {
-      super(isFinal, trackingRef);
+        int xtypeId,
+        boolean isFinal,
+        boolean nullable,
+        boolean trackingRef,
+        FieldType keyType,
+        FieldType valueType) {
+      super(xtypeId, isFinal, nullable, trackingRef);
       this.keyType = keyType;
       this.valueType = valueType;
     }
@@ -599,12 +748,12 @@ public class ClassDef implements Serializable {
     }
 
     @Override
-    public TypeRef<?> toTypeToken(ClassResolver classResolver) {
+    public TypeRef<?> toTypeToken(ClassResolver classResolver, TypeRef<?> declared) {
       // TODO support preserve element TypeExtMeta, it will be lost when building other TypeRef
       return mapOf(
-          keyType.toTypeToken(classResolver),
-          valueType.toTypeToken(classResolver),
-          new TypeExtMeta(trackingRef));
+          keyType.toTypeToken(classResolver, declared),
+          valueType.toTypeToken(classResolver, declared),
+          new TypeExtMeta(nullable, trackingRef));
     }
 
     @Override
@@ -643,19 +792,13 @@ public class ClassDef implements Serializable {
   }
 
   public static class EnumFieldType extends FieldType {
-    private static final EnumFieldType INSTANCE = new EnumFieldType();
-
-    private EnumFieldType() {
-      super(true, false);
+    private EnumFieldType(boolean nullable, int xtypeId) {
+      super(xtypeId, true, nullable, false);
     }
 
     @Override
-    public TypeRef<?> toTypeToken(ClassResolver classResolver) {
+    public TypeRef<?> toTypeToken(ClassResolver classResolver, TypeRef<?> declared) {
       return TypeRef.of(NonexistentClass.NonexistentEnum.class);
-    }
-
-    public static EnumFieldType getInstance() {
-      return INSTANCE;
     }
   }
 
@@ -665,14 +808,24 @@ public class ClassDef implements Serializable {
 
     public ArrayFieldType(
         boolean isMonomorphic, boolean trackingRef, FieldType componentType, int dimensions) {
-      super(isMonomorphic, trackingRef);
+      this(-1, isMonomorphic, true, trackingRef, componentType, dimensions);
+    }
+
+    public ArrayFieldType(
+        int xtypeId,
+        boolean isMonomorphic,
+        boolean nullable,
+        boolean trackingRef,
+        FieldType componentType,
+        int dimensions) {
+      super(xtypeId, isMonomorphic, nullable, trackingRef);
       this.componentType = componentType;
       this.dimensions = dimensions;
     }
 
     @Override
-    public TypeRef<?> toTypeToken(ClassResolver classResolver) {
-      TypeRef<?> componentTypeRef = componentType.toTypeToken(classResolver);
+    public TypeRef<?> toTypeToken(ClassResolver classResolver, TypeRef<?> declared) {
+      TypeRef<?> componentTypeRef = componentType.toTypeToken(classResolver, declared);
       Class<?> componentRawType = componentTypeRef.getRawType();
       if (NonexistentClass.class.isAssignableFrom(componentRawType)) {
         return TypeRef.of(
@@ -680,11 +833,11 @@ public class ClassDef implements Serializable {
             // here.
             NonexistentClass.getNonexistentClass(
                 componentType instanceof EnumFieldType, dimensions, true),
-            new TypeExtMeta(trackingRef));
+            new TypeExtMeta(nullable, trackingRef));
       } else {
         return TypeRef.of(
             Array.newInstance(componentRawType, new int[dimensions]).getClass(),
-            new TypeExtMeta(trackingRef));
+            new TypeExtMeta(nullable, trackingRef));
       }
     }
 
@@ -734,15 +887,15 @@ public class ClassDef implements Serializable {
   /** Class for field type which isn't registered and not collection/map type too. */
   public static class ObjectFieldType extends FieldType {
 
-    public ObjectFieldType(boolean isFinal, boolean trackingRef) {
-      super(isFinal, trackingRef);
+    public ObjectFieldType(int xtypeId, boolean isFinal, boolean nullable, boolean trackingRef) {
+      super(xtypeId, isFinal, nullable, trackingRef);
     }
 
     @Override
-    public TypeRef<?> toTypeToken(ClassResolver classResolver) {
+    public TypeRef<?> toTypeToken(ClassResolver classResolver, TypeRef<?> declared) {
       return isMonomorphic()
-          ? TypeRef.of(FinalObjectTypeStub.class, new TypeExtMeta(trackingRef))
-          : TypeRef.of(Object.class, new TypeExtMeta(trackingRef));
+          ? TypeRef.of(FinalObjectTypeStub.class, new TypeExtMeta(nullable, trackingRef))
+          : TypeRef.of(Object.class, new TypeExtMeta(nullable, trackingRef));
     }
 
     @Override
@@ -757,58 +910,89 @@ public class ClassDef implements Serializable {
   }
 
   /** Build field type from generics, nested generics will be extracted too. */
-  static FieldType buildFieldType(ClassResolver classResolver, Field field) {
+  static FieldType buildFieldType(TypeResolver resolver, Field field) {
     Preconditions.checkNotNull(field);
-    GenericType genericType = GenericType.build(field.getGenericType());
-    return buildFieldType(classResolver, genericType);
+    GenericType genericType = resolver.buildGenericType(field.getGenericType());
+    return buildFieldType(resolver, genericType);
   }
 
   /** Build field type from generics, nested generics will be extracted too. */
-  private static FieldType buildFieldType(ClassResolver classResolver, GenericType genericType) {
+  private static FieldType buildFieldType(TypeResolver resolver, GenericType genericType) {
     Preconditions.checkNotNull(genericType);
     Class<?> rawType = genericType.getCls();
+    boolean isXlang = resolver.getFury().isCrossLanguage();
+    int xtypeId = -1;
+    if (isXlang) {
+      ClassInfo info = resolver.getClassInfo(genericType.getCls(), false);
+      if (info != null) {
+        xtypeId = info.getXtypeId();
+      } else {
+        xtypeId = Types.UNKNOWN;
+      }
+    }
     boolean isMonomorphic = genericType.isMonomorphic();
-    boolean trackingRef = genericType.trackingRef(classResolver);
+    boolean trackingRef = genericType.trackingRef(resolver);
+    // TODO support @Nullable/FuryField annotation
+    boolean nullable = !genericType.getCls().isPrimitive();
     if (COLLECTION_TYPE.isSupertypeOf(genericType.getTypeRef())) {
       return new CollectionFieldType(
+          xtypeId,
           isMonomorphic,
+          nullable,
           trackingRef,
           buildFieldType(
-              classResolver,
+              resolver,
               genericType.getTypeParameter0() == null
                   ? GenericType.build(Object.class)
                   : genericType.getTypeParameter0()));
     } else if (MAP_TYPE.isSupertypeOf(genericType.getTypeRef())) {
       return new MapFieldType(
+          xtypeId,
           isMonomorphic,
+          nullable,
           trackingRef,
           buildFieldType(
-              classResolver,
+              resolver,
               genericType.getTypeParameter0() == null
                   ? GenericType.build(Object.class)
                   : genericType.getTypeParameter0()),
           buildFieldType(
-              classResolver,
+              resolver,
               genericType.getTypeParameter1() == null
                   ? GenericType.build(Object.class)
                   : genericType.getTypeParameter1()));
     } else {
-      Short classId = classResolver.getRegisteredClassId(rawType);
-      if (classId != null && classId != ClassResolver.NO_CLASS_ID) {
-        return new RegisteredFieldType(isMonomorphic, trackingRef, classId);
+      if (isXlang
+          && !Types.isUserDefinedType((byte) xtypeId)
+          && resolver.isRegisteredById(rawType)) {
+        return new RegisteredFieldType(isMonomorphic, nullable, trackingRef, xtypeId);
+      } else if (!isXlang && resolver.isRegisteredById(rawType)) {
+        Short classId = ((ClassResolver) resolver).getRegisteredClassId(rawType);
+        return new RegisteredFieldType(isMonomorphic, nullable, trackingRef, classId);
       } else {
         if (rawType.isEnum()) {
-          return EnumFieldType.getInstance();
+          return new EnumFieldType(nullable, xtypeId);
         }
         if (rawType.isArray()) {
+          Class<?> elemType = rawType.getComponentType();
+          if (isXlang && !elemType.isPrimitive()) {
+            return new CollectionFieldType(
+                xtypeId,
+                isMonomorphic,
+                nullable,
+                trackingRef,
+                buildFieldType(resolver, GenericType.build(elemType)));
+          }
           Tuple2<Class<?>, Integer> info = TypeUtils.getArrayComponentInfo(rawType);
           return new ArrayFieldType(
+              xtypeId,
               isMonomorphic,
+              nullable,
               trackingRef,
-              buildFieldType(classResolver, GenericType.build(info.f0)),
+              buildFieldType(resolver, GenericType.build(info.f0)),
               info.f1);
         }
-        return new ObjectFieldType(isMonomorphic, trackingRef);
+        return new ObjectFieldType(xtypeId, isMonomorphic, nullable, trackingRef);
       }
     }
   }
@@ -818,19 +1002,21 @@ public class ClassDef implements Serializable {
   }
 
   public static ClassDef buildClassDef(Fury fury, Class<?> cls, boolean resolveParent) {
+    if (fury.isCrossLanguage()) {
+      return TypeDefEncoder.buildTypeDef(fury, cls);
+    }
     return ClassDefEncoder.buildClassDef(
         fury.getClassResolver(), cls, buildFields(fury, cls, resolveParent), true);
   }
 
   /** Build class definition from fields of class. */
-  public static ClassDef buildClassDef(
-      ClassResolver classResolver, Class<?> type, List<Field> fields) {
+  static ClassDef buildClassDef(ClassResolver classResolver, Class<?> type, List<Field> fields) {
     return buildClassDef(classResolver, type, fields, true);
   }
 
   public static ClassDef buildClassDef(
-      ClassResolver classResolver, Class<?> type, List<Field> fields, boolean isObjectType) {
-    return ClassDefEncoder.buildClassDef(classResolver, type, fields, isObjectType);
+      ClassResolver classResolver, Class<?> type, List<Field> fields, boolean hasFieldsMeta) {
+    return ClassDefEncoder.buildClassDef(classResolver, type, fields, hasFieldsMeta);
   }
 
   public ClassDef replaceRootClassTo(ClassResolver classResolver, Class<?> targetCls) {
@@ -847,6 +1033,6 @@ public class ClassDef implements Serializable {
                 })
             .collect(Collectors.toList());
     return ClassDefEncoder.buildClassDefWithFieldInfos(
-        classResolver, targetCls, fieldInfos, isObjectType);
+        classResolver, targetCls, fieldInfos, hasFieldsMeta);
   }
 }

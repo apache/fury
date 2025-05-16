@@ -2,6 +2,21 @@
 title: Fury Java Serialization Format
 sidebar_position: 1
 id: fury_java_serialization_spec
+license: |
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
 ---
 
 ## Spec overview
@@ -110,29 +125,32 @@ For Schema consistent mode, class will be encoded as an enumerated string by ful
 the meta layout for schema evolution mode:
 
 ```
-|      8 bytes meta header      | meta size |   variable bytes   |  variable bytes   | variable bytes |
-+-------------------------------+-----------|--------------------+-------------------+----------------+
-| 7 bytes hash + 1 bytes header | 1~2 bytes | current class meta | parent class meta |      ...       |
+|  8 bytes global meta header   |  1~2 bytes  |   variable bytes   |  variable bytes   | variable bytes |
++-------------------------------+-------------|--------------------+-------------------+----------------+
+| 50 bits hash + 14 bits header | type header | current class meta | parent class meta |      ...       |
 ```
 
 Class meta are encoded from parent class to leaf class, only class with serializable fields will be encoded.
 
-### Meta header
+### Global meta header
 
 Meta header is a 64 bits number value encoded in little endian order.
+
+- lower 12 bits are used to encode meta size. If meta size `>= 0b111_1111_1111`, then write
+  `meta_ size - 0b111_1111_1111` next.
+- 13rd bit is used to indicate whether to write fields meta. When this class is schema-consistent or use registered
+  serializer, fields meta will be skipped. Class Meta will be used for share namespace + type name only.
+- 14rd bit is used to indicate whether meta is compressed.
+- Other 50 bits is used to store the unique hash of `flags + all layers class meta`.
+
+### Type header
 
 - Lowest 4 digits `0b0000~0b1110` are used to record num classes. `0b1111` is preserved to indicate that Fury need to
   read more bytes for length using Fury unsigned int encoding. If current class doesn't has parent class, or parent
   class doesn't have fields to serialize, or we're in a context which serialize fields of current class
-  only( `ObjectStreamSerializer#SlotInfo` is an example), num classes will be 1.
-- 5rd bit is used to indicate whether this class needs schema evolution.
-- 6rd bit is used to indicate whether the size sum of all layers meta is less than 256.
-- Other 56 bits is used to store the unique hash of `flags + all layers class meta`.
-
-### Meta size
-
-- If the size sum of all layers meta is less than 256, then one byte is written next to indicate the length of meta.
-- Otherwise, write size as two bytes in little endian.
+  only(`ObjectStreamSerializer#SlotInfo` is an example), num classes will be 1.
+- Other 4 bits are preserved to future extensions.
+- If num classes are greater than or equal to `0b1111`, write `num_classes - 0b1111` as varuint next.
 
 ### Single layer class meta
 

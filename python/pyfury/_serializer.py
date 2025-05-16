@@ -17,6 +17,8 @@
 
 import datetime
 import logging
+import platform
+import time
 from abc import ABC, abstractmethod
 from typing import Dict
 
@@ -194,14 +196,23 @@ class DateSerializer(CrossLanguageCompatibleSerializer):
 
 
 class TimestampSerializer(CrossLanguageCompatibleSerializer):
+    __win_platform = platform.system() == "Windows"
+
+    def _get_timestamp(self, value: datetime.datetime):
+        seconds_offset = 0
+        if TimestampSerializer.__win_platform and value.tzinfo is None:
+            is_dst = time.daylight and time.localtime().tm_isdst > 0
+            seconds_offset = time.altzone if is_dst else time.timezone
+            value = value.replace(tzinfo=datetime.timezone.utc)
+        return int((value.timestamp() + seconds_offset) * 1000000)
+
     def write(self, buffer, value: datetime.datetime):
         if not isinstance(value, datetime.datetime):
             raise TypeError(
                 "{} should be {} instead of {}".format(value, datetime, type(value))
             )
         # TimestampType represent micro seconds
-        timestamp = int(value.timestamp() * 1000000)
-        buffer.write_int64(timestamp)
+        buffer.write_int64(self._get_timestamp(value))
 
     def read(self, buffer):
         ts = buffer.read_int64() / 1000000
@@ -676,6 +687,10 @@ SubMapSerializer = MapSerializer
 
 
 class EnumSerializer(Serializer):
+    def __init__(self, fury, type_):
+        super().__init__(fury, type_)
+        self.need_to_write_ref = False
+
     @classmethod
     def support_subclass(cls) -> bool:
         return True
@@ -688,10 +703,11 @@ class EnumSerializer(Serializer):
         return getattr(self.type_, name)
 
     def xwrite(self, buffer, value):
-        raise NotImplementedError
+        buffer.write_varuint32(value.value)
 
     def xread(self, buffer):
-        raise NotImplementedError
+        ordinal = buffer.read_varuint32()
+        return self.type_(ordinal)
 
 
 class SliceSerializer(Serializer):

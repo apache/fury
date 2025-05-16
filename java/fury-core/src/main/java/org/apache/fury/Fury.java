@@ -43,6 +43,7 @@ import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.meta.MetaCompressor;
 import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassInfoHolder;
 import org.apache.fury.resolver.ClassResolver;
@@ -558,7 +559,12 @@ public final class Fury implements BaseFury {
     xwriteData(buffer, classInfo, obj);
   }
 
-  private void xwriteData(MemoryBuffer buffer, ClassInfo classInfo, Object obj) {
+  public void xwriteNonRef(MemoryBuffer buffer, Object obj, ClassInfo classInfo) {
+    xtypeResolver.writeClassInfo(buffer, classInfo);
+    xwriteData(buffer, classInfo, obj);
+  }
+
+  public void xwriteData(MemoryBuffer buffer, ClassInfo classInfo, Object obj) {
     switch (classInfo.getXtypeId()) {
       case Types.BOOL:
         buffer.writeBoolean((Boolean) obj);
@@ -1112,6 +1118,15 @@ public final class Fury implements BaseFury {
         Object o = classInfo.getSerializer().xread(buffer);
         depth--;
         return o;
+    }
+  }
+
+  public Object xreadNullable(MemoryBuffer buffer, Serializer<Object> serializer) {
+    byte headFlag = buffer.readByte();
+    if (headFlag == Fury.NULL_FLAG) {
+      return null;
+    } else {
+      return serializer.xread(buffer);
     }
   }
 
@@ -1701,6 +1716,10 @@ public final class Fury implements BaseFury {
 
   public boolean compressLong() {
     return config.compressLong();
+  }
+
+  public MetaCompressor getMetaCompressor() {
+    return config.getMetaCompressor();
   }
 
   public static FuryBuilder builder() {
