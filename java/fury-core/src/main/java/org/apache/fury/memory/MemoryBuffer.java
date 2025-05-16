@@ -2447,7 +2447,7 @@ public final class MemoryBuffer {
    */
   public byte[] getRemainingBytes() {
     int length = size - readerIndex;
-    if (heapMemory != null && size == length) {
+    if (heapMemory != null && size == length && heapOffset == 0) {
       return heapMemory;
     } else {
       return getBytes(readerIndex, length);

@@ -195,6 +195,17 @@ public class MemoryBufferTest {
   }
 
   @Test
+  public void testSliceAndGetRemainingBytes() {
+    MemoryBuffer buf = MemoryBuffer.newHeapBuffer(16);
+    for (int i = 0; i < 16; i++) {
+      buf.writeByte(i);
+    }
+    byte[] sliceRemaining = buf.slice(4, 8).getRemainingBytes();
+    byte[] expected = buf.getBytes(4, 8);
+    assertEquals(sliceRemaining, expected);
+  }
+
+  @Test
   public void testEqualTo() {
     MemoryBuffer buf1 = MemoryUtils.buffer(16);
     MemoryBuffer buf2 = MemoryUtils.buffer(16);
