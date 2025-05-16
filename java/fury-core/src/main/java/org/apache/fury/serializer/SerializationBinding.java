@@ -41,6 +41,8 @@ interface SerializationBinding {
 
   void writeRef(MemoryBuffer buffer, Object obj, ClassInfoHolder classInfoHolder);
 
+  void writeRef(MemoryBuffer buffer, Object obj, ClassInfo classInfo);
+
   void writeNonRef(MemoryBuffer buffer, Object obj);
 
   void writeNonRef(MemoryBuffer buffer, Object obj, ClassInfo classInfo);
@@ -122,6 +124,11 @@ interface SerializationBinding {
     @Override
     public void writeRef(MemoryBuffer buffer, Object obj, ClassInfoHolder classInfoHolder) {
       fury.writeRef(buffer, obj, classInfoHolder);
+    }
+
+    @Override
+    public void writeRef(MemoryBuffer buffer, Object obj, ClassInfo classInfo) {
+      fury.writeRef(buffer, obj, classInfo);
     }
 
     @Override
@@ -314,6 +321,11 @@ interface SerializationBinding {
 
     @Override
     public void writeRef(MemoryBuffer buffer, Object obj, ClassInfoHolder classInfoHolder) {
+      fury.xwriteRef(buffer, obj);
+    }
+
+    @Override
+    public void writeRef(MemoryBuffer buffer, Object obj, ClassInfo classInfo) {
       fury.xwriteRef(buffer, obj);
     }
 
