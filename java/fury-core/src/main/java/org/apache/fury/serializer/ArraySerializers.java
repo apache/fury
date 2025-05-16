@@ -101,7 +101,10 @@ public class ArraySerializers {
       RefResolver refResolver = fury.getRefResolver();
       Serializer componentSerializer = this.componentTypeSerializer;
       if (this.collectionSerializer != null) {
-        fury.getGenerics().pushGenericType(this.collectionGenericType);
+        buffer.writeVarUint32Small7(len);
+        if (len == 0) {
+          return;
+        }
         ArrayAsList list = this.list;
         if (list == null) {
           list = new ArrayAsList(0);
@@ -110,9 +113,10 @@ public class ArraySerializers {
         }
         list.setArray(arr);
         fury.incDepth(1);
+        fury.getGenerics().pushGenericType(this.collectionGenericType);
         this.collectionSerializer.write(buffer, list);
-        fury.incDepth(-1);
         fury.getGenerics().popGenericType();
+        fury.incDepth(-1);
         this.list = list;
       } else {
         int header = componentSerializer != null ? 0b1 : 0b0;
@@ -188,12 +192,15 @@ public class ArraySerializers {
     @Override
     public T[] read(MemoryBuffer buffer) {
       Object[] value;
+      int numElements = buffer.readVarUint32Small7();
       if (this.collectionSerializer != null) {
         fury.getGenerics().pushGenericType(this.collectionGenericType);
         value = this.collectionSerializer.read(buffer).toArray();
         fury.getGenerics().popGenericType();
+        if (this.innerType.isPrimitive() || TypeUtils.isBoxed(this.innerType)) {
+          return Arrays.copyOf(value, value.length, this.type);
+        }
       } else {
-        int numElements = buffer.readVarUint32Small7();
         boolean isFinal = (numElements & 0b1) != 0;
         numElements >>>= 1;
         value = newArray(numElements);
