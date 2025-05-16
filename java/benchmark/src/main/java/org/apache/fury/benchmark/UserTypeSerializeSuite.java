@@ -23,16 +23,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import org.apache.fury.benchmark.data.MediaContent;
 import org.apache.fury.benchmark.data.Sample;
-import org.apache.fury.benchmark.state.FlatBuffersState;
-import org.apache.fury.benchmark.state.FstState;
-import org.apache.fury.benchmark.state.FuryState;
-import org.apache.fury.benchmark.state.HessionState;
-import org.apache.fury.benchmark.state.JDKState;
-import org.apache.fury.benchmark.state.JsonbState;
-import org.apache.fury.benchmark.state.KryoState;
-import org.apache.fury.benchmark.state.ObjectType;
-import org.apache.fury.benchmark.state.ProtoBuffersState;
-import org.apache.fury.benchmark.state.ProtostuffState;
+import org.apache.fury.benchmark.state.*;
 import org.apache.fury.memory.ByteBufferUtil;
 import org.openjdk.jmh.Main;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -115,9 +106,23 @@ public class UserTypeSerializeSuite {
     return state.bos;
   }
 
-  // @Benchmark
+  @Benchmark
   public byte[] jsonb_serialize(JsonbState.JsonbUserTypeState state, Blackhole bh) {
     return JsonbState.serialize(bh, state, state.object);
+  }
+
+  @Benchmark
+  public byte[] msgpack_serialize(MsgpackState.MsgpackUserTypeState state, Blackhole bh)
+      throws IOException {
+    state.bos.reset();
+    return MsgpackState.serialize(bh, state, state.object);
+  }
+
+  @Benchmark
+  public byte[] msgpack_jackson_serialize(
+      MsgpackState.MsgpackJacksonUserTypeState state, Blackhole bh) throws IOException {
+    state.bos.reset();
+    return MsgpackState.serialize(bh, state, state.object);
   }
 
   @Benchmark
