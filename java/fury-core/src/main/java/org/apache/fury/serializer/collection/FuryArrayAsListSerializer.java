@@ -42,6 +42,13 @@ public final class FuryArrayAsListSerializer
     return new ArrayAsList(numElements);
   }
 
+  @Override
+  public Collection newCollection(Collection collection) {
+    int numElements = collection.size();
+    setNumElements(numElements);
+    return new ArrayAsList(numElements);
+  }
+
   /**
    * A List which wrap a Java array into a list, used for serialization only, do not use it in other
    * scenarios.

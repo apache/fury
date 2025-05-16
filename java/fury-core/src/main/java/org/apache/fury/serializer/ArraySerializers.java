@@ -26,12 +26,17 @@ import org.apache.fury.Fury;
 import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.Platform;
+import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassInfoHolder;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.resolver.RefResolver;
+import org.apache.fury.serializer.NonexistentClass.NonexistentSkip;
+import org.apache.fury.serializer.NonexistentClassSerializers.NonexistentEnumClassSerializer;
+import org.apache.fury.serializer.Serializers.CrossLanguageCompatibleSerializer;
 import org.apache.fury.serializer.collection.CollectionFlags;
 import org.apache.fury.serializer.collection.FuryArrayAsListSerializer;
+import org.apache.fury.serializer.collection.FuryArrayAsListSerializer.ArrayAsList;
 import org.apache.fury.type.GenericType;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.type.Types;
@@ -45,6 +50,9 @@ public class ArraySerializers {
   public static final class ObjectArraySerializer<T> extends Serializer<T[]> {
     private final Class<T> innerType;
     private final Serializer componentTypeSerializer;
+    private final FuryArrayAsListSerializer collectionSerializer;
+    private ArrayAsList list;
+    private final GenericType collectionGenericType;
     private final ClassInfoHolder classInfoHolder;
     private final int[] stubDims;
     private final GenericType componentGenericType;
@@ -69,14 +77,21 @@ public class ArraySerializers {
       if (fury.getClassResolver().isMonomorphic(componentType)) {
         if (fury.isCrossLanguage()) {
           this.componentTypeSerializer = null;
+          this.collectionSerializer = null;
+          this.collectionGenericType = null;
         } else {
           this.componentTypeSerializer = fury.getClassResolver().getSerializer(componentType);
+          this.collectionSerializer = new FuryArrayAsListSerializer(fury);
+          this.collectionGenericType = buildCollectionGenericType(dimension);
         }
       } else {
         // TODO add ClassInfo cache for non-final component type.
         this.componentTypeSerializer = null;
+        this.collectionSerializer = null;
+        this.collectionGenericType = null;
       }
       this.stubDims = new int[dimension];
+      this.list = null;
       classInfoHolder = fury.getClassResolver().nilClassInfoHolder();
     }
 
@@ -85,27 +100,47 @@ public class ArraySerializers {
       int len = arr.length;
       RefResolver refResolver = fury.getRefResolver();
       Serializer componentSerializer = this.componentTypeSerializer;
-      int header = componentSerializer != null ? 0b1 : 0b0;
-      buffer.writeVarUint32Small7(len << 1 | header);
-      if (componentSerializer != null) {
-        for (T t : arr) {
-          if (!refResolver.writeRefOrNull(buffer, t)) {
-            componentSerializer.write(buffer, t);
-          }
+      if (this.collectionSerializer != null) {
+        buffer.writeVarUint32Small7(len);
+        if (len == 0) {
+          return;
         }
+        ArrayAsList list = this.list;
+        if (list == null) {
+          list = new ArrayAsList(0);
+        } else {
+          this.list = null;
+        }
+        list.setArray(arr);
+        fury.incDepth(1);
+        fury.getGenerics().pushGenericType(this.collectionGenericType);
+        this.collectionSerializer.write(buffer, list);
+        fury.getGenerics().popGenericType();
+        fury.incDepth(-1);
+        this.list = list;
       } else {
-        Fury fury = this.fury;
-        ClassResolver classResolver = fury.getClassResolver();
-        ClassInfo classInfo = null;
-        Class<?> elemClass = null;
-        for (T t : arr) {
-          if (!refResolver.writeRefOrNull(buffer, t)) {
-            Class<?> clz = t.getClass();
-            if (clz != elemClass) {
-              elemClass = clz;
-              classInfo = classResolver.getClassInfo(clz);
+        int header = componentSerializer != null ? 0b1 : 0b0;
+        buffer.writeVarUint32Small7(len << 1 | header);
+        if (componentSerializer != null) {
+          for (T t : arr) {
+            if (!refResolver.writeRefOrNull(buffer, t)) {
+              componentSerializer.write(buffer, t);
             }
-            fury.writeNonRef(buffer, t, classInfo);
+          }
+        } else {
+          Fury fury = this.fury;
+          ClassResolver classResolver = fury.getClassResolver();
+          ClassInfo classInfo = null;
+          Class<?> elemClass = null;
+          for (T t : arr) {
+            if (!refResolver.writeRefOrNull(buffer, t)) {
+              Class<?> clz = t.getClass();
+              if (clz != elemClass) {
+                elemClass = clz;
+                classInfo = classResolver.getClassInfo(clz);
+              }
+              fury.writeNonRef(buffer, t, classInfo);
+            }
           }
         }
       }
@@ -113,23 +148,32 @@ public class ArraySerializers {
 
     @Override
     public T[] copy(T[] originArray) {
-      int length = originArray.length;
-      Object[] newArray = newArray(length);
-      if (needToCopyRef) {
-        fury.reference(originArray, newArray);
-      }
+      Object[] newArray;
       Serializer componentSerializer = this.componentTypeSerializer;
-      if (componentSerializer != null) {
-        if (componentSerializer.isImmutable()) {
-          System.arraycopy(originArray, 0, newArray, 0, length);
+      if (this.collectionSerializer != null) {
+        fury.getGenerics().pushGenericType(this.collectionGenericType);
+        ArrayAsList list = new ArrayAsList(originArray.length);
+        list.setArray(originArray);
+        newArray = this.collectionSerializer.copy(list).toArray();
+        fury.getGenerics().popGenericType();
+      } else {
+        int length = originArray.length;
+        newArray = newArray(length);
+        if (needToCopyRef) {
+          fury.reference(originArray, newArray);
+        }
+        if (componentSerializer != null) {
+          if (componentSerializer.isImmutable()) {
+            System.arraycopy(originArray, 0, newArray, 0, length);
+          } else {
+            for (int i = 0; i < length; i++) {
+              newArray[i] = componentSerializer.copy(originArray[i]);
+            }
+          }
         } else {
           for (int i = 0; i < length; i++) {
-            newArray[i] = componentSerializer.copy(originArray[i]);
+            newArray[i] = fury.copyObject(originArray[i]);
           }
-        }
-      } else {
-        for (int i = 0; i < length; i++) {
-          newArray[i] = fury.copyObject(originArray[i]);
         }
       }
       return (T[]) newArray;
@@ -147,39 +191,49 @@ public class ArraySerializers {
 
     @Override
     public T[] read(MemoryBuffer buffer) {
+      Object[] value;
       int numElements = buffer.readVarUint32Small7();
-      boolean isFinal = (numElements & 0b1) != 0;
-      numElements >>>= 1;
-      Object[] value = newArray(numElements);
-      RefResolver refResolver = fury.getRefResolver();
-      refResolver.reference(value);
-      if (isFinal) {
-        final Serializer componentTypeSerializer = this.componentTypeSerializer;
-        for (int i = 0; i < numElements; i++) {
-          Object elem;
-          int nextReadRefId = refResolver.tryPreserveRefId(buffer);
-          if (nextReadRefId >= Fury.NOT_NULL_VALUE_FLAG) {
-            elem = componentTypeSerializer.read(buffer);
-            refResolver.setReadObject(nextReadRefId, elem);
-          } else {
-            elem = refResolver.getReadObject();
-          }
-          value[i] = elem;
+      if (this.collectionSerializer != null) {
+        fury.getGenerics().pushGenericType(this.collectionGenericType);
+        value = this.collectionSerializer.read(buffer).toArray();
+        fury.getGenerics().popGenericType();
+        if (this.innerType.isPrimitive() || TypeUtils.isBoxed(this.innerType)) {
+          return Arrays.copyOf(value, value.length, this.type);
         }
       } else {
-        Fury fury = this.fury;
-        ClassInfoHolder classInfoHolder = this.classInfoHolder;
-        for (int i = 0; i < numElements; i++) {
-          int nextReadRefId = refResolver.tryPreserveRefId(buffer);
-          Object o;
-          if (nextReadRefId >= Fury.NOT_NULL_VALUE_FLAG) {
-            // ref value or not-null value
-            o = fury.readNonRef(buffer, classInfoHolder);
-            refResolver.setReadObject(nextReadRefId, o);
-          } else {
-            o = refResolver.getReadObject();
+        boolean isFinal = (numElements & 0b1) != 0;
+        numElements >>>= 1;
+        value = newArray(numElements);
+        RefResolver refResolver = fury.getRefResolver();
+        refResolver.reference(value);
+        if (isFinal) {
+          final Serializer componentTypeSerializer = this.componentTypeSerializer;
+          for (int i = 0; i < numElements; i++) {
+            Object elem;
+            int nextReadRefId = refResolver.tryPreserveRefId(buffer);
+            if (nextReadRefId >= Fury.NOT_NULL_VALUE_FLAG) {
+              elem = componentTypeSerializer.read(buffer);
+              refResolver.setReadObject(nextReadRefId, elem);
+            } else {
+              elem = refResolver.getReadObject();
+            }
+            value[i] = elem;
           }
-          value[i] = o;
+        } else {
+          Fury fury = this.fury;
+          ClassInfoHolder classInfoHolder = this.classInfoHolder;
+          for (int i = 0; i < numElements; i++) {
+            int nextReadRefId = refResolver.tryPreserveRefId(buffer);
+            Object o;
+            if (nextReadRefId >= Fury.NOT_NULL_VALUE_FLAG) {
+              // ref value or not-null value
+              o = fury.readNonRef(buffer, classInfoHolder);
+              refResolver.setReadObject(nextReadRefId, o);
+            } else {
+              o = refResolver.getReadObject();
+            }
+            value[i] = o;
+          }
         }
       }
       return (T[]) value;
@@ -207,6 +261,14 @@ public class ArraySerializers {
         value = (Object[]) Array.newInstance(innerType, stubDims);
       }
       return value;
+    }
+
+    private GenericType buildCollectionGenericType(int dims) {
+      TypeRef arrayType = TypeRef.of(this.innerType);
+      for (int i = 0; i < dims; i++) {
+        arrayType = TypeUtils.collectionOf(arrayType);
+      }
+      return GenericType.build(arrayType);
     }
   }
 
@@ -249,7 +311,7 @@ public class ArraySerializers {
   // Implement all read/write methods in subclasses to avoid
   // virtual method call cost.
   public abstract static class PrimitiveArraySerializer<T>
-      extends Serializers.CrossLanguageCompatibleSerializer<T> {
+      extends CrossLanguageCompatibleSerializer<T> {
     protected final int offset;
     protected final int elemSize;
 
@@ -610,14 +672,14 @@ public class ArraySerializers {
   public static final class StringArraySerializer extends Serializer<String[]> {
     private final StringSerializer stringSerializer;
     private final FuryArrayAsListSerializer collectionSerializer;
-    private final FuryArrayAsListSerializer.ArrayAsList list;
+    private final ArrayAsList list;
 
     public StringArraySerializer(Fury fury) {
       super(fury, String[].class);
       stringSerializer = new StringSerializer(fury);
       collectionSerializer = new FuryArrayAsListSerializer(fury);
       collectionSerializer.setElementSerializer(stringSerializer);
-      list = new FuryArrayAsListSerializer.ArrayAsList(0);
+      list = new ArrayAsList(0);
     }
 
     @Override
@@ -890,11 +952,10 @@ public class ArraySerializers {
     public NonexistentArrayClassSerializer(Fury fury, String className, Class<?> cls) {
       super(fury, className, cls);
       if (TypeUtils.getArrayComponent(cls).isEnum()) {
-        componentSerializer = new NonexistentClassSerializers.NonexistentEnumClassSerializer(fury);
+        componentSerializer = new NonexistentEnumClassSerializer(fury);
       } else {
         if (fury.getConfig().getCompatibleMode() == CompatibleMode.COMPATIBLE) {
-          componentSerializer =
-              new CompatibleSerializer<>(fury, NonexistentClass.NonexistentSkip.class);
+          componentSerializer = new CompatibleSerializer<>(fury, NonexistentSkip.class);
         } else {
           componentSerializer = null;
         }
