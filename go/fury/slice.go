@@ -22,8 +22,15 @@ import (
 	"reflect"
 )
 
-type sliceSerializer struct {
-}
+const (
+	CollectionDefaultFlag        = 0b0000
+	CollectionTrackingRef        = 0b0001
+	CollectionHasNull            = 0b0010
+	CollectionNotDeclElementType = 0b0100
+	CollectionNotSameType        = 0b1000
+)
+
+type sliceSerializer struct{}
 
 func (s sliceSerializer) TypeId() TypeId {
 	return LIST
@@ -31,31 +38,212 @@ func (s sliceSerializer) TypeId() TypeId {
 
 func (s sliceSerializer) Write(f *Fury, buf *ByteBuffer, value reflect.Value) error {
 	length := value.Len()
-	if err := f.writeLength(buf, length); err != nil {
-		return err
+	if length == 0 {
+		buf.WriteVarUint32(0)
+		return nil
 	}
-	for i := 0; i < length; i++ {
-		if err := f.WriteReferencable(buf, value.Index(i)); err != nil {
-			return err
+
+	collectFlag, elemTypeInfo := s.writeHeader(f, buf, value)
+
+	if (collectFlag & CollectionNotSameType) == 0 {
+		return s.writeSameType(f, buf, value, elemTypeInfo, collectFlag)
+	}
+	return s.writeDifferentTypes(f, buf, value)
+}
+
+func (s sliceSerializer) writeHeader(f *Fury, buf *ByteBuffer, value reflect.Value) (byte, TypeInfo) {
+	collectFlag := CollectionDefaultFlag
+	var elemTypeInfo TypeInfo
+	hasNull := false
+	hasDifferentType := false
+	elemTypeInfo, _ = f.typeResolver.getTypeInfo(value, true)
+
+	collectFlag |= CollectionNotDeclElementType
+	//}
+
+	// 遍历元素检测类型
+	for i := 0; i < value.Len(); i++ {
+		elem := value.Index(i).Elem()
+		if isNull(elem) {
+			hasNull = true
+			continue
+		}
+
+		currentTypeInfo, _ := f.typeResolver.getTypeInfo(elem, true)
+		if currentTypeInfo.TypeID != elemTypeInfo.TypeID {
+			hasDifferentType = true
+		}
+	}
+
+	// 设置标志位
+	if hasNull {
+		collectFlag |= CollectionHasNull
+	}
+	if hasDifferentType {
+		collectFlag |= CollectionNotSameType
+	}
+
+	// 引用跟踪
+	if f.referenceTracking {
+		collectFlag |= CollectionTrackingRef
+	}
+
+	// 写入元数据
+	buf.WriteVarUint32(uint32(value.Len()))
+	buf.WriteInt8(int8(collectFlag))
+
+	// 写入元素类型信息
+	if !hasDifferentType {
+		buf.WriteVarInt32(elemTypeInfo.TypeID)
+	}
+
+	return byte(collectFlag), elemTypeInfo
+}
+
+func (s sliceSerializer) writeSameType(f *Fury, buf *ByteBuffer, value reflect.Value, typeInfo TypeInfo, flag byte) error {
+	serializer := typeInfo.Serializer
+	trackRefs := (flag & CollectionTrackingRef) != 0
+
+	for i := 0; i < value.Len(); i++ {
+		elem := value.Index(i).Elem()
+		if isNull(elem) {
+			buf.WriteInt8(NullFlag)
+			continue
+		}
+
+		if trackRefs {
+			refWritten, err := f.refResolver.WriteRefOrNull(buf, elem)
+			if err != nil {
+				return err
+			}
+			if !refWritten {
+				if err := serializer.Write(f, buf, elem); err != nil {
+					return err
+				}
+			}
+		} else {
+			if err := serializer.Write(f, buf, elem); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
 }
-func (s sliceSerializer) Read(f *Fury, buf *ByteBuffer, type_ reflect.Type, value reflect.Value) error {
-	length := f.readLength(buf)
-	if value.Cap() < length {
-		value.Set(reflect.MakeSlice(value.Type(), length, length))
-	} else if value.Len() < length {
-		value.Set(value.Slice(0, length))
-	}
-	f.refResolver.Reference(value)
-	for i := 0; i < length; i++ {
-		elem := value.Index(i)
-		if err := f.ReadReferencable(buf, elem); err != nil {
+
+func (s sliceSerializer) writeDifferentTypes(f *Fury, buf *ByteBuffer, value reflect.Value) error {
+	for i := 0; i < value.Len(); i++ {
+		elem := value.Index(i).Elem()
+		if isNull(elem) {
+			buf.WriteInt8(NullFlag)
+			continue
+		}
+
+		typeInfo, _ := f.typeResolver.getTypeInfo(elem, true)
+		refWritten, err := f.refResolver.WriteRefOrNull(buf, elem)
+		buf.WriteVarInt32(typeInfo.TypeID)
+		if err != nil {
 			return err
+		}
+		if !refWritten {
+			if err := typeInfo.Serializer.Write(f, buf, elem); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
+}
+
+func (s sliceSerializer) Read(f *Fury, buf *ByteBuffer, type_ reflect.Type, value reflect.Value) error {
+	length := int(buf.ReadVarUint32())
+	if length == 0 {
+		value.Set(reflect.MakeSlice(type_, 0, 0))
+		return nil
+	}
+
+	collectFlag := buf.ReadInt8()
+	var elemTypeInfo TypeInfo
+
+	// 读取元素类型
+	if (collectFlag & CollectionNotSameType) == 0 {
+		typeID := buf.ReadVarInt32()
+		elemTypeInfo, _ = f.typeResolver.getTypeInfoById(int16(typeID))
+	}
+
+	// 初始化切片
+	if value.Cap() < length {
+		value.Set(reflect.MakeSlice(type_, length, length))
+	} else {
+		value.Set(value.Slice(0, length))
+	}
+	f.refResolver.Reference(value)
+
+	// 分派读取逻辑
+	if (collectFlag & CollectionNotSameType) == 0 {
+		return s.readSameType(f, buf, value, elemTypeInfo, collectFlag)
+	}
+	return s.readDifferentTypes(f, buf, value)
+}
+
+func (s sliceSerializer) readSameType(f *Fury, buf *ByteBuffer, value reflect.Value, typeInfo TypeInfo, flag int8) error {
+	trackRefs := (flag & CollectionTrackingRef) != 0
+	serializer := typeInfo.Serializer
+	var refID int32
+
+	for i := 0; i < value.Len(); i++ {
+		if trackRefs {
+			refID, _ = f.refResolver.TryPreserveRefId(buf)
+			if int8(refID) < NotNullValueFlag {
+				value.Index(i).Set(f.refResolver.GetCurrentReadObject())
+				continue
+			}
+		}
+
+		// 创建正确类型的新值
+		elem := reflect.New(typeInfo.Type).Elem()
+		if err := serializer.Read(f, buf, elem.Type(), elem); err != nil {
+			return err
+		}
+		value.Index(i).Set(elem)
+		f.refResolver.SetReadObject(refID, elem)
+	}
+	return nil
+}
+
+func (s sliceSerializer) readDifferentTypes(f *Fury, buf *ByteBuffer, value reflect.Value) error {
+	for i := 0; i < value.Len(); i++ {
+		refID, _ := f.refResolver.TryPreserveRefId(buf)
+		typeID := buf.ReadVarInt32()
+		typeInfo, _ := f.typeResolver.getTypeInfoById(int16(typeID))
+		if int8(refID) < NotNullValueFlag {
+			value.Index(i).Set(f.refResolver.GetCurrentReadObject())
+			continue
+		}
+
+		elem := reflect.New(typeInfo.Type).Elem()
+		if err := typeInfo.Serializer.Read(f, buf, typeInfo.Type, elem); err != nil {
+			return err
+		}
+		f.refResolver.SetReadObject(refID, elem)
+		value.Index(i).Set(elem)
+	}
+	return nil
+}
+
+// 辅助方法
+func getDeclaredElementType(f *Fury, sliceType reflect.Type) reflect.Type {
+	// 实现类型声明检测逻辑
+	// 例如通过注册信息或类型参数获取
+	return nil
+}
+
+// 辅助函数
+func isNull(v reflect.Value) bool {
+	switch v.Kind() {
+	case reflect.Ptr, reflect.Interface, reflect.Slice, reflect.Map, reflect.Func:
+		return v.IsNil()
+	default:
+		return false
+	}
 }
 
 // sliceConcreteValueSerializer serialize a slice whose elem is not an interface or pointer to interface

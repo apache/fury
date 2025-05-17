@@ -612,9 +612,7 @@ func (r *typeResolver) writeTypeInfo(buffer *ByteBuffer, typeInfo TypeInfo) erro
 	internalTypeID := typeID & 0xFF
 
 	// Write the type ID to buffer (variable-length encoding)
-	if err := buffer.WriteVarUint32(uint32(typeID)); err != nil {
-		return err
-	}
+	buffer.WriteVarUint32(uint32(typeID))
 
 	// For namespaced types, write additional metadata:
 	if IsNamespacedType(TypeId(internalTypeID)) {
@@ -924,6 +922,13 @@ func (r *typeResolver) getTypeById(id int16) (reflect.Type, error) {
 		return nil, fmt.Errorf("type of id %d not supported, supported types: %v", id, r.typeIdToType)
 	}
 	return type_, nil
+}
+
+func (r *typeResolver) getTypeInfoById(id int16) (TypeInfo, error) {
+
+	typeInfo := r.typeIDToClassInfo[int32(id)]
+
+	return typeInfo, nil
 }
 
 func (r *typeResolver) writeMetaString(buffer *ByteBuffer, str string) error {

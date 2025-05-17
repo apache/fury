@@ -160,7 +160,6 @@ func (f *Fury) Serialize(buf *ByteBuffer, v interface{}, callback BufferCallback
 	}
 	if f.language != XLANG {
 		return fmt.Errorf("%d language is not supported", f.language)
-		buffer.WriteInt8(int8(GO))
 	} else {
 		if err := buffer.WriteByte(GO); err != nil {
 			return err
@@ -179,10 +178,6 @@ func (f *Fury) Write(buffer *ByteBuffer, v interface{}) (err error) {
 		buffer.WriteInt8(NullFlag)
 	case bool:
 		f.WriteBool(buffer, v)
-	case int32:
-		f.WriteInt32(buffer, v)
-	case int64:
-		f.WriteInt64(buffer, v)
 	case float64:
 		f.WriteFloat64(buffer, v)
 	case float32:
