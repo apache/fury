@@ -19,6 +19,7 @@ package fury
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 )
 
@@ -112,7 +113,7 @@ func (s mapSerializer) Write(f *Fury, buf *ByteBuffer, value reflect.Value) erro
 		chunkHeader := byte(0)
 		if keySerializer == nil {
 			//keyType := key.Type()
-			keyClassInfo, _ := classResolver.getTypeInfo(key, true)
+			keyClassInfo, _ := getActualTypeInfo(key, classResolver)
 			if err := classResolver.writeTypeInfo(buf, keyClassInfo); err != nil {
 				return err
 			}
@@ -123,7 +124,7 @@ func (s mapSerializer) Write(f *Fury, buf *ByteBuffer, value reflect.Value) erro
 
 		if valueSerializer == nil {
 			//valueType := val.Type()
-			valueClassInfo, _ := classResolver.getTypeInfo(val, true)
+			valueClassInfo, _ := getActualTypeInfo(key, classResolver)
 			if err := classResolver.writeTypeInfo(buf, valueClassInfo); err != nil {
 				return err
 			}
@@ -197,6 +198,25 @@ func (s mapSerializer) Write(f *Fury, buf *ByteBuffer, value reflect.Value) erro
 	return nil
 }
 
+func getActualType(v reflect.Value) reflect.Type {
+	if v.Kind() == reflect.Interface && !v.IsNil() {
+		return v.Elem().Type()
+	}
+	return v.Type()
+}
+
+func getActualTypeInfo(v reflect.Value, resolver *typeResolver) (TypeInfo, error) {
+	// NOTE: 处理接口类型
+	if v.Kind() == reflect.Interface && !v.IsNil() {
+		elem := v.Elem()
+		if !elem.IsValid() {
+			return TypeInfo{}, fmt.Errorf("invalid interface value")
+		}
+		return resolver.getTypeInfo(elem, true)
+	}
+	return resolver.getTypeInfo(v, true)
+}
+
 func (s mapSerializer) Read(f *Fury, buf *ByteBuffer, typ reflect.Type, value reflect.Value) error {
 	if value.IsNil() {
 		value.Set(reflect.MakeMap(typ))
@@ -249,8 +269,8 @@ func (s mapSerializer) Read(f *Fury, buf *ByteBuffer, typ reflect.Type, value re
 		}
 
 		// 分块读取逻辑
-		chunkHeader := header >> 6
-		chunkSize := int(header & 0x3F)
+		chunkHeader := header
+		chunkSize := int(buf.ReadUint8())
 
 		// 类型信息读取
 		if chunkHeader&KEY_DECL_TYPE == 0 {
@@ -276,20 +296,21 @@ func (s mapSerializer) Read(f *Fury, buf *ByteBuffer, typ reflect.Type, value re
 				return errors.New("invalid chunk size")
 			}
 			var key reflect.Value
+			var refID int32
 			if trackKeyRef {
-				if refID, err := refResolver.TryPreserveRefId(buf); err != nil {
-					return err
-				} else if refID >= 0 {
-					key = refResolver.GetReadObject(refID)
+				refID, _ = refResolver.TryPreserveRefId(buf)
+
+				if int8(refID) < NotNullValueFlag {
+					key = refResolver.GetCurrentReadObject()
 				} else {
-					key = reflect.New(typ.Key()).Elem()
+					key, _ = actualVal(typ.Key())
 					if err := keySerializer.Read(f, buf, key.Type(), key); err != nil {
 						return err
 					}
 					refResolver.SetReadObject(refID, key)
 				}
 			} else {
-				key = reflect.New(typ.Key()).Elem()
+				key, _ = actualVal(typ.Key())
 				if err := keySerializer.Read(f, buf, key.Type(), key); err != nil {
 					return err
 				}
@@ -297,19 +318,19 @@ func (s mapSerializer) Read(f *Fury, buf *ByteBuffer, typ reflect.Type, value re
 
 			var val reflect.Value
 			if trackValueRef {
-				if refID, err := refResolver.TryPreserveRefId(buf); err != nil {
-					return err
-				} else if refID >= 0 {
-					val = refResolver.GetReadObject(refID)
+				refID, _ = refResolver.TryPreserveRefId(buf)
+
+				if int8(refID) < NotNullValueFlag {
+					val = refResolver.GetCurrentReadObject()
 				} else {
-					val = reflect.New(typ.Elem()).Elem()
+					val, _ = actualVal(typ.Elem())
 					if err := valueSerializer.Read(f, buf, val.Type(), val); err != nil {
 						return err
 					}
 					refResolver.SetReadObject(refID, val)
 				}
 			} else {
-				val = reflect.New(typ.Elem()).Elem()
+				val, _ = actualVal(typ.Elem())
 				if err := valueSerializer.Read(f, buf, val.Type(), val); err != nil {
 					return err
 				}
@@ -320,6 +341,17 @@ func (s mapSerializer) Read(f *Fury, buf *ByteBuffer, typ reflect.Type, value re
 		}
 	}
 	return nil
+}
+
+func actualVal(t reflect.Type) (reflect.Value, error) {
+	if t.Kind() == reflect.Interface {
+		// 创建接口值的正确方式
+		var container interface{}
+		// NOTE: 这里实际上应该根据类型信息创建具体类型
+		// 暂时创建空接口，实际类型会在反序列化时确定
+		return reflect.ValueOf(&container).Elem(), nil
+	}
+	return reflect.New(t).Elem(), nil
 }
 
 // 辅助函数
