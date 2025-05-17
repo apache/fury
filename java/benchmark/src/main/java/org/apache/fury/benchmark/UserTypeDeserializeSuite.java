@@ -20,16 +20,7 @@
 package org.apache.fury.benchmark;
 
 import java.io.IOException;
-import org.apache.fury.benchmark.state.FlatBuffersState;
-import org.apache.fury.benchmark.state.FstState;
-import org.apache.fury.benchmark.state.FuryState;
-import org.apache.fury.benchmark.state.HessionState;
-import org.apache.fury.benchmark.state.JDKState;
-import org.apache.fury.benchmark.state.JsonbState;
-import org.apache.fury.benchmark.state.KryoState;
-import org.apache.fury.benchmark.state.ObjectType;
-import org.apache.fury.benchmark.state.ProtoBuffersState;
-import org.apache.fury.benchmark.state.ProtostuffState;
+import org.apache.fury.benchmark.state.*;
 import org.apache.fury.memory.ByteBufferUtil;
 import org.openjdk.jmh.Main;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -105,9 +96,23 @@ public class UserTypeDeserializeSuite {
     return JDKState.deserialize(state.bis);
   }
 
-  // @Benchmark
+  @Benchmark
   public Object jsonb_deserialize(JsonbState.JsonbUserTypeState state, Blackhole bh) {
     return JsonbState.deserialize(bh, state);
+  }
+
+  @Benchmark
+  public Object msgpack_deserialize(MsgpackState.MsgpackUserTypeState state, Blackhole bh)
+      throws IOException {
+    state.bis.reset();
+    return MsgpackState.deserialize(bh, state);
+  }
+
+  @Benchmark
+  public Object msgpack_jackson_deserialize(
+      MsgpackState.MsgpackJacksonUserTypeState state, Blackhole bh) throws IOException {
+    state.bis.reset();
+    return MsgpackState.deserialize(bh, state);
   }
 
   @Benchmark
