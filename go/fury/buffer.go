@@ -609,3 +609,7 @@ func (b *ByteBuffer) readVarUint32Slow() uint32 {
 	}
 	return result
 }
+
+func (b *ByteBuffer) PutUint8(writerIndex int, value uint8) {
+	b.data[writerIndex] = byte(value)
+}
