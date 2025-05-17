@@ -924,6 +924,13 @@ func (r *typeResolver) getTypeById(id int16) (reflect.Type, error) {
 	return type_, nil
 }
 
+func (r *typeResolver) getTypeInfoById(id int16) (TypeInfo, error) {
+
+	typeInfo := r.typeIDToClassInfo[int32(id)]
+
+	return typeInfo, nil
+}
+
 func (r *typeResolver) writeMetaString(buffer *ByteBuffer, str string) error {
 	if id, ok := r.dynamicStringToId[str]; !ok {
 		dynamicStringId := r.dynamicStringId
