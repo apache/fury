@@ -117,22 +117,22 @@ func (s mapSerializer) Write(f *Fury, buf *ByteBuffer, value reflect.Value) erro
 		chunkHeader := byte(0)
 		if keySerializer == nil {
 			// Get key type info and write to buffer
-			keyClassInfo, _ := getActualTypeInfo(key, typeResolver)
-			if err := typeResolver.writeTypeInfo(buf, keyClassInfo); err != nil {
+			keyTypeInfo, _ := getActualTypeInfo(key, typeResolver)
+			if err := typeResolver.writeTypeInfo(buf, keyTypeInfo); err != nil {
 				return err
 			}
-			keySerializer = keyClassInfo.Serializer
+			keySerializer = keyTypeInfo.Serializer
 		} else {
 			chunkHeader |= KEY_DECL_TYPE // Key type already declared
 		}
 
 		if valueSerializer == nil {
 			// Get value type info and write to buffer
-			valueClassInfo, _ := getActualTypeInfo(val, typeResolver)
-			if err := typeResolver.writeTypeInfo(buf, valueClassInfo); err != nil {
+			valueTypeInfo, _ := getActualTypeInfo(val, typeResolver)
+			if err := typeResolver.writeTypeInfo(buf, valueTypeInfo); err != nil {
 				return err
 			}
-			valueSerializer = valueClassInfo.Serializer
+			valueSerializer = valueTypeInfo.Serializer
 		} else {
 			chunkHeader |= VALUE_DECL_TYPE // Value type already declared
 		}
