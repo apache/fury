@@ -137,18 +137,20 @@ func (s sliceSerializer) writeDifferentTypes(f *Fury, buf *ByteBuffer, value ref
 			buf.WriteInt8(NullFlag)
 			continue
 		}
-
-		typeInfo, _ := f.typeResolver.getTypeInfo(elem, true)
 		refWritten, err := f.refResolver.WriteRefOrNull(buf, elem)
-		buf.WriteVarInt32(typeInfo.TypeID)
 		if err != nil {
 			return err
 		}
-		if !refWritten {
-			if err := typeInfo.Serializer.Write(f, buf, elem); err != nil {
-				return err
-			}
+		if refWritten {
+			continue
 		}
+		typeInfo, _ := f.typeResolver.getTypeInfo(elem, true)
+		buf.WriteVarInt32(typeInfo.TypeID)
+
+		if err := typeInfo.Serializer.Write(f, buf, elem); err != nil {
+			return err
+		}
+
 	}
 	return nil
 }
@@ -212,12 +214,12 @@ func (s sliceSerializer) readSameType(f *Fury, buf *ByteBuffer, value reflect.Va
 func (s sliceSerializer) readDifferentTypes(f *Fury, buf *ByteBuffer, value reflect.Value) error {
 	for i := 0; i < value.Len(); i++ {
 		refID, _ := f.refResolver.TryPreserveRefId(buf)
-		typeID := buf.ReadVarInt32()
-		typeInfo, _ := f.typeResolver.getTypeInfoById(int16(typeID))
 		if int8(refID) < NotNullValueFlag {
 			value.Index(i).Set(f.refResolver.GetCurrentReadObject())
 			continue
 		}
+		typeID := buf.ReadVarInt32()
+		typeInfo, _ := f.typeResolver.getTypeInfoById(int16(typeID))
 
 		elem := reflect.New(typeInfo.Type).Elem()
 		if err := typeInfo.Serializer.Read(f, buf, typeInfo.Type, elem); err != nil {
