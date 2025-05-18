@@ -49,17 +49,20 @@ func (s mapSerializer) TypeId() TypeId {
 }
 
 func (s mapSerializer) Write(f *Fury, buf *ByteBuffer, value reflect.Value) error {
+	// Get map length and write it to buffer
 	length := value.Len()
 	buf.WriteVarUint32(uint32(length))
 	if length == 0 {
 		return nil
 	}
 
-	classResolver := f.typeResolver
+	// Get resolvers from Fury instance
+	typeResolver := f.typeResolver
 	refResolver := f.refResolver
 	var keySerializer Serializer
 	var valueSerializer Serializer
 
+	// Initialize map iterator and get first key-value pair
 	iter := value.MapRange()
 	if !iter.Next() {
 		return nil
@@ -68,6 +71,7 @@ func (s mapSerializer) Write(f *Fury, buf *ByteBuffer, value reflect.Value) erro
 	hasNext := true
 
 	for hasNext {
+		// Process null key/value pairs
 		for {
 			keyValid := isValid(key)
 			valValid := isValid(val)
@@ -105,35 +109,35 @@ func (s mapSerializer) Write(f *Fury, buf *ByteBuffer, value reflect.Value) erro
 			break
 		}
 
-		// 写分块头
+		// Write chunk header placeholder (will be updated later)
 		chunkHeaderOffset := buf.WriterIndex()
 		buf.WriteInt16(-1)
 
-		// 处理类型信息
+		// Process type information
 		chunkHeader := byte(0)
 		if keySerializer == nil {
-			//keyType := key.Type()
-			keyClassInfo, _ := getActualTypeInfo(key, classResolver)
-			if err := classResolver.writeTypeInfo(buf, keyClassInfo); err != nil {
+			// Get key type info and write to buffer
+			keyClassInfo, _ := getActualTypeInfo(key, typeResolver)
+			if err := typeResolver.writeTypeInfo(buf, keyClassInfo); err != nil {
 				return err
 			}
 			keySerializer = keyClassInfo.Serializer
 		} else {
-			chunkHeader |= KEY_DECL_TYPE
+			chunkHeader |= KEY_DECL_TYPE // Key type already declared
 		}
 
 		if valueSerializer == nil {
-			//valueType := val.Type()
-			valueClassInfo, _ := getActualTypeInfo(val, classResolver)
-			if err := classResolver.writeTypeInfo(buf, valueClassInfo); err != nil {
+			// Get value type info and write to buffer
+			valueClassInfo, _ := getActualTypeInfo(val, typeResolver)
+			if err := typeResolver.writeTypeInfo(buf, valueClassInfo); err != nil {
 				return err
 			}
 			valueSerializer = valueClassInfo.Serializer
 		} else {
-			chunkHeader |= VALUE_DECL_TYPE
+			chunkHeader |= VALUE_DECL_TYPE // Value type already declared
 		}
 
-		// 设置跟踪标记
+		// Set tracking flags if reference tracking is enabled
 		if f.referenceTracking {
 			chunkHeader |= TRACKING_KEY_REF
 		}
@@ -141,11 +145,11 @@ func (s mapSerializer) Write(f *Fury, buf *ByteBuffer, value reflect.Value) erro
 			chunkHeader |= TRACKING_VALUE_REF
 		}
 
-		// 写chunk header
+		// Write chunk header
 		buf.PutUint8(chunkHeaderOffset, chunkHeader)
 		chunkSize := 0
 
-		// 序列化相同类型的元素
+		// Serialize elements of same type in chunks
 		keyType := getActualType(key)
 		valueType := getActualType(val)
 		for chunkSize < MAX_CHUNK_SIZE {
@@ -153,7 +157,7 @@ func (s mapSerializer) Write(f *Fury, buf *ByteBuffer, value reflect.Value) erro
 				break
 			}
 
-			// 写key
+			// Write key
 			key = UnwrapReflectValue(key)
 			if f.referenceTracking {
 				if written, err := refResolver.WriteRefOrNull(buf, key); err != nil {
@@ -169,7 +173,7 @@ func (s mapSerializer) Write(f *Fury, buf *ByteBuffer, value reflect.Value) erro
 				}
 			}
 
-			// 写value
+			// Write value
 			val = UnwrapReflectValue(val)
 			if f.referenceTracking {
 				if written, err := refResolver.WriteRefOrNull(buf, val); err != nil {
@@ -194,69 +198,51 @@ func (s mapSerializer) Write(f *Fury, buf *ByteBuffer, value reflect.Value) erro
 			}
 		}
 
+		// Reset serializers for next chunk
 		keySerializer = nil
 		valueSerializer = nil
-		// 更新chunk size
+		// Update chunk size in header
 		buf.PutUint8(chunkHeaderOffset+1, uint8(chunkSize))
 	}
 	return nil
 }
 
-func getActualType(v reflect.Value) reflect.Type {
-	if v.Kind() == reflect.Interface && !v.IsNil() {
-		return v.Elem().Type()
-	}
-	return v.Type()
-}
-
-func getActualTypeInfo(v reflect.Value, resolver *typeResolver) (TypeInfo, error) {
-	// NOTE: 处理接口类型
-	if v.Kind() == reflect.Interface && !v.IsNil() {
-		elem := v.Elem()
-		if !elem.IsValid() {
-			return TypeInfo{}, fmt.Errorf("invalid interface value")
-		}
-		return resolver.getTypeInfo(elem, true)
-	}
-	return resolver.getTypeInfo(v, true)
-}
-
-func UnwrapReflectValue(v reflect.Value) reflect.Value {
-	for v.Kind() == reflect.Interface && !v.IsNil() {
-		v = v.Elem()
-	}
-	return v
-}
-
 func (s mapSerializer) Read(f *Fury, buf *ByteBuffer, typ reflect.Type, value reflect.Value) error {
+	// Initialize map if nil
 	if value.IsNil() {
 		value.Set(reflect.MakeMap(typ))
 	}
+	// Register reference for tracking
 	f.refResolver.Reference(value)
 
+	// Read map length from buffer
 	length := buf.ReadVarUint32()
 
 	var keySerializer Serializer
 	var valueSerializer Serializer
-	classResolver := f.typeResolver
+	typeResolver := f.typeResolver
 	refResolver := f.refResolver
 
 	remaining := int(length)
 	for remaining > 0 {
 		header := buf.ReadUint8()
 
+		// Handle special cases based on header flags
 		switch {
 		case header == (KEY_HAS_NULL | VALUE_HAS_NULL):
+			// Null key and null value case
 			value.SetMapIndex(reflect.Zero(typ.Key()), reflect.Zero(typ.Elem()))
 			remaining--
 			continue
 
 		case (header & (KEY_HAS_NULL | VALUE_DECL_TYPE)) == (KEY_HAS_NULL | VALUE_DECL_TYPE):
+			// Null key with declared value type case
 			trackValueRef := (header & TRACKING_VALUE_REF) != 0
 			var key, val reflect.Value
 
 			key = reflect.Zero(typ.Key())
 			if trackValueRef {
+				// Handle reference tracking for value
 				if refID, err := refResolver.TryPreserveRefId(buf); err != nil {
 					return err
 				} else if refID >= 0 {
@@ -269,6 +255,7 @@ func (s mapSerializer) Read(f *Fury, buf *ByteBuffer, typ reflect.Type, value re
 					refResolver.SetReadObject(refID, val)
 				}
 			} else {
+				// Read value without reference tracking
 				val = reflect.New(typ.Elem()).Elem()
 				if err := valueSerializer.Read(f, buf, val.Type(), val); err != nil {
 					return err
@@ -279,33 +266,37 @@ func (s mapSerializer) Read(f *Fury, buf *ByteBuffer, typ reflect.Type, value re
 			continue
 		}
 
-		// 分块读取逻辑
+		// Chunk reading logic
 		chunkHeader := header
 		chunkSize := int(buf.ReadUint8())
 
-		// 类型信息读取
+		// Read type information if not declared
 		if chunkHeader&KEY_DECL_TYPE == 0 {
-			keyTypeInfo, err := classResolver.readTypeInfo(buf)
+			keyTypeInfo, err := typeResolver.readTypeInfo(buf)
 			if err != nil {
 				return err
 			}
 			keySerializer = keyTypeInfo.Serializer
 		}
 		if chunkHeader&VALUE_DECL_TYPE == 0 {
-			valueTypeInfo, err := classResolver.readTypeInfo(buf)
+			valueTypeInfo, err := typeResolver.readTypeInfo(buf)
 			if err != nil {
 				return err
 			}
 			valueSerializer = valueTypeInfo.Serializer
 		}
 
+		// Check reference tracking flags
 		trackKeyRef := chunkHeader&TRACKING_KEY_REF != 0
 		trackValueRef := chunkHeader&TRACKING_VALUE_REF != 0
 
+		// Process each element in the chunk
 		for i := 0; i < chunkSize; i++ {
 			if remaining <= 0 {
 				return errors.New("invalid chunk size")
 			}
+
+			// Read key with or without reference tracking
 			var key reflect.Value
 			var refID int32
 			if trackKeyRef {
@@ -327,6 +318,7 @@ func (s mapSerializer) Read(f *Fury, buf *ByteBuffer, typ reflect.Type, value re
 				}
 			}
 
+			// Read value with or without reference tracking
 			var val reflect.Value
 			if trackValueRef {
 				refID, _ = refResolver.TryPreserveRefId(buf)
@@ -347,6 +339,7 @@ func (s mapSerializer) Read(f *Fury, buf *ByteBuffer, typ reflect.Type, value re
 				}
 			}
 
+			// Store key-value pair in map
 			value.SetMapIndex(key, val)
 			remaining--
 		}
@@ -354,18 +347,39 @@ func (s mapSerializer) Read(f *Fury, buf *ByteBuffer, typ reflect.Type, value re
 	return nil
 }
 
+func getActualType(v reflect.Value) reflect.Type {
+	if v.Kind() == reflect.Interface && !v.IsNil() {
+		return v.Elem().Type()
+	}
+	return v.Type()
+}
+
+func getActualTypeInfo(v reflect.Value, resolver *typeResolver) (TypeInfo, error) {
+	if v.Kind() == reflect.Interface && !v.IsNil() {
+		elem := v.Elem()
+		if !elem.IsValid() {
+			return TypeInfo{}, fmt.Errorf("invalid interface value")
+		}
+		return resolver.getTypeInfo(elem, true)
+	}
+	return resolver.getTypeInfo(v, true)
+}
+
+func UnwrapReflectValue(v reflect.Value) reflect.Value {
+	for v.Kind() == reflect.Interface && !v.IsNil() {
+		v = v.Elem()
+	}
+	return v
+}
+
 func actualVal(t reflect.Type) (reflect.Value, error) {
 	if t.Kind() == reflect.Interface {
-		// 创建接口值的正确方式
 		var container interface{}
-		// NOTE: 这里实际上应该根据类型信息创建具体类型
-		// 暂时创建空接口，实际类型会在反序列化时确定
 		return reflect.ValueOf(&container).Elem(), nil
 	}
 	return reflect.New(t).Elem(), nil
 }
 
-// 辅助函数
 func isValid(v reflect.Value) bool {
 	return v.IsValid() && !v.IsZero()
 }

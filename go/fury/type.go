@@ -498,6 +498,7 @@ func (r *typeResolver) getTypeInfo(value reflect.Value, create bool) (TypeInfo, 
 	default:
 		fmt.Errorf("type %v must be registered explicitly", typ)
 	}
+	// TThere are still some problems in order to adapt the struct
 	if value.Kind() == reflect.Struct {
 		typeID = NAMED_STRUCT
 	}
@@ -593,18 +594,6 @@ func (r *typeResolver) registerType(
 	}
 
 	return typeInfo, fmt.Errorf("registerType error")
-}
-
-func isStructPtr(val reflect.Value) bool {
-
-	// 检查是否是指针类型
-	if val.Kind() != reflect.Ptr {
-		return false
-	}
-
-	// 检查指针指向的类型是否是结构体
-	elem := val.Elem()
-	return elem.Kind() == reflect.Struct
 }
 
 // allocateTypeID
@@ -941,9 +930,7 @@ func (r *typeResolver) getTypeById(id int16) (reflect.Type, error) {
 }
 
 func (r *typeResolver) getTypeInfoById(id int16) (TypeInfo, error) {
-
 	typeInfo := r.typeIDToClassInfo[int32(id)]
-
 	return typeInfo, nil
 }
 

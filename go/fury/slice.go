@@ -36,32 +36,40 @@ func (s sliceSerializer) TypeId() TypeId {
 	return LIST
 }
 
+// Write serializes a slice value into the buffer
 func (s sliceSerializer) Write(f *Fury, buf *ByteBuffer, value reflect.Value) error {
+	// Get slice length and handle empty slice case
 	length := value.Len()
 	if length == 0 {
-		buf.WriteVarUint32(0)
+		buf.WriteVarUint32(0) // Write 0 for empty slice
 		return nil
 	}
 
+	// Write collection header and get type information
 	collectFlag, elemTypeInfo := s.writeHeader(f, buf, value)
 
+	// Choose serialization path based on type consistency
 	if (collectFlag & CollectionNotSameType) == 0 {
-		return s.writeSameType(f, buf, value, elemTypeInfo, collectFlag)
+		return s.writeSameType(f, buf, value, elemTypeInfo, collectFlag) // Optimized path for same-type elements
 	}
-	return s.writeDifferentTypes(f, buf, value)
+	return s.writeDifferentTypes(f, buf, value) // Fallback path for mixed-type elements
 }
 
+// writeHeader prepares and writes collection metadata including:
+// - Collection size
+// - Type consistency flags
+// - Element type information (if homogeneous)
 func (s sliceSerializer) writeHeader(f *Fury, buf *ByteBuffer, value reflect.Value) (byte, TypeInfo) {
 	collectFlag := CollectionDefaultFlag
 	var elemTypeInfo TypeInfo
 	hasNull := false
 	hasDifferentType := false
+
+	// Get type information for the first element
 	elemTypeInfo, _ = f.typeResolver.getTypeInfo(value, true)
-
 	collectFlag |= CollectionNotDeclElementType
-	//}
 
-	// 遍历元素检测类型
+	// Iterate through elements to check for nulls and type consistency
 	for i := 0; i < value.Len(); i++ {
 		elem := value.Index(i).Elem()
 		if isNull(elem) {
@@ -69,30 +77,31 @@ func (s sliceSerializer) writeHeader(f *Fury, buf *ByteBuffer, value reflect.Val
 			continue
 		}
 
+		// Compare each element's type with the first element's type
 		currentTypeInfo, _ := f.typeResolver.getTypeInfo(elem, true)
 		if currentTypeInfo.TypeID != elemTypeInfo.TypeID {
 			hasDifferentType = true
 		}
 	}
 
-	// 设置标志位
+	// Set collection flags based on findings
 	if hasNull {
-		collectFlag |= CollectionHasNull
+		collectFlag |= CollectionHasNull // Mark if collection contains null values
 	}
 	if hasDifferentType {
-		collectFlag |= CollectionNotSameType
+		collectFlag |= CollectionNotSameType // Mark if elements have different types
 	}
 
-	// 引用跟踪
+	// Enable reference tracking if configured
 	if f.referenceTracking {
 		collectFlag |= CollectionTrackingRef
 	}
 
-	// 写入元数据
-	buf.WriteVarUint32(uint32(value.Len()))
-	buf.WriteInt8(int8(collectFlag))
+	// Write metadata to buffer
+	buf.WriteVarUint32(uint32(value.Len())) // Collection size
+	buf.WriteInt8(int8(collectFlag))        // Collection flags
 
-	// 写入元素类型信息
+	// Write element type ID if all elements have same type
 	if !hasDifferentType {
 		buf.WriteVarInt32(elemTypeInfo.TypeID)
 	}
@@ -100,28 +109,32 @@ func (s sliceSerializer) writeHeader(f *Fury, buf *ByteBuffer, value reflect.Val
 	return byte(collectFlag), elemTypeInfo
 }
 
+// writeSameType efficiently serializes a slice where all elements share the same type
 func (s sliceSerializer) writeSameType(f *Fury, buf *ByteBuffer, value reflect.Value, typeInfo TypeInfo, flag byte) error {
 	serializer := typeInfo.Serializer
-	trackRefs := (flag & CollectionTrackingRef) != 0
+	trackRefs := (flag & CollectionTrackingRef) != 0 // Check if reference tracking is enabled
 
 	for i := 0; i < value.Len(); i++ {
 		elem := value.Index(i).Elem()
 		if isNull(elem) {
-			buf.WriteInt8(NullFlag)
+			buf.WriteInt8(NullFlag) // Write null marker
 			continue
 		}
 
 		if trackRefs {
+			// Handle reference tracking if enabled
 			refWritten, err := f.refResolver.WriteRefOrNull(buf, elem)
 			if err != nil {
 				return err
 			}
 			if !refWritten {
+				// Write actual value if not a reference
 				if err := serializer.Write(f, buf, elem); err != nil {
 					return err
 				}
 			}
 		} else {
+			// Directly write value without reference tracking
 			if err := serializer.Write(f, buf, elem); err != nil {
 				return err
 			}
@@ -130,114 +143,136 @@ func (s sliceSerializer) writeSameType(f *Fury, buf *ByteBuffer, value reflect.V
 	return nil
 }
 
+// writeDifferentTypes handles serialization of slices with mixed element types
 func (s sliceSerializer) writeDifferentTypes(f *Fury, buf *ByteBuffer, value reflect.Value) error {
 	for i := 0; i < value.Len(); i++ {
 		elem := value.Index(i).Elem()
 		if isNull(elem) {
-			buf.WriteInt8(NullFlag)
+			buf.WriteInt8(NullFlag) // Write null marker
 			continue
 		}
+
+		// Handle reference tracking
 		refWritten, err := f.refResolver.WriteRefOrNull(buf, elem)
 		if err != nil {
 			return err
 		}
 		if refWritten {
-			continue
+			continue // Skip if element was written as reference
 		}
+
+		// Get and write type info for each element (since types vary)
 		typeInfo, _ := f.typeResolver.getTypeInfo(elem, true)
 		buf.WriteVarInt32(typeInfo.TypeID)
 
+		// Write actual value
 		if err := typeInfo.Serializer.Write(f, buf, elem); err != nil {
 			return err
 		}
-
 	}
 	return nil
 }
 
+// Read deserializes a slice from the buffer into the provided reflect.Value
 func (s sliceSerializer) Read(f *Fury, buf *ByteBuffer, type_ reflect.Type, value reflect.Value) error {
+	// Read slice length from buffer
 	length := int(buf.ReadVarUint32())
 	if length == 0 {
+		// Initialize empty slice if length is 0
 		value.Set(reflect.MakeSlice(type_, 0, 0))
 		return nil
 	}
 
+	// Read collection flags that indicate special characteristics
 	collectFlag := buf.ReadInt8()
 	var elemTypeInfo TypeInfo
 
-	// 读取元素类型
+	// Read element type information if all elements are same type
 	if (collectFlag & CollectionNotSameType) == 0 {
 		typeID := buf.ReadVarInt32()
 		elemTypeInfo, _ = f.typeResolver.getTypeInfoById(int16(typeID))
 	}
 
-	// 初始化切片
+	// Initialize slice with proper capacity
 	if value.Cap() < length {
 		value.Set(reflect.MakeSlice(type_, length, length))
 	} else {
 		value.Set(value.Slice(0, length))
 	}
+	// Register reference for tracking
 	f.refResolver.Reference(value)
 
-	// 分派读取逻辑
+	// Choose appropriate deserialization path based on type consistency
 	if (collectFlag & CollectionNotSameType) == 0 {
 		return s.readSameType(f, buf, value, elemTypeInfo, collectFlag)
 	}
 	return s.readDifferentTypes(f, buf, value)
 }
 
+// readSameType handles deserialization of slices where all elements share the same type
 func (s sliceSerializer) readSameType(f *Fury, buf *ByteBuffer, value reflect.Value, typeInfo TypeInfo, flag int8) error {
+	// Determine if reference tracking is enabled
 	trackRefs := (flag & CollectionTrackingRef) != 0
 	serializer := typeInfo.Serializer
 	var refID int32
 
 	for i := 0; i < value.Len(); i++ {
 		if trackRefs {
+			// Handle reference tracking if enabled
 			refID, _ = f.refResolver.TryPreserveRefId(buf)
 			if int8(refID) < NotNullValueFlag {
+				// Use existing reference if available
 				value.Index(i).Set(f.refResolver.GetCurrentReadObject())
 				continue
 			}
 		}
 
-		// 创建正确类型的新值
+		// Create new element of the correct type and deserialize from buffer
 		elem := reflect.New(typeInfo.Type).Elem()
 		if err := serializer.Read(f, buf, elem.Type(), elem); err != nil {
 			return err
 		}
+		// Set element in slice and register reference
 		value.Index(i).Set(elem)
 		f.refResolver.SetReadObject(refID, elem)
 	}
 	return nil
 }
 
+// readDifferentTypes handles deserialization of slices with mixed element types
 func (s sliceSerializer) readDifferentTypes(f *Fury, buf *ByteBuffer, value reflect.Value) error {
 	for i := 0; i < value.Len(); i++ {
+		// Handle reference tracking for each element
 		refID, _ := f.refResolver.TryPreserveRefId(buf)
 		if int8(refID) < NotNullValueFlag {
+			// Use existing reference if available
 			value.Index(i).Set(f.refResolver.GetCurrentReadObject())
 			continue
 		}
+
+		// Read type ID for each element (since types vary)
 		typeID := buf.ReadVarInt32()
 		typeInfo, _ := f.typeResolver.getTypeInfoById(int16(typeID))
 
+		// Create new element and deserialize from buffer
 		elem := reflect.New(typeInfo.Type).Elem()
 		if err := typeInfo.Serializer.Read(f, buf, typeInfo.Type, elem); err != nil {
 			return err
 		}
+		// Set element in slice and register reference
 		f.refResolver.SetReadObject(refID, elem)
 		value.Index(i).Set(elem)
 	}
 	return nil
 }
 
-// 辅助函数
+// Helper function to check if a value is null/nil
 func isNull(v reflect.Value) bool {
 	switch v.Kind() {
 	case reflect.Ptr, reflect.Interface, reflect.Slice, reflect.Map, reflect.Func:
-		return v.IsNil()
+		return v.IsNil() // Check if reference types are nil
 	default:
-		return false
+		return false // Value types are never null
 	}
 }
 

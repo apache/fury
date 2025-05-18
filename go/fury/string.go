@@ -22,34 +22,34 @@ import (
 	"unicode/utf16"
 )
 
-// 编码类型常量
+// Encoding type constants
 const (
-	encodingLatin1 = iota
-	encodingUTF16LE
-	encodingUTF8
+	encodingLatin1  = iota // Latin1/ISO-8859-1 encoding
+	encodingUTF16LE        // UTF-16 Little Endian encoding
+	encodingUTF8           // UTF-8 encoding (default)
 )
 
-// writeString 实现带编码检测的字符串序列化
+// writeString implements string serialization with automatic encoding detection
 func writeString(buf *ByteBuffer, value string) error {
-	// 检测Latin1编码
+	// Check if string can be encoded as Latin1
 	if isLatin1(value) {
 		return writeLatin1(buf, value)
 	}
 
-	// 检测UTF-16LE编码是否适用
+	// Check if UTF-16LE encoding is more efficient
 	if utf16Bytes, ok := tryUTF16LE(value); ok {
 		return writeUTF16LE(buf, utf16Bytes)
 	}
 
-	// 默认使用UTF-8编码
+	// Default to UTF-8 encoding
 	return writeUTF8(buf, value)
 }
 
-// readString 实现带编码解析的字符串反序列化
+// readString implements string deserialization with encoding parsing
 func readString(buf *ByteBuffer) string {
 	header := buf.ReadVarUint64()
-	size := header >> 2
-	encoding := header & 0b11
+	size := header >> 2       // Extract string length (in characters)
+	encoding := header & 0b11 // Extract encoding type
 
 	switch encoding {
 	case encodingLatin1:
@@ -63,8 +63,9 @@ func readString(buf *ByteBuffer) string {
 	}
 }
 
-// 编码检测辅助函数
+// Encoding detection helper functions
 func isLatin1(s string) bool {
+	// Check if all runes fit within Latin1 range (0-255)
 	for _, r := range s {
 		if r > 0xFF {
 			return false
@@ -77,7 +78,7 @@ func tryUTF16LE(s string) ([]byte, bool) {
 	runes := []rune(s)
 	utf16Runes := utf16.Encode(runes)
 
-	// 检测代理对
+	// Check for surrogate pairs (indicates complex Unicode)
 	hasSurrogate := false
 	for _, r := range utf16Runes {
 		if r >= 0xD800 && r <= 0xDFFF {
@@ -90,28 +91,28 @@ func tryUTF16LE(s string) ([]byte, bool) {
 		return nil, false
 	}
 
-	// 转换为小端字节序
+	// Convert to Little Endian byte order
 	buf := make([]byte, 2*len(utf16Runes))
 	for i, r := range utf16Runes {
-		buf[2*i] = byte(r)
-		buf[2*i+1] = byte(r >> 8)
+		buf[2*i] = byte(r)        // Low byte
+		buf[2*i+1] = byte(r >> 8) // High byte
 	}
 	return buf, true
 }
 
-// 具体编码写入方法
+// Specific encoding write methods
 func writeLatin1(buf *ByteBuffer, s string) error {
 	length := len(s)
-	header := (uint64(length) << 2) | encodingLatin1
+	header := (uint64(length) << 2) | encodingLatin1 // Pack length and encoding
 
 	buf.WriteVarUint64(header)
-	buf.WriteBinary(unsafeGetBytes(s)) // 直接使用底层字节（Latin1字符在Go中与UTF-8兼容）
+	buf.WriteBinary(unsafeGetBytes(s)) // Directly use underlying bytes (Latin1 chars are compatible with UTF-8 in Go)
 	return nil
 }
 
 func writeUTF16LE(buf *ByteBuffer, data []byte) error {
-	length := len(data) / 2
-	header := (uint64(length) << 3) | encodingUTF16LE
+	length := len(data) / 2 // Character count (2 bytes per char)
+	header := (uint64(length) << 2) | encodingUTF16LE
 
 	buf.WriteVarUint64(header)
 	buf.WriteBinary(data)
@@ -127,16 +128,17 @@ func writeUTF8(buf *ByteBuffer, s string) error {
 	return nil
 }
 
-// 具体编码读取方法
+// Specific encoding read methods
 func readLatin1(buf *ByteBuffer, size int) string {
 	data := buf.ReadBinary(size)
-	return string(data) // Go会自动处理Latin1到UTF-8的转换
+	return string(data) // Go automatically handles Latin1 to UTF-8 conversion
 }
 
 func readUTF16LE(buf *ByteBuffer, charCount int) string {
 	byteCount := charCount * 2
 	data := buf.ReadBinary(byteCount)
 
+	// Reconstruct UTF-16 code units
 	u16s := make([]uint16, charCount)
 	for i := 0; i < byteCount; i += 2 {
 		u16s[i/2] = uint16(data[i]) | uint16(data[i+1])<<8
@@ -147,5 +149,5 @@ func readUTF16LE(buf *ByteBuffer, charCount int) string {
 
 func readUTF8(buf *ByteBuffer, size int) string {
 	data := buf.ReadBinary(size)
-	return string(data)
+	return string(data) // Direct UTF-8 conversion
 }

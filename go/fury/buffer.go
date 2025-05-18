@@ -90,22 +90,6 @@ func (b *ByteBuffer) WriteInt32(value int32) {
 	b.writerIndex += 4
 }
 
-//func (b *ByteBuffer) WriteVarUint32(value uint32) error {
-//    // Ensure enough capacity (max 5 bytes for varint32)
-//    b.grow(5)
-//
-//    // Varint encoding
-//    for value >= 0x80 {
-//        b.data[b.writerIndex] = byte(value) | 0x80
-//        b.writerIndex++
-//        value >>= 7
-//    }
-//    b.data[b.writerIndex] = byte(value)
-//    b.writerIndex++
-//
-//    return nil
-//}
-
 func (b *ByteBuffer) WriteLength(value int) {
 	b.grow(4)
 	if value >= MaxInt32 {
@@ -337,48 +321,19 @@ func (b *ByteBuffer) ReadVarInt32() int32 {
 	return result
 }
 
-//func (b *ByteBuffer) ReadVarUint32() uint32 {
-//	readerIndex := b.readerIndex
-//	byte_ := uint32(b.data[readerIndex])
-//	readerIndex++
-//	result := byte_ & 0x7F
-//	if (byte_ & 0x80) != 0 {
-//		byte_ = uint32(b.data[readerIndex])
-//		readerIndex++
-//		result |= (byte_ & 0x7F) << 7
-//		if (byte_ & 0x80) != 0 {
-//			byte_ = uint32(b.data[readerIndex])
-//			readerIndex++
-//			result |= (byte_ & 0x7F) << 14
-//			if (byte_ & 0x80) != 0 {
-//				byte_ = uint32(b.data[readerIndex])
-//				readerIndex++
-//				result |= (byte_ & 0x7F) << 21
-//				if (byte_ & 0x80) != 0 {
-//					byte_ = uint32(b.data[readerIndex])
-//					readerIndex++
-//					result |= (byte_ & 0x7F) << 28
-//				}
-//			}
-//		}
-//	}
-//	b.readerIndex = readerIndex
-//	return result
-//}
-
 type BufferObject interface {
 	TotalBytes() int
 	WriteTo(buf *ByteBuffer)
 	ToBuffer() *ByteBuffer
 }
 
-// WriteVarint64 写入zig-zag编码的varint
+// WriteVarint64 writes the zig-zag encoded varint
 func (b *ByteBuffer) WriteVarint64(value int64) {
 	u := uint64((value << 1) ^ (value >> 63))
 	b.WriteVarUint64(u)
 }
 
-// WriteVarUint64 写入无符号varint（最多9字节）
+// WriteVarUint64 writes to unsigned varint (up to 9 bytes)
 func (b *ByteBuffer) WriteVarUint64(value uint64) {
 	b.grow(9)
 	offset := b.writerIndex
@@ -394,14 +349,14 @@ func (b *ByteBuffer) WriteVarUint64(value uint64) {
 		}
 		data[i] |= 0x80
 	}
-	if i == 8 { // 需要第9字节
+	if i == 8 {
 		data[8] = byte(value)
 		i = 9
 	}
 	b.writerIndex += i
 }
 
-// ReadVarint64 读取zig-zag编码的varint
+// ReadVarint64 reads the varint encoded with zig-zag
 func (b *ByteBuffer) ReadVarint64() int64 {
 	u := b.ReadVarUint64()
 	v := int64(u >> 1)
@@ -411,7 +366,7 @@ func (b *ByteBuffer) ReadVarint64() int64 {
 	return v
 }
 
-// ReadVarUint64 读取无符号varint
+// ReadVarUint64 reads unsigned varint
 func (b *ByteBuffer) ReadVarUint64() uint64 {
 	if b.remaining() >= 9 {
 		return b.readVarUint64Fast()
@@ -419,7 +374,7 @@ func (b *ByteBuffer) ReadVarUint64() uint64 {
 	return b.readVarUint64Slow()
 }
 
-// 快速路径（剩余字节足够时）
+// Fast path (when the remaining bytes are sufficient)
 func (b *ByteBuffer) readVarUint64Fast() uint64 {
 	data := b.data[b.readerIndex:]
 	var result uint64
@@ -480,7 +435,7 @@ func (b *ByteBuffer) readVarUint64Fast() uint64 {
 	return result
 }
 
-// 慢速路径（逐个字节读取）
+// Slow path (read byte by byte)
 func (b *ByteBuffer) readVarUint64Slow() uint64 {
 	var result uint64
 	var shift uint
@@ -498,7 +453,7 @@ func (b *ByteBuffer) readVarUint64Slow() uint64 {
 	return result
 }
 
-// 辅助方法
+// Auxiliary function
 func (b *ByteBuffer) remaining() int {
 	return len(b.data) - b.readerIndex
 }
@@ -532,7 +487,7 @@ func (b *ByteBuffer) WriteVarUint32(value uint32) {
 		}
 		data[i] |= 0x80
 	}
-	if i == 4 { // 需要第5字节
+	if i == 4 {
 		data[4] = byte(value)
 		i = 5
 	}
@@ -555,7 +510,7 @@ func (b *ByteBuffer) ReadVarUint32() uint32 {
 	return b.readVarUint32Slow()
 }
 
-// 快速路径读取（剩余字节足够时）
+// Fast path reading (when the remaining bytes are sufficient)
 func (b *ByteBuffer) readVarUint32Fast() uint32 {
 	data := b.data[b.readerIndex:]
 	var result uint32
@@ -592,7 +547,7 @@ func (b *ByteBuffer) readVarUint32Fast() uint32 {
 	return result
 }
 
-// 慢速路径读取（逐个字节处理）
+// Slow path reading (processing byte by byte)
 func (b *ByteBuffer) readVarUint32Slow() uint32 {
 	var result uint32
 	var shift uint

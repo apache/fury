@@ -228,20 +228,6 @@ func (s ptrToStringSerializer) Read(f *Fury, buf *ByteBuffer, type_ reflect.Type
 	return nil
 }
 
-//func writeString(buf *ByteBuffer, value string) error {
-//	strBytes := unsafeGetBytes(value)
-//	if len(strBytes) >= MaxInt32 {
-//		return fmt.Errorf("too long string: %d", len(strBytes))
-//	}
-//	buf.WriteVarInt32(int32(len(strBytes)))
-//	buf.WriteBinary(strBytes)
-//	return nil
-//}
-//
-//func readString(buf *ByteBuffer) string {
-//	return string(readStringBytes(buf))
-//}
-
 func readStringBytes(buf *ByteBuffer) []byte {
 	return buf.ReadBinary(int(buf.ReadVarInt32()))
 }
