@@ -229,13 +229,6 @@ func (s sliceSerializer) readDifferentTypes(f *Fury, buf *ByteBuffer, value refl
 	return nil
 }
 
-// 辅助方法
-func getDeclaredElementType(f *Fury, sliceType reflect.Type) reflect.Type {
-	// 实现类型声明检测逻辑
-	// 例如通过注册信息或类型参数获取
-	return nil
-}
-
 // 辅助函数
 func isNull(v reflect.Value) bool {
 	switch v.Kind() {

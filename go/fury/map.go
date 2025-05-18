@@ -124,7 +124,7 @@ func (s mapSerializer) Write(f *Fury, buf *ByteBuffer, value reflect.Value) erro
 
 		if valueSerializer == nil {
 			//valueType := val.Type()
-			valueClassInfo, _ := getActualTypeInfo(key, classResolver)
+			valueClassInfo, _ := getActualTypeInfo(val, classResolver)
 			if err := classResolver.writeTypeInfo(buf, valueClassInfo); err != nil {
 				return err
 			}
@@ -146,14 +146,15 @@ func (s mapSerializer) Write(f *Fury, buf *ByteBuffer, value reflect.Value) erro
 		chunkSize := 0
 
 		// 序列化相同类型的元素
-		keyType := key.Type()
-		valueType := val.Type()
+		keyType := getActualType(key)
+		valueType := getActualType(val)
 		for chunkSize < MAX_CHUNK_SIZE {
-			if !isValid(key) || !isValid(val) || key.Type() != keyType || val.Type() != valueType {
+			if !isValid(key) || !isValid(val) || getActualType(key) != keyType || getActualType(val) != valueType {
 				break
 			}
 
 			// 写key
+			key = UnwrapReflectValue(key)
 			if f.referenceTracking {
 				if written, err := refResolver.WriteRefOrNull(buf, key); err != nil {
 					return err
@@ -169,6 +170,7 @@ func (s mapSerializer) Write(f *Fury, buf *ByteBuffer, value reflect.Value) erro
 			}
 
 			// 写value
+			val = UnwrapReflectValue(val)
 			if f.referenceTracking {
 				if written, err := refResolver.WriteRefOrNull(buf, val); err != nil {
 					return err
@@ -192,6 +194,8 @@ func (s mapSerializer) Write(f *Fury, buf *ByteBuffer, value reflect.Value) erro
 			}
 		}
 
+		keySerializer = nil
+		valueSerializer = nil
 		// 更新chunk size
 		buf.PutUint8(chunkHeaderOffset+1, uint8(chunkSize))
 	}
@@ -215,6 +219,13 @@ func getActualTypeInfo(v reflect.Value, resolver *typeResolver) (TypeInfo, error
 		return resolver.getTypeInfo(elem, true)
 	}
 	return resolver.getTypeInfo(v, true)
+}
+
+func UnwrapReflectValue(v reflect.Value) reflect.Value {
+	for v.Kind() == reflect.Interface && !v.IsNil() {
+		v = v.Elem()
+	}
+	return v
 }
 
 func (s mapSerializer) Read(f *Fury, buf *ByteBuffer, typ reflect.Type, value reflect.Value) error {
