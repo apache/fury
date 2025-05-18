@@ -33,7 +33,7 @@ type structSerializer struct {
 }
 
 func (s *structSerializer) TypeId() TypeId {
-	return -FURY_TYPE_TAG
+	return NAMED_STRUCT
 }
 
 func (s *structSerializer) Write(f *Fury, buf *ByteBuffer, value reflect.Value) error {

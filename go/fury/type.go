@@ -453,7 +453,8 @@ func (r *typeResolver) getSerializerByTypeTag(typeTag string) (Serializer, error
 
 func (r *typeResolver) getTypeInfo(value reflect.Value, create bool) (TypeInfo, error) {
 	// First check if type info exists in cache
-	if info, ok := r.classesInfo[value.Type().String()]; ok {
+	typeString := value.Type().String()
+	if info, ok := r.classesInfo[typeString]; ok {
 		if info.Serializer == nil {
 			// Lazy initialize serializer if not created yet
 			serializer, err := r.createSerializer(value.Type())
@@ -496,6 +497,9 @@ func (r *typeResolver) getTypeInfo(value reflect.Value, create bool) (TypeInfo, 
 		typeID = r.allocateTypeID()
 	default:
 		fmt.Errorf("type %v must be registered explicitly", typ)
+	}
+	if value.Kind() == reflect.Struct {
+		typeID = NAMED_STRUCT
 	}
 
 	// Register the type with full metadata
@@ -589,6 +593,18 @@ func (r *typeResolver) registerType(
 	}
 
 	return typeInfo, fmt.Errorf("registerType error")
+}
+
+func isStructPtr(val reflect.Value) bool {
+
+	// 检查是否是指针类型
+	if val.Kind() != reflect.Ptr {
+		return false
+	}
+
+	// 检查指针指向的类型是否是结构体
+	elem := val.Elem()
+	return elem.Kind() == reflect.Struct
 }
 
 // allocateTypeID
