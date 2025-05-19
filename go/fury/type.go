@@ -269,14 +269,14 @@ type typeResolver struct {
 
 	// Type tracking
 	dynamicWrittenMetaStr []string
-	typeIDToClassInfo     map[int32]TypeInfo
+	typeIDToTypeInfo      map[int32]TypeInfo
 	typeIDCounter         int32
 	dynamicWriteStringID  int32
 
 	// Class registries
-	classesInfo          map[string]TypeInfo
-	nsTypeToClassInfo    map[nsTypeKey]TypeInfo
-	namedTypeToClassInfo map[namedTypeKey]TypeInfo
+	typesInfo           map[string]TypeInfo
+	nsTypeToTypeInfo    map[nsTypeKey]TypeInfo
+	namedTypeToTypeInfo map[namedTypeKey]TypeInfo
 
 	// Encoders/Decoders
 	namespaceEncoder *meta.Encoder
@@ -306,13 +306,13 @@ func newTypeResolver(fury *Fury) *typeResolver {
 		hashToClassInfo:  make(map[uint64]TypeInfo),
 
 		dynamicWrittenMetaStr: make([]string, 0),
-		typeIDToClassInfo:     make(map[int32]TypeInfo),
+		typeIDToTypeInfo:      make(map[int32]TypeInfo),
 		typeIDCounter:         300,
 		dynamicWriteStringID:  0,
 
-		classesInfo:          make(map[string]TypeInfo),
-		nsTypeToClassInfo:    make(map[nsTypeKey]TypeInfo),
-		namedTypeToClassInfo: make(map[namedTypeKey]TypeInfo),
+		typesInfo:           make(map[string]TypeInfo),
+		nsTypeToTypeInfo:    make(map[nsTypeKey]TypeInfo),
+		namedTypeToTypeInfo: make(map[namedTypeKey]TypeInfo),
 
 		namespaceEncoder: meta.NewEncoder('.', '_'),
 		namespaceDecoder: meta.NewDecoder('.', '_'),
@@ -453,7 +453,8 @@ func (r *typeResolver) getSerializerByTypeTag(typeTag string) (Serializer, error
 
 func (r *typeResolver) getTypeInfo(value reflect.Value, create bool) (TypeInfo, error) {
 	// First check if type info exists in cache
-	if info, ok := r.classesInfo[value.Type().String()]; ok {
+	typeString := value.Type().String()
+	if info, ok := r.typesInfo[typeString]; ok {
 		if info.Serializer == nil {
 			// Lazy initialize serializer if not created yet
 			serializer, err := r.createSerializer(value.Type())
@@ -496,6 +497,10 @@ func (r *typeResolver) getTypeInfo(value reflect.Value, create bool) (TypeInfo, 
 		typeID = r.allocateTypeID()
 	default:
 		fmt.Errorf("type %v must be registered explicitly", typ)
+	}
+	// TThere are still some problems in order to adapt the struct
+	if value.Kind() == reflect.Struct {
+		typeID = NAMED_STRUCT
 	}
 
 	// Register the type with full metadata
@@ -574,18 +579,18 @@ func (r *typeResolver) registerType(
 
 	// Update resolver caches:
 	tname := typ.String()
-	r.classesInfo[tname] = typeInfo // Cache by type string
+	r.typesInfo[tname] = typeInfo // Cache by type string
 
 	if typeName != "" {
 		// Cache by namespace/name pair
-		r.namedTypeToClassInfo[[2]string{namespace, typeName}] = typeInfo
+		r.namedTypeToTypeInfo[[2]string{namespace, typeName}] = typeInfo
 		// Cache by hashed namespace/name bytes
-		r.nsTypeToClassInfo[nsTypeKey{nsBytes.Hashcode, typeBytes.Hashcode}] = typeInfo
+		r.nsTypeToTypeInfo[nsTypeKey{nsBytes.Hashcode, typeBytes.Hashcode}] = typeInfo
 	}
 
 	// Cache by type ID (for cross-language support)
 	if r.language == XLANG || !IsNamespacedType(TypeId(typeID)) {
-		r.typeIDToClassInfo[typeID] = typeInfo
+		r.typeIDToTypeInfo[typeID] = typeInfo
 	}
 
 	return typeInfo, fmt.Errorf("registerType error")
@@ -612,9 +617,7 @@ func (r *typeResolver) writeTypeInfo(buffer *ByteBuffer, typeInfo TypeInfo) erro
 	internalTypeID := typeID & 0xFF
 
 	// Write the type ID to buffer (variable-length encoding)
-	if err := buffer.WriteVarUint32(uint32(typeID)); err != nil {
-		return err
-	}
+	buffer.WriteVarUint32(uint32(typeID))
 
 	// For namespaced types, write additional metadata:
 	if IsNamespacedType(TypeId(internalTypeID)) {
@@ -871,7 +874,7 @@ func (r *typeResolver) readTypeInfo(buffer *ByteBuffer) (TypeInfo, error) {
 
 		compositeKey := nsTypeKey{nsBytes.Hashcode, typeBytes.Hashcode}
 		var typeInfo TypeInfo
-		if typeInfo, exists := r.nsTypeToClassInfo[compositeKey]; exists {
+		if typeInfo, exists := r.nsTypeToTypeInfo[compositeKey]; exists {
 			return typeInfo, nil
 		}
 
@@ -887,8 +890,8 @@ func (r *typeResolver) readTypeInfo(buffer *ByteBuffer) (TypeInfo, error) {
 		}
 
 		nameKey := [2]string{ns, typeName}
-		if typeInfo, exists := r.namedTypeToClassInfo[nameKey]; exists {
-			r.nsTypeToClassInfo[compositeKey] = typeInfo
+		if typeInfo, exists := r.namedTypeToTypeInfo[nameKey]; exists {
+			r.nsTypeToTypeInfo[compositeKey] = typeInfo
 			return typeInfo, nil
 		}
 
@@ -902,7 +905,7 @@ func (r *typeResolver) readTypeInfo(buffer *ByteBuffer) (TypeInfo, error) {
 
 	// Handle simple type IDs (non-namespaced types)
 
-	if typeInfo, exists := r.typeIDToClassInfo[typeID]; exists {
+	if typeInfo, exists := r.typeIDToTypeInfo[typeID]; exists {
 		return typeInfo, nil
 	}
 
@@ -924,6 +927,11 @@ func (r *typeResolver) getTypeById(id int16) (reflect.Type, error) {
 		return nil, fmt.Errorf("type of id %d not supported, supported types: %v", id, r.typeIdToType)
 	}
 	return type_, nil
+}
+
+func (r *typeResolver) getTypeInfoById(id int16) (TypeInfo, error) {
+	typeInfo := r.typeIDToTypeInfo[int32(id)]
+	return typeInfo, nil
 }
 
 func (r *typeResolver) writeMetaString(buffer *ByteBuffer, str string) error {

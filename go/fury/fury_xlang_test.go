@@ -15,9 +15,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-//go:build skiptest
-// +build skiptest
-
 package fury_test
 
 import (
@@ -228,6 +225,8 @@ type ComplexObject2 struct {
 }
 
 func TestSerializeSimpleStruct(t *testing.T) {
+	// Temporarily disabled
+	t.Skip()
 	fury_ := fury.NewFury(true)
 	require.Nil(t, fury_.RegisterTagType("test.ComplexObject2", ComplexObject2{}))
 	obj2 := &ComplexObject2{}
@@ -237,6 +236,8 @@ func TestSerializeSimpleStruct(t *testing.T) {
 }
 
 func TestSerializeComplexStruct(t *testing.T) {
+	// Temporarily disabled
+	t.Skip()
 	fury_ := fury.NewFury(true)
 	require.Nil(t, fury_.RegisterTagType("test.ComplexObject1", ComplexObject1{}))
 	require.Nil(t, fury_.RegisterTagType("test.ComplexObject2", ComplexObject2{}))
@@ -286,6 +287,8 @@ func structRoundBack(t *testing.T, fury_ *fury.Fury, obj interface{}, testName s
 }
 
 func TestOutOfBandBuffer(t *testing.T) {
+	// Temporarily disabled
+	t.Skip()
 	fury_ := fury.NewFury(true)
 	var data [][]byte
 	for i := 0; i < 10; i++ {
