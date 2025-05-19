@@ -11,9 +11,11 @@ Fury Java Benchmark contains benchmarks for:
 - Jsonb
 - Protobuf
 - Flatbuffers
+- Msgpack
 
 > Part of benchmark data is based on [Kryo benchmark](https://github.com/EsotericSoftware/kryo/tree/master/benchmarks).
 > Kryo benchmark suite is based on [Kryo benchmark](https://github.com/EsotericSoftware/kryo/tree/master/benchmarks).
+> The msgpack's official provides [msgpack-jackson](https://github.com/msgpack/msgpack-java/tree/main/msgpack-jackson) lib, but the performance is relatively poor. So, generate a basic [handwritten code](https://github.com/apache/fury/tree/main/java/benchmark/src/main/java/org/apache/fury/benchmark/util/MsgpackUtil.java) using qwen3(LLM). Then modify it.
 
 ## How to run
 

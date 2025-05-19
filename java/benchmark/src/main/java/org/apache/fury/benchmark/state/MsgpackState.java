@@ -26,7 +26,7 @@ import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.fury.benchmark.data.MediaContent;
 import org.apache.fury.benchmark.data.Sample;
-import org.apache.fury.benchmark.utils.MsgpackUtil;
+import org.apache.fury.benchmark.util.MsgpackUtil;
 import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.util.Preconditions;

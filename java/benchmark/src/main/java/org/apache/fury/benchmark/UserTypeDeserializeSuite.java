@@ -20,7 +20,18 @@
 package org.apache.fury.benchmark;
 
 import java.io.IOException;
-import org.apache.fury.benchmark.state.*;
+
+import org.apache.fury.benchmark.state.FlatBuffersState;
+import org.apache.fury.benchmark.state.FstState;
+import org.apache.fury.benchmark.state.FuryState;
+import org.apache.fury.benchmark.state.HessionState;
+import org.apache.fury.benchmark.state.JDKState;
+import org.apache.fury.benchmark.state.JsonbState;
+import org.apache.fury.benchmark.state.KryoState;
+import org.apache.fury.benchmark.state.MsgpackState;
+import org.apache.fury.benchmark.state.ObjectType;
+import org.apache.fury.benchmark.state.ProtoBuffersState;
+import org.apache.fury.benchmark.state.ProtostuffState;
 import org.apache.fury.memory.ByteBufferUtil;
 import org.openjdk.jmh.Main;
 import org.openjdk.jmh.annotations.Benchmark;
