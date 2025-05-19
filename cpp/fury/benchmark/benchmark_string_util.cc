@@ -34,15 +34,20 @@
  */
 
 // Generate random bytes (0x00 to 0xFF)
+std::mt19937 &getGenerator() {
+  static thread_local std::mt19937 generator(std::random_device{}());
+  return generator;
+}
+
 std::string generateRandom(size_t length) {
   std::string result;
   result.reserve(length);
 
-  std::mt19937 generator(std::random_device{}());
+  std::mt19937 &rng = getGenerator();
   std::uniform_int_distribution<unsigned short> distribution(0x00, 0xFF);
 
   for (size_t i = 0; i < length; ++i) {
-    result.push_back(static_cast<char>(distribution(generator)));
+    result.push_back(static_cast<char>(distribution(rng)));
   }
   return result;
 }
@@ -51,7 +56,7 @@ std::string generateRandom(size_t length) {
 std::string generateAscii(size_t length) {
   const char charset[] =
       "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  std::default_random_engine rng(std::random_device{}());
+  std::mt19937 &rng = getGenerator();
   std::uniform_int_distribution<> dist(0, sizeof(charset) - 2);
 
   std::string result;
@@ -67,11 +72,11 @@ std::u16string generateLatin1(size_t length) {
   std::u16string result;
   result.reserve(length);
 
-  std::mt19937 generator(std::random_device{}());
+  std::mt19937 &rng = getGenerator();
   std::uniform_int_distribution<uint16_t> distribution(0x00, 0xFF);
 
   for (size_t i = 0; i < length; ++i) {
-    result.push_back(static_cast<char16_t>(distribution(generator)));
+    result.push_back(static_cast<char16_t>(distribution(rng)));
   }
   return result;
 }
@@ -81,11 +86,11 @@ std::string generateUtf8(size_t length) {
   std::string result;
   result.reserve(length);
 
-  std::mt19937 generator(std::random_device{}());
+  std::mt19937 &rng = getGenerator();
   std::uniform_int_distribution<uint32_t> distribution(0, 0x10FFFF);
 
   while (result.size() < length) {
-    uint32_t code_point = distribution(generator);
+    uint32_t code_point = distribution(rng);
 
     // Skip surrogate pairs (0xD800 to 0xDFFF) and invalid Unicode code points
     if ((code_point >= 0xD800 && code_point <= 0xDFFF) ||
@@ -117,11 +122,11 @@ std::u16string generateUtf16(size_t length) {
   std::u16string result;
   result.reserve(length);
 
-  std::mt19937 generator(std::random_device{}());
+  std::mt19937 &rng = getGenerator();
   std::uniform_int_distribution<uint32_t> distribution(0, 0x10FFFF);
 
   while (result.size() < length) {
-    uint32_t code_point = distribution(generator);
+    uint32_t code_point = distribution(rng);
 
     // Skip surrogate pairs (0xD800 to 0xDFFF) and invalid Unicode code points
     if ((code_point >= 0xD800 && code_point <= 0xDFFF) ||
@@ -144,9 +149,16 @@ std::u16string generateUtf16(size_t length) {
 }
 
 /*
- *  TEST NUM
+ *  Number of test strings to generate.
+ *  Each benchmark will run on `num_tests` samples.
  */
 const size_t num_tests = 1000;
+
+/*
+ *  Target length when generating individual strings.
+ *  For ASCII, Latin-1, this is exact.
+ *  For UTF-8, UTF-16, actual string size may vary slightly.
+ */
 const size_t string_length = 1000;
 
 /*
@@ -156,8 +168,8 @@ const size_t string_length = 1000;
 std::vector<std::string> generateAsciiString(size_t num_tests,
                                              size_t string_length) {
   std::vector<std::string> test_strings;
-  for (size_t i = 0; i < string_length; ++i) {
-    test_strings.push_back(generateUtf8(num_tests));
+  for (size_t i = 0; i < num_tests; ++i) {
+    test_strings.push_back(generateAscii(string_length));
   }
   return test_strings;
 }
@@ -182,8 +194,8 @@ const std::vector<std::u16string> test_latin1_strings =
 std::vector<std::u16string> generateUTF16String(size_t num_tests,
                                                 size_t string_length) {
   std::vector<std::u16string> test_strings;
-  for (size_t i = 0; i < string_length; ++i) {
-    test_strings.push_back(generateUtf16(num_tests));
+  for (size_t i = 0; i < num_tests; ++i) {
+    test_strings.push_back(generateUtf16(string_length));
   }
   return test_strings;
 }
@@ -195,8 +207,8 @@ const std::vector<std::u16string> test_utf16_strings =
 std::vector<std::string> generateUTF8String(size_t num_tests,
                                             size_t string_length) {
   std::vector<std::string> test_strings;
-  for (size_t i = 0; i < string_length; ++i) {
-    test_strings.push_back(generateUtf8(num_tests));
+  for (size_t i = 0; i < num_tests; ++i) {
+    test_strings.push_back(generateUtf8(string_length));
   }
   return test_strings;
 }
@@ -226,7 +238,7 @@ bool isAscii_SIMDUTF(const std::string &str) {
 // Benchmark function for Baseline ASCII check
 static void BM_IsAscii_BaseLine(benchmark::State &state) {
   for (auto _ : state) {
-    for (const auto &str : test_ascii_strings) {
+    for (const std::string &str : test_ascii_strings) {
       bool result = isAscii_BaseLine(str);
       benchmark::DoNotOptimize(result); // Prevent compiler optimization
     }
@@ -238,7 +250,7 @@ BENCHMARK(BM_IsAscii_BaseLine);
 // Benchmark function for SIMDUTF ASCII check
 static void BM_IsAscii_SIMDUTF(benchmark::State &state) {
   for (auto _ : state) {
-    for (const auto &str : test_ascii_strings) {
+    for (const std::string &str : test_ascii_strings) {
       bool result = isAscii_SIMDUTF(str);
       benchmark::DoNotOptimize(result); // Prevent compiler optimization
     }
@@ -250,7 +262,7 @@ BENCHMARK(BM_IsAscii_SIMDUTF);
 // Benchmark function for SIMD ASCII check
 static void BM_IsAscii_FURY(benchmark::State &state) {
   for (auto _ : state) {
-    for (const auto &str : test_ascii_strings) {
+    for (const std::string &str : test_ascii_strings) {
       bool result = fury::isAscii(str);
       benchmark::DoNotOptimize(result); // Prevent compiler optimization
     }
@@ -288,7 +300,7 @@ bool isLatin1_SIMDUTF(const std::u16string &str) {
 // Benchmark function for Baseline Latin-1 check
 static void BM_IsLatin1_BaseLine(benchmark::State &state) {
   for (auto _ : state) {
-    for (const auto &str : test_latin1_strings) {
+    for (const std::u16string &str : test_latin1_strings) {
       bool result = isLatin1_BaseLine(str);
       benchmark::DoNotOptimize(result); // Prevent compiler optimization
     }
@@ -300,7 +312,7 @@ BENCHMARK(BM_IsLatin1_BaseLine);
 // Benchmark function for Optimized Latin-1 check
 static void BM_IsLatin1_SIMDUTF(benchmark::State &state) {
   for (auto _ : state) {
-    for (const auto &str : test_latin1_strings) {
+    for (const std::u16string &str : test_latin1_strings) {
       bool result = isLatin1_SIMDUTF(str);
       benchmark::DoNotOptimize(result); // Prevent compiler optimization
     }
@@ -312,7 +324,7 @@ BENCHMARK(BM_IsLatin1_SIMDUTF);
 // Benchmark function for Optimized Latin-1 check
 static void BM_IsLatin1_FURY(benchmark::State &state) {
   for (auto _ : state) {
-    for (const auto &str : test_latin1_strings) {
+    for (const std::u16string &str : test_latin1_strings) {
       bool result = fury::isLatin1(str);
       benchmark::DoNotOptimize(result); // Prevent compiler optimization
     }
@@ -338,7 +350,7 @@ bool utf16HasSurrogatePairs_BaseLine(const std::u16string &str) {
 // Benchmark function for checking if a UTF-16 string contains surrogate pairs
 static void BM_Utf16HasSurrogatePairs_BaseLine(benchmark::State &state) {
   for (auto _ : state) {
-    for (const auto &str : test_utf16_strings) {
+    for (const std::u16string &str : test_utf16_strings) {
       bool result = utf16HasSurrogatePairs_BaseLine(str);
       benchmark::DoNotOptimize(result); // Prevent compiler optimization
     }
@@ -351,7 +363,7 @@ BENCHMARK(BM_Utf16HasSurrogatePairs_BaseLine);
 // with SIMD
 static void BM_Utf16HasSurrogatePairs_FURY(benchmark::State &state) {
   for (auto _ : state) {
-    for (const auto &str : test_utf16_strings) {
+    for (const std::u16string &str : test_utf16_strings) {
       bool result = fury::utf16HasSurrogatePairs(str);
       benchmark::DoNotOptimize(result); // Prevent compiler optimization
     }
@@ -418,7 +430,7 @@ std::string utf16ToUtf8_SIMDUTF(const std::u16string &utf16,
 // Benchmark function for Standard Library UTF-16 to UTF-8 conversion
 static void BM_Utf16ToUtf8_StandardLibrary(benchmark::State &state) {
   for (auto _ : state) {
-    for (const auto &str : test_utf16_strings) {
+    for (const std::u16string &str : test_utf16_strings) {
       std::string utf8 = utf16ToUtf8StandardLibrary(str);
       benchmark::DoNotOptimize(
           utf8); // Prevents the compiler from optimizing away unused variables
@@ -431,7 +443,7 @@ BENCHMARK(BM_Utf16ToUtf8_StandardLibrary);
 // Benchmark function for Baseline UTF-16 to UTF-8 conversion
 static void BM_Utf16ToUtf8_BaseLine(benchmark::State &state) {
   for (auto _ : state) {
-    for (const auto &str : test_utf16_strings) {
+    for (const std::u16string &str : test_utf16_strings) {
       std::string utf8 = utf16ToUtf8BaseLine(str, true);
       benchmark::DoNotOptimize(
           utf8); // Prevents the compiler from optimizing away unused variables
@@ -444,7 +456,7 @@ BENCHMARK(BM_Utf16ToUtf8_BaseLine);
 // Benchmark function for SIMD-based UTF-16 to UTF-8 conversion
 static void BM_Utf16ToUtf8_SIMDUTF(benchmark::State &state) {
   for (auto _ : state) {
-    for (const auto &str : test_utf16_strings) {
+    for (const std::u16string &str : test_utf16_strings) {
       std::string utf8 = utf16ToUtf8_SIMDUTF(str, true);
       benchmark::DoNotOptimize(
           utf8); // Prevents the compiler from optimizing away unused variables
@@ -457,7 +469,7 @@ BENCHMARK(BM_Utf16ToUtf8_SIMDUTF);
 // Benchmark function for SIMD-based UTF-16 to UTF-8 conversion
 static void BM_Utf16ToUtf8_FURY(benchmark::State &state) {
   for (auto _ : state) {
-    for (const auto &str : test_utf16_strings) {
+    for (const std::u16string &str : test_utf16_strings) {
       std::string utf8 = fury::utf16ToUtf8(str, true);
       benchmark::DoNotOptimize(
           utf8); // Prevents the compiler from optimizing away unused variables
@@ -572,19 +584,20 @@ std::u16string utf8ToUtf16_SIMDUTF(const std::string &utf8,
 // Benchmark function for Standard Library UTF-8 to UTF-16 conversion
 static void BM_Utf8ToUtf16_StandardLibrary(benchmark::State &state) {
   for (auto _ : state) {
-    for (const auto &str : test_utf8_strings) {
+    for (const std::string &str : test_utf8_strings) {
       std::u16string utf16 = utf8ToUtf16StandardLibrary(str);
       benchmark::DoNotOptimize(
           utf16); // Prevents the compiler from optimizing away unused variables
     }
   }
 }
+
 BENCHMARK(BM_Utf8ToUtf16_StandardLibrary);
 
 // Benchmark function for Baseline UTF-8 to UTF-16 conversion
 static void BM_Utf8ToUtf16_BaseLine(benchmark::State &state) {
   for (auto _ : state) {
-    for (const auto &str : test_utf8_strings) {
+    for (const std::string &str : test_utf8_strings) {
       std::u16string utf16 = utf8ToUtf16BaseLine(str, true);
       benchmark::DoNotOptimize(
           utf16); // Prevents the compiler from optimizing away unused variables
@@ -597,7 +610,7 @@ BENCHMARK(BM_Utf8ToUtf16_BaseLine);
 // Benchmark function for SIMD-based UTF-8 to UTF-16 conversion
 static void BM_Utf8ToUtf16_SIMDUTF(benchmark::State &state) {
   for (auto _ : state) {
-    for (const auto &str : test_utf8_strings) {
+    for (const std::string &str : test_utf8_strings) {
       std::u16string utf16 = utf8ToUtf16_SIMDUTF(str, true);
       benchmark::DoNotOptimize(
           utf16); // Prevents the compiler from optimizing away unused variables
@@ -610,7 +623,7 @@ BENCHMARK(BM_Utf8ToUtf16_SIMDUTF);
 // Benchmark function for SIMD-based UTF-8 to UTF-16 conversion
 static void BM_Utf8ToUtf16_FURY(benchmark::State &state) {
   for (auto _ : state) {
-    for (const auto &str : test_utf8_strings) {
+    for (const std::string &str : test_utf8_strings) {
       std::u16string utf16 = fury::utf8ToUtf16(str, true);
       benchmark::DoNotOptimize(
           utf16); // Prevents the compiler from optimizing away unused variables
