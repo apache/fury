@@ -148,17 +148,16 @@ std::u16string generateUtf16(size_t length) {
   return result;
 }
 
-
 /*
- * Number of test strings to generate.
- * Each benchmark will run on `num_tests` samples.
+ *  Number of test strings to generate.
+ *  Each benchmark will run on `num_tests` samples.
  */
 const size_t num_tests = 1000;
 
 /*
- * Target length when generating individual strings.
- * For single-byte encodings (ASCII, Latin-1), this is exact.
- * For multibyte encodings (UTF-8, UTF-16), actual string size may vary slightly.
+ *  Target length when generating individual strings.
+ *  For single-byte encodings (ASCII, Latin-1), this is exact.
+ *  For multibyte encodings (UTF-8, UTF-16), actual string size may vary slightly.
  */
 const size_t string_length = 1000;
 
@@ -592,6 +591,7 @@ static void BM_Utf8ToUtf16_StandardLibrary(benchmark::State &state) {
     }
   }
 }
+
 BENCHMARK(BM_Utf8ToUtf16_StandardLibrary);
 
 // Benchmark function for Baseline UTF-8 to UTF-16 conversion
