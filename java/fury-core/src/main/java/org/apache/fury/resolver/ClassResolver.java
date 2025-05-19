@@ -38,6 +38,7 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Field;
+import java.lang.reflect.Member;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -262,7 +263,7 @@ public class ClassResolver implements TypeResolver {
     // Tuple2<Class, Class>: Tuple2<From Class, To Class>
     private final Map<Tuple2<Class<?>, Class<?>>, ClassInfo> transformedClassInfo = new HashMap<>();
     // TODO(chaokunyang) Better to  use soft reference, see ObjectStreamClass.
-    private final ConcurrentHashMap<Tuple2<Class<?>, Boolean>, SortedMap<Field, Descriptor>>
+    private final ConcurrentHashMap<Tuple2<Class<?>, Boolean>, SortedMap<Member, Descriptor>>
         descriptorsCache = new ConcurrentHashMap<>();
     private ClassChecker classChecker = (classResolver, className) -> true;
     private GenericType objectGenericType;
@@ -873,6 +874,7 @@ public class ClassResolver implements TypeResolver {
   }
 
   /** Get or create serializer for <code>cls</code>. */
+  @Override
   @SuppressWarnings("unchecked")
   public <T> Serializer<T> getSerializer(Class<T> cls) {
     Preconditions.checkNotNull(cls);
@@ -1187,8 +1189,20 @@ public class ClassResolver implements TypeResolver {
     return fieldResolver;
   }
 
+  public List<Descriptor> getFieldDescriptors(Class<?> clz, boolean searchParent) {
+    SortedMap<Member, Descriptor> allDescriptors = getAllDescriptorsMap(clz, searchParent);
+    List<Descriptor> result = new ArrayList<>(allDescriptors.size());
+    allDescriptors.forEach(
+        (member, descriptor) -> {
+          if (member instanceof Field) {
+            result.add(descriptor);
+          }
+        });
+    return result;
+  }
+
   // thread safe
-  public SortedMap<Field, Descriptor> getAllDescriptorsMap(Class<?> clz, boolean searchParent) {
+  public SortedMap<Member, Descriptor> getAllDescriptorsMap(Class<?> clz, boolean searchParent) {
     // when jit thread query this, it is already built by serialization main thread.
     return extRegistry.descriptorsCache.computeIfAbsent(
         Tuple2.of(clz, searchParent), t -> Descriptor.getAllDescriptorsMap(clz, searchParent));
@@ -1198,6 +1212,7 @@ public class ClassResolver implements TypeResolver {
    * Whether to track reference for this type. If false, reference tracing of subclasses may be
    * ignored too.
    */
+  @Override
   public boolean needToWriteRef(TypeRef<?> typeRef) {
     Object extInfo = typeRef.getExtInfo();
     if (extInfo instanceof TypeExtMeta) {
@@ -1239,6 +1254,7 @@ public class ClassResolver implements TypeResolver {
   }
 
   /** Get classinfo by cache, update cache if miss. */
+  @Override
   public ClassInfo getClassInfo(Class<?> cls, ClassInfoHolder classInfoHolder) {
     ClassInfo classInfo = classInfoHolder.classInfo;
     if (classInfo.getCls() != cls) {
@@ -1439,6 +1455,7 @@ public class ClassResolver implements TypeResolver {
   // }
 
   /** Write classname for java serialization. */
+  @Override
   public void writeClassInfo(MemoryBuffer buffer, ClassInfo classInfo) {
     if (metaContextShareEnabled) {
       // FIXME(chaokunyang) Register class but not register serializer can't be used with
@@ -1835,6 +1852,7 @@ public class ClassResolver implements TypeResolver {
   }
 
   /** Read class info, update classInfoHolder if cache not hit. */
+  @Override
   @CodegenInvoke
   public ClassInfo readClassInfo(MemoryBuffer buffer, ClassInfoHolder classInfoHolder) {
     if (metaContextShareEnabled) {
@@ -1986,6 +2004,7 @@ public class ClassResolver implements TypeResolver {
 
   public void resetWrite() {}
 
+  @Override
   public GenericType buildGenericType(TypeRef<?> typeRef) {
     return GenericType.build(
         typeRef,
@@ -1998,6 +2017,7 @@ public class ClassResolver implements TypeResolver {
         });
   }
 
+  @Override
   public GenericType buildGenericType(Type type) {
     GenericType genericType = extRegistry.genericTypes.get(type);
     if (genericType != null) {
@@ -2030,10 +2050,12 @@ public class ClassResolver implements TypeResolver {
   }
 
   // Invoked by fury JIT.
+  @Override
   public ClassInfo nilClassInfo() {
     return new ClassInfo(this, null, null, NO_CLASS_ID, NOT_SUPPORT_XLANG);
   }
 
+  @Override
   public ClassInfoHolder nilClassInfoHolder() {
     return new ClassInfoHolder(nilClassInfo());
   }

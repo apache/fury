@@ -55,7 +55,7 @@ class TypeDefEncoder {
     DescriptorGrouper descriptorGrouper =
         fury.getClassResolver()
             .createDescriptorGrouper(
-                fury.getClassResolver().getAllDescriptorsMap(type, true).values(),
+                fury.getClassResolver().getFieldDescriptors(type, true),
                 false,
                 Function.identity());
     List<Field> fields =

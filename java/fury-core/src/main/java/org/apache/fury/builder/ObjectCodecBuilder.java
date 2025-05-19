@@ -96,7 +96,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
                       .getClassDef(beanClass, true)
                       .getDescriptors(classResolver, beanClass));
     } else {
-      descriptors = fury.getClassResolver().getAllDescriptorsMap(beanClass, true).values();
+      descriptors = fury.getClassResolver().getFieldDescriptors(beanClass, true);
     }
     DescriptorGrouper grouper = classResolver.createDescriptorGrouper(descriptors, false);
     descriptors = grouper.getSortedDescriptors();

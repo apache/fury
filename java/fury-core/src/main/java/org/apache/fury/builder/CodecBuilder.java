@@ -67,7 +67,6 @@ import org.apache.fury.util.StringUtils;
 import org.apache.fury.util.function.Functions;
 import org.apache.fury.util.record.RecordComponent;
 import org.apache.fury.util.record.RecordUtils;
-import sun.misc.Unsafe;
 
 /**
  * Base builder for generating code to serialize java bean in row-format or object stream format.
@@ -93,6 +92,7 @@ public abstract class CodecBuilder {
   protected final TypeRef<?> beanType;
   protected final Class<?> beanClass;
   protected final boolean isRecord;
+  protected final boolean isInterface;
   private final Set<String> duplicatedFields;
   protected Reference furyRef = new Reference(FURY_NAME, TypeRef.of(Fury.class));
   public static final Reference recordComponentDefaultValues =
@@ -105,10 +105,11 @@ public abstract class CodecBuilder {
     this.beanType = beanType;
     this.beanClass = getRawType(beanType);
     isRecord = RecordUtils.isRecord(beanClass);
+    isInterface = beanClass.isInterface();
     if (isRecord) {
       recordCtrAccessible = recordCtrAccessible(beanClass);
     }
-    duplicatedFields = Descriptor.getSortedDuplicatedFields(beanClass).keySet();
+    duplicatedFields = Descriptor.getSortedDuplicatedMembers(beanClass).keySet();
     // don't ctx.addImport beanClass, because it maybe causes name collide.
     ctx.reserveName(FURY_NAME);
     ctx.reserveName(ROOT_OBJECT_NAME);
@@ -191,6 +192,9 @@ public abstract class CodecBuilder {
     TypeRef<?> fieldType = descriptor.getTypeRef();
     Class<?> rawType = descriptor.getRawType();
     String fieldName = descriptor.getName();
+    if (isInterface) {
+      return new Invoke(inputBeanExpr, descriptor.getName(), fieldName, fieldType);
+    }
     if (isRecord) {
       return getRecordFieldValue(inputBeanExpr, descriptor);
     }
