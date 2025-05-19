@@ -22,6 +22,7 @@ package org.apache.fury.format.encoder;
 import static org.apache.fury.type.TypeUtils.CLASS_TYPE;
 import static org.apache.fury.type.TypeUtils.getRawType;
 
+import java.lang.reflect.Array;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.fury.Fury;
 import org.apache.fury.codegen.CodeGenerator;
@@ -43,9 +44,11 @@ public class ArrayEncoderBuilder extends BaseBinaryEncoderBuilder {
   private static final String FIELD_NAME = "field";
   private static final String ROOT_ARRAY_NAME = "array";
   private static final String ROOT_ARRAY_WRITER_NAME = "arrayWriter";
+  private static final String ROOT_EMPTY_ARRAY_NAME = "emptyArray";
 
   private static final TypeRef<Field> ARROW_FIELD_TYPE = TypeRef.of(Field.class);
   private final TypeRef<?> arrayToken;
+  private final Expression emptyArrayInstance;
 
   public ArrayEncoderBuilder(Class<?> arrayCls, Class<?> beanClass) {
     this(TypeRef.of(arrayCls), TypeRef.of(beanClass));
@@ -56,10 +59,27 @@ public class ArrayEncoderBuilder extends BaseBinaryEncoderBuilder {
     arrayToken = clsType;
     ctx.reserveName(ROOT_ARRAY_WRITER_NAME);
     ctx.reserveName(ROOT_ARRAY_NAME);
+    ctx.reserveName(ROOT_EMPTY_ARRAY_NAME);
 
     // add array class field
     Expression.Literal clsExpr = new Expression.Literal(getRawType(arrayToken), CLASS_TYPE);
     ctx.addField(true, Class.class.getName(), "arrayClass", clsExpr);
+    ctx.addField(
+        true,
+        ctx.type(beanType.getRawType()) + "[]",
+        ROOT_EMPTY_ARRAY_NAME,
+        new Expression.Cast(
+            new Expression.StaticInvoke(
+                Array.class,
+                "newInstance",
+                ROOT_EMPTY_ARRAY_NAME,
+                TypeRef.of(Object.class),
+                true,
+                false,
+                Expression.Literal.ofClass(beanType.getRawType()),
+                Expression.Literal.ofInt(0)),
+            TypeRef.of(Array.newInstance(beanType.getRawType(), 0).getClass())));
+    emptyArrayInstance = new Expression.Reference(ROOT_EMPTY_ARRAY_NAME);
   }
 
   @Override
@@ -128,7 +148,7 @@ public class ArrayEncoderBuilder extends BaseBinaryEncoderBuilder {
 
     Expression.Reference fieldExpr = new Expression.Reference(FIELD_NAME, ARROW_FIELD_TYPE, false);
     Expression listExpression =
-        serializeForArrayByWriter(array, arrayWriter, arrayToken, fieldExpr);
+        serializeForArrayByWriter(emptyArrayInstance, array, arrayWriter, arrayToken, fieldExpr);
 
     expressions.add(listExpression);
 
@@ -142,26 +162,29 @@ public class ArrayEncoderBuilder extends BaseBinaryEncoderBuilder {
    * Returns an expression that deserialize <code>row</code> as a java bean of type {@link
    * ArrayEncoderBuilder#beanClass}.
    */
+  @Override
   public Expression buildDecodeExpression() {
     Expression.ListExpression expressions = new Expression.ListExpression();
-    Expression collection = newCollection(arrayToken);
     Expression.Reference arrayRef =
         new Expression.Reference(ROOT_ARRAY_NAME, binaryArrayTypeToken, false);
+    Expression collection = newCollection(arrayRef, arrayToken);
 
     Expression value =
-        deserializeForCollection(arrayRef, collection, TypeUtils.getElementType(arrayToken));
+        arrayDeserializeForCollection(arrayRef, collection, TypeUtils.getElementType(arrayToken));
     expressions.add(value);
     expressions.add(new Expression.Return(collection));
     return expressions;
   }
 
-  private Expression deserializeForCollection(
+  private Expression arrayDeserializeForCollection(
       Expression arrayData, Expression collection, TypeRef<?> elemType) {
     ArrayDataForEach addElemsOp =
         new ArrayDataForEach(
             arrayData,
             elemType,
-            (i, value) -> new Expression.Invoke(collection, "add", deserializeFor(value, elemType)),
+            (i, value) ->
+                new Expression.Invoke(
+                    collection, "add", deserializeFor(emptyArrayInstance, value, elemType)),
             i -> new Expression.Invoke(collection, "add", ExpressionUtils.nullValue(elemType)));
     return new Expression.ListExpression(collection, addElemsOp, collection);
   }

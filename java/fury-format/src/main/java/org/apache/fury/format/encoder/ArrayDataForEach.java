@@ -30,6 +30,7 @@ import org.apache.fury.codegen.Expression;
 import org.apache.fury.codegen.Expression.AbstractExpression;
 import org.apache.fury.format.row.binary.BinaryArray;
 import org.apache.fury.format.row.binary.BinaryUtils;
+import org.apache.fury.format.type.CustomTypeEncoderRegistry;
 import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.Preconditions;
@@ -75,8 +76,17 @@ public class ArrayDataForEach extends AbstractExpression {
     super(inputArrayData);
     Preconditions.checkArgument(getRawType(inputArrayData.type()) == BinaryArray.class);
     this.inputArrayData = inputArrayData;
-    this.accessMethod = BinaryUtils.getElemAccessMethodName(elemType);
-    this.elemType = BinaryUtils.getElemReturnType(elemType);
+    TypeRef<?> accessType;
+    CustomCodec<?, ?> customEncoder =
+        CustomTypeEncoderRegistry.customTypeHandler()
+            .findCodec(BinaryArray.class, elemType.getRawType());
+    if (customEncoder == null) {
+      accessType = elemType;
+    } else {
+      accessType = TypeRef.of(customEncoder.encodedType());
+    }
+    this.accessMethod = BinaryUtils.getElemAccessMethodName(accessType);
+    this.elemType = BinaryUtils.getElemReturnType(accessType);
     this.notNullAction = notNullAction;
     this.nullAction = nullAction;
   }
