@@ -558,7 +558,7 @@ func (b *ByteBuffer) readVarUint32Slow() uint32 {
 			break
 		}
 		shift += 7
-		if shift >= 28 { // 32位最多需要5字节（28位）
+		if shift >= 28 {
 			panic("varuint32 overflow")
 		}
 	}

@@ -5,3 +5,22 @@ Fury is a blazingly fast multi-language serialization framework powered by just-
 Currently, Fury Go is implemented using reflection. In the future, we plan to implement a static code generator
 to generate serializer code ahead to speed up serialization, or implement a JIT framework which generate ASM
 instructions to speed up serialization.
+
+## How to test
+
+```bash
+cd go/fury
+go test -v
+go test -v fury_xlang_test.go
+```
+
+## Code Style
+
+```bash
+cd go/fury
+gofmt -s -w .
+```
+When using Go's gofmt -s -w . command on Windows, ensure your source files use Unix-style line endings (LF) instead of Windows-style (CRLF). Go tools expect LF by default, and mismatched line endings may cause unexpected behavior or unnecessary changes in version control.
+
+
+Before committing, you can use `git config core.autocrlf input` to take effect on future commits.
