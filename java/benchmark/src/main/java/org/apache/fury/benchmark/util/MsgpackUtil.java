@@ -33,9 +33,11 @@ import org.msgpack.core.MessagePacker;
 import org.msgpack.core.MessageUnpacker;
 
 /**
- * The msgpack's official provides {@link <a href="https://github.com/msgpack/msgpack-java/tree/main/msgpack-jackson">...</a>} lib, but the performance is relatively poor.
- * So, generate a basic handwritten code using qwen3(LLM). Then modify it.
- * */
+ * The msgpack's official provides {@link <a
+ * href="https://github.com/msgpack/msgpack-java/tree/main/msgpack-jackson">...</a>} lib, but the
+ * performance is relatively poor. So, generate a basic handwritten code using qwen3(LLM). Then
+ * modify it.
+ */
 public class MsgpackUtil {
 
   public static byte[] serialize(MediaContent mediaContent, ByteArrayOutputStream bos)
