@@ -34,7 +34,6 @@
  */
 
 // Generate random bytes (0x00 to 0xFF)
-
 std::mt19937 &getGenerator() {
   static thread_local std::mt19937 generator(std::random_device{}());
   return generator;
