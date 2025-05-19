@@ -60,6 +60,8 @@ cdef class Buffer:
 
     cpdef inline put_bool(self, uint32_t offset, c_bool v)
 
+    cpdef inline put_uint8(self, uint32_t offset, uint8_t v)
+
     cpdef inline put_int8(self, uint32_t offset, int8_t v)
 
     cpdef inline put_int16(self, uint32_t offset, int16_t v)
@@ -109,6 +111,8 @@ cdef class Buffer:
     cpdef inline skip(self, int32_t length)
 
     cpdef inline c_bool read_bool(self)
+
+    cpdef inline uint8_t read_uint8(self)
 
     cpdef inline int8_t read_int8(self)
 

@@ -19,19 +19,24 @@
 
 package org.apache.fury.meta;
 
-import static org.apache.fury.meta.ClassDef.COMPRESSION_FLAG;
-import static org.apache.fury.meta.ClassDef.SIZE_TWO_BYTES_FLAG;
+import static org.apache.fury.meta.ClassDef.COMPRESS_META_FLAG;
+import static org.apache.fury.meta.ClassDef.HAS_FIELDS_META_FLAG;
+import static org.apache.fury.meta.ClassDef.META_SIZE_MASKS;
 import static org.apache.fury.meta.ClassDefEncoder.BIG_NAME_THRESHOLD;
+import static org.apache.fury.meta.ClassDefEncoder.NUM_CLASS_THRESHOLD;
 import static org.apache.fury.meta.Encoders.fieldNameEncodings;
 import static org.apache.fury.meta.Encoders.pkgEncodings;
 import static org.apache.fury.meta.Encoders.typeNameEncodings;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.fury.collection.Tuple2;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.meta.ClassDef.FieldType;
 import org.apache.fury.meta.MetaString.Encoding;
 import org.apache.fury.resolver.ClassResolver;
+import org.apache.fury.resolver.TypeResolver;
+import org.apache.fury.serializer.NonexistentClass;
 import org.apache.fury.util.Preconditions;
 
 /**
@@ -40,32 +45,30 @@ import org.apache.fury.util.Preconditions;
  * href="https://fury.apache.org/docs/specification/fury_java_serialization_spec">...</a>
  */
 class ClassDefDecoder {
-  public static ClassDef decodeClassDef(ClassResolver classResolver, MemoryBuffer buffer, long id) {
-    boolean sizeTwoBytes = (id & SIZE_TWO_BYTES_FLAG) != 0;
-    MemoryBuffer encoded = MemoryBuffer.newHeapBuffer(32);
+  static Tuple2<byte[], byte[]> decodeClassDefBuf(
+      MemoryBuffer inputBuffer, TypeResolver resolver, long id) {
+    MemoryBuffer encoded = MemoryBuffer.newHeapBuffer(64);
     encoded.writeInt64(id);
-    int size;
-    if (sizeTwoBytes) {
-      size = buffer.readInt16() & 0xffff;
-      encoded.writeInt16((short) size);
-    } else {
-      size = buffer.readByte() & 0xff;
-      encoded.writeByte(size);
+    int size = (int) (id & META_SIZE_MASKS);
+    if (size == META_SIZE_MASKS) {
+      int moreSize = inputBuffer.readVarUint32Small14();
+      encoded.writeVarUint32(moreSize);
+      size += moreSize;
     }
-    byte[] encodedClassDef = buffer.readBytes(size);
+    byte[] encodedClassDef = inputBuffer.readBytes(size);
     encoded.writeBytes(encodedClassDef);
-    if ((id & COMPRESSION_FLAG) != 0) {
+    if ((id & COMPRESS_META_FLAG) != 0) {
       encodedClassDef =
-          classResolver
-              .getFury()
-              .getConfig()
-              .getMetaCompressor()
-              .decompress(encodedClassDef, 0, size);
+          resolver.getFury().getConfig().getMetaCompressor().decompress(encodedClassDef, 0, size);
     }
-    MemoryBuffer classDefBuf = MemoryBuffer.fromByteArray(encodedClassDef);
-    long header = id & 0xff;
-    int numClasses = (int) (header & 0b1111);
-    if (numClasses == 0b1111) {
+    return Tuple2.of(encodedClassDef, encoded.getBytes(0, encoded.writerIndex()));
+  }
+
+  public static ClassDef decodeClassDef(ClassResolver resolver, MemoryBuffer buffer, long id) {
+    Tuple2<byte[], byte[]> decoded = decodeClassDefBuf(buffer, resolver, id);
+    MemoryBuffer classDefBuf = MemoryBuffer.fromByteArray(decoded.f0);
+    int numClasses = classDefBuf.readByte();
+    if (numClasses == NUM_CLASS_THRESHOLD) {
       numClasses += classDefBuf.readVarUint32Small7();
     }
     numClasses += 1;
@@ -79,27 +82,37 @@ class ClassDefDecoder {
       boolean isRegistered = (currentClassHeader & 0b1) != 0;
       int numFields = currentClassHeader >>> 1;
       if (isRegistered) {
-        int registeredId = classDefBuf.readVarUint32Small7();
-        Class<?> cls = classResolver.getClassInfo((short) registeredId).getCls();
-        className = cls.getName();
-        classSpec = new ClassSpec(cls);
+        short registeredId = (short) classDefBuf.readVarUint32Small7();
+        if (resolver.getRegisteredClass(registeredId) == null) {
+          classSpec = new ClassSpec(NonexistentClass.NonexistentMetaShared.class);
+          className = classSpec.entireClassName;
+        } else {
+          Class<?> cls = resolver.getClassInfo(registeredId).getCls();
+          className = cls.getName();
+          classSpec = new ClassSpec(cls);
+        }
       } else {
         String pkg = readPkgName(classDefBuf);
         String typeName = readTypeName(classDefBuf);
         classSpec = Encoders.decodePkgAndClass(pkg, typeName);
         className = classSpec.entireClassName;
+        if (resolver.isRegisteredByName(className)) {
+          Class<?> cls = resolver.getRegisteredClass(className);
+          className = cls.getName();
+          classSpec = new ClassSpec(cls);
+        }
       }
-      List<ClassDef.FieldInfo> fieldInfos = readFieldsInfo(classDefBuf, className, numFields);
+      List<ClassDef.FieldInfo> fieldInfos =
+          readFieldsInfo(classDefBuf, resolver, className, numFields);
       classFields.addAll(fieldInfos);
     }
     Preconditions.checkNotNull(classSpec);
-    boolean isObjectType = (header & ClassDef.OBJECT_TYPE_FLAG) != 0;
-    return new ClassDef(
-        classSpec, classFields, isObjectType, id, encoded.getBytes(0, encoded.writerIndex()));
+    boolean hasFieldsMeta = (id & HAS_FIELDS_META_FLAG) != 0;
+    return new ClassDef(classSpec, classFields, hasFieldsMeta, id, decoded.f1);
   }
 
   private static List<ClassDef.FieldInfo> readFieldsInfo(
-      MemoryBuffer buffer, String className, int numFields) {
+      MemoryBuffer buffer, ClassResolver resolver, String className, int numFields) {
     List<ClassDef.FieldInfo> fieldInfos = new ArrayList<>(numFields);
     for (int i = 0; i < numFields; i++) {
       int header = buffer.readByte() & 0xff;
@@ -118,14 +131,15 @@ class ClassDefDecoder {
       Encoding encoding = fieldNameEncodings[encodingFlags];
       String fieldName = Encoders.FIELD_NAME_DECODER.decode(buffer.readBytes(size), encoding);
       boolean isMonomorphic = (header & 0b100) != 0;
+      boolean trackingRef = (header & 0b001) != 0;
       int typeId = buffer.readVarUint32Small14();
-      FieldType fieldType = FieldType.read(buffer, isMonomorphic, typeId);
+      FieldType fieldType = FieldType.read(buffer, resolver, isMonomorphic, trackingRef, typeId);
       fieldInfos.add(new ClassDef.FieldInfo(className, fieldName, fieldType));
     }
     return fieldInfos;
   }
 
-  private static String readPkgName(MemoryBuffer buffer) {
+  static String readPkgName(MemoryBuffer buffer) {
     // - Package name encoding(omitted when class is registered):
     //    - encoding algorithm: `UTF8/ALL_TO_LOWER_SPECIAL/LOWER_UPPER_DIGIT_SPECIAL`
     //    - Header: `6 bits size | 2 bits encoding flags`.
@@ -135,7 +149,7 @@ class ClassDefDecoder {
     return readName(Encoders.PACKAGE_DECODER, buffer, pkgEncodings);
   }
 
-  private static String readTypeName(MemoryBuffer buffer) {
+  static String readTypeName(MemoryBuffer buffer) {
     // - Class name encoding(omitted when class is registered):
     //     - encoding algorithm:
     // `UTF8/LOWER_UPPER_DIGIT_SPECIAL/FIRST_TO_LOWER_SPECIAL/ALL_TO_LOWER_SPECIAL`

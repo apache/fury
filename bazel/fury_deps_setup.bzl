@@ -145,8 +145,8 @@ def setup_deps():
     auto_http_archive(
         name = "cython",
         build_file = "@com_github_grpc_grpc//third_party:cython.BUILD",
-        url = "https://github.com/cython/cython/releases/download/3.0.0/Cython-3.0.0.tar.gz",
-        sha256 = "350b18f9673e63101dbbfcf774ee2f57c20ac4636d255741d76ca79016b1bd82",
+        url = "https://github.com/cython/cython/releases/download/3.1.0a1/cython-3.1.0a1.tar.gz",
+        sha256 = "35b53f6947c3133452b84f0f9703f222deb9b02874861427a45e63c891379440",
     )
     auto_http_archive(
         name = "com_google_googletest",
@@ -160,4 +160,9 @@ def setup_deps():
         urls = [
             "https://github.com/abseil/abseil-cpp/archive/20230125.3.tar.gz",
         ],
+    )
+    http_archive(
+        name = "compile_commands_extractor",
+        url = "https://github.com/hedronvision/bazel-compile-commands-extractor/archive/80ac7efb33a65f0cc627635e5b958ea3eb03231d.tar.gz",
+        strip_prefix = "bazel-compile-commands-extractor-80ac7efb33a65f0cc627635e5b958ea3eb03231d",
     )

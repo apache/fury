@@ -19,10 +19,11 @@
 
 import { hasBuffer } from "./util";
 
-let utf8Encoder: TextEncoder | null;
-let textDecoder: TextDecoder | null;
+const utf8Encoder = new TextEncoder();
+const utf8Decoder = new TextDecoder("utf-8");
+const utf16LEDecoder = new TextDecoder("utf-16le");
 
-export type SupportedEncodings = "latin1" | "utf8";
+export type SupportedEncodings = "latin1" | "utf8" | "utf16le";
 
 export interface PlatformBuffer extends Uint8Array {
   toString(encoding?: SupportedEncodings, start?: number, end?: number): string;
@@ -32,59 +33,55 @@ export interface PlatformBuffer extends Uint8Array {
 
 export class BrowserBuffer extends Uint8Array implements PlatformBuffer {
   write(string: string, offset: number, encoding: SupportedEncodings = "utf8"): void {
-    if (encoding === "latin1") {
-      return this.latin1Write(string, offset);
+    switch (encoding) {
+      case "utf8":
+        return this.utf8Write(string, offset);
+      case "utf16le":
+        return this.ucs2Write(string, offset);
+      case "latin1":
+        return this.latin1Write(string, offset);
+      default:
+        break;
     }
-    return this.utf8Write(string, offset);
+  }
+
+  private ucs2Write(string: string, offset: number): void {
+    for (let i = 0; i < string.length; i++) {
+      const codePoint = string.charCodeAt(i);
+      this[offset++] = codePoint & 0xFF;
+      this[offset++] = (codePoint >> 8) & 0xFF;
+    }
   }
 
   toString(encoding: SupportedEncodings = "utf8", start = 0, end = this.length): string {
-    if (encoding === "latin1") {
-      return this.latin1Slice(start, end);
+    switch (encoding) {
+      case "utf8":
+        return this.utf8Slice(start, end);
+      case "utf16le":
+        return this.utf16LESlice(start, end);
+      case "latin1":
+        return this.latin1Slice(start, end);
+      default:
+        return "";
     }
-    return this.utf8Slice(start, end);
   }
 
   static alloc(size: number) {
     return new BrowserBuffer(new Uint8Array(size));
   }
 
-  latin1Write(string: string, offset: number) {
+  private latin1Write(string: string, offset: number) {
     let index = 0;
     for (; index < string.length; index++) {
       this[offset++] = string.charCodeAt(index);
     }
   }
 
-  utf8Write(string: string, offset: number) {
-    let c1: number;
-    let c2: number;
-    for (let i = 0; i < string.length; ++i) {
-      c1 = string.charCodeAt(i);
-      if (c1 < 128) {
-        this[offset++] = c1;
-      } else if (c1 < 2048) {
-        this[offset++] = (c1 >> 6) | 192;
-        this[offset++] = (c1 & 63) | 128;
-      } else if (
-        (c1 & 0xfc00) === 0xd800
-        && ((c2 = string.charCodeAt(i + 1)) & 0xfc00) === 0xdc00
-      ) {
-        c1 = 0x10000 + ((c1 & 0x03ff) << 10) + (c2 & 0x03ff);
-        ++i;
-        this[offset++] = (c1 >> 18) | 240;
-        this[offset++] = ((c1 >> 12) & 63) | 128;
-        this[offset++] = ((c1 >> 6) & 63) | 128;
-        this[offset++] = (c1 & 63) | 128;
-      } else {
-        this[offset++] = (c1 >> 12) | 224;
-        this[offset++] = ((c1 >> 6) & 63) | 128;
-        this[offset++] = (c1 & 63) | 128;
-      }
-    }
+  private utf8Write(string: string, offset: number) {
+    utf8Encoder.encodeInto(string, this.subarray(offset));
   }
 
-  latin1Slice(start: number, end: number) {
+  private latin1Slice(start: number, end: number) {
     if (end - start < 1) {
       return "";
     }
@@ -95,16 +92,18 @@ export class BrowserBuffer extends Uint8Array implements PlatformBuffer {
     return str;
   }
 
-  utf8Slice(start: number, end: number) {
+  private utf16LESlice(start: number, end: number) {
     if (end - start < 1) {
       return "";
     }
+    return utf16LEDecoder.decode(this.subarray(start, end));
+  }
 
-    if (!textDecoder) {
-      textDecoder = new TextDecoder("utf-8");
+  private utf8Slice(start: number, end: number) {
+    if (end - start < 1) {
+      return "";
     }
-
-    return textDecoder.decode(this.subarray(start, end));
+    return utf8Decoder.decode(this.subarray(start, end));
   }
 
   copy(target: Uint8Array, targetStart?: number, sourceStart?: number, sourceEnd?: number) {
@@ -150,8 +149,5 @@ export const fromString
 = hasBuffer
   ? (str: string) => Buffer.from(str) as unknown as PlatformBuffer
   : (str: string) => {
-      if (!utf8Encoder) {
-        utf8Encoder = new TextEncoder();
-      }
       return new BrowserBuffer(utf8Encoder.encode(str));
     };

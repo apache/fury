@@ -98,15 +98,10 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     } else {
       descriptors = fury.getClassResolver().getAllDescriptorsMap(beanClass, true).values();
     }
+    DescriptorGrouper grouper = classResolver.createDescriptorGrouper(descriptors, false);
+    descriptors = grouper.getSortedDescriptors();
     classVersionHash =
-        new Literal(ObjectSerializer.computeVersionHash(descriptors), PRIMITIVE_INT_TYPE);
-    DescriptorGrouper grouper =
-        DescriptorGrouper.createDescriptorGrouper(
-            fury.getClassResolver()::isMonomorphic,
-            descriptors,
-            false,
-            fury.compressInt(),
-            fury.compressLong());
+        new Literal(ObjectSerializer.computeStructHash(fury, descriptors), PRIMITIVE_INT_TYPE);
     objectCodecOptimizer =
         new ObjectCodecOptimizer(beanClass, grouper, !fury.isBasicTypesRefIgnored(), ctx);
     if (isRecord) {
@@ -209,7 +204,9 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
             // `bean` will be replaced by `Reference` to cut-off expr dependency.
             Expression fieldValue = getFieldValue(bean, d);
             walkPath.add(d.getDeclaringClass() + d.getName());
-            Expression fieldExpr = serializeFor(fieldValue, buffer, d.getTypeRef());
+            boolean nullable = d.isNullable();
+            Expression fieldExpr =
+                serializeForNullable(fieldValue, buffer, d.getTypeRef(), nullable);
             walkPath.removeLast();
             groupExpressions.add(fieldExpr);
           }
@@ -510,8 +507,12 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     return new NewInstance(beanType, params);
   }
 
-  private class FieldsCollector implements Expression {
+  private class FieldsCollector extends Expression.AbstractExpression {
     private final TreeMap<Integer, Expression> recordValuesMap = new TreeMap<>();
+
+    protected FieldsCollector() {
+      super(new Expression[0]);
+    }
 
     @Override
     public TypeRef<?> type() {
@@ -555,15 +556,17 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
           for (Descriptor d : group) {
             ExpressionVisitor.ExprHolder exprHolder = ExpressionVisitor.ExprHolder.of("bean", bean);
             walkPath.add(d.getDeclaringClass() + d.getName());
+            boolean nullable = d.isNullable();
             Expression action =
-                deserializeFor(
+                deserializeForNullable(
                     buffer,
                     d.getTypeRef(),
                     // `bean` will be replaced by `Reference` to cut-off expr
                     // dependency.
                     expr ->
                         setFieldValue(
-                            exprHolder.get("bean"), d, tryInlineCast(expr, d.getTypeRef())));
+                            exprHolder.get("bean"), d, tryInlineCast(expr, d.getTypeRef())),
+                    nullable);
             walkPath.removeLast();
             groupExpressions.add(action);
           }
@@ -581,7 +584,8 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     ListExpression groupExpressions = new ListExpression();
     // use Reference to cut-off expr dependency.
     for (Descriptor d : group) {
-      Expression v = deserializeFor(buffer, d.getTypeRef(), expr -> expr);
+      boolean nullable = d.isNullable();
+      Expression v = deserializeForNullable(buffer, d.getTypeRef(), expr -> expr, nullable);
       Expression action = setFieldValue(bean, d, tryInlineCast(v, d.getTypeRef()));
       groupExpressions.add(action);
     }
@@ -621,14 +625,14 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     List<Expression> expressions = new ArrayList<>();
     int numPrimitiveFields = getNumPrimitiveFields(primitiveGroups);
     Literal totalSizeLiteral = Literal.ofInt(totalSize);
+    // After this check, following read can be totally unsafe without checks
+    expressions.add(new Invoke(buffer, "checkReadableBytes", totalSizeLiteral));
     Expression heapBuffer =
         new Invoke(buffer, "getHeapMemory", "heapBuffer", PRIMITIVE_BYTE_ARRAY_TYPE);
     Expression readerAddr =
         new Invoke(buffer, "getUnsafeReaderAddress", "readerAddr", PRIMITIVE_LONG_TYPE);
     expressions.add(heapBuffer);
     expressions.add(readerAddr);
-    // After this check, following read can be totally unsafe without checks
-    expressions.add(new Invoke(buffer, "checkReadableBytes", totalSizeLiteral));
     int acc = 0;
     for (List<Descriptor> group : primitiveGroups) {
       ListExpression groupExpressions = new ListExpression();
@@ -686,16 +690,17 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
       Expression bean, Expression buffer, List<List<Descriptor>> primitiveGroups) {
     List<Expression> expressions = new ArrayList<>();
     int numPrimitiveFields = getNumPrimitiveFields(primitiveGroups);
-    Expression heapBuffer =
-        new Invoke(buffer, "getHeapMemory", "heapBuffer", PRIMITIVE_BYTE_ARRAY_TYPE);
-    expressions.add(heapBuffer);
     for (List<Descriptor> group : primitiveGroups) {
+      // After this check, following read can be totally unsafe without checks.
+      // checkReadableBytes first, `fillBuffer` may create a new heap buffer.
+      ReplaceStub checkReadableBytesStub = new ReplaceStub();
+      expressions.add(checkReadableBytesStub);
+      Expression heapBuffer =
+          new Invoke(buffer, "getHeapMemory", "heapBuffer", PRIMITIVE_BYTE_ARRAY_TYPE);
+      expressions.add(heapBuffer);
       ListExpression groupExpressions = new ListExpression();
       Expression readerAddr =
           new Invoke(buffer, "getUnsafeReaderAddress", "readerAddr", PRIMITIVE_LONG_TYPE);
-      // After this check, following read can be totally unsafe without checks.
-      ReplaceStub checkReadableBytesStub = new ReplaceStub();
-      expressions.add(checkReadableBytesStub);
       int acc = 0;
       boolean compressStarted = false;
       for (Descriptor descriptor : group) {

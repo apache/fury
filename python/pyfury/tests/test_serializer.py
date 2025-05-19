@@ -53,7 +53,7 @@ def test_float():
     assert ser_de(fury, -1.0) == -1.0
     assert ser_de(fury, 1 / 3) == 1 / 3
     serializer = fury.class_resolver.get_serializer(float)
-    assert type(serializer) is pyfury.DoubleSerializer
+    assert type(serializer) is pyfury.Float64Serializer
 
 
 def test_tuple():
@@ -71,8 +71,9 @@ def test_string():
     assert ser_de(fury, "hello，😀" * 10) == "hello，😀" * 10
 
 
-def test_dict():
-    fury = Fury(language=Language.PYTHON, ref_tracking=True)
+@pytest.mark.parametrize("track_ref", [False, True])
+def test_dict(track_ref):
+    fury = Fury(language=Language.PYTHON, ref_tracking=track_ref)
     assert ser_de(fury, {1: 2}) == {1: 2}
     assert ser_de(fury, {1 / 3: 2.0}) == {1 / 3: 2.0}
     assert ser_de(fury, {1 / 3: 2}) == {1 / 3: 2}
@@ -90,6 +91,40 @@ def test_dict():
         2: {-1.0: -1.0, 10: -1.0},
     }
     assert ser_de(fury, dict3) == dict3
+
+
+@pytest.mark.parametrize("track_ref", [False, True])
+def test_multi_chunk_simple_dict(track_ref):
+    fury = Fury(language=Language.PYTHON, ref_tracking=track_ref)
+    dict0 = {
+        1: 2.0,
+        2: 3,
+        4.0: True,
+    }
+    assert ser_de(fury, dict0) == dict0
+
+
+@pytest.mark.parametrize("track_ref", [False, True])
+def test_multi_chunk_complex_dict(track_ref):
+    fury = Fury(language=Language.PYTHON, ref_tracking=track_ref)
+    now = datetime.datetime.now()
+    day = datetime.date(2021, 11, 23)
+    dict0 = {"a": "a", 1: 1, -1.0: -1.0, True: True, now: now, day: day}
+    assert ser_de(fury, dict0) == dict0
+
+
+@pytest.mark.parametrize("track_ref", [False, True])
+def test_big_chunk_dict(track_ref):
+    fury = Fury(language=Language.PYTHON, ref_tracking=track_ref)
+    now = datetime.datetime.now()
+    day = datetime.date(2021, 11, 23)
+    dict0 = {}
+    values = ["a", 1, -1.0, True, False, now, day]
+    for i in range(1000):
+        dict0[i] = values[i % len(values)]
+        dict0[f"key{i}"] = values[i % len(values)]
+        dict0[float(i)] = values[i % len(values)]
+    assert ser_de(fury, dict0) == dict0
 
 
 @pytest.mark.parametrize("language", [Language.XLANG, Language.PYTHON])
@@ -576,6 +611,34 @@ def test_function():
     df = pd.DataFrame({"a": list(range(10))})
     df_sum = fury.deserialize(fury.serialize(df.sum))
     assert df_sum().equals(df.sum())
+
+
+@dataclass(unsafe_hash=True)
+class MapFields:
+    simple_dict: dict = None
+    empty_dict: dict = None
+    large_dict: dict = None
+
+
+def test_map_fields_chunk_serializer():
+    fury = Fury(
+        language=Language.PYTHON, ref_tracking=True, require_class_registration=False
+    )
+
+    simple_dict = {"a": 1, "b": 2, "c": 3}
+    empty_dict = {}
+    large_dict = {f"key{i}": i for i in range(1000)}
+
+    # MapSerializer test
+    map_fields_object = MapFields(
+        simple_dict=simple_dict, empty_dict=empty_dict, large_dict=large_dict
+    )
+
+    serialized = fury.serialize(map_fields_object)
+    deserialized = fury.deserialize(serialized)
+    assert map_fields_object.simple_dict == deserialized.simple_dict
+    assert map_fields_object.empty_dict == deserialized.empty_dict
+    assert map_fields_object.large_dict == deserialized.large_dict
 
 
 if __name__ == "__main__":

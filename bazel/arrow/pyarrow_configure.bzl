@@ -37,10 +37,12 @@ def _execute(
       The result of repository_ctx.execute(cmdline).
     """
     result = repository_ctx.execute(cmdline)
-    if result.stderr or not (empty_stdout_fine or result.stdout):
+    if (result.return_code != 0) or not (empty_stdout_fine or result.stdout):
         _fail("\n".join([
             error_msg.strip() if error_msg else "Repository command failed",
+            "return code: " + str(result.return_code),
             result.stderr.strip(),
+            result.stdout.strip(),
             error_details if error_details else "",
         ]))
     return result

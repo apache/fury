@@ -68,7 +68,7 @@ public class ProtocolInteroperabilityTest extends FuryTestBase {
         .map(
             c ->
                 new Object[] {
-                  Fury.builder()
+                  builder()
                       .withLanguage(Language.JAVA)
                       .withRefTracking((Boolean) c[0])
                       .withNumberCompressed((Boolean) c[1])
@@ -77,7 +77,7 @@ public class ProtocolInteroperabilityTest extends FuryTestBase {
                       .withCompatibleMode((CompatibleMode) c[3])
                       .requireClassRegistration(false)
                       .build(),
-                  Fury.builder()
+                  builder()
                       .withLanguage(Language.JAVA)
                       .withRefTracking((Boolean) c[0])
                       .withNumberCompressed((Boolean) c[1])
@@ -236,7 +236,7 @@ public class ProtocolInteroperabilityTest extends FuryTestBase {
         .map(
             c ->
                 new Object[] {
-                  Fury.builder()
+                  builder()
                       .withLanguage(Language.JAVA)
                       .withMetaShare(true)
                       .withCompatibleMode((CompatibleMode) c[0])
@@ -244,7 +244,7 @@ public class ProtocolInteroperabilityTest extends FuryTestBase {
                       .withCodegen(false)
                       .requireClassRegistration(false)
                       .build(),
-                  Fury.builder()
+                  builder()
                       .withLanguage(Language.JAVA)
                       .withMetaShare(true)
                       .withCompatibleMode((CompatibleMode) c[0])

@@ -30,6 +30,7 @@ import org.apache.fury.util.MurmurHash3;
 @Internal
 public final class MetaStringBytes {
   static final short DEFAULT_DYNAMIC_WRITE_STRING_ID = -1;
+  public static final MetaStringBytes EMPTY = MetaStringBytes.of(MetaString.EMPTY);
   private static final int HEADER_MASK = 0xff;
 
   final byte[] bytes;

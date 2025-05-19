@@ -53,6 +53,7 @@ import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.resolver.longlongpkg.C1;
 import org.apache.fury.resolver.longlongpkg.C2;
 import org.apache.fury.resolver.longlongpkg.C3;
@@ -92,19 +93,30 @@ public class ClassResolverTest extends FuryTestBase {
   }
 
   @Test
+  public void testRegisterClassByName() {
+    Fury fury = Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(true).build();
+    ClassResolver classResolver = fury.getClassResolver();
+    classResolver.register(C1.class, "ns", "C1");
+    Assert.assertThrows(
+        IllegalArgumentException.class, () -> classResolver.register(C1.class, "ns", "C1"));
+    Assert.assertThrows(
+        IllegalArgumentException.class, () -> classResolver.register(C1.class, 200));
+    Assert.assertTrue(fury.serialize(C1.class).length < 12);
+    serDeCheck(fury, C1.class);
+
+    classResolver.register(C2.class, "", "C2");
+    Assert.assertTrue(fury.serialize(C2.class).length < 12);
+    serDeCheck(fury, C2.class);
+
+    classResolver.register(Foo.class, "ns", "Foo");
+    Foo foo = new Foo();
+    foo.f1 = 10;
+    serDeCheck(fury, foo);
+  }
+
+  @Test
   public void testRegisterClass() {
     Fury fury = Fury.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
-    ClassResolver classResolver = fury.getClassResolver();
-    classResolver.register(org.apache.fury.test.bean.Foo.class);
-    Assert.assertThrows(
-        IllegalArgumentException.class,
-        () -> classResolver.register(org.apache.fury.test.bean.Foo.class, 100));
-    Assert.assertThrows(
-        IllegalArgumentException.class,
-        () -> classResolver.register(org.apache.fury.test.bean.Foo.createCompatibleClass1()));
-    classResolver.register(Interface1.class, 200);
-    Assert.assertThrows(
-        IllegalArgumentException.class, () -> classResolver.register(Interface2.class, 200));
   }
 
   @Test
@@ -293,7 +305,8 @@ public class ClassResolverTest extends FuryTestBase {
             .requireClassRegistration(false)
             .build();
     ClassResolver classResolver = fury.getClassResolver();
-    Assert.assertFalse(classResolver.needToWriteRef(TestNeedToWriteReferenceClass.class));
+    Assert.assertFalse(
+        classResolver.needToWriteRef(TypeRef.of(TestNeedToWriteReferenceClass.class)));
     assertNull(classResolver.getClassInfo(TestNeedToWriteReferenceClass.class, false));
   }
 

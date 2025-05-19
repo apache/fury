@@ -92,6 +92,8 @@ TUPLE = (
     60,
 )
 LARGE_TUPLE = tuple(range(2**20 + 1))
+LARGE_FLOAT_TUPLE = tuple([random.random() * 10000 for _ in range(2**20 + 1)])
+LARGE_BOOLEAN_TUPLE = tuple([bool(random.random() > 0.5) for _ in range(2**20 + 1)])
 
 
 LIST = [[list(range(10)), list(range(10))] for _ in range(10)]
@@ -187,6 +189,21 @@ def micro_benchmark():
     runner.bench_func("fury_tuple", fury_object, language, not args.no_ref, TUPLE)
     runner.bench_func(
         "fury_large_tuple", fury_object, language, not args.no_ref, LARGE_TUPLE
+    )
+    runner.bench_func("fury_list", fury_object, language, not args.no_ref, LIST)
+    runner.bench_func(
+        "fury_large_float_tuple",
+        fury_object,
+        language,
+        not args.no_ref,
+        LARGE_FLOAT_TUPLE,
+    )
+    runner.bench_func(
+        "fury_large_boolean_tuple",
+        fury_object,
+        language,
+        not args.no_ref,
+        LARGE_BOOLEAN_TUPLE,
     )
     runner.bench_func("fury_list", fury_object, language, not args.no_ref, LIST)
     runner.bench_func(

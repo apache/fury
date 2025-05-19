@@ -106,12 +106,12 @@ func (s int32Serializer) TypeId() TypeId {
 }
 
 func (s int32Serializer) Write(f *Fury, buf *ByteBuffer, value reflect.Value) error {
-	buf.WriteInt32(int32(value.Int()))
+	buf.WriteVarint32(int32(value.Int()))
 	return nil
 }
 
 func (s int32Serializer) Read(f *Fury, buf *ByteBuffer, type_ reflect.Type, value reflect.Value) error {
-	value.Set(reflect.ValueOf(buf.ReadInt32()))
+	value.Set(reflect.ValueOf(buf.ReadVarint32()))
 	return nil
 }
 
@@ -123,12 +123,12 @@ func (s int64Serializer) TypeId() TypeId {
 }
 
 func (s int64Serializer) Write(f *Fury, buf *ByteBuffer, value reflect.Value) error {
-	buf.WriteInt64(value.Int())
+	buf.WriteVarint64(value.Int())
 	return nil
 }
 
 func (s int64Serializer) Read(f *Fury, buf *ByteBuffer, type_ reflect.Type, value reflect.Value) error {
-	value.Set(reflect.ValueOf(buf.ReadInt64()))
+	value.Set(reflect.ValueOf(buf.ReadVarint64()))
 	return nil
 }
 
@@ -195,14 +195,11 @@ func (s stringSerializer) TypeId() TypeId {
 }
 
 func (s stringSerializer) Write(f *Fury, buf *ByteBuffer, value reflect.Value) error {
-	// string bytes data reference has been handled in `referenceResolver`.
-	// We handle string reference instead of string data reference for cross-language compatibility.
 	return writeString(buf, value.Interface().(string))
 }
 
 func (s stringSerializer) Read(f *Fury, buf *ByteBuffer, type_ reflect.Type, value reflect.Value) error {
-	str := string(buf.ReadBinary(int(buf.ReadVarInt32())))
-	value.Set(reflect.ValueOf(str))
+	value.Set(reflect.ValueOf(readString(buf)))
 	return nil
 }
 
@@ -216,29 +213,19 @@ func (s ptrToStringSerializer) TypeId() TypeId {
 }
 
 func (s ptrToStringSerializer) Write(f *Fury, buf *ByteBuffer, value reflect.Value) error {
-	// string reference has been handled in `referenceResolver` by ptr type.
-	// We handle string reference instead of string data reference for cross-language compatibility.
-	return writeString(buf, value.Elem().Interface().(string))
+
+	if value.Kind() != reflect.Ptr || value.IsNil() {
+		return fmt.Errorf("expected non-nil string pointer, got %v", value.Type())
+	}
+	str := value.Elem().Interface().(string)
+	return writeString(buf, str)
 }
 
 func (s ptrToStringSerializer) Read(f *Fury, buf *ByteBuffer, type_ reflect.Type, value reflect.Value) error {
-	str := string(readStringBytes(buf))
+
+	str := readString(buf)
 	value.Set(reflect.ValueOf(&str))
 	return nil
-}
-
-func writeString(buf *ByteBuffer, value string) error {
-	strBytes := unsafeGetBytes(value)
-	if len(strBytes) >= MaxInt32 {
-		return fmt.Errorf("too long string: %d", len(strBytes))
-	}
-	buf.WriteVarInt32(int32(len(strBytes)))
-	buf.WriteBinary(strBytes)
-	return nil
-}
-
-func readString(buf *ByteBuffer) string {
-	return string(readStringBytes(buf))
 }
 
 func readStringBytes(buf *ByteBuffer) []byte {
@@ -351,7 +338,7 @@ type dateSerializer struct {
 }
 
 func (s dateSerializer) TypeId() TypeId {
-	return DATE32
+	return LOCAL_DATE
 }
 
 func (s dateSerializer) Write(f *Fury, buf *ByteBuffer, value reflect.Value) error {

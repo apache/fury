@@ -39,7 +39,7 @@ except ImportError:
     np = None
 
 from pyfury._fury import (
-    NOT_NULL_PYINT_FLAG,
+    NOT_NULL_INT64_FLAG,
     BufferObject,
 )
 
@@ -56,10 +56,8 @@ if ENABLE_FURY_CYTHON_SERIALIZATION:
         Int16Serializer,
         Int32Serializer,
         Int64Serializer,
-        DynamicIntSerializer,
-        FloatSerializer,
-        DoubleSerializer,
-        DynamicFloatSerializer,
+        Float32Serializer,
+        Float64Serializer,
         StringSerializer,
         DateSerializer,
         TimestampSerializer,
@@ -82,8 +80,8 @@ else:
         Int16Serializer,
         Int32Serializer,
         Int64Serializer,
-        FloatSerializer,
-        DoubleSerializer,
+        Float32Serializer,
+        Float64Serializer,
         StringSerializer,
         DateSerializer,
         TimestampSerializer,
@@ -96,8 +94,6 @@ else:
         SubMapSerializer,
         EnumSerializer,
         SliceSerializer,
-        DynamicIntSerializer,
-        DynamicFloatSerializer,
     )
 
 from pyfury.type import (
@@ -117,6 +113,10 @@ from pyfury.type import (
 
 
 class NoneSerializer(Serializer):
+    def __init__(self, fury):
+        super().__init__(fury, None)
+        self.need_to_write_ref = False
+
     def xwrite(self, buffer, value):
         raise NotImplementedError
 
@@ -222,7 +222,7 @@ class PandasRangeIndexSerializer(Serializer):
         stop = value.stop
         step = value.step
         if type(start) is int:
-            buffer.write_int16(NOT_NULL_PYINT_FLAG)
+            buffer.write_int16(NOT_NULL_INT64_FLAG)
             buffer.write_varint64(start)
         else:
             if start is None:
@@ -231,7 +231,7 @@ class PandasRangeIndexSerializer(Serializer):
                 buffer.write_int8(NOT_NULL_VALUE_FLAG)
                 fury.serialize_nonref(buffer, start)
         if type(stop) is int:
-            buffer.write_int16(NOT_NULL_PYINT_FLAG)
+            buffer.write_int16(NOT_NULL_INT64_FLAG)
             buffer.write_varint64(stop)
         else:
             if stop is None:
@@ -240,7 +240,7 @@ class PandasRangeIndexSerializer(Serializer):
                 buffer.write_int8(NOT_NULL_VALUE_FLAG)
                 fury.serialize_nonref(buffer, stop)
         if type(step) is int:
-            buffer.write_int16(NOT_NULL_PYINT_FLAG)
+            buffer.write_int16(NOT_NULL_INT64_FLAG)
             buffer.write_varint64(step)
         else:
             if step is None:
@@ -536,6 +536,7 @@ class DynamicPyArraySerializer(Serializer):
         return arr
 
     def write(self, buffer, value):
+        buffer.write_varuint32(PickleSerializer.PICKLE_CLASS_ID)
         self.fury.handle_unsupported_write(buffer, value)
 
     def read(self, buffer):
@@ -597,6 +598,7 @@ class Numpy1DArraySerializer(Serializer):
         return np.frombuffer(data, dtype=self.dtype)
 
     def write(self, buffer, value):
+        buffer.write_int8(PickleSerializer.PICKLE_CLASS_ID)
         self.fury.handle_unsupported_write(buffer, value)
 
     def read(self, buffer):
@@ -619,6 +621,7 @@ class NDArraySerializer(Serializer):
         raise NotImplementedError("Multi-dimensional array not supported currently")
 
     def write(self, buffer, value):
+        buffer.write_int8(PickleSerializer.PICKLE_CLASS_ID)
         self.fury.handle_unsupported_write(buffer, value)
 
     def read(self, buffer):
@@ -651,6 +654,8 @@ class BytesBufferObject(BufferObject):
 
 
 class PickleSerializer(Serializer):
+    PICKLE_CLASS_ID = 96
+
     def xwrite(self, buffer, value):
         raise NotImplementedError
 

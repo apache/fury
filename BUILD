@@ -16,6 +16,7 @@
 # under the License.
 
 load("@com_github_grpc_grpc//bazel:cython_library.bzl", "pyx_library")
+load("@compile_commands_extractor//:refresh_compile_commands.bzl", "refresh_compile_commands")
 
 
 pyx_library(
@@ -63,6 +64,7 @@ pyx_library(
     deps = [
         "//cpp/fury/util:fury_util",
         "//cpp/fury/type:fury_type",
+        "//cpp/fury/python:_pyfury",
         "@com_google_absl//absl/container:flat_hash_map",
     ],
 )
@@ -121,4 +123,10 @@ genrule(
     local = 1,
     tags = ["no-cache"],
     visibility = ["//visibility:public"],
+)
+
+refresh_compile_commands(
+    name = "refresh_compile_commands",
+    exclude_headers = "all",
+    exclude_external_sources = True,
 )

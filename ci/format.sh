@@ -326,7 +326,7 @@ if ! git diff --quiet &>/dev/null; then
     echo 'Files updated:'
     echo
 
-    git --no-pager diff --name-only
+    git --no-pager diff
 
     exit 1
 fi

@@ -46,7 +46,7 @@ jobs:
       MY_VAR: "PATH"
     strategy:
       matrix:
-        java-version: ["8", "11", "17", "21"]
+        java-version: ["8", "11", "17", "21", "24"]
     steps:
       - uses: actions/checkout@v4
       - name: Set up JDK ${{ matrix.java-version }}
@@ -94,6 +94,26 @@ jobs:
         run: ./ci/run_ci.sh install_pyfury
       - name: Run CI with Maven
         run: ./ci/run_ci.sh java${{ matrix.java-version }}
+
+  java21_windows:
+    name: Windows Java 21 CI
+    runs-on: windows-2022
+    env:
+      MY_VAR: "PATH"
+    strategy:
+      matrix:
+        java-version: ["21"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK ${{ matrix.java-version }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ matrix.java-version }}
+          distribution: "temurin"
+      - name: Run CI with Maven
+        shell: bash
+        run: ./ci/run_ci.sh windows_java21
+
   graalvm:
     name: GraalVM CI
     runs-on: ubuntu-latest
@@ -113,7 +133,28 @@ jobs:
         with:
           python-version: 3.8
       - name: Build native image and run
+        shell: bash
         run: ./ci/run_ci.sh graalvm_test
+
+  kotlin:
+    name: Kotlin CI
+    runs-on: ubuntu-latest
+    env:
+      MY_VAR: "PATH"
+    strategy:
+      matrix:
+        java-version: ["8", "11", "17", "21"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK ${{ matrix.java-version }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ matrix.java-version }}
+          distribution: "temurin"
+      - name: Install fury java
+        run: cd java && mvn -T10 --no-transfer-progress clean install -DskipTests && cd -
+      - name: Run Kotlin CI
+        run: ./ci/run_ci.sh kotlin
 
   scala:
     name: Scala CI
@@ -158,7 +199,7 @@ jobs:
     name: JavaScript CI
     strategy:
       matrix:
-        node-version: [14.x, 16.x, 18.x, 20.x]
+        node-version: [16.x, 18.x, 20.x]
         os: [ubuntu-latest, macos-13, windows-2022]
     runs-on: ${{ matrix.os }}
     steps:
@@ -185,7 +226,7 @@ jobs:
     name: Rust CI
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-13, macos-14] # macos-13: x86, macos-14: arm64
+        os: [ubuntu-latest, macos-13, macos-14]  # macos-13: x86, macos-14: arm64
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     steps:
@@ -201,7 +242,7 @@ jobs:
     name: C++ CI
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-13, macos-14, windows-2022] # macos-13: x86, macos-14: arm64
+        os: [ubuntu-latest, macos-13, macos-14, windows-2022]  # macos-13: x86, macos-14: arm64
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -218,8 +259,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: [3.8, 3.12]
-        os: [ubuntu-20.04, windows-2022]
+        python-version: [3.8, 3.12, 3.13]
+        os: [ubuntu-latest, macos-13, macos-14, windows-2022]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}

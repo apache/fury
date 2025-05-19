@@ -41,15 +41,17 @@ import org.apache.fury.util.record.RecordUtils;
  * <li>other fields
  */
 public class DescriptorGrouper {
-  // sort primitive descriptors from largest to smallest, if size is the same,
-  // sort by field name to fix order.
-  private static final Comparator<Descriptor> PRIMITIVE_COMPARATOR =
+  static final Comparator<Descriptor> COMPARATOR_BY_PRIMITIVE_TYPE_ID =
       (d1, d2) -> {
         int c =
-            getSizeOfPrimitiveType(TypeUtils.unwrap(d2.getRawType()))
-                - getSizeOfPrimitiveType(TypeUtils.unwrap(d1.getRawType()));
+            Types.getPrimitiveTypeId(TypeUtils.unwrap(d2.getRawType()))
+                - Types.getPrimitiveTypeId(TypeUtils.unwrap(d1.getRawType()));
         if (c == 0) {
-          c = DescriptorGrouper.COMPARATOR_BY_TYPE_AND_NAME.compare(d1, d2);
+          c = d1.getSnakeCaseName().compareTo(d2.getSnakeCaseName());
+          if (c == 0) {
+            // Field name duplicate in super/child classes.
+            c = d1.getDeclaringClass().compareTo(d2.getDeclaringClass());
+          }
         }
         return c;
       };
@@ -64,7 +66,17 @@ public class DescriptorGrouper {
   public static Comparator<Descriptor> getPrimitiveComparator(
       boolean compressInt, boolean compressLong) {
     if (!compressInt && !compressLong) {
-      return PRIMITIVE_COMPARATOR;
+      // sort primitive descriptors from largest to smallest, if size is the same,
+      // sort by field name to fix order.
+      return (d1, d2) -> {
+        int c =
+            getSizeOfPrimitiveType(TypeUtils.unwrap(d2.getRawType()))
+                - getSizeOfPrimitiveType(TypeUtils.unwrap(d1.getRawType()));
+        if (c == 0) {
+          c = COMPARATOR_BY_PRIMITIVE_TYPE_ID.compare(d1, d2);
+        }
+        return c;
+      };
     }
     return (d1, d2) -> {
       Class<?> t1 = TypeUtils.unwrap(d1.getRawType());
@@ -74,7 +86,7 @@ public class DescriptorGrouper {
       if ((t1Compress && t2Compress) || (!t1Compress && !t2Compress)) {
         int c = getSizeOfPrimitiveType(t2) - getSizeOfPrimitiveType(t1);
         if (c == 0) {
-          c = DescriptorGrouper.COMPARATOR_BY_TYPE_AND_NAME.compare(d1, d2);
+          c = COMPARATOR_BY_PRIMITIVE_TYPE_ID.compare(d1, d2);
         }
         return c;
       }
@@ -131,16 +143,18 @@ public class DescriptorGrouper {
   /**
    * Create a descriptor grouper.
    *
+   * @param isMonomorphic whether the class is monomorphic.
    * @param descriptors descriptors may have field with same name.
-   * @param descriptorUpdator create a new descriptor from original one.
+   * @param descriptorsGroupedOrdered whether the descriptors are grouped and ordered.
+   * @param descriptorUpdater create a new descriptor from original one.
    * @param primitiveComparator comparator for primitive/boxed fields.
    * @param comparator comparator for non-primitive fields.
    */
-  public DescriptorGrouper(
+  private DescriptorGrouper(
       Predicate<Class<?>> isMonomorphic,
       Collection<Descriptor> descriptors,
       boolean descriptorsGroupedOrdered,
-      Function<Descriptor, Descriptor> descriptorUpdator,
+      Function<Descriptor, Descriptor> descriptorUpdater,
       Comparator<Descriptor> primitiveComparator,
       Comparator<Descriptor> comparator) {
     this.primitiveDescriptors =
@@ -155,18 +169,18 @@ public class DescriptorGrouper {
     this.otherDescriptors =
         descriptorsGroupedOrdered ? new ArrayList<>() : new TreeSet<>(comparator);
     for (Descriptor descriptor : descriptors) {
-      if (descriptor.getRawType().isPrimitive()) {
-        primitiveDescriptors.add(descriptorUpdator.apply(descriptor));
+      if (TypeUtils.isPrimitive(descriptor.getRawType())) {
+        primitiveDescriptors.add(descriptorUpdater.apply(descriptor));
       } else if (TypeUtils.isBoxed(descriptor.getRawType())) {
-        boxedDescriptors.add(descriptorUpdator.apply(descriptor));
+        boxedDescriptors.add(descriptorUpdater.apply(descriptor));
       } else if (TypeUtils.isCollection(descriptor.getRawType())) {
-        collectionDescriptors.add(descriptorUpdator.apply(descriptor));
+        collectionDescriptors.add(descriptorUpdater.apply(descriptor));
       } else if (TypeUtils.isMap(descriptor.getRawType())) {
-        mapDescriptors.add(descriptorUpdator.apply(descriptor));
+        mapDescriptors.add(descriptorUpdater.apply(descriptor));
       } else if (isMonomorphic.test(descriptor.getRawType())) {
-        finalDescriptors.add(descriptorUpdator.apply(descriptor));
+        finalDescriptors.add(descriptorUpdater.apply(descriptor));
       } else {
-        otherDescriptors.add(descriptorUpdator.apply(descriptor));
+        otherDescriptors.add(descriptorUpdater.apply(descriptor));
       }
     }
   }
@@ -176,9 +190,9 @@ public class DescriptorGrouper {
     descriptors.addAll(getPrimitiveDescriptors());
     descriptors.addAll(getBoxedDescriptors());
     descriptors.addAll(getFinalDescriptors());
+    descriptors.addAll(getOtherDescriptors());
     descriptors.addAll(getCollectionDescriptors());
     descriptors.addAll(getMapDescriptors());
-    descriptors.addAll(getOtherDescriptors());
     return descriptors;
   }
 
@@ -222,16 +236,17 @@ public class DescriptorGrouper {
       Predicate<Class<?>> isMonomorphic,
       Collection<Descriptor> descriptors,
       boolean descriptorsGroupedOrdered,
+      Function<Descriptor, Descriptor> descriptorUpdator,
       boolean compressInt,
-      boolean compressLong) {
-    Comparator<Descriptor> comparator = getPrimitiveComparator(compressInt, compressLong);
+      boolean compressLong,
+      Comparator<Descriptor> comparator) {
     return new DescriptorGrouper(
         isMonomorphic,
         descriptors,
         descriptorsGroupedOrdered,
-        DescriptorGrouper::createDescriptor,
-        comparator,
-        COMPARATOR_BY_TYPE_AND_NAME);
+        descriptorUpdator == null ? DescriptorGrouper::createDescriptor : descriptorUpdator,
+        getPrimitiveComparator(compressInt, compressLong),
+        comparator);
   }
 
   public int getNumDescriptors() {

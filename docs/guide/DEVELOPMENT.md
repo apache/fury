@@ -2,6 +2,21 @@
 title: Development
 sidebar_position: 7
 id: development
+license: |
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
 ---
 
 ## How to build Fury
@@ -24,7 +39,13 @@ mvn clean compile -DskipTests
 
 ```bash
 cd python
-pip install pyarrow==14.0.0 Cython wheel numpy pytest
+# Uninstall numpy first so that when we install pyarrow, it will install the correct numpy version automatically.
+# For Python versions less than 3.13, numpy 2 is not currently supported.
+pip uninstall -y numpy
+# Install necessary environment for Python < 3.13.
+pip install pyarrow==15.0.0 Cython wheel pytest
+# For Python 3.13, pyarrow 18.0.0 is available and requires numpy version greater than 2.
+# pip install pyarrow==18.0.0 Cython wheel pytest
 pip install -v -e .
 ```
 
@@ -37,14 +58,14 @@ pip install -v -e .
 Build fury row format：
 
 ```bash
-pip install pyarrow==14.0.0
+pip install pyarrow==15.0.0
 bazel build //cpp/fury/row:fury_row_format
 ```
 
 Build fury row format encoder:
 
 ```bash
-pip install pyarrow==14.0.0
+pip install pyarrow==15.0.0
 bazel build //cpp/fury/encoder:fury_encoder
 ```
 

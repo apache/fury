@@ -40,6 +40,7 @@ import org.apache.fury.type.TypeUtils;
 // https://github.com/google/guava/blob/9f6a3840/guava/src/com/google/common/reflect/TypeToken.java
 public class TypeRef<T> {
   private final Type type;
+  private final Object extInfo;
   private transient Class<? super T> rawType;
   private transient Map<TypeVariableKey, Type> typeMappings;
 
@@ -57,19 +58,36 @@ public class TypeRef<T> {
    */
   protected TypeRef() {
     this.type = capture();
+    this.extInfo = null;
+  }
+
+  protected TypeRef(Object extInfo) {
+    this.type = capture();
+    this.extInfo = extInfo;
   }
 
   private TypeRef(Class<T> declaringClass) {
     this.type = declaringClass;
+    this.extInfo = null;
+  }
+
+  private TypeRef(Class<T> declaringClass, Object extInfo) {
+    this.type = declaringClass;
+    this.extInfo = extInfo;
   }
 
   private TypeRef(Type type) {
     this.type = type;
+    this.extInfo = null;
   }
 
   /** Returns an instance of type token that wraps {@code type}. */
   public static <T> TypeRef<T> of(Class<T> clazz) {
     return new TypeRef<>(clazz);
+  }
+
+  public static <T> TypeRef<T> of(Class<T> clazz, Object extInfo) {
+    return new TypeRef<>(clazz, extInfo);
   }
 
   /** Returns an instance of type token that wraps {@code type}. */
@@ -138,6 +156,10 @@ public class TypeRef<T> {
                 throw new AssertionError("Unknown type: " + type);
               }
             });
+  }
+
+  public Object getExtInfo() {
+    return extInfo;
   }
 
   /** Returns true if this type is one of the primitive types (including {@code void}). */

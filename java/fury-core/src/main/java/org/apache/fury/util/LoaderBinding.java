@@ -20,7 +20,6 @@
 package org.apache.fury.util;
 
 import java.lang.ref.SoftReference;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
@@ -69,7 +68,7 @@ public final class LoaderBinding {
       }
     } else {
       Set<Fury> furySet = new HashSet<>(furyMap.size());
-      Collections.addAll(furyMap.values());
+      furySet.addAll(furyMap.values());
       for (SoftReference<Fury> ref : furySoftMap.values()) {
         Fury f = ref.get();
         if (f != null) {

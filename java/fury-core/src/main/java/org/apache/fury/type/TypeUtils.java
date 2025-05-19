@@ -50,6 +50,7 @@ import org.apache.fury.collection.Tuple2;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeParameter;
 import org.apache.fury.reflect.TypeRef;
+import org.apache.fury.serializer.NonexistentClass;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.StringUtils;
 
@@ -90,12 +91,15 @@ public class TypeUtils {
   public static final TypeRef<?> INSTANT_TYPE = TypeRef.of(Instant.class);
   public static final TypeRef<?> BINARY_TYPE = TypeRef.of(byte[].class);
   public static final TypeRef<?> ITERABLE_TYPE = TypeRef.of(Iterable.class);
+
+  public static final TypeRef<?> ITERATOR_TYPE = TypeRef.of(Iterator.class);
   public static final TypeRef<?> COLLECTION_TYPE = TypeRef.of(Collection.class);
   public static final TypeRef<?> LIST_TYPE = TypeRef.of(List.class);
   public static final TypeRef<?> ARRAYLIST_TYPE = TypeRef.of(ArrayList.class);
   public static final TypeRef<?> SET_TYPE = TypeRef.of(Set.class);
   public static final TypeRef<?> HASHSET_TYPE = TypeRef.of(HashSet.class);
   public static final TypeRef<?> MAP_TYPE = TypeRef.of(Map.class);
+  public static final TypeRef<?> MAP_ENTRY_TYPE = TypeRef.of(Map.Entry.class);
   public static final TypeRef<?> HASHMAP_TYPE = TypeRef.of(HashMap.class);
   public static final TypeRef<?> OBJECT_TYPE = TypeRef.of(Object.class);
 
@@ -509,12 +513,22 @@ public class TypeUtils {
     return new TypeRef<Collection<E>>() {}.where(new TypeParameter<E>() {}, elemType);
   }
 
+  public static <E> TypeRef<Collection<E>> collectionOf(TypeRef<E> elemType, Object extMeta) {
+    return new TypeRef<Collection<E>>(extMeta) {}.where(new TypeParameter<E>() {}, elemType);
+  }
+
   public static <K, V> TypeRef<Map<K, V>> mapOf(Class<K> keyType, Class<V> valueType) {
     return mapOf(TypeRef.of(keyType), TypeRef.of(valueType));
   }
 
   public static <K, V> TypeRef<Map<K, V>> mapOf(TypeRef<K> keyType, TypeRef<V> valueType) {
     return new TypeRef<Map<K, V>>() {}.where(new TypeParameter<K>() {}, keyType)
+        .where(new TypeParameter<V>() {}, valueType);
+  }
+
+  public static <K, V> TypeRef<Map<K, V>> mapOf(
+      TypeRef<K> keyType, TypeRef<V> valueType, Object extMeta) {
+    return new TypeRef<Map<K, V>>(extMeta) {}.where(new TypeParameter<K>() {}, keyType)
         .where(new TypeParameter<V>() {}, valueType);
   }
 
@@ -540,6 +554,9 @@ public class TypeUtils {
   }
 
   public static boolean isMap(Class<?> cls) {
+    if (cls == NonexistentClass.NonexistentMetaShared.class) {
+      return false;
+    }
     return cls == HashMap.class || Map.class.isAssignableFrom(cls);
   }
 
@@ -551,6 +568,10 @@ public class TypeUtils {
     return isBean(TypeRef.of(clz));
   }
 
+  public static boolean isBean(Type type, CustomTypeRegistry customTypes) {
+    return isBean(TypeRef.of(type), new LinkedHashSet<>(), customTypes);
+  }
+
   /**
    * Returns true if class is not array/iterable/map, and all fields is {@link
    * TypeUtils#isSupported(TypeRef)}. Bean class can't be a non-static inner class. Public static
@@ -560,7 +581,14 @@ public class TypeUtils {
     return isBean(typeRef, new LinkedHashSet<>());
   }
 
-  private static boolean isBean(TypeRef<?> typeRef, LinkedHashSet<TypeRef> walkedTypePath) {
+  private static boolean isBean(TypeRef<?> typeRef, LinkedHashSet<TypeRef<?>> walkedTypePath) {
+    return isBean(typeRef, walkedTypePath, CustomTypeRegistry.EMPTY);
+  }
+
+  private static boolean isBean(
+      TypeRef<?> typeRef,
+      LinkedHashSet<TypeRef<?>> walkedTypePath,
+      CustomTypeRegistry customTypes) {
     Class<?> cls = getRawType(typeRef);
     if (Modifier.isAbstract(cls.getModifiers()) || Modifier.isInterface(cls.getModifiers())) {
       return false;
@@ -572,7 +600,7 @@ public class TypeUtils {
       if (cls.getEnclosingClass() != null && !Modifier.isStatic(cls.getModifiers())) {
         return false;
       }
-      LinkedHashSet<TypeRef> newTypePath = new LinkedHashSet<>(walkedTypePath);
+      LinkedHashSet<TypeRef<?>> newTypePath = new LinkedHashSet<>(walkedTypePath);
       newTypePath.add(typeRef);
       if (cls == Object.class) {
         // return false for typeToken that point to un-specialized generic type.
@@ -585,6 +613,7 @@ public class TypeUtils {
               && !ITERABLE_TYPE.isSupertypeOf(typeRef)
               && !MAP_TYPE.isSupertypeOf(typeRef);
       if (maybe) {
+        Class<?> enclosingType = enclosingType(newTypePath);
         return Descriptor.getDescriptors(cls).stream()
             .allMatch(
                 d -> {
@@ -592,7 +621,9 @@ public class TypeUtils {
                   // do field modifiers and getter/setter validation here, not in getDescriptors.
                   // If Modifier.isFinal(d.getModifiers()), use reflection
                   // private field that doesn't have getter/setter will be handled by reflection.
-                  return isSupported(t, newTypePath) || isBean(t, newTypePath);
+                  return customTypes.hasCodec(enclosingType, t.getRawType())
+                      || isSupported(t, newTypePath, customTypes)
+                      || isBean(t, newTypePath, customTypes);
                 });
       } else {
         return false;
@@ -604,10 +635,13 @@ public class TypeUtils {
 
   /** Check if <code>typeToken</code> is supported by row-format. */
   public static boolean isSupported(TypeRef<?> typeRef) {
-    return isSupported(typeRef, new LinkedHashSet<>());
+    return isSupported(typeRef, new LinkedHashSet<>(), CustomTypeRegistry.EMPTY);
   }
 
-  private static boolean isSupported(TypeRef<?> typeRef, LinkedHashSet<TypeRef> walkedTypePath) {
+  private static boolean isSupported(
+      TypeRef<?> typeRef,
+      LinkedHashSet<TypeRef<?>> walkedTypePath,
+      CustomTypeRegistry customTypes) {
     Class<?> cls = getRawType(typeRef);
     if (!Modifier.isPublic(cls.getModifiers())) {
       return false;
@@ -622,6 +656,10 @@ public class TypeUtils {
     } else if (typeRef.isArray()) {
       return isSupported(Objects.requireNonNull(typeRef.getComponentType()));
     } else if (ITERABLE_TYPE.isSupertypeOf(typeRef)) {
+      TypeRef<?> elementType = getElementType(typeRef);
+      if (customTypes.canConstructCollection(typeRef.getRawType(), elementType.getRawType())) {
+        return true;
+      }
       boolean isSuperOfArrayList = cls.isAssignableFrom(ArrayList.class);
       boolean isSuperOfHashSet = cls.isAssignableFrom(HashSet.class);
       if ((!isSuperOfArrayList && !isSuperOfHashSet)
@@ -641,7 +679,7 @@ public class TypeUtils {
         throw new UnsupportedOperationException(
             "cyclic type is not supported. walkedTypePath: " + walkedTypePath);
       } else {
-        LinkedHashSet<TypeRef> newTypePath = new LinkedHashSet<>(walkedTypePath);
+        LinkedHashSet<TypeRef<?>> newTypePath = new LinkedHashSet<>(walkedTypePath);
         newTypePath.add(typeRef);
         return isBean(typeRef, newTypePath);
       }
@@ -656,13 +694,24 @@ public class TypeUtils {
    *     parameters recursively
    */
   public static LinkedHashSet<Class<?>> listBeansRecursiveInclusive(Class<?> beanClass) {
-    return listBeansRecursiveInclusive(beanClass, new LinkedHashSet<>());
+    return listBeansRecursiveInclusive(beanClass, CustomTypeRegistry.EMPTY);
+  }
+
+  public static LinkedHashSet<Class<?>> listBeansRecursiveInclusive(
+      Class<?> beanClass, CustomTypeRegistry customTypes) {
+    return listBeansRecursiveInclusive(beanClass, new LinkedHashSet<>(), customTypes);
   }
 
   private static LinkedHashSet<Class<?>> listBeansRecursiveInclusive(
-      Class<?> beanClass, LinkedHashSet<TypeRef<?>> walkedTypePath) {
+      Class<?> beanClass,
+      LinkedHashSet<TypeRef<?>> walkedTypePath,
+      CustomTypeRegistry customTypes) {
     LinkedHashSet<Class<?>> beans = new LinkedHashSet<>();
-    if (isBean(beanClass)) {
+    Class<?> enclosingType = enclosingType(walkedTypePath);
+    if (customTypes.hasCodec(enclosingType, beanClass)) {
+      return beans;
+    }
+    if (isBean(beanClass, customTypes)) {
       beans.add(beanClass);
     }
     LinkedHashSet<TypeRef<?>> typeRefs = new LinkedHashSet<>();
@@ -673,21 +722,38 @@ public class TypeUtils {
       typeRefs.addAll(getAllTypeArguments(typeRef));
     }
 
-    typeRefs.stream()
-        .filter(typeToken -> isBean(getRawType(typeToken)))
-        .forEach(
-            typeToken -> {
-              Class<?> cls = getRawType(typeToken);
-              beans.add(cls);
-              if (walkedTypePath.contains(typeToken)) {
-                throw new UnsupportedOperationException(
-                    "cyclic type is not supported. walkedTypePath: " + walkedTypePath);
-              } else {
-                LinkedHashSet<TypeRef<?>> newPath = new LinkedHashSet<>(walkedTypePath);
-                newPath.add(typeToken);
-                beans.addAll(listBeansRecursiveInclusive(cls, newPath));
-              }
-            });
+    for (TypeRef<?> typeToken : typeRefs) {
+      Class<?> type = getRawType(typeToken);
+      if (isBean(type, customTypes)) {
+        if (walkedTypePath.contains(typeToken)) {
+          throw new UnsupportedOperationException(
+              "cyclic type is not supported. walkedTypePath: " + walkedTypePath);
+        } else {
+          LinkedHashSet<TypeRef<?>> newPath = new LinkedHashSet<>(walkedTypePath);
+          newPath.add(typeToken);
+          beans.addAll(listBeansRecursiveInclusive(type, newPath, customTypes));
+        }
+      } else if (isCollection(type)) {
+        TypeRef<?> elementType = getElementType(typeToken);
+        LinkedHashSet<TypeRef<?>> newPath = new LinkedHashSet<>(walkedTypePath);
+        newPath.add(elementType);
+        beans.addAll(listBeansRecursiveInclusive(elementType.getClass(), newPath, customTypes));
+      } else if (isMap(type)) {
+        Tuple2<TypeRef<?>, TypeRef<?>> mapKeyValueType = getMapKeyValueType(typeToken);
+        LinkedHashSet<TypeRef<?>> newPath = new LinkedHashSet<>(walkedTypePath);
+        newPath.add(mapKeyValueType.f0);
+        newPath.add(mapKeyValueType.f1);
+        beans.addAll(
+            listBeansRecursiveInclusive(mapKeyValueType.f0.getRawType(), newPath, customTypes));
+        beans.addAll(
+            listBeansRecursiveInclusive(mapKeyValueType.f1.getRawType(), newPath, customTypes));
+      } else if (type.isArray()) {
+        Class<?> arrayComponent = getArrayComponent(type);
+        LinkedHashSet<TypeRef<?>> newPath = new LinkedHashSet<>(walkedTypePath);
+        newPath.add(TypeRef.of(arrayComponent));
+        beans.addAll(listBeansRecursiveInclusive(arrayComponent, newPath, customTypes));
+      }
+    }
     return beans;
   }
 
@@ -704,7 +770,7 @@ public class TypeUtils {
   }
 
   /** Returns generic type arguments of <code>typeToken</code>. */
-  public static List<TypeRef<?>> getTypeArguments(TypeRef typeRef) {
+  public static List<TypeRef<?>> getTypeArguments(TypeRef<?> typeRef) {
     if (typeRef.getType() instanceof ParameterizedType) {
       ParameterizedType parameterizedType = (ParameterizedType) typeRef.getType();
       return Arrays.stream(parameterizedType.getActualTypeArguments())
@@ -719,7 +785,7 @@ public class TypeUtils {
    * Returns generic type arguments of <code>typeToken</code>, includes generic type arguments of
    * generic type arguments recursively.
    */
-  public static List<TypeRef<?>> getAllTypeArguments(TypeRef typeRef) {
+  public static List<TypeRef<?>> getAllTypeArguments(TypeRef<?> typeRef) {
     List<TypeRef<?>> types = getTypeArguments(typeRef);
     LinkedHashSet<TypeRef<?>> allTypeArguments = new LinkedHashSet<>(types);
     for (TypeRef<?> type : types) {
@@ -742,5 +808,13 @@ public class TypeUtils {
     } else {
       return pkg + "." + className;
     }
+  }
+
+  private static Class<?> enclosingType(LinkedHashSet<TypeRef<?>> newTypePath) {
+    Class<?> result = Object.class;
+    for (TypeRef<?> type : newTypePath) {
+      result = type.getRawType();
+    }
+    return result;
   }
 }

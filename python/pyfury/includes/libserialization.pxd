@@ -17,6 +17,7 @@
 
 from libc.stdint cimport int32_t
 from libcpp cimport bool as c_bool
+from pyfury.includes.libutil cimport CBuffer
 
 cdef extern from "fury/type/type.h" namespace "fury" nogil:
 
@@ -37,35 +38,34 @@ cdef extern from "fury/type/type.h" namespace "fury" nogil:
         ENUM = 13
         NAMED_ENUM = 14
         STRUCT = 15
-        POLYMORPHIC_STRUCT = 16
-        COMPATIBLE_STRUCT = 17
-        POLYMORPHIC_COMPATIBLE_STRUCT = 18
-        NAMED_STRUCT = 19
-        NAMED_POLYMORPHIC_STRUCT = 20
-        NAMED_COMPATIBLE_STRUCT = 21
-        NAMED_POLYMORPHIC_COMPATIBLE_STRUCT = 22
-        EXT = 23
-        POLYMORPHIC_EXT = 24
-        NAMED_EXT = 25
-        NAMED_POLYMORPHIC_EXT = 26
-        LIST = 27
-        SET = 28
-        MAP = 29
-        DURATION = 30
-        TIMESTAMP = 31
-        LOCAL_DATE = 32
-        DECIMAL = 33
-        BINARY = 34
-        ARRAY = 35
-        BOOL_ARRAY = 36
-        INT8_ARRAY = 37
-        INT16_ARRAY = 38
-        INT32_ARRAY = 39
-        INT64_ARRAY = 40
-        FLOAT16_ARRAY = 41
-        FLOAT32_ARRAY = 42
-        FLOAT64_ARRAY = 43
-        ARROW_RECORD_BATCH = 44
-        ARROW_TABLE = 45
+        COMPATIBLE_STRUCT = 16
+        NAMED_STRUCT = 17
+        NAMED_COMPATIBLE_STRUCT = 18
+        EXT = 19
+        NAMED_EXT = 20
+        LIST = 21
+        SET = 22
+        MAP = 23
+        DURATION = 24
+        TIMESTAMP = 25
+        LOCAL_DATE = 26
+        DECIMAL = 27
+        BINARY = 28
+        ARRAY = 29
+        BOOL_ARRAY = 30
+        INT8_ARRAY = 31
+        INT16_ARRAY = 32
+        INT32_ARRAY = 33
+        INT64_ARRAY = 34
+        FLOAT16_ARRAY = 35
+        FLOAT32_ARRAY = 36
+        FLOAT64_ARRAY = 37
+        ARROW_RECORD_BATCH = 38
+        ARROW_TABLE = 39
+        BOUND = 64
 
     cdef c_bool IsNamespacedType(int32_t type_id)
+
+cdef extern from "fury/python/pyfury.h" namespace "fury":
+    int Fury_PyBooleanSequenceWriteToBuffer(object collection, CBuffer *buffer, Py_ssize_t start_index)
+    int Fury_PyFloatSequenceWriteToBuffer(object collection, CBuffer *buffer, Py_ssize_t start_index)

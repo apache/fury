@@ -19,7 +19,7 @@
 
 const Fury = require("@furyjs/fury");
 const utils = require("@furyjs/fury/dist/lib/util");
-const hps = require('@furyjs/hps');
+const hps = require('@furyjs/hps').default;
 const fury = new Fury.default({ hps, refTracking: false, useSliceString: true });
 const Benchmark = require("benchmark");
 const protobuf = require("protobufjs");
@@ -27,6 +27,68 @@ const path = require('path');
 const Type = Fury.Type;
 const assert = require('assert');
 const { spawn } = require("child_process");
+
+
+export const data2TypeInfo = (
+  data,
+  typeName,
+) => {
+  if (data === null || data === undefined) {
+    return null;
+  }
+  if (Array.isArray(data)) {
+    const item = data2TypeInfo(data[0], typeName);
+    if (!item) {
+      throw new Error("empty array can't convert");
+    }
+    return Type.array(item);
+  }
+  if (data instanceof Date) {
+    return Type.timestamp();
+  }
+  if (typeof data === "string") {
+    return Type.string();
+  }
+  if (data instanceof Set) {
+    return Type.set(data2TypeInfo([...data.values()][0], typeName));
+  }
+  if (data instanceof Map) {
+    return Type.map(
+      data2TypeInfo([...data.keys()][0], typeName),
+      data2TypeInfo([...data.values()][0], typeName),
+    );
+  }
+  if (typeof data === "boolean") {
+    return Type.bool();
+  }
+  if (typeof data === "number") {
+    if (data > Number.MAX_SAFE_INTEGER || data < Number.MIN_SAFE_INTEGER) {
+      return Type.int64();
+    }
+    return Type.int32();
+  }
+
+  if (typeof data === "object") {
+    if (isUint8Array(data)) {
+      return Type.binary();
+    }
+
+    return Type.struct(
+      {
+        typeName
+      },
+      Object.fromEntries(
+        Object.entries(data)
+          .map(([key, value]) => {
+            return [key, data2TypeInfo(value, `${typeName}.${key}`)];
+          })
+          .filter(([, v]) => Boolean(v)),
+      ),
+    );
+  }
+
+  throw new Error(`unkonw data type ${typeof data}`);
+};
 
 
 const sample = {
@@ -108,8 +170,8 @@ const sample = {
 };
 
 
-const description = utils.data2Description(sample, "fury.test.foo");
-const { serialize, deserialize, serializeVolatile } = fury.registerSerializer(description);
+const typeinfo = utils.data2TypeInfo(sample, "fury.test.foo");
+const { serialize, deserialize, serializeVolatile } = fury.registerSerializer(typeinfo);
 
 const furyAb = serialize(sample);
 const sampleJson = JSON.stringify(sample);

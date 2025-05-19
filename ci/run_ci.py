@@ -27,9 +27,7 @@ import importlib
 
 BAZEL_VERSION = "6.3.2"
 
-PYARROW_VERSION = "14.0.0"
-
-NUMPY_VERSION = "1.26.4"
+PYARROW_VERSION = "15.0.0"
 
 PROJECT_ROOT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../")
 
@@ -120,8 +118,8 @@ def _run_js():
 
 def _install_cpp_deps():
     _exec_cmd(f"pip install pyarrow=={PYARROW_VERSION}")
+    # Automatically install numpy
     _exec_cmd("pip install psutil")
-    _exec_cmd(f"pip install numpy=={NUMPY_VERSION}")
     _install_bazel()
 
 

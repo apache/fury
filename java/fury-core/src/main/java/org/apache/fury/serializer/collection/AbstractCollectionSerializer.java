@@ -29,6 +29,7 @@ import org.apache.fury.resolver.ClassInfo;
 import org.apache.fury.resolver.ClassInfoHolder;
 import org.apache.fury.resolver.ClassResolver;
 import org.apache.fury.resolver.RefResolver;
+import org.apache.fury.resolver.TypeResolver;
 import org.apache.fury.serializer.CompatibleSerializer;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.type.GenericType;
@@ -45,6 +46,8 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
   // TODO remove elemSerializer, support generics in CompatibleSerializer.
   private Serializer<?> elemSerializer;
   protected final ClassInfoHolder elementClassInfoHolder;
+  private final TypeResolver typeResolver;
+  protected final SerializationBinding binding;
 
   // For subclass whose element type are instantiated already, such as
   // `Subclass extends ArrayList<String>`. If declared `Collection` doesn't specify
@@ -63,6 +66,8 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
     super(fury, cls);
     this.supportCodegenHook = supportCodegenHook;
     elementClassInfoHolder = fury.getClassResolver().nilClassInfoHolder();
+    this.typeResolver = fury.isCrossLanguage() ? fury.getXtypeResolver() : fury.getClassResolver();
+    binding = SerializationBinding.createBinding(fury);
   }
 
   public AbstractCollectionSerializer(
@@ -70,6 +75,8 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
     super(fury, cls, immutable);
     this.supportCodegenHook = supportCodegenHook;
     elementClassInfoHolder = fury.getClassResolver().nilClassInfoHolder();
+    this.typeResolver = fury.isCrossLanguage() ? fury.getXtypeResolver() : fury.getClassResolver();
+    binding = SerializationBinding.createBinding(fury);
   }
 
   private GenericType getElementGenericType(Fury fury) {
@@ -122,7 +129,7 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
   protected final int writeElementsHeader(MemoryBuffer buffer, Collection value) {
     GenericType elemGenericType = getElementGenericType(fury);
     if (elemGenericType != null) {
-      boolean trackingRef = elemGenericType.trackingRef(fury.getClassResolver());
+      boolean trackingRef = elemGenericType.trackingRef(typeResolver);
       if (elemGenericType.isMonomorphic()) {
         if (trackingRef) {
           buffer.writeByte(CollectionFlags.TRACKING_REF);
@@ -192,6 +199,9 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
       bitmap |= CollectionFlags.NOT_SAME_TYPE | CollectionFlags.NOT_DECL_ELEMENT_TYPE;
       buffer.writeByte(bitmap);
     } else {
+      if (elemClass == null) {
+        elemClass = void.class;
+      }
       // Write class in case peer doesn't have this class.
       if (!fury.getConfig().isMetaShareEnabled() && elemClass == declareElementType) {
         buffer.writeByte(bitmap);
@@ -199,9 +209,8 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
         bitmap |= CollectionFlags.NOT_DECL_ELEMENT_TYPE;
         buffer.writeByte(bitmap);
         // Update classinfo, the caller will use it.
-        ClassResolver classResolver = fury.getClassResolver();
-        ClassInfo classInfo = classResolver.getClassInfo(elemClass, cache);
-        classResolver.writeClass(buffer, classInfo);
+        TypeResolver typeResolver = this.typeResolver;
+        typeResolver.writeClassInfo(buffer, typeResolver.getClassInfo(elemClass, cache));
       }
     }
     return bitmap;
@@ -232,18 +241,18 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
       bitmap |= CollectionFlags.NOT_SAME_TYPE | CollectionFlags.TRACKING_REF;
       buffer.writeByte(bitmap);
     } else {
-      ClassResolver classResolver = fury.getClassResolver();
+      TypeResolver typeResolver = this.typeResolver;
       // When serialize a collection with all elements null directly, the declare type
       // will be equal to element type: null
       if (elemClass == null) {
-        elemClass = Object.class;
+        elemClass = void.class;
       }
-      ClassInfo classInfo = classResolver.getClassInfo(elemClass, cache);
+      ClassInfo classInfo = typeResolver.getClassInfo(elemClass, cache);
       if (classInfo.getSerializer().needToWriteRef()) {
         bitmap |= CollectionFlags.TRACKING_REF;
       }
       buffer.writeByte(bitmap);
-      classResolver.writeClass(buffer, classInfo);
+      typeResolver.writeClassInfo(buffer, classInfo);
     }
     return bitmap;
   }
@@ -289,9 +298,9 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
       } else {
         bitmap |= CollectionFlags.NOT_DECL_ELEMENT_TYPE;
         buffer.writeByte(bitmap);
-        ClassResolver classResolver = fury.getClassResolver();
-        ClassInfo classInfo = classResolver.getClassInfo(elemClass, cache);
-        classResolver.writeClass(buffer, classInfo);
+        TypeResolver typeResolver = this.typeResolver;
+        ClassInfo classInfo = typeResolver.getClassInfo(elemClass, cache);
+        typeResolver.writeClassInfo(buffer, classInfo);
       }
     }
     return bitmap;
@@ -320,16 +329,16 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
         generalJavaWrite(fury, buffer, value, null, flags);
       }
     } else {
-      compatibleWrite(fury, buffer, value, serializer, flags);
+      compatibleWrite(buffer, value, serializer, flags);
     }
   }
 
   // TODO use generics for compatible serializer.
-  private static <T extends Collection> void compatibleWrite(
-      Fury fury, MemoryBuffer buffer, T value, Serializer serializer, int flags) {
+  private <T extends Collection> void compatibleWrite(
+      MemoryBuffer buffer, T value, Serializer serializer, int flags) {
     if (serializer.needToWriteRef()) {
       for (Object elem : value) {
-        fury.writeRef(buffer, elem, serializer);
+        binding.writeRef(buffer, elem, serializer);
       }
     } else {
       boolean hasNull = (flags & CollectionFlags.HAS_NULL) == CollectionFlags.HAS_NULL;
@@ -339,12 +348,12 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
             buffer.writeByte(Fury.NULL_FLAG);
           } else {
             buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
-            serializer.write(buffer, elem);
+            binding.write(buffer, serializer, elem);
           }
         }
       } else {
         for (Object elem : value) {
-          serializer.write(buffer, elem);
+          binding.write(buffer, serializer, elem);
         }
       }
     }
@@ -363,7 +372,7 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
     // Note: ObjectSerializer should mark `FinalElemType` in `Collection<FinalElemType>`
     // as non-final to write class def when meta share is enabled.
     if (elemGenericType.isMonomorphic()) {
-      Serializer serializer = elemGenericType.getSerializer(fury.getClassResolver());
+      Serializer serializer = elemGenericType.getSerializer(typeResolver);
       writeSameTypeElements(fury, buffer, serializer, flags, collection);
     } else {
       generalJavaWrite(fury, buffer, collection, elemGenericType, flags);
@@ -384,30 +393,30 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
       if ((flags & CollectionFlags.NOT_DECL_ELEMENT_TYPE)
           != CollectionFlags.NOT_DECL_ELEMENT_TYPE) {
         Preconditions.checkNotNull(elemGenericType);
-        serializer = elemGenericType.getSerializer(fury.getClassResolver());
+        serializer = elemGenericType.getSerializer(typeResolver);
       } else {
         serializer = elementClassInfoHolder.getSerializer();
       }
       writeSameTypeElements(fury, buffer, serializer, flags, collection);
     } else {
-      writeDifferentTypeElements(fury, buffer, flags, collection);
+      writeDifferentTypeElements(buffer, flags, collection);
     }
   }
 
-  private static <T extends Collection> void writeSameTypeElements(
+  private <T extends Collection> void writeSameTypeElements(
       Fury fury, MemoryBuffer buffer, Serializer serializer, int flags, T collection) {
     fury.incDepth(1);
     if ((flags & CollectionFlags.TRACKING_REF) == CollectionFlags.TRACKING_REF) {
       RefResolver refResolver = fury.getRefResolver();
       for (Object elem : collection) {
         if (!refResolver.writeRefOrNull(buffer, elem)) {
-          serializer.write(buffer, elem);
+          binding.write(buffer, serializer, elem);
         }
       }
     } else {
       if ((flags & CollectionFlags.HAS_NULL) != CollectionFlags.HAS_NULL) {
         for (Object elem : collection) {
-          serializer.write(buffer, elem);
+          binding.write(buffer, serializer, elem);
         }
       } else {
         for (Object elem : collection) {
@@ -415,7 +424,7 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
             buffer.writeByte(Fury.NULL_FLAG);
           } else {
             buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
-            serializer.write(buffer, elem);
+            binding.write(buffer, serializer, elem);
           }
         }
       }
@@ -423,20 +432,25 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
     fury.incDepth(-1);
   }
 
-  private static <T extends Collection> void writeDifferentTypeElements(
-      Fury fury, MemoryBuffer buffer, int flags, T collection) {
+  private <T extends Collection> void writeDifferentTypeElements(
+      MemoryBuffer buffer, int flags, T collection) {
     if ((flags & CollectionFlags.TRACKING_REF) == CollectionFlags.TRACKING_REF) {
       for (Object elem : collection) {
-        fury.writeRef(buffer, elem);
+        binding.writeRef(buffer, elem);
       }
     } else {
       if ((flags & CollectionFlags.HAS_NULL) != CollectionFlags.HAS_NULL) {
         for (Object elem : collection) {
-          fury.writeNonRef(buffer, elem);
+          binding.writeNonRef(buffer, elem);
         }
       } else {
         for (Object elem : collection) {
-          fury.writeNullable(buffer, elem);
+          if (elem == null) {
+            buffer.writeByte(Fury.NULL_FLAG);
+          } else {
+            buffer.writeByte(Fury.NOT_NULL_VALUE_FLAG);
+            binding.writeNonRef(buffer, elem);
+          }
         }
       }
     }
@@ -444,37 +458,7 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
 
   @Override
   public void xwrite(MemoryBuffer buffer, T value) {
-    Collection collection = (Collection) value;
-    int len = collection.size();
-    buffer.writeVarUint32Small7(len);
-    xwriteElements(fury, buffer, collection);
-  }
-
-  private void xwriteElements(Fury fury, MemoryBuffer buffer, Collection value) {
-    GenericType elemGenericType = getElementGenericType(fury);
-    if (elemGenericType != null) {
-      boolean hasGenericParameters = elemGenericType.hasGenericParameters();
-      if (hasGenericParameters) {
-        fury.getGenerics().pushGenericType(elemGenericType);
-      }
-      if (elemGenericType.isMonomorphic()) {
-        Serializer elemSerializer = elemGenericType.getSerializer(fury.getClassResolver());
-        for (Object elem : value) {
-          fury.xwriteRef(buffer, elem, elemSerializer);
-        }
-      } else {
-        for (Object elem : value) {
-          fury.xwriteRef(buffer, elem);
-        }
-      }
-      if (hasGenericParameters) {
-        fury.getGenerics().popGenericType();
-      }
-    } else {
-      for (Object elem : value) {
-        fury.xwriteRef(buffer, elem);
-      }
-    }
+    write(buffer, value);
   }
 
   @Override
@@ -529,11 +513,9 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
   }
 
   public void copyElements(Collection originCollection, Collection newCollection) {
-    ClassResolver classResolver = fury.getClassResolver();
     for (Object element : originCollection) {
       if (element != null) {
-        ClassInfo classInfo =
-            classResolver.getClassInfo(element.getClass(), elementClassInfoHolder);
+        ClassInfo classInfo = typeResolver.getClassInfo(element.getClass(), elementClassInfoHolder);
         if (!classInfo.getSerializer().isImmutable()) {
           element = fury.copyObject(element, classInfo.getClassId());
         }
@@ -544,11 +526,9 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
 
   public void copyElements(Collection originCollection, Object[] elements) {
     int index = 0;
-    ClassResolver classResolver = fury.getClassResolver();
     for (Object element : originCollection) {
       if (element != null) {
-        ClassInfo classInfo =
-            classResolver.getClassInfo(element.getClass(), elementClassInfoHolder);
+        ClassInfo classInfo = typeResolver.getClassInfo(element.getClass(), elementClassInfoHolder);
         if (!classInfo.getSerializer().isImmutable()) {
           element = fury.copyObject(element, classInfo.getSerializer());
         }
@@ -600,7 +580,7 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
   }
 
   /** Code path for {@link CompatibleSerializer}. */
-  private static void compatibleRead(
+  private void compatibleRead(
       Fury fury,
       MemoryBuffer buffer,
       Collection collection,
@@ -609,7 +589,7 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
       int flags) {
     if (serializer.needToWriteRef()) {
       for (int i = 0; i < numElements; i++) {
-        collection.add(fury.readRef(buffer, serializer));
+        collection.add(binding.readRef(buffer, serializer));
       }
     } else {
       if ((flags & CollectionFlags.HAS_NULL) == CollectionFlags.HAS_NULL) {
@@ -617,13 +597,13 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
           if (buffer.readByte() == Fury.NULL_FLAG) {
             collection.add(null);
           } else {
-            Object elem = serializer.read(buffer);
+            Object elem = binding.read(buffer, serializer);
             collection.add(elem);
           }
         }
       } else {
         for (int i = 0; i < numElements; i++) {
-          Object elem = serializer.read(buffer);
+          Object elem = binding.read(buffer, serializer);
           collection.add(elem);
         }
       }
@@ -642,7 +622,7 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
       fury.getGenerics().pushGenericType(elemGenericType);
     }
     if (elemGenericType.isMonomorphic()) {
-      Serializer serializer = elemGenericType.getSerializer(fury.getClassResolver());
+      Serializer serializer = elemGenericType.getSerializer(typeResolver);
       readSameTypeElements(fury, buffer, serializer, flags, collection, numElements);
     } else {
       generalJavaRead(fury, buffer, collection, numElements, flags, elemGenericType);
@@ -661,13 +641,12 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
       GenericType elemGenericType) {
     if ((flags & CollectionFlags.NOT_SAME_TYPE) != CollectionFlags.NOT_SAME_TYPE) {
       Serializer serializer;
-      ClassResolver classResolver = fury.getClassResolver();
+      TypeResolver typeResolver = this.typeResolver;
       if ((flags & CollectionFlags.NOT_DECL_ELEMENT_TYPE)
           == CollectionFlags.NOT_DECL_ELEMENT_TYPE) {
-        serializer = classResolver.readClassInfo(buffer, elementClassInfoHolder).getSerializer();
+        serializer = typeResolver.readClassInfo(buffer, elementClassInfoHolder).getSerializer();
       } else {
-        Preconditions.checkNotNull(elemGenericType);
-        serializer = elemGenericType.getSerializer(classResolver);
+        serializer = elemGenericType.getSerializer(typeResolver);
       }
       readSameTypeElements(fury, buffer, serializer, flags, collection, numElements);
     } else {
@@ -676,7 +655,7 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
   }
 
   /** Read elements whose type are same. */
-  private static <T extends Collection> void readSameTypeElements(
+  private <T extends Collection> void readSameTypeElements(
       Fury fury,
       MemoryBuffer buffer,
       Serializer serializer,
@@ -686,19 +665,19 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
     fury.incDepth(1);
     if ((flags & CollectionFlags.TRACKING_REF) == CollectionFlags.TRACKING_REF) {
       for (int i = 0; i < numElements; i++) {
-        collection.add(fury.readRef(buffer, serializer));
+        collection.add(binding.readRef(buffer, serializer));
       }
     } else {
       if ((flags & CollectionFlags.HAS_NULL) != CollectionFlags.HAS_NULL) {
         for (int i = 0; i < numElements; i++) {
-          collection.add(serializer.read(buffer));
+          collection.add(binding.read(buffer, serializer));
         }
       } else {
         for (int i = 0; i < numElements; i++) {
           if (buffer.readByte() == Fury.NULL_FLAG) {
             collection.add(null);
           } else {
-            collection.add(serializer.read(buffer));
+            collection.add(binding.read(buffer, serializer));
           }
         }
       }
@@ -707,20 +686,25 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
   }
 
   /** Read elements whose type are different. */
-  private static <T extends Collection> void readDifferentTypeElements(
+  private <T extends Collection> void readDifferentTypeElements(
       Fury fury, MemoryBuffer buffer, int flags, T collection, int numElements) {
     if ((flags & CollectionFlags.TRACKING_REF) == CollectionFlags.TRACKING_REF) {
       for (int i = 0; i < numElements; i++) {
-        collection.add(fury.readRef(buffer));
+        collection.add(binding.readRef(buffer));
       }
     } else {
       if ((flags & CollectionFlags.HAS_NULL) != CollectionFlags.HAS_NULL) {
         for (int i = 0; i < numElements; i++) {
-          collection.add(fury.readNonRef(buffer));
+          collection.add(binding.readNonRef(buffer));
         }
       } else {
         for (int i = 0; i < numElements; i++) {
-          collection.add(fury.readNullable(buffer));
+          byte headFlag = buffer.readByte();
+          if (headFlag == Fury.NULL_FLAG) {
+            collection.add(null);
+          } else {
+            collection.add(binding.readNonRef(buffer));
+          }
         }
       }
     }
@@ -728,44 +712,6 @@ public abstract class AbstractCollectionSerializer<T> extends Serializer<T> {
 
   @Override
   public T xread(MemoryBuffer buffer) {
-    Collection collection = newCollection(buffer);
-    xreadElements(fury, buffer, collection, numElements);
-    return onCollectionRead(collection);
-  }
-
-  public void xreadElements(
-      Fury fury, MemoryBuffer buffer, Collection collection, int numElements) {
-    GenericType elemGenericType = getElementGenericType(fury);
-    if (elemGenericType != null) {
-      boolean hasGenericParameters = elemGenericType.hasGenericParameters();
-      if (hasGenericParameters) {
-        fury.getGenerics().pushGenericType(elemGenericType);
-      }
-      if (elemGenericType.isMonomorphic()) {
-        Serializer elemSerializer = elemGenericType.getSerializer(fury.getClassResolver());
-        for (int i = 0; i < numElements; i++) {
-          Object elem;
-          if (elemSerializer == null) {
-            elem = fury.xreadRef(buffer);
-          } else {
-            elem = fury.xreadRef(buffer, elemSerializer);
-          }
-          collection.add(elem);
-        }
-      } else {
-        for (int i = 0; i < numElements; i++) {
-          Object elem = fury.xreadRef(buffer);
-          collection.add(elem);
-        }
-      }
-      if (hasGenericParameters) {
-        fury.getGenerics().popGenericType();
-      }
-    } else {
-      for (int i = 0; i < numElements; i++) {
-        Object elem = fury.xreadRef(buffer);
-        collection.add(elem);
-      }
-    }
+    return read(buffer);
   }
 }

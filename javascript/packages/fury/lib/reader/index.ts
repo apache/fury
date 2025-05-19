@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import { Config, LATIN1 } from "../type";
+import { LATIN1, UTF16, UTF8 } from "../type";
 import { isNodeEnv } from "../util";
 import { PlatformBuffer, alloc, fromUint8Array } from "../platformBuffer";
 import { readLatin1String } from "./string";
@@ -30,7 +30,9 @@ export class BinaryReader {
   private bigString = "";
   private byteLength = 0;
 
-  constructor(config: Config) {
+  constructor(config: {
+    useSliceString?: boolean;
+  }) {
     this.sliceStringEnable = isNodeEnv && config.useSliceString;
   }
 
@@ -124,10 +126,23 @@ export class BinaryReader {
     return result;
   }
 
+  stringUtf16LE(len: number) {
+    const result = this.platformBuffer.toString("utf16le", this.cursor, this.cursor + len);
+    this.cursor += len;
+    return result;
+  }
+
   stringOfVarUInt32() {
-    const isLatin1 = this.uint8() === LATIN1;
-    const len = this.varUInt32();
-    return isLatin1 ? this.stringLatin1(len) : this.stringUtf8(len);
+    switch (this.uint8()) {
+      case LATIN1:
+        return this.stringLatin1(this.varUInt32());
+      case UTF8:
+        return this.stringUtf8(this.varUInt32());
+      case UTF16:
+        return this.stringUtf16LE(this.varUInt32());
+      default:
+        break;
+    }
   }
 
   stringLatin1(len: number) {

@@ -129,12 +129,19 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
   private void readAndWriteFieldValue(
       MemoryBuffer buffer, FieldResolver.FieldInfo fieldInfo, Object targetObject) {
     FieldAccessor fieldAccessor = fieldInfo.getFieldAccessor();
+    boolean nullable = fieldInfo.isNullable();
     short classId = fieldInfo.getEmbeddedClassId();
-    if (ObjectSerializer.writePrimitiveFieldValueFailed(
+    if (AbstractObjectSerializer.writePrimitiveFieldValueFailed(
         fury, buffer, targetObject, fieldAccessor, classId)) {
       Object fieldValue;
       fieldValue = fieldAccessor.getObject(targetObject);
-      if (ObjectSerializer.writeBasicObjectFieldValueFailed(fury, buffer, fieldValue, classId)) {
+      boolean writeBasicObjectResult =
+          nullable
+              ? AbstractObjectSerializer.writeBasicNullableObjectFieldValueFailed(
+                  fury, buffer, fieldValue, classId)
+              : AbstractObjectSerializer.writeBasicObjectFieldValueFailed(
+                  fury, buffer, fieldValue, classId);
+      if (writeBasicObjectResult) {
         if (classId == ClassResolver.NO_CLASS_ID) { // SEPARATE_TYPES_HASH
           writeSeparateFieldValue(fieldInfo, buffer, fieldValue);
         } else {
@@ -221,10 +228,10 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
   private void writeCollectionField(
       MemoryBuffer buffer, FieldResolver.CollectionFieldInfo fieldInfo, Collection fieldValue) {
     ClassInfo elementClassInfo = fieldInfo.getElementClassInfo();
-    classResolver.writeClass(buffer, elementClassInfo);
+    classResolver.writeClassInfo(buffer, elementClassInfo);
     // following write is consistent with `BaseSeqCodecBuilder.serializeForCollection`
     ClassInfo classInfo = fieldInfo.getClassInfo(fieldValue.getClass());
-    classResolver.writeClass(buffer, classInfo);
+    classResolver.writeClassInfo(buffer, classInfo);
     AbstractCollectionSerializer collectionSerializer =
         (AbstractCollectionSerializer) classInfo.getSerializer();
     try {
@@ -241,11 +248,11 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
       MemoryBuffer buffer, FieldResolver.MapFieldInfo fieldInfo, Map fieldValue) {
     ClassInfo keyClassInfo = fieldInfo.getKeyClassInfo();
     ClassInfo valueClassInfo = fieldInfo.getValueClassInfo();
-    classResolver.writeClass(buffer, keyClassInfo);
-    classResolver.writeClass(buffer, valueClassInfo);
+    classResolver.writeClassInfo(buffer, keyClassInfo);
+    classResolver.writeClassInfo(buffer, valueClassInfo);
     // following write is consistent with `BaseSeqCodecBuilder.serializeForMap`
     ClassInfo classInfo = fieldInfo.getClassInfo(fieldValue.getClass());
-    classResolver.writeClass(buffer, classInfo);
+    classResolver.writeClassInfo(buffer, classInfo);
     AbstractMapSerializer mapSerializer = (AbstractMapSerializer) classInfo.getSerializer();
     try {
       mapSerializer.setKeySerializer(keyClassInfo.getSerializer());
@@ -262,10 +269,10 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
   private void writeMapKeyFinal(
       MemoryBuffer buffer, FieldResolver.MapFieldInfo fieldInfo, Map fieldValue) {
     ClassInfo keyClassInfo = fieldInfo.getKeyClassInfo();
-    classResolver.writeClass(buffer, keyClassInfo);
+    classResolver.writeClassInfo(buffer, keyClassInfo);
     // following write is consistent with `BaseSeqCodecBuilder.serializeForMap`
     ClassInfo classInfo = fieldInfo.getClassInfo(fieldValue.getClass());
-    classResolver.writeClass(buffer, classInfo);
+    classResolver.writeClassInfo(buffer, classInfo);
     AbstractMapSerializer mapSerializer = (AbstractMapSerializer) classInfo.getSerializer();
     try {
       mapSerializer.setKeySerializer(keyClassInfo.getSerializer());
@@ -280,10 +287,10 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
   private void writeMapValueFinal(
       MemoryBuffer buffer, FieldResolver.MapFieldInfo fieldInfo, Map fieldValue) {
     ClassInfo valueClassInfo = fieldInfo.getValueClassInfo();
-    classResolver.writeClass(buffer, valueClassInfo);
+    classResolver.writeClassInfo(buffer, valueClassInfo);
     // following write is consistent with `BaseSeqCodecBuilder.serializeForMap`
     ClassInfo classInfo = fieldInfo.getClassInfo(fieldValue.getClass());
-    classResolver.writeClass(buffer, classInfo);
+    classResolver.writeClassInfo(buffer, classInfo);
     AbstractMapSerializer mapSerializer = (AbstractMapSerializer) classInfo.getSerializer();
     try {
       mapSerializer.setValueSerializer(valueClassInfo.getSerializer());
@@ -558,10 +565,14 @@ public final class CompatibleSerializer<T> extends CompatibleSerializerBase<T> {
       FieldResolver.FieldInfo fieldInfo, MemoryBuffer buffer, Object targetObject) {
     FieldAccessor fieldAccessor = fieldInfo.getFieldAccessor();
     short classId = fieldInfo.getEmbeddedClassId();
-    if (ObjectSerializer.readPrimitiveFieldValueFailed(
+    boolean nullable = fieldInfo.isNullable();
+    if (AbstractObjectSerializer.readPrimitiveFieldValueFailed(
             fury, buffer, targetObject, fieldAccessor, classId)
-        && ObjectSerializer.readBasicObjectFieldValueFailed(
-            fury, buffer, targetObject, fieldAccessor, classId)) {
+        && (nullable
+            ? AbstractObjectSerializer.readBasicNullableObjectFieldValueFailed(
+                fury, buffer, targetObject, fieldAccessor, classId)
+            : AbstractObjectSerializer.readBasicObjectFieldValueFailed(
+                fury, buffer, targetObject, fieldAccessor, classId))) {
       if (classId == ClassResolver.NO_CLASS_ID) {
         // SEPARATE_TYPES_HASH
         Object fieldValue = fieldResolver.readObjectField(buffer, fieldInfo);

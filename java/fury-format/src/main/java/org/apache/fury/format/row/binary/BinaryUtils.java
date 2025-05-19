@@ -26,7 +26,7 @@ import org.apache.fury.type.TypeUtils;
 /** Util class for building generated binary encoder. */
 @SuppressWarnings("UnstableApiUsage")
 public class BinaryUtils {
-  public static String getElemAccessMethodName(TypeRef type) {
+  public static String getElemAccessMethodName(TypeRef<?> type) {
     if (TypeUtils.PRIMITIVE_BYTE_TYPE.equals(type) || TypeUtils.BYTE_TYPE.equals(type)) {
       return "getByte";
     } else if (TypeUtils.PRIMITIVE_BOOLEAN_TYPE.equals(type)
@@ -50,7 +50,7 @@ public class BinaryUtils {
       return "getTimestamp";
     } else if (TypeUtils.STRING_TYPE.equals(type)) {
       return "getString";
-    } else if (type.isArray() || TypeUtils.ITERABLE_TYPE.isSupertypeOf(type)) {
+    } else if (isArray(type)) {
       // Since row-format serialize bytes as array data, instead of call `writer.write(int ordinal,
       // byte[] input)`,
       // we take BINARY_TYPE as byte[] array.
@@ -90,7 +90,7 @@ public class BinaryUtils {
       return TypeUtils.LONG_TYPE;
     } else if (TypeUtils.STRING_TYPE.equals(type)) {
       return TypeUtils.STRING_TYPE;
-    } else if (type.isArray() || TypeUtils.ITERABLE_TYPE.isSupertypeOf(type)) {
+    } else if (isArray(type)) {
       // take BINARY_TYPE as array
       return TypeRef.of(BinaryArray.class);
     } else if (TypeUtils.MAP_TYPE.isSupertypeOf(type)) {
@@ -102,5 +102,11 @@ public class BinaryUtils {
       // slice MemoryBuffer, then deserialize in EncodeExpressionBuilder.deserializeFor
       return TypeRef.of(MemoryBuffer.class);
     }
+  }
+
+  private static boolean isArray(TypeRef<?> type) {
+    return type.isArray()
+        || BinaryArray.class.equals(type.getRawType())
+        || TypeUtils.ITERABLE_TYPE.isSupertypeOf(type);
   }
 }

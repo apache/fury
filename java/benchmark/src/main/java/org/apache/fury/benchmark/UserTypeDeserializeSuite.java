@@ -27,6 +27,7 @@ import org.apache.fury.benchmark.state.HessionState;
 import org.apache.fury.benchmark.state.JDKState;
 import org.apache.fury.benchmark.state.JsonbState;
 import org.apache.fury.benchmark.state.KryoState;
+import org.apache.fury.benchmark.state.MsgpackState;
 import org.apache.fury.benchmark.state.ObjectType;
 import org.apache.fury.benchmark.state.ProtoBuffersState;
 import org.apache.fury.benchmark.state.ProtostuffState;
@@ -105,9 +106,23 @@ public class UserTypeDeserializeSuite {
     return JDKState.deserialize(state.bis);
   }
 
-  // @Benchmark
+  @Benchmark
   public Object jsonb_deserialize(JsonbState.JsonbUserTypeState state, Blackhole bh) {
     return JsonbState.deserialize(bh, state);
+  }
+
+  @Benchmark
+  public Object msgpack_deserialize(MsgpackState.MsgpackUserTypeState state, Blackhole bh)
+      throws IOException {
+    state.bis.reset();
+    return MsgpackState.deserialize(bh, state);
+  }
+
+  @Benchmark
+  public Object msgpack_jackson_deserialize(
+      MsgpackState.MsgpackJacksonUserTypeState state, Blackhole bh) throws IOException {
+    state.bis.reset();
+    return MsgpackState.deserialize(bh, state);
   }
 
   @Benchmark

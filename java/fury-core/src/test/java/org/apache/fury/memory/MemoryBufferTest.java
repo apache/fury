@@ -195,6 +195,17 @@ public class MemoryBufferTest {
   }
 
   @Test
+  public void testSliceAndGetRemainingBytes() {
+    MemoryBuffer buf = MemoryBuffer.newHeapBuffer(16);
+    for (int i = 0; i < 16; i++) {
+      buf.writeByte(i);
+    }
+    byte[] sliceRemaining = buf.slice(4, 8).getRemainingBytes();
+    byte[] expected = buf.getBytes(4, 8);
+    assertEquals(sliceRemaining, expected);
+  }
+
+  @Test
   public void testEqualTo() {
     MemoryBuffer buf1 = MemoryUtils.buffer(16);
     MemoryBuffer buf2 = MemoryUtils.buffer(16);
@@ -632,6 +643,17 @@ public class MemoryBufferTest {
       buf.increaseReaderIndex(-diff);
       buf._unsafePutVarUint36Small(index, 0b1000000000000000000000000000000000000L);
       assertEquals(buf.readVarUint36Small(), 0); // overflow
+    }
+    {
+      // With buffer size 9
+      MemoryBuffer buf1 = MemoryBuffer.newHeapBuffer(9);
+      // With buffer size 8
+      MemoryBuffer buf2 = MemoryBuffer.newHeapBuffer(8);
+      long uint36Max = 0b111111111111111111111111111111111111L;
+      buf1._unsafePutVarUint36Small(0, uint36Max);
+      buf2._unsafePutVarUint36Small(0, uint36Max);
+      assertEquals(buf1.readVarUint36Small(), uint36Max);
+      assertEquals(buf2.readVarUint36Small(), uint36Max);
     }
   }
 

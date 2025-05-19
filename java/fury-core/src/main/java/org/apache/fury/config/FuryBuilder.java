@@ -375,7 +375,9 @@ public final class FuryBuilder {
       }
     }
     if (language != Language.JAVA) {
-      stringRefIgnored = false;
+      stringRefIgnored = true;
+      longEncoding = LongEncoding.PVL;
+      compressInt = true;
     }
     if (ENABLE_CLASS_REGISTRATION_FORCIBLY) {
       if (!requireClassRegistration) {
@@ -421,6 +423,9 @@ public final class FuryBuilder {
       scopedMetaShareEnabled = false;
       if (metaShareEnabled == null) {
         metaShareEnabled = false;
+      }
+      if (language != Language.JAVA) {
+        checkClassVersion = true;
       }
     }
     if (!requireClassRegistration) {

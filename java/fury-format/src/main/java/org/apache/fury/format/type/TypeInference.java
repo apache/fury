@@ -23,6 +23,7 @@ import static org.apache.fury.format.type.DataTypes.field;
 import static org.apache.fury.type.TypeUtils.getRawType;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
@@ -37,6 +38,8 @@ import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.FieldType;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.fury.collection.Tuple2;
+import org.apache.fury.format.encoder.CustomCodec;
+import org.apache.fury.format.encoder.CustomCollectionFactory;
 import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.type.Descriptor;
 import org.apache.fury.type.TypeUtils;
@@ -135,8 +138,20 @@ public class TypeInference {
    */
   private static Field inferField(
       String name, TypeRef<?> typeRef, LinkedHashSet<Class<?>> seenTypeSet) {
+    return inferField(name, typeRef, seenTypeSet, CustomTypeEncoderRegistry.customTypeHandler());
+  }
+
+  private static Field inferField(
+      String name,
+      TypeRef<?> typeRef,
+      LinkedHashSet<Class<?>> seenTypeSet,
+      CustomTypeHandler customTypes) {
     Class<?> rawType = getRawType(typeRef);
-    if (rawType == boolean.class) {
+    Class<?> enclosingType = enclosingType(seenTypeSet);
+    CustomCodec<?, ?> customEncoder = customTypes.findCodec(enclosingType, rawType);
+    if (customEncoder != null) {
+      return customEncoder.getField(name);
+    } else if (rawType == boolean.class) {
       return field(name, DataTypes.notNullFieldType(ArrowType.Bool.INSTANCE));
     } else if (rawType == byte.class) {
       return field(name, DataTypes.notNullFieldType(new ArrowType.Int(8, true)));
@@ -194,24 +209,29 @@ public class TypeInference {
           inferField(
               DataTypes.ARRAY_ITEM_NAME,
               Objects.requireNonNull(typeRef.getComponentType()),
-              seenTypeSet);
+              seenTypeSet,
+              customTypes);
       return DataTypes.arrayField(name, f);
     } else if (TypeUtils.ITERABLE_TYPE.isSupertypeOf(typeRef)) { // iterable
       // when type is both iterable and bean, we take it as iterable in row-format
       Field f =
-          inferField(DataTypes.ARRAY_ITEM_NAME, TypeUtils.getElementType(typeRef), seenTypeSet);
+          inferField(
+              DataTypes.ARRAY_ITEM_NAME,
+              TypeUtils.getElementType(typeRef),
+              seenTypeSet,
+              customTypes);
       return DataTypes.arrayField(name, f);
     } else if (TypeUtils.MAP_TYPE.isSupertypeOf(typeRef)) {
       Tuple2<TypeRef<?>, TypeRef<?>> kvType = TypeUtils.getMapKeyValueType(typeRef);
-      Field keyField = inferField(MapVector.KEY_NAME, kvType.f0, seenTypeSet);
+      Field keyField = inferField(MapVector.KEY_NAME, kvType.f0, seenTypeSet, customTypes);
       // Map's keys must be non-nullable
       FieldType keyFieldType =
           new FieldType(
               false, keyField.getType(), keyField.getDictionary(), keyField.getMetadata());
       keyField = DataTypes.field(keyField.getName(), keyFieldType, keyField.getChildren());
-      Field valueField = inferField(MapVector.VALUE_NAME, kvType.f1, seenTypeSet);
+      Field valueField = inferField(MapVector.VALUE_NAME, kvType.f1, seenTypeSet, customTypes);
       return DataTypes.mapField(name, keyField, valueField);
-    } else if (TypeUtils.isBean(rawType)) { // bean field
+    } else if (TypeUtils.isBean(rawType, customTypes)) { // bean field
       if (seenTypeSet.contains(rawType)) {
         String msg =
             String.format(
@@ -226,7 +246,7 @@ public class TypeInference {
                     LinkedHashSet<Class<?>> newSeenTypeSet = new LinkedHashSet<>(seenTypeSet);
                     newSeenTypeSet.add(rawType);
                     String n = StringUtils.lowerCamelToLowerUnderscore(descriptor.getName());
-                    return inferField(n, descriptor.getTypeRef(), newSeenTypeSet);
+                    return inferField(n, descriptor.getTypeRef(), newSeenTypeSet, customTypes);
                   })
               .collect(Collectors.toList());
       return DataTypes.structField(name, true, fields);
@@ -251,5 +271,23 @@ public class TypeInference {
       sb.append(token.getRawType().getSimpleName());
     }
     return sb.toString();
+  }
+
+  public static <T> void registerCustomCodec(
+      final CustomTypeRegistration registration, final CustomCodec<T, ?> codec) {
+    CustomTypeEncoderRegistry.registerCustomCodec(registration, codec);
+  }
+
+  public static <E, C extends Collection<E>> void registerCustomCollectionFactory(
+      Class<?> iterableType, Class<E> elementType, CustomCollectionFactory<E, C> factory) {
+    CustomTypeEncoderRegistry.registerCustomCollection(iterableType, elementType, factory);
+  }
+
+  private static Class<?> enclosingType(LinkedHashSet<Class<?>> newTypePath) {
+    Class<?> result = Object.class;
+    for (Class<?> type : newTypePath) {
+      result = type;
+    }
+    return result;
   }
 }

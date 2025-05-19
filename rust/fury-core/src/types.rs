@@ -117,7 +117,7 @@ pub fn compute_struct_hash(props: Vec<(&str, FieldType)>) -> u32 {
             FieldType::ARRAY | FieldType::MAP => compute_field_hash(hash, *ty as i16),
             _ => hash,
         };
-        let is_basic_type = BASIC_TYPES.iter().any(|x| *x == *ty);
+        let is_basic_type = BASIC_TYPES.contains(ty);
         if is_basic_type {
             hash = compute_field_hash(hash, *ty as i16);
         }
@@ -141,6 +141,7 @@ pub enum Language {
     Go = 4,
     Javascript = 5,
     Rust = 6,
+    Dart = 7,
 }
 
 #[derive(PartialEq)]

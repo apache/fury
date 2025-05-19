@@ -21,54 +21,95 @@ import ClassResolver from "./classResolver";
 import { BinaryWriter } from "./writer";
 import { BinaryReader } from "./reader";
 import { ReferenceResolver } from "./referenceResolver";
-import { ConfigFlags, Serializer, Config, Language, MAGIC_NUMBER, Mode } from "./type";
+import { ConfigFlags, Serializer, Config, Language, MAGIC_NUMBER, Mode, FuryTypeInfoSymbol, WithFuryClsInfo } from "./type";
 import { OwnershipError } from "./error";
-import { InputType, ResultType, TypeDescription } from "./description";
-import { generateSerializer, AnySerializer } from "./gen";
+import { InputType, ResultType, TypeInfo } from "./typeInfo";
+import { Gen, AnySerializer } from "./gen";
 import { TypeMeta } from "./meta/TypeMeta";
+import { PlatformBuffer } from "./platformBuffer";
+import { TypeMetaResolver } from "./typeMetaResolver";
+import { MetaStringResolver } from "./metaStringResolver";
 
 export default class {
   binaryReader: BinaryReader;
   binaryWriter: BinaryWriter;
-  classResolver = new ClassResolver();
+  classResolver: ClassResolver;
+  typeMetaResolver: TypeMetaResolver;
+  metaStringResolver: MetaStringResolver;
   referenceResolver: ReferenceResolver;
   anySerializer: AnySerializer;
   typeMeta = TypeMeta;
+  config: Config;
 
-  constructor(public config: Config = {
-    refTracking: false,
-    useSliceString: false,
-    hooks: {
-    },
-    mode: Mode.SchemaConsistent,
-  }) {
-    this.binaryReader = new BinaryReader(config);
-    this.binaryWriter = new BinaryWriter(config);
+  constructor(config?: Partial<Config>) {
+    this.config = this.initConfig(config);
+    this.binaryReader = new BinaryReader(this.config);
+    this.binaryWriter = new BinaryWriter(this.config);
     this.referenceResolver = new ReferenceResolver(this.binaryReader);
-    this.classResolver.init(this);
+    this.typeMetaResolver = new TypeMetaResolver(this);
+    this.classResolver = new ClassResolver(this);
     this.anySerializer = new AnySerializer(this);
+    this.metaStringResolver = new MetaStringResolver(this);
+    this.classResolver.init();
   }
 
-  registerSerializer<T extends TypeDescription>(description: T) {
-    const serializer = generateSerializer(this, description);
+  private initConfig(config: Partial<Config> | undefined) {
+    return {
+      refTracking: Boolean(config?.refTracking),
+      useSliceString: Boolean(config?.useSliceString),
+      hooks: config?.hooks || {},
+      mode: config?.mode || Mode.SchemaConsistent,
+      constructClass: Boolean(config?.constructClass),
+    };
+  }
+
+  registerSerializer<T extends new () => any>(constructor: T, replace?: boolean): {
+    serializer: Serializer;
+    serialize(data: Partial<InstanceType<T>> | null): PlatformBuffer;
+    serializeVolatile(data: Partial<InstanceType<T>>): {
+      get: () => Uint8Array;
+      dispose: () => void;
+    };
+    deserialize(bytes: Uint8Array): InstanceType<T> | null;
+  };
+  registerSerializer<T extends TypeInfo>(typeInfo: T, replace?: boolean): {
+    serializer: Serializer;
+    serialize(data: InputType<T> | null): PlatformBuffer;
+    serializeVolatile(data: InputType<T>): {
+      get: () => Uint8Array;
+      dispose: () => void;
+    };
+    deserialize(bytes: Uint8Array): ResultType<T>;
+  };
+  registerSerializer(constructor: any, replace = false) {
+    let serializer: Serializer;
+    if (constructor.prototype?.[FuryTypeInfoSymbol]) {
+      const typeInfo: TypeInfo = (<WithFuryClsInfo>(constructor.prototype[FuryTypeInfoSymbol])).structTypeInfo;
+      serializer = new Gen(this, replace, { constructor }).generateSerializer(typeInfo);
+      this.classResolver.registerSerializer(typeInfo, serializer);
+    } else {
+      const typeInfo = constructor;
+      serializer = new Gen(this, replace).generateSerializer(typeInfo);
+    }
     return {
       serializer,
-      serialize: (data: InputType<T>) => {
+      serialize: (data: any) => {
         return this.serialize(data, serializer);
       },
-      serializeVolatile: (data: InputType<T>) => {
+      serializeVolatile: (data: any) => {
         return this.serializeVolatile(data, serializer);
       },
       deserialize: (bytes: Uint8Array) => {
-        return this.deserialize(bytes, serializer) as ResultType<T>;
+        return this.deserialize(bytes, serializer);
       },
     };
   }
 
   deserialize<T = any>(bytes: Uint8Array, serializer: Serializer = this.anySerializer): T | null {
     this.referenceResolver.reset();
-    this.classResolver.reset();
     this.binaryReader.reset(bytes);
+    this.typeMetaResolver.reset();
+    this.metaStringResolver.reset();
     if (this.binaryReader.int16() !== MAGIC_NUMBER) {
       throw new Error("the fury xlang serialization must start with magic number 0x%x. Please check whether the serialization is based on the xlang protocol and the data didn't corrupt");
     }
@@ -105,7 +146,6 @@ export default class {
       throw e;
     }
     this.referenceResolver.reset();
-    this.classResolver.reset();
     let bitmap = 0;
     if (data === null) {
       bitmap |= ConfigFlags.isNullFlag;
@@ -119,7 +159,7 @@ export default class {
     this.binaryWriter.skip(4); // preserve 4-byte for nativeObjects start offsets.
     this.binaryWriter.uint32(0); // nativeObjects length.
     // reserve fixed size
-    this.binaryWriter.reserve(serializer.meta.fixedSize);
+    this.binaryWriter.reserve(serializer.fixedSize);
     // start write
     serializer.write(data);
     this.binaryWriter.setUint32Position(cursor, this.binaryWriter.getCursor()); // nativeObjects start offsets;
