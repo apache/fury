@@ -20,7 +20,7 @@ go test -v fury_xlang_test.go
 cd go/fury
 gofmt -s -w .
 ```
-When using Go's gofmt -s -w . command on Windows, ensure your source files use Unix-style line endings (LF) instead of Windows-style (CRLF). Go tools expect LF by default, and mismatched line endings may cause unexpected behavior or unnecessary changes in version control.
 
+When using Go's gofmt -s -w . command on Windows, ensure your source files use Unix-style line endings (LF) instead of Windows-style (CRLF). Go tools expect LF by default, and mismatched line endings may cause unexpected behavior or unnecessary changes in version control.
 
 Before committing, you can use `git config core.autocrlf input` to take effect on future commits.
