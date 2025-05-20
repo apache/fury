@@ -599,10 +599,14 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
           boolean trackKeyRef = (chunkHeader & TRACKING_KEY_REF) != 0;
           Object key;
           if ((chunkHeader & KEY_DECL_TYPE) != 0) {
-            if (trackKeyRef) {
-              key = binding.readRef(buffer, keySerializer);
+            if (keySerializer == null) {
+              key = readNonEmptyValueFromNullChunk(buffer, trackKeyRef, true);
             } else {
-              key = binding.read(buffer, keySerializer);
+              if (trackKeyRef) {
+                key = binding.readRef(buffer, keySerializer);
+              } else {
+                key = binding.read(buffer, keySerializer);
+              }
             }
           } else {
             key = binding.readRef(buffer, keyClassInfoReadCache);
@@ -635,10 +639,14 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
       Object value;
       boolean trackValueRef = (chunkHeader & TRACKING_VALUE_REF) != 0;
       if ((chunkHeader & VALUE_DECL_TYPE) != 0) {
-        if (trackValueRef) {
-          value = binding.readRef(buffer, valueSerializer);
+        if (valueSerializer == null) {
+          value = readNonEmptyValueFromNullChunk(buffer, trackValueRef, false);
         } else {
-          value = binding.read(buffer, valueSerializer);
+          if (trackValueRef) {
+            value = binding.readRef(buffer, valueSerializer);
+          } else {
+            value = binding.read(buffer, valueSerializer);
+          }
         }
       } else {
         value = binding.readRef(buffer, valueClassInfoReadCache);
@@ -647,6 +655,28 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     } else {
       map.put(null, null);
     }
+  }
+
+  private Object readNonEmptyValueFromNullChunk(
+      MemoryBuffer buffer, boolean trackRef, boolean isKey) {
+    Generics generics = fury.getGenerics();
+    GenericType genericType = generics.nextGenericType();
+    if (genericType.getTypeParametersCount() < 2) {
+      genericType = getKVGenericType(genericType);
+    }
+    GenericType type = isKey ? genericType.getTypeParameter0() : genericType.getTypeParameter1();
+    generics.pushGenericType(type);
+    fury.incDepth(1);
+    Serializer<?> serializer = type.getSerializer(typeResolver);
+    Object v;
+    if (trackRef) {
+      v = binding.readRef(buffer, serializer);
+    } else {
+      v = binding.read(buffer, serializer);
+    }
+    fury.incDepth(-1);
+    generics.popGenericType();
+    return v;
   }
 
   @CodegenInvoke
