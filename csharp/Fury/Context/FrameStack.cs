@@ -11,7 +11,10 @@ internal sealed class FrameStack<TFrame>
     private int _frameCount;
     private int _currentFrameIndex = -1;
 
-    public TFrame CurrentFrame => _frames[_frameCount - 1];
+    /// <summary>
+    /// Get the current frame. When resuming serialization or deserialization, the current frame may not be the last frame.
+    /// </summary>
+    public TFrame CurrentFrame => _frames[_currentFrameIndex];
     public bool IsCurrentTheLastFrame => _currentFrameIndex == _frameCount - 1;
 
     public void MoveNext()
