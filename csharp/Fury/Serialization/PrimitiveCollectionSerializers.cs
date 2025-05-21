@@ -6,7 +6,9 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Fury.Buffers;
 using Fury.Context;
+using Fury.Helpers;
 
 namespace Fury.Serialization;
 
@@ -70,19 +72,12 @@ internal sealed class PrimitiveArrayDeserializer<TElement> : AbstractDeserialize
         return task.Result;
     }
 
-    public override ValueTask<ReadValueResult<TElement[]>> DeserializeAsync(
-        DeserializationReader reader,
-        CancellationToken cancellationToken = default
-    )
+    public override ValueTask<ReadValueResult<TElement[]>> DeserializeAsync(DeserializationReader reader, CancellationToken cancellationToken = default)
     {
         return Deserialize(reader, true, cancellationToken);
     }
 
-    private async ValueTask<ReadValueResult<TElement[]>> Deserialize(
-        DeserializationReader reader,
-        bool isAsync,
-        CancellationToken cancellationToken
-    )
+    private async ValueTask<ReadValueResult<TElement[]>> Deserialize(DeserializationReader reader, bool isAsync, CancellationToken cancellationToken)
     {
         if (_array is null)
         {
@@ -103,13 +98,18 @@ internal sealed class PrimitiveArrayDeserializer<TElement> : AbstractDeserialize
         }
 
         var totalByteCount = _array.Length * ElementSize;
-        var unreadByteCount = totalByteCount - _readByteCount;
-        var readResult = await reader.Read(unreadByteCount, isAsync, cancellationToken);
-        var buffer = readResult.Buffer;
-        var destination = MemoryMarshal.AsBytes(_array.AsSpan()).Slice(_readByteCount);
-        var consumed = buffer.CopyUpTo(destination);
-        _readByteCount += consumed;
-        reader.AdvanceTo(buffer.GetPosition(consumed));
+
+        if (isAsync)
+        {
+            var memoryManager = new UnmanagedToByteArrayMemoryManager<TElement>(_array);
+            var destination = memoryManager.Memory.Slice(_readByteCount);
+            _readByteCount += await reader.ReadBytesAsync(destination, cancellationToken);
+        }
+        else
+        {
+            var destination = MemoryMarshal.AsBytes(_array.AsSpan()).Slice(_readByteCount);
+            _readByteCount += reader.ReadBytes(destination);
+        }
         Debug.Assert(_readByteCount <= totalByteCount);
 
         if (_readByteCount != totalByteCount)
@@ -123,31 +123,80 @@ internal sealed class PrimitiveArrayDeserializer<TElement> : AbstractDeserialize
     [DoesNotReturn]
     private static void ThrowBadDeserializationInputException_InvalidByteCount(int byteCount)
     {
-        throw new BadDeserializationInputException(
-            $"Invalid byte count: {byteCount}. Expected a multiple of {ElementSize}."
-        );
+        throw new BadDeserializationInputException($"Invalid byte count: {byteCount}. Expected a multiple of {ElementSize}.");
     }
 }
 
+#if NET5_0_OR_GREATER
 internal sealed class PrimitiveListSerializer<TElement> : CollectionSerializer<TElement, List<TElement>>
     where TElement : unmanaged
 {
-    private int writtenByteCount;
+    private int _writtenByteCount;
 
     public override void Reset()
     {
         base.Reset();
-        writtenByteCount = 0;
+        _writtenByteCount = 0;
     }
 
-#if NET5_0_OR_GREATER
-    protected override bool WriteElements(ref SerializationWriterRef writer, in List<TElement> collection)
+    protected override int GetCount(in List<TElement> collection)
     {
-        var span = MemoryMarshal.AsBytes(CollectionsMarshal.AsSpan(collection));
-        writtenByteCount += writer.WriteBytes(span.Slice(writtenByteCount));
-        return writtenByteCount == span.Length;
+        return collection.Count;
     }
+
+    protected override bool WriteElements(ref SerializationWriterRef writerRef, in List<TElement> collection)
+    {
+        var bytes = MemoryMarshal.AsBytes(CollectionsMarshal.AsSpan(collection));
+        _writtenByteCount += writerRef.WriteBytes(bytes.Slice(_writtenByteCount));
+        return _writtenByteCount == bytes.Length;
+    }
+
+    protected override CollectionCheckResult CheckElementsState(in List<TElement> collection, CollectionCheckOptions options)
+    {
+        return new CollectionCheckResult(false, typeof(TElement));
+    }
+}
 #endif
 
+#if NET8_0_OR_GREATER
+internal sealed class PrimitiveListDeserializer<TElement> : CollectionDeserializer<TElement, List<TElement>>
+    where TElement : unmanaged
+{
+    private static readonly int ElementSize = Unsafe.SizeOf<TElement>();
 
+    private int _readByteCount;
+    private int _totalByteCount;
+
+    private readonly UnmanagedToByteListMemoryManager<TElement> _listMemoryManager = new();
+    private Memory<byte> ByteMemory => _listMemoryManager.Memory;
+
+    public override void Reset()
+    {
+        base.Reset();
+        _readByteCount = 0;
+        _totalByteCount = 0;
+    }
+
+    protected override void CreateCollection(int count)
+    {
+        _totalByteCount = count * ElementSize;
+        Collection = new List<TElement>(count);
+        CollectionsMarshal.SetCount(Collection, count);
+        _listMemoryManager.List = Collection;
+    }
+
+    protected override bool ReadElements(DeserializationReader reader)
+    {
+        var destination = MemoryMarshal.AsBytes(CollectionsMarshal.AsSpan(Collection)).Slice(_readByteCount);
+        _readByteCount += reader.ReadBytes(destination);
+        return _readByteCount == _totalByteCount;
+    }
+
+    protected override async ValueTask<bool> ReadElementsAsync(DeserializationReader reader, CancellationToken cancellationToken)
+    {
+        var destination = ByteMemory.Slice(_readByteCount);
+        _readByteCount += await reader.ReadBytesAsync(destination, cancellationToken);
+        return _readByteCount == _totalByteCount;
+    }
 }
+#endif

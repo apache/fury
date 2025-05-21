@@ -6,8 +6,8 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Fury.Buffers;
 using Fury.Context;
+using Fury.Helpers;
 using Fury.Serialization.Meta;
 
 namespace Fury.Serialization;
@@ -23,36 +23,39 @@ internal enum CollectionHeaderFlags : byte
 
 // IReadOnlyCollection<TElement> is not inherited from ICollection<TElement>, so we use IEnumerable<TElement> instead.
 
-public abstract class CollectionSerializer<TElement, TCollection>(TypeRegistration? elementRegistration = null)
-    : AbstractSerializer<TCollection>
+public abstract class CollectionSerializer<TElement, TCollection>(TypeRegistration? elementRegistration = null) : AbstractSerializer<TCollection>
     where TCollection : notnull
 {
     private bool _hasWrittenHeader;
     private bool _hasInitializedTypeMetaSerializer;
+    private CollectionHeaderFlags _writtenCollectionFlags;
 
     /// <summary>
     /// Only used when elements are same type but not declared type.
     /// </summary>
-    private TypeRegistration? _cachedElementRegistration;
+    private TypeRegistration? _elementRegistration = elementRegistration;
+    private readonly bool _shouldResetElementRegistration = elementRegistration is null;
     private TypeMetaSerializer? _elementTypeMetaSerializer;
     private bool _hasWrittenCount;
-
-    protected TypeRegistration? ElementRegistration { get; set; } = elementRegistration;
 
     public override void Reset()
     {
         _hasWrittenHeader = false;
+        _writtenCollectionFlags = default;
         _hasWrittenCount = false;
 
+        if (_shouldResetElementRegistration)
+        {
+            _elementRegistration = null;
+        }
         _hasInitializedTypeMetaSerializer = false;
-        _cachedElementRegistration = null;
     }
 
     public sealed override bool Serialize(SerializationWriter writer, in TCollection value)
     {
-        if (ElementRegistration is null && typeof(TElement).IsSealed)
+        if (_elementRegistration is null && typeof(TElement).IsSealed)
         {
-            ElementRegistration = writer.TypeRegistry.GetTypeRegistration(typeof(TElement));
+            _elementRegistration = writer.TypeRegistry.GetTypeRegistration(typeof(TElement));
         }
 
         var writerRef = writer.ByrefWriter;
@@ -61,47 +64,57 @@ public abstract class CollectionSerializer<TElement, TCollection>(TypeRegistrati
         {
             return false;
         }
+        WriteElementsHeader(ref writerRef, in value, out var needWriteTypeMeta);
+        if (!_hasWrittenHeader)
+        {
+            return false;
+        }
+
+        if (needWriteTypeMeta)
+        {
+            if (!WriteTypeMeta(ref writerRef))
+            {
+                return false;
+            }
+        }
 
         return WriteElements(ref writerRef, in value);
     }
 
-    // TODO: Implement this method
-    private bool WriteElementsHeader(ref SerializationWriterRef writerRef, in TCollection collection)
+    private void WriteElementsHeader(ref SerializationWriterRef writerRef, in TCollection collection, out bool needWriteTypeMeta)
     {
-        // For value types:
-        // 1. If TElement is nullable, we check if there is any null element and write nullability header.
-        // 2. If TElement is not nullable, we write a header without default value.
-        // For reference types:
-        // 1. If TElement is sealed:
-        //   1. If ReferenceTracking is enabled, we write a header with tracking reference flag.
-        //   2. If ReferenceTracking is disabled, we write a header with nullability flag.
-        // 2. If TElement is not sealed:
-        //   1. If ReferenceTracking is enabled, we write a header with tracking reference flag.
-
+        needWriteTypeMeta = false;
         if (typeof(TElement).IsValueType)
         {
-            if (NullableHelper.IsNullable(typeof(TElement)))
+            // For value types, all elements are the same as the declared type.
+            if (TypeHelper.IsNullable(typeof(TElement)))
             {
+                // If the element type is nullable, we need to check if there are any null elements.
                 WriteNullabilityHeader(ref writerRef, in collection);
             }
             else
             {
-                WriteHeader(ref writerRef, default);
+                // If the element type is not nullable, we can write a header without any flags.
+                WriteHeaderFlags(ref writerRef, default);
             }
-            return _hasWrittenHeader;
+
+            _elementRegistration = writerRef.TypeRegistry.GetTypeRegistration(typeof(TElement));
         }
         var config = writerRef.Config;
         if (typeof(TElement).IsSealed)
         {
+            // For sealed reference types, all elements are the same as the declared type.
             if (config.ReferenceTracking)
             {
                 // RefFlag contains the nullability information, so we don't need to write HasNull flag here.
-                WriteHeader(ref writerRef, CollectionHeaderFlags.TrackingRef);
+                WriteHeaderFlags(ref writerRef, CollectionHeaderFlags.TrackingRef);
             }
             else
             {
+                // If ReferenceTracking is disabled, we need to check if there are any null elements to determine if we need to write the HasNull flag.
                 WriteNullabilityHeader(ref writerRef, in collection);
             }
+            _elementRegistration = writerRef.TypeRegistry.GetTypeRegistration(typeof(TElement));
         }
         else
         {
@@ -111,46 +124,29 @@ public abstract class CollectionSerializer<TElement, TCollection>(TypeRegistrati
                 var checkResult = CheckElementsState(in collection, CollectionCheckOptions.TypeConsistency);
                 if (checkResult.ElementType is { } elementType)
                 {
-                    // TODO: Handle the case when all elements are null.
-                    if (elementType == typeof(TElement))
-                    {
-                        WriteHeader(ref writerRef, flags);
-                    }
-                    else
+                    _elementRegistration = writerRef.TypeRegistry.GetTypeRegistration(elementType);
+                    if (elementType != typeof(TElement))
                     {
                         flags |= CollectionHeaderFlags.NotDeclElementType;
-                        WriteHeader(ref writerRef, flags);
-                        if (!_hasWrittenHeader)
-                        {
-                            return false;
-                        }
-
-                        _elementTypeMetaSerializer ??= writerRef.InnerWriter.CreateTypeMetaSerializer();
-                        if (!_hasInitializedTypeMetaSerializer)
-                        {
-                            _elementTypeMetaSerializer.Initialize(writerRef.InnerWriter.MetaStringContext);
-                            _hasInitializedTypeMetaSerializer = true;
-                        }
-
-                        _cachedElementRegistration = writerRef.TypeRegistry.GetTypeRegistration(elementType);
-                        _elementTypeMetaSerializer.Write(ref writerRef, _cachedElementRegistration);
+                        needWriteTypeMeta = true;
                     }
                 }
                 else
                 {
+                    // ElementType is null, which means elements are not the same type or all null.
                     flags |= CollectionHeaderFlags.NotSameType | CollectionHeaderFlags.NotDeclElementType;
-                    WriteHeader(ref writerRef, flags);
                 }
+
+                WriteHeaderFlags(ref writerRef, flags);
             }
         }
-        return _hasWrittenHeader;
     }
 
     private void WriteNullabilityHeader(ref SerializationWriterRef writerRef, in TCollection collection)
     {
         var checkResult = CheckElementsState(in collection, CollectionCheckOptions.Nullability);
         var flags = checkResult.HasNull ? CollectionHeaderFlags.HasNull : default;
-        WriteHeader(ref writerRef, flags);
+        WriteHeaderFlags(ref writerRef, flags);
     }
 
     /// <summary>
@@ -167,10 +163,7 @@ public abstract class CollectionSerializer<TElement, TCollection>(TypeRegistrati
     /// A <see cref="CollectionCheckResult"/> indicating the result of the checks.
     /// </returns>
     /// <seealso cref="CheckElementsState{T}"/>
-    protected virtual CollectionCheckResult CheckElementsState(
-        in TCollection collection,
-        CollectionCheckOptions options
-    )
+    protected virtual CollectionCheckResult CheckElementsState(in TCollection collection, CollectionCheckOptions options)
     {
         if (collection is not IEnumerable<TElement> enumerable)
         {
@@ -193,10 +186,7 @@ public abstract class CollectionSerializer<TElement, TCollection>(TypeRegistrati
     /// <returns>
     /// A <see cref="CollectionCheckResult"/> indicating the result of the checks.
     /// </returns>
-    protected CollectionCheckResult CheckElementsState<TEnumerator>(
-        in TEnumerator enumerator,
-        CollectionCheckOptions options
-    )
+    protected CollectionCheckResult CheckElementsState<TEnumerator>(in TEnumerator enumerator, CollectionCheckOptions options)
         where TEnumerator : IEnumerator<TElement>
     {
         // We create this separate method to avoid boxing the enumerator.
@@ -223,7 +213,7 @@ public abstract class CollectionSerializer<TElement, TCollection>(TypeRegistrati
     private static CollectionCheckResult CheckElementsNullability<TEnumerator>(TEnumerator enumerator)
         where TEnumerator : IEnumerator<TElement>
     {
-        if (typeof(TElement).IsValueType && !NullableHelper.IsNullable(typeof(TElement)))
+        if (typeof(TElement).IsValueType && !TypeHelper.IsNullable(typeof(TElement)))
         {
             return CollectionCheckResult.FromNullability(false);
         }
@@ -306,14 +296,27 @@ public abstract class CollectionSerializer<TElement, TCollection>(TypeRegistrati
         return new CollectionCheckResult(hasNull, hasDifferentType ? null : elementType);
     }
 
-    private void WriteHeader(ref SerializationWriterRef writerRef, CollectionHeaderFlags flags)
+    private void WriteHeaderFlags(ref SerializationWriterRef writerRef, CollectionHeaderFlags flags)
     {
         if (_hasWrittenHeader)
         {
+            Debug.Assert(_writtenCollectionFlags == flags);
             return;
         }
 
         _hasWrittenHeader = writerRef.WriteUInt8((byte)flags);
+        _writtenCollectionFlags = flags;
+    }
+
+    private bool WriteTypeMeta(ref SerializationWriterRef writerRef)
+    {
+        _elementTypeMetaSerializer ??= writerRef.InnerWriter.CreateTypeMetaSerializer();
+        if (!_hasInitializedTypeMetaSerializer)
+        {
+            _elementTypeMetaSerializer.Initialize(writerRef.InnerWriter.MetaStringContext);
+            _hasInitializedTypeMetaSerializer = true;
+        }
+        return _elementTypeMetaSerializer.Write(ref writerRef, _elementRegistration!);
     }
 
     private void WriteCount(ref SerializationWriterRef writerRef, in TCollection collection)
@@ -327,15 +330,27 @@ public abstract class CollectionSerializer<TElement, TCollection>(TypeRegistrati
         _hasWrittenCount = writerRef.Write7BitEncodedUInt32((uint)count);
     }
 
-    protected abstract bool WriteElements(ref SerializationWriterRef writer, in TCollection collection);
+    protected bool WriteElement(ref SerializationWriterRef writerRef, in TElement element)
+    {
+        ObjectMetaOption metaOption = default;
+        if ((_writtenCollectionFlags & (CollectionHeaderFlags.TrackingRef | CollectionHeaderFlags.HasNull)) != 0)
+        {
+            metaOption |= ObjectMetaOption.ReferenceMeta;
+        }
+        if ((_writtenCollectionFlags & CollectionHeaderFlags.NotSameType) != 0)
+        {
+            metaOption |= ObjectMetaOption.TypeMeta;
+        }
+        return writerRef.Write(element, metaOption, _elementRegistration);
+    }
+
+    protected abstract bool WriteElements(ref SerializationWriterRef writerRef, in TCollection collection);
 
     protected abstract int GetCount(in TCollection collection);
 
     private void ThrowNotSupportedException_TCollectionNotSupported([CallerMemberName] string methodName = "")
     {
-        throw new NotSupportedException(
-            $"The default implementation of {methodName} is not supported for {typeof(TCollection).Name}."
-        );
+        throw new NotSupportedException($"The default implementation of {methodName} is not supported for {typeof(TCollection).Name}.");
     }
 
     [Flags]
@@ -355,21 +370,38 @@ public abstract class CollectionSerializer<TElement, TCollection>(TypeRegistrati
     }
 }
 
-public abstract class CollectionDeserializer<TElement, TCollection>(TypeRegistration? elementRegistration = null)
-    : AbstractDeserializer<TCollection>
+public abstract class CollectionDeserializer<TElement, TCollection>(TypeRegistration? elementRegistration = null) : AbstractDeserializer<TCollection>
     where TCollection : notnull
 {
-    private int? _count;
+    private bool _hasReadCount;
     private CollectionHeaderFlags? _headerFlags;
 
     protected TCollection? Collection;
     private TypeRegistration? _elementRegistration = elementRegistration;
+    private readonly bool _shouldResetElementRegistration = elementRegistration is null;
+
+    public override object ReferenceableObject
+    {
+        get
+        {
+            if (typeof(TCollection).IsValueType)
+            {
+                ThrowNotSupportedException_ValueTypeNotSupported();
+            }
+
+            return Collection!;
+        }
+    }
 
     public override void Reset()
     {
-        _count = null;
+        _hasReadCount = false;
         _headerFlags = null;
         Collection = default;
+        if (_shouldResetElementRegistration)
+        {
+            _elementRegistration = null;
+        }
     }
 
     public sealed override ReadValueResult<TCollection> Deserialize(DeserializationReader reader)
@@ -379,26 +411,19 @@ public abstract class CollectionDeserializer<TElement, TCollection>(TypeRegistra
         return task.Result;
     }
 
-    public sealed override ValueTask<ReadValueResult<TCollection>> DeserializeAsync(
-        DeserializationReader reader,
-        CancellationToken cancellationToken = default
-    )
+    public sealed override ValueTask<ReadValueResult<TCollection>> DeserializeAsync(DeserializationReader reader, CancellationToken cancellationToken = default)
     {
         return Deserialize(reader, true, cancellationToken);
     }
 
-    private async ValueTask<ReadValueResult<TCollection>> Deserialize(
-        DeserializationReader reader,
-        bool isAsync,
-        CancellationToken cancellationToken = default
-    )
+    private async ValueTask<ReadValueResult<TCollection>> Deserialize(DeserializationReader reader, bool isAsync, CancellationToken cancellationToken = default)
     {
         if (_elementRegistration is null && typeof(TElement).IsSealed)
         {
             _elementRegistration = reader.TypeRegistry.GetTypeRegistration(typeof(TElement));
         }
 
-        if (_count is null)
+        if (!_hasReadCount)
         {
             var countResult = await reader.Read7BitEncodedUint(isAsync, cancellationToken);
             if (!countResult.IsSuccess)
@@ -406,17 +431,16 @@ public abstract class CollectionDeserializer<TElement, TCollection>(TypeRegistra
                 return ReadValueResult<TCollection>.Failed;
             }
 
+            _hasReadCount = true;
             var count = (int)countResult.Value;
-            _count = count;
-
             CreateCollection(count);
         }
-        else
-        {
-            Debug.Assert(Collection is not null);
-        }
+        Debug.Assert(Collection is not null);
 
-        // TODO: Read header
+        if (!await ReadHeaderFlags(reader, isAsync, cancellationToken))
+        {
+            return ReadValueResult<TCollection>.Failed;
+        }
 
         bool fillSuccess;
         if (isAsync)
@@ -433,18 +457,39 @@ public abstract class CollectionDeserializer<TElement, TCollection>(TypeRegistra
         {
             return ReadValueResult<TCollection>.Failed;
         }
-        return ReadValueResult<TCollection>.FromValue(Collection);
+        return ReadValueResult<TCollection>.FromValue(Collection!);
     }
 
-    protected ReadValueResult<TElement> ReadElement(DeserializationReader reader) { }
+    private async ValueTask<bool> ReadHeaderFlags(DeserializationReader reader, bool isAsync, CancellationToken cancellationToken)
+    {
+        if (_headerFlags is not null)
+        {
+            return true;
+        }
 
-    protected ValueTask<ReadValueResult<TElement>> ReadElementAsync(DeserializationReader reader, CancellationToken cancellationToken = default) { }
+        var readFlagsResult = await reader.ReadUInt8(isAsync, cancellationToken);
+        if (!readFlagsResult.IsSuccess)
+        {
+            return false;
+        }
 
-    private protected async ValueTask<ReadValueResult<TElement?>> ReadElement(
-        DeserializationReader reader,
-        bool isAsync,
-        CancellationToken cancellationToken
-    )
+        _headerFlags = (CollectionHeaderFlags)readFlagsResult.Value;
+        return true;
+    }
+
+    protected ReadValueResult<TElement?> ReadElement(DeserializationReader reader)
+    {
+        var task = ReadElement(reader, false, CancellationToken.None);
+        Debug.Assert(task.IsCompleted);
+        return task.Result;
+    }
+
+    protected ValueTask<ReadValueResult<TElement?>> ReadElementAsync(DeserializationReader reader, CancellationToken cancellationToken = default)
+    {
+        return ReadElement(reader, true, cancellationToken);
+    }
+
+    private protected async ValueTask<ReadValueResult<TElement?>> ReadElement(DeserializationReader reader, bool isAsync, CancellationToken cancellationToken)
     {
         if (_headerFlags is not { } headerFlags)
         {
@@ -452,125 +497,210 @@ public abstract class CollectionDeserializer<TElement, TCollection>(TypeRegistra
             return ReadValueResult<TElement>.Failed;
         }
 
-        var needReadRefMeta =
-            (headerFlags & (CollectionHeaderFlags.TrackingRef | CollectionHeaderFlags.HasNull)) != 0;
-        var needReadTypeMeta = (headerFlags & CollectionHeaderFlags.NotSameType) != 0;
-
-        if (needReadRefMeta && needReadTypeMeta)
+        ObjectMetaOption metaOption = default;
+        if ((headerFlags & (CollectionHeaderFlags.TrackingRef | CollectionHeaderFlags.HasNull)) != 0)
         {
-            return await reader.Deserialize<TElement>(_elementRegistration, isAsync, cancellationToken);
+            metaOption |= ObjectMetaOption.ReferenceMeta;
         }
+        if ((headerFlags & CollectionHeaderFlags.NotSameType) != 0)
+        {
+            metaOption |= ObjectMetaOption.TypeMeta;
+        }
+        return await reader.Read<TElement>(_elementRegistration, metaOption, isAsync, cancellationToken);
     }
 
     protected abstract bool ReadElements(DeserializationReader reader);
 
-    protected abstract ValueTask<bool> ReadElementsAsync(
-        DeserializationReader reader,
-        CancellationToken cancellationToken
-    );
+    protected abstract ValueTask<bool> ReadElementsAsync(DeserializationReader reader, CancellationToken cancellationToken);
 
     [MemberNotNull(nameof(Collection))]
     protected abstract void CreateCollection(int count);
 
     [DoesNotReturn]
-    private void ThrowInvalidOperationException_HeaderNotRead()
+    private static void ThrowInvalidOperationException_HeaderNotRead()
     {
         throw new InvalidOperationException(
-            $"Header not read yet. Call {nameof(ReadElement)} in {nameof(ReadElements)} " +
-            $"or {nameof(ReadElementAsync)} in {nameof(ReadElementsAsync)}."
+            $"Header not read yet. Call {nameof(ReadElement)} in {nameof(ReadElements)} " + $"or {nameof(ReadElementAsync)} in {nameof(ReadElementsAsync)}."
+        );
+    }
+
+    [DoesNotReturn]
+    private static void ThrowNotSupportedException_ValueTypeNotSupported([CallerMemberName] string memberName = "")
+    {
+        throw new NotSupportedException(
+            $"{memberName}'s default implementation is not supported when {nameof(TCollection)} is a value type: {typeof(TCollection).Name}."
         );
     }
 }
 
 #region Built-in
 
-internal sealed class ListSerializer<TElement>(TypeRegistration? elementRegistration)
-    : CollectionSerializer<TElement, List<TElement>>(elementRegistration)
+internal sealed class ListSerializer<TElement>(TypeRegistration? elementRegistration) : CollectionSerializer<TElement, List<TElement>>(elementRegistration)
 {
-    private int _writtenCount;
+    private int _currentIndex;
 
     public override void Reset()
     {
         base.Reset();
-        _writtenCount = 0;
+        _currentIndex = 0;
     }
 
     protected override int GetCount(in List<TElement> list) => list.Count;
 
-    protected override bool WriteElements(ref SerializationWriterRef writer, in List<TElement> collection)
+    protected override bool WriteElements(ref SerializationWriterRef writerRef, in List<TElement> collection)
     {
 #if NET5_0_OR_GREATER
-        var elementSpan = CollectionsMarshal.AsSpan(collection);
-        for (; _writtenCount < elementSpan.Length; _writtenCount++)
+        var elements = CollectionsMarshal.AsSpan(collection);
+        for (; _currentIndex < elements.Length; _currentIndex++)
         {
-            if (!writer.Serialize(in elementSpan[_writtenCount]))
+            if (!WriteElement(ref writerRef, in elements[_currentIndex]))
             {
                 return false;
             }
         }
-
-        return true;
 #else
-        foreach (var element in collection)
+        for (; _currentIndex < collection.Count; _currentIndex++)
         {
-            if (!writer.Serialize(in element))
+            if (!WriteElement(ref writerRef, collection[_currentIndex]))
             {
                 return false;
             }
         }
-
-        return true;
 #endif
+        return true;
     }
 
-    protected override CollectionCheckResult CheckElementsState(
-        in List<TElement> collection,
-        CollectionCheckOptions options
-    )
+    protected override CollectionCheckResult CheckElementsState(in List<TElement> collection, CollectionCheckOptions options)
     {
         return base.CheckElementsState(collection.GetEnumerator(), options);
     }
 }
 
-internal sealed class ListDeserializer<TElement>(TypeRegistration? elementRegistration)
-    : CollectionDeserializer<TElement, List<TElement>>(elementRegistration)
+internal sealed class ListDeserializer<TElement>(TypeRegistration? elementRegistration) : CollectionDeserializer<TElement, List<TElement?>>(elementRegistration)
 {
-    protected override void CreateCollection(int count) => new(count);
+    private int _count;
+    private int _currentIndex;
+    public override object ReferenceableObject => Collection!;
 
-    protected override bool ReadElements(DeserializationReader reader) { }
-
-    protected override ValueTask<bool> ReadElementsAsync(
-        DeserializationReader reader,
-        CancellationToken cancellationToken
-    ) { }
-
-    private async ValueTask<bool> ReadElements(
-        DeserializationReader reader,
-        bool isAsync,
-        CancellationToken cancellationToken
-    ) { }
-}
-
-internal sealed class ArraySerializer<TElement>(TypeRegistration? elementRegistration)
-    : CollectionSerializer<TElement, TElement[]>(elementRegistration)
-{
-    protected override int GetCount(in TElement[] list) => list.Length;
-
-    protected override bool TryGetSpan(in TElement[] list, out ReadOnlySpan<TElement> elementSpan)
+    public override void Reset()
     {
-        elementSpan = list;
+        base.Reset();
+        _count = 0;
+        _currentIndex = 0;
+    }
+
+    protected override void CreateCollection(int count)
+    {
+        _count = count;
+        Collection = new List<TElement?>(count);
+    }
+
+    protected override bool ReadElements(DeserializationReader reader)
+    {
+#if NET8_0_OR_GREATER
+        CollectionsMarshal.SetCount(Collection!, _count);
+        var elements = CollectionsMarshal.AsSpan(Collection);
+#else
+        var elements = Collection!;
+#endif
+        for (; _currentIndex < _count; _currentIndex++)
+        {
+            var readResult = ReadElement(reader);
+            if (!readResult.IsSuccess)
+            {
+                return false;
+            }
+#if NET8_0_OR_GREATER
+            elements[_currentIndex] = readResult.Value;
+#else
+            elements.Add(readResult.Value);
+#endif
+        }
+
+        return true;
+    }
+
+    protected override async ValueTask<bool> ReadElementsAsync(DeserializationReader reader, CancellationToken cancellationToken)
+    {
+        for (; _currentIndex < _count; _currentIndex++)
+        {
+            var readResult = await ReadElementAsync(reader, cancellationToken);
+            if (!readResult.IsSuccess)
+            {
+                return false;
+            }
+
+            Collection!.Add(readResult.Value);
+        }
+
         return true;
     }
 }
 
-internal sealed class ArrayDeserializer<TElement>(TypeRegistration? elementRegistration)
-    : CollectionDeserializer<TElement, TElement[]>(elementRegistration)
+internal sealed class ArraySerializer<TElement>(TypeRegistration? elementRegistration) : CollectionSerializer<TElement, TElement[]>(elementRegistration)
 {
-    protected override void CreateCollection(int count) => new TElement[count];
+    private int _currentIndex;
 
-    protected override bool TryGetMemory(ref TElement[] list, out Memory<TElement> elementMemory)
+    public override void Reset()
     {
-        elementMemory = list;
+        base.Reset();
+        _currentIndex = 0;
+    }
+
+    protected override int GetCount(in TElement[] list) => list.Length;
+
+    protected override bool WriteElements(ref SerializationWriterRef writerRef, in TElement[] collection)
+    {
+        for (; _currentIndex < collection.Length; _currentIndex++)
+        {
+            if (!WriteElement(ref writerRef, in collection[_currentIndex]))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+}
+
+internal sealed class ArrayDeserializer<TElement>(TypeRegistration? elementRegistration) : CollectionDeserializer<TElement, TElement?[]>(elementRegistration)
+{
+    private int _currentIndex;
+
+    public override object ReferenceableObject => Collection!;
+
+    public override void Reset()
+    {
+        base.Reset();
+        _currentIndex = 0;
+    }
+
+    protected override void CreateCollection(int count) => Collection = new TElement[count];
+
+    protected override bool ReadElements(DeserializationReader reader)
+    {
+        var task = ReadElements(reader, false, CancellationToken.None);
+        Debug.Assert(task.IsCompleted);
+        return task.Result;
+    }
+
+    protected override ValueTask<bool> ReadElementsAsync(DeserializationReader reader, CancellationToken cancellationToken)
+    {
+        return ReadElements(reader, true, cancellationToken);
+    }
+
+    private async ValueTask<bool> ReadElements(DeserializationReader reader, bool isAsync, CancellationToken cancellationToken)
+    {
+        for (; _currentIndex < Collection!.Length; _currentIndex++)
+        {
+            var readResult = await ReadElement(reader, isAsync, cancellationToken);
+            if (!readResult.IsSuccess)
+            {
+                return false;
+            }
+
+            Collection[_currentIndex] = readResult.Value;
+        }
         return true;
     }
 }
@@ -578,22 +708,94 @@ internal sealed class ArrayDeserializer<TElement>(TypeRegistration? elementRegis
 internal sealed class HashSetSerializer<TElement>(TypeRegistration? elementRegistration)
     : CollectionSerializer<TElement, HashSet<TElement>>(elementRegistration)
 {
-    protected override int GetCount(in HashSet<TElement> set)
+    private bool _hasGottenEnumerator;
+    private HashSet<TElement>.Enumerator _enumerator;
+
+    public override void Reset()
     {
-        return set.Count;
+        base.Reset();
+        _hasGottenEnumerator = false;
+    }
+
+    protected override int GetCount(in HashSet<TElement> set) => set.Count;
+
+    protected override bool WriteElements(ref SerializationWriterRef writerRef, in HashSet<TElement> collection)
+    {
+        var moveNextSuccess = true;
+        if (!_hasGottenEnumerator)
+        {
+            _enumerator = collection.GetEnumerator();
+            _hasGottenEnumerator = true;
+            moveNextSuccess = _enumerator.MoveNext();
+        }
+
+        while (moveNextSuccess)
+        {
+            if (!WriteElement(ref writerRef, _enumerator.Current))
+            {
+                return false;
+            }
+            moveNextSuccess = _enumerator.MoveNext();
+        }
+
+        return true;
+    }
+
+    protected override CollectionCheckResult CheckElementsState(in HashSet<TElement> collection, CollectionCheckOptions options)
+    {
+        return base.CheckElementsState(collection.GetEnumerator(), options);
     }
 }
 
 internal sealed class HashSetDeserializer<TElement>(TypeRegistration? elementRegistration)
-    : CollectionDeserializer<TElement, HashSet<TElement>>(elementRegistration)
+    : CollectionDeserializer<TElement, HashSet<TElement?>>(elementRegistration)
 {
+    private int _count;
+
+    public override object ReferenceableObject => Collection!;
+
+    public override void Reset()
+    {
+        base.Reset();
+        _count = 0;
+    }
+
     protected override void CreateCollection(int count)
     {
+        _count = count;
 #if NETSTANDARD2_0
-        return [];
+        Collection = [];
 #else
-        return new HashSet<TElement>(count);
+        Collection = new HashSet<TElement?>(count);
 #endif
+    }
+
+    protected override bool ReadElements(DeserializationReader reader)
+    {
+        var task = ReadElements(reader, false, CancellationToken.None);
+        Debug.Assert(task.IsCompleted);
+        return task.Result;
+    }
+
+    protected override ValueTask<bool> ReadElementsAsync(DeserializationReader reader, CancellationToken cancellationToken)
+    {
+        return ReadElements(reader, true, cancellationToken);
+    }
+
+    private async ValueTask<bool> ReadElements(DeserializationReader reader, bool isAsync, CancellationToken cancellationToken)
+    {
+        while (Collection!.Count < _count)
+        {
+            var readResult = await ReadElement(reader, isAsync, cancellationToken);
+            if (!readResult.IsSuccess)
+            {
+                return false;
+            }
+
+            Collection.Add(readResult.Value);
+        }
+
+        return true;
     }
 }
 
