@@ -286,8 +286,9 @@ public sealed class Fury : IDisposable
             {
                 return DeserializationResult<T>.FromValue(default);
             }
-            var deserializationResult = await reader.Deserialize<T>(
+            var deserializationResult = await reader.Read<T>(
                 uncompletedResult.RootTypeRegistrationHint,
+                ObjectMetaOption.ReferenceMeta | ObjectMetaOption.TypeMeta,
                 isAsync,
                 cancellationToken
             );
@@ -342,8 +343,9 @@ public sealed class Fury : IDisposable
             {
                 return DeserializationResult<T?>.FromValue(null);
             }
-            var deserializationResult = await reader.DeserializeNullable<T>(
+            var deserializationResult = await reader.ReadNullable<T>(
                 uncompletedResult.RootTypeRegistrationHint,
+                ObjectMetaOption.ReferenceMeta | ObjectMetaOption.TypeMeta,
                 isAsync,
                 cancellationToken
             );
