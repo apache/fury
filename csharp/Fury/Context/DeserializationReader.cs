@@ -9,6 +9,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Fury.Collections;
+using Fury.Helpers;
 using Fury.Meta;
 using Fury.Serialization;
 using Fury.Serialization.Meta;
@@ -40,7 +41,7 @@ public sealed class DeserializationReader
     }
 
     public TypeRegistry TypeRegistry { get; }
-    private MetaStringStorage _metaStringStorage;
+    private readonly MetaStringStorage _metaStringStorage;
 
     public DeserializationConfig Config { get; private set; } = DeserializationConfig.Default;
     private readonly BatchReader _innerReader = new();
@@ -64,8 +65,7 @@ public sealed class DeserializationReader
     {
         _innerReader.Reset();
         _headerDeserializer.Reset();
-        _referenceMetaDeserializer.Reset();
-        _typeMetaDeserializer.Reset();
+        ResetCurrent();
         foreach (var frame in _frameStack.Frames)
         {
             frame.Reset();
@@ -108,39 +108,47 @@ public sealed class DeserializationReader
     // TODO: Fast path for primitive types and string
 
     [MustUseReturnValue]
-    public ReadValueResult<TTarget?> Deserialize<TTarget>(TypeRegistration? registrationHint = null)
+    public ReadValueResult<TTarget?> Read<TTarget>(TypeRegistration? registrationHint = null)
     {
-        var task = Deserialize<TTarget>(registrationHint, false, CancellationToken.None);
+        var task = Read<TTarget>(registrationHint, ObjectMetaOption.ReferenceMeta | ObjectMetaOption.TypeMeta, false, CancellationToken.None);
         Debug.Assert(task.IsCompleted);
         return task.Result;
     }
 
     [MustUseReturnValue]
-    public ValueTask<ReadValueResult<TTarget?>> DeserializeAsync<TTarget>(
-        TypeRegistration? registrationHint = null,
-        CancellationToken cancellationToken = default
-    )
+    public ValueTask<ReadValueResult<TTarget?>> ReadAsync<TTarget>(TypeRegistration? registrationHint = null, CancellationToken cancellationToken = default)
     {
-        return Deserialize<TTarget>(registrationHint, true, cancellationToken);
+        return Read<TTarget>(registrationHint, ObjectMetaOption.ReferenceMeta | ObjectMetaOption.TypeMeta, true, cancellationToken);
     }
 
     [MustUseReturnValue]
-    internal async ValueTask<ReadValueResult<TTarget?>> Deserialize<TTarget>(
+    internal async ValueTask<ReadValueResult<TTarget?>> Read<TTarget>(
         TypeRegistration? registrationHint,
+        ObjectMetaOption metaOption,
         bool isAsync,
         CancellationToken cancellationToken
     )
     {
         _frameStack.MoveNext();
+        var currentFrame = _frameStack.CurrentFrame;
         var isSuccess = false;
         try
         {
-            isSuccess = await ReadRefMeta(isAsync, cancellationToken);
-            if (!isSuccess)
+            if ((metaOption & ObjectMetaOption.ReferenceMeta) != 0)
             {
-                return ReadValueResult<TTarget?>.Failed;
+                isSuccess = await ReadRefMeta(currentFrame, isAsync, cancellationToken);
+                if (!isSuccess)
+                {
+                    return ReadValueResult<TTarget?>.Failed;
+                }
             }
-            var valueResult = await ReadValue<TTarget>(registrationHint, isAsync, cancellationToken);
+            else
+            {
+                // If reading RefFlag is not required, it should be equivalent to RefFlag.NotNullValue.
+                currentFrame.RefMetadata = new RefMetadata(RefFlag.NotNullValue);
+            }
+
+            var valueResult = await ReadCommon<TTarget>(currentFrame, metaOption, registrationHint, isAsync, cancellationToken);
             isSuccess = valueResult.IsSuccess;
             return valueResult;
         }
@@ -151,48 +159,50 @@ public sealed class DeserializationReader
     }
 
     [MustUseReturnValue]
-    public ReadValueResult<TTarget?> DeserializeNullable<TTarget>(TypeRegistration? registrationHint = null)
+    public ReadValueResult<TTarget?> ReadNullable<TTarget>(TypeRegistration? registrationHint = null)
         where TTarget : struct
     {
-        var task = DeserializeNullable<TTarget>(registrationHint, false, CancellationToken.None);
+        var task = ReadNullable<TTarget>(registrationHint, ObjectMetaOption.ReferenceMeta | ObjectMetaOption.TypeMeta, false, CancellationToken.None);
         Debug.Assert(task.IsCompleted);
         return task.Result;
     }
 
     [MustUseReturnValue]
-    public async ValueTask<ReadValueResult<TTarget?>> DeserializeNullableAsync<TTarget>(
+    public async ValueTask<ReadValueResult<TTarget?>> ReadNullableAsync<TTarget>(
         TypeRegistration? registrationHint = null,
         CancellationToken cancellationToken = default
     )
         where TTarget : struct
     {
-        return await DeserializeNullable<TTarget>(registrationHint, true, cancellationToken);
+        return await ReadNullable<TTarget>(registrationHint, ObjectMetaOption.ReferenceMeta | ObjectMetaOption.TypeMeta, true, cancellationToken);
     }
 
     [MustUseReturnValue]
-    internal async ValueTask<ReadValueResult<TTarget?>> DeserializeNullable<TTarget>(
+    internal async ValueTask<ReadValueResult<TTarget?>> ReadNullable<TTarget>(
         TypeRegistration? registrationHint,
+        ObjectMetaOption metaOption,
         bool isAsync,
         CancellationToken cancellationToken
     )
         where TTarget : struct
     {
         _frameStack.MoveNext();
+        var currentFrame = _frameStack.CurrentFrame;
         var isSuccess = false;
         try
         {
-            var refMetaResult = await ReadRefMeta(isAsync, cancellationToken);
+            var refMetaResult = await ReadRefMeta(currentFrame, isAsync, cancellationToken);
             if (!refMetaResult)
             {
                 return ReadValueResult<TTarget?>.Failed;
             }
 
-            if (_frameStack.CurrentFrame.RefMetadata is { RefFlag: RefFlag.Null })
+            if (currentFrame.RefMetadata is { RefFlag: RefFlag.Null })
             {
                 return ReadValueResult<TTarget?>.FromValue(null);
             }
 
-            var valueResult = await ReadValue<TTarget>(registrationHint, isAsync, cancellationToken);
+            var valueResult = await ReadCommon<TTarget>(currentFrame, metaOption, registrationHint, isAsync, cancellationToken);
             isSuccess = valueResult.IsSuccess;
             if (!isSuccess)
             {
@@ -207,10 +217,9 @@ public sealed class DeserializationReader
         }
     }
 
-    private async ValueTask<bool> ReadRefMeta(bool isAsync, CancellationToken cancellationToken)
+    private async ValueTask<bool> ReadRefMeta(Frame currentFrame, bool isAsync, CancellationToken cancellationToken)
     {
-        var currentFrame = _frameStack.CurrentFrame;
-        if (!_frameStack.IsCurrentTheLastFrame || currentFrame.RefMetadata is not null)
+        if (currentFrame.RefMetadata is not null)
         {
             return true;
         }
@@ -223,82 +232,131 @@ public sealed class DeserializationReader
         return true;
     }
 
-    private async ValueTask<ReadValueResult<TTarget?>> ReadValue<TTarget>(
+    private async ValueTask<ReadValueResult<TTarget?>> ReadCommon<TTarget>(
+        Frame currentFrame,
+        ObjectMetaOption metaOption,
         TypeRegistration? registrationHint,
         bool isAsync,
         CancellationToken cancellationToken
     )
     {
-        var currentFrame = _frameStack.CurrentFrame;
-        switch (currentFrame.RefMetadata)
+        if (currentFrame.RefMetadata is not { } refMeta)
         {
-            case { RefFlag: RefFlag.Null }:
-                // Maybe we should throw an exception here for value types
-                return ReadValueResult<TTarget?>.FromValue(default);
-            case { RefFlag: RefFlag.Ref, RefId: var refId }:
-                _referenceMetaDeserializer.GetReadValue(refId, out var readValue);
-                return ReadValueResult<TTarget?>.FromValue((TTarget)readValue);
-            case { RefFlag: RefFlag.RefValue }:
-                if (!await ReadTypeMeta(typeof(TTarget), registrationHint, isAsync, cancellationToken))
-                {
-                    return ReadValueResult<TTarget?>.Failed;
-                }
-                if (!await ReadReferenceable(isAsync, cancellationToken))
-                {
-                    return ReadValueResult<TTarget?>.Failed;
-                }
-                return ReadValueResult<TTarget?>.FromValue((TTarget?)currentFrame.Value);
-            case { RefFlag: RefFlag.NotNullValue }:
-                if (!await ReadTypeMeta(typeof(TTarget), registrationHint, isAsync, cancellationToken))
-                {
-                    return ReadValueResult<TTarget?>.Failed;
-                }
-
-                return (await ReadUnreferenceable<TTarget>(isAsync, cancellationToken))!;
-            default:
-                ThrowHelper.ThrowUnreachableException();
-                return ReadValueResult<TTarget>.Failed;
+            ThrowHelper.ThrowArgumentException(nameof(metaOption));
+            return ReadValueResult<TTarget?>.Failed;
         }
+
+        if (refMeta is { RefFlag: RefFlag.Null })
+        {
+            // Maybe we should throw an exception here for value types
+            return ReadValueResult<TTarget?>.FromValue(default);
+        }
+
+        if (refMeta is { RefFlag: RefFlag.Ref, RefId: var refId })
+        {
+            _referenceMetaDeserializer.GetReadValue(refId, out var readValue);
+            return ReadValueResult<TTarget?>.FromValue((TTarget)readValue);
+        }
+
+        if (refMeta is { RefFlag: RefFlag.RefValue })
+        {
+            if (!await ReadTypeMeta(currentFrame, metaOption, typeof(TTarget), registrationHint, isAsync, cancellationToken))
+            {
+                return ReadValueResult<TTarget?>.Failed;
+            }
+
+            if (!await ReadReferenceable(currentFrame, isAsync, cancellationToken))
+            {
+                return ReadValueResult<TTarget?>.Failed;
+            }
+
+            return ReadValueResult<TTarget?>.FromValue((TTarget?)currentFrame.Value);
+        }
+
+        if (refMeta is { RefFlag: RefFlag.NotNullValue })
+        {
+            if (!await ReadTypeMeta(currentFrame, metaOption, typeof(TTarget), registrationHint, isAsync, cancellationToken))
+            {
+                return ReadValueResult<TTarget?>.Failed;
+            }
+
+            return (await ReadUnreferenceable<TTarget>(currentFrame, isAsync, cancellationToken))!;
+        }
+
+        ThrowBadDeserializationInputExceptionException_InvalidRefFlag(refMeta.RefFlag);
+        return ReadValueResult<TTarget>.Failed;
+    }
+
+    [DoesNotReturn]
+    private static void ThrowBadDeserializationInputExceptionException_InvalidRefFlag(RefFlag refFlag)
+    {
+        throw new BadDeserializationInputException($"Invalid RefFlag: {refFlag}");
+    }
+
+    [DoesNotReturn]
+    private static void ThrowArgumentNullException_RegistrationHintIsNull([InvokerParameterName] string paramName)
+    {
+        throw new ArgumentNullException(paramName, $"When type meta is not read, the {paramName} must not be null.");
+    }
+
+    [DoesNotReturn]
+    private static void ThrowArgumentException_RegistrationHintDoesNotMatch(
+        Type declaredType,
+        TypeRegistration registrationHint,
+        [InvokerParameterName] string paramName
+    )
+    {
+        throw new ArgumentException(
+            $"Provided registration hint's target type `{registrationHint.TargetType}` cannot be assigned to `{declaredType}`.",
+            paramName
+        );
     }
 
     private async ValueTask<bool> ReadTypeMeta(
+        Frame currentFrame,
+        ObjectMetaOption metaOption,
         Type declaredType,
         TypeRegistration? registrationHint,
         bool isAsync,
         CancellationToken cancellationToken
     )
     {
-        var currentFrame = _frameStack.CurrentFrame;
-        if (!_frameStack.IsCurrentTheLastFrame || currentFrame.Registration is not null)
+        if ((metaOption & ObjectMetaOption.TypeMeta) != 0)
         {
-            return true;
+            var typeMetaResult = await _typeMetaDeserializer.Read(this, declaredType, registrationHint, isAsync, cancellationToken);
+            if (!typeMetaResult.IsSuccess)
+            {
+                return false;
+            }
+            currentFrame.Registration = typeMetaResult.Value;
+        }
+        else
+        {
+            if (registrationHint is null)
+            {
+                ThrowArgumentNullException_RegistrationHintIsNull(nameof(registrationHint));
+            }
+
+            if (!declaredType.IsAssignableFrom(registrationHint.TargetType))
+            {
+                ThrowArgumentException_RegistrationHintDoesNotMatch(declaredType, registrationHint, nameof(registrationHint));
+            }
+
+            currentFrame.Registration = registrationHint;
         }
 
-        var typeMetaResult = await _typeMetaDeserializer.Read(
-            this,
-            declaredType,
-            registrationHint,
-            isAsync,
-            cancellationToken
-        );
-        if (!typeMetaResult.IsSuccess)
-        {
-            return false;
-        }
-        currentFrame.Registration = typeMetaResult.Value;
-        currentFrame.Deserializer = currentFrame.Registration.RentDeserializer();
         return true;
     }
 
-    private async ValueTask<bool> ReadReferenceable(bool isAsync, CancellationToken cancellationToken)
+    private async ValueTask<bool> ReadReferenceable(Frame currentFrame, bool isAsync, CancellationToken cancellationToken)
     {
-        var currentFrame = _frameStack.CurrentFrame;
         if (currentFrame.Value is not null)
         {
             return true;
         }
 
-        var deserializer = currentFrame.Deserializer!;
+        Debug.Assert(currentFrame.Registration is not null);
+        var deserializer = currentFrame.Deserializer ?? currentFrame.Registration.RentDeserializer();
 
         var createResult = ReadValueResult<object>.Failed;
         try
@@ -338,12 +396,10 @@ public sealed class DeserializationReader
         }
     }
 
-    private async ValueTask<ReadValueResult<TTarget>> ReadUnreferenceable<TTarget>(
-        bool isAsync,
-        CancellationToken cancellationToken
-    )
+    private async ValueTask<ReadValueResult<TTarget>> ReadUnreferenceable<TTarget>(Frame currentFrame, bool isAsync, CancellationToken cancellationToken)
     {
-        var deserializer = _frameStack.CurrentFrame.Deserializer!;
+        Debug.Assert(currentFrame.Registration is not null);
+        var deserializer = currentFrame.Deserializer ?? currentFrame.Registration.RentDeserializer();
         if (deserializer is not IDeserializer<TTarget> typedDeserializer)
         {
             ReadValueResult<object> untypedResult;
@@ -458,11 +514,7 @@ public sealed class DeserializationReader
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal ValueTask<ReadValueResult<T>> ReadUnmanagedAs<T>(
-        int size,
-        bool isAsync,
-        CancellationToken cancellationToken
-    )
+    internal ValueTask<ReadValueResult<T>> ReadUnmanagedAs<T>(int size, bool isAsync, CancellationToken cancellationToken)
         where T : unmanaged
     {
         if (isAsync)
@@ -471,6 +523,24 @@ public sealed class DeserializationReader
         }
 
         return new ValueTask<ReadValueResult<T>>(ReadUnmanagedAs<T>(size));
+    }
+
+    public int ReadBytes(scoped Span<byte> destination)
+    {
+        var readResult = Read(destination.Length);
+        var buffer = readResult.Buffer;
+        var (consumed, consumedLength) = buffer.CopyUpTo(destination);
+        AdvanceTo(consumed);
+        return consumedLength;
+    }
+
+    public async ValueTask<int> ReadBytesAsync(Memory<byte> destination, CancellationToken cancellationToken = default)
+    {
+        var readResult = await ReadAsync(destination.Length, cancellationToken);
+        var buffer = readResult.Buffer;
+        var (consumed, consumedLength) = buffer.CopyUpTo(destination.Span);
+        AdvanceTo(consumed);
+        return consumedLength;
     }
 
     public ReadValueResult<byte> ReadUInt8() => ReadUnmanagedAs<byte>(sizeof(byte));
@@ -619,10 +689,7 @@ public sealed class DeserializationReader
         return ReadValueResult<int>.FromValue(value);
     }
 
-    internal async ValueTask<ReadValueResult<uint>> Read7BitEncodedUint(
-        bool isAsync,
-        CancellationToken cancellationToken
-    )
+    internal async ValueTask<ReadValueResult<uint>> Read7BitEncodedUint(bool isAsync, CancellationToken cancellationToken)
     {
         uint value = 0;
         var reader = new SequenceReader<byte>(ReadOnlySequence<byte>.Empty);
@@ -703,9 +770,7 @@ public sealed class DeserializationReader
         return Read7BitEncodedUlong(true, cancellationToken);
     }
 
-    public async ValueTask<ReadValueResult<long>> Read7BitEncodedLongAsync(
-        CancellationToken cancellationToken = default
-    )
+    public async ValueTask<ReadValueResult<long>> Read7BitEncodedLongAsync(CancellationToken cancellationToken = default)
     {
         var ulongResult = await Read7BitEncodedUlongAsync(cancellationToken);
         if (!ulongResult.IsSuccess)
@@ -716,10 +781,7 @@ public sealed class DeserializationReader
         return ReadValueResult<long>.FromValue(value);
     }
 
-    internal async ValueTask<ReadValueResult<ulong>> Read7BitEncodedUlong(
-        bool isAsync,
-        CancellationToken cancellationToken = default
-    )
+    internal async ValueTask<ReadValueResult<ulong>> Read7BitEncodedUlong(bool isAsync, CancellationToken cancellationToken = default)
     {
         ulong value = 0;
         var reader = new SequenceReader<byte>(ReadOnlySequence<byte>.Empty);

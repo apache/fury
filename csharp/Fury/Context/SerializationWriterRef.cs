@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Fury.Helpers;
 using Fury.Serialization.Meta;
 using JetBrains.Annotations;
 
@@ -32,18 +33,33 @@ public ref struct SerializationWriterRef
     }
 
     [MustUseReturnValue]
-    public bool Serialize<TTarget>(in TTarget? value, TypeRegistration? registrationHint = null)
+    public bool Write<TTarget>(in TTarget? value, TypeRegistration? registrationHint = null)
     {
         _version--; // make sure the version is out of date
         return InnerWriter.Write(in value, registrationHint);
     }
 
     [MustUseReturnValue]
-    public bool Serialize<TTarget>(in TTarget? value, TypeRegistration? registrationHint = null)
+    public bool Write<TTarget>(in TTarget? value, TypeRegistration? registrationHint = null)
         where TTarget : struct
     {
         _version--; // make sure the version is out of date
-        return InnerWriter.Serialize(in value, registrationHint);
+        return InnerWriter.WriteNullable(in value, registrationHint);
+    }
+
+    [MustUseReturnValue]
+    internal bool Write<TTarget>(in TTarget? value, ObjectMetaOption metaOption, TypeRegistration? registrationHint = null)
+    {
+        _version--; // make sure the version is out of date
+        return InnerWriter.Write(in value, metaOption, registrationHint);
+    }
+
+    [MustUseReturnValue]
+    internal bool Write<TTarget>(in TTarget? value, ObjectMetaOption metaOption, TypeRegistration? registrationHint = null)
+        where TTarget : struct
+    {
+        _version--; // make sure the version is out of date
+        return InnerWriter.WriteNullable(in value, metaOption, registrationHint);
     }
 
     public void Advance(int count)

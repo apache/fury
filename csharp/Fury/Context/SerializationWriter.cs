@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO.Pipelines;
 using Fury.Collections;
+using Fury.Helpers;
 using Fury.Meta;
 using Fury.Serialization;
 using Fury.Serialization.Meta;
@@ -55,8 +56,7 @@ public sealed class SerializationWriter : IDisposable
     {
         _innerWriter.Reset();
         _headerSerializer.Reset();
-        _referenceMetaSerializer.Reset();
-        _typeMetaSerializer.Reset();
+        ResetCurrent();
         foreach (var frame in _frameStack.Frames)
         {
             frame.Reset();
@@ -118,39 +118,28 @@ public sealed class SerializationWriter : IDisposable
     )
     {
         _frameStack.MoveNext();
-
+        var currentFrame = _frameStack.CurrentFrame;
         var isSuccess = false;
         try
         {
             var writer = ByrefWriter;
-            if ((metaOption & ObjectMetaOption.ReferenceMeta) != 0)
+            isSuccess = WriteCommon(
+                currentFrame,
+                ref writer,
+                in value,
+                metaOption,
+                registrationHint,
+                out var needWriteValue
+            );
+            if (!isSuccess)
             {
-                isSuccess = WriteRefMeta(ref writer, in value, out var needWriteValue);
-                if (!isSuccess)
-                {
-                    return false;
-                }
-                if (!needWriteValue)
-                {
-                    return true;
-                }
+                return false;
             }
-
-            if (value is null)
+            if (!needWriteValue)
             {
-                ThrowHelper.ThrowArgumentNullExceptionIfNull(nameof(value));
+                return true;
             }
-
-            PopulateTypeRegistrationToCurrentFrame(in value, registrationHint);
-            if ((metaOption & ObjectMetaOption.TypeMeta) != 0)
-            {
-                isSuccess = WriteTypeMeta(ref writer);
-                if (!isSuccess)
-                {
-                    return false;
-                }
-            }
-            isSuccess = WriteValue(ref writer, in value);
+            isSuccess = WriteValue(currentFrame, ref writer, in value);
         }
         finally
         {
@@ -160,14 +149,14 @@ public sealed class SerializationWriter : IDisposable
     }
 
     [MustUseReturnValue]
-    public bool Serialize<TTarget>(in TTarget? value, TypeRegistration? registrationHint = null)
+    public bool WriteNullable<TTarget>(in TTarget? value, TypeRegistration? registrationHint = null)
         where TTarget : struct
     {
-        return Serialize(in value, ObjectMetaOption.ReferenceMeta | ObjectMetaOption.TypeMeta, registrationHint);
+        return WriteNullable(in value, ObjectMetaOption.ReferenceMeta | ObjectMetaOption.TypeMeta, registrationHint);
     }
 
     [MustUseReturnValue]
-    internal bool Serialize<TTarget>(
+    internal bool WriteNullable<TTarget>(
         in TTarget? value,
         ObjectMetaOption metaOption,
         TypeRegistration? registrationHint = null
@@ -175,12 +164,19 @@ public sealed class SerializationWriter : IDisposable
         where TTarget : struct
     {
         _frameStack.MoveNext();
-
+        var currentFrame = _frameStack.CurrentFrame;
         var isSuccess = false;
         try
         {
             var writer = ByrefWriter;
-            isSuccess = WriteRefMeta(ref writer, in value, out var needWriteValue);
+            isSuccess = WriteCommon(
+                currentFrame,
+                ref writer,
+                in value,
+                metaOption,
+                registrationHint,
+                out var needWriteValue
+            );
             if (!isSuccess)
             {
                 return false;
@@ -189,17 +185,11 @@ public sealed class SerializationWriter : IDisposable
             {
                 return true;
             }
-            Debug.Assert(value is not null);
-            isSuccess = WriteTypeMeta(ref writer);
-            if (!isSuccess)
-            {
-                return false;
-            }
-#if NET6_0_OR_GREATER
-            ref readonly var valueRef = ref NullableHelper.GetValueRefOrDefaultRef(in value);
-            isSuccess = WriteValue(ref writer, in valueRef);
+#if NET7_0_OR_GREATER
+            ref readonly var valueRef = ref Nullable.GetValueRefOrDefaultRef(in value);
+            isSuccess = WriteValue(currentFrame, ref writer, in valueRef);
 #else
-            isSuccess = WriteValue(ref writer, value.Value);
+            isSuccess = WriteValue(currentFrame, ref writer, value.Value);
 #endif
         }
         finally
@@ -209,7 +199,51 @@ public sealed class SerializationWriter : IDisposable
         return isSuccess;
     }
 
-    private bool WriteRefMeta<TTarget>(ref SerializationWriterRef writerRef, in TTarget? value, out bool needWriteValue)
+    private bool WriteCommon<TTarget>(
+        Frame currentFrame,
+        ref SerializationWriterRef writerRef,
+        in TTarget? value,
+        ObjectMetaOption metaOption,
+        TypeRegistration? registrationHint,
+        out bool needWriteValue
+    )
+    {
+        if (_frameStack.IsCurrentTheLastFrame)
+        {
+            if ((metaOption & ObjectMetaOption.ReferenceMeta) != 0)
+            {
+                if (!WriteRefMeta(currentFrame, ref writerRef, in value, out needWriteValue))
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                needWriteValue = true;
+            }
+            PopulateTypeRegistrationToCurrentFrame(in value, registrationHint);
+            if ((metaOption & ObjectMetaOption.TypeMeta) != 0)
+            {
+                if (!WriteTypeMeta(ref writerRef))
+                {
+                    return false;
+                }
+            }
+        }
+        else
+        {
+            needWriteValue = true;
+        }
+
+        return true;
+    }
+
+    private bool WriteRefMeta<TTarget>(
+        Frame currentFrame,
+        ref SerializationWriterRef writerRef,
+        in TTarget? value,
+        out bool needWriteValue
+    )
     {
         if (!_frameStack.IsCurrentTheLastFrame)
         {
@@ -230,7 +264,7 @@ public sealed class SerializationWriter : IDisposable
         }
 
         needWriteValue = writtenFlag is RefFlag.RefValue or RefFlag.NotNullValue;
-        _frameStack.CurrentFrame.NeedNotifyWriteValueCompleted = writtenFlag is RefFlag.RefValue;
+        currentFrame.NeedNotifyWriteValueCompleted = writtenFlag is RefFlag.RefValue;
         return true;
     }
 
@@ -263,9 +297,8 @@ public sealed class SerializationWriter : IDisposable
     }
 
     [MustUseReturnValue]
-    private bool WriteValue<TTarget>(ref SerializationWriterRef writerRef, in TTarget value)
+    private bool WriteValue<TTarget>(Frame currentFrame, ref SerializationWriterRef writerRef, in TTarget value)
     {
-        var currentFrame = _frameStack.CurrentFrame;
         Debug.Assert(currentFrame.Registration is not null);
         switch (currentFrame.Registration!.TypeKind) {
             // TODO: Fast path for primitive types, string, string array and primitive arrays
