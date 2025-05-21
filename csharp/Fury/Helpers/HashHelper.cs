@@ -4,7 +4,7 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace Fury;
+namespace Fury.Helpers;
 
 internal static class HashHelper
 {

@@ -2,6 +2,7 @@
 using System.Buffers;
 using System.Diagnostics.Contracts;
 using System.Runtime.InteropServices;
+using Fury.Helpers;
 
 namespace Fury.Meta;
 

@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Fury.Context;
+using Fury.Helpers;
 
 namespace Fury.Serialization;
 

@@ -2,7 +2,7 @@
 using System.Buffers;
 using System.Runtime.InteropServices;
 
-namespace Fury;
+namespace Fury.Helpers;
 
 internal static class SpanHelper
 {
@@ -44,7 +44,7 @@ internal static class SpanHelper
         return source.Length;
     }
 
-    public static int CopyUpTo<T>(this ReadOnlySequence<T> source, Span<T> destination)
+    public static (SequencePosition Consumed, int Length) CopyUpTo<T>(this ReadOnlySequence<T> source, Span<T> destination)
     {
         var sourceLength = (int)source.Length;
         if (sourceLength > destination.Length)
@@ -54,6 +54,6 @@ internal static class SpanHelper
         }
 
         source.CopyTo(destination);
-        return sourceLength;
+        return (source.End, sourceLength);
     }
 }

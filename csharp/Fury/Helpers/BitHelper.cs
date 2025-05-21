@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.Intrinsics.X86;
 #endif
 
-namespace Fury;
+namespace Fury.Helpers;
 
 internal static class BitHelper
 {

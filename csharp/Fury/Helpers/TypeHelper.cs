@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
-namespace Fury;
+namespace Fury.Helpers;
 
 internal static class TypeHelper<T>
 {
@@ -105,5 +105,10 @@ internal static class TypeHelper
 #else
         return IsReferenceOrContainsReferences(typeof(T));
 #endif
+    }
+
+    public static bool IsNullable(Type type)
+    {
+        return Nullable.GetUnderlyingType(type) is not null;
     }
 }

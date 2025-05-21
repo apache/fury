@@ -1,7 +1,7 @@
 ﻿using System.Reflection;
 using System.Runtime.CompilerServices;
 
-namespace Fury;
+namespace Fury.Helpers;
 
 internal static class ReferenceHelper
 {

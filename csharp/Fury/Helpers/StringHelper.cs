@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Buffers;
 
-namespace Fury;
+namespace Fury.Helpers;
 
 internal static class StringHelper
 {
