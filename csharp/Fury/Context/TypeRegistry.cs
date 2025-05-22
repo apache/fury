@@ -32,8 +32,7 @@ public sealed class TypeRegistry : IDisposable
     private readonly MetaStringStorage _metaStringStorage;
 
     private readonly Dictionary<Type, TypeRegistration> _typeToRegistrations = new();
-    private readonly Dictionary<(TypeKind TypeKind, Type DeclaredType), TypeRegistration> _declaredTypeToRegistrations =
-        new();
+    private readonly Dictionary<(TypeKind TypeKind, Type DeclaredType), TypeRegistration> _declaredTypeToRegistrations = new();
     private readonly Dictionary<(string? Namespace, string Name), TypeRegistration> _nameToRegistrations = new();
     private readonly Dictionary<int, TypeRegistration> _idToRegistrations = new();
     private int _idGenerator;
@@ -77,23 +76,11 @@ public sealed class TypeRegistry : IDisposable
         RegisterPrimitive<double>(InternalTypeKind.Float64, TypeKind.Float64Array);
 
         RegisterGeneral<string>(InternalTypeKind.String, () => new StringSerializer(), () => new StringDeserializer());
-        RegisterGeneral<TimeSpan>(
-            InternalTypeKind.Duration,
-            () => new StandardTimeSpanSerializer(),
-            () => new StandardTimeSpanDeserializer()
-        );
+        RegisterGeneral<TimeSpan>(InternalTypeKind.Duration, () => new StandardTimeSpanSerializer(), () => new StandardTimeSpanDeserializer());
 #if NET6_0_OR_GREATER
-        RegisterGeneral<DateOnly>(
-            InternalTypeKind.LocalDate,
-            () => new StandardDateOnlySerializer(),
-            () => new StandardDateOnlyDeserializer()
-        );
+        RegisterGeneral<DateOnly>(InternalTypeKind.LocalDate, () => new StandardDateOnlySerializer(), () => new StandardDateOnlyDeserializer());
 #endif
-        RegisterGeneral<DateTime>(
-            InternalTypeKind.Timestamp,
-            () => StandardDateTimeSerializer.Instance,
-            () => StandardDateTimeDeserializer.Instance
-        );
+        RegisterGeneral<DateTime>(InternalTypeKind.Timestamp, () => StandardDateTimeSerializer.Instance, () => StandardDateTimeDeserializer.Instance);
         return;
 
         void RegisterPrimitive<T>(InternalTypeKind typeKind, TypeKind arrayTypeKind)
@@ -107,20 +94,16 @@ public sealed class TypeRegistry : IDisposable
             };
             var registration = Register(createInfo);
 
-            Register(
-                typeof(T[]),
-                arrayTypeKind,
-                () => new PrimitiveArraySerializer<T>(),
-                () => new PrimitiveArrayDeserializer<T>()
-            );
+            Register(typeof(T[]), arrayTypeKind, () => new PrimitiveArraySerializer<T>(), () => new PrimitiveArrayDeserializer<T>());
+#if NET8_0_OR_GREATER
+            Register(typeof(List<T>), TypeKind.List, () => new PrimitiveListSerializer<T>(registration), () => new PrimitiveListDeserializer<T>(registration));
+#else
+            Register(typeof(List<T>), TypeKind.List, () => new ListSerializer<T>(registration), () => new ListDeserializer<T>(registration));
+#endif
             RegisterCollections<T>(registration);
         }
 
-        void RegisterGeneral<T>(
-            InternalTypeKind typeKind,
-            Func<ISerializer> serializerFactory,
-            Func<IDeserializer> deserializerFactory
-        )
+        void RegisterGeneral<T>(InternalTypeKind typeKind, Func<ISerializer> serializerFactory, Func<IDeserializer> deserializerFactory)
         {
             var createInfo = new TypeRegistrationCreateInfo(typeof(T))
             {
@@ -130,24 +113,13 @@ public sealed class TypeRegistry : IDisposable
             };
             var registration = Register(createInfo);
 
-            Register(
-                typeof(T[]),
-                TypeKind.List,
-                () => new ArraySerializer<T>(registration),
-                () => new ArrayDeserializer<T>(registration)
-            );
+            Register(typeof(T[]), TypeKind.List, () => new ArraySerializer<T>(registration), () => new ArrayDeserializer<T>(registration));
+            Register(typeof(List<T>), TypeKind.List, () => new ListSerializer<T>(registration), () => new ListDeserializer<T>(registration));
             RegisterCollections<T>(registration);
         }
 
         void RegisterCollections<T>(TypeRegistration elementRegistration)
         {
-            Register(
-                typeof(List<T>),
-                TypeKind.List,
-                () => new ListSerializer<T>(elementRegistration),
-                () => new ListDeserializer<T>(elementRegistration)
-            );
-
             Register(
                 typeof(HashSet<T>),
                 TypeKind.Set,
@@ -159,11 +131,7 @@ public sealed class TypeRegistry : IDisposable
 
     #region Public Register Methods
 
-    public TypeRegistration Register(
-        Type targetType,
-        Func<ISerializer>? serializerFactory,
-        Func<IDeserializer>? deserializerFactory
-    )
+    public TypeRegistration Register(Type targetType, Func<ISerializer>? serializerFactory, Func<IDeserializer>? deserializerFactory)
     {
         // We need lock here to ensure that the auto-generated id is unique.
         if (!_registrationLock.TryEnterReadLock(_timeout))
@@ -209,12 +177,7 @@ public sealed class TypeRegistry : IDisposable
         return Register(createInfo);
     }
 
-    public TypeRegistration Register(
-        Type targetType,
-        TypeKind targetTypeKind,
-        Func<ISerializer> serializerFactory,
-        Func<IDeserializer> deserializerFactory
-    )
+    public TypeRegistration Register(Type targetType, TypeKind targetTypeKind, Func<ISerializer> serializerFactory, Func<IDeserializer> deserializerFactory)
     {
         var createInfo = new TypeRegistrationCreateInfo(targetType)
         {
@@ -225,12 +188,7 @@ public sealed class TypeRegistry : IDisposable
         return Register(createInfo);
     }
 
-    public TypeRegistration Register(
-        Type targetType,
-        int id,
-        Func<ISerializer> serializerFactory,
-        Func<IDeserializer> deserializerFactory
-    )
+    public TypeRegistration Register(Type targetType, int id, Func<ISerializer> serializerFactory, Func<IDeserializer> deserializerFactory)
     {
         var createInfo = new TypeRegistrationCreateInfo(targetType)
         {
@@ -257,11 +215,7 @@ public sealed class TypeRegistry : IDisposable
             }
             if (_declaredTypeToRegistrations.TryGetValue((typeKind, declaredType), out var existingRegistration))
             {
-                ThrowArgumentException_DuplicateTypeKindDeclaredType(
-                    $"{nameof(declaredType)}, {nameof(registration)}",
-                    declaredType,
-                    existingRegistration
-                );
+                ThrowArgumentException_DuplicateTypeKindDeclaredType($"{nameof(declaredType)}, {nameof(registration)}", declaredType, existingRegistration);
             }
 
             _declaredTypeToRegistrations.Add((typeKind, declaredType), registration);
@@ -312,11 +266,7 @@ public sealed class TypeRegistry : IDisposable
             }
             if (createInfo.Name is not null)
             {
-                var registered = _nameToRegistrations.GetOrAdd(
-                    (createInfo.Namespace, createInfo.Name),
-                    registration,
-                    out exists
-                );
+                var registered = _nameToRegistrations.GetOrAdd((createInfo.Namespace, createInfo.Name), registration, out exists);
                 if (exists)
                 {
                     Debug.Assert(registered.Name == createInfo.Name);
@@ -390,9 +340,7 @@ public sealed class TypeRegistry : IDisposable
 
     private static void ThrowInvalidOperationException_NoSerializationProviderSupport(Type targetType)
     {
-        throw new InvalidOperationException(
-            $"Type `{targetType}` is not supported by either built-in or custom serialization provider."
-        );
+        throw new InvalidOperationException($"Type `{targetType}` is not supported by either built-in or custom serialization provider.");
     }
 
     public TypeRegistration GetTypeRegistration(Type type)
@@ -496,17 +444,13 @@ public sealed class TypeRegistry : IDisposable
     private static void ThrowInvalidOperationException_DuplicateTypeName(TypeRegistration registration)
     {
         var fullName = StringHelper.ToFullName(registration.Namespace, registration.Name);
-        throw new InvalidOperationException(
-            $"Type name `{fullName}` is already registered for type `{registration.TargetType}`."
-        );
+        throw new InvalidOperationException($"Type name `{fullName}` is already registered for type `{registration.TargetType}`.");
     }
 
     [DoesNotReturn]
     private static void ThrowInvalidOperationException_DuplicateTypeId(TypeRegistration existent)
     {
-        throw new InvalidOperationException(
-            $"Type id `{existent.Id}` is already registered for type `{existent.TargetType}`."
-        );
+        throw new InvalidOperationException($"Type id `{existent.Id}` is already registered for type `{existent.TargetType}`.");
     }
 
     [DoesNotReturn]
@@ -517,21 +461,12 @@ public sealed class TypeRegistry : IDisposable
     )
     {
         var typeKind = registration.TypeKind;
-        throw new ArgumentException(
-            $"Declared type `{declaredType}` and type kind `{typeKind}` are already registered.",
-            parameterName
-        );
+        throw new ArgumentException($"Declared type `{declaredType}` and type kind `{typeKind}` are already registered.", parameterName);
     }
 
     [DoesNotReturn]
-    private static void ThrowArgumentException_NoTypeKindRegistered(
-        [InvokerParameterName] string parameterName,
-        TypeRegistration registration
-    )
+    private static void ThrowArgumentException_NoTypeKindRegistered([InvokerParameterName] string parameterName, TypeRegistration registration)
     {
-        throw new ArgumentException(
-            $"Type `{registration.TargetType}` was not registered with a {nameof(TypeKind)}",
-            parameterName
-        );
+        throw new ArgumentException($"Type `{registration.TargetType}` was not registered with a {nameof(TypeKind)}", parameterName);
     }
 }

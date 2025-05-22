@@ -128,7 +128,8 @@ internal sealed class PrimitiveArrayDeserializer<TElement> : AbstractDeserialize
 }
 
 #if NET5_0_OR_GREATER
-internal sealed class PrimitiveListSerializer<TElement> : CollectionSerializer<TElement, List<TElement>>
+internal sealed class PrimitiveListSerializer<TElement>(TypeRegistration elementRegistration)
+    : CollectionSerializer<TElement, List<TElement>>(elementRegistration)
     where TElement : unmanaged
 {
     private int _writtenByteCount;
@@ -159,7 +160,8 @@ internal sealed class PrimitiveListSerializer<TElement> : CollectionSerializer<T
 #endif
 
 #if NET8_0_OR_GREATER
-internal sealed class PrimitiveListDeserializer<TElement> : CollectionDeserializer<TElement, List<TElement>>
+internal sealed class PrimitiveListDeserializer<TElement>(TypeRegistration elementRegistration)
+    : CollectionDeserializer<TElement, List<TElement>>(elementRegistration)
     where TElement : unmanaged
 {
     private static readonly int ElementSize = Unsafe.SizeOf<TElement>();
