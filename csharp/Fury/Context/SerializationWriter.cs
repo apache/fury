@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.IO.Pipelines;
 using Fury.Collections;
-using Fury.Helpers;
 using Fury.Meta;
 using Fury.Serialization;
 using Fury.Serialization.Meta;
@@ -111,33 +110,26 @@ public sealed class SerializationWriter : IDisposable
     }
 
     [MustUseReturnValue]
-    internal bool Write<TTarget>(
-        in TTarget? value,
-        ObjectMetaOption metaOption,
-        TypeRegistration? registrationHint = null
-    )
+    internal bool Write<TTarget>(in TTarget? value, ObjectMetaOption metaOption, TypeRegistration? registrationHint = null)
     {
         _frameStack.MoveNext();
         var currentFrame = _frameStack.CurrentFrame;
+        var needWriteMeta = _frameStack.IsCurrentTheLastFrame;
         var isSuccess = false;
         try
         {
             var writer = ByrefWriter;
-            isSuccess = WriteCommon(
-                currentFrame,
-                ref writer,
-                in value,
-                metaOption,
-                registrationHint,
-                out var needWriteValue
-            );
-            if (!isSuccess)
+            if (needWriteMeta)
             {
-                return false;
-            }
-            if (!needWriteValue)
-            {
-                return true;
+                isSuccess = WriteMeta(currentFrame, ref writer, in value, metaOption, registrationHint, out var needWriteValue);
+                if (!isSuccess)
+                {
+                    return false;
+                }
+                if (!needWriteValue)
+                {
+                    return true;
+                }
             }
             isSuccess = WriteValue(currentFrame, ref writer, in value);
         }
@@ -156,40 +148,33 @@ public sealed class SerializationWriter : IDisposable
     }
 
     [MustUseReturnValue]
-    internal bool WriteNullable<TTarget>(
-        in TTarget? value,
-        ObjectMetaOption metaOption,
-        TypeRegistration? registrationHint = null
-    )
+    internal bool WriteNullable<TTarget>(in TTarget? value, ObjectMetaOption metaOption, TypeRegistration? registrationHint = null)
         where TTarget : struct
     {
         _frameStack.MoveNext();
         var currentFrame = _frameStack.CurrentFrame;
+        var needWriteMeta = _frameStack.IsCurrentTheLastFrame;
         var isSuccess = false;
         try
         {
-            var writer = ByrefWriter;
-            isSuccess = WriteCommon(
-                currentFrame,
-                ref writer,
-                in value,
-                metaOption,
-                registrationHint,
-                out var needWriteValue
-            );
-            if (!isSuccess)
+            var writerRef = ByrefWriter;
+            if (needWriteMeta)
             {
-                return false;
-            }
-            if (!needWriteValue)
-            {
-                return true;
+                isSuccess = WriteMeta(currentFrame, ref writerRef, in value, metaOption, registrationHint, out var needWriteValue);
+                if (!isSuccess)
+                {
+                    return false;
+                }
+                if (!needWriteValue)
+                {
+                    return true;
+                }
             }
 #if NET7_0_OR_GREATER
             ref readonly var valueRef = ref Nullable.GetValueRefOrDefaultRef(in value);
-            isSuccess = WriteValue(currentFrame, ref writer, in valueRef);
+            isSuccess = WriteValue(currentFrame, ref writerRef, in valueRef);
 #else
-            isSuccess = WriteValue(currentFrame, ref writer, value.Value);
+            isSuccess = WriteValue(currentFrame, ref writerRef, value!.Value);
 #endif
         }
         finally
@@ -199,7 +184,7 @@ public sealed class SerializationWriter : IDisposable
         return isSuccess;
     }
 
-    private bool WriteCommon<TTarget>(
+    private bool WriteMeta<TTarget>(
         Frame currentFrame,
         ref SerializationWriterRef writerRef,
         in TTarget? value,
@@ -208,54 +193,31 @@ public sealed class SerializationWriter : IDisposable
         out bool needWriteValue
     )
     {
-        if (_frameStack.IsCurrentTheLastFrame)
+        if ((metaOption & ObjectMetaOption.ReferenceMeta) != 0)
         {
-            if ((metaOption & ObjectMetaOption.ReferenceMeta) != 0)
+            if (!WriteRefMeta(currentFrame, ref writerRef, in value, out needWriteValue))
             {
-                if (!WriteRefMeta(currentFrame, ref writerRef, in value, out needWriteValue))
-                {
-                    return false;
-                }
-            }
-            else
-            {
-                needWriteValue = true;
-            }
-            PopulateTypeRegistrationToCurrentFrame(in value, registrationHint);
-            if ((metaOption & ObjectMetaOption.TypeMeta) != 0)
-            {
-                if (!WriteTypeMeta(ref writerRef))
-                {
-                    return false;
-                }
+                return false;
             }
         }
         else
         {
             needWriteValue = true;
         }
+        PopulateTypeRegistrationToCurrentFrame(in value, registrationHint);
+        if ((metaOption & ObjectMetaOption.TypeMeta) != 0)
+        {
+            if (!WriteTypeMeta(ref writerRef))
+            {
+                return false;
+            }
+        }
 
         return true;
     }
 
-    private bool WriteRefMeta<TTarget>(
-        Frame currentFrame,
-        ref SerializationWriterRef writerRef,
-        in TTarget? value,
-        out bool needWriteValue
-    )
+    private bool WriteRefMeta<TTarget>(Frame currentFrame, ref SerializationWriterRef writerRef, in TTarget? value, out bool needWriteValue)
     {
-        if (!_frameStack.IsCurrentTheLastFrame)
-        {
-            // The write calls which write RefFlag.Null or RefFlag.Ref do not need to write value,
-            // so that they will not produce new write calls and can only be stored in the last
-            // frame of the stack.
-            // If the current frame is not the last frame, it must be the RefFlag.RefValue or
-            // RefFlag.NotNullValue case, which means that the value is not null, and we need to write it.
-            needWriteValue = true;
-            return true;
-        }
-
         var writeMetaSuccess = _referenceMetaSerializer.Write(ref writerRef, in value, out var writtenFlag);
         if (!writeMetaSuccess)
         {
@@ -286,11 +248,6 @@ public sealed class SerializationWriter : IDisposable
 
     private bool WriteTypeMeta(ref SerializationWriterRef writerRef)
     {
-        if (!_frameStack.IsCurrentTheLastFrame)
-        {
-            return true;
-        }
-
         var currentFrame = _frameStack.CurrentFrame;
         Debug.Assert(currentFrame is { Registration: not null });
         return _typeMetaSerializer.Write(ref writerRef, currentFrame.Registration);
