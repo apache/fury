@@ -35,7 +35,7 @@ public abstract class CollectionSerializer<TElement, TCollection>(TypeRegistrati
     /// </summary>
     private TypeRegistration? _elementRegistration = elementRegistration;
     private readonly bool _shouldResetElementRegistration = elementRegistration is null;
-    private TypeMetaSerializer? _elementTypeMetaSerializer;
+    private TypeMetaSerializer _elementTypeMetaSerializer = new();
     private bool _hasWrittenCount;
 
     public override void Reset()
@@ -310,7 +310,6 @@ public abstract class CollectionSerializer<TElement, TCollection>(TypeRegistrati
 
     private bool WriteTypeMeta(ref SerializationWriterRef writerRef)
     {
-        _elementTypeMetaSerializer ??= writerRef.InnerWriter.CreateTypeMetaSerializer();
         if (!_hasInitializedTypeMetaSerializer)
         {
             _elementTypeMetaSerializer.Initialize(writerRef.InnerWriter.MetaStringContext);
@@ -375,6 +374,8 @@ public abstract class CollectionDeserializer<TElement, TCollection>(TypeRegistra
 {
     private bool _hasReadCount;
     private CollectionHeaderFlags? _headerFlags;
+    private bool _hasInitializedTypeMetaDeserializer;
+    private readonly TypeMetaDeserializer _elementTypeMetaDeserializer = new();
 
     protected TCollection? Collection;
     private TypeRegistration? _elementRegistration = elementRegistration;
@@ -397,6 +398,7 @@ public abstract class CollectionDeserializer<TElement, TCollection>(TypeRegistra
     {
         _hasReadCount = false;
         _headerFlags = null;
+        _hasInitializedTypeMetaDeserializer = false;
         Collection = default;
         if (_shouldResetElementRegistration)
         {
@@ -437,7 +439,7 @@ public abstract class CollectionDeserializer<TElement, TCollection>(TypeRegistra
         }
         Debug.Assert(Collection is not null);
 
-        if (!await ReadHeaderFlags(reader, isAsync, cancellationToken))
+        if (!await ReadHeader(reader, isAsync, cancellationToken))
         {
             return ReadValueResult<TCollection>.Failed;
         }
@@ -460,6 +462,24 @@ public abstract class CollectionDeserializer<TElement, TCollection>(TypeRegistra
         return ReadValueResult<TCollection>.FromValue(Collection!);
     }
 
+    private async ValueTask<bool> ReadHeader(DeserializationReader reader, bool isAsync, CancellationToken cancellationToken)
+    {
+        if (!await ReadHeaderFlags(reader, isAsync, cancellationToken))
+        {
+            return false;
+        }
+
+        if ((_headerFlags!.Value & CollectionHeaderFlags.NotSameType) == 0)
+        {
+            if (!await ReadTypeMeta(reader, isAsync, cancellationToken))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     private async ValueTask<bool> ReadHeaderFlags(DeserializationReader reader, bool isAsync, CancellationToken cancellationToken)
     {
         if (_headerFlags is not null)
@@ -474,6 +494,24 @@ public abstract class CollectionDeserializer<TElement, TCollection>(TypeRegistra
         }
 
         _headerFlags = (CollectionHeaderFlags)readFlagsResult.Value;
+        return true;
+    }
+
+    private async ValueTask<bool> ReadTypeMeta(DeserializationReader reader, bool isAsync, CancellationToken cancellationToken)
+    {
+        if (!_hasInitializedTypeMetaDeserializer)
+        {
+            _elementTypeMetaDeserializer.Initialize(reader.TypeRegistry, reader.MetaStringStorage, reader.MetaStringContext);
+            _hasInitializedTypeMetaDeserializer = true;
+        }
+
+        var typeMetaResult = await _elementTypeMetaDeserializer.Read(reader, typeof(TElement), _elementRegistration, isAsync, cancellationToken);
+        if (!typeMetaResult.IsSuccess)
+        {
+            return false;
+        }
+
+        _elementRegistration = typeMetaResult.Value;
         return true;
     }
 

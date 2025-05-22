@@ -47,7 +47,7 @@ public sealed class SerializationWriter : IDisposable
     internal SerializationWriter(TypeRegistry registry)
     {
         TypeRegistry = registry;
-        _typeMetaSerializer = CreateTypeMetaSerializer();
+        _typeMetaSerializer = new TypeMetaSerializer();
         _typeMetaSerializer.Initialize(MetaStringContext);
     }
 
@@ -81,8 +81,6 @@ public sealed class SerializationWriter : IDisposable
         _innerWriter.Dispose();
         TypeRegistry.Dispose();
     }
-
-    internal TypeMetaSerializer CreateTypeMetaSerializer() => new();
 
     private void OnCurrentSerializationCompleted(bool isSuccess)
     {
@@ -131,7 +129,7 @@ public sealed class SerializationWriter : IDisposable
                     return true;
                 }
             }
-            isSuccess = WriteValue(currentFrame, ref writer, in value);
+            isSuccess = WriteValue(currentFrame, in value);
         }
         finally
         {
@@ -172,9 +170,9 @@ public sealed class SerializationWriter : IDisposable
             }
 #if NET7_0_OR_GREATER
             ref readonly var valueRef = ref Nullable.GetValueRefOrDefaultRef(in value);
-            isSuccess = WriteValue(currentFrame, ref writerRef, in valueRef);
+            isSuccess = WriteValue(currentFrame, in valueRef);
 #else
-            isSuccess = WriteValue(currentFrame, ref writerRef, value!.Value);
+            isSuccess = WriteValue(currentFrame, value!.Value);
 #endif
         }
         finally
@@ -250,18 +248,14 @@ public sealed class SerializationWriter : IDisposable
     {
         var currentFrame = _frameStack.CurrentFrame;
         Debug.Assert(currentFrame is { Registration: not null });
-        return _typeMetaSerializer.Write(ref writerRef, currentFrame.Registration);
+        return _typeMetaSerializer.Write(ref writerRef, currentFrame.Registration!);
     }
 
     [MustUseReturnValue]
-    private bool WriteValue<TTarget>(Frame currentFrame, ref SerializationWriterRef writerRef, in TTarget value)
+    private bool WriteValue<TTarget>(Frame currentFrame, in TTarget value)
     {
         Debug.Assert(currentFrame.Registration is not null);
-        switch (currentFrame.Registration!.TypeKind) {
-            // TODO: Fast path for primitive types, string, string array and primitive arrays
-        }
-
-        currentFrame.Serializer ??= currentFrame.Registration.RentSerializer();
+        currentFrame.Serializer ??= currentFrame.Registration!.RentSerializer();
 
         bool success;
 
@@ -307,7 +301,7 @@ public sealed class SerializationWriter : IDisposable
 
     /// <inheritdoc cref="SerializationWriterRef.WriteInt16"/>
     [MustUseReturnValue]
-    public bool WriteInt16(short value) => ByrefWriter.WriteInt32((int)value);
+    public bool WriteInt16(short value) => ByrefWriter.WriteInt16(value);
 
     /// <inheritdoc cref="SerializationWriterRef.WriteUInt32"/>
     [MustUseReturnValue]

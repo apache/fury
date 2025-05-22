@@ -62,19 +62,12 @@ internal sealed class TypeMetaSerializer
     }
 }
 
-internal sealed class TypeMetaDeserializer(
-    TypeRegistry registry,
-    MetaStringStorage metaStringStorage
-)
+internal sealed class TypeMetaDeserializer
 {
-    private MetaStringDeserializer _nameMetaStringDeserializer = new(
-        metaStringStorage,
-        MetaStringStorage.EncodingPolicy.Name
-    );
-    private MetaStringDeserializer _namespaceMetaStringDeserializer = new(
-        metaStringStorage,
-        MetaStringStorage.EncodingPolicy.Namespace
-    );
+    private MetaStringDeserializer _nameMetaStringDeserializer = new(MetaStringStorage.EncodingPolicy.Name);
+    private MetaStringDeserializer _namespaceMetaStringDeserializer = new(MetaStringStorage.EncodingPolicy.Namespace);
+
+    private TypeRegistry _registry = null!;
 
     private TypeMetadata? _typeMetadata;
     private MetaString? _namespaceMetaString;
@@ -86,10 +79,12 @@ internal sealed class TypeMetaDeserializer(
         ResetCurrent();
     }
 
-    public void Initialize(AutoIncrementIdDictionary<MetaString> metaStringContext)
+    public void Initialize(TypeRegistry registry, MetaStringStorage metaStringStorage, AutoIncrementIdDictionary<MetaString> metaStringContext)
     {
-        _nameMetaStringDeserializer.Initialize(metaStringContext);
-        _namespaceMetaStringDeserializer.Initialize(metaStringContext);
+        _registry = registry;
+        _nameMetaStringDeserializer.Initialize(metaStringStorage, metaStringContext);
+        _namespaceMetaStringDeserializer.Initialize(metaStringStorage, metaStringContext);
+        Reset();
     }
 
     public void ResetCurrent()
@@ -118,17 +113,13 @@ internal sealed class TypeMetaDeserializer(
 
         if (internalTypeKind.TryToBePublic(out var typeKind))
         {
-            if (
-                registrationHint is not null
-                && registrationHint.TypeKind == typeKind
-                && declaredType.IsAssignableFrom(registrationHint.TargetType)
-            )
+            if (registrationHint is not null && registrationHint.TypeKind == typeKind && declaredType.IsAssignableFrom(registrationHint.TargetType))
             {
                 _registration = registrationHint;
             }
             else
             {
-                _registration = registry.GetTypeRegistration(typeKind, declaredType);
+                _registration = _registry.GetTypeRegistration(typeKind, declaredType);
             }
         }
         else
@@ -158,7 +149,7 @@ internal sealed class TypeMetaDeserializer(
                 }
                 else
                 {
-                    _registration = registry.GetTypeRegistration(namespaceMetaString.Value, nameMetaString.Value);
+                    _registration = _registry.GetTypeRegistration(namespaceMetaString.Value, nameMetaString.Value);
                 }
             }
             else
@@ -174,7 +165,7 @@ internal sealed class TypeMetaDeserializer(
                 }
                 else
                 {
-                    _registration = registry.GetTypeRegistration(typeId);
+                    _registration = _registry.GetTypeRegistration(typeId);
                 }
             }
         }
@@ -182,11 +173,7 @@ internal sealed class TypeMetaDeserializer(
         return ReadValueResult<TypeRegistration>.FromValue(_registration);
     }
 
-    private async ValueTask ReadTypeMeta(
-        DeserializationReader reader,
-        bool isAsync,
-        CancellationToken cancellationToken
-    )
+    private async ValueTask ReadTypeMeta(DeserializationReader reader, bool isAsync, CancellationToken cancellationToken)
     {
         if (_typeMetadata is not null)
         {
@@ -202,11 +189,7 @@ internal sealed class TypeMetaDeserializer(
         _typeMetadata = TypeMetadata.FromUint(varIntResult.Value);
     }
 
-    private async ValueTask ReadNamespaceMetaString(
-        DeserializationReader reader,
-        bool isAsync,
-        CancellationToken cancellationToken
-    )
+    private async ValueTask ReadNamespaceMetaString(DeserializationReader reader, bool isAsync, CancellationToken cancellationToken)
     {
         if (_namespaceMetaString is not null)
         {
@@ -220,11 +203,7 @@ internal sealed class TypeMetaDeserializer(
         }
     }
 
-    private async ValueTask ReadNameMetaString(
-        DeserializationReader reader,
-        bool isAsync,
-        CancellationToken cancellationToken
-    )
+    private async ValueTask ReadNameMetaString(DeserializationReader reader, bool isAsync, CancellationToken cancellationToken)
     {
         if (_nameMetaString is not null)
         {

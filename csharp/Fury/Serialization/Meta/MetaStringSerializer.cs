@@ -114,11 +114,9 @@ internal sealed class MetaStringSerializer
     }
 }
 
-internal struct MetaStringDeserializer(
-    MetaStringStorage sharedMetaStringStorage,
-    MetaStringStorage.EncodingPolicy encodingPolicy
-)
+internal struct MetaStringDeserializer(MetaStringStorage.EncodingPolicy encodingPolicy)
 {
+    private MetaStringStorage _sharedMetaStringStorage;
     private MetaStringHeader? _header;
     private ulong? _hashCode;
     private MetaString.Encoding? _metaEncoding;
@@ -134,16 +132,14 @@ internal struct MetaStringDeserializer(
         _metaString = null;
     }
 
-    public void Initialize(AutoIncrementIdDictionary<MetaString> metaStringContext)
+    public void Initialize(MetaStringStorage metaStringStorage, AutoIncrementIdDictionary<MetaString> metaStringContext)
     {
+        _sharedMetaStringStorage = metaStringStorage;
         _metaStringContext = metaStringContext;
+        Reset();
     }
 
-    public async ValueTask<ReadValueResult<MetaString>> Read(
-        DeserializationReader reader,
-        bool isAsync,
-        CancellationToken cancellationToken
-    )
+    public async ValueTask<ReadValueResult<MetaString>> Read(DeserializationReader reader, bool isAsync, CancellationToken cancellationToken)
     {
         if (_metaString is not null)
         {
@@ -192,11 +188,7 @@ internal struct MetaStringDeserializer(
         _header = header;
     }
 
-    private async ValueTask ReadMetaString(
-        DeserializationReader reader,
-        bool isAsync,
-        CancellationToken cancellationToken
-    )
+    private async ValueTask ReadMetaString(DeserializationReader reader, bool isAsync, CancellationToken cancellationToken)
     {
         if (_metaString is not null)
         {
@@ -226,11 +218,7 @@ internal struct MetaStringDeserializer(
         return metaString;
     }
 
-    private async ValueTask ReadMetaStringBytes(
-        DeserializationReader reader,
-        bool isAsync,
-        CancellationToken cancellationToken
-    )
+    private async ValueTask ReadMetaStringBytes(DeserializationReader reader, bool isAsync, CancellationToken cancellationToken)
     {
         var length = _header!.Value.Length;
         ulong hashCode = 0;
@@ -280,16 +268,12 @@ internal struct MetaStringDeserializer(
             hashCode = MetaString.GetHashCode(buffer, metaEncoding);
         }
 
-        _metaString = sharedMetaStringStorage.GetMetaString(hashCode, in buffer, encodingPolicy, ref _cache);
+        _metaString = _sharedMetaStringStorage.GetMetaString(hashCode, in buffer, encodingPolicy, ref _cache);
 
         reader.AdvanceTo(buffer.End);
     }
 
-    private async ValueTask ReadHashCode(
-        DeserializationReader reader,
-        bool isAsync,
-        CancellationToken cancellationToken
-    )
+    private async ValueTask ReadHashCode(DeserializationReader reader, bool isAsync, CancellationToken cancellationToken)
     {
         if (_hashCode is not null)
         {
@@ -313,11 +297,7 @@ internal struct MetaStringDeserializer(
         }
     }
 
-    private async ValueTask ReadMetaEncoding(
-        DeserializationReader reader,
-        bool isAsync,
-        CancellationToken cancellationToken
-    )
+    private async ValueTask ReadMetaEncoding(DeserializationReader reader, bool isAsync, CancellationToken cancellationToken)
     {
         if (_metaEncoding is not null)
         {

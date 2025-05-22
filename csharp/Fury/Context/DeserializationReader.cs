@@ -41,7 +41,7 @@ public sealed class DeserializationReader
     }
 
     public TypeRegistry TypeRegistry { get; }
-    private readonly MetaStringStorage _metaStringStorage;
+    internal MetaStringStorage MetaStringStorage { get; }
 
     public DeserializationConfig Config { get; private set; } = DeserializationConfig.Default;
     private readonly BatchReader _innerReader = new();
@@ -56,9 +56,9 @@ public sealed class DeserializationReader
     internal DeserializationReader(TypeRegistry registry, MetaStringStorage metaStringStorage)
     {
         TypeRegistry = registry;
-        _metaStringStorage = metaStringStorage;
-        _typeMetaDeserializer = CreateTypeMetaDeserializer();
-        _typeMetaDeserializer.Initialize(MetaStringContext);
+        MetaStringStorage = metaStringStorage;
+        _typeMetaDeserializer = new TypeMetaDeserializer();
+        _typeMetaDeserializer.Initialize(TypeRegistry, MetaStringStorage, MetaStringContext);
     }
 
     internal void Reset()
@@ -85,8 +85,6 @@ public sealed class DeserializationReader
         _innerReader.Initialize(pipeReader);
     }
 
-    internal TypeMetaDeserializer CreateTypeMetaDeserializer() => new(TypeRegistry, _metaStringStorage);
-
     private void OnCurrentDeserializationCompleted(bool isSuccess)
     {
         if (isSuccess)
@@ -104,8 +102,6 @@ public sealed class DeserializationReader
     {
         return _headerDeserializer.Read(this, isAsync, cancellationToken);
     }
-
-    // TODO: Fast path for primitive types and string
 
     [MustUseReturnValue]
     public ReadValueResult<TTarget?> Read<TTarget>(TypeRegistration? registrationHint = null)
