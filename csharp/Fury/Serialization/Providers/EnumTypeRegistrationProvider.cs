@@ -60,7 +60,6 @@ internal static class EnumTypeRegistrationProvider
         TypeRegistry registry,
         string? @namespace,
         string name,
-        Type declaredType,
         [NotNullWhen(true)] out TypeRegistration? registration
     )
     {
