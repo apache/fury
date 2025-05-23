@@ -30,6 +30,7 @@ import java.io.ObjectStreamClass;
 import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.lang.reflect.Member;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -240,9 +241,9 @@ public class ClassDef implements Serializable {
    */
   public List<Descriptor> getDescriptors(ClassResolver resolver, Class<?> cls) {
     if (descriptors == null) {
-      SortedMap<Field, Descriptor> allDescriptorsMap = resolver.getAllDescriptorsMap(cls, true);
+      SortedMap<Member, Descriptor> allDescriptorsMap = resolver.getAllDescriptorsMap(cls, true);
       Map<String, Descriptor> descriptorsMap = new HashMap<>();
-      for (Map.Entry<Field, Descriptor> e : allDescriptorsMap.entrySet()) {
+      for (Map.Entry<Member, Descriptor> e : allDescriptorsMap.entrySet()) {
         if (descriptorsMap.put(
                 e.getKey().getDeclaringClass().getName() + "." + e.getKey().getName(), e.getValue())
             != null) {

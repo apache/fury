@@ -48,6 +48,7 @@ import org.apache.fury.logging.Logger;
 import org.apache.fury.logging.LoggerFactory;
 import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.type.Descriptor;
+import org.apache.fury.type.TypeResolutionContext;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.GraalvmSupport;
 import org.apache.fury.util.Preconditions;
@@ -61,10 +62,13 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
   static final String ROOT_ROW_NAME = "row";
   static final String ROOT_ROW_WRITER_NAME = "rowWriter";
 
+  private final String className;
   private final SortedMap<String, Descriptor> descriptorsMap;
   private final Schema schema;
   protected static final String BEAN_CLASS_NAME = "beanClass";
   protected Reference beanClassRef = new Reference(BEAN_CLASS_NAME, CLASS_TYPE);
+  private final CodegenContext generatedBeanImpl;
+  private final String generatedBeanImplName;
 
   public RowEncoderBuilder(Class<?> beanClass) {
     this(TypeRef.of(beanClass));
@@ -72,7 +76,9 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
 
   public RowEncoderBuilder(TypeRef<?> beanType) {
     super(new CodegenContext(), beanType);
-    Preconditions.checkArgument(TypeUtils.isBean(beanType.getType(), customTypeHandler));
+    Preconditions.checkArgument(
+        beanClass.isInterface() || TypeUtils.isBean(beanType.getType(), customTypeHandler));
+    className = codecClassName(beanClass);
     this.schema = TypeInference.inferSchema(getRawType(beanType));
     this.descriptorsMap = Descriptor.getDescriptorsMap(beanClass);
     ctx.reserveName(ROOT_ROW_WRITER_NAME);
@@ -86,12 +92,19 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
       // non-public class is not accessible in other class.
       clsExpr =
           new Expression.StaticInvoke(
-              Class.class, "forName", CLASS_TYPE, false, Literal.ofClass(beanClass));
+              Class.class, "forName", CLASS_TYPE, false, Literal.ofString(ctx.type(beanClass)));
     }
     ctx.addField(Class.class, "beanClass", clsExpr);
     ctx.addImports(Field.class, Schema.class);
     ctx.addImports(Row.class, ArrayData.class, MapData.class);
     ctx.addImports(BinaryRow.class, BinaryArray.class, BinaryMap.class);
+    if (beanClass.isInterface()) {
+      generatedBeanImplName = beanClass.getSimpleName() + "GeneratedImpl";
+      generatedBeanImpl = buildImplClass();
+    } else {
+      generatedBeanImplName = null;
+      generatedBeanImpl = null;
+    }
   }
 
   @Override
@@ -102,7 +115,6 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
   @Override
   public String genCode() {
     ctx.setPackage(CodeGenerator.getPackage(beanClass));
-    String className = codecClassName(beanClass);
     ctx.setClassName(className);
     // don't addImport(beanClass), because user class may name collide.
     // janino don't support generics, so GeneratedCodec has no generics
@@ -141,6 +153,14 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
 
     long startTime = System.nanoTime();
     String code = ctx.genCode();
+    // It would be nice if Expression let us write inner classes
+    if (generatedBeanImpl != null) {
+      int insertPoint = code.lastIndexOf('}');
+      code =
+          code.substring(0, insertPoint)
+              + generatedBeanImpl.genCode()
+              + code.substring(insertPoint);
+    }
     long durationMs = (System.nanoTime() - startTime) / 1000;
     LOG.info("Generate codec for class {} take {} us", beanClass, durationMs);
     return code;
@@ -169,7 +189,7 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
       Expression.StaticInvoke field =
           new Expression.StaticInvoke(
               DataTypes.class, "fieldOfSchema", ARROW_FIELD_TYPE, false, schemaExpr, ordinal);
-      Expression fieldExpr = serializeFor(bean, ordinal, fieldValue, writer, fieldType, field);
+      Expression fieldExpr = serializeFor(ordinal, fieldValue, writer, fieldType, field);
       expressions.add(fieldExpr);
     }
     expressions.add(
@@ -185,6 +205,13 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
   @Override
   public Expression buildDecodeExpression() {
     Reference row = new Reference(ROOT_ROW_NAME, binaryRowTypeToken, false);
+
+    addDecoderMethods();
+
+    if (generatedBeanImpl != null) {
+      return new Expression.Return(
+          new Expression.Reference("new " + generatedBeanImplName + "(row)"));
+    }
     Expression bean = newBean();
 
     int numFields = schema.getFields().size();
@@ -197,16 +224,42 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
       TypeRef<?> fieldType = d.getTypeRef();
       Expression.Invoke isNullAt =
           new Expression.Invoke(row, "isNullAt", TypeUtils.PRIMITIVE_BOOLEAN_TYPE, ordinal);
-      CustomCodec<?, ?> customEncoder =
-          customTypeHandler.findCodec(beanClass, fieldType.getRawType());
+      Expression value =
+          new Expression.Variable(
+              "decoded" + i, new Expression.Reference("decode" + i + "(row)", fieldType));
+      Expression setActionExpr = setFieldValue(bean, d, value);
+      Expression action = new Expression.If(ExpressionUtils.not(isNullAt), setActionExpr);
+      expressions.add(action);
+    }
+
+    expressions.add(new Expression.Return(bean));
+    return expressions;
+  }
+
+  private void addDecoderMethods() {
+    Reference row = new Reference(ROOT_ROW_NAME, binaryRowTypeToken, false);
+    int numFields = schema.getFields().size();
+    for (int i = 0; i < numFields; i++) {
+      Literal ordinal = Literal.ofInt(i);
+      Descriptor d = getDescriptorByFieldName(schema.getFields().get(i).getName());
+      TypeRef<?> fieldType = d.getTypeRef();
+      Class<?> rawFieldType = fieldType.getRawType();
+      TypeResolutionContext fieldCtx;
+      if (beanClass.isInterface() && rawFieldType.isInterface()) {
+        fieldCtx = typeCtx.withSynthesizedBeanType(rawFieldType);
+      } else {
+        fieldCtx = typeCtx;
+      }
+      CustomCodec<?, ?> customEncoder = customTypeHandler.findCodec(beanClass, rawFieldType);
       TypeRef<?> columnAccessType;
       if (customEncoder == null) {
         columnAccessType = fieldType;
       } else {
         columnAccessType = TypeRef.of(customEncoder.encodedType());
       }
-      String columnAccessMethodName = BinaryUtils.getElemAccessMethodName(columnAccessType);
-      TypeRef<?> colType = BinaryUtils.getElemReturnType(columnAccessType);
+      String columnAccessMethodName =
+          BinaryUtils.getElemAccessMethodName(columnAccessType, fieldCtx);
+      TypeRef<?> colType = BinaryUtils.getElemReturnType(columnAccessType, fieldCtx);
       Expression.Invoke columnValue =
           new Expression.Invoke(
               row,
@@ -215,14 +268,64 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
               colType,
               false,
               ordinal);
-      Expression value = deserializeFor(bean, columnValue, fieldType);
-      Expression setActionExpr = setFieldValue(bean, d, value);
-      Expression action = new Expression.If(ExpressionUtils.not(isNullAt), setActionExpr);
-      expressions.add(action);
+      final Expression value =
+          new Expression.Return(deserializeFor(columnValue, fieldType, fieldCtx));
+      ctx.addMethod(
+          "decode" + i,
+          value.doGenCode(ctx).code(),
+          fieldType.getRawType(),
+          BinaryRow.class,
+          ROOT_ROW_NAME);
+    }
+  }
+
+  private CodegenContext buildImplClass() {
+    Reference row = new Reference(ROOT_ROW_NAME, binaryRowTypeToken, false);
+    CodegenContext implClass = new CodegenContext();
+    implClass.setClassModifiers("final");
+    implClass.setClassName(generatedBeanImplName);
+    implClass.implementsInterfaces(implClass.type(beanClass));
+    implClass.addField(true, implClass.type(BinaryRow.class), "row", null);
+    implClass.addConstructor("this.row = row;", BinaryRow.class, "row");
+
+    int numFields = schema.getFields().size();
+    for (int i = 0; i < numFields; i++) {
+      Literal ordinal = Literal.ofInt(i);
+      Descriptor d = getDescriptorByFieldName(schema.getFields().get(i).getName());
+      TypeRef<?> fieldType = d.getTypeRef();
+
+      Expression.Reference decodeValue =
+          new Expression.Reference("decode" + i + "(row)", fieldType);
+      Expression getterImpl;
+      if (fieldType.isPrimitive()) {
+        getterImpl = new Expression.Return(decodeValue);
+      } else {
+        String fieldName = "f" + i + "_" + d.getName();
+        implClass.addField(fieldType.getRawType(), fieldName);
+
+        Expression fieldRef = new Expression.Reference(fieldName, fieldType, true);
+        Expression storeValue =
+            new Expression.SetField(new Expression.Reference("this"), fieldName, decodeValue);
+        Expression loadIfFieldIsNull =
+            new Expression.If(new Expression.IsNull(fieldRef), storeValue);
+        Expression assigner;
+
+        if (d.isNullable()) {
+          Expression isNotNullAt =
+              new Expression.Not(
+                  new Expression.Invoke(
+                      row, "isNullAt", TypeUtils.PRIMITIVE_BOOLEAN_TYPE, ordinal));
+          assigner = new Expression.If(isNotNullAt, loadIfFieldIsNull);
+        } else {
+          assigner = loadIfFieldIsNull;
+        }
+        getterImpl = new Expression.ListExpression(assigner, new Expression.Return(fieldRef));
+      }
+      implClass.addMethod(
+          d.getName(), getterImpl.genCode(implClass).code(), fieldType.getRawType());
     }
 
-    expressions.add(new Expression.Return(bean));
-    return expressions;
+    return implClass;
   }
 
   private Descriptor getDescriptorByFieldName(String fieldName) {

@@ -98,7 +98,7 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
       ClassDef classDef = classResolver.getClassDef(cls, resolveParent);
       descriptors = classDef.getDescriptors(classResolver, cls);
     } else {
-      descriptors = fury.getClassResolver().getAllDescriptorsMap(cls, resolveParent).values();
+      descriptors = fury.getClassResolver().getFieldDescriptors(cls, resolveParent);
     }
     DescriptorGrouper descriptorGrouper = classResolver.createDescriptorGrouper(descriptors, false);
     descriptors = descriptorGrouper.getSortedDescriptors();
