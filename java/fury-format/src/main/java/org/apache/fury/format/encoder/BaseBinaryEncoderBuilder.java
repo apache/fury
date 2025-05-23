@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.fury.builder.CodecBuilder;
@@ -172,6 +173,14 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
           ExpressionUtils.eqNull(inputObject),
           new Invoke(writer, "setNullAt", ordinal),
           doSerialize);
+    } else if (rawType == Optional.class) {
+      TypeRef<?> elemType = TypeUtils.getTypeArguments(typeRef).get(0);
+      Invoke orNull =
+          new Invoke(inputObject, "orElse", TypeUtils.OBJECT_TYPE, new Expression.Null(elemType));
+      Expression unwrapped =
+          new If(ExpressionUtils.eqNull(inputObject), new Expression.Null(elemType), orNull);
+      return serializeFor(
+          ordinal, new Expression.Cast(unwrapped, elemType), writer, elemType, arrowField);
     } else if (TypeUtils.isPrimitive(rawType)) {
       return new ListExpression(
           // notNull is by default, no need to call setNotNullAt
@@ -541,6 +550,15 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
         return newValue;
       }
       return deserializeFor(newValue, rewrittenType, ctx);
+    } else if (rawType == Optional.class) {
+      TypeRef<?> elemType = TypeUtils.getTypeArguments(typeRef).get(0);
+      return new Expression.StaticInvoke(
+          Optional.class,
+          "ofNullable",
+          "optional",
+          typeRef,
+          true,
+          deserializeFor(value, elemType, ctx));
     } else if (TypeUtils.isPrimitive(rawType) || TypeUtils.isBoxed(rawType)) {
       return value;
     } else if (rawType == BigDecimal.class) {

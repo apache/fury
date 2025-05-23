@@ -23,6 +23,7 @@ import static org.apache.fury.type.TypeUtils.CLASS_TYPE;
 import static org.apache.fury.type.TypeUtils.getRawType;
 
 import java.lang.reflect.Modifier;
+import java.util.Optional;
 import java.util.SortedMap;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.Schema;
@@ -228,7 +229,14 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
           new Expression.Variable(
               "decoded" + i, new Expression.Reference("decode" + i + "(row)", fieldType));
       Expression setActionExpr = setFieldValue(bean, d, value);
-      Expression action = new Expression.If(ExpressionUtils.not(isNullAt), setActionExpr);
+      Expression action;
+      if (fieldType.getRawType() == Optional.class) {
+        Expression setEmptyExpr =
+            setFieldValue(bean, d, new Expression.StaticInvoke(Optional.class, "empty"));
+        action = new Expression.If(isNullAt, setEmptyExpr, setActionExpr);
+      } else {
+        action = new Expression.If(ExpressionUtils.not(isNullAt), setActionExpr);
+      }
       expressions.add(action);
     }
 
@@ -250,12 +258,16 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
       } else {
         fieldCtx = typeCtx;
       }
-      CustomCodec<?, ?> customEncoder = customTypeHandler.findCodec(beanClass, rawFieldType);
       TypeRef<?> columnAccessType;
-      if (customEncoder == null) {
-        columnAccessType = fieldType;
+      if (rawFieldType == Optional.class) {
+        columnAccessType = TypeUtils.getTypeArguments(fieldType).get(0);
       } else {
-        columnAccessType = TypeRef.of(customEncoder.encodedType());
+        CustomCodec<?, ?> customEncoder = customTypeHandler.findCodec(beanClass, rawFieldType);
+        if (customEncoder == null) {
+          columnAccessType = fieldType;
+        } else {
+          columnAccessType = TypeRef.of(customEncoder.encodedType());
+        }
       }
       String columnAccessMethodName =
           BinaryUtils.getElemAccessMethodName(columnAccessType, fieldCtx);
