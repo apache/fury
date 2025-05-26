@@ -31,7 +31,9 @@ import org.apache.fury.codegen.Expression.AbstractExpression;
 import org.apache.fury.format.row.binary.BinaryArray;
 import org.apache.fury.format.row.binary.BinaryUtils;
 import org.apache.fury.format.type.CustomTypeEncoderRegistry;
+import org.apache.fury.format.type.CustomTypeHandler;
 import org.apache.fury.reflect.TypeRef;
+import org.apache.fury.type.TypeResolutionContext;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.StringUtils;
@@ -85,8 +87,13 @@ public class ArrayDataForEach extends AbstractExpression {
     } else {
       accessType = TypeRef.of(customEncoder.encodedType());
     }
-    this.accessMethod = BinaryUtils.getElemAccessMethodName(accessType);
-    this.elemType = BinaryUtils.getElemReturnType(accessType);
+    CustomTypeHandler customTypeHandler = CustomTypeEncoderRegistry.customTypeHandler();
+    TypeResolutionContext ctx = new TypeResolutionContext(customTypeHandler);
+    if (inputArrayData.type().getRawType().isInterface() && elemType.getRawType().isInterface()) {
+      ctx = ctx.withSynthesizedBeanType(elemType.getRawType());
+    }
+    this.accessMethod = BinaryUtils.getElemAccessMethodName(accessType, ctx);
+    this.elemType = BinaryUtils.getElemReturnType(accessType, ctx);
     this.notNullAction = notNullAction;
     this.nullAction = nullAction;
   }

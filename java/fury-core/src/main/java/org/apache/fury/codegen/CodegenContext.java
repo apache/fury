@@ -140,6 +140,7 @@ public class CodegenContext {
   String pkg;
   LinkedHashSet<String> imports = new LinkedHashSet<>();
   String className;
+  String classModifiers = "public final";
   String[] superClasses;
   String[] interfaces;
   List<FieldInfo> fields = new ArrayList<>();
@@ -416,6 +417,15 @@ public class CodegenContext {
   }
 
   /**
+   * Set class modifiers. Default is {@code public final}.
+   *
+   * @param classModifiers the new class modifiers
+   */
+  public void setClassModifiers(String classModifiers) {
+    this.classModifiers = classModifiers;
+  }
+
+  /**
    * Set super classes.
    *
    * @param superClasses super classes
@@ -626,7 +636,7 @@ public class CodegenContext {
       codeBuilder.append('\n');
     }
 
-    codeBuilder.append(String.format("public final class %s ", className));
+    codeBuilder.append(String.format("%s class %s ", classModifiers, className));
     if (superClasses != null) {
       codeBuilder.append(String.format("extends %s ", String.join(", ", superClasses)));
     }

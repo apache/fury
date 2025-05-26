@@ -21,12 +21,13 @@ package org.apache.fury.format.row.binary;
 
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.reflect.TypeRef;
+import org.apache.fury.type.TypeResolutionContext;
 import org.apache.fury.type.TypeUtils;
 
 /** Util class for building generated binary encoder. */
 @SuppressWarnings("UnstableApiUsage")
 public class BinaryUtils {
-  public static String getElemAccessMethodName(TypeRef<?> type) {
+  public static String getElemAccessMethodName(TypeRef<?> type, TypeResolutionContext ctx) {
     if (TypeUtils.PRIMITIVE_BYTE_TYPE.equals(type) || TypeUtils.BYTE_TYPE.equals(type)) {
       return "getByte";
     } else if (TypeUtils.PRIMITIVE_BOOLEAN_TYPE.equals(type)
@@ -57,7 +58,7 @@ public class BinaryUtils {
       return "getArray";
     } else if (TypeUtils.MAP_TYPE.isSupertypeOf(type)) {
       return "getMap";
-    } else if (TypeUtils.isBean(type)) {
+    } else if (TypeUtils.isBean(type, ctx)) {
       return "getStruct";
     } else {
       // take unknown type as OBJECT_TYPE, return as sliced MemoryBuffer
@@ -66,7 +67,7 @@ public class BinaryUtils {
     }
   }
 
-  public static TypeRef<?> getElemReturnType(TypeRef<?> type) {
+  public static TypeRef<?> getElemReturnType(TypeRef<?> type, TypeResolutionContext ctx) {
     if (TypeUtils.PRIMITIVE_BYTE_TYPE.equals(type) || TypeUtils.BYTE_TYPE.equals(type)) {
       return TypeUtils.PRIMITIVE_BYTE_TYPE;
     } else if (TypeUtils.PRIMITIVE_BOOLEAN_TYPE.equals(type)
@@ -95,7 +96,7 @@ public class BinaryUtils {
       return TypeRef.of(BinaryArray.class);
     } else if (TypeUtils.MAP_TYPE.isSupertypeOf(type)) {
       return TypeRef.of(BinaryMap.class);
-    } else if (TypeUtils.isBean(type)) {
+    } else if (TypeUtils.isBean(type, ctx)) {
       return TypeRef.of(BinaryRow.class);
     } else {
       // take unknown type as OBJECT_TYPE, return as sliced MemoryBuffer

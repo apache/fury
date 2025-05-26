@@ -48,7 +48,6 @@ public class ArrayEncoderBuilder extends BaseBinaryEncoderBuilder {
 
   private static final TypeRef<Field> ARROW_FIELD_TYPE = TypeRef.of(Field.class);
   private final TypeRef<?> arrayToken;
-  private final Expression emptyArrayInstance;
 
   public ArrayEncoderBuilder(Class<?> arrayCls, Class<?> beanClass) {
     this(TypeRef.of(arrayCls), TypeRef.of(beanClass));
@@ -79,7 +78,6 @@ public class ArrayEncoderBuilder extends BaseBinaryEncoderBuilder {
                 Expression.Literal.ofClass(beanType.getRawType()),
                 Expression.Literal.ofInt(0)),
             TypeRef.of(Array.newInstance(beanType.getRawType(), 0).getClass())));
-    emptyArrayInstance = new Expression.Reference(ROOT_EMPTY_ARRAY_NAME);
   }
 
   @Override
@@ -148,7 +146,7 @@ public class ArrayEncoderBuilder extends BaseBinaryEncoderBuilder {
 
     Expression.Reference fieldExpr = new Expression.Reference(FIELD_NAME, ARROW_FIELD_TYPE, false);
     Expression listExpression =
-        serializeForArrayByWriter(emptyArrayInstance, array, arrayWriter, arrayToken, fieldExpr);
+        serializeForArrayByWriter(array, arrayWriter, arrayToken, fieldExpr);
 
     expressions.add(listExpression);
 
@@ -183,8 +181,7 @@ public class ArrayEncoderBuilder extends BaseBinaryEncoderBuilder {
             arrayData,
             elemType,
             (i, value) ->
-                new Expression.Invoke(
-                    collection, "add", deserializeFor(emptyArrayInstance, value, elemType)),
+                new Expression.Invoke(collection, "add", deserializeFor(value, elemType, typeCtx)),
             i -> new Expression.Invoke(collection, "add", ExpressionUtils.nullValue(elemType)));
     return new Expression.ListExpression(collection, addElemsOp, collection);
   }

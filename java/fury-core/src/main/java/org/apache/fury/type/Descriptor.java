@@ -24,6 +24,7 @@ import static org.apache.fury.util.Preconditions.checkArgument;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import java.lang.reflect.Field;
+import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -37,6 +38,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.WeakHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -60,7 +62,8 @@ import org.apache.fury.util.record.RecordUtils;
  * @see Ignore
  */
 public class Descriptor {
-  private static Cache<Class<?>, Tuple2<SortedMap<Field, Descriptor>, SortedMap<Field, Descriptor>>>
+  private static Cache<
+          Class<?>, Tuple2<SortedMap<Member, Descriptor>, SortedMap<Member, Descriptor>>>
       descCache = CacheBuilder.newBuilder().weakKeys().softValues().concurrencyLevel(64).build();
   private static final Map<Class<?>, AtomicBoolean> flags =
       Collections.synchronizedMap(new WeakHashMap<>());
@@ -128,6 +131,21 @@ public class Descriptor {
     this.typeRef = null;
     this.furyField = this.field.getAnnotation(FuryField.class);
     if (!field.getType().isPrimitive()) {
+      this.nullable = furyField == null || furyField.nullable();
+    }
+  }
+
+  private Descriptor(Method readMethod) {
+    this.field = null;
+    this.typeName = readMethod.getReturnType().getName();
+    this.name = readMethod.getName();
+    this.modifier = readMethod.getModifiers();
+    this.declaringClass = readMethod.getDeclaringClass().getName();
+    this.readMethod = readMethod;
+    this.writeMethod = null;
+    this.typeRef = TypeRef.of(readMethod.getGenericReturnType());
+    this.furyField = readMethod.getAnnotation(FuryField.class);
+    if (!readMethod.getReturnType().isPrimitive()) {
       this.nullable = furyField == null || furyField.nullable();
     }
   }
@@ -292,8 +310,8 @@ public class Descriptor {
    */
   public static List<Descriptor> getDescriptors(Class<?> clz) {
     // TODO(chaokunyang) add cache by weak class key, see java.io.ObjectStreamClass.WeakClassKey.
-    SortedMap<Field, Descriptor> allDescriptorsMap = getAllDescriptorsMap(clz);
-    Map<String, List<Field>> duplicateNameFields = getDuplicateNameFields(allDescriptorsMap);
+    SortedMap<Member, Descriptor> allDescriptorsMap = getAllDescriptorsMap(clz);
+    Map<String, List<Member>> duplicateNameFields = getDuplicateNames(allDescriptorsMap);
     checkArgument(
         duplicateNameFields.size() == 0, "%s has duplicate fields %s", clz, duplicateNameFields);
     return new ArrayList<>(allDescriptorsMap.values());
@@ -304,8 +322,8 @@ public class Descriptor {
    * not allowed to have duplicate name field.
    */
   public static SortedMap<String, Descriptor> getDescriptorsMap(Class<?> clz) {
-    SortedMap<Field, Descriptor> allDescriptorsMap = getAllDescriptorsMap(clz);
-    Map<String, List<Field>> duplicateNameFields = getDuplicateNameFields(allDescriptorsMap);
+    SortedMap<Member, Descriptor> allDescriptorsMap = getAllDescriptorsMap(clz);
+    Map<String, List<Member>> duplicateNameFields = getDuplicateNames(allDescriptorsMap);
     Preconditions.checkArgument(
         duplicateNameFields.size() == 0, "%s has duplicate fields %s", clz, duplicateNameFields);
     TreeMap<String, Descriptor> map = new TreeMap<>();
@@ -313,14 +331,14 @@ public class Descriptor {
     return map;
   }
 
-  private static final ClassValue<Map<String, List<Field>>> sortedDuplicatedFields =
-      new ClassValue<Map<String, List<Field>>>() {
+  private static final ClassValue<Map<String, List<Member>>> sortedDuplicatedMembers =
+      new ClassValue<Map<String, List<Member>>>() {
         @Override
-        protected Map<String, List<Field>> computeValue(Class<?> type) {
-          SortedMap<Field, Descriptor> allFields = Descriptor.getAllDescriptorsMap(type);
-          Map<String, List<Field>> duplicated = Descriptor.getDuplicateNameFields(allFields);
-          Map<String, List<Field>> map = new HashMap<>();
-          for (Map.Entry<String, List<Field>> e : duplicated.entrySet()) {
+        protected Map<String, List<Member>> computeValue(Class<?> type) {
+          SortedMap<Member, Descriptor> allFields = Descriptor.getAllDescriptorsMap(type);
+          Map<String, List<Member>> duplicated = Descriptor.getDuplicateNames(allFields);
+          Map<String, List<Member>> map = new HashMap<>();
+          for (Map.Entry<String, List<Member>> e : duplicated.entrySet()) {
             e.getValue()
                 .sort(
                     (f1, f2) -> {
@@ -340,36 +358,35 @@ public class Descriptor {
         }
       };
 
-  public static Map<String, List<Field>> getDuplicateNameFields(
-      SortedMap<Field, Descriptor> allDescriptorsMap) {
-    Map<String, List<Field>> duplicateNameFields = new HashMap<>();
-    for (Field field : allDescriptorsMap.keySet()) {
-      duplicateNameFields.compute(
-          field.getName(),
-          (fieldName, fields) -> {
-            if (fields == null) {
-              fields = new ArrayList<>();
+  public static Map<String, List<Member>> getDuplicateNames(
+      SortedMap<Member, Descriptor> allDescriptorsMap) {
+    Map<String, List<Member>> duplicateNames = new HashMap<>();
+    for (Member member : allDescriptorsMap.keySet()) {
+      duplicateNames.compute(
+          member.getName(),
+          (memberName, members) -> {
+            if (members == null) {
+              members = new ArrayList<>();
             }
-            fields.add(field);
-            return fields;
+            members.add(member);
+            return members;
           });
     }
-    Map<String, List<Field>> map = new HashMap<>();
-    for (Map.Entry<String, List<Field>> e : duplicateNameFields.entrySet()) {
+    Map<String, List<Member>> map = new HashMap<>();
+    for (Map.Entry<String, List<Member>> e : duplicateNames.entrySet()) {
       if (Objects.requireNonNull(e.getValue()).size() > 1) {
         map.put(e.getKey(), e.getValue());
       }
     }
-    duplicateNameFields = map;
-    return duplicateNameFields;
+    return map;
   }
 
-  public static Map<String, List<Field>> getSortedDuplicatedFields(Class<?> cls) {
-    return sortedDuplicatedFields.get(cls);
+  public static Map<String, List<Member>> getSortedDuplicatedMembers(Class<?> cls) {
+    return sortedDuplicatedMembers.get(cls);
   }
 
   public static boolean hasDuplicateNameFields(Class<?> clz) {
-    return !getSortedDuplicatedFields(clz).isEmpty();
+    return !getSortedDuplicatedMembers(clz).isEmpty();
   }
 
   /**
@@ -377,7 +394,13 @@ public class Descriptor {
    * name first and declaring class second. Super class and sub class can have same name field.
    */
   public static Set<Field> getFields(Class<?> clz) {
-    return getAllDescriptorsMap(clz).keySet();
+    Set<Field> fields = new TreeSet<>(memberComparator);
+    for (Member member : getAllDescriptorsMap(clz).keySet()) {
+      if (member instanceof Field) {
+        fields.add((Field) member);
+      }
+    }
+    return fields;
   }
 
   /**
@@ -385,24 +408,24 @@ public class Descriptor {
    * field name first and declaring class second. Super class and subclass can have same names
    * field.
    */
-  public static SortedMap<Field, Descriptor> getAllDescriptorsMap(Class<?> clz) {
+  public static SortedMap<Member, Descriptor> getAllDescriptorsMap(Class<?> clz) {
     return getAllDescriptorsMap(clz, true);
   }
 
-  private static final Comparator<Field> fieldComparator =
-      ((Field f1, Field f2) -> {
-        int compare = f1.getName().compareTo(f2.getName());
+  private static final Comparator<Member> memberComparator =
+      ((Member m1, Member m2) -> {
+        int compare = m1.getName().compareTo(m2.getName());
         if (compare == 0) { // class and super classes have same named field
-          return f1.getDeclaringClass().getName().compareTo(f2.getDeclaringClass().getName());
+          return m1.getDeclaringClass().getName().compareTo(m2.getDeclaringClass().getName());
         } else {
           return compare;
         }
       });
 
-  public static SortedMap<Field, Descriptor> getAllDescriptorsMap(
+  public static SortedMap<Member, Descriptor> getAllDescriptorsMap(
       Class<?> clz, boolean searchParent) {
     try {
-      Tuple2<SortedMap<Field, Descriptor>, SortedMap<Field, Descriptor>> tuple2 =
+      Tuple2<SortedMap<Member, Descriptor>, SortedMap<Member, Descriptor>> tuple2 =
           descCache.get(clz, () -> createAllDescriptorsMap(clz));
       if (searchParent) {
         return tuple2.f0;
@@ -414,11 +437,11 @@ public class Descriptor {
     }
   }
 
-  private static Tuple2<SortedMap<Field, Descriptor>, SortedMap<Field, Descriptor>>
+  private static Tuple2<SortedMap<Member, Descriptor>, SortedMap<Member, Descriptor>>
       createAllDescriptorsMap(Class<?> clz) {
     // use TreeMap to sort to fix field order
-    TreeMap<Field, Descriptor> descriptorMap = new TreeMap<>(fieldComparator);
-    TreeMap<Field, Descriptor> currentDescriptorMap = new TreeMap<>(fieldComparator);
+    TreeMap<Member, Descriptor> descriptorMap = new TreeMap<>(memberComparator);
+    TreeMap<Member, Descriptor> currentDescriptorMap = new TreeMap<>(memberComparator);
     Class<?> clazz = clz;
     // TODO(chaokunyang) use fury compiler thread pool
     ExecutorService compilationService = ForkJoinPool.commonPool();
@@ -434,6 +457,16 @@ public class Descriptor {
         // impossible
         Platform.throwException(e);
       }
+      currentDescriptorMap = new TreeMap<>(descriptorMap);
+      return Tuple2.of(descriptorMap, currentDescriptorMap);
+    }
+    if (clazz.isInterface()) {
+      for (Method method : clazz.getMethods()) {
+        if (method.getParameterCount() == 0 && method.getReturnType() != void.class) {
+          descriptorMap.put(method, new Descriptor(method));
+        }
+      }
+
       currentDescriptorMap = new TreeMap<>(descriptorMap);
       return Tuple2.of(descriptorMap, currentDescriptorMap);
     }
@@ -542,7 +575,7 @@ public class Descriptor {
       Class<?> clz, boolean searchParent) {
     List<Field> fieldList = new ArrayList<>();
     Class<?> clazz = clz;
-    Map<Tuple2<Class, String>, Method> methodMap = new HashMap<>();
+    Map<Tuple2<Class<?>, String>, Method> methodMap = new HashMap<>();
     do {
       Field[] fields = clazz.getDeclaredFields();
       for (Field field : fields) {
@@ -571,7 +604,7 @@ public class Descriptor {
     }
 
     // use TreeMap to sort to fix field order
-    TreeMap<Field, Descriptor> descriptorMap = new TreeMap<>(fieldComparator);
+    TreeMap<Field, Descriptor> descriptorMap = new TreeMap<>(memberComparator);
     for (Field field : fieldList) {
       Class<?> fieldDeclaringClass = field.getDeclaringClass();
       String fieldName = field.getName();
@@ -601,7 +634,7 @@ public class Descriptor {
           setter = null;
         }
       }
-      TypeRef fieldType = TypeRef.of(field.getGenericType());
+      TypeRef<?> fieldType = TypeRef.of(field.getGenericType());
       descriptorMap.put(field, new Descriptor(field, fieldType, getter, setter));
     }
     // Don't cache descriptors using a static `WeakHashMap<Class<?>, SortedMap<Field, Descriptor>>`，
