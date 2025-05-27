@@ -242,7 +242,7 @@ public class TypeInference {
                     TypeResolutionContext newCtx = ctx.appendTypePath(rawType);
                     TypeRef<?> fieldType = descriptor.getTypeRef();
                     Class<?> rawFieldType = getRawType(fieldType);
-                    if (rawType.isInterface() && rawFieldType.isInterface()) {
+                    if (rawFieldType.isInterface()) {
                       newCtx = newCtx.withSynthesizedBeanType(rawFieldType);
                     }
                     return inferField(n, fieldType, newCtx);

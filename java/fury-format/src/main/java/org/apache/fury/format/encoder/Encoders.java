@@ -135,6 +135,7 @@ public class Encoders {
    *   <li>time related: java.sql.Date, java.sql.Timestamp, java.time.LocalDate, java.time.Instant
    *   <li>Optional and friends: OptionalInt, OptionalLong, OptionalDouble
    *   <li>collection types: only array and java.util.List currently, map support is in progress
+   *   <li>record types
    *   <li>nested java bean
    * </ul>
    */

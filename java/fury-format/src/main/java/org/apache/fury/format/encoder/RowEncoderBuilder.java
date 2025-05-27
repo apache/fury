@@ -23,6 +23,8 @@ import static org.apache.fury.type.TypeUtils.CLASS_TYPE;
 import static org.apache.fury.type.TypeUtils.getRawType;
 
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.SortedMap;
 import org.apache.arrow.vector.types.pojo.Field;
@@ -54,6 +56,7 @@ import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.GraalvmSupport;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.StringUtils;
+import org.apache.fury.util.record.RecordUtils;
 
 /** Expression builder for building jit row encoder class. */
 @SuppressWarnings("UnstableApiUsage")
@@ -93,7 +96,7 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
       // non-public class is not accessible in other class.
       clsExpr =
           new Expression.StaticInvoke(
-              Class.class, "forName", CLASS_TYPE, false, Literal.ofString(ctx.type(beanClass)));
+              Class.class, "forName", CLASS_TYPE, false, Literal.ofString(beanClass.getName()));
     }
     ctx.addField(Class.class, "beanClass", clsExpr);
     ctx.addImports(Field.class, Schema.class);
@@ -213,35 +216,58 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
       return new Expression.Return(
           new Expression.Reference("new " + generatedBeanImplName + "(row)"));
     }
-    Expression bean = newBean();
 
     int numFields = schema.getFields().size();
+    List<String> fieldNames = new ArrayList<>(numFields);
+    Expression[] values = new Expression[numFields];
+    Descriptor[] descriptors = new Descriptor[numFields];
     Expression.ListExpression expressions = new Expression.ListExpression();
-    expressions.add(bean);
     // schema field's name must correspond to descriptor's name.
     for (int i = 0; i < numFields; i++) {
       Literal ordinal = Literal.ofInt(i);
       Descriptor d = getDescriptorByFieldName(schema.getFields().get(i).getName());
+      fieldNames.add(d.getName());
+      descriptors[i] = d;
       TypeRef<?> fieldType = d.getTypeRef();
+      Expression.Variable value = new Expression.Variable(d.getName(), nullValue(fieldType));
+      values[i] = value;
+      expressions.add(value);
       Expression.Invoke isNullAt =
           new Expression.Invoke(row, "isNullAt", TypeUtils.PRIMITIVE_BOOLEAN_TYPE, ordinal);
-      Expression value =
-          new Expression.Variable(
-              "decoded" + i, new Expression.Reference("decode" + i + "(row)", fieldType));
-      Expression setActionExpr = setFieldValue(bean, d, value);
-      Expression action;
-      if (fieldType.getRawType() == Optional.class) {
-        Expression setEmptyExpr =
-            setFieldValue(bean, d, new Expression.StaticInvoke(Optional.class, "empty"));
-        action = new Expression.If(isNullAt, setEmptyExpr, setActionExpr);
-      } else {
-        action = new Expression.If(ExpressionUtils.not(isNullAt), setActionExpr);
+      Expression decode =
+          new Expression.If(
+              ExpressionUtils.not(isNullAt),
+              new Expression.Assign(
+                  value, new Expression.Reference(decodeMethodName(i) + "(row)", fieldType)));
+      expressions.add(decode);
+    }
+    Expression bean;
+    if (RecordUtils.isRecord(beanClass)) {
+      int[] map = RecordUtils.buildRecordComponentMapping(beanClass, fieldNames);
+      Expression[] args = new Expression[numFields];
+      for (int i = 0; i < numFields; i++) {
+        args[i] = values[map[i]];
       }
-      expressions.add(action);
+      bean = new Expression.NewInstance(beanType, beanType.getRawType().getName(), args);
+    } else {
+      bean = newBean();
+      expressions.add(bean);
+      for (int i = 0; i < values.length; i++) {
+        expressions.add(setFieldValue(bean, descriptors[i], values[i]));
+      }
     }
 
     expressions.add(new Expression.Return(bean));
     return expressions;
+  }
+
+  private static Expression nullValue(TypeRef<?> fieldType) {
+    Class<?> rawType = fieldType.getRawType();
+    if (rawType == Optional.class) {
+      return new Expression.StaticInvoke(
+          Optional.class, "empty", "", TypeUtils.OPTIONAL_TYPE, false, true);
+    }
+    return new Expression.Reference(TypeUtils.defaultValue(rawType), fieldType);
   }
 
   private void addDecoderMethods() {
@@ -280,10 +306,9 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
               colType,
               false,
               ordinal);
-      final Expression value =
-          new Expression.Return(deserializeFor(columnValue, fieldType, fieldCtx));
+      Expression value = new Expression.Return(deserializeFor(columnValue, fieldType, fieldCtx));
       ctx.addMethod(
-          "decode" + i,
+          decodeMethodName(i),
           value.doGenCode(ctx).code(),
           fieldType.getRawType(),
           BinaryRow.class,
@@ -307,7 +332,7 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
       TypeRef<?> fieldType = d.getTypeRef();
 
       Expression.Reference decodeValue =
-          new Expression.Reference("decode" + i + "(row)", fieldType);
+          new Expression.Reference(decodeMethodName(i) + "(row)", fieldType);
       Expression getterImpl;
       if (fieldType.isPrimitive()) {
         getterImpl = new Expression.Return(decodeValue);
@@ -343,6 +368,10 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
   private Descriptor getDescriptorByFieldName(String fieldName) {
     String name = StringUtils.lowerUnderscoreToLowerCamelCase(fieldName);
     return descriptorsMap.get(name);
+  }
+
+  private String decodeMethodName(int i) {
+    return "decode" + i + "_" + schema.getFields().get(i).getName();
   }
 
   @Override
