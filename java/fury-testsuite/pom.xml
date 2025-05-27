@@ -32,8 +32,6 @@
   <artifactId>fury-testsuite</artifactId>
 
   <properties>
-    <maven.compiler.source>8</maven.compiler.source>
-    <maven.compiler.target>8</maven.compiler.target>
     <maven.deploy.skip>true</maven.deploy.skip>
     <maven.javadoc.skip>true</maven.javadoc.skip>
     <fury.java.rootdir>${basedir}/..</fury.java.rootdir>

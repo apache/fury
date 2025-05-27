@@ -48,8 +48,6 @@
 
   <properties>
     <zstd.version>1.5.6-9</zstd.version>
-    <maven.compiler.source>8</maven.compiler.source>
-    <maven.compiler.target>8</maven.compiler.target>
     <fury.java.rootdir>${basedir}/..</fury.java.rootdir>
   </properties>
 

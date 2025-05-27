@@ -47,8 +47,6 @@
   </description>
 
   <properties>
-    <maven.compiler.source>8</maven.compiler.source>
-    <maven.compiler.target>8</maven.compiler.target>
     <arrow.version>15.0.0</arrow.version>
     <jackson-bom.version>2.16.0</jackson-bom.version>
     <fury.java.rootdir>${basedir}/..</fury.java.rootdir>
