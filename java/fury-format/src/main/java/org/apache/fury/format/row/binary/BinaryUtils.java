@@ -49,6 +49,10 @@ public class BinaryUtils {
       return "getDate";
     } else if (TypeUtils.TIMESTAMP_TYPE.equals(type)) {
       return "getTimestamp";
+    } else if (TypeUtils.INSTANT_TYPE.equals(type)) {
+      return "getInt64";
+    } else if (TypeUtils.LOCAL_DATE_TYPE.equals(type)) {
+      return "getInt32";
     } else if (TypeUtils.STRING_TYPE.equals(type)) {
       return "getString";
     } else if (isArray(type)) {
@@ -89,6 +93,10 @@ public class BinaryUtils {
       return TypeUtils.INT_TYPE;
     } else if (TypeUtils.TIMESTAMP_TYPE.equals(type)) {
       return TypeUtils.LONG_TYPE;
+    } else if (TypeUtils.INSTANT_TYPE.equals(type)) {
+      return TypeUtils.LONG_TYPE;
+    } else if (TypeUtils.LOCAL_DATE_TYPE.equals(type)) {
+      return TypeUtils.INT_TYPE;
     } else if (TypeUtils.STRING_TYPE.equals(type)) {
       return TypeUtils.STRING_TYPE;
     } else if (isArray(type)) {

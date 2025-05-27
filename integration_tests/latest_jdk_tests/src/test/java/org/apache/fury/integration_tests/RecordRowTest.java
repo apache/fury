@@ -19,6 +19,8 @@
 
 package org.apache.fury.integration_tests;
 
+import java.time.Instant;
+import java.time.LocalDate;
 import org.apache.fury.format.encoder.Encoders;
 import org.apache.fury.format.encoder.RowEncoder;
 import org.apache.fury.format.row.binary.BinaryRow;
@@ -29,14 +31,15 @@ import org.testng.annotations.Test;
 
 public class RecordRowTest {
 
-  public record TestRecord(int f1, String f2) {}
+  public record TestRecord(Instant f1, String f2, LocalDate f3) {}
 
   // Intentionally mis-ordered to ensure record component order is different from sorted field order
   public record OuterTestRecord(long f2, long f1, TestRecord f3) {}
 
   @Test
   public void testRecord() {
-    final TestRecord bean = new TestRecord(42, "Luna");
+    final TestRecord bean =
+        new TestRecord(Instant.ofEpochMilli(42), "Luna", LocalDate.ofEpochDay(1234));
     final RowEncoder<TestRecord> encoder = Encoders.bean(TestRecord.class);
     final BinaryRow row = encoder.toRow(bean);
     final MemoryBuffer buffer = MemoryUtils.wrap(row.toBytes());
@@ -47,7 +50,8 @@ public class RecordRowTest {
 
   @Test
   public void testNestedRecord() {
-    final TestRecord nested = new TestRecord(43, "Mars");
+    final TestRecord nested =
+        new TestRecord(Instant.ofEpochMilli(43), "Mars", LocalDate.ofEpochDay(5678));
     final OuterTestRecord bean = new OuterTestRecord(12, 34, nested);
     final RowEncoder<OuterTestRecord> encoder = Encoders.bean(OuterTestRecord.class);
     final BinaryRow row = encoder.toRow(bean);
