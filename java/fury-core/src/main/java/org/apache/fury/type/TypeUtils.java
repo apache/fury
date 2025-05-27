@@ -43,6 +43,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.fury.collection.IdentityMap;
@@ -101,6 +102,7 @@ public class TypeUtils {
   public static final TypeRef<?> MAP_TYPE = TypeRef.of(Map.class);
   public static final TypeRef<?> MAP_ENTRY_TYPE = TypeRef.of(Map.Entry.class);
   public static final TypeRef<?> HASHMAP_TYPE = TypeRef.of(HashMap.class);
+  public static final TypeRef<?> OPTIONAL_TYPE = TypeRef.of(Optional.class);
   public static final TypeRef<?> OBJECT_TYPE = TypeRef.of(Object.class);
 
   public static Type ITERATOR_RETURN_TYPE;
@@ -155,6 +157,7 @@ public class TypeUtils {
     SUPPORTED_TYPES.add(LOCAL_DATE_TYPE);
     SUPPORTED_TYPES.add(TIMESTAMP_TYPE);
     SUPPORTED_TYPES.add(INSTANT_TYPE);
+    SUPPORTED_TYPES.add(OPTIONAL_TYPE);
   }
 
   static {
@@ -729,7 +732,10 @@ public class TypeUtils {
 
     for (TypeRef<?> typeToken : typeRefs) {
       Class<?> type = getRawType(typeToken);
-      if (isCollection(type)) {
+      if (type == Optional.class) {
+        TypeRef<?> elemType = getTypeArguments(typeToken).get(0);
+        beans.addAll(listBeansRecursiveInclusive(elemType.getRawType(), newCtx));
+      } else if (isCollection(type)) {
         TypeRef<?> elementType = getElementType(typeToken);
         while (isContainer(elementType.getRawType())) {
           elementType = getElementType(elementType);

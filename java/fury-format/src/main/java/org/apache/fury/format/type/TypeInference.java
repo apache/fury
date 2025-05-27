@@ -146,7 +146,19 @@ public class TypeInference {
     Class<?> enclosingType = ctx.getEnclosingType().getRawType();
     CustomCodec<?, ?> customEncoder =
         ((CustomTypeHandler) ctx.getCustomTypeRegistry()).findCodec(enclosingType, rawType);
-    if (customEncoder != null) {
+    if (rawType == Optional.class) {
+      TypeRef<?> elemType = TypeUtils.getTypeArguments(typeRef).get(0);
+      Field result = inferField(name, elemType, ctx);
+      if (result.isNullable()) {
+        return result;
+      }
+      FieldType fieldType = result.getFieldType();
+      return new Field(
+          result.getName(),
+          new FieldType(
+              true, fieldType.getType(), fieldType.getDictionary(), fieldType.getMetadata()),
+          result.getChildren());
+    } else if (customEncoder != null) {
       return customEncoder.getField(name);
     } else if (rawType == boolean.class) {
       return field(name, DataTypes.notNullFieldType(ArrowType.Bool.INSTANCE));
