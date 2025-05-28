@@ -274,7 +274,7 @@ type typeResolver struct {
 	dynamicWriteStringID  int32
 
 	// Class registries
-	typesInfo           map[string]TypeInfo
+	typesInfo           map[reflect.Type]TypeInfo
 	nsTypeToTypeInfo    map[nsTypeKey]TypeInfo
 	namedTypeToTypeInfo map[namedTypeKey]TypeInfo
 
@@ -310,7 +310,7 @@ func newTypeResolver(fury *Fury) *typeResolver {
 		typeIDCounter:         300,
 		dynamicWriteStringID:  0,
 
-		typesInfo:           make(map[string]TypeInfo),
+		typesInfo:           make(map[reflect.Type]TypeInfo),
 		nsTypeToTypeInfo:    make(map[nsTypeKey]TypeInfo),
 		namedTypeToTypeInfo: make(map[namedTypeKey]TypeInfo),
 
@@ -453,7 +453,7 @@ func (r *typeResolver) getSerializerByTypeTag(typeTag string) (Serializer, error
 
 func (r *typeResolver) getTypeInfo(value reflect.Value, create bool) (TypeInfo, error) {
 	// First check if type info exists in cache
-	typeString := value.Type().String()
+	typeString := value.Type()
 	if info, ok := r.typesInfo[typeString]; ok {
 		if info.Serializer == nil {
 			// Lazy initialize serializer if not created yet
@@ -578,8 +578,7 @@ func (r *typeResolver) registerType(
 	}
 
 	// Update resolver caches:
-	tname := typ.String()
-	r.typesInfo[tname] = typeInfo // Cache by type string
+	r.typesInfo[typ] = typeInfo // Cache by type string
 
 	if typeName != "" {
 		// Cache by namespace/name pair
