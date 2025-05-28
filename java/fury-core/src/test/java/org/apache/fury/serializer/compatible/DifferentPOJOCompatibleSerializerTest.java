@@ -19,6 +19,7 @@
 
 package org.apache.fury.serializer.compatible;
 
+import java.util.Arrays;
 import org.apache.fury.Fury;
 import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.config.Language;
@@ -44,6 +45,7 @@ public class DifferentPOJOCompatibleSerializerTest extends Assert {
             .requireClassRegistration(false)
             .withAsyncCompilation(true)
             .serializeEnumByName(true)
+            .withName(Arrays.toString(classes))
             .build();
     if (classes != null) {
       for (Class<?> clazz : classes) {
