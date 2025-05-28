@@ -1013,13 +1013,16 @@ public class MapSerializersTest extends FuryTestBase {
   @AllArgsConstructor
   public static class NullChunkGeneric {
     public Map<String, Integer> map;
+    public Map<String, List<Integer>> map1;
   }
 
   @Test
   public void testNullChunkGeneric() {
     Fury fury1 = builder().withCodegen(true).build();
     Map<String, Integer> map = ofHashMap(null, 1, "k1", null, "k2", 2);
-    NullChunkGeneric o = new NullChunkGeneric(map);
+    Map<String, List<Integer>> map1 =
+        ofHashMap(null, ofArrayList(1), "k1", null, "k2", ofArrayList(2));
+    NullChunkGeneric o = new NullChunkGeneric(map, map1);
     byte[] bytes = fury1.serialize(o);
     Fury fury2 = builder().withCodegen(false).build();
     Object object = fury2.deserialize(bytes);

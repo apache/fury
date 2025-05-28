@@ -267,6 +267,7 @@ public class ClassResolver implements TypeResolver {
     private ClassChecker classChecker = (classResolver, className) -> true;
     private GenericType objectGenericType;
     private final IdentityMap<Type, GenericType> genericTypes = new IdentityMap<>();
+    private final Map<Class, Map<String, GenericType>> classGenericTypes = new HashMap<>();
     private final Map<List<ClassLoader>, CodeGenerator> codeGeneratorMap = new HashMap<>();
   }
 
@@ -1985,6 +1986,22 @@ public class ClassResolver implements TypeResolver {
   public void resetRead() {}
 
   public void resetWrite() {}
+
+  @CodegenInvoke
+  public GenericType getGenericTypeInStruct(Class<?> cls, String genericTypeStr) {
+    Map<String, GenericType> map =
+        extRegistry.classGenericTypes.computeIfAbsent(cls, k -> new HashMap<>());
+    GenericType genericType = map.get(genericTypeStr);
+    if (genericType == null) {
+      for (Field field : ReflectionUtils.getFields(cls, true)) {
+        Type type = field.getGenericType();
+        TypeRef<Object> typeRef = TypeRef.of(type);
+        genericType = buildGenericType(typeRef);
+        map.put(type.getTypeName(), genericType);
+      }
+    }
+    return genericType;
+  }
 
   public GenericType buildGenericType(TypeRef<?> typeRef) {
     return GenericType.build(

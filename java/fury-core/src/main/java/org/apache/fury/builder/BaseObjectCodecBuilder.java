@@ -22,6 +22,7 @@ package org.apache.fury.builder;
 import static org.apache.fury.codegen.CodeGenerator.getPackage;
 import static org.apache.fury.codegen.Expression.Invoke.inlineInvoke;
 import static org.apache.fury.codegen.Expression.Literal.ofInt;
+import static org.apache.fury.codegen.Expression.Literal.ofString;
 import static org.apache.fury.codegen.Expression.Reference.fieldRef;
 import static org.apache.fury.codegen.ExpressionOptimizer.invokeGenerated;
 import static org.apache.fury.codegen.ExpressionUtils.add;
@@ -668,11 +669,18 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
             k ->
                 StringUtils.uncapitalize(typeRef.getRawType().getSimpleName())
                     + namesForSharedGenericTypeFields.size());
+
     return getOrCreateField(
         false,
         GenericType.class,
         name,
-        () -> invoke(classResolverRef, "buildGenericType", "genericType", GENERIC_TYPE));
+        () ->
+            new Invoke(
+                classResolverRef,
+                "getGenericTypeInStruct",
+                GENERIC_TYPE,
+                beanClassExpr(),
+                ofString(typeRef.getType().getTypeName())));
   }
 
   /**
