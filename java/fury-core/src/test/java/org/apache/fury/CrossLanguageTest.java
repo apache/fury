@@ -467,7 +467,7 @@ public class CrossLanguageTest extends FuryTestBase {
         ObjectSerializer.class.getDeclaredMethod("computeStructHash", Fury.class, Collection.class);
     method.setAccessible(true);
     Collection<Descriptor> descriptors =
-        fury.getClassResolver().getAllDescriptorsMap(ComplexObject1.class, true).values();
+        fury.getClassResolver().getFieldDescriptors(ComplexObject1.class, true);
     descriptors =
         fury.getClassResolver().createDescriptorGrouper(descriptors, false).getSortedDescriptors();
     Integer hash = (Integer) method.invoke(serializer, fury, descriptors);

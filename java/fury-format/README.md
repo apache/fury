@@ -12,17 +12,19 @@ Fury row format is heavily inspired by spark tungsten row format, but with chang
 
 The initial fury java row data structure implementation is modified from spark unsafe row/writer.
 
+See `Encoders.bean` Javadoc for a list built-in supported types.
+
 It is possible to register custom type handling and collection factories for the row format -
-see Encoders.registerCustomCodec and Encoders.registerCustomCollectionFactory.
+see Encoders.registerCustomCodec and Encoders.registerCustomCollectionFactory. For an interface,
+Fury can synthesize a simple value implementation, such as the UuidType below.
 
 A short example:
 
 ```
-@Data
-public static class UuidType {
-  public UUID f1;
-  public UUID[] f2;
-  public SortedSet<UUID> f3;
+public interface UuidType {
+  UUID f1();
+  UUID[] f2();
+  SortedSet<UUID> f3();
 }
 
 static class UuidEncoder implements CustomCodec.MemoryBufferCodec<UUID> {

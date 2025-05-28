@@ -24,7 +24,6 @@ import static org.apache.fury.type.TypeUtils.getRawType;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -42,6 +41,7 @@ import org.apache.fury.format.encoder.CustomCodec;
 import org.apache.fury.format.encoder.CustomCollectionFactory;
 import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.type.Descriptor;
+import org.apache.fury.type.TypeResolutionContext;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.DecimalUtils;
 import org.apache.fury.util.Preconditions;
@@ -120,13 +120,18 @@ public class TypeInference {
   }
 
   private static Field inferField(TypeRef<?> arrayTypeRef, TypeRef<?> typeRef) {
-    LinkedHashSet<Class<?>> seenTypeSet = new LinkedHashSet<>();
+    TypeResolutionContext ctx =
+        new TypeResolutionContext(CustomTypeEncoderRegistry.customTypeHandler());
+    Class<?> clz = getRawType(typeRef);
+    if (clz.isInterface()) {
+      ctx = ctx.withSynthesizedBeanType(clz);
+    }
     String name = "";
     if (arrayTypeRef != null) {
-      Field f = inferField(DataTypes.ARRAY_ITEM_NAME, typeRef, seenTypeSet);
+      Field f = inferField(DataTypes.ARRAY_ITEM_NAME, typeRef, ctx);
       return DataTypes.arrayField(name, f);
     } else {
-      return inferField("", typeRef, seenTypeSet);
+      return inferField("", typeRef, ctx);
     }
   }
 
@@ -136,20 +141,24 @@ public class TypeInference {
    *
    * @return DataType of a typeToken
    */
-  private static Field inferField(
-      String name, TypeRef<?> typeRef, LinkedHashSet<Class<?>> seenTypeSet) {
-    return inferField(name, typeRef, seenTypeSet, CustomTypeEncoderRegistry.customTypeHandler());
-  }
-
-  private static Field inferField(
-      String name,
-      TypeRef<?> typeRef,
-      LinkedHashSet<Class<?>> seenTypeSet,
-      CustomTypeHandler customTypes) {
+  private static Field inferField(String name, TypeRef<?> typeRef, TypeResolutionContext ctx) {
     Class<?> rawType = getRawType(typeRef);
-    Class<?> enclosingType = enclosingType(seenTypeSet);
-    CustomCodec<?, ?> customEncoder = customTypes.findCodec(enclosingType, rawType);
-    if (customEncoder != null) {
+    Class<?> enclosingType = ctx.getEnclosingType().getRawType();
+    CustomCodec<?, ?> customEncoder =
+        ((CustomTypeHandler) ctx.getCustomTypeRegistry()).findCodec(enclosingType, rawType);
+    if (rawType == Optional.class) {
+      TypeRef<?> elemType = TypeUtils.getTypeArguments(typeRef).get(0);
+      Field result = inferField(name, elemType, ctx);
+      if (result.isNullable()) {
+        return result;
+      }
+      FieldType fieldType = result.getFieldType();
+      return new Field(
+          result.getName(),
+          new FieldType(
+              true, fieldType.getType(), fieldType.getDictionary(), fieldType.getMetadata()),
+          result.getChildren());
+    } else if (customEncoder != null) {
       return customEncoder.getField(name);
     } else if (rawType == boolean.class) {
       return field(name, DataTypes.notNullFieldType(ArrowType.Bool.INSTANCE));
@@ -207,53 +216,44 @@ public class TypeInference {
     } else if (rawType.isArray()) { // array
       Field f =
           inferField(
-              DataTypes.ARRAY_ITEM_NAME,
-              Objects.requireNonNull(typeRef.getComponentType()),
-              seenTypeSet,
-              customTypes);
+              DataTypes.ARRAY_ITEM_NAME, Objects.requireNonNull(typeRef.getComponentType()), ctx);
       return DataTypes.arrayField(name, f);
     } else if (TypeUtils.ITERABLE_TYPE.isSupertypeOf(typeRef)) { // iterable
       // when type is both iterable and bean, we take it as iterable in row-format
-      Field f =
-          inferField(
-              DataTypes.ARRAY_ITEM_NAME,
-              TypeUtils.getElementType(typeRef),
-              seenTypeSet,
-              customTypes);
+      Field f = inferField(DataTypes.ARRAY_ITEM_NAME, TypeUtils.getElementType(typeRef), ctx);
       return DataTypes.arrayField(name, f);
     } else if (TypeUtils.MAP_TYPE.isSupertypeOf(typeRef)) {
       Tuple2<TypeRef<?>, TypeRef<?>> kvType = TypeUtils.getMapKeyValueType(typeRef);
-      Field keyField = inferField(MapVector.KEY_NAME, kvType.f0, seenTypeSet, customTypes);
+      Field keyField = inferField(MapVector.KEY_NAME, kvType.f0, ctx);
       // Map's keys must be non-nullable
       FieldType keyFieldType =
           new FieldType(
               false, keyField.getType(), keyField.getDictionary(), keyField.getMetadata());
       keyField = DataTypes.field(keyField.getName(), keyFieldType, keyField.getChildren());
-      Field valueField = inferField(MapVector.VALUE_NAME, kvType.f1, seenTypeSet, customTypes);
+      Field valueField = inferField(MapVector.VALUE_NAME, kvType.f1, ctx);
       return DataTypes.mapField(name, keyField, valueField);
-    } else if (TypeUtils.isBean(rawType, customTypes)) { // bean field
-      if (seenTypeSet.contains(rawType)) {
-        String msg =
-            String.format(
-                "circular references in bean class is not allowed, but got " + "%s in %s",
-                rawType, seenTypeSet);
-        throw new UnsupportedOperationException(msg);
-      }
+    } else if (TypeUtils.isBean(rawType, ctx)) { // bean field
+      ctx.checkNoCycle(rawType);
       List<Field> fields =
           Descriptor.getDescriptors(rawType).stream()
               .map(
                   descriptor -> {
-                    LinkedHashSet<Class<?>> newSeenTypeSet = new LinkedHashSet<>(seenTypeSet);
-                    newSeenTypeSet.add(rawType);
                     String n = StringUtils.lowerCamelToLowerUnderscore(descriptor.getName());
-                    return inferField(n, descriptor.getTypeRef(), newSeenTypeSet, customTypes);
+                    TypeResolutionContext newCtx = ctx.appendTypePath(rawType);
+                    TypeRef<?> fieldType = descriptor.getTypeRef();
+                    Class<?> rawFieldType = getRawType(fieldType);
+                    if (rawFieldType.isInterface()) {
+                      newCtx = newCtx.withSynthesizedBeanType(rawFieldType);
+                    }
+                    return inferField(n, fieldType, newCtx);
                   })
               .collect(Collectors.toList());
       return DataTypes.structField(name, true, fields);
     } else {
       throw new UnsupportedOperationException(
           String.format(
-              "Unsupported type %s for field %s, seen type set is %s", typeRef, name, seenTypeSet));
+              "Unsupported type %s for field %s, seen type set is %s",
+              typeRef, name, ctx.getWalkedTypePath()));
     }
   }
 
@@ -281,13 +281,5 @@ public class TypeInference {
   public static <E, C extends Collection<E>> void registerCustomCollectionFactory(
       Class<?> iterableType, Class<E> elementType, CustomCollectionFactory<E, C> factory) {
     CustomTypeEncoderRegistry.registerCustomCollection(iterableType, elementType, factory);
-  }
-
-  private static Class<?> enclosingType(LinkedHashSet<Class<?>> newTypePath) {
-    Class<?> result = Object.class;
-    for (Class<?> type : newTypePath) {
-      result = type;
-    }
-    return result;
   }
 }

@@ -125,11 +125,20 @@ public class Encoders {
    *
    * <p>T must be publicly accessible.
    *
-   * <p>supported types for java bean field: - primitive types: boolean, int, double, etc. - boxed
-   * types: Boolean, Integer, Double, etc. - String - java.math.BigDecimal, java.math.BigInteger -
-   * time related: java.sql.Date, java.sql.Timestamp, java.time.LocalDate, java.time.Instant -
-   * collection types: only array and java.util.List currently, map support is in progress - nested
-   * java bean.
+   * <p>supported types for java bean field:
+   *
+   * <ul>
+   *   <li>primitive types: boolean, int, double, etc.
+   *   <li>boxed types: Boolean, Integer, Double, etc.
+   *   <li>String
+   *   <li>Enum (as String)
+   *   <li>java.math.BigDecimal, java.math.BigInteger
+   *   <li>time related: java.sql.Date, java.sql.Timestamp, java.time.LocalDate, java.time.Instant
+   *   <li>Optional and friends: OptionalInt, OptionalLong, OptionalDouble
+   *   <li>collection types: only array and java.util.List currently, map support is in progress
+   *   <li>record types
+   *   <li>nested java bean
+   * </ul>
    */
   public static <T> RowEncoder<T> bean(Class<T> beanClass, BinaryRowWriter writer, Fury fury) {
     Schema schema = writer.getSchema();

@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.fury.builder.CodecBuilder;
@@ -67,6 +68,7 @@ import org.apache.fury.format.type.DataTypes;
 import org.apache.fury.memory.MemoryBuffer;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.reflect.TypeRef;
+import org.apache.fury.type.TypeResolutionContext;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.DateTimeUtils;
 import org.apache.fury.util.Preconditions;
@@ -95,6 +97,7 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
   protected final Map<TypeRef<?>, Reference> rowWriterMap = new HashMap<>();
   protected final CustomTypeHandler customTypeHandler =
       CustomTypeEncoderRegistry.customTypeHandler();
+  protected final TypeResolutionContext typeCtx;
 
   public BaseBinaryEncoderBuilder(CodegenContext context, Class<?> beanClass) {
     this(context, TypeRef.of(beanClass));
@@ -107,6 +110,12 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
     ctx.addImport(BinaryRow.class.getPackage().getName() + ".*");
     ctx.addImport(BinaryWriter.class.getPackage().getName() + ".*");
     ctx.addImport(Schema.class.getPackage().getName() + ".*");
+    TypeResolutionContext typeCtx = new TypeResolutionContext(customTypeHandler);
+    typeCtx.appendTypePath(beanClass);
+    if (beanClass.isInterface()) {
+      typeCtx = typeCtx.withSynthesizedBeanType(beanClass);
+    }
+    this.typeCtx = typeCtx;
   }
 
   public String codecClassName(Class<?> beanClass) {
@@ -140,7 +149,6 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
    * writer</code>
    */
   protected Expression serializeFor(
-      Expression bean,
       Expression ordinal,
       Expression inputObject,
       Expression writer,
@@ -157,14 +165,22 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
               "rewrittenValue",
               rewrittenType,
               true,
-              bean,
+              new Expression.Null(beanType, true),
               inputObject);
       Expression doSerialize =
-          serializeFor(bean, ordinal, newInputObject, writer, rewrittenType, arrowField);
+          serializeFor(ordinal, newInputObject, writer, rewrittenType, arrowField);
       return new If(
           ExpressionUtils.eqNull(inputObject),
           new Invoke(writer, "setNullAt", ordinal),
           doSerialize);
+    } else if (rawType == Optional.class) {
+      TypeRef<?> elemType = TypeUtils.getTypeArguments(typeRef).get(0);
+      Invoke orNull =
+          new Invoke(inputObject, "orElse", TypeUtils.OBJECT_TYPE, new Expression.Null(elemType));
+      Expression unwrapped =
+          new If(ExpressionUtils.eqNull(inputObject), new Expression.Null(elemType), orNull);
+      return serializeFor(
+          ordinal, new Expression.Cast(unwrapped, elemType), writer, elemType, arrowField);
     } else if (TypeUtils.isPrimitive(rawType)) {
       return new ListExpression(
           // notNull is by default, no need to call setNotNullAt
@@ -224,7 +240,7 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
       // but don't setOffsetAndSize for array.
       Invoke offset =
           new Invoke(writer, "writerIndex", "writerIndex", TypeUtils.PRIMITIVE_INT_TYPE);
-      Expression serializeArray = serializeForArray(bean, inputObject, writer, typeRef, arrowField);
+      Expression serializeArray = serializeForArray(inputObject, writer, typeRef, arrowField);
       Arithmetic size =
           ExpressionUtils.subtract(
               new Invoke(writer, "writerIndex", "writerIndex", TypeUtils.PRIMITIVE_INT_TYPE),
@@ -237,8 +253,8 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
           new Invoke(writer, "setNullAt", ordinal),
           expression);
     } else if (TypeUtils.MAP_TYPE.isSupertypeOf(typeRef)) {
-      return serializeForMap(bean, ordinal, writer, inputObject, typeRef, arrowField);
-    } else if (TypeUtils.isBean(rawType)) {
+      return serializeForMap(ordinal, writer, inputObject, typeRef, arrowField);
+    } else if (TypeUtils.isBean(rawType, createElementTypeContext(typeRef))) {
       return serializeForBean(ordinal, writer, inputObject, typeRef, arrowField);
     } else if (rawType == BinaryArray.class) {
       Invoke writeExp =
@@ -270,21 +286,13 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
   }
 
   protected Expression serializeForArray(
-      Expression bean,
-      Expression inputObject,
-      Expression writer,
-      TypeRef<?> typeRef,
-      Expression arrowField) {
+      Expression inputObject, Expression writer, TypeRef<?> typeRef, Expression arrowField) {
     Reference arrayWriter = getOrCreateArrayWriter(typeRef, arrowField, writer);
-    return serializeForArrayByWriter(bean, inputObject, arrayWriter, typeRef, arrowField);
+    return serializeForArrayByWriter(inputObject, arrayWriter, typeRef, arrowField);
   }
 
   protected Expression serializeForArrayByWriter(
-      Expression bean,
-      Expression inputObject,
-      Expression arrayWriter,
-      TypeRef<?> typeRef,
-      Expression arrowField) {
+      Expression inputObject, Expression arrayWriter, TypeRef<?> typeRef, Expression arrowField) {
     StaticInvoke arrayElementField =
         new StaticInvoke(
             DataTypes.class, "arrayElementField", "elemField", ARROW_FIELD_TYPE, false, arrowField);
@@ -301,7 +309,6 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
                 inputObject,
                 (i, value) ->
                     serializeFor(
-                        bean,
                         i,
                         value,
                         arrayWriter,
@@ -318,12 +325,7 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
               listFromIterable,
               (i, value) ->
                   serializeFor(
-                      bean,
-                      i,
-                      value,
-                      arrayWriter,
-                      TypeUtils.getElementType(typeRef),
-                      arrayElementField));
+                      i, value, arrayWriter, TypeUtils.getElementType(typeRef), arrayElementField));
       return new ListExpression(reset, forEach, arrayWriter);
     } else { // collection
       Invoke size = new Invoke(inputObject, "size", TypeUtils.PRIMITIVE_INT_TYPE);
@@ -333,12 +335,7 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
               inputObject,
               (i, value) ->
                   serializeFor(
-                      bean,
-                      i,
-                      value,
-                      arrayWriter,
-                      TypeUtils.getElementType(typeRef),
-                      arrayElementField));
+                      i, value, arrayWriter, TypeUtils.getElementType(typeRef), arrayElementField));
       return new ListExpression(reset, forEach, arrayWriter);
     }
   }
@@ -362,7 +359,6 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
    * row/array using given <code>writer</code>.
    */
   protected Expression serializeForMap(
-      Expression bean,
       Expression ordinal,
       Expression writer,
       Expression inputObject,
@@ -398,8 +394,7 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
     expressions.add(offset, preserve);
 
     Invoke keySet = new Invoke(inputObject, "keySet", keySetType);
-    Expression keySerializationExpr =
-        serializeForArray(bean, keySet, writer, keySetType, keyArrayField);
+    Expression keySerializationExpr = serializeForArray(keySet, writer, keySetType, keyArrayField);
     expressions.add(keySet, keySerializationExpr);
 
     expressions.add(
@@ -411,7 +406,7 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
 
     Invoke values = new Invoke(inputObject, "values", valuesType);
     Expression valueSerializationExpr =
-        serializeForArray(bean, values, writer, valuesType, valueArrayField);
+        serializeForArray(values, writer, valuesType, valueArrayField);
     expressions.add(values, valueSerializationExpr);
 
     Arithmetic size =
@@ -524,7 +519,8 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
    * Returns an expression that deserialize <code>value</code> as a java object of type <code>
    * typeToken</code>.
    */
-  protected Expression deserializeFor(Expression bean, Expression value, TypeRef<?> typeRef) {
+  protected Expression deserializeFor(
+      Expression value, TypeRef<?> typeRef, TypeResolutionContext ctx) {
     Class<?> rawType = getRawType(typeRef);
     CustomCodec<?, ?> customHandler = customTypeHandler.findCodec(beanType.getRawType(), rawType);
     if (customHandler != null) {
@@ -543,7 +539,7 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
               "decodedValue",
               typeRef,
               true,
-              bean,
+              new Expression.Null(beanType, true),
               new Expression.Null(typeRef, true),
               inputValue);
       if (rawRewrittenType == MemoryBuffer.class) {
@@ -553,7 +549,16 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
       } else if (rawRewrittenType == byte[].class) {
         return newValue;
       }
-      return deserializeFor(bean, newValue, rewrittenType);
+      return deserializeFor(newValue, rewrittenType, ctx);
+    } else if (rawType == Optional.class) {
+      TypeRef<?> elemType = TypeUtils.getTypeArguments(typeRef).get(0);
+      return new Expression.StaticInvoke(
+          Optional.class,
+          "ofNullable",
+          "optional",
+          typeRef,
+          true,
+          deserializeFor(value, elemType, ctx));
     } else if (TypeUtils.isPrimitive(rawType) || TypeUtils.isBoxed(rawType)) {
       return value;
     } else if (rawType == BigDecimal.class) {
@@ -576,12 +581,12 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
     } else if (rawType.isEnum()) {
       return ExpressionUtils.valueOf(typeRef, value);
     } else if (rawType.isArray()) {
-      return deserializeForArray(bean, value, typeRef);
+      return deserializeForArray(value, typeRef);
     } else if (TypeUtils.ITERABLE_TYPE.isSupertypeOf(typeRef)) {
-      return deserializeForCollection(bean, value, typeRef);
+      return deserializeForCollection(value, typeRef);
     } else if (TypeUtils.MAP_TYPE.isSupertypeOf(typeRef)) {
-      return deserializeForMap(bean, value, typeRef);
-    } else if (TypeUtils.isBean(rawType)) {
+      return deserializeForMap(value, typeRef);
+    } else if (TypeUtils.isBean(rawType, ctx)) {
       return deserializeForBean(value, typeRef);
     } else {
       return deserializeForObject(value, typeRef);
@@ -602,7 +607,7 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
   }
 
   /** Returns an expression that deserialize <code>mapData</code> as a java map. */
-  protected Expression deserializeForMap(Expression bean, Expression mapData, TypeRef<?> typeRef) {
+  protected Expression deserializeForMap(Expression mapData, TypeRef<?> typeRef) {
     Expression javaMap = newMap(typeRef);
     @SuppressWarnings("unchecked")
     TypeRef<?> supertype = ((TypeRef<? extends Map<?, ?>>) typeRef).getSupertype(Map.class);
@@ -614,14 +619,14 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
     Expression keyJavaArray;
     Expression valueJavaArray;
     if (TypeUtils.ITERABLE_TYPE.isSupertypeOf(keysType)) {
-      keyJavaArray = deserializeForCollection(bean, keyArray, keysType);
+      keyJavaArray = deserializeForCollection(keyArray, keysType);
     } else {
-      keyJavaArray = deserializeForArray(bean, keyArray, keysType);
+      keyJavaArray = deserializeForArray(keyArray, keysType);
     }
     if (TypeUtils.ITERABLE_TYPE.isSupertypeOf(valuesType)) {
-      valueJavaArray = deserializeForCollection(bean, valueArray, valuesType);
+      valueJavaArray = deserializeForCollection(valueArray, valuesType);
     } else {
-      valueJavaArray = deserializeForArray(bean, valueArray, valuesType);
+      valueJavaArray = deserializeForArray(valueArray, valuesType);
     }
 
     ZipForEach put =
@@ -634,8 +639,7 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
   }
 
   /** Returns an expression that deserialize <code>arrayData</code> as a java collection. */
-  protected Expression deserializeForCollection(
-      Expression bean, Expression arrayData, TypeRef<?> typeRef) {
+  protected Expression deserializeForCollection(Expression arrayData, TypeRef<?> typeRef) {
     Expression collection = newCollection(arrayData, typeRef);
     try {
       TypeRef<?> elemType = TypeUtils.getElementType(typeRef);
@@ -643,7 +647,11 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
           new ArrayDataForEach(
               arrayData,
               elemType,
-              (i, value) -> new Invoke(collection, "add", deserializeFor(bean, value, elemType)),
+              (i, value) ->
+                  new Invoke(
+                      collection,
+                      "add",
+                      deserializeFor(value, elemType, createElementTypeContext(elemType))),
               i -> new Invoke(collection, "add", ExpressionUtils.nullValue(elemType)));
       return new ListExpression(collection, addElemsOp, collection);
     } catch (Exception e) {
@@ -712,7 +720,6 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
    * <code>rootJavaArray</code>.
    */
   protected Expression deserializeForMultiDimensionArray(
-      Expression bean,
       Expression arrayData,
       Expression rootJavaArray,
       int numDimensions,
@@ -729,8 +736,7 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
             Expression[] newIndexes = Arrays.copyOf(indexes, indexes.length + 1);
             newIndexes[indexes.length] = i;
             Expression elemArr =
-                deserializeForArray(
-                    bean, value, Objects.requireNonNull(typeRef.getComponentType()));
+                deserializeForArray(value, Objects.requireNonNull(typeRef.getComponentType()));
             return new AssignArrayElem(rootJavaArray, elemArr, newIndexes);
           });
     } else {
@@ -741,7 +747,7 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
             Expression[] newIndexes = Arrays.copyOf(indexes, indexes.length + 1);
             newIndexes[indexes.length] = i;
             return deserializeForMultiDimensionArray(
-                bean, value, rootJavaArray, numDimensions - 1, elemType, newIndexes);
+                value, rootJavaArray, numDimensions - 1, elemType, newIndexes);
           });
     }
   }
@@ -750,8 +756,7 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
    * Return an expression that deserialize <code>arrayData</code>. If array is multi-array, forward
    * to {@link BaseBinaryEncoderBuilder#deserializeForMultiDimensionArray}
    */
-  protected Expression deserializeForArray(
-      Expression bean, Expression arrayData, TypeRef<?> typeRef) {
+  protected Expression deserializeForArray(Expression arrayData, TypeRef<?> typeRef) {
     int numDimensions = TypeUtils.getArrayDimensions(typeRef);
     if (numDimensions > 1) {
       // If some dimension's elements is all null, we take outer-most array as null,
@@ -770,7 +775,7 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
       Expression rootJavaMultiDimArray = new NewArray(innerElemClass, numDimensions, dimensions);
       Expression op =
           deserializeForMultiDimensionArray(
-              bean, arrayData, rootJavaMultiDimArray, numDimensions, typeRef, new Expression[0]);
+              arrayData, rootJavaMultiDimArray, numDimensions, typeRef, new Expression[0]);
       // although the value maybe null, we don't use this info, so we set nullability to false.
       return new If(
           ExpressionUtils.notNull(dimensions),
@@ -802,7 +807,8 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
                 arrayData,
                 elemType,
                 (i, value) -> {
-                  Expression elemValue = deserializeFor(bean, value, elemType);
+                  Expression elemValue =
+                      deserializeFor(value, elemType, createElementTypeContext(elemType));
                   return new AssignArrayElem(javaArray, elemValue, i);
                 });
         // add javaArray at last as expression value
@@ -817,5 +823,15 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
    */
   protected Expression deserializeForObject(Expression value, TypeRef<?> typeRef) {
     return new Invoke(furyRef, "deserialize", typeRef, value);
+  }
+
+  protected TypeResolutionContext createElementTypeContext(TypeRef<?> elemType) {
+    TypeResolutionContext newTypeCtx;
+    if (elemType.isInterface() && beanClass.isInterface()) {
+      newTypeCtx = typeCtx.withSynthesizedBeanType(elemType.getRawType());
+    } else {
+      newTypeCtx = typeCtx;
+    }
+    return newTypeCtx;
   }
 }

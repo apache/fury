@@ -125,13 +125,13 @@ Release version:
 <dependency>
   <groupId>org.apache.fury</groupId>
   <artifactId>fury-core</artifactId>
-  <version>0.10.2</version>
+  <version>0.10.3</version>
 </dependency>
 <!-- row/arrow format support -->
 <!-- <dependency>
   <groupId>org.apache.fury</groupId>
   <artifactId>fury-format</artifactId>
-  <version>0.10.2</version>
+  <version>0.10.3</version>
 </dependency> -->
 ```
 
@@ -140,13 +140,13 @@ Release version:
 Scala2:
 
 ```sbt
-libraryDependencies += "org.apache.fury" % "fury-scala_2.13" % "0.10.2"
+libraryDependencies += "org.apache.fury" % "fury-scala_2.13" % "0.10.3"
 ```
 
 Scala3:
 
 ```sbt
-libraryDependencies += "org.apache.fury" % "fury-scala_3" % "0.10.2"
+libraryDependencies += "org.apache.fury" % "fury-scala_3" % "0.10.3"
 ```
 
 ### Kotlin
@@ -155,7 +155,7 @@ libraryDependencies += "org.apache.fury" % "fury-scala_3" % "0.10.2"
 <dependency>
   <groupId>org.apache.fury</groupId>
   <artifactId>fury-kotlin</artifactId>
-  <version>0.10.2</version>
+  <version>0.10.3</version>
 </dependency>
 ```
 

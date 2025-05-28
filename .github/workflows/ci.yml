@@ -66,6 +66,13 @@ jobs:
         run: ./ci/run_ci.sh install_pyfury
       - name: Run CI with Maven
         run: ./ci/run_ci.sh java${{ matrix.java-version }}
+      - name: Upload Test Report
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: surefire-reports-${{ matrix.java-version }}
+          path: "**/target/surefire-reports/**"
+
   openj9:
     name: Openj9 Java CI
     runs-on: ubuntu-latest

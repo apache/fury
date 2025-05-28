@@ -167,6 +167,10 @@ public class TypeRef<T> {
     return type instanceof Class && ((Class<?>) type).isPrimitive();
   }
 
+  public boolean isInterface() {
+    return getRawType().isInterface();
+  }
+
   /**
    * Returns true if this type is known to be an array type, such as {@code int[]}, {@code T[]},
    * {@code <? extends Map<String, Integer>[]>} etc.

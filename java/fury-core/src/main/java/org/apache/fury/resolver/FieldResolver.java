@@ -28,6 +28,7 @@ import static org.apache.fury.resolver.FieldResolver.FieldInfoEncodingType.SEPAR
 import static org.apache.fury.type.TypeUtils.getRawType;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Member;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,6 +43,7 @@ import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.fury.Fury;
 import org.apache.fury.annotation.FuryField;
 import org.apache.fury.collection.Tuple2;
@@ -194,17 +196,27 @@ public class FieldResolver {
   public static FieldResolver of(
       Fury fury, Class<?> type, boolean resolveParent, boolean ignoreCollectionType) {
     // all fields of class and super classes should be a consistent order between jvm process.
-    SortedMap<Field, Descriptor> allFieldsMap =
+    SortedMap<Member, Descriptor> allFieldsMap =
         fury.getClassResolver().getAllDescriptorsMap(type, resolveParent);
     Set<String> duplicatedFields;
     if (resolveParent) {
-      duplicatedFields = Descriptor.getSortedDuplicatedFields(type).keySet();
+      duplicatedFields = Descriptor.getSortedDuplicatedMembers(type).keySet();
     } else {
       duplicatedFields = new HashSet<>();
     }
     List<ClassField> allFields =
-        allFieldsMap.keySet().stream().map(ClassField::new).collect(Collectors.toList());
+        allFieldsMap.keySet().stream()
+            .flatMap(FieldResolver::mapField)
+            .map(ClassField::new)
+            .collect(Collectors.toList());
     return new FieldResolver(fury, type, ignoreCollectionType, allFields, duplicatedFields);
+  }
+
+  private static Stream<Field> mapField(Member member) {
+    if (member instanceof Field) {
+      return Stream.of((Field) member);
+    }
+    return Stream.empty();
   }
 
   private final Class<?> cls;
