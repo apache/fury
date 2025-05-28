@@ -2005,7 +2005,6 @@ public class ClassResolver implements TypeResolver {
 
   public void resetWrite() {}
 
-  @Override
   @CodegenInvoke
   public GenericType getGenericTypeInStruct(Class<?> cls, String genericTypeStr) {
     Map<String, GenericType> map =
