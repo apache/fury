@@ -141,7 +141,9 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
       if (keySerializer != null || valueSerializer != null) {
         entry = writeJavaNullChunk(buffer, entry, iterator, keySerializer, valueSerializer);
         if (entry != null) {
-          entry = writeJavaChunk(classResolver, buffer, entry, iterator, keySerializer, valueSerializer);
+          entry =
+              writeJavaChunk(
+                  classResolver, buffer, entry, iterator, keySerializer, valueSerializer);
         }
       } else {
         Generics generics = fury.getGenerics();
@@ -157,9 +159,12 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
           }
           GenericType keyGenericType = genericType.getTypeParameter0();
           GenericType valueGenericType = genericType.getTypeParameter1();
-          entry = writeJavaNullChunkGeneric(buffer, entry, iterator, keyGenericType, valueGenericType);
+          entry =
+              writeJavaNullChunkGeneric(buffer, entry, iterator, keyGenericType, valueGenericType);
           if (entry != null) {
-            entry = writeJavaChunkGeneric(classResolver, generics, genericType, buffer, entry, iterator);
+            entry =
+                writeJavaChunkGeneric(
+                    classResolver, generics, genericType, buffer, entry, iterator);
           }
         }
       }
@@ -348,7 +353,8 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     return classInfo.getSerializer();
   }
 
-  private Entry writeJavaChunkGeneric(
+  @CodegenInvoke
+  public Entry writeJavaChunkGeneric(
       TypeResolver classResolver,
       Generics generics,
       GenericType genericType,
@@ -939,7 +945,8 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     }
   }
 
-  private void writeKeyForNullValueChunkGeneric(MemoryBuffer buffer, Object key, GenericType keyType) {
+  private void writeKeyForNullValueChunkGeneric(
+      MemoryBuffer buffer, Object key, GenericType keyType) {
     if (!keyType.isMonomorphic()) {
       buffer.writeByte(VALUE_HAS_NULL | TRACKING_KEY_REF);
       binding.writeRef(buffer, key, keyClassInfoWriteCache);
@@ -963,7 +970,8 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     }
   }
 
-  private void writeValueForNullKeyChunkGeneric(MemoryBuffer buffer, Object value, GenericType valueType) {
+  private void writeValueForNullKeyChunkGeneric(
+      MemoryBuffer buffer, Object value, GenericType valueType) {
     if (!valueType.isMonomorphic()) {
       buffer.writeByte(KEY_HAS_NULL | TRACKING_VALUE_REF);
       binding.writeRef(buffer, value, valueClassInfoWriteCache);

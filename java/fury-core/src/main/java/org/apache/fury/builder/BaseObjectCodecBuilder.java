@@ -118,6 +118,7 @@ import org.apache.fury.serializer.StringSerializer;
 import org.apache.fury.serializer.collection.AbstractCollectionSerializer;
 import org.apache.fury.serializer.collection.AbstractMapSerializer;
 import org.apache.fury.serializer.collection.CollectionFlags;
+import org.apache.fury.type.GenericType;
 import org.apache.fury.type.TypeUtils;
 import org.apache.fury.util.GraalvmSupport;
 import org.apache.fury.util.Preconditions;
@@ -141,6 +142,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
   private static final TypeRef<?> COLLECTION_SERIALIZER_TYPE =
       TypeRef.of(AbstractCollectionSerializer.class);
   private static final TypeRef<?> MAP_SERIALIZER_TYPE = TypeRef.of(AbstractMapSerializer.class);
+  private static final TypeRef<?> GENERIC_TYPE = TypeRef.of(GenericType.class);
 
   protected final Reference refResolverRef;
   protected final Reference classResolverRef =
@@ -655,6 +657,24 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     }
   }
 
+  private final Map<TypeRef<?>, String> namesForSharedGenericTypeFields = new HashMap<>();
+
+  protected Expression getGenericTypeField(TypeRef<?> typeRef) {
+    // create a field name from generic type, so multiple call of same generic type will reuse the
+    // same field.
+    String name =
+        namesForSharedGenericTypeFields.computeIfAbsent(
+            typeRef,
+            k ->
+                StringUtils.uncapitalize(typeRef.getRawType().getSimpleName())
+                    + namesForSharedGenericTypeFields.size());
+    return getOrCreateField(
+        false,
+        GenericType.class,
+        name,
+        () -> invoke(classResolverRef, "buildGenericType", "genericType", GENERIC_TYPE));
+  }
+
   /**
    * The boolean value in tuple indicates whether the classinfo needs update.
    *
@@ -1137,19 +1157,36 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
                   method = "writeNullChunkKVFinalNoRef";
                 }
               }
+              boolean hasGenerics =
+                  keyTypeRawType != Object.class || valueTypeRawType != Object.class;
+              Expression writeNullChunk;
+              if (hasGenerics) {
+                method = "writeJavaChunkGeneric";
+                writeNullChunk =
+                    inlineInvoke(
+                        serializer,
+                        method,
+                        MAP_ENTRY_TYPE,
+                        buffer,
+                        entry,
+                        iterator,
+                        getGenericTypeField(keyType),
+                        getGenericTypeField(valueType));
+              } else {
+                writeNullChunk =
+                    inlineInvoke(
+                        serializer,
+                        method,
+                        MAP_ENTRY_TYPE,
+                        buffer,
+                        entry,
+                        iterator,
+                        keySerializer,
+                        valueSerializer);
+              }
               Expression writeChunk = writeChunk(buffer, entry, iterator, keyType, valueType);
               return new ListExpression(
-                  new Assign(
-                      entry,
-                      inlineInvoke(
-                          serializer,
-                          method,
-                          MAP_ENTRY_TYPE,
-                          buffer,
-                          entry,
-                          iterator,
-                          keySerializer,
-                          valueSerializer)),
+                  new Assign(entry, writeNullChunk),
                   new If(
                       neqNull(entry), inline ? writeChunk : new Assign(entry, inline(writeChunk))));
             });
