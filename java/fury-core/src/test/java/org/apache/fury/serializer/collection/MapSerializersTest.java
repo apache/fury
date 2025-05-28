@@ -1008,4 +1008,21 @@ public class MapSerializersTest extends FuryTestBase {
     serDeCheck(fury, pojo);
     fury.serialize(pojo);
   }
+
+  @Data
+  @AllArgsConstructor
+  public static class NullChunkGeneric {
+    public Map<String, Integer> map;
+  }
+
+  @Test
+  public void testNullChunkGeneric() {
+    Fury fury1 = builder().withCodegen(true).build();
+    Map<String, Integer> map = ofHashMap(null, 1, "k1", null, "k2", 2);
+    NullChunkGeneric o = new NullChunkGeneric(map);
+    byte[] bytes = fury1.serialize(o);
+    Fury fury2 = builder().withCodegen(false).build();
+    Object object = fury2.deserialize(bytes);
+    assertEquals(object, o);
+  }
 }
