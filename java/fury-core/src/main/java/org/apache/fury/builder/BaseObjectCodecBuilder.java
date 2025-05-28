@@ -1161,7 +1161,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
                   keyTypeRawType != Object.class || valueTypeRawType != Object.class;
               Expression writeNullChunk;
               if (hasGenerics) {
-                method = "writeJavaChunkGeneric";
+                method = "writeJavaNullChunkGeneric";
                 writeNullChunk =
                     inlineInvoke(
                         serializer,
