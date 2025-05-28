@@ -19,6 +19,7 @@
 
 package org.apache.fury.type;
 
+import static org.apache.fury.type.TypeUtils.OBJECT_TYPE;
 import static org.apache.fury.type.TypeUtils.getRawType;
 
 import java.lang.reflect.GenericArrayType;
@@ -123,7 +124,7 @@ public class GenericType {
     return build(TypeRef.of(type), finalPredicate);
   }
 
-  private static final GenericType OBJECT_GENERIC_TYPE = GenericType.build(Object.class);
+  private static final GenericType OBJECT_GENERIC_TYPE = new GenericType(OBJECT_TYPE, false);
 
   public static GenericType build(TypeRef<?> typeRef, Predicate<Type> finalPredicate) {
     if (typeRef.getRawType() == Object.class) {
