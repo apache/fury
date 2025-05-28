@@ -568,3 +568,171 @@ func (b *ByteBuffer) readVarUint32Slow() uint32 {
 func (b *ByteBuffer) PutUint8(writerIndex int, value uint8) {
 	b.data[writerIndex] = byte(value)
 }
+
+// WriteVarUint32Small7 writes a uint32 in variable-length small-7 format
+func (b *ByteBuffer) WriteVarUint32Small7(value uint32) int {
+	b.grow(8)
+	if value>>7 == 0 {
+		b.data[b.writerIndex] = byte(value)
+		b.writerIndex++
+		return 1
+	}
+	return b.continueWriteVarUint32Small7(value)
+}
+
+func (b *ByteBuffer) continueWriteVarUint32Small7(value uint32) int {
+	encoded := uint64(value & 0x7F)
+	encoded |= uint64((value&0x3f80)<<1) | 0x80
+	idx := b.writerIndex
+	if value>>14 == 0 {
+		b.unsafePutInt32(idx, int32(encoded))
+		b.writerIndex += 2
+		return 2
+	}
+	d := b.continuePutVarInt36(idx, encoded, uint64(value))
+	b.writerIndex += d
+	return d
+}
+
+func (b *ByteBuffer) continuePutVarInt36(index int, encoded, value uint64) int {
+	// bits 14
+	encoded |= ((value & 0x1fc000) << 2) | 0x8000
+	if value>>21 == 0 {
+		b.unsafePutInt32(index, int32(encoded))
+		return 3
+	}
+	// bits 21
+	encoded |= ((value & 0xfe00000) << 3) | 0x800000
+	if value>>28 == 0 {
+		b.unsafePutInt32(index, int32(encoded))
+		return 4
+	}
+	// bits 28
+	encoded |= ((value & 0xff0000000) << 4) | 0x80000000
+	b.unsafePutInt64(index, encoded)
+	return 5
+}
+
+func (b *ByteBuffer) unsafePutInt32(index int, v int32) {
+	binary.LittleEndian.PutUint32(b.data[index:], uint32(v))
+}
+
+func (b *ByteBuffer) unsafePutInt64(index int, v uint64) {
+	binary.LittleEndian.PutUint64(b.data[index:], v)
+}
+
+// ByteBuffer methods for variable-length integers
+func (b *ByteBuffer) ReadVarUint32Small7() int {
+	readIdx := b.readerIndex
+	if len(b.data)-readIdx > 0 {
+		v := b.data[readIdx]
+		readIdx++
+		if v&0x80 == 0 {
+			b.readerIndex = readIdx
+			return int(v)
+		}
+	}
+	return b.readVarUint32Small14()
+}
+
+func (b *ByteBuffer) readVarUint32Small14() int {
+	readIdx := b.readerIndex
+	if len(b.data)-readIdx >= 5 {
+		four := b.unsafeGetInt32(readIdx)
+		readIdx++
+		value := four & 0x7F
+		if four&0x80 != 0 {
+			readIdx++
+			value |= (four >> 1) & 0x3f80
+			if four&0x8000 != 0 {
+				return b.continueReadVarUint32(readIdx, four, value)
+			}
+		}
+		b.readerIndex = readIdx
+		return value
+	}
+	return int(b.readVarUint36Slow())
+}
+
+func (b *ByteBuffer) continueReadVarUint32(readIdx, bulkRead, value int) int {
+	readIdx++
+	value |= (bulkRead >> 2) & 0x1fc000
+	if bulkRead&0x800000 != 0 {
+		readIdx++
+		value |= (bulkRead >> 3) & 0xfe00000
+		if bulkRead&0x80000000 != 0 {
+			v := b.data[readIdx]
+			readIdx++
+			value |= int(v&0x7F) << 28
+		}
+	}
+	b.readerIndex = readIdx
+	return value
+}
+
+func (b *ByteBuffer) readVarUint36Slow() uint64 {
+	// unrolled loop
+	b0, _ := b.ReadByte()
+	result := uint64(b0 & 0x7F)
+	if b0&0x80 != 0 {
+		b1, _ := b.ReadByte()
+		result |= uint64(b1&0x7F) << 7
+		if b1&0x80 != 0 {
+			b2, _ := b.ReadByte()
+			result |= uint64(b2&0x7F) << 14
+			if b2&0x80 != 0 {
+				b3, _ := b.ReadByte()
+				result |= uint64(b3&0x7F) << 21
+				if b3&0x80 != 0 {
+					b4, _ := b.ReadByte()
+					result |= uint64(b4) << 28
+				}
+			}
+		}
+	}
+	return result
+}
+
+// unsafeGetInt32 reads little-endian int32 at index
+func (b *ByteBuffer) unsafeGetInt32(idx int) int {
+	return int(int32(binary.LittleEndian.Uint32(b.data[idx:])))
+}
+
+// IncreaseReaderIndex advances readerIndex
+func (b *ByteBuffer) IncreaseReaderIndex(n int) {
+	b.readerIndex += n
+}
+
+// ReadBytesAsInt64 reads up to 8 bytes and returns as uint64
+// fast path using underlying 64-bit read
+func (b *ByteBuffer) ReadBytesAsInt64(length int) uint64 {
+	readerIdx := b.readerIndex
+	remaining := len(b.data) - readerIdx
+	if remaining >= length {
+		// fast: read full 8 bytes then mask
+		v := binary.LittleEndian.Uint64(b.data[readerIdx:])
+		b.readerIndex = readerIdx + length
+		// mask off unused high bytes
+		mask := uint64(0xffffffffffffffff) >> uint((8-length)*8)
+		return v & mask
+	}
+	return b.slowReadBytesAsInt64(remaining, length)
+}
+
+func (b *ByteBuffer) slowReadBytesAsInt64(remaining, length int) uint64 {
+	// fill buffer omitted: assume data available
+	readerIdx := b.readerIndex
+	b.readerIndex = readerIdx + length
+	var result uint64
+	for i := 0; i < length; i++ {
+		result |= uint64(b.data[readerIdx+i]&0xff) << (i * 8)
+	}
+	return result
+}
+
+// ReadBytes reads n bytes
+func (b *ByteBuffer) ReadBytes(n int) []byte {
+	p := b.data[b.readerIndex : b.readerIndex+n]
+	b.readerIndex += n
+	return p
+}

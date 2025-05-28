@@ -17,6 +17,8 @@
 
 package meta
 
+import "errors"
+
 // Encoding Algorithms Flags
 type Encoding uint8
 
@@ -37,6 +39,20 @@ type MetaString struct {
 	encodedBytes []byte // serialized data
 }
 
+func NewMetaString(input string, encoding Encoding, special1, special2 byte, encoded []byte) *MetaString {
+	return &MetaString{
+		inputString:  input,
+		encoding:     encoding,
+		specialChar1: special1,
+		specialChar2: special2,
+		encodedBytes: encoded,
+	}
+}
+
+func NewEmptyMetaString() *MetaString {
+	return NewMetaString("", UTF_8, 0, 0, []byte{})
+}
+
 func (ms *MetaString) GetInputString() string { return ms.inputString }
 
 func (ms *MetaString) GetEncoding() Encoding { return ms.encoding }
@@ -46,6 +62,15 @@ func (ms *MetaString) GetSpecialChar1() byte { return ms.specialChar1 }
 func (ms *MetaString) GetSpecialChar2() byte { return ms.specialChar2 }
 
 func (ms *MetaString) GetEncodedBytes() []byte { return ms.encodedBytes }
+
+// EncodingFromByte maps a byte value to an Encoding
+func EncodingFromByte(b byte) (Encoding, error) {
+	switch Encoding(b) {
+	case UTF_8, LOWER_SPECIAL, LOWER_UPPER_DIGIT_SPECIAL, FIRST_TO_LOWER_SPECIAL, ALL_TO_LOWER_SPECIAL:
+		return Encoding(b), nil
+	}
+	return 0, errors.New("Encoding flag not recognized: " + string(b))
+}
 
 // StripLastChar return true if last char should be stripped
 func (ms *MetaString) StripLastChar() bool {
