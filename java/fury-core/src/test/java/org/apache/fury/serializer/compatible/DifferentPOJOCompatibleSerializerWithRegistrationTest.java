@@ -45,14 +45,13 @@ public class DifferentPOJOCompatibleSerializerWithRegistrationTest extends Asser
             .requireClassRegistration(false)
             .withAsyncCompilation(true)
             .serializeEnumByName(true)
-            .withName(Arrays.toString(classes))
+            .withName(getClass() + Arrays.toString(classes))
             .build();
     if (classes != null) {
       for (Class<?> clazz : classes) {
         instance.register(clazz);
       }
     }
-    ;
     return instance;
   }
 
