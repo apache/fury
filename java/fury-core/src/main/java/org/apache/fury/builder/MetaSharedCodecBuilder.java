@@ -75,8 +75,7 @@ public class MetaSharedCodecBuilder extends ObjectCodecBuilder {
         "Class version check should be disabled when compatible mode is enabled.");
     this.classDef = classDef;
     Collection<Descriptor> descriptors =
-        visitFury(
-            f -> MetaSharedSerializer.consolidateFields(f.getClassResolver(), beanClass, classDef));
+        f(f -> MetaSharedSerializer.consolidateFields(f.getClassResolver(), beanClass, classDef));
     DescriptorGrouper grouper = fury.getClassResolver().createDescriptorGrouper(descriptors, false);
     objectCodecOptimizer =
         new ObjectCodecOptimizer(beanClass, grouper, !fury.isBasicTypesRefIgnored(), ctx);
