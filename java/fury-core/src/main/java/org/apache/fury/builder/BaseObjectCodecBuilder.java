@@ -1159,17 +1159,25 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
         new While(
             neqNull(entry),
             () -> {
-              String method = "writeJavaNullChunk";
-              if (keyMonomorphic && valueMonomorphic) {
-                if (!trackingKeyRef && !trackingValueRef) {
-                  method = "writeNullChunkKVFinalNoRef";
-                }
-              }
               boolean hasGenerics =
                   keyTypeRawType != Object.class || valueTypeRawType != Object.class;
-              Expression writeNullChunk;
-              if (hasGenerics) {
+              String method = hasGenerics ? "writeJavaNullChunkGeneric" : "writeJavaNullChunk";
+              GenericType keyGenericType =
+                  visitFury(f -> f.getClassResolver().buildGenericType(keyType));
+              GenericType valueGenericType =
+                  visitFury(f -> f.getClassResolver().buildGenericType(valueType));
+              if (keyGenericType.hasGenericParameters()
+                  || valueGenericType.hasGenericParameters()) {
                 method = "writeJavaNullChunkGeneric";
+              } else if (keyMonomorphic && valueMonomorphic) {
+                if (!trackingKeyRef && !trackingValueRef) {
+                  method = "writeNullChunkKVFinalNoRef";
+                } else {
+                  method = "writeJavaNullChunk";
+                }
+              }
+              Expression writeNullChunk;
+              if (method.equals("writeJavaNullChunkGeneric")) {
                 writeNullChunk =
                     inlineInvoke(
                         serializer,
