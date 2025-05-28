@@ -131,6 +131,7 @@ public class Encoders {
    *   <li>primitive types: boolean, int, double, etc.
    *   <li>boxed types: Boolean, Integer, Double, etc.
    *   <li>String
+   *   <li>Enum (as String)
    *   <li>java.math.BigDecimal, java.math.BigInteger
    *   <li>time related: java.sql.Date, java.sql.Timestamp, java.time.LocalDate, java.time.Instant
    *   <li>Optional and friends: OptionalInt, OptionalLong, OptionalDouble

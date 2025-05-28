@@ -60,6 +60,8 @@ public class BinaryUtils {
       return "getMap";
     } else if (TypeUtils.isBean(type, ctx)) {
       return "getStruct";
+    } else if (type.getRawType().isEnum()) {
+      return "getString";
     } else {
       // take unknown type as OBJECT_TYPE, return as sliced MemoryBuffer
       // slice MemoryBuffer, then deserialize in EncodeExpressionBuilder.deserializeFor
@@ -98,6 +100,8 @@ public class BinaryUtils {
       return TypeRef.of(BinaryMap.class);
     } else if (TypeUtils.isBean(type, ctx)) {
       return TypeRef.of(BinaryRow.class);
+    } else if (type.getRawType().isEnum()) {
+      return TypeUtils.STRING_TYPE;
     } else {
       // take unknown type as OBJECT_TYPE, return as sliced MemoryBuffer
       // slice MemoryBuffer, then deserialize in EncodeExpressionBuilder.deserializeFor

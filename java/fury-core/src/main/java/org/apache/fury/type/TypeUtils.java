@@ -681,6 +681,8 @@ public class TypeUtils {
       }
       Tuple2<TypeRef<?>, TypeRef<?>> mapKeyValueType = getMapKeyValueType(typeRef);
       return isSupported(mapKeyValueType.f0) && isSupported(mapKeyValueType.f1);
+    } else if (cls.isEnum()) {
+      return true;
     } else {
       ctx.checkNoCycle(typeRef);
       return isBean(typeRef, ctx.appendTypePath(typeRef));
