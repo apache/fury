@@ -123,7 +123,12 @@ public class GenericType {
     return build(TypeRef.of(type), finalPredicate);
   }
 
+  private static final GenericType OBJECT_GENERIC_TYPE = GenericType.build(Object.class);
+
   public static GenericType build(TypeRef<?> typeRef, Predicate<Type> finalPredicate) {
+    if (typeRef.getRawType() == Object.class) {
+      return OBJECT_GENERIC_TYPE;
+    }
     Type type = typeRef.getType();
     if (type instanceof ParameterizedType) {
       // List<String>, List<T>, Map<String, List<String>>, SomeClass<T>
