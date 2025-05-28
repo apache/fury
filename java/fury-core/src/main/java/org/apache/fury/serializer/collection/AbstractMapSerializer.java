@@ -946,12 +946,20 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
       return;
     }
     Serializer serializer = keyType.getSerializer(typeResolver);
+    if (keyType.hasGenericParameters()) {
+      fury.getGenerics().pushGenericType(keyType);
+      fury.incDepth(1);
+    }
     if (serializer.needToWriteRef()) {
       buffer.writeByte(NULL_VALUE_KEY_DECL_TYPE_TRACKING_REF);
       binding.writeRef(buffer, key, serializer);
     } else {
       buffer.writeByte(NULL_VALUE_KEY_DECL_TYPE);
       binding.write(buffer, serializer, key);
+    }
+    if (keyType.hasGenericParameters()) {
+      fury.incDepth(-1);
+      fury.getGenerics().popGenericType();
     }
   }
 
@@ -962,12 +970,20 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
       return;
     }
     Serializer serializer = valueType.getSerializer(typeResolver);
+    if (valueType.hasGenericParameters()) {
+      fury.getGenerics().pushGenericType(valueType);
+      fury.incDepth(1);
+    }
     if (serializer.needToWriteRef()) {
       buffer.writeByte(NULL_KEY_VALUE_DECL_TYPE_TRACKING_REF);
       binding.writeRef(buffer, value, serializer);
     } else {
       buffer.writeByte(NULL_KEY_VALUE_DECL_TYPE);
       binding.write(buffer, serializer, value);
+    }
+    if (valueType.hasGenericParameters()) {
+      fury.incDepth(-1);
+      fury.getGenerics().popGenericType();
     }
   }
 }
