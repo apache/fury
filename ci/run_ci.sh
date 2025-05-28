@@ -146,10 +146,11 @@ integration_tests() {
 
 jdk17_plus_tests() {
   java -version
+  export JDK_JAVA_OPTIONS="--add-opens=java.base/java.nio=org.apache.arrow.memory.core,ALL-UNNAMED"
   echo "Executing fury java tests"
   cd "$ROOT/java"
   set +e
-  mvn -T10 --batch-mode --no-transfer-progress test install -pl '!fury-format,!fury-testsuite'
+  mvn -T10 --batch-mode --no-transfer-progress install
   testcode=$?
   if [[ $testcode -ne 0 ]]; then
     exit $testcode

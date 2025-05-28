@@ -54,6 +54,7 @@ import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.serializer.NonexistentClass;
 import org.apache.fury.util.Preconditions;
 import org.apache.fury.util.StringUtils;
+import org.apache.fury.util.record.RecordUtils;
 
 /** Type utils for common type inference and extraction. */
 @SuppressWarnings({"UnstableApiUsage", "unchecked"})
@@ -598,7 +599,7 @@ public class TypeUtils {
 
   public static boolean isBean(TypeRef<?> typeRef, TypeResolutionContext ctx) {
     Class<?> cls = getRawType(typeRef);
-    if (ctx.isSynthesizedBeanType(cls)) {
+    if (ctx.isSynthesizedBeanType(cls) || RecordUtils.isRecord(cls)) {
       return true;
     }
     if (Modifier.isAbstract(cls.getModifiers()) || Modifier.isInterface(cls.getModifiers())) {
