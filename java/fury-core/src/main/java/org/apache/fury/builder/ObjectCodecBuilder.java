@@ -90,7 +90,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     boolean shareMeta = fury.getConfig().isMetaShareEnabled();
     if (shareMeta) {
       descriptors =
-          f(
+          fury(
               f ->
                   f.getClassResolver()
                       .getClassDef(beanClass, true)
@@ -99,7 +99,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
       descriptors = fury.getClassResolver().getFieldDescriptors(beanClass, true);
     }
     Collection<Descriptor> p = descriptors;
-    DescriptorGrouper grouper = f(f -> f.getClassResolver().createDescriptorGrouper(p, false));
+    DescriptorGrouper grouper = fury(f -> f.getClassResolver().createDescriptorGrouper(p, false));
     descriptors = grouper.getSortedDescriptors();
     classVersionHash =
         new Literal(ObjectSerializer.computeStructHash(fury, descriptors), PRIMITIVE_INT_TYPE);
@@ -138,7 +138,7 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
   /** Mark non-inner registered final types as non-final to write class def for those types. */
   @Override
   protected boolean isMonomorphic(Class<?> clz) {
-    return f(f -> f.getClassResolver().isMonomorphic(clz));
+    return fury(f -> f.getClassResolver().isMonomorphic(clz));
   }
 
   /**
