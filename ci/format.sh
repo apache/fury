@@ -60,7 +60,7 @@ BLACK_VERSION=$(black --version | awk '{print $2}')
 # params: tool name, tool version, required version
 tool_version_check() {
     if [ "$2" != "$3" ]; then
-        echo "WARNING: Fury uses $1 $3, You currently are using $2. This might generate different results."
+        echo "WARNING: Fory uses $1 $3, You currently are using $2. This might generate different results."
     fi
 }
 
@@ -71,7 +71,7 @@ if command -v shellcheck >/dev/null; then
     SHELLCHECK_VERSION=$(shellcheck --version | awk '/^version:/ {print $2}')
     tool_version_check "shellcheck" "$SHELLCHECK_VERSION" "$SHELLCHECK_VERSION_REQUIRED"
 else
-    echo "INFO: Fury uses shellcheck for shell scripts, which is not installed. You may install shellcheck=$SHELLCHECK_VERSION_REQUIRED with your system package manager."
+    echo "INFO: Fory uses shellcheck for shell scripts, which is not installed. You may install shellcheck=$SHELLCHECK_VERSION_REQUIRED with your system package manager."
 fi
 
 if command -v clang-format >/dev/null; then
@@ -101,11 +101,11 @@ else
 fi
 
 if [[ $(flake8 --version) != *"flake8_quotes"* ]]; then
-    echo "WARNING: Fury uses flake8 with flake8_quotes. Might error without it. Install with: pip install flake8-quotes"
+    echo "WARNING: Fory uses flake8 with flake8_quotes. Might error without it. Install with: pip install flake8-quotes"
 fi
 
 if [[ $(flake8 --version) != *"flake8-bugbear"* ]]; then
-    echo "WARNING: Fury uses flake8 with flake8-bugbear. Might error without it. Install with: pip install flake8-bugbear"
+    echo "WARNING: Fory uses flake8 with flake8-bugbear. Might error without it. Install with: pip install flake8-bugbear"
 fi
 
 SHELLCHECK_FLAGS=(
@@ -304,7 +304,7 @@ elif [ "${1-}" == '--java' ]; then
 else
     # Add the origin remote if it doesn't exist
     if ! git remote -v | grep -q origin; then
-        git remote add 'origin' 'https://github.com/apache/fury.git'
+        git remote add 'origin' 'https://github.com/apache/fory.git'
     fi
 
     # use unshallow fetch for `git merge-base origin/main HEAD` to work.

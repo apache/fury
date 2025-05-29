@@ -158,4 +158,4 @@ void Init(v8::Local<v8::Object> exports) {
       .Check();
 }
 
-NODE_MODULE(fury_util, Init)
+NODE_MODULE(fory_util, Init)

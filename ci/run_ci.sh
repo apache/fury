@@ -32,13 +32,13 @@ install_python() {
   echo "Python version $(python -V), path $(which python)"
 }
 
-install_pyfury() {
+install_pyfory() {
   echo "Python version $(python -V), path $(which python)"
   "$ROOT"/ci/deploy.sh install_pyarrow
   pip install Cython wheel pytest
   pushd "$ROOT/python"
   pip list
-  echo "Install pyfury"
+  echo "Install pyfory"
   # Fix strange installed deps not found
   pip install setuptools -U
   pip install -v -e .
@@ -134,20 +134,20 @@ integration_tests() {
      export JAVA_HOME="$ROOT/$jdk"
      export PATH=$JAVA_HOME/bin:$PATH
      echo "First round for generate data: ${jdk}"
-     mvn -T10 --no-transfer-progress clean test -Dtest=org.apache.fury.integration_tests.JDKCompatibilityTest
+     mvn -T10 --no-transfer-progress clean test -Dtest=org.apache.fory.integration_tests.JDKCompatibilityTest
   done
   for jdk in "${JDKS[@]}"; do
      export JAVA_HOME="$ROOT/$jdk"
      export PATH=$JAVA_HOME/bin:$PATH
      echo "Second round for compatibility: ${jdk}"
-     mvn -T10 --no-transfer-progress clean test -Dtest=org.apache.fury.integration_tests.JDKCompatibilityTest
+     mvn -T10 --no-transfer-progress clean test -Dtest=org.apache.fory.integration_tests.JDKCompatibilityTest
   done
 }
 
 jdk17_plus_tests() {
   java -version
   export JDK_JAVA_OPTIONS="--add-opens=java.base/java.nio=org.apache.arrow.memory.core,ALL-UNNAMED"
-  echo "Executing fury java tests"
+  echo "Executing fory java tests"
   cd "$ROOT/java"
   set +e
   mvn -T10 --batch-mode --no-transfer-progress install
@@ -155,7 +155,7 @@ jdk17_plus_tests() {
   if [[ $testcode -ne 0 ]]; then
     exit $testcode
   fi
-  echo "Executing fury java tests succeeds"
+  echo "Executing fory java tests succeeds"
   echo "Executing latest_jdk_tests"
   cd "$ROOT"/integration_tests/latest_jdk_tests
   mvn -T10 -B --no-transfer-progress clean test
@@ -163,7 +163,7 @@ jdk17_plus_tests() {
 }
 
 kotlin_tests() {
-  echo "Executing fury kotlin tests"
+  echo "Executing fory kotlin tests"
   cd "$ROOT/kotlin"
   set +e
   mvn -T16 --batch-mode --no-transfer-progress test -DfailIfNoTests=false
@@ -171,25 +171,25 @@ kotlin_tests() {
   if [[ $testcode -ne 0 ]]; then
     exit $testcode
   fi
-  echo "Executing fury kotlin tests succeeds"
+  echo "Executing fory kotlin tests succeeds"
 }
 
 windows_java21_test() {
   java -version
-  echo "Executing fury java tests"
+  echo "Executing fory java tests"
   cd "$ROOT/java"
   set +e
-  mvn -T10 --batch-mode --no-transfer-progress test -Dtest=!org.apache.fury.CrossLanguageTest install -pl '!fury-format,!fury-testsuite'
+  mvn -T10 --batch-mode --no-transfer-progress test -Dtest=!org.apache.fory.CrossLanguageTest install -pl '!fory-format,!fory-testsuite'
   testcode=$?
   if [[ $testcode -ne 0 ]]; then
     exit $testcode
   fi
-  echo "Executing fury java tests succeeds"
+  echo "Executing fory java tests succeeds"
 }
 
 case $1 in
     java8)
-      echo "Executing fury java tests"
+      echo "Executing fory java tests"
       cd "$ROOT/java"
       set +e
       mvn -T16 --batch-mode --no-transfer-progress test
@@ -197,11 +197,11 @@ case $1 in
       if [[ $testcode -ne 0 ]]; then
         exit $testcode
       fi
-      echo "Executing fury java tests succeeds"
+      echo "Executing fory java tests succeeds"
     ;;
     java11)
       java -version
-      echo "Executing fury java tests"
+      echo "Executing fory java tests"
       cd "$ROOT/java"
       set +e
       mvn -T16 --batch-mode --no-transfer-progress test
@@ -209,7 +209,7 @@ case $1 in
       if [[ $testcode -ne 0 ]]; then
         exit $testcode
       fi
-      echo "Executing fury java tests succeeds"
+      echo "Executing fory java tests succeeds"
     ;;
     java17)
       jdk17_plus_tests
@@ -229,28 +229,28 @@ case $1 in
     integration_tests)
       echo "Install jdk"
       install_jdks
-      echo "Executing fury integration tests"
+      echo "Executing fory integration tests"
       integration_tests
-      echo "Executing fury integration tests succeeds"
+      echo "Executing fory integration tests succeeds"
      ;;
     javascript)
       set +e
-      echo "Executing fury javascript tests"
+      echo "Executing fory javascript tests"
       cd "$ROOT/javascript"
       npm install
       node ./node_modules/.bin/jest --ci --reporters=default --reporters=jest-junit
       testcode=$?
       if [[ $testcode -ne 0 ]]; then
-        echo "Executing fury javascript tests failed"
+        echo "Executing fory javascript tests failed"
         exit $testcode
       fi
-      echo "Executing fury javascript tests succeeds"
+      echo "Executing fory javascript tests succeeds"
     ;;
     rust)
       set -e
       rustup component add clippy-preview
       rustup component add rustfmt
-      echo "Executing fury rust tests"
+      echo "Executing fory rust tests"
       cd "$ROOT/rust"
       cargo doc --no-deps --document-private-items --all-features --open
       cargo fmt --all -- --check
@@ -261,11 +261,11 @@ case $1 in
       cargo test
       testcode=$?
       if [[ $testcode -ne 0 ]]; then
-        echo "Executing fury rust tests failed"
+        echo "Executing fory rust tests failed"
         exit $testcode
       fi
       cargo clean
-      echo "Executing fury rust tests succeeds"
+      echo "Executing fory rust tests succeeds"
     ;;
     cpp)
       echo "Install pyarrow"
@@ -273,38 +273,38 @@ case $1 in
       export PATH=~/bin:$PATH
       echo "bazel version: $(bazel version)"
       set +e
-      echo "Executing fury c++ tests"
+      echo "Executing fory c++ tests"
       bazel test $(bazel query //...)
       testcode=$?
       if [[ $testcode -ne 0 ]]; then
-        echo "Executing fury c++ tests failed"
+        echo "Executing fory c++ tests failed"
         exit $testcode
       fi
-      echo "Executing fury c++ tests succeeds"
+      echo "Executing fory c++ tests succeeds"
     ;;
     python)
-      install_pyfury
+      install_pyfory
       pip install pandas
       cd "$ROOT/python"
-      echo "Executing fury python tests"
-      pytest -v -s --durations=60 pyfury/tests
+      echo "Executing fory python tests"
+      pytest -v -s --durations=60 pyfory/tests
       testcode=$?
       if [[ $testcode -ne 0 ]]; then
         exit $testcode
       fi
-      echo "Executing fury python tests succeeds"
-      ENABLE_FURY_CYTHON_SERIALIZATION=0 pytest -v -s --durations=60 pyfury/tests
+      echo "Executing fory python tests succeeds"
+      ENABLE_FORY_CYTHON_SERIALIZATION=0 pytest -v -s --durations=60 pyfory/tests
       testcode=$?
       if [[ $testcode -ne 0 ]]; then
         exit $testcode
       fi
-      echo "Executing fury python tests succeeds"
+      echo "Executing fory python tests succeeds"
     ;;
     go)
-      echo "Executing fury go tests for go"
-      cd "$ROOT/go/fury"
+      echo "Executing fory go tests for go"
+      cd "$ROOT/go/fory"
       go test -v
-      echo "Executing fury go tests succeeds"
+      echo "Executing fory go tests succeeds"
     ;;
     format)
       echo "Install format tools"

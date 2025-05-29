@@ -1,8 +1,8 @@
-# Apache Fury™ C++
+# Apache Fory™ C++
 
-Fury is a blazingly-fast multi-language serialization framework powered by just-in-time compilation and zero-copy.
+Fory is a blazingly-fast multi-language serialization framework powered by just-in-time compilation and zero-copy.
 
-## Build Fury C++
+## Build Fory C++
 
 ```bash
 # Build all projects
@@ -18,9 +18,9 @@ bazel test //:all
 ## Benchmark
 
 ```bash
-bazel build //cpp/fury/benchmark:all
-bazel test //cpp/fury/benchmark:all
+bazel build //cpp/fory/benchmark:all
+bazel test //cpp/fory/benchmark:all
 # You can also run a single benchmark to see how efficient it is.
 # For example
-bazel run //cpp/fury/benchmark:benchmark_string_util
+bazel run //cpp/fory/benchmark:benchmark_string_util
 ```

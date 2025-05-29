@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import Fury, { Type } from '../packages/fury/index';
+import Fory, { Type } from '../packages/fory/index';
 import { describe, expect, test } from '@jest/globals';
 import * as beautify from 'js-beautify';
 
@@ -34,12 +34,12 @@ describe('array', () => {
         a: Type.string()
       }))
     });
-    const fury = new Fury({ refTracking: true, hooks: {
+    const fory = new Fory({ refTracking: true, hooks: {
       afterCodeGenerated: (code: string) => {
         return beautify.js(code, { indent_size: 2, space_in_empty_paren: true, indent_empty_lines: true });
       }
     } });
-    const { serialize, deserialize } = fury.registerSerializer(typeinfo);
+    const { serialize, deserialize } = fory.registerSerializer(typeinfo);
     const o = { a: "123" };
     expect(deserialize(serialize({ c: [o, o] }))).toEqual({ c: [o, o] })
   });
@@ -54,15 +54,15 @@ describe('array', () => {
       a6: Type.float64Array()
     });
 
-    const fury = new Fury({ refTracking: true }); const serializer = fury.registerSerializer(typeinfo).serializer;
-    const input = fury.serialize({
+    const fory = new Fory({ refTracking: true }); const serializer = fory.registerSerializer(typeinfo).serializer;
+    const input = fory.serialize({
       a: [true, false],
       a2: [1, 2, 3],
       a3: [3, 5, 76],
       a4: [634, 564, 76],
       a6: [234243.555, 55654.6786],
     }, serializer);
-    const result = fury.deserialize(
+    const result = fory.deserialize(
       input
     );
     result.a4 = result.a4.map(x => Number(x));
@@ -83,11 +83,11 @@ describe('array', () => {
       a5: Type.float32Array(),
     })
     
-    const fury = new Fury({ refTracking: true }); const serialize = fury.registerSerializer(typeinfo).serializer;
-    const input = fury.serialize({
+    const fory = new Fory({ refTracking: true }); const serialize = fory.registerSerializer(typeinfo).serializer;
+    const input = fory.serialize({
       a5: [2.43, 654.4, 55],
     }, serialize);
-    const result = fury.deserialize(
+    const result = fory.deserialize(
       input
     );
     expect(result.a5[0]).toBeCloseTo(2.43)

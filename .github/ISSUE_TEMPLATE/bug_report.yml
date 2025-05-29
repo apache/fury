@@ -21,22 +21,22 @@ labels: ["bug"]
 body:
   - type: markdown
     attributes:
-      value: Thank you very much for submitting feedback to Fury.
+      value: Thank you very much for submitting feedback to Fory.
   - type: checkboxes
     attributes:
       label: Search before asking
       description: >
-        Please make sure to search in the [issues](https://github.com/apache/fury/issues) first to see whether the same issue was reported already.
+        Please make sure to search in the [issues](https://github.com/apache/fory/issues) first to see whether the same issue was reported already.
       options:
         - label: >
-            I had searched in the [issues](https://github.com/apache/fury/issues) and found no similar issues.
+            I had searched in the [issues](https://github.com/apache/fory/issues) and found no similar issues.
           required: true
   - type: textarea
     attributes:
       label: Version
       description: >
-        Please provide the versions of Fury, OS, and others such as JDK/Python/Gcc/Clang/Go/NodeJS if they are used.
-        If Fury is the unstable version, please input commit id.
+        Please provide the versions of Fory, OS, and others such as JDK/Python/Gcc/Clang/Go/NodeJS if they are used.
+        If Fory is the unstable version, please input commit id.
     validations:
       required: true
   - type: dropdown
@@ -80,7 +80,7 @@ body:
     attributes:
       label: Are you willing to submit a PR?
       description: >
-        We very much look forward to developers or users to help solve Fury problems together.
+        We very much look forward to developers or users to help solve Fory problems together.
         If you are willing to submit a PR to fix this problem, please tick it.
       options:
         - label: I'm willing to submit a PR!

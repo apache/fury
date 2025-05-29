@@ -17,9 +17,9 @@
  * under the License.
  */
 
-import { alloc } from '../packages/fury/lib/platformBuffer';
-import { BinaryReader } from '../packages/fury/lib/reader';
-import { BinaryWriter } from '../packages/fury/lib/writer';
+import { alloc } from '../packages/fory/lib/platformBuffer';
+import { BinaryReader } from '../packages/fory/lib/reader';
+import { BinaryWriter } from '../packages/fory/lib/writer';
 import { describe, expect, test } from '@jest/globals';
 
 

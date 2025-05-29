@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-use fury_core::util::to_utf8;
+use fory_core::util::to_utf8;
 
 #[test]
 fn test_to_utf8() {

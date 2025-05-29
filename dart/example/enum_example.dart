@@ -17,11 +17,11 @@
  * under the License.
  */
 
-import 'package:fury/fury.dart';
+import 'package:fory/fory.dart';
 
 part 'enum_example.g.dart';
 
-@furyEnum
+@foryEnum
 enum Color {
   Red,
   Gray,

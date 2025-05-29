@@ -16,34 +16,34 @@
  * limitations under the License.
  */
 
-val furyVersion = "0.11.0-SNAPSHOT"
+val foryVersion = "0.11.0-SNAPSHOT"
 val scala213Version = "2.13.15"
-ThisBuild / apacheSonatypeProjectProfile := "fury"
-version := furyVersion
+ThisBuild / apacheSonatypeProjectProfile := "fory"
+version := foryVersion
 scalaVersion := scala213Version
 crossScalaVersions := Seq(scala213Version, "3.3.4")
 
-lazy val root = Project(id = "fury-scala", base = file("."))
+lazy val root = Project(id = "fory-scala", base = file("."))
   .settings(
-    name := "fury-scala",
+    name := "fory-scala",
     apacheSonatypeLicenseFile := baseDirectory.value / ".." / "LICENSE",
     apacheSonatypeNoticeFile := baseDirectory.value / ".." / "NOTICE",
     apacheSonatypeDisclaimerFile := Some(baseDirectory.value / ".." / "DISCLAIMER"),
-    description := "Apache Fury(Incubating) is a blazingly fast multi-language serialization framework powered by JIT and zero-copy.",
-    homepage := Some(url("https://fury.apache.org/")),
+    description := "Apache Fory(Incubating) is a blazingly fast multi-language serialization framework powered by JIT and zero-copy.",
+    homepage := Some(url("https://fory.apache.org/")),
     startYear := Some(2024),
     developers := List(
       Developer(
-        "fury-contributors",
-        "Apache Fury(Incubating) Contributors",
-        "dev@fury.apache.org",
-        url("https://github.com/apache/fury/graphs/contributors"))))
+        "fory-contributors",
+        "Apache Fory(Incubating) Contributors",
+        "dev@fory.apache.org",
+        url("https://github.com/apache/fory/graphs/contributors"))))
 
 resolvers += Resolver.mavenLocal
 resolvers += Resolver.ApacheMavenSnapshotsRepo
 
 libraryDependencies ++= Seq(
-  "org.apache.fury" % "fury-core" % furyVersion,
+  "org.apache.fory" % "fory-core" % foryVersion,
   "org.scalatest" %% "scalatest" % "3.2.19" % Test,
   "dev.zio" %% "zio" % "2.1.7" % Test,
 )

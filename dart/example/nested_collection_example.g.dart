@@ -22,7 +22,7 @@
 part of 'nested_collection_example.dart';
 
 // **************************************************************************
-// FuryObjSpecGenerator
+// ForyObjSpecGenerator
 // **************************************************************************
 
 final $NestedObject = ClassSpec(
@@ -128,7 +128,7 @@ final $NestedObject = ClassSpec(
   () => NestedObject(),
 );
 
-mixin _$NestedObjectFury implements Furiable {
+mixin _$NestedObjectFory implements Furiable {
   @override
-  Type get $furyType => NestedObject;
+  Type get $foryType => NestedObject;
 }

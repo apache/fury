@@ -16,20 +16,20 @@
 // under the License.
 
 use chrono::{DateTime, NaiveDate, NaiveDateTime};
-use fury_core::fury::Fury;
-use fury_core::types::Mode;
-use fury_derive::Fury;
+use fory_core::fory::Fory;
+use fory_core::types::Mode;
+use fory_derive::Fory;
 use std::any::Any;
 use std::collections::HashMap;
 
 #[test]
 fn any() {
-    #[derive(Fury, Debug)]
+    #[derive(Fory, Debug)]
     struct Animal {
         f3: String,
     }
 
-    #[derive(Fury, Debug)]
+    #[derive(Fory, Debug)]
     struct Person {
         f1: Box<dyn Any>,
     }
@@ -40,38 +40,38 @@ fn any() {
         }),
     };
 
-    let mut fury = Fury::default();
-    fury.register::<Animal>(999);
-    fury.register::<Person>(1000);
-    let bin = fury.serialize(&person);
-    let obj: Person = fury.deserialize(&bin).expect("");
+    let mut fory = Fory::default();
+    fory.register::<Animal>(999);
+    fory.register::<Person>(1000);
+    let bin = fory.serialize(&person);
+    let obj: Person = fory.deserialize(&bin).expect("");
     assert!(obj.f1.is::<Animal>())
 }
 
 #[test]
 fn enum_without_payload() {
-    #[derive(Fury, Debug, PartialEq)]
+    #[derive(Fory, Debug, PartialEq)]
     enum Color {
         Green,
         Red,
         Blue,
     }
-    let mut fury = Fury::default();
-    fury.register::<Color>(999);
+    let mut fory = Fory::default();
+    fory.register::<Color>(999);
     let color = Color::Red;
-    let bin = fury.serialize(&color);
-    let color2: Color = fury.deserialize(&bin).expect("");
+    let bin = fory.serialize(&color);
+    let color2: Color = fory.deserialize(&bin).expect("");
     assert_eq!(color, color2);
 }
 
 #[test]
 fn complex_struct() {
-    #[derive(Fury, Debug, PartialEq, Default)]
+    #[derive(Fory, Debug, PartialEq, Default)]
     struct Animal {
         category: String,
     }
 
-    #[derive(Fury, Debug, PartialEq, Default)]
+    #[derive(Fory, Debug, PartialEq, Default)]
     struct Person {
         c1: Vec<u8>,  // binary
         c2: Vec<i16>, // primitive array
@@ -107,23 +107,23 @@ fn complex_struct() {
         c5: 2.0,
         c6: 4.0,
     };
-    let mut fury = Fury::default().mode(Mode::Compatible);
-    fury.register::<Person>(999);
-    fury.register::<Animal>(899);
+    let mut fory = Fory::default().mode(Mode::Compatible);
+    fory.register::<Person>(999);
+    fory.register::<Animal>(899);
 
-    let bin: Vec<u8> = fury.serialize(&person);
-    let obj: Person = fury.deserialize(&bin).expect("should success");
+    let bin: Vec<u8> = fory.serialize(&person);
+    let obj: Person = fory.deserialize(&bin).expect("should success");
     assert_eq!(person, obj);
 }
 
 #[test]
 fn encode_to_obin() {
-    #[derive(Fury, Debug, PartialEq, Default)]
+    #[derive(Fory, Debug, PartialEq, Default)]
     struct Animal {
         category: String,
     }
 
-    #[derive(Fury, Debug, PartialEq, Default)]
+    #[derive(Fory, Debug, PartialEq, Default)]
     struct Person {
         f1: String,
         f2: HashMap<String, i8>,
@@ -135,10 +135,10 @@ fn encode_to_obin() {
         f8: f64,
         f10: HashMap<i32, f64>,
     }
-    let mut fury = Fury::default();
-    fury.register::<Person>(999);
-    fury.register::<Animal>(899);
-    let bin: Vec<u8> = fury.serialize(&Person {
+    let mut fory = Fory::default();
+    fory.register::<Person>(999);
+    fory.register::<Animal>(899);
+    let bin: Vec<u8> = fory.serialize(&Person {
         f1: "Hello".to_string(),
         f2: HashMap::from([("hello1".to_string(), 1), ("hello2".to_string(), 2)]),
         f3: 1,

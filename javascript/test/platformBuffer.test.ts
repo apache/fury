@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import { fromUint8Array, alloc, BrowserBuffer, PlatformBuffer } from '../packages/fury/lib/platformBuffer';
+import { fromUint8Array, alloc, BrowserBuffer, PlatformBuffer } from '../packages/fory/lib/platformBuffer';
 import { describe, expect, test } from '@jest/globals';
 
 describe('platformBuffer', () => {
@@ -48,7 +48,7 @@ describe('platformBuffer', () => {
 
 
     test('should utf8Write work', () => {
-        const rawStr = "我是Fury, 你好！😁א";
+        const rawStr = "我是Fory, 你好！😁א";
         const bb = BrowserBuffer.alloc(100);
         bb.write(rawStr, 0);
 
@@ -57,7 +57,7 @@ describe('platformBuffer', () => {
     });
 
     test('should utf8 work', () => {
-        const rawStr = "我是Fury, 你好！😁א";
+        const rawStr = "我是Fory, 你好！😁א";
         const bb = BrowserBuffer.alloc(100);
         bb.write(rawStr, 0, 'utf8');
 
@@ -68,7 +68,7 @@ describe('platformBuffer', () => {
 
     test('should byteLength work', () => {
         expect(BrowserBuffer.byteLength("hello, world")).toBe(12);
-        expect(BrowserBuffer.byteLength("我是Fury, 你好！😁א")).toBe(27);
+        expect(BrowserBuffer.byteLength("我是Fory, 你好！😁א")).toBe(27);
     });
 
     test('should copy work', () => {

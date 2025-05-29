@@ -48,7 +48,7 @@
   <!-- exclude the generated files from being parsed, which make checkstyle check more fast -->
   <module name="BeforeExecutionExclusionFileFilter">
     <property name="fileNamePattern"
-              value="org.apache.fury.*MurmurHash3|Identity2IdMap.java"/>
+              value="org.apache.fory.*MurmurHash3|Identity2IdMap.java"/>
   </module>
   <module name="TreeWalker">
     <module name="SuppressWarningsHolder" />

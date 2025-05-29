@@ -26,75 +26,75 @@ graph serialization.
 
 ## Quick Start
 
-Note that fury creation is not cheap, the **fury instances should be reused between serializations** instead of creating
+Note that fory creation is not cheap, the **fory instances should be reused between serializations** instead of creating
 it everytime.
-You should keep fury to a static global variable, or instance variable of some singleton object or limited objects.
+You should keep fory to a static global variable, or instance variable of some singleton object or limited objects.
 
-Fury for single-thread usage:
+Fory for single-thread usage:
 
 ```java
 import java.util.List;
 import java.util.Arrays;
 
-import org.apache.fury.*;
-import org.apache.fury.config.*;
+import org.apache.fory.*;
+import org.apache.fory.config.*;
 
 public class Example {
   public static void main(String[] args) {
     SomeClass object = new SomeClass();
-    // Note that Fury instances should be reused between
+    // Note that Fory instances should be reused between
     // multiple serializations of different objects.
-    Fury fury = Fury.builder().withLanguage(Language.JAVA)
+    Fory fory = Fory.builder().withLanguage(Language.JAVA)
       .requireClassRegistration(true)
       .build();
     // Registering types can reduce class name serialization overhead, but not mandatory.
     // If class registration enabled, all custom types must be registered.
-    fury.register(SomeClass.class);
-    byte[] bytes = fury.serialize(object);
-    System.out.println(fury.deserialize(bytes));
+    fory.register(SomeClass.class);
+    byte[] bytes = fory.serialize(object);
+    System.out.println(fory.deserialize(bytes));
   }
 }
 ```
 
-Fury for multiple-thread usage:
+Fory for multiple-thread usage:
 
 ```java
 import java.util.List;
 import java.util.Arrays;
 
-import org.apache.fury.*;
-import org.apache.fury.config.*;
+import org.apache.fory.*;
+import org.apache.fory.config.*;
 
 public class Example {
   public static void main(String[] args) {
     SomeClass object = new SomeClass();
-    // Note that Fury instances should be reused between
+    // Note that Fory instances should be reused between
     // multiple serializations of different objects.
-    ThreadSafeFury fury = new ThreadLocalFury(classLoader -> {
-      Fury f = Fury.builder().withLanguage(Language.JAVA)
+    ThreadSafeFory fory = new ThreadLocalFory(classLoader -> {
+      Fory f = Fory.builder().withLanguage(Language.JAVA)
         .withClassLoader(classLoader).build();
       f.register(SomeClass.class);
       return f;
     });
-    byte[] bytes = fury.serialize(object);
-    System.out.println(fury.deserialize(bytes));
+    byte[] bytes = fory.serialize(object);
+    System.out.println(fory.deserialize(bytes));
   }
 }
 ```
 
-Fury instances reuse example:
+Fory instances reuse example:
 
 ```java
 import java.util.List;
 import java.util.Arrays;
 
-import org.apache.fury.*;
-import org.apache.fury.config.*;
+import org.apache.fory.*;
+import org.apache.fory.config.*;
 
 public class Example {
-  // reuse fury.
-  private static final ThreadSafeFury fury = new ThreadLocalFury(classLoader -> {
-    Fury f = Fury.builder().withLanguage(Language.JAVA)
+  // reuse fory.
+  private static final ThreadSafeFory fory = new ThreadLocalFory(classLoader -> {
+    Fory f = Fory.builder().withLanguage(Language.JAVA)
       .withClassLoader(classLoader).build();
     f.register(SomeClass.class);
     return f;
@@ -102,24 +102,24 @@ public class Example {
 
   public static void main(String[] args) {
     SomeClass object = new SomeClass();
-    byte[] bytes = fury.serialize(object);
-    System.out.println(fury.deserialize(bytes));
+    byte[] bytes = fory.serialize(object);
+    System.out.println(fory.deserialize(bytes));
   }
 }
 ```
 
-## FuryBuilder  options
+## ForyBuilder  options
 
 | Option Name                         | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Default Value                                                  |
 |-------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------|
-| `timeRefIgnored`                    | Whether to ignore reference tracking of all time types registered in `TimeSerializers` and subclasses of those types when ref tracking is enabled. If ignored, ref tracking of every time type can be enabled by invoking `Fury#registerSerializer(Class, Serializer)`. For example, `fury.registerSerializer(Date.class, new DateSerializer(fury, true))`. Note that enabling ref tracking should happen before serializer codegen of any types which contain time fields. Otherwise, those fields will still skip ref tracking. | `true`                                                         |
+| `timeRefIgnored`                    | Whether to ignore reference tracking of all time types registered in `TimeSerializers` and subclasses of those types when ref tracking is enabled. If ignored, ref tracking of every time type can be enabled by invoking `Fory#registerSerializer(Class, Serializer)`. For example, `fory.registerSerializer(Date.class, new DateSerializer(fory, true))`. Note that enabling ref tracking should happen before serializer codegen of any types which contain time fields. Otherwise, those fields will still skip ref tracking. | `true`                                                         |
 | `compressInt`                       | Enables or disables int compression for smaller size.                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | `true`                                                         |
 | `compressLong`                      | Enables or disables long compression for smaller size.                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | `true`                                                         |
 | `compressString`                    | Enables or disables string compression for smaller size.                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | `false`                                                        |
-| `classLoader`                       | The classloader should not be updated; Fury caches class metadata. Use `LoaderBinding` or `ThreadSafeFury` for classloader updates.                                                                                                                                                                                                                                                                                                                                                                                               | `Thread.currentThread().getContextClassLoader()`               |
+| `classLoader`                       | The classloader should not be updated; Fory caches class metadata. Use `LoaderBinding` or `ThreadSafeFory` for classloader updates.                                                                                                                                                                                                                                                                                                                                                                                               | `Thread.currentThread().getContextClassLoader()`               |
 | `compatibleMode`                    | Type forward/backward compatibility config. Also Related to `checkClassVersion` config. `SCHEMA_CONSISTENT`: Class schema must be consistent between serialization peer and deserialization peer. `COMPATIBLE`: Class schema can be different between serialization peer and deserialization peer. They can add/delete fields independently. [See more](#class-inconsistency-and-class-version-check).                                                                                                                            | `CompatibleMode.SCHEMA_CONSISTENT`                             |
-| `checkClassVersion`                 | Determines whether to check the consistency of the class schema. If enabled, Fury checks, writes, and checks consistency using the `classVersionHash`. It will be automatically disabled when `CompatibleMode#COMPATIBLE` is enabled. Disabling is not recommended unless you can ensure the class won't evolve.                                                                                                                                                                                                                  | `false`                                                        |
-| `checkJdkClassSerializable`         | Enables or disables checking of `Serializable` interface for classes under `java.*`. If a class under `java.*` is not `Serializable`, Fury will throw an `UnsupportedOperationException`.                                                                                                                                                                                                                                                                                                                                         | `true`                                                         |
+| `checkClassVersion`                 | Determines whether to check the consistency of the class schema. If enabled, Fory checks, writes, and checks consistency using the `classVersionHash`. It will be automatically disabled when `CompatibleMode#COMPATIBLE` is enabled. Disabling is not recommended unless you can ensure the class won't evolve.                                                                                                                                                                                                                  | `false`                                                        |
+| `checkJdkClassSerializable`         | Enables or disables checking of `Serializable` interface for classes under `java.*`. If a class under `java.*` is not `Serializable`, Fory will throw an `UnsupportedOperationException`.                                                                                                                                                                                                                                                                                                                                         | `true`                                                         |
 | `registerGuavaTypes`                | Whether to pre-register Guava types such as `RegularImmutableMap`/`RegularImmutableList`. These types are not public API, but seem pretty stable.                                                                                                                                                                                                                                                                                                                                                                                 | `true`                                                         |
 | `requireClassRegistration`          | Disabling may allow unknown classes to be deserialized, potentially causing security risks.                                                                                                                                                                                                                                                                                                                                                                                                                                       | `true`                                                         |
 | `suppressClassRegistrationWarnings` | Whether to suppress class registration warnings. The warnings can be used for security audit, but may be annoying, this suppression will be enabled by default.                                                                                                                                                                                                                                                                                                                                                                   | `true`                                                         |
@@ -130,17 +130,17 @@ public class Example {
 | `codeGenEnabled`                    | Disabling may result in faster initial serialization but slower subsequent serializations.                                                                                                                                                                                                                                                                                                                                                                                                                                        | `true`                                                         |
 | `asyncCompilationEnabled`           | If enabled, serialization uses interpreter mode first and switches to JIT serialization after async serializer JIT for a class is finished.                                                                                                                                                                                                                                                                                                                                                                                       | `false`                                                        |
 | `scalaOptimizationEnabled`          | Enables or disables Scala-specific serialization optimization.                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | `false`                                                        |
-| `copyRef`                           | When disabled, the copy performance will be better. But fury deep copy will ignore circular and shared reference. Same reference of an object graph will be copied into different objects in one `Fury#copy`.                                                                                                                                                                                                                                                                                                                     | `true`                                                         |
-| `serializeEnumByName`               | When Enabled, fury serialize enum by name instead of ordinal.                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | `false`                                                        |
+| `copyRef`                           | When disabled, the copy performance will be better. But fory deep copy will ignore circular and shared reference. Same reference of an object graph will be copied into different objects in one `Fory#copy`.                                                                                                                                                                                                                                                                                                                     | `true`                                                         |
+| `serializeEnumByName`               | When Enabled, fory serialize enum by name instead of ordinal.                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | `false`                                                        |
 
 ## Advanced Usage
 
-### Fury creation
+### Fory creation
 
-Single thread fury:
+Single thread fory:
 
 ```java
-Fury fury = Fury.builder()
+Fory fory = Fory.builder()
   .withLanguage(Language.JAVA)
   // enable reference tracking for shared/circular reference.
   // Disable it will have better performance if no duplicate reference.
@@ -152,14 +152,14 @@ Fury fury = Fury.builder()
   // enable async multi-threaded compilation.
   .withAsyncCompilation(true)
   .build();
-byte[] bytes = fury.serialize(object);
-System.out.println(fury.deserialize(bytes));
+byte[] bytes = fory.serialize(object);
+System.out.println(fory.deserialize(bytes));
 ```
 
-Thread-safe fury:
+Thread-safe fory:
 
 ```java
-ThreadSafeFury fury = Fury.builder()
+ThreadSafeFory fory = Fory.builder()
   .withLanguage(Language.JAVA)
   // enable reference tracking for shared/circular reference.
   // Disable it will have better performance if no duplicate reference.
@@ -174,9 +174,9 @@ ThreadSafeFury fury = Fury.builder()
   // .withCompatibleMode(CompatibleMode.COMPATIBLE)
   // enable async multi-threaded compilation.
   .withAsyncCompilation(true)
-  .buildThreadSafeFury();
-byte[] bytes = fury.serialize(object);
-System.out.println(fury.deserialize(bytes));
+  .buildThreadSafeFory();
+byte[] bytes = fory.serialize(object);
+System.out.println(fory.deserialize(bytes));
 ```
 
 ### Handling Class Schema Evolution in Serialization
@@ -185,38 +185,38 @@ In many systems, the schema of a class used for serialization may change over ti
 may be added or removed. When serialization and deserialization processes use different versions of jars, the schema of
 the class being deserialized may differ from the one used during serialization.
 
-By default, Fury serializes objects using the `CompatibleMode.SCHEMA_CONSISTENT` mode. This mode assumes that the
+By default, Fory serializes objects using the `CompatibleMode.SCHEMA_CONSISTENT` mode. This mode assumes that the
 deserialization process uses the same class schema as the serialization process, minimizing payload overhead.
 However, if there is a schema inconsistency, deserialization will fail.
 
 If the schema is expected to change, to make deserialization succeed, i.e. schema forward/backward compatibility.
-Users must configure Fury to use `CompatibleMode.COMPATIBLE`. This can be done using the
-`FuryBuilder#withCompatibleMode(CompatibleMode.COMPATIBLE)` method.
+Users must configure Fory to use `CompatibleMode.COMPATIBLE`. This can be done using the
+`ForyBuilder#withCompatibleMode(CompatibleMode.COMPATIBLE)` method.
 In this compatible mode, deserialization can handle schema changes such as missing or extra fields, allowing it to
 succeed even when the serialization and deserialization processes have different class schemas.
 
-Here is an example of creating Fury to support schema evolution:
+Here is an example of creating Fory to support schema evolution:
 
 ```java
-Fury fury = Fury.builder()
+Fory fory = Fory.builder()
   .withCompatibleMode(CompatibleMode.COMPATIBLE)
   .build();
 
-byte[] bytes = fury.serialize(object);
-System.out.println(fury.deserialize(bytes));
+byte[] bytes = fory.serialize(object);
+System.out.println(fory.deserialize(bytes));
 ```
 
-This compatible mode involves serializing class metadata into the serialized output. Despite Fury's use of
+This compatible mode involves serializing class metadata into the serialized output. Despite Fory's use of
 sophisticated compression techniques to minimize overhead, there is still some additional space cost associated with
 class metadata.
 
-To further reduce metadata costs, Fury introduces a class metadata sharing mechanism, which allows the metadata to be
+To further reduce metadata costs, Fory introduces a class metadata sharing mechanism, which allows the metadata to be
 sent to the deserialization process only once. For more details, please refer to the [Meta Sharing](#MetaSharing)
 section.
 
 ### Smaller size
 
-`FuryBuilder#withIntCompressed`/`FuryBuilder#withLongCompressed` can be used to compress int/long for smaller size.
+`ForyBuilder#withIntCompressed`/`ForyBuilder#withLongCompressed` can be used to compress int/long for smaller size.
 Normally compress int is enough.
 
 Both compression are enabled by default, if the serialized is not important, for example, you use flatbuffers for
@@ -224,15 +224,15 @@ serialization before, which doesn't compress anything, then you should disable c
 numbers,
 the compression may bring 80% performance regression.
 
-For int compression, fury use 1~5 bytes for encoding. First bit in every byte indicate whether has next byte. if first
+For int compression, fory use 1~5 bytes for encoding. First bit in every byte indicate whether has next byte. if first
 bit is set, then next byte will be read util first bit of next byte is unset.
 
-For long compression, fury support two encoding:
+For long compression, fory support two encoding:
 
-- Fury SLI(Small long as int) Encoding (**used by default**):
+- Fory SLI(Small long as int) Encoding (**used by default**):
   - If long is in `[-1073741824, 1073741823]`, encode as 4 bytes int: `| little-endian: ((int) value) << 1 |`
   - Otherwise write as 9 bytes: `| 0b1 | little-endian 8bytes long |`
-- Fury PVL(Progressive Variable-length Long) Encoding:
+- Fory PVL(Progressive Variable-length Long) Encoding:
   - First bit in every byte indicate whether has next byte. if first bit is set, then next byte will be read util
       first bit of next byte is unset.
   - Negative number will be converted to positive number by `(v << 1) ^ (v >> 63)` to reduce cost of small negative
@@ -249,18 +249,18 @@ space savings.
 Deep copy example:
 
 ```java
-Fury fury = Fury.builder().withRefCopy(true).build();
+Fory fory = Fory.builder().withRefCopy(true).build();
 SomeClass a = xxx;
-SomeClass copied = fury.copy(a);
+SomeClass copied = fory.copy(a);
 ```
 
-Make fury deep copy ignore circular and shared reference, this deep copy mode will ignore circular and shared reference.
-Same reference of an object graph will be copied into different objects in one `Fury#copy`.
+Make fory deep copy ignore circular and shared reference, this deep copy mode will ignore circular and shared reference.
+Same reference of an object graph will be copied into different objects in one `Fory#copy`.
 
 ```java
-Fury fury = Fury.builder().withRefCopy(false).build();
+Fory fory = Fory.builder().withRefCopy(false).build();
 SomeClass a = xxx;
-SomeClass copied = fury.copy(a);
+SomeClass copied = fory.copy(a);
 ```
 
 ### Implement a customized serializer
@@ -282,8 +282,8 @@ class Foo {
 }
 
 class FooSerializer extends Serializer<Foo> {
-  public FooSerializer(Fury fury) {
-    super(fury, Foo.class);
+  public FooSerializer(Fory fory) {
+    super(fory, Foo.class);
   }
 
   @Override
@@ -303,13 +303,13 @@ class FooSerializer extends Serializer<Foo> {
 Register serializer:
 
 ```java
-Fury fury = getFury();
-fury.registerSerializer(Foo.class, new FooSerializer(fury));
+Fory fory = getFory();
+fory.registerSerializer(Foo.class, new FooSerializer(fory));
 ```
 
 ### Security & Class Registration
 
-`FuryBuilder#requireClassRegistration` can be used to disable class registration, this will allow to deserialize objects
+`ForyBuilder#requireClassRegistration` can be used to disable class registration, this will allow to deserialize objects
 unknown types,
 more flexible but **may be insecure if the classes contains malicious code**.
 
@@ -319,32 +319,32 @@ disabled.
 
 Class registration can not only reduce security risks, but also avoid classname serialization cost.
 
-You can register class with API `Fury#register`.
+You can register class with API `Fory#register`.
 
 Note that class registration order is important, serialization and deserialization peer
 should have same registration order.
 
 ```java
-Fury fury = xxx;
-fury.register(SomeClass.class);
-fury.register(SomeClass1.class, 200);
+Fory fory = xxx;
+fory.register(SomeClass.class);
+fory.register(SomeClass1.class, 200);
 ```
 
-If you invoke `FuryBuilder#requireClassRegistration(false)` to disable class registration check,
-you can set `org.apache.fury.resolver.ClassChecker` by `ClassResolver#setClassChecker` to control which classes are
+If you invoke `ForyBuilder#requireClassRegistration(false)` to disable class registration check,
+you can set `org.apache.fory.resolver.ClassChecker` by `ClassResolver#setClassChecker` to control which classes are
 allowed
 for serialization. For example, you can allow classes started with `org.example.*` by:
 
 ```java
-Fury fury = xxx;
-fury.getClassResolver().setClassChecker(
+Fory fory = xxx;
+fory.getClassResolver().setClassChecker(
   (classResolver, className) -> className.startsWith("org.example."));
 ```
 
 ```java
 AllowListChecker checker = new AllowListChecker(AllowListChecker.CheckLevel.STRICT);
-ThreadSafeFury fury = new ThreadLocalFury(classLoader -> {
-  Fury f = Fury.builder().requireClassRegistration(true).withClassLoader(classLoader).build();
+ThreadSafeFory fory = new ThreadLocalFory(classLoader -> {
+  Fory f = Fory.builder().requireClassRegistration(true).withClassLoader(classLoader).build();
   f.getClassResolver().setClassChecker(checker);
   checker.addListener(f.getClassResolver());
   return f;
@@ -352,7 +352,7 @@ ThreadSafeFury fury = new ThreadLocalFury(classLoader -> {
 checker.allowClass("org.example.*");
 ```
 
-Fury also provided a `org.apache.fury.resolver.AllowListChecker` which is allowed/disallowed list based checker to
+Fory also provided a `org.apache.fory.resolver.AllowListChecker` which is allowed/disallowed list based checker to
 simplify
 the customization of class check mechanism. You can use this checker or implement more sophisticated checker by
 yourself.
@@ -364,7 +364,7 @@ of type id is complex. In such cases, registering class by name using API
 `register(Class<?> cls, String namespace, String typeName)` is recommended.
 
 ```java
-fury.register(Foo.class, "demo", "Foo");
+fory.register(Foo.class, "demo", "Foo");
 ```
 
 If there are no duplicate name for type, `namespace` can be left as empty to reduce serialized size.
@@ -374,73 +374,73 @@ class by id**
 
 ### Serializer Registration
 
-You can also register a custom serializer for a class by `Fury#registerSerializer` API.
+You can also register a custom serializer for a class by `Fory#registerSerializer` API.
 
 Or implement `java.io.Externalizable` for a class.
 
 ### Zero-Copy Serialization
 
 ```java
-import org.apache.fury.*;
-import org.apache.fury.config.*;
-import org.apache.fury.serializer.BufferObject;
-import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fory.*;
+import org.apache.fory.config.*;
+import org.apache.fory.serializer.BufferObject;
+import org.apache.fory.memory.MemoryBuffer;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class ZeroCopyExample {
-  // Note that fury instance should be reused instead of creation every time.
-  static Fury fury = Fury.builder()
+  // Note that fory instance should be reused instead of creation every time.
+  static Fory fory = Fory.builder()
     .withLanguage(Language.JAVA)
     .build();
 
-  // mvn exec:java -Dexec.mainClass="io.ray.fury.examples.ZeroCopyExample"
+  // mvn exec:java -Dexec.mainClass="io.ray.fory.examples.ZeroCopyExample"
   public static void main(String[] args) {
     List<Object> list = Arrays.asList("str", new byte[1000], new int[100], new double[100]);
     Collection<BufferObject> bufferObjects = new ArrayList<>();
-    byte[] bytes = fury.serialize(list, e -> !bufferObjects.add(e));
+    byte[] bytes = fory.serialize(list, e -> !bufferObjects.add(e));
     List<MemoryBuffer> buffers = bufferObjects.stream()
       .map(BufferObject::toBuffer).collect(Collectors.toList());
-    System.out.println(fury.deserialize(bytes, buffers));
+    System.out.println(fory.deserialize(bytes, buffers));
   }
 }
 ```
 
 ### Meta Sharing
 
-Fury supports share type metadata (class name, field name, final field type information, etc.) between multiple
+Fory supports share type metadata (class name, field name, final field type information, etc.) between multiple
 serializations in a context (ex. TCP connection), and this information will be sent to the peer during the first
 serialization in the context. Based on this metadata, the peer can rebuild the same deserializer, which avoids
 transmitting metadata for subsequent serializations and reduces network traffic pressure and supports type
 forward/backward compatibility automatically.
 
 ```java
-// Fury.builder()
+// Fory.builder()
 //   .withLanguage(Language.JAVA)
 //   .withRefTracking(false)
 //   // share meta across serialization.
 //   .withMetaContextShare(true)
-// Not thread-safe fury.
+// Not thread-safe fory.
 MetaContext context = xxx;
-fury.getSerializationContext().setMetaContext(context);
-byte[] bytes = fury.serialize(o);
-// Not thread-safe fury.
+fory.getSerializationContext().setMetaContext(context);
+byte[] bytes = fory.serialize(o);
+// Not thread-safe fory.
 MetaContext context = xxx;
-fury.getSerializationContext().setMetaContext(context);
-fury.deserialize(bytes);
+fory.getSerializationContext().setMetaContext(context);
+fory.deserialize(bytes);
 
-// Thread-safe fury
-fury.setClassLoader(beanA.getClass().getClassLoader());
-byte[] serialized = fury.execute(
+// Thread-safe fory
+fory.setClassLoader(beanA.getClass().getClassLoader());
+byte[] serialized = fory.execute(
   f -> {
     f.getSerializationContext().setMetaContext(context);
     return f.serialize(beanA);
   }
 );
-// thread-safe fury
-fury.setClassLoader(beanA.getClass().getClassLoader());
-Object newObj = fury.execute(
+// thread-safe fory
+fory.setClassLoader(beanA.getClass().getClassLoader());
+Object newObj = fory.execute(
   f -> {
     f.getSerializationContext().setMetaContext(context);
     return f.deserialize(serialized);
@@ -450,9 +450,9 @@ Object newObj = fury.execute(
 
 ### Deserialize non-existent classes
 
-Fury support deserializing non-existent classes, this feature can be enabled
-by `FuryBuilder#deserializeNonexistentClass(true)`. When enabled, and metadata sharing enabled, Fury will store
-the deserialized data of this type in a lazy subclass of Map. By using the lazy map implemented by Fury, the rebalance
+Fory support deserializing non-existent classes, this feature can be enabled
+by `ForyBuilder#deserializeNonexistentClass(true)`. When enabled, and metadata sharing enabled, Fory will store
+the deserialized data of this type in a lazy subclass of Map. By using the lazy map implemented by Fory, the rebalance
 cost of filling map during deserialization can be avoided, which further improves performance. If this data is sent to
 another process and the class exists in this process, the data will be deserialized into the object of this type without
 losing any information.
@@ -462,14 +462,14 @@ returned.
 
 ### Coping/Mapping object from one type to another type
 
-Fury support mapping object from one type to another type.
+Fory support mapping object from one type to another type.
 > Notes:
 >
 > 1. This mapping will execute a deep copy, all mapped fields are serialized into binary and
      deserialized from that binary to map into another type.
-> 2. All struct types must be registered with same ID, otherwise Fury can not mapping to correct struct type.
-     > Be careful when you use `Fury#register(Class)`, because fury will allocate an auto-grown ID which might be
-     > inconsistent if you register classes with different order between Fury instance.
+> 2. All struct types must be registered with same ID, otherwise Fory can not mapping to correct struct type.
+     > Be careful when you use `Fory#register(Class)`, because fory will allocate an auto-grown ID which might be
+     > inconsistent if you register classes with different order between Fory instance.
 
 ```java
 public class StructMappingExample {
@@ -489,22 +489,22 @@ public class StructMappingExample {
     double f3;
   }
 
-  static ThreadSafeFury fury1 = Fury.builder()
-    .withCompatibleMode(CompatibleMode.COMPATIBLE).buildThreadSafeFury();
-  static ThreadSafeFury fury2 = Fury.builder()
-    .withCompatibleMode(CompatibleMode.COMPATIBLE).buildThreadSafeFury();
+  static ThreadSafeFory fory1 = Fory.builder()
+    .withCompatibleMode(CompatibleMode.COMPATIBLE).buildThreadSafeFory();
+  static ThreadSafeFory fory2 = Fory.builder()
+    .withCompatibleMode(CompatibleMode.COMPATIBLE).buildThreadSafeFory();
 
   static {
-    fury1.register(Struct1.class);
-    fury2.register(Struct2.class);
+    fory1.register(Struct1.class);
+    fory2.register(Struct2.class);
   }
 
   public static void main(String[] args) {
     Struct1 struct1 = new Struct1(10, "abc");
-    Struct2 struct2 = (Struct2) fury2.deserialize(fury1.serialize(struct1));
+    Struct2 struct2 = (Struct2) fory2.deserialize(fory1.serialize(struct1));
     Assert.assertEquals(struct2.f1, struct1.f1);
     Assert.assertEquals(struct2.f2, struct1.f2);
-    struct1 = (Struct1) fury1.deserialize(fury2.serialize(struct2));
+    struct1 = (Struct1) fory1.deserialize(fory2.serialize(struct2));
     Assert.assertEquals(struct1.f1, struct2.f1);
     Assert.assertEquals(struct1.f2, struct2.f2);
   }
@@ -516,74 +516,74 @@ public class StructMappingExample {
 ### JDK migration
 
 If you use jdk serialization before, and you can't upgrade your client and server at the same time, which is common for
-online application. Fury provided an util method `org.apache.fury.serializer.JavaSerializer.serializedByJDK` to check
+online application. Fory provided an util method `org.apache.fory.serializer.JavaSerializer.serializedByJDK` to check
 whether
 the binary are generated by jdk serialization, you use following pattern to make exiting serialization protocol-aware,
-then upgrade serialization to fury in an async rolling-up way:
+then upgrade serialization to fory in an async rolling-up way:
 
 ```java
 if (JavaSerializer.serializedByJDK(bytes)) {
   ObjectInputStream objectInputStream=xxx;
   return objectInputStream.readObject();
 } else {
-  return fury.deserialize(bytes);
+  return fory.deserialize(bytes);
 }
 ```
 
-### Upgrade fury
+### Upgrade fory
 
-Currently binary compatibility is ensured for minor versions only. For example, if you are using fury`v0.2.0`, binary
+Currently binary compatibility is ensured for minor versions only. For example, if you are using fory`v0.2.0`, binary
 compatibility will
-be provided if you upgrade to fury `v0.2.1`. But if upgrade to fury `v0.4.1`, no binary compatibility are ensured.
-Most of the time there is no need to upgrade fury to newer major version, the current version is fast and compact
+be provided if you upgrade to fory `v0.2.1`. But if upgrade to fory `v0.4.1`, no binary compatibility are ensured.
+Most of the time there is no need to upgrade fory to newer major version, the current version is fast and compact
 enough,
 and we provide some minor fix for recent older versions.
 
-But if you do want to upgrade fury for better performance and smaller size, you need to write fury version as header to
+But if you do want to upgrade fory for better performance and smaller size, you need to write fory version as header to
 serialized data
 using code like following to keep binary compatibility:
 
 ```java
 MemoryBuffer buffer = xxx;
 buffer.writeVarInt32(2);
-fury.serialize(buffer, obj);
+fory.serialize(buffer, obj);
 ```
 
 Then for deserialization, you need:
 
 ```java
 MemoryBuffer buffer = xxx;
-int furyVersion = buffer.readVarInt32();
-Fury fury = getFury(furyVersion);
-fury.deserialize(buffer);
+int foryVersion = buffer.readVarInt32();
+Fory fory = getFory(foryVersion);
+fory.deserialize(buffer);
 ```
 
-`getFury` is a method to load corresponding fury, you can shade and relocate different version of fury to different
-package, and load fury by version.
+`getFory` is a method to load corresponding fory, you can shade and relocate different version of fory to different
+package, and load fory by version.
 
-If you upgrade fury by minor version, or you won't have data serialized by older fury, you can upgrade fury directly,
+If you upgrade fory by minor version, or you won't have data serialized by older fory, you can upgrade fory directly,
 no need to `versioning` the data.
 
 ## Trouble shooting
 
 ### Class inconsistency and class version check
 
-If you create fury without setting `CompatibleMode` to `org.apache.fury.config.CompatibleMode.COMPATIBLE`, and you got a
+If you create fory without setting `CompatibleMode` to `org.apache.fory.config.CompatibleMode.COMPATIBLE`, and you got a
 strange
 serialization error, it may be caused by class inconsistency between serialization peer and deserialization peer.
 
-In such cases, you can invoke `FuryBuilder#withClassVersionCheck` to create fury to validate it, if deserialization
-throws `org.apache.fury.exception.ClassNotCompatibleException`, it shows class are inconsistent, and you should create
-fury with
-`FuryBuilder#withCompaibleMode(CompatibleMode.COMPATIBLE)`.
+In such cases, you can invoke `ForyBuilder#withClassVersionCheck` to create fory to validate it, if deserialization
+throws `org.apache.fory.exception.ClassNotCompatibleException`, it shows class are inconsistent, and you should create
+fory with
+`ForyBuilder#withCompaibleMode(CompatibleMode.COMPATIBLE)`.
 
 `CompatibleMode.COMPATIBLE` has more performance and space cost, do not set it by default if your classes are always
 consistent between serialization and deserialization.
 
 ### Deserialize POJO into another type
 
-Fury allows you to serialize one POJO and deserialize it into a different POJO. The different POJO means the schema inconsistency. Users must to configure Fury with
-`CompatibleMode` set to `org.apache.fury.config.CompatibleMode.COMPATIBLE`.
+Fory allows you to serialize one POJO and deserialize it into a different POJO. The different POJO means the schema inconsistency. Users must to configure Fory with
+`CompatibleMode` set to `org.apache.fory.config.CompatibleMode.COMPATIBLE`.
 
 ```java
 public class DeserializeIntoType {
@@ -603,26 +603,26 @@ public class DeserializeIntoType {
     double f3;
   }
 
-  static ThreadSafeFury fury = Fury.builder()
-    .withCompatibleMode(CompatibleMode.COMPATIBLE).buildThreadSafeFury();
+  static ThreadSafeFory fory = Fory.builder()
+    .withCompatibleMode(CompatibleMode.COMPATIBLE).buildThreadSafeFory();
 
   public static void main(String[] args) {
     Struct1 struct1 = new Struct1(10, "abc");
-    byte[] data = fury.serializeJavaObject(struct1);
-    Struct2 struct2 = (Struct2) fury.deserializeJavaObject(bytes, Struct2.class);
+    byte[] data = fory.serializeJavaObject(struct1);
+    Struct2 struct2 = (Struct2) fory.deserializeJavaObject(bytes, Struct2.class);
   }
 }
 ```
 
 ### Use wrong API for deserialization
 
-If you serialize an object by invoking `Fury#serialize`, you should invoke `Fury#deserialize` for deserialization
+If you serialize an object by invoking `Fory#serialize`, you should invoke `Fory#deserialize` for deserialization
 instead of
-`Fury#deserializeJavaObject`.
+`Fory#deserializeJavaObject`.
 
-If you serialize an object by invoking `Fury#serializeJavaObject`, you should invoke `Fury#deserializeJavaObject` for
-deserialization instead of `Fury#deserializeJavaObjectAndClass`/`Fury#deserialize`.
+If you serialize an object by invoking `Fory#serializeJavaObject`, you should invoke `Fory#deserializeJavaObject` for
+deserialization instead of `Fory#deserializeJavaObjectAndClass`/`Fory#deserialize`.
 
-If you serialize an object by invoking `Fury#serializeJavaObjectAndClass`, you should
-invoke `Fury#deserializeJavaObjectAndClass` for deserialization instead
-of `Fury#deserializeJavaObject`/`Fury#deserialize`.
+If you serialize an object by invoking `Fory#serializeJavaObjectAndClass`, you should
+invoke `Fory#deserializeJavaObjectAndClass` for deserialization instead
+of `Fory#deserializeJavaObject`/`Fory#deserialize`.

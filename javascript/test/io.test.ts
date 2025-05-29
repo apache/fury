@@ -17,10 +17,10 @@
  * under the License.
  */
 
-import { fromUint8Array } from '../packages/fury/lib/platformBuffer';
-import { BinaryReader } from '../packages/fury/lib/reader';
-import { Config, RefFlags } from '../packages/fury/lib/type';
-import { BinaryWriter } from '../packages/fury/lib/writer';
+import { fromUint8Array } from '../packages/fory/lib/platformBuffer';
+import { BinaryReader } from '../packages/fory/lib/reader';
+import { Config, RefFlags } from '../packages/fory/lib/type';
+import { BinaryWriter } from '../packages/fory/lib/writer';
 import { describe, expect, test } from '@jest/globals';
 
 

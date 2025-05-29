@@ -30,15 +30,15 @@
     <version>29</version>
   </parent>
 
-  <groupId>org.apache.fury</groupId>
-  <artifactId>fury-parent</artifactId>
+  <groupId>org.apache.fory</groupId>
+  <artifactId>fory-parent</artifactId>
   <packaging>pom</packaging>
   <version>0.11.0-SNAPSHOT</version>
-  <name>Fury Project Parent POM</name>
+  <name>Fory Project Parent POM</name>
   <description>
-    Apache Fury™ is a blazingly fast multi-language serialization framework powered by jit and zero-copy.
+    Apache Fory™ is a blazingly fast multi-language serialization framework powered by jit and zero-copy.
 
-    Apache Fury (incubating) is an effort undergoing incubation at the Apache
+    Apache Fory (incubating) is an effort undergoing incubation at the Apache
     Software Foundation (ASF), sponsored by the Apache Incubator PMC.
 
     Incubation is required of all newly accepted projects until a further review
@@ -49,7 +49,7 @@
     or stability of the code, it does indicate that the project has yet to be
     fully endorsed by the ASF.
   </description>
-  <url>https://github.com/apache/fury</url>
+  <url>https://github.com/apache/fory</url>
 
   <licenses>
     <license>
@@ -59,22 +59,22 @@
   </licenses>
 
   <scm>
-    <url>https://github.com/apache/fury</url>
-    <connection>git@github.com:apache/fury.git</connection>
-    <developerConnection>scm:git:ssh://github.com:apache/fury.git</developerConnection>
+    <url>https://github.com/apache/fory</url>
+    <connection>git@github.com:apache/fory.git</connection>
+    <developerConnection>scm:git:ssh://github.com:apache/fory.git</developerConnection>
   </scm>
   <developers>
     <developer>
-      <organizationUrl>https://fury.apache.org</organizationUrl>
+      <organizationUrl>https://fory.apache.org</organizationUrl>
     </developer>
   </developers>
 
   <modules>
-    <module>fury-format</module>
-    <module>fury-core</module>
-    <module>fury-extensions</module>
-    <module>fury-test-core</module>
-    <module>fury-testsuite</module>
+    <module>fory-format</module>
+    <module>fory-core</module>
+    <module>fory-extensions</module>
+    <module>fory-test-core</module>
+    <module>fory-testsuite</module>
   </modules>
 
   <properties>
@@ -83,7 +83,7 @@
     <guava.version>32.1.2-jre</guava.version>
     <janino.version>3.1.12</janino.version>
     <commons_codec.version>1.13</commons_codec.version>
-    <fury.java.rootdir>${basedir}</fury.java.rootdir>
+    <fory.java.rootdir>${basedir}</fory.java.rootdir>
     <maven-spotless-plugin.version>2.41.1</maven-spotless-plugin.version>
     <lombok.version>1.18.38</lombok.version>
   </properties>
@@ -183,7 +183,7 @@
           <configuration>
             <doclint>none</doclint>
             <bottom>
-              Copyright © 2023-2025, The Apache Software Foundation. Apache Fury™, Fury™, and Apache
+              Copyright © 2023-2025, The Apache Software Foundation. Apache Fory™, Fory™, and Apache
               are either registered trademarks or trademarks of the Apache Software Foundation.
             </bottom>
           </configuration>
@@ -244,8 +244,8 @@
           </execution>
         </executions>
         <configuration>
-          <configLocation>${fury.java.rootdir}/checkstyle.xml</configLocation>
-          <suppressionsLocation>${fury.java.rootdir}/checkstyle-suppressions.xml</suppressionsLocation>
+          <configLocation>${fory.java.rootdir}/checkstyle.xml</configLocation>
+          <suppressionsLocation>${fory.java.rootdir}/checkstyle-suppressions.xml</suppressionsLocation>
           <encoding>UTF-8</encoding>
           <consoleOutput>true</consoleOutput>
           <failsOnError>true</failsOnError>

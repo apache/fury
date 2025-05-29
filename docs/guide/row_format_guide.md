@@ -82,13 +82,13 @@ class Foo:
     f3: Dict[str, pa.int32]
     f4: List[Bar]
 
-encoder = pyfury.encoder(Foo)
+encoder = pyfory.encoder(Foo)
 foo = Foo(f1=10, f2=list(range(1000_000)),
          f3={f"k{i}": i for i in range(1000_000)},
          f4=[Bar(f1=f"s{i}", f2=list(range(10))) for i in range(1000_000)])
 binary: bytes = encoder.to_row(foo).to_bytes()
 print(f"start: {datetime.datetime.now()}")
-foo_row = pyfury.RowData(encoder.schema, binary)
+foo_row = pyfory.RowData(encoder.schema, binary)
 print(foo_row.f2[100000], foo_row.f4[100000].f1, foo_row.f4[200000].f2[5])
 print(f"end: {datetime.datetime.now()}")
 
@@ -101,7 +101,7 @@ print(f"pickle end: {datetime.datetime.now()}")
 
 ### Apache Arrow Support
 
-Fury Format also supports automatic conversion from/to Arrow Table/RecordBatch.
+Fory Format also supports automatic conversion from/to Arrow Table/RecordBatch.
 
 Java:
 
@@ -119,8 +119,8 @@ return arrowWriter.finishAsRecordBatch();
 Python:
 
 ```python
-import pyfury
-encoder = pyfury.encoder(Foo)
+import pyfory
+encoder = pyfory.encoder(Foo)
 encoder.to_arrow_record_batch([foo] * 10000)
 encoder.to_arrow_table([foo] * 10000)
 ```

@@ -19,11 +19,11 @@ license: |
   limitations under the License.
 ---
 
-## How to build Fury
+## How to build Fory
 
-Please checkout the source tree from https://github.com/apache/fury.
+Please checkout the source tree from https://github.com/apache/fory.
 
-### Build Fury Java
+### Build Fory Java
 
 ```bash
 cd java
@@ -35,7 +35,7 @@ mvn clean compile -DskipTests
 - java 1.8+
 - maven 3.6.3+
 
-### Build Fury Python
+### Build Fory Python
 
 ```bash
 cd python
@@ -53,20 +53,20 @@ pip install -v -e .
 
 - python 3.6+
 
-### Build Fury C++
+### Build Fory C++
 
-Build fury row format：
+Build fory row format：
 
 ```bash
 pip install pyarrow==15.0.0
-bazel build //cpp/fury/row:fury_row_format
+bazel build //cpp/fory/row:fory_row_format
 ```
 
-Build fury row format encoder:
+Build fory row format encoder:
 
 ```bash
 pip install pyarrow==15.0.0
-bazel build //cpp/fury/encoder:fury_encoder
+bazel build //cpp/fory/encoder:fory_encoder
 ```
 
 #### Environment Requirements
@@ -74,21 +74,21 @@ bazel build //cpp/fury/encoder:fury_encoder
 - compilers with C++17 support
 - bazel 6.3.2
 
-### Build Fury GoLang
+### Build Fory GoLang
 
 ```bash
-cd go/fury
+cd go/fory
 # run test
 go test -v
 # run xlang test
-go test -v fury_xlang_test.go
+go test -v fory_xlang_test.go
 ```
 
 #### Environment Requirements
 
 - go 1.13+
 
-### Build Fury Rust
+### Build Fory Rust
 
 ```bash
 cd rust
@@ -104,7 +104,7 @@ cargo test
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
-### Build Fury JavaScript
+### Build Fory JavaScript
 
 ```bash
 cd javascript

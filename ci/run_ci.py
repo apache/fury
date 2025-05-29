@@ -90,7 +90,7 @@ def _run_cpp():
 
 
 def _run_rust():
-    logging.info("Executing fury rust tests")
+    logging.info("Executing fory rust tests")
     _cd_project_subdir("rust")
 
     cmds = (
@@ -105,15 +105,15 @@ def _run_rust():
     )
     for cmd in cmds:
         _exec_cmd(cmd)
-    logging.info("Executing fury rust tests succeeds")
+    logging.info("Executing fory rust tests succeeds")
 
 
 def _run_js():
-    logging.info("Executing fury javascript tests.")
+    logging.info("Executing fory javascript tests.")
     _cd_project_subdir("javascript")
     _exec_cmd("npm install")
     _exec_cmd("npm run test")
-    logging.info("Executing fury javascript tests succeeds.")
+    logging.info("Executing fory javascript tests succeeds.")
 
 
 def _install_cpp_deps():

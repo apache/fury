@@ -22,7 +22,7 @@
 part of 'typed_data_array_example.dart';
 
 // **************************************************************************
-// FuryObjSpecGenerator
+// ForyObjSpecGenerator
 // **************************************************************************
 
 final $TypedDataArrayExample = ClassSpec(
@@ -83,7 +83,7 @@ final $TypedDataArrayExample = ClassSpec(
   () => TypedDataArrayExample(),
 );
 
-mixin _$TypedDataArrayExampleFury implements Furiable {
+mixin _$TypedDataArrayExampleFory implements Furiable {
   @override
-  Type get $furyType => TypedDataArrayExample;
+  Type get $foryType => TypedDataArrayExample;
 }

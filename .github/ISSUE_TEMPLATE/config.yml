@@ -18,5 +18,5 @@
 blank_issues_enabled: false
 contact_links:
   - name: Community Support
-    url: https://github.com/apache/fury/discussions
+    url: https://github.com/apache/fory/discussions
     about: Please ask and answer questions here.

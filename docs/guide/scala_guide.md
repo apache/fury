@@ -19,7 +19,7 @@ license: |
   limitations under the License.
 ---
 
-Fury supports all scala object serialization:
+Fory supports all scala object serialization:
 
 - `case` class serialization supported
 - `pojo/bean` class serialization supported
@@ -31,16 +31,16 @@ Scala 2 and 3 are both supported.
 
 ## Install
 
-To add a dependency on Fury scala for scala 2 with sbt, use the following:
+To add a dependency on Fory scala for scala 2 with sbt, use the following:
 
 ```sbt
-libraryDependencies += "org.apache.fury" % "fury-scala_2.13" % "0.10.3"
+libraryDependencies += "org.apache.fory" % "fory-scala_2.13" % "0.10.3"
 ```
 
-To add a dependency on Fury scala for scala 3 with sbt, use the following:
+To add a dependency on Fory scala for scala 3 with sbt, use the following:
 
 ```sbt
-libraryDependencies += "org.apache.fury" % "fury-scala_3" % "0.10.3"
+libraryDependencies += "org.apache.fory" % "fory-scala_3" % "0.10.3"
 ```
 
 ## Quict Start
@@ -50,56 +50,56 @@ case class Person(name: String, id: Long, github: String)
 case class Point(x : Int, y : Int, z : Int)
 
 object ScalaExample {
-  val fury: Fury = Fury.builder().withScalaOptimizationEnabled(true).build()
-  // Register optimized fury serializers for scala
-  ScalaSerializers.registerSerializers(fury)
-  fury.register(classOf[Person])
-  fury.register(classOf[Point])
+  val fory: Fory = Fory.builder().withScalaOptimizationEnabled(true).build()
+  // Register optimized fory serializers for scala
+  ScalaSerializers.registerSerializers(fory)
+  fory.register(classOf[Person])
+  fory.register(classOf[Point])
 
   def main(args: Array[String]): Unit = {
     val p = Person("Shawn Yang", 1, "https://github.com/chaokunyang")
-    println(fury.deserialize(fury.serialize(p)))
-    println(fury.deserialize(fury.serialize(Point(1, 2, 3))))
+    println(fory.deserialize(fory.serialize(p)))
+    println(fory.deserialize(fory.serialize(Point(1, 2, 3))))
   }
 }
 ```
 
-## Fury creation
+## Fory creation
 
-When using fury for scala serialization, you should create fury at least with following options:
+When using fory for scala serialization, you should create fory at least with following options:
 
 ```scala
-import org.apache.fury.Fury
-import org.apache.fury.serializer.scala.ScalaSerializers
+import org.apache.fory.Fory
+import org.apache.fory.serializer.scala.ScalaSerializers
 
-val fury = Fury.builder().withScalaOptimizationEnabled(true).build()
+val fory = Fory.builder().withScalaOptimizationEnabled(true).build()
 
-// Register optimized fury serializers for scala
-ScalaSerializers.registerSerializers(fury)
+// Register optimized fory serializers for scala
+ScalaSerializers.registerSerializers(fory)
 ```
 
 Depending on the object types you serialize, you may need to register some scala internal types:
 
 ```scala
-fury.register(Class.forName("scala.Enumeration.Val"))
+fory.register(Class.forName("scala.Enumeration.Val"))
 ```
 
-If you want to avoid such registration, you can disable class registration by `FuryBuilder#requireClassRegistration(false)`.
+If you want to avoid such registration, you can disable class registration by `ForyBuilder#requireClassRegistration(false)`.
 Note that this option allow to deserialize objects unknown types, more flexible but may be insecure if the classes contains malicious code.
 
-And circular references are common in scala, `Reference tracking` should be enabled by `FuryBuilder#withRefTracking(true)`. If you don't enable reference tracking, [StackOverflowError](https://github.com/apache/fury/issues/1032) may happen for some scala versions when serializing scala Enumeration.
+And circular references are common in scala, `Reference tracking` should be enabled by `ForyBuilder#withRefTracking(true)`. If you don't enable reference tracking, [StackOverflowError](https://github.com/apache/fory/issues/1032) may happen for some scala versions when serializing scala Enumeration.
 
-Note that fury instance should be shared between multiple serialization, the creation of fury instance is not cheap.
+Note that fory instance should be shared between multiple serialization, the creation of fory instance is not cheap.
 
-If you use shared fury instance across multiple threads, you should create `ThreadSafeFury` instead by `FuryBuilder#buildThreadSafeFury()` instead.
+If you use shared fory instance across multiple threads, you should create `ThreadSafeFory` instead by `ForyBuilder#buildThreadSafeFory()` instead.
 
 ## Serialize case object
 
 ```scala
 case class Person(github: String, age: Int, id: Long)
 val p = Person("https://github.com/chaokunyang", 18, 1)
-println(fury.deserialize(fury.serialize(p)))
-println(fury.deserializeJavaObject(fury.serializeJavaObject(p)))
+println(fory.deserialize(fory.serialize(p)))
+println(fory.deserializeJavaObject(fory.serializeJavaObject(p)))
 ```
 
 ## Serialize pojo
@@ -108,7 +108,7 @@ println(fury.deserializeJavaObject(fury.serializeJavaObject(p)))
 class Foo(f1: Int, f2: String) {
   override def toString: String = s"Foo($f1, $f2)"
 }
-println(fury.deserialize(fury.serialize(Foo(1, "chaokunyang"))))
+println(fory.deserialize(fory.serialize(Foo(1, "chaokunyang"))))
 ```
 
 ## Serialize object singleton
@@ -116,8 +116,8 @@ println(fury.deserialize(fury.serialize(Foo(1, "chaokunyang"))))
 ```scala
 object singleton {
 }
-val o1 = fury.deserialize(fury.serialize(singleton))
-val o2 = fury.deserialize(fury.serialize(singleton))
+val o1 = fory.deserialize(fory.serialize(singleton))
+val o2 = fory.deserialize(fory.serialize(singleton))
 println(o1 == o2)
 ```
 
@@ -127,18 +127,18 @@ println(o1 == o2)
 val seq = Seq(1,2)
 val list = List("a", "b")
 val map = Map("a" -> 1, "b" -> 2)
-println(fury.deserialize(fury.serialize(seq)))
-println(fury.deserialize(fury.serialize(list)))
-println(fury.deserialize(fury.serialize(map)))
+println(fory.deserialize(fory.serialize(seq)))
+println(fory.deserialize(fory.serialize(list)))
+println(fory.deserialize(fory.serialize(map)))
 ```
 
 ## Serialize Tuple
 
 ```scala
 val tuple = Tuple2(100, 10000L)
-println(fury.deserialize(fury.serialize(tuple)))
+println(fory.deserialize(fory.serialize(tuple)))
 val tuple = Tuple4(100, 10000L, 10000L, "str")
-println(fury.deserialize(fury.serialize(tuple)))
+println(fory.deserialize(fory.serialize(tuple)))
 ```
 
 ## Serialize Enum
@@ -147,7 +147,7 @@ println(fury.deserialize(fury.serialize(tuple)))
 
 ```scala
 enum Color { case Red, Green, Blue }
-println(fury.deserialize(fury.serialize(Color.Green)))
+println(fory.deserialize(fory.serialize(Color.Green)))
 ```
 
 ### Scala2 Enum
@@ -157,14 +157,14 @@ object ColorEnum extends Enumeration {
   type ColorEnum = Value
   val Red, Green, Blue = Value
 }
-println(fury.deserialize(fury.serialize(ColorEnum.Green)))
+println(fory.deserialize(fory.serialize(ColorEnum.Green)))
 ```
 
 ## Serialize Option
 
 ```scala
 val opt: Option[Long] = Some(100)
-println(fury.deserialize(fury.serialize(opt)))
+println(fory.deserialize(fory.serialize(opt)))
 val opt1: Option[Long] = None
-println(fury.deserialize(fury.serialize(opt1)))
+println(fory.deserialize(fory.serialize(opt1)))
 ```
