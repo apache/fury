@@ -19,8 +19,8 @@
 
 package org.apache.fory.benchmark;
 
-import org.apache.fory.benchmark.state.FstState;
 import org.apache.fory.benchmark.state.ForyState;
+import org.apache.fory.benchmark.state.FstState;
 import org.apache.fory.benchmark.state.HessionState;
 import org.apache.fory.benchmark.state.JDKState;
 import org.apache.fory.benchmark.state.KryoState;
