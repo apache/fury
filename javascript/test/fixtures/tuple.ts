@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import { Type } from "../../packages/fury";
+import { Type } from "../../packages/fory";
 
 export const tupleType1 = Type.tuple( [
   Type.struct('example.foo.1',{

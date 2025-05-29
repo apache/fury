@@ -29,7 +29,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "pyfury"
 dynamic = ["version"]
-description = "Apache Fury™(incubating) is a blazingly fast multi-language serialization framework powered by jit and zero-copy"
+description = "Apache Fory™(incubating) is a blazingly fast multi-language serialization framework powered by jit and zero-copy"
 authors = [
     {name = "chaokunyang", email = "shawn.ck.yang@gmail.com"},
 ]
@@ -48,7 +48,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: Implementation :: CPython",
 ]
-keywords = ["fury", "serialization", "multi-language", "fast", "row-format", "jit", "codegen", "polymorphic", "zero-copy"]
+keywords = ["fory", "serialization", "multi-language", "fast", "row-format", "jit", "codegen", "polymorphic", "zero-copy"]
 dependencies = [
     "cloudpickle",
 ]

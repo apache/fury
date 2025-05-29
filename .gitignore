@@ -30,8 +30,8 @@ java/foo
 scala/.bsp
 scala/.idea
 bazel-*/
-bazel-fury/
-bazel-fury/**
+bazel-fory/
+bazel-fory/**
 java/**/generated
 javascript/**/dist/
 javascript/**/node_modules/

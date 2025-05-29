@@ -1,7 +1,7 @@
 ---
-title: Fury Row Format
+title: Fory Row Format
 sidebar_position: 2
-id: fury_row_format_spec
+id: fory_row_format_spec
 license: |
   Licensed to the Apache Software Foundation (ASF) under one or more
   contributor license agreements.  See the NOTICE file distributed with

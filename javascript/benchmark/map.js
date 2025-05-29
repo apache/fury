@@ -17,10 +17,10 @@
  * under the License.
  */
 
-const Fury = require("@furyjs/fury");
+const Fory = require("@furyjs/fory");
 const beautify = require("js-beautify");
 const hps = require('@furyjs/hps');
-const fury = new Fury.default({
+const fory = new Fory.default({
   hps, refTracking: false, useSliceString: true, hooks: {
     afterCodeGenerated: (code) => {
       return beautify.js(code, { indent_size: 2, space_in_empty_paren: true, indent_empty_lines: true });
@@ -28,16 +28,16 @@ const fury = new Fury.default({
   }
 });
 const Benchmark = require("benchmark");
-const Type = Fury.Type;
+const Type = Fory.Type;
 
 
 
-const { serialize: serialize1, deserialize: deserialize1, serializeVolatile: serializeVolatile1 } = fury.registerSerializer(Type.struct("any", {
+const { serialize: serialize1, deserialize: deserialize1, serializeVolatile: serializeVolatile1 } = fory.registerSerializer(Type.struct("any", {
   f1: Type.map(Type.any(), Type.any()),
   f2: Type.map(Type.any(), Type.any())
 }));
 
-const { serialize: serialize2, deserialize: deserialize2, serializeVolatile: serializeVolatile2 } = fury.registerSerializer(Type.struct("specific", {
+const { serialize: serialize2, deserialize: deserialize2, serializeVolatile: serializeVolatile2 } = fory.registerSerializer(Type.struct("specific", {
   f1: Type.map(Type.string(), Type.string()),
   f2: Type.map(Type.int32(), Type.string())
 }));
@@ -46,8 +46,8 @@ const sample = {
   f2: new Map([[123, "ba1"], [234, "ba1"], [345, "ba1"], [456, "ba1"], [567, "ba1"], [678, "ba1"], [789, "ba1"], [890, "ba1"]])
 };
 
-const furyAb1 = serialize1(sample);
-const furyAb2 = serialize2(sample);
+const foryAb1 = serialize1(sample);
+const foryAb2 = serialize2(sample);
 
 async function start() {
 
@@ -61,13 +61,13 @@ async function start() {
         serializeVolatile1(sample).dispose()
       })
       .add("any deserialize", function () {
-        deserialize1(furyAb1)
+        deserialize1(foryAb1)
       })
       .add("jit serialize", function () {
         serializeVolatile2(sample).dispose()
       })
       .add("jit deserialize", function () {
-        deserialize2(furyAb2)
+        deserialize2(foryAb2)
       })
       .on("complete", function (e) {
         e.currentTarget.forEach(({ name, hz }) => {

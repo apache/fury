@@ -17,24 +17,24 @@
  * under the License.
  */
 
-import Fury, { TypeInfo, InternalSerializerType } from '../packages/fury/index';
+import Fory, { TypeInfo, InternalSerializerType } from '../packages/fory/index';
 import {describe, expect, test} from '@jest/globals';
 
 describe('bool', () => {
   test('should false work', () => {
     
-    const fury = new Fury({ refTracking: true });    
-    const input = fury.serialize(false);
-    const result = fury.deserialize(
+    const fory = new Fory({ refTracking: true });    
+    const input = fory.serialize(false);
+    const result = fory.deserialize(
         input
     );
     expect(result).toEqual(false)
   });
   test('should true work', () => {
     
-    const fury = new Fury({ refTracking: true });    
-    const input = fury.serialize(true);
-    const result = fury.deserialize(
+    const fory = new Fory({ refTracking: true });    
+    const input = fory.serialize(true);
+    const result = fory.deserialize(
         input
     );
     expect(result).toEqual(true)

@@ -20,7 +20,7 @@
 syntax = "proto3";
 package protobuf;
 
-option java_package = "org.apache.fury.integration_tests.state.generated";
+option java_package = "org.apache.fory.integration_tests.state.generated";
 option java_outer_classname = "ProtoMessage";
 
 message Foo {

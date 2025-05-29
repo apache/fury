@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import Fury, { TypeInfo, InternalSerializerType, Type } from '../packages/fury/index';
+import Fory, { TypeInfo, InternalSerializerType, Type } from '../packages/fory/index';
 import {describe, expect, test} from '@jest/globals';
 
 describe('enum', () => {
@@ -26,8 +26,8 @@ describe('enum', () => {
             f1: 1,
             f2: 2
         }
-        const fury = new Fury({ refTracking: true });   
-        const {serialize, deserialize} = fury.registerSerializer(Type.enum("example.foo", Foo)) 
+        const fory = new Fory({ refTracking: true });   
+        const {serialize, deserialize} = fory.registerSerializer(Type.enum("example.foo", Foo)) 
         const input = serialize(Foo.f1);
         const result = deserialize(
             input
@@ -40,10 +40,10 @@ describe('enum', () => {
             f1: "hello",
             f2: "world"
         }
-        const fury = new Fury({ refTracking: true });   
-        fury.registerSerializer(Type.enum("example.foo", Foo)) 
-        const input = fury.serialize(Foo.f1);
-        const result = fury.deserialize(
+        const fory = new Fory({ refTracking: true });   
+        fory.registerSerializer(Type.enum("example.foo", Foo)) 
+        const input = fory.serialize(Foo.f1);
+        const result = fory.deserialize(
             input
         );
         expect(result).toEqual(Foo.f1)
@@ -53,8 +53,8 @@ describe('enum', () => {
         f1 = 1,
         f2 = 2
     }
-    const fury = new Fury({ refTracking: true });   
-    const {serialize, deserialize} = fury.registerSerializer(Type.enum("example.foo", Foo)) 
+    const fory = new Fory({ refTracking: true });   
+    const {serialize, deserialize} = fory.registerSerializer(Type.enum("example.foo", Foo)) 
     const input = serialize(Foo.f1);
     const result = deserialize(
         input
@@ -67,10 +67,10 @@ describe('enum', () => {
         f1 = "hello",
         f2 = "world"
     }
-    const fury = new Fury({ refTracking: true });   
-    fury.registerSerializer(Type.enum("example.foo", Foo)) 
-    const input = fury.serialize(Foo.f1);
-    const result = fury.deserialize(
+    const fory = new Fory({ refTracking: true });   
+    fory.registerSerializer(Type.enum("example.foo", Foo)) 
+    const input = fory.serialize(Foo.f1);
+    const result = fory.deserialize(
         input
     );
     expect(result).toEqual(Foo.f1)

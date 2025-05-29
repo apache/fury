@@ -17,11 +17,11 @@
  * under the License.
  */
 
-import 'package:fury/fury.dart';
+import 'package:fory/fory.dart';
 
 part 'nested_collection_example.g.dart';
 
-@furyClass
+@foryClass
 class NestedObject with _$NestedObjectFury{
   late final String name;
   late final List<String> names;

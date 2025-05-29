@@ -24,8 +24,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <artifactId>fury-parent</artifactId>
-        <groupId>org.apache.fury</groupId>
+        <artifactId>fory-parent</artifactId>
+        <groupId>org.apache.fory</groupId>
         <version>0.11.0-SNAPSHOT</version>
     </parent>
 
@@ -46,23 +46,23 @@
         <checkstyle.skip>true</checkstyle.skip>
         <maven.deploy.skip>true</maven.deploy.skip>
         <maven.javadoc.skip>true</maven.javadoc.skip>
-        <fury.java.rootdir>${basedir}/..</fury.java.rootdir>
+        <fory.java.rootdir>${basedir}/..</fory.java.rootdir>
     </properties>
 
     <dependencies>
         <dependency>
-            <groupId>org.apache.fury</groupId>
-            <artifactId>fury-core</artifactId>
+            <groupId>org.apache.fory</groupId>
+            <artifactId>fory-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.apache.fury</groupId>
-            <artifactId>fury-format</artifactId>
+            <groupId>org.apache.fory</groupId>
+            <artifactId>fory-format</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.apache.fury</groupId>
-            <artifactId>fury-test-core</artifactId>
+            <groupId>org.apache.fory</groupId>
+            <artifactId>fory-test-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -211,7 +211,7 @@
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <Automatic-Module-Name>org.apache.fury.benchmark</Automatic-Module-Name>
+                            <Automatic-Module-Name>org.apache.fory.benchmark</Automatic-Module-Name>
                         </manifestEntries>
                     </archive>
                 </configuration>

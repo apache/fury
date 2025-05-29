@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import Fury, { TypeInfo, InternalSerializerType, Type } from '../packages/fury/index';
+import Fory, { TypeInfo, InternalSerializerType, Type } from '../packages/fory/index';
 import {describe, expect, test} from '@jest/globals';
 
 const config = {};
@@ -25,9 +25,9 @@ const config = {};
 describe('string', () => {
   test('should latin1 string work', () => {
     
-    const fury = new Fury(config);    
-    const input = fury.serialize("123")
-    const result = fury.deserialize(
+    const fory = new Fory(config);    
+    const input = fory.serialize("123")
+    const result = fory.deserialize(
         input
     );
     expect(result).toEqual("123")
@@ -35,29 +35,29 @@ describe('string', () => {
 
   test('should utf8 string work', () => {
     
-    const fury = new Fury(config);    
-    const input = fury.serialize("我是Fury, 你好！😁א")
-    const result = fury.deserialize(
+    const fory = new Fory(config);    
+    const input = fory.serialize("我是Fory, 你好！😁א")
+    const result = fory.deserialize(
         input
     );
-    expect(result).toEqual("我是Fury, 你好！😁א")
+    expect(result).toEqual("我是Fory, 你好！😁א")
   });
 
   test('should long latin1 string work', () => {
     const str = new Array(100).fill("123").join();
-    const fury = new Fury(config);    
-    const input = fury.serialize(str)
-    const result = fury.deserialize(
+    const fory = new Fory(config);    
+    const input = fory.serialize(str)
+    const result = fory.deserialize(
         input
     );
     expect(result).toEqual(str)
   });
 
   test('should long utf8 string work', () => {
-    const str = new Array(10).fill("我是Fury, 你好！😁א").join();
-    const fury = new Fury(config);    
-    const input = fury.serialize(str)
-    const result = fury.deserialize(
+    const str = new Array(10).fill("我是Fory, 你好！😁א").join();
+    const fory = new Fory(config);    
+    const input = fory.serialize(str)
+    const result = fory.deserialize(
         input
     );
     expect(result).toEqual(str)

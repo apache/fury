@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-name: Fury CI
+name: Fory CI
 
 on:
   push:
@@ -80,7 +80,7 @@ jobs:
       MY_VAR: "PATH"
     strategy:
       matrix:
-        # String in openj9 1.8 share byte array by offset, fury doesn't allow it.
+        # String in openj9 1.8 share byte array by offset, fory doesn't allow it.
         java-version: ["21"]
     steps:
       - uses: actions/checkout@v4
@@ -158,7 +158,7 @@ jobs:
         with:
           java-version: ${{ matrix.java-version }}
           distribution: "temurin"
-      - name: Install fury java
+      - name: Install fory java
         run: cd java && mvn -T10 --no-transfer-progress clean install -DskipTests && cd -
       - name: Run Kotlin CI
         run: ./ci/run_ci.sh kotlin
@@ -173,7 +173,7 @@ jobs:
         with:
           java-version: 11
           distribution: "temurin"
-      - name: Install fury java
+      - name: Install fory java
         run: cd java && mvn -T10 --no-transfer-progress clean install -DskipTests && cd -
       - name: Test
         run: |

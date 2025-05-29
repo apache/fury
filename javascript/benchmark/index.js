@@ -17,14 +17,14 @@
  * under the License.
  */
 
-const Fury = require("@furyjs/fury");
-const utils = require("@furyjs/fury/dist/lib/util");
+const Fory = require("@furyjs/fory");
+const utils = require("@furyjs/fory/dist/lib/util");
 const hps = require('@furyjs/hps').default;
-const fury = new Fury.default({ hps, refTracking: false, useSliceString: true });
+const fory = new Fory.default({ hps, refTracking: false, useSliceString: true });
 const Benchmark = require("benchmark");
 const protobuf = require("protobufjs");
 const path = require('path');
-const Type = Fury.Type;
+const Type = Fory.Type;
 const assert = require('assert');
 const { spawn } = require("child_process");
 
@@ -170,10 +170,10 @@ const sample = {
 };
 
 
-const typeinfo = utils.data2TypeInfo(sample, "fury.test.foo");
-const { serialize, deserialize, serializeVolatile } = fury.registerSerializer(typeinfo);
+const typeinfo = utils.data2TypeInfo(sample, "fory.test.foo");
+const { serialize, deserialize, serializeVolatile } = fory.registerSerializer(typeinfo);
 
-const furyAb = serialize(sample);
+const foryAb = serialize(sample);
 const sampleJson = JSON.stringify(sample);
 
 function loadProto() {
@@ -207,10 +207,10 @@ async function start() {
   {
     console.log('sample json size: ', `${(sampleJson.length / 1000).toFixed()}k`);
     assert(JSON.stringify(protobufDecode(protobufBf)) === sampleJson);
-    assert.deepEqual(deserialize(furyAb), sample);
+    assert.deepEqual(deserialize(foryAb), sample);
   }
   let result = {
-    fury: {
+    fory: {
       serialize: 0,
       deserialize: 0,
     },
@@ -227,7 +227,7 @@ async function start() {
   {
     var suite = new Benchmark.Suite();
     suite
-      .add("fury", function () {
+      .add("fory", function () {
         serializeVolatile(sample).dispose();
       })
       .add("json", function () {
@@ -248,8 +248,8 @@ async function start() {
   {
     var suite = new Benchmark.Suite();
     suite
-      .add("fury", function () {
-        deserialize(furyAb);
+      .add("fory", function () {
+        deserialize(foryAb);
       })
       .add("json", function () {
         JSON.parse(sampleJson);
@@ -268,7 +268,7 @@ async function start() {
 
   spawn(
     `python3`,
-    ['draw.py', result.json.serialize, result.json.deserialize, result.protobuf.serialize, result.protobuf.deserialize, result.fury.serialize, result.fury.deserialize],
+    ['draw.py', result.json.serialize, result.json.deserialize, result.protobuf.serialize, result.protobuf.deserialize, result.fory.serialize, result.fory.deserialize],
     {
       cwd: __dirname,
     }

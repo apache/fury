@@ -22,7 +22,7 @@ from os.path import abspath, join as pjoin
 from setuptools import setup
 from setuptools.dist import Distribution
 
-DEBUG = os.environ.get("FURY_DEBUG", "False").lower() == "true"
+DEBUG = os.environ.get("FORY_DEBUG", "False").lower() == "true"
 BAZEL_BUILD_EXT = os.environ.get("BAZEL_BUILD_EXT", "True").lower() == "true"
 
 if DEBUG:
@@ -33,10 +33,10 @@ print(f"DEBUG = {DEBUG}, BAZEL_BUILD_EXT = {BAZEL_BUILD_EXT}")
 
 setup_dir = abspath(os.path.dirname(__file__))
 project_dir = abspath(pjoin(setup_dir, os.pardir))
-fury_cpp_src_dir = abspath(pjoin(setup_dir, "../src/"))
+fory_cpp_src_dir = abspath(pjoin(setup_dir, "../src/"))
 
 print(f"setup_dir: {setup_dir}")
-print(f"fury_cpp_src_dir: {fury_cpp_src_dir}")
+print(f"fory_cpp_src_dir: {fory_cpp_src_dir}")
 
 
 class BinaryDistribution(Distribution):

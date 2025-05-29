@@ -23,8 +23,8 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <parent>
-    <groupId>org.apache.fury</groupId>
-    <artifactId>fury-parent</artifactId>
+    <groupId>org.apache.fory</groupId>
+    <artifactId>fory-parent</artifactId>
     <version>0.11.0-SNAPSHOT</version>
     <relativePath>../../java</relativePath>
   </parent>
@@ -36,7 +36,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <native.maven.plugin.version>0.9.28</native.maven.plugin.version>
     <junit.jupiter.version>5.8.1</junit.jupiter.version>
-    <mainClass>org.apache.fury.graalvm.Main</mainClass>
+    <mainClass>org.apache.fory.graalvm.Main</mainClass>
     <imageName>main</imageName>
   </properties>
 
@@ -55,8 +55,8 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.apache.fury</groupId>
-      <artifactId>fury-core</artifactId>
+      <groupId>org.apache.fory</groupId>
+      <artifactId>fory-core</artifactId>
       <version>${project.version}</version>
     </dependency>
   </dependencies>

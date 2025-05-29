@@ -15,8 +15,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
-name: fury_dart
-description: apache fury dart support
+name: fory_dart
+description: apache fory dart support
 version: 1.0.0
 # repository: https://github.com/my_org/my_repo
 
@@ -25,10 +25,10 @@ environment:
 
 # Add regular dependencies here.
 dependencies:
-  fury: 1.0.0
+  fory: 1.0.0
   build_runner: ^2.4.13
 dev_dependencies:
   lints: ^5.0.0
 workspace:
-  - packages/fury
-  - packages/fury-test
+  - packages/fory
+  - packages/fory-test

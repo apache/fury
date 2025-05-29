@@ -17,16 +17,16 @@
  * under the License.
  */
 
-import Fury, { TypeInfo, InternalSerializerType, Type } from '../packages/fury/index';
+import Fory, { TypeInfo, InternalSerializerType, Type } from '../packages/fory/index';
 import {describe, expect, test} from '@jest/globals';
 
 describe('datetime', () => {
   test('should date work', () => {
     
-    const fury = new Fury({ refTracking: true });    
+    const fory = new Fory({ refTracking: true });    
     const now = new Date();
-    const input = fury.serialize(now);
-    const result = fury.deserialize(
+    const input = fory.serialize(now);
+    const result = fory.deserialize(
         input
     );
     expect(result).toEqual(now)
@@ -36,11 +36,11 @@ describe('datetime', () => {
       a: Type.timestamp(),
       b: Type.duration(),
     })
-    const fury = new Fury({ refTracking: true });    
-    const serializer = fury.registerSerializer(typeinfo).serializer;
+    const fory = new Fory({ refTracking: true });    
+    const serializer = fory.registerSerializer(typeinfo).serializer;
     const d = new Date('2021/10/20 09:13');
-    const input = fury.serialize({ a:  d, b: d}, serializer);
-    const result = fury.deserialize(
+    const input = fory.serialize({ a:  d, b: d}, serializer);
+    const result = fory.deserialize(
       input
     );
     expect(result).toEqual({ a: d, b: new Date('2021/10/20 00:00') })

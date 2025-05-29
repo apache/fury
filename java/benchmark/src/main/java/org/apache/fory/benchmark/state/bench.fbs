@@ -1,0 +1,79 @@
+namespace org.apache.fory.integration_tests.state.generated;
+
+table FBSFoo {
+  string:string;
+  f2_key:[string]; // flatbuffers doesn't support map
+  f2_value:[int];
+}
+
+table FBSBar {
+  f1:FBSFoo;
+  f2:string;
+  f3:[FBSFoo];
+  f4_key:[int]; // flatbuffers doesn't support map
+  f4_value:[FBSFoo];
+  f5:int;
+  f6:long;
+  f7:float;
+  f8:double;
+  f9:[short];
+  f10:[long];
+}
+
+table FBSSample {
+  int_value:int;
+  long_value:long;
+  float_value:float;
+  double_value:double;
+  short_value:short;
+  char_value:short;
+  boolean_value:bool;
+  int_value_boxed:int;
+  long_value_boxed:long;
+  float_value_boxed:float;
+  double_value_boxed:double;
+  short_value_boxed:short;
+  char_value_boxed:short;
+  boolean_value_boxed:bool;
+  int_array:[int];
+  long_array:[long];
+  float_array:[float];
+  double_array:[double];
+  short_array:[short];
+  char_array:[short];
+  boolean_array:[bool];
+  string:string;
+}
+
+enum FBSPlayer : byte { JAVA = 0, FLASH }
+
+enum FBSSize : byte { SMALL = 0, LARGE }
+
+table FBSMediaContent {
+  media:FBSMedia;
+  images:[FBSImage];
+}
+
+table FBSMedia {
+  uri:string;
+  title:string;
+  width:int;
+  height:int;
+  format:string;
+  duration:long;
+  size:long;
+  bitrate:int;
+  has_bitrate:bool;
+  persons:[string];
+  player:FBSPlayer;
+  copyright:string;
+}
+
+table FBSImage {
+  uri:string;
+  title:string; // Can be null.
+  width:int;
+  height:int;
+  size:FBSSize;
+  media:FBSMedia; // Can be null.
+}

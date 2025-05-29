@@ -25,7 +25,7 @@ on:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    if: github.repository == 'apache/fury'
+    if: github.repository == 'apache/fory'
     steps:
       - uses: actions/checkout@v4
       - name: Sync files

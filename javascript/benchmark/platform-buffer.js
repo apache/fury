@@ -17,7 +17,7 @@
  * under the License.
  */
 
-const { BrowserBuffer } = require('@furyjs/fury/dist/lib/platformBuffer')
+const { BrowserBuffer } = require('@furyjs/fory/dist/lib/platformBuffer')
 const Benchmark = require("benchmark");
 const { spawn } = require("child_process");
 

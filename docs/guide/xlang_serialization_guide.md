@@ -28,25 +28,25 @@ Common types can be serialized automatically: primitive numeric types, string, b
 **Java**
 
 ```java
-import org.apache.fury.*;
-import org.apache.fury.config.*;
+import org.apache.fory.*;
+import org.apache.fory.config.*;
 
 import java.util.*;
 
 public class Example1 {
   public static void main(String[] args) {
-    Fury fury = Fury.builder().withLanguage(Language.XLANG).build();
+    Fory fory = Fory.builder().withLanguage(Language.XLANG).build();
     List<Object> list = ofArrayList(true, false, "str", -1.1, 1, new int[100], new double[20]);
-    byte[] bytes = fury.serialize(list);
+    byte[] bytes = fory.serialize(list);
     // bytes can be data serialized by other languages.
-    fury.deserialize(bytes);
+    fory.deserialize(bytes);
     Map<Object, Object> map = new HashMap<>();
     map.put("k1", "v1");
     map.put("k2", list);
     map.put("k3", -1);
-    bytes = fury.serialize(map);
+    bytes = fory.serialize(map);
     // bytes can be data serialized by other languages.
-    fury.deserialize(bytes);
+    fory.deserialize(bytes);
   }
 }
 ```
@@ -57,16 +57,16 @@ public class Example1 {
 import pyfury
 import numpy as np
 
-fury = pyfury.Fury()
+fory = pyfury.Fory()
 object_list = [True, False, "str", -1.1, 1,
                np.full(100, 0, dtype=np.int32), np.full(20, 0.0, dtype=np.double)]
-data = fury.serialize(object_list)
+data = fory.serialize(object_list)
 # bytes can be data serialized by other languages.
-new_list = fury.deserialize(data)
+new_list = fory.deserialize(data)
 object_map = {"k1": "v1", "k2": object_list, "k3": -1}
-data = fury.serialize(object_map)
+data = fory.serialize(object_map)
 # bytes can be data serialized by other languages.
-new_map = fury.deserialize(data)
+new_map = fory.deserialize(data)
 print(new_map)
 ```
 
@@ -75,19 +75,19 @@ print(new_map)
 ```go
 package main
 
-import furygo "github.com/apache/fury/fury/go/fury"
+import furygo "github.com/apache/fory/fory/go/fory"
 import "fmt"
 
 func main() {
  list := []interface{}{true, false, "str", -1.1, 1, make([]int32, 10), make([]float64, 20)}
- fury := furygo.NewFury()
- bytes, err := fury.Marshal(list)
+ fory := furygo.NewFury()
+ bytes, err := fory.Marshal(list)
  if err != nil {
   panic(err)
  }
  var newValue interface{}
  // bytes can be data serialized by other languages.
- if err := fury.Unmarshal(bytes, &newValue); err != nil {
+ if err := fory.Unmarshal(bytes, &newValue); err != nil {
   panic(err)
  }
  fmt.Println(newValue)
@@ -96,12 +96,12 @@ func main() {
   "k2": list,
   "k3": -1,
  }
- bytes, err = fury.Marshal(dict)
+ bytes, err = fory.Marshal(dict)
  if err != nil {
   panic(err)
  }
  // bytes can be data serialized by other languages.
- if err := fury.Unmarshal(bytes, &newValue); err != nil {
+ if err := fory.Unmarshal(bytes, &newValue); err != nil {
   panic(err)
  }
  fmt.Println(newValue)
@@ -111,7 +111,7 @@ func main() {
 **JavaScript**
 
 ```javascript
-import Fury from '@furyjs/fury';
+import Fory from '@furyjs/fory';
 
 /**
  * @furyjs/hps use v8's fast-calls-api that can be called directly by jit, ensure that the version of Node is 20 or above.
@@ -120,9 +120,9 @@ import Fury from '@furyjs/fury';
  **/
 import hps from '@furyjs/hps';
 
-const fury = new Fury({ hps });
-const input = fury.serialize('hello fury');
-const result = fury.deserialize(input);
+const fory = new Fory({ hps });
+const input = fory.serialize('hello fory');
+const result = fory.deserialize(input);
 console.log(result);
 ```
 
@@ -130,7 +130,7 @@ console.log(result);
 
 ```rust
 use chrono::{NaiveDate, NaiveDateTime};
-use fury::{from_buffer, to_buffer, Fury};
+use fory::{from_buffer, to_buffer, Fory};
 use std::collections::HashMap;
 
 fn run() {
@@ -147,8 +147,8 @@ Serializing user-defined types needs registering the custom type using the regis
 **Java**
 
 ```java
-import org.apache.fury.*;
-import org.apache.fury.config.*;
+import org.apache.fory.*;
+import org.apache.fory.config.*;
 import java.util.*;
 
 public class Example2 {
@@ -192,14 +192,14 @@ public class Example2 {
     return obj;
   }
 
-  // mvn exec:java -Dexec.mainClass="org.apache.fury.examples.Example2"
+  // mvn exec:java -Dexec.mainClass="org.apache.fory.examples.Example2"
   public static void main(String[] args) {
-    Fury fury = Fury.builder().withLanguage(Language.XLANG).build();
-    fury.register(SomeClass1.class, "example.SomeClass1");
-    fury.register(SomeClass2.class, "example.SomeClass2");
-    byte[] bytes = fury.serialize(createObject());
+    Fory fory = Fory.builder().withLanguage(Language.XLANG).build();
+    fory.register(SomeClass1.class, "example.SomeClass1");
+    fory.register(SomeClass2.class, "example.SomeClass2");
+    byte[] bytes = fory.serialize(createObject());
     // bytes can be data serialized by other languages.
-    System.out.println(fury.deserialize(bytes));
+    System.out.println(fory.deserialize(bytes));
   }
 }
 ```
@@ -239,7 +239,7 @@ class SomeClass2:
 
 
 if __name__ == "__main__":
-    f = pyfury.Fury()
+    f = pyfury.Fory()
     f.register_type(SomeClass1, typename="example.SomeClass1")
     f.register_type(SomeClass2, typename="example.SomeClass2")
     obj1 = SomeClass1(f1=True, f2={-1: 2})
@@ -267,7 +267,7 @@ if __name__ == "__main__":
 ```go
 package main
 
-import furygo "github.com/apache/fury/fury/go/fury"
+import furygo "github.com/apache/fory/fory/go/fory"
 import "fmt"
 
 func main() {
@@ -283,18 +283,18 @@ func main() {
   F9  float32
   F10 float64
   F11 []int16
-  F12 fury.Int16Slice
+  F12 fory.Int16Slice
  }
 
  type SomeClas2 struct {
   F1 interface{}
   F2 map[int8]int32
  }
- fury := furygo.NewFury()
- if err := fury.RegisterTagType("example.SomeClass1", SomeClass1{}); err != nil {
+ fory := furygo.NewFury()
+ if err := fory.RegisterTagType("example.SomeClass1", SomeClass1{}); err != nil {
   panic(err)
  }
- if err := fury.RegisterTagType("example.SomeClass2", SomeClass2{}); err != nil {
+ if err := fory.RegisterTagType("example.SomeClass2", SomeClass2{}); err != nil {
   panic(err)
  }
  obj1 := &SomeClass1{}
@@ -306,21 +306,21 @@ func main() {
  obj.F3 = []interface{}{"abc", "abc"}
  f4 := map[int8]int32{1: 2}
  obj.F4 = f4
- obj.F5 = fury.MaxInt8
- obj.F6 = fury.MaxInt16
- obj.F7 = fury.MaxInt32
- obj.F8 = fury.MaxInt64
+ obj.F5 = fory.MaxInt8
+ obj.F6 = fory.MaxInt16
+ obj.F7 = fory.MaxInt32
+ obj.F8 = fory.MaxInt64
  obj.F9 = 1.0 / 2
  obj.F10 = 1 / 3.0
  obj.F11 = []int16{1, 2}
  obj.F12 = []int16{-1, 4}
- bytes, err := fury.Marshal(obj);
+ bytes, err := fory.Marshal(obj);
  if err != nil {
   panic(err)
  }
  var newValue interface{}
  // bytes can be data serialized by other languages.
- if err := fury.Unmarshal(bytes, &newValue); err != nil {
+ if err := fory.Unmarshal(bytes, &newValue); err != nil {
   panic(err)
  }
  fmt.Println(newValue)
@@ -330,7 +330,7 @@ func main() {
 **JavaScript**
 
 ```javascript
-import Fury, { Type, InternalSerializerType } from '@furyjs/fury';
+import Fory, { Type, InternalSerializerType } from '@furyjs/fory';
 
 /**
  * @furyjs/hps use v8's fast-calls-api that can be called directly by jit, ensure that the version of Node is 20 or above.
@@ -343,9 +343,9 @@ import hps from '@furyjs/hps';
 const description = Type.object('example.foo', {
   foo: Type.string(),
 });
-const fury = new Fury({ hps });
-const { serialize, deserialize } = fury.registerSerializer(description);
-const input = serialize({ foo: 'hello fury' });
+const fory = new Fory({ hps });
+const { serialize, deserialize } = fory.registerSerializer(description);
+const input = serialize({ foo: 'hello fory' });
 const result = deserialize(input);
 console.log(result);
 ```
@@ -354,18 +354,18 @@ console.log(result);
 
 ```rust
 use chrono::{NaiveDate, NaiveDateTime};
-use fury::{from_buffer, to_buffer, Fury};
+use fory::{from_buffer, to_buffer, Fory};
 use std::collections::HashMap;
 
 #[test]
 fn complex_struct() {
-    #[derive(Fury, Debug, PartialEq)]
+    #[derive(Fory, Debug, PartialEq)]
     #[tag("example.foo2")]
     struct Animal {
         category: String,
     }
 
-    #[derive(Fury, Debug, PartialEq)]
+    #[derive(Fory, Debug, PartialEq)]
     #[tag("example.foo")]
     struct Person {
         c1: Vec<u8>,  // binary
@@ -416,8 +416,8 @@ Shared reference and circular reference can be serialized automatically, no dupl
 **Java**
 
 ```java
-import org.apache.fury.*;
-import org.apache.fury.config.*;
+import org.apache.fory.*;
+import org.apache.fory.config.*;
 import java.util.*;
 
 public class ReferenceExample {
@@ -435,14 +435,14 @@ public class ReferenceExample {
     return obj;
   }
 
-  // mvn exec:java -Dexec.mainClass="org.apache.fury.examples.ReferenceExample"
+  // mvn exec:java -Dexec.mainClass="org.apache.fory.examples.ReferenceExample"
   public static void main(String[] args) {
-    Fury fury = Fury.builder().withLanguage(Language.XLANG)
+    Fory fory = Fory.builder().withLanguage(Language.XLANG)
       .withRefTracking(true).build();
-    fury.register(SomeClass.class, "example.SomeClass");
-    byte[] bytes = fury.serialize(createObject());
+    fory.register(SomeClass.class, "example.SomeClass");
+    byte[] bytes = fory.serialize(createObject());
     // bytes can be data serialized by other languages.
-    System.out.println(fury.deserialize(bytes));
+    System.out.println(fory.deserialize(bytes));
   }
 }
 ```
@@ -458,14 +458,14 @@ class SomeClass:
     f2: Dict[str, str]
     f3: Dict[str, str]
 
-fury = pyfury.Fury(ref_tracking=True)
-fury.register_type(SomeClass, typename="example.SomeClass")
+fory = pyfury.Fory(ref_tracking=True)
+fory.register_type(SomeClass, typename="example.SomeClass")
 obj = SomeClass()
 obj.f2 = {"k1": "v1", "k2": "v2"}
 obj.f1, obj.f3 = obj, obj.f2
-data = fury.serialize(obj)
+data = fory.serialize(obj)
 # bytes can be data serialized by other languages.
-print(fury.deserialize(data))
+print(fory.deserialize(data))
 ```
 
 **Golang**
@@ -473,7 +473,7 @@ print(fury.deserialize(data))
 ```go
 package main
 
-import furygo "github.com/apache/fury/fury/go/fury"
+import furygo "github.com/apache/fory/fory/go/fory"
 import "fmt"
 
 func main() {
@@ -482,19 +482,19 @@ func main() {
   F2 map[string]string
   F3 map[string]string
  }
- fury := furygo.NewFury(true)
- if err := fury.RegisterTagType("example.SomeClass", SomeClass{}); err != nil {
+ fory := furygo.NewFury(true)
+ if err := fory.RegisterTagType("example.SomeClass", SomeClass{}); err != nil {
   panic(err)
  }
  value := &SomeClass{F2: map[string]string{"k1": "v1", "k2": "v2"}}
  value.F3 = value.F2
  value.F1 = value
- bytes, err := fury.Marshal(value)
+ bytes, err := fory.Marshal(value)
  if err != nil {
  }
  var newValue interface{}
  // bytes can be data serialized by other languages.
- if err := fury.Unmarshal(bytes, &newValue); err != nil {
+ if err := fory.Unmarshal(bytes, &newValue); err != nil {
   panic(err)
  }
  fmt.Println(newValue)
@@ -504,7 +504,7 @@ func main() {
 **JavaScript**
 
 ```javascript
-import Fury, { Type } from '@furyjs/fury';
+import Fory, { Type } from '@furyjs/fory';
 /**
  * @furyjs/hps use v8's fast-calls-api that can be called directly by jit, ensure that the version of Node is 20 or above.
  * Experimental feature, installation success cannot be guaranteed at this moment
@@ -517,10 +517,10 @@ const description = Type.object('example.foo', {
   bar: Type.object('example.foo'),
 });
 
-const fury = new Fury({ hps });
-const { serialize, deserialize } = fury.registerSerializer(description);
+const fory = new Fory({ hps });
+const { serialize, deserialize } = fory.registerSerializer(description);
 const data: any = {
-  foo: 'hello fury',
+  foo: 'hello fory',
 };
 data.bar = data;
 const input = serialize(data);
@@ -536,25 +536,25 @@ Reference cannot be implemented because of rust ownership restrictions
 **Java**
 
 ```java
-import org.apache.fury.*;
-import org.apache.fury.config.*;
-import org.apache.fury.serializer.BufferObject;
-import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fory.*;
+import org.apache.fory.config.*;
+import org.apache.fory.serializer.BufferObject;
+import org.apache.fory.memory.MemoryBuffer;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class ZeroCopyExample {
-  // mvn exec:java -Dexec.mainClass="io.ray.fury.examples.ZeroCopyExample"
+  // mvn exec:java -Dexec.mainClass="io.ray.fory.examples.ZeroCopyExample"
   public static void main(String[] args) {
-    Fury fury = Fury.builder().withLanguage(Language.XLANG).build();
+    Fory fory = Fory.builder().withLanguage(Language.XLANG).build();
     List<Object> list = ofArrayList("str", new byte[1000], new int[100], new double[100]);
     Collection<BufferObject> bufferObjects = new ArrayList<>();
-    byte[] bytes = fury.serialize(list, e -> !bufferObjects.add(e));
+    byte[] bytes = fory.serialize(list, e -> !bufferObjects.add(e));
     // bytes can be data serialized by other languages.
     List<MemoryBuffer> buffers = bufferObjects.stream()
       .map(BufferObject::toBuffer).collect(Collectors.toList());
-    System.out.println(fury.deserialize(bytes, buffers));
+    System.out.println(fory.deserialize(bytes, buffers));
   }
 }
 ```
@@ -566,14 +566,14 @@ import array
 import pyfury
 import numpy as np
 
-fury = pyfury.Fury()
+fory = pyfury.Fory()
 list_ = ["str", bytes(bytearray(1000)),
          array.array("i", range(100)), np.full(100, 0.0, dtype=np.double)]
 serialized_objects = []
-data = fury.serialize(list_, buffer_callback=serialized_objects.append)
+data = fory.serialize(list_, buffer_callback=serialized_objects.append)
 buffers = [o.to_buffer() for o in serialized_objects]
 # bytes can be data serialized by other languages.
-print(fury.deserialize(data, buffers=buffers))
+print(fory.deserialize(data, buffers=buffers))
 ```
 
 **Golang**
@@ -581,24 +581,24 @@ print(fury.deserialize(data, buffers=buffers))
 ```go
 package main
 
-import furygo "github.com/apache/fury/fury/go/fury"
+import furygo "github.com/apache/fory/fory/go/fory"
 import "fmt"
 
 func main() {
- fury := furygo.NewFury()
+ fory := furygo.NewFury()
  list := []interface{}{"str", make([]byte, 1000)}
- buf := fury.NewByteBuffer(nil)
- var bufferObjects []fury.BufferObject
- fury.Serialize(buf, list, func(o fury.BufferObject) bool {
+ buf := fory.NewByteBuffer(nil)
+ var bufferObjects []fory.BufferObject
+ fory.Serialize(buf, list, func(o fory.BufferObject) bool {
   bufferObjects = append(bufferObjects, o)
   return false
  })
  var newList []interface{}
- var buffers []*fury.ByteBuffer
+ var buffers []*fory.ByteBuffer
  for _, o := range bufferObjects {
   buffers = append(buffers, o.ToBuffer())
  }
- if err := fury.Deserialize(buf, &newList, buffers); err != nil {
+ if err := fory.Deserialize(buf, &newList, buffers); err != nil {
   panic(err)
  }
  fmt.Println(newList)

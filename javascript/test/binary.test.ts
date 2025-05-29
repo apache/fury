@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import Fury, { Type } from '../packages/fury/index';
+import Fory, { Type } from '../packages/fory/index';
 import { describe, expect, test } from '@jest/globals';
 
 
@@ -27,10 +27,10 @@ describe('binary', () => {
             a: Type.binary()
         })
 
-        const fury = new Fury({ refTracking: true });    
-        const serializer = fury.registerSerializer(typeinfo).serializer;
-        const input = fury.serialize({ a: new Uint8Array([1, 2, 3]) }, serializer);
-        const result = fury.deserialize(
+        const fory = new Fory({ refTracking: true });    
+        const serializer = fory.registerSerializer(typeinfo).serializer;
+        const input = fory.serialize({ a: new Uint8Array([1, 2, 3]) }, serializer);
+        const result = fory.deserialize(
             input
         );
         expect(result instanceof Uint8Array)

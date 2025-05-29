@@ -23,13 +23,13 @@ license: |
 Debug C++ is tricky and binary protocol bug is hard to locate without debugging support, but setup
 debugging support for bazel project is not easy.
 
-Fury include an out-of-box `launch.json/tasks.json` config in `.vocode` directory for c++ debugging.
+Fory include an out-of-box `launch.json/tasks.json` config in `.vocode` directory for c++ debugging.
 
-Just open the fury root directory in vscode, then open a test file such as `src/fury/row/row_test.cc`,
+Just open the fory root directory in vscode, then open a test file such as `src/fory/row/row_test.cc`,
 enter `F5`, then you can debug the c++ code line by line, watch variables, add breakpoints in vscode just like
 java/python debugging.
 
-<img src="images/vscode_debug_fury.jpg" alt="Fury Debugging Example" width="50%" height="50%" />
+<img src="images/vscode_debug_fory.jpg" alt="Fory Debugging Example" width="50%" height="50%" />
 
 ## Notes
 

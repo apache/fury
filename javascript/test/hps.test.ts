@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import { BinaryReader } from '@furyjs/fury/dist/lib/reader';
+import { BinaryReader } from '@furyjs/fory/dist/lib/reader';
 import hps from '../packages/hps/index';
 import { describe, expect, test } from '@jest/globals';
 

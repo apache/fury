@@ -27,7 +27,7 @@ module.exports = {
     "**/*.ts",
     "!**/dist/**",
     "!**/build/**",
-    "!packages/fury/lib/murmurHash3.ts"
+    "!packages/fory/lib/murmurHash3.ts"
   ],
   transform: {
     '\\.ts$': ['ts-jest', {

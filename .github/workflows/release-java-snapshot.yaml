@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-name: Publish Fury Java Snapshot
+name: Publish Fory Java Snapshot
 
 on:
   push:
@@ -26,7 +26,7 @@ on:
 jobs:
   publish-java:
     runs-on: ubuntu-latest
-    if: github.repository == 'apache/fury'
+    if: github.repository == 'apache/fory'
     steps:
       - uses: actions/checkout@v4
       - name: Set up Maven Central Repository
@@ -39,7 +39,7 @@ jobs:
           server-id: apache.snapshots.https
           server-username: NEXUS_USERNAME
           server-password: NEXUS_PASSWORD
-      - name: Publish Fury Java Snapshot
+      - name: Publish Fory Java Snapshot
         run: cd java && mvn deploy -Dgpg.skip -DskipTests -Papache-release
         env:
           NEXUS_USERNAME: ${{ secrets.NEXUS_USER }}

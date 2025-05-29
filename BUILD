@@ -31,7 +31,7 @@ pyx_library(
         linkstatic = 1,
     ),
     deps = [
-        "//cpp/fury/util:fury_util",
+        "//cpp/fory/util:fory_util",
     ],
 )
 
@@ -46,7 +46,7 @@ pyx_library(
         linkstatic = 1,
     ),
     deps = [
-        "//cpp/fury/thirdparty:libmmh3",
+        "//cpp/fory/thirdparty:libmmh3",
     ],
 )
 
@@ -62,9 +62,9 @@ pyx_library(
         linkstatic = 1,
     ),
     deps = [
-        "//cpp/fury/util:fury_util",
-        "//cpp/fury/type:fury_type",
-        "//cpp/fury/python:_pyfury",
+        "//cpp/fory/util:fory_util",
+        "//cpp/fory/type:fory_type",
+        "//cpp/fory/python:_pyfury",
         "@com_google_absl//absl/container:flat_hash_map",
     ],
 )
@@ -84,7 +84,7 @@ pyx_library(
         linkstatic = 1,
     ),
     deps = [
-        "//cpp/fury:fury",
+        "//cpp/fory:fory",
         "@local_config_pyarrow//:python_numpy_headers",
         "@local_config_pyarrow//:arrow_python_shared_library"
     ],

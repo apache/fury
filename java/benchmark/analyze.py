@@ -16,7 +16,7 @@
 # under the License.
 
 """
-    process fury/kryo/fst/hession performance data
+    process fory/kryo/fst/hession performance data
 """
 import datetime
 import matplotlib.pyplot as plt
@@ -89,7 +89,7 @@ def process_data(filepath: str):
 
 
 color_map = {
-    "Fury": "#7845FD",
+    "Fory": "#7845FD",
     "Furymetashared": "#B237ED",  # (1, 0.65, 0.55)
     # "Kryo": (1, 0.5, 1),
     # "Kryo": (1, 0.84, 0.25),
@@ -128,10 +128,10 @@ def plot(df: pd.DataFrame, file_dir, filename, column="Tps"):
         jdk = data[data["Lib"].str.contains("Jdk")].copy()
         jdk["Benchmark"] = jdk["Benchmark"] + "_compatible"
         data = pd.concat([data, jdk])
-        fury_metashared_color = plot_color_map["Furymetashared"]
-        fury_color = plot_color_map["Fury"]
-        plot_color_map["Fury"] = fury_metashared_color
-        plot_color_map["Furymetashared"] = fury_color
+        fory_metashared_color = plot_color_map["Furymetashared"]
+        fory_color = plot_color_map["Fory"]
+        plot_color_map["Fory"] = fory_metashared_color
+        plot_color_map["Furymetashared"] = fory_color
     ylable = column
     if column == "Tps":
         ylable = f"Tps/{scaler}"

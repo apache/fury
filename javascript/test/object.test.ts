@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import Fury, { TypeInfo, InternalSerializerType, Type } from '../packages/fury/index';
+import Fory, { TypeInfo, InternalSerializerType, Type } from '../packages/fory/index';
 import { describe, expect, test } from '@jest/globals';
 
 describe('object', () => {
@@ -29,8 +29,8 @@ describe('object', () => {
       @Type.int32()
       a: number;
     }
-    const fury = new Fury({ refTracking: true });
-    const { serialize, deserialize } = fury.registerSerializer(Foo);
+    const fory = new Fory({ refTracking: true });
+    const { serialize, deserialize } = fory.registerSerializer(Foo);
     const foo = new Foo();
     foo.a = 123;
     const input = serialize(foo);
@@ -49,13 +49,13 @@ describe('object', () => {
       @Type.int32()
       a: number;
     }
-    const fury = new Fury({ refTracking: true });
-    fury.registerSerializer(Foo);
+    const fory = new Fory({ refTracking: true });
+    fory.registerSerializer(Foo);
 
     const foo = new Foo();
     foo.a = 123;
-    const input = fury.serialize(foo)
-    const result = fury.deserialize(input);
+    const input = fory.serialize(foo)
+    const result = fory.deserialize(input);
     expect(result instanceof Foo);
     expect(result).toEqual({ a: 123 })
   });
@@ -66,8 +66,8 @@ describe('object', () => {
         b: Type.string()
       })
     })
-    const fury = new Fury({ refTracking: true });
-    const { serialize, deserialize } = fury.registerSerializer(typeInfo);
+    const fory = new Fory({ refTracking: true });
+    const { serialize, deserialize } = fory.registerSerializer(typeInfo);
     const input = serialize({ a: { b: "hel" } });
     const result = deserialize(
       input
@@ -82,8 +82,8 @@ describe('object', () => {
         b: Type.string()
       })
     })
-    const fury = new Fury({ refTracking: true });
-    const { serialize, deserialize } = fury.registerSerializer(typeInfo);
+    const fory = new Fory({ refTracking: true });
+    const { serialize, deserialize } = fory.registerSerializer(typeInfo);
     const input = serialize({ a: null });
     const result = deserialize(
       input
@@ -102,10 +102,10 @@ describe('object', () => {
       }))
     })
     
-    const fury = new Fury({ refTracking: true });
-    const serializer = fury.registerSerializer(typeInfo).serializer;
-    const input = fury.serialize({ a: [{ b: "hel", c: true, d: 123, e: 123, f: new Uint8Array([1,2,3]) }] }, serializer);
-    const result = fury.deserialize(
+    const fory = new Fory({ refTracking: true });
+    const serializer = fory.registerSerializer(typeInfo).serializer;
+    const input = fory.serialize({ a: [{ b: "hel", c: true, d: 123, e: 123, f: new Uint8Array([1,2,3]) }] }, serializer);
+    const result = fory.deserialize(
       input
     );
     result.a.forEach(x => x.e = Number(x.e))
@@ -119,10 +119,10 @@ describe('object', () => {
       }),
       a2: Type.struct("example.bar")
     });
-    const fury = new Fury({ refTracking: true });
-    const serializer = fury.registerSerializer(typeInfo).serializer;
-    const input = fury.serialize({ a: { b: "hel" }, a2: { b: "hel2" } }, serializer);
-    const result = fury.deserialize(
+    const fory = new Fory({ refTracking: true });
+    const serializer = fory.registerSerializer(typeInfo).serializer;
+    const input = fory.serialize({ a: { b: "hel" }, a2: { b: "hel2" } }, serializer);
+    const result = fory.deserialize(
       input
     );
     expect(result).toEqual({ a: { b: "hel" }, a2: { b: "hel2" } })
@@ -136,13 +136,13 @@ describe('object', () => {
       a2: Type.struct("example.foo")
     })
     
-    const fury = new Fury({ refTracking: true });
-    const serialize = fury.registerSerializer(typeInfo).serializer;
+    const fory = new Fory({ refTracking: true });
+    const serialize = fory.registerSerializer(typeInfo).serializer;
     const param: any = {};
     param.a = { b: "hel" };
     param.a2 = param;
-    const input = fury.serialize(param, serialize);
-    const result = fury.deserialize(
+    const input = fory.serialize(param, serialize);
+    const result = fory.deserialize(
       input
     );
     expect(result.a).toEqual({ b: "hel" })
@@ -159,8 +159,8 @@ describe('object', () => {
       }),
     })
     
-    const fury = new Fury({ refTracking: true });
-    const { serialize, deserialize } = fury.registerSerializer(typeInfo);
+    const fory = new Fory({ refTracking: true });
+    const { serialize, deserialize } = fory.registerSerializer(typeInfo);
     const input = serialize({ "+a": { "delete": "hel", c: [{ d: "hello" }] } });
     const result = deserialize(
       input
@@ -179,8 +179,8 @@ describe('object', () => {
       }),
     })
     
-    const fury = new Fury({ refTracking: true });
-    const { serialize, deserialize } = fury.registerSerializer(typeInfo);
+    const fory = new Fory({ refTracking: true });
+    const { serialize, deserialize } = fory.registerSerializer(typeInfo);
     const input = serialize({ a: { b: "hel", c: [{ d: "hello" }] } });
     const result = deserialize(
       input
@@ -195,8 +195,8 @@ describe('object', () => {
         path: Type.string(),
     });
 
-    const fury = new Fury({ hps });
-    const { serialize, deserialize } = fury.registerSerializer(typeInfo);
+    const fory = new Fory({ hps });
+    const { serialize, deserialize } = fory.registerSerializer(typeInfo);
     const bin = serialize({
         kind: "123",
     });
@@ -209,8 +209,8 @@ describe('object', () => {
       a: Type.string()
     });
     
-    const fury = new Fury({ refTracking: true });
-    const { serialize, deserialize } = fury.registerSerializer(typeInfo);
+    const fory = new Fory({ refTracking: true });
+    const { serialize, deserialize } = fory.registerSerializer(typeInfo);
     const input = serialize({ a: "Hello, world! 🌍😊" });
     const result = deserialize(input);
     expect(result).toEqual({ a: "Hello, world! 🌍😊" });

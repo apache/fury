@@ -56,7 +56,7 @@ def build(v: str):
     os.mkdir("dist")
     subprocess.check_call(f"git checkout releases-{v}", shell=True)
     branch = f"releases-{v}"
-    src_tar = f"apache-fury-{v}-incubating-src.tar.gz"
+    src_tar = f"apache-fory-{v}-incubating-src.tar.gz"
     _check_all_committed()
     _strip_unnecessary_license()
     subprocess.check_call(
@@ -65,7 +65,7 @@ def build(v: str):
     subprocess.check_call(
         f"git archive --format=tar.gz "
         f"--output=dist/{src_tar} "
-        f"--prefix=apache-fury-{v}-incubating-src/ {branch}",
+        f"--prefix=apache-fory-{v}-incubating-src/ {branch}",
         shell=True,
     )
     subprocess.check_call("git reset --hard HEAD~", shell=True)
@@ -116,7 +116,7 @@ def _strip_unnecessary_license():
 
 
 def verify(v):
-    src_tar = f"apache-fury-{v}-incubating-src.tar.gz"
+    src_tar = f"apache-fory-{v}-incubating-src.tar.gz"
     subprocess.check_call(f"gpg --verify {src_tar}.asc {src_tar}", shell=True)
     logger.info("Verified signature")
     subprocess.check_call(f"sha512sum --check {src_tar}.sha512", shell=True)
@@ -145,7 +145,7 @@ def bump_version(**kwargs):
             )
         elif lang == "javascript":
             _bump_version(
-                "javascript/packages/fury",
+                "javascript/packages/fory",
                 "package.json",
                 new_version,
                 _update_js_version,
@@ -209,8 +209,8 @@ def _update_pom_parent_version(lines, new_version):
 
 def _update_scala_version(lines, v):
     for index, line in enumerate(lines):
-        if "furyVersion = " in line:
-            lines[index] = f'val furyVersion = "{v}"\n'
+        if "foryVersion = " in line:
+            lines[index] = f'val foryVersion = "{v}"\n'
             break
     return lines
 
@@ -218,7 +218,7 @@ def _update_scala_version(lines, v):
 def _update_kotlin_version(lines, v):
     target_index = -1
     for index, line in enumerate(lines):
-        if "<artifactId>fury-kotlin</artifactId>" in line:
+        if "<artifactId>fory-kotlin</artifactId>" in line:
             target_index = index + 1
             break
     current_version_line = lines[target_index]
