@@ -664,14 +664,12 @@ public class TypeUtils {
       return isSupported(Objects.requireNonNull(typeRef.getComponentType()));
     } else if (ITERABLE_TYPE.isSupertypeOf(typeRef)) {
       TypeRef<?> elementType = getElementType(typeRef);
-      if (ctx.getCustomTypeRegistry()
-          .canConstructCollection(typeRef.getRawType(), elementType.getRawType())) {
-        return true;
-      }
       boolean isSuperOfArrayList = cls.isAssignableFrom(ArrayList.class);
       boolean isSuperOfHashSet = cls.isAssignableFrom(HashSet.class);
       if ((!isSuperOfArrayList && !isSuperOfHashSet)
-          && (cls.isInterface() || Modifier.isAbstract(cls.getModifiers()))) {
+          && (cls.isInterface() || Modifier.isAbstract(cls.getModifiers()))
+          && !ctx.getCustomTypeRegistry()
+              .canConstructCollection(typeRef.getRawType(), elementType.getRawType())) {
         return false;
       }
       return isSupported(getElementType(typeRef));
@@ -707,58 +705,42 @@ public class TypeUtils {
     if (beanClass.isInterface()) {
       ctx = ctx.withSynthesizedBeanType(beanClass);
     }
-    return listBeansRecursiveInclusive(beanClass, ctx);
+    return listBeansRecursiveInclusive(TypeRef.of(beanClass), ctx);
   }
 
   private static LinkedHashSet<Class<?>> listBeansRecursiveInclusive(
-      Class<?> beanClass, TypeResolutionContext ctx) {
+      TypeRef<?> typeRef, TypeResolutionContext ctx) {
     LinkedHashSet<Class<?>> beans = new LinkedHashSet<>();
     Class<?> enclosingType = ctx.getEnclosingType().getRawType();
-    if (ctx.getCustomTypeRegistry().hasCodec(enclosingType, beanClass)) {
-      return beans;
-    }
-    if (isBean(beanClass, ctx)) {
-      beans.add(beanClass);
-    }
-    LinkedHashSet<TypeRef<?>> typeRefs = new LinkedHashSet<>();
-    List<Descriptor> descriptors = Descriptor.getDescriptors(beanClass);
+    Class<?> type = typeRef.getRawType();
     TypeResolutionContext newCtx = ctx;
-    for (Descriptor descriptor : descriptors) {
-      TypeRef<?> typeRef = descriptor.getTypeRef();
-      Class<?> rawType = typeRef.getRawType();
-      typeRefs.add(descriptor.getTypeRef());
-      typeRefs.addAll(getAllTypeArguments(typeRef));
-      if (beanClass.isInterface() && typeRef.getRawType().isInterface() && !isContainer(rawType)) {
-        newCtx = newCtx.withSynthesizedBeanType(typeRef.getRawType());
-      }
-    }
-
-    for (TypeRef<?> typeToken : typeRefs) {
-      Class<?> type = getRawType(typeToken);
-      if (type == Optional.class) {
-        TypeRef<?> elemType = getTypeArguments(typeToken).get(0);
-        beans.addAll(listBeansRecursiveInclusive(elemType.getRawType(), newCtx));
-      } else if (isCollection(type)) {
-        TypeRef<?> elementType = getElementType(typeToken);
-        while (isContainer(elementType.getRawType())) {
-          elementType = getElementType(elementType);
+    if (ctx.getCustomTypeRegistry().hasCodec(enclosingType, type)) {
+      return beans;
+    } else if (type == Optional.class) {
+      TypeRef<?> elemType = getTypeArguments(typeRef).get(0);
+      beans.addAll(listBeansRecursiveInclusive(elemType, newCtx));
+    } else if (isCollection(type) || Iterable.class == type) {
+      TypeRef<?> elementType = getElementType(typeRef);
+      beans.addAll(listBeansRecursiveInclusive(elementType, newCtx));
+    } else if (isMap(type)) {
+      Tuple2<TypeRef<?>, TypeRef<?>> mapKeyValueType = getMapKeyValueType(typeRef);
+      TypeResolutionContext mapCtx = newCtx;
+      beans.addAll(listBeansRecursiveInclusive(mapKeyValueType.f0, mapCtx));
+      beans.addAll(listBeansRecursiveInclusive(mapKeyValueType.f1, mapCtx));
+    } else if (type.isArray()) {
+      Class<?> arrayComponent = getArrayComponent(type);
+      beans.addAll(listBeansRecursiveInclusive(TypeRef.of(arrayComponent), newCtx));
+    } else if (isBean(type, newCtx)) {
+      List<Descriptor> descriptors = Descriptor.getDescriptors(type);
+      beans.add(type);
+      for (Descriptor descriptor : descriptors) {
+        ctx.checkNoCycle(typeRef);
+        TypeRef<?> propertyTypeRef = descriptor.getTypeRef();
+        Class<?> propertyType = propertyTypeRef.getRawType();
+        if (propertyType.isInterface()) {
+          newCtx = newCtx.withSynthesizedBeanType(propertyType);
         }
-        beans.addAll(
-            listBeansRecursiveInclusive(
-                elementType.getRawType(), newCtx.appendTypePath(elementType)));
-      } else if (isMap(type)) {
-        Tuple2<TypeRef<?>, TypeRef<?>> mapKeyValueType = getMapKeyValueType(typeToken);
-        TypeResolutionContext mapCtx =
-            newCtx.appendTypePath(mapKeyValueType.f0, mapKeyValueType.f1);
-        beans.addAll(listBeansRecursiveInclusive(mapKeyValueType.f0.getRawType(), mapCtx));
-        beans.addAll(listBeansRecursiveInclusive(mapKeyValueType.f1.getRawType(), mapCtx));
-      } else if (type.isArray()) {
-        Class<?> arrayComponent = getArrayComponent(type);
-        beans.addAll(
-            listBeansRecursiveInclusive(arrayComponent, newCtx.appendTypePath(arrayComponent)));
-      } else if (isBean(type, newCtx)) {
-        ctx.checkNoCycle(typeToken);
-        beans.addAll(listBeansRecursiveInclusive(type, newCtx.appendTypePath(typeToken)));
+        beans.addAll(listBeansRecursiveInclusive(propertyTypeRef, newCtx.appendTypePath(typeRef)));
       }
     }
     return beans;

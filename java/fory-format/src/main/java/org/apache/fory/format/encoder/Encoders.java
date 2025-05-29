@@ -656,6 +656,7 @@ public class Encoders {
         if (TypeUtils.isBean(typeRef)) {
           set.add(typeRef);
         }
+        findBeanToken(typeRef, set);
       } else {
         Tuple2<TypeRef<?>, TypeRef<?>> tuple2 = TypeUtils.getMapKeyValueType(typeRef);
         if (TypeUtils.isBean(tuple2.f0)) {
