@@ -21,10 +21,13 @@ package org.apache.fory.test;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
+import org.testng.SkipException;
 
 public class TestUtils {
   public static String random(int size, int rand) {
@@ -72,6 +75,22 @@ public class TestUtils {
       }
     } catch (Exception e) {
       throw new RuntimeException("Error executing command " + String.join(" ", command), e);
+    }
+  }
+
+  public static void verifyPyforyInstalled() {
+    // Don't skip in CI, fail if something goes wrong instead
+    if (System.getenv("FORY_CI") != null) {
+      return;
+    }
+    if (executeCommand(
+        Arrays.asList(
+            "python",
+            "-c",
+            "import importlib, sys; sys.exit(0 if importlib.util.find_spec(\"pyfory\") is None else 1)"),
+        10,
+        Collections.emptyMap())) {
+      throw new SkipException("pyfory not installed");
     }
   }
 }
