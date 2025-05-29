@@ -49,7 +49,7 @@ import org.testng.annotations.DataProvider;
 /** Fory unit test base class. */
 @SuppressWarnings("unchecked")
 public abstract class ForyTestBase {
-  private static final ThreadLocal<Fory> javaFuryLocal =
+  private static final ThreadLocal<Fory> javaForyLocal =
       ThreadLocal.withInitial(
           () ->
               Fory.builder()
@@ -58,8 +58,8 @@ public abstract class ForyTestBase {
                   .suppressClassRegistrationWarnings(true)
                   .build());
 
-  public static Fory getJavaFury() {
-    return javaFuryLocal.get();
+  public static Fory getJavaFory() {
+    return javaForyLocal.get();
   }
 
   public static ForyBuilder builder() {
@@ -97,7 +97,7 @@ public abstract class ForyTestBase {
   }
 
   @DataProvider
-  public static Object[][] trackingRefFury() {
+  public static Object[][] trackingRefFory() {
     return new Object[][] {
       {
         Fory.builder()
@@ -175,8 +175,8 @@ public abstract class ForyTestBase {
     };
   }
 
-  @DataProvider(name = "javaFury")
-  public static Object[][] javaFuryConfig() {
+  @DataProvider(name = "javaFory")
+  public static Object[][] javaForyConfig() {
     return new Object[][] {
       {
         Fory.builder()
@@ -218,7 +218,7 @@ public abstract class ForyTestBase {
   }
 
   @DataProvider
-  public static Object[][] javaFuryKVCompatible() {
+  public static Object[][] javaForyKVCompatible() {
     Supplier<ForyBuilder> builder =
         () ->
             Fory.builder()
@@ -263,7 +263,7 @@ public abstract class ForyTestBase {
   }
 
   @DataProvider
-  public static Object[][] basicMultiConfigFury() {
+  public static Object[][] basicMultiConfigFory() {
     return Sets.cartesianProduct(
             ImmutableSet.of(true, false), // trackingRef
             ImmutableSet.of(true, false), // codeGen
@@ -422,7 +422,7 @@ public abstract class ForyTestBase {
   }
 
   /** Update serialization depth by <code>diff</code>. */
-  protected void increaseFuryDepth(Fory fory, int diff) {
+  protected void increaseForyDepth(Fory fory, int diff) {
     long offset = ReflectionUtils.getFieldOffset(Fory.class, "depth");
     int depth = Platform.getInt(fory, offset);
     Platform.putInt(fory, offset, depth + diff);

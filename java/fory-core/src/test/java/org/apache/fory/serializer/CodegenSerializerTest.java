@@ -309,7 +309,7 @@ public class CodegenSerializerTest extends ForyTestBase {
 
   @Test
   public void testPrivateInterfaceField() {
-    TestClass1 o = serDe(getJavaFury(), new TestClass1());
+    TestClass1 o = serDe(getJavaFory(), new TestClass1());
     Assert.assertEquals(o.a.t(), 1);
     Assert.assertEquals(o.b.t(), 2);
   }

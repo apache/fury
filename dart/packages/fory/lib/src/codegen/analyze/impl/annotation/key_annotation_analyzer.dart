@@ -42,7 +42,7 @@ class KeyAnnotationAnalyzer {
     for (ElementAnnotation annoElement in metadata){
       anno = annoElement.computeConstantValue()!;
       annoClsElement = anno.type!.element as ClassElement;
-      if (AnalysisTypeIdentifier.isFuryKey(annoClsElement)){
+      if (AnalysisTypeIdentifier.isForyKey(annoClsElement)){
         if (getMeta){
           throw DuplicatedAnnotationException(
             ForyKey.name,
@@ -54,12 +54,12 @@ class KeyAnnotationAnalyzer {
         // 目前只处理ForyKey
       }
     }
-    // If there is no annotation, both includeFromFury and includeToFury default to true.
-    bool includeFromFury = true;
-    bool includeToFury = true;
+    // If there is no annotation, both includeFromFory and includeToFory default to true.
+    bool includeFromFory = true;
+    bool includeToFory = true;
     if (anno != null){
-      includeFromFury = anno.getField("includeFromFury")!.toBoolValue()!;
-      includeToFury = anno.getField("includeToFury")!.toBoolValue()!;
+      includeFromFory = anno.getField("includeFromFory")!.toBoolValue()!;
+      includeToFory = anno.getField("includeToFory")!.toBoolValue()!;
       // serializeToVar = anno.getField("serializeTo")?.variable;
       // deserializeFromVar = anno.getField("deserializeFrom")?.variable;
       // if (serializeToVar != null){
@@ -73,8 +73,8 @@ class KeyAnnotationAnalyzer {
     ForyKey foryKey = ForyKey(
       // serializeTo: serializeTo,
       // deserializeFrom: deserializeFrom,
-      includeFromFury: includeFromFury,
-      includeToFury: includeToFury,
+      includeFromFory: includeFromFory,
+      includeToFory: includeToFory,
     );
     return foryKey;
   }

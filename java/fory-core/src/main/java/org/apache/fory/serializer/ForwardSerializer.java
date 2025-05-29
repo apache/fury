@@ -102,7 +102,7 @@ public class ForwardSerializer {
     }
   }
 
-  public static class DefaultFuryProxy extends SerializerProxy<LoaderBinding> {
+  public static class DefaultForyProxy extends SerializerProxy<LoaderBinding> {
 
     private final ThreadLocal<MemoryBuffer> bufferLocal =
         ThreadLocal.withInitial(() -> MemoryUtils.buffer(32));

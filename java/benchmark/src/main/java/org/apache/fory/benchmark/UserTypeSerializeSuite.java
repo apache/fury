@@ -75,7 +75,7 @@ public class UserTypeSerializeSuite {
   }
 
   @Benchmark
-  public Object furymetashared_serialize_compatible(ForyState.ForyMetaSharedState state) {
+  public Object forymetashared_serialize_compatible(ForyState.ForyMetaSharedState state) {
     state.buffer.writerIndex(0);
     state.fory.getSerializationContext().setMetaContext(state.writerMetaContext);
     state.fory.serialize(state.buffer, state.object);

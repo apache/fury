@@ -1,17 +1,17 @@
-# Fury Dart
+# Fory Dart
 
 ## Overview
 
-This PR adds Dart language support to Apache Fury, implementing a comprehensive serialization solution for Dart and Flutter applications. Fury Dart consists of approximately 15,000 lines of code and provides an efficient serialization mechanism that works within Flutter's reflection limitations.
+This PR adds Dart language support to Apache Fory, implementing a comprehensive serialization solution for Dart and Flutter applications. Fory Dart consists of approximately 15,000 lines of code and provides an efficient serialization mechanism that works within Flutter's reflection limitations.
 
 ## Implementation Approach
 
-Dart supports reflection, but Flutter explicitly prohibits it. To address this constraint, Fury Dart uses a combination of:
+Dart supports reflection, but Flutter explicitly prohibits it. To address this constraint, Fory Dart uses a combination of:
 
 1. Core serialization/deserialization logic
 2. Static code generation for type handling
 
-This approach ensures compatibility with Flutter while maintaining the performance and flexibility expected from Fury.
+This approach ensures compatibility with Flutter while maintaining the performance and flexibility expected from Fory.
 
 ## Features
 
@@ -29,12 +29,12 @@ This approach ensures compatibility with Flutter while maintaining the performan
 ### Basic Class Serialization
 
 ```dart
-import 'package:fury/fury.dart';
+import 'package:fory/fory.dart';
 
 part 'example.g.dart';
 
-@furyClass
-class SomeClass with _$SomeClassFury {
+@foryClass
+class SomeClass with _$SomeClassFory {
   late int id;
   late String name;
   late Map<String, double> map;
@@ -45,38 +45,38 @@ class SomeClass with _$SomeClassFury {
 }
 ```
 
-After annotating your class with `@furyClass`, run:
+After annotating your class with `@foryClass`, run:
 
 ```bash
 dart run build_runner build
 ```
 
-This generates the necessary code in `example.g.dart` and creates the `_$SomeClassFury` mixin.
+This generates the necessary code in `example.g.dart` and creates the `_$SomeClassFory` mixin.
 
 ### Serializing and Deserializing
 
 ```dart
-Fury fury = Fury(
+Fory fory = Fory(
   refTracking: true,
 );
-fury.register($SomeClass, "example.SomeClass");
+fory.register($SomeClass, "example.SomeClass");
 SomeClass obj = SomeClass(1, 'SomeClass', {'a': 1.0});
 
 // Serialize
-Uint8List bytes = fury.toFury(obj);
+Uint8List bytes = fory.toFory(obj);
 
 // Deserialize
-obj = fury.fromFury(bytes) as SomeClass;
+obj = fory.fromFory(bytes) as SomeClass;
 ```
 
 ### Enum Serialization
 
 ```dart
-import 'package:fury/fury.dart';
+import 'package:fory/fory.dart';
 
 part 'example.g.dart';
 
-@furyEnum
+@foryEnum
 enum EnumFoo {
   A,
   B
@@ -86,24 +86,24 @@ enum EnumFoo {
 Registration is similar to classes:
 
 ```dart
-fury.register($EnumFoo, "example.EnumFoo");
+fory.register($EnumFoo, "example.EnumFoo");
 ```
 
 ## Type Support
 
-Fury Dart currently supports the following type mappings in XLANG mode:
+Fory Dart currently supports the following type mappings in XLANG mode:
 
-| Fury Type                  | Dart Type                                       |
+| Fory Type                  | Dart Type                                       |
 |----------------------------|------------------------------------------------|
 | bool                       | bool                                            |
-| int8                       | fury.Int8                                       |
-| int16                      | fury.Int16                                      |
-| int32                      | fury.Int32                                      |
-| var_int32                  | fury.Int32                                      |
+| int8                       | fory.Int8                                       |
+| int16                      | fory.Int16                                      |
+| int32                      | fory.Int32                                      |
+| var_int32                  | fory.Int32                                      |
 | int64                      | int                                             |
 | var_int64                  | int                                             |
 | sli_int64                  | int                                             |
-| float32                    | fury.Float32                                    |
+| float32                    | fory.Float32                                    |
 | float64                    | double                                          |
 | string                     | String                                          |
 | enum                       | Enum                                            |
@@ -112,8 +112,8 @@ Fury Dart currently supports the following type mappings in XLANG mode:
 | list                       | List                                            |
 | set                        | Set (LinkedHashSet, HashSet, SplayTreeSet)      |
 | map                        | Map (LinkedHashMap, HashMap, SplayTreeMap)      |
-| timestamp                  | fury.TimeStamp                                  |
-| local_date                 | fury.LocalDate                                  |
+| timestamp                  | fory.TimeStamp                                  |
+| local_date                 | fory.LocalDate                                  |
 | binary                     | Uint8List                                       |
 | bool_array                 | BoolList                                        |
 | int8_array                 | Int8List                                        |
@@ -127,23 +127,23 @@ Fury Dart currently supports the following type mappings in XLANG mode:
 
 The implementation is organized into three main components:
 
-1. **Codegen**: Located at `dart/packages/fury/lib/src/codegen`  
+1. **Codegen**: Located at `dart/packages/fory/lib/src/codegen`  
    Handles static code generation for serialization/deserialization.
 
-2. **FuryCore**: Located at `dart/packages/fury/lib/src`  
+2. **ForyCore**: Located at `dart/packages/fory/lib/src`  
    Contains the core serialization and deserialization logic.
 
-3. **FuryTest**: Located at `dart/fury_test`  
-   Comprehensive test suite for Fury Dart functionality.
+3. **ForyTest**: Located at `dart/fory_test`  
+   Comprehensive test suite for Fory Dart functionality.
 
 ## Testing Approach
 
-The test suite is inspired by Fury Java's testing approach and includes:
+The test suite is inspired by Fory Java's testing approach and includes:
 
 - **Datatype Tests**: Validates custom data types implemented for Dart
 - **Code Generation Tests**: Ensures correctness of the generated static code
 - **Buffer Tests**: Validates correct memory handling for primitive types
-- **Cross-Language Tests**: Tests functionality against other Fury implementations
+- **Cross-Language Tests**: Tests functionality against other Fory implementations
 - **Performance Tests**: Simple benchmarks for serialization/deserialization performance
 
 ### Running Tests
@@ -154,7 +154,7 @@ To run tests:
 
 ```bash
 # First, generate necessary code
-cd fury-test
+cd fory-test
 dart run build_runner build
 
 # Run all tests
@@ -166,7 +166,7 @@ dart test
 
 ## Code Quality
 
-Fury Dart maintains high code quality standards. You can verify this using:
+Fory Dart maintains high code quality standards. You can verify this using:
 
 ```bash
 dart analyze
@@ -187,7 +187,7 @@ dart fix --apply
 
 ## Dependencies
 
-### fury package:
+### fory package:
 
 ```
 analyzer: '>=6.5.0 <8.0.0'
@@ -202,7 +202,7 @@ lints: ^5.0.0
 test: ^1.24.4
 ```
 
-### fury-test package:
+### fory-test package:
 
 ```
 lints: ^5.0.0

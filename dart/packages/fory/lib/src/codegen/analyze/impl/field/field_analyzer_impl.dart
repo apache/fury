@@ -85,7 +85,7 @@ class FieldAnalyzerImpl implements FieldAnalyzer{
     );
 
     
-    if (!key.includeFromFury && !key.includeToFury){
+    if (!key.includeFromFory && !key.includeToFory){
       // If both are false, return null directly, this field is ignored
       return null;
     }
@@ -104,8 +104,8 @@ class FieldAnalyzerImpl implements FieldAnalyzer{
         isFinal: element.isFinal,
         isLate: element.isLate,
         hasInitializer: element.hasInitializer,
-        includeFromFury: key.includeFromFury,
-        includeToFury: key.includeToFury,
+        includeFromFory: key.includeFromFory,
+        includeToFory: key.includeToFory,
       ),
     );
   }

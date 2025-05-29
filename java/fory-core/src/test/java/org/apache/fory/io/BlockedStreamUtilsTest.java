@@ -33,7 +33,7 @@ public class BlockedStreamUtilsTest extends ForyTestBase {
 
   @Test
   public void testDeserializeStream() {
-    Fory fory = getJavaFury();
+    Fory fory = getJavaFory();
     ByteArrayOutputStream stream = new ByteArrayOutputStream();
     Foo foo = Foo.create();
     BlockedStreamUtils.serialize(fory, stream, foo);

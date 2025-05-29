@@ -24,7 +24,7 @@ import (
 	"sync"
 )
 
-func NewFury(referenceTracking bool) *Fory {
+func NewFory(referenceTracking bool) *Fory {
 	fory := &Fory{
 		refResolver:       newRefResolver(referenceTracking),
 		referenceTracking: referenceTracking,
@@ -37,24 +37,24 @@ func NewFury(referenceTracking bool) *Fory {
 
 var foryPool = sync.Pool{
 	New: func() interface{} {
-		return NewFury(true)
+		return NewFory(true)
 	},
 }
 
-func GetFury() *Fory {
+func GetFory() *Fory {
 	return foryPool.Get().(*Fory)
 }
 
-func PutFury(fory *Fory) {
+func PutFory(fory *Fory) {
 	foryPool.Put(fory)
 }
 
 // Marshal returns the MessagePack encoding of v.
 func Marshal(v interface{}) ([]byte, error) {
-	fory := GetFury()
+	fory := GetFory()
 	err := fory.Serialize(nil, v, nil)
 	data := fory.buffer.GetByteSlice(0, fory.buffer.writerIndex)
-	PutFury(fory)
+	PutFory(fory)
 	if err != nil {
 		return nil, err
 	}
@@ -64,9 +64,9 @@ func Marshal(v interface{}) ([]byte, error) {
 // Unmarshal decodes the fory-encoded data and stores the result
 // in the value pointed to by v.
 func Unmarshal(data []byte, v interface{}) error {
-	fory := GetFury()
+	fory := GetFory()
 	err := fory.Deserialize(NewByteBuffer(data), v, nil)
-	PutFury(fory)
+	PutFory(fory)
 	return err
 }
 

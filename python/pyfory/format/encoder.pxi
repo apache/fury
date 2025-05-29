@@ -22,13 +22,13 @@ from libcpp cimport bool as c_bool
 import cython
 import pyarrow as pa
 from cpython cimport *
-from pyfury.includes.libformat cimport CWriter, CRowWriter, CArrayWriter, CBuffer
-from pyfury.includes.libutil cimport AllocateBuffer
+from pyfory.includes.libformat cimport CWriter, CRowWriter, CArrayWriter, CBuffer
+from pyfory.includes.libutil cimport AllocateBuffer
 from pyarrow.lib cimport Schema, DataType, ListType, MapType, Field
 from pyarrow.lib cimport CSchema, CDataType, CListType
 from pyarrow import types
 
-cimport pyfury.includes.libformat as libformat
+cimport pyfory.includes.libformat as libformat
 cimport pyarrow.lib as libpa
 
 
@@ -135,7 +135,7 @@ cdef class RowEncoder(Encoder):
         cdef:
             int num_fields = len(self.schema)
             int i
-        from pyfury.format import get_cls_by_schema
+        from pyfory.format import get_cls_by_schema
         cls = get_cls_by_schema(self.schema)
         obj = cls.__new__(cls)
         for i in range(num_fields):

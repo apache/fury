@@ -18,7 +18,7 @@
  */
 
 import { TypeMeta } from "./meta/TypeMeta";
-import { ForyTypeInfoSymbol, InternalSerializerType, WithFuryClsInfo, TypeId } from "./type";
+import { ForyTypeInfoSymbol, InternalSerializerType, WithForyClsInfo, TypeId } from "./type";
 
 const initMeta = (target: new () => any, typeInfo: TypeInfo) => {
   if (!target.prototype) {
@@ -39,7 +39,7 @@ const initMeta = (target: new () => any, typeInfo: TypeInfo) => {
     }, targetFields.get(target) || {}, {
       withConstructor: true,
     }),
-  } as WithFuryClsInfo;
+  } as WithForyClsInfo;
 };
 
 const targetFields = new WeakMap<new () => any, { [key: string]: TypeInfo }>();

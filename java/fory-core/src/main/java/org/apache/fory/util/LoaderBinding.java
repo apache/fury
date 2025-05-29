@@ -54,7 +54,7 @@ public final class LoaderBinding {
     return fory;
   }
 
-  public void visitAllFury(Consumer<Fory> consumer) {
+  public void visitAllFory(Consumer<Fory> consumer) {
     if (forySoftMap.isEmpty()) {
       for (Fory f : foryMap.values()) {
         consumer.accept(f);

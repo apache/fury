@@ -57,7 +57,7 @@ public class SerializationBenchmark {
   public void serializationBenchmark() throws Exception {
     @SuppressWarnings("unchecked")
     Object data = Foo.create();
-    testFury(data);
+    testFory(data);
     testFst(data);
     testKryo(data);
     testJDK(data);
@@ -96,7 +96,7 @@ public class SerializationBenchmark {
             + "/ms\n");
   }
 
-  private void testFury(Object obj) {
+  private void testFory(Object obj) {
     Fory fory =
         Fory.builder()
             .withLanguage(Language.JAVA)

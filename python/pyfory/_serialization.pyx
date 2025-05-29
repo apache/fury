@@ -27,16 +27,16 @@ import time
 import warnings
 from typing import TypeVar, Union, Iterable
 
-from pyfury._util import get_bit, set_bit, clear_bit
-from pyfury import _fory as fmod
-from pyfury._fory import Language
-from pyfury._fory import _PicklerStub, _UnpicklerStub, Pickler, Unpickler
-from pyfury._fory import _ENABLE_CLASS_REGISTRATION_FORCIBLY
-from pyfury.lib import mmh3
-from pyfury.meta.metastring import Encoding
-from pyfury.type import is_primitive_type
-from pyfury.util import is_little_endian
-from pyfury.includes.libserialization cimport \
+from pyfory._util import get_bit, set_bit, clear_bit
+from pyfory import _fory as fmod
+from pyfory._fory import Language
+from pyfory._fory import _PicklerStub, _UnpicklerStub, Pickler, Unpickler
+from pyfory._fory import _ENABLE_CLASS_REGISTRATION_FORCIBLY
+from pyfory.lib import mmh3
+from pyfory.meta.metastring import Encoding
+from pyfory.type import is_primitive_type
+from pyfory.util import is_little_endian
+from pyfory.includes.libserialization cimport \
     (TypeId, IsNamespacedType, Fory_PyBooleanSequenceWriteToBuffer, Fory_PyFloatSequenceWriteToBuffer)
 
 from libc.stdint cimport int8_t, int16_t, int32_t, int64_t, uint64_t
@@ -50,8 +50,8 @@ from cpython.tuple cimport PyTuple_New, PyTuple_SET_ITEM
 from libcpp cimport bool as c_bool
 from libcpp.utility cimport pair
 from cython.operator cimport dereference as deref
-from pyfury._util cimport Buffer
-from pyfury.includes.libabsl cimport flat_hash_map
+from pyfory._util cimport Buffer
+from pyfory.includes.libabsl cimport flat_hash_map
 
 try:
     import numpy as np
@@ -61,8 +61,8 @@ except ImportError:
 cimport cython
 
 logger = logging.getLogger(__name__)
-ENABLE_FURY_CYTHON_SERIALIZATION = os.environ.get(
-    "ENABLE_FURY_CYTHON_SERIALIZATION", "True").lower() in ("true", "1")
+ENABLE_FORY_CYTHON_SERIALIZATION = os.environ.get(
+    "ENABLE_FORY_CYTHON_SERIALIZATION", "True").lower() in ("true", "1")
 
 cdef extern from *:
     """
@@ -432,7 +432,7 @@ cdef class ClassResolver:
     def __init__(self, fory):
         self.fory = fory
         self.metastring_resolver = fory.metastring_resolver
-        from pyfury._registry import ClassResolver
+        from pyfory._registry import ClassResolver
         self._resolver = ClassResolver(fory)
 
     def initialize(self):

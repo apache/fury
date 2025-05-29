@@ -64,7 +64,7 @@ import org.testng.annotations.Test;
 
 public class MapSerializersTest extends ForyTestBase {
 
-  @Test(dataProvider = "basicMultiConfigFury")
+  @Test(dataProvider = "basicMultiConfigFory")
   public void basicTestCaseWithMultiConfig(
       boolean trackingRef,
       boolean codeGen,
@@ -346,8 +346,8 @@ public class MapSerializersTest extends ForyTestBase {
 
   @Test
   public void testEmptyMap() {
-    serDeCheckSerializer(getJavaFury(), Collections.EMPTY_MAP, "EmptyMapSerializer");
-    serDeCheckSerializer(getJavaFury(), Collections.emptySortedMap(), "EmptySortedMap");
+    serDeCheckSerializer(getJavaFory(), Collections.EMPTY_MAP, "EmptyMapSerializer");
+    serDeCheckSerializer(getJavaFory(), Collections.emptySortedMap(), "EmptySortedMap");
   }
 
   @Test(dataProvider = "foryCopyConfig")
@@ -358,7 +358,7 @@ public class MapSerializersTest extends ForyTestBase {
 
   @Test
   public void testSingleMap() {
-    serDeCheckSerializer(getJavaFury(), Collections.singletonMap("k", 1), "SingletonMap");
+    serDeCheckSerializer(getJavaFory(), Collections.singletonMap("k", 1), "SingletonMap");
   }
 
   @Test(dataProvider = "foryCopyConfig")
@@ -369,8 +369,8 @@ public class MapSerializersTest extends ForyTestBase {
   @Test
   public void testConcurrentMap() {
     Map<String, Integer> data = new TreeMap<>(ImmutableMap.of("a", 1, "b", 2));
-    serDeCheckSerializer(getJavaFury(), new ConcurrentHashMap<>(data), "ConcurrentHashMap");
-    serDeCheckSerializer(getJavaFury(), new ConcurrentSkipListMap<>(data), "ConcurrentSkipListMap");
+    serDeCheckSerializer(getJavaFory(), new ConcurrentHashMap<>(data), "ConcurrentHashMap");
+    serDeCheckSerializer(getJavaFory(), new ConcurrentSkipListMap<>(data), "ConcurrentSkipListMap");
   }
 
   @Test(dataProvider = "foryCopyConfig")
@@ -385,9 +385,9 @@ public class MapSerializersTest extends ForyTestBase {
     EnumMap<TestEnum, Object> enumMap = new EnumMap<>(TestEnum.class);
     enumMap.put(TestEnum.A, 1);
     enumMap.put(TestEnum.B, "str");
-    serDe(getJavaFury(), enumMap);
+    serDe(getJavaFory(), enumMap);
     Assert.assertEquals(
-        getJavaFury().getClassResolver().getSerializerClass(enumMap.getClass()),
+        getJavaFory().getClassResolver().getSerializerClass(enumMap.getClass()),
         MapSerializers.EnumMapSerializer.class);
   }
 
@@ -398,7 +398,7 @@ public class MapSerializersTest extends ForyTestBase {
     enumMap.put(TestEnum.B, "str");
     copyCheck(fory, enumMap);
     Assert.assertEquals(
-        getJavaFury().getClassResolver().getSerializerClass(enumMap.getClass()),
+        getJavaFory().getClassResolver().getSerializerClass(enumMap.getClass()),
         MapSerializers.EnumMapSerializer.class);
   }
 
@@ -433,7 +433,7 @@ public class MapSerializersTest extends ForyTestBase {
     serDeCheck(fory, new HashMap<>(ImmutableMap.of(1, 2, 3, 4)));
   }
 
-  @Test(dataProvider = "javaFury")
+  @Test(dataProvider = "javaFory")
   public void testMapFieldSerializers(Fory fory) {
     MapFields obj = createMapFieldsObject();
     Assert.assertEquals(serDe(fory, obj), obj);
@@ -445,7 +445,7 @@ public class MapSerializersTest extends ForyTestBase {
     copyCheck(fory, obj);
   }
 
-  @Test(dataProvider = "javaFuryKVCompatible")
+  @Test(dataProvider = "javaForyKVCompatible")
   public void testMapFieldsKVCompatible(Fory fory) {
     MapFields obj = createMapFieldsObject();
     Assert.assertEquals(serDe(fory, obj), obj);

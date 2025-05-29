@@ -25,7 +25,7 @@ part '../generated/complex_obj_3.g.dart';
 
 
 @foryClass
-class ComplexObject3 with _$ComplexObject3Fury{
+class ComplexObject3 with _$ComplexObject3Fory{
   late final List<Map<int, Float32>> f1;
   late final HashMap<String, List<SplayTreeMap<int, Float32>>> f2;
   late final LinkedHashMap<String, HashSet<Int8>> f3;

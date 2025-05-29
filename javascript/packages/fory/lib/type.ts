@@ -224,7 +224,7 @@ export enum Language {
 
 export const MAGIC_NUMBER = 0x62D4;
 
-export interface WithFuryClsInfo {
+export interface WithForyClsInfo {
   structTypeInfo: StructTypeInfo;
 }
 

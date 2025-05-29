@@ -22,33 +22,33 @@ import pickle
 import typing
 from weakref import WeakValueDictionary
 
-import pyfury.lib.mmh3
-from pyfury.buffer import Buffer
-from pyfury.codegen import (
+import pyfory.lib.mmh3
+from pyfory.buffer import Buffer
+from pyfory.codegen import (
     gen_write_nullable_basic_stmts,
     gen_read_nullable_basic_stmts,
     compile_function,
 )
-from pyfury.error import ClassNotCompatibleError
-from pyfury.lib.collection import WeakIdentityKeyDictionary
-from pyfury.resolver import NULL_FLAG, NOT_NULL_VALUE_FLAG
+from pyfory.error import ClassNotCompatibleError
+from pyfory.lib.collection import WeakIdentityKeyDictionary
+from pyfory.resolver import NULL_FLAG, NOT_NULL_VALUE_FLAG
 
 try:
     import numpy as np
 except ImportError:
     np = None
 
-from pyfury._fory import (
+from pyfory._fory import (
     NOT_NULL_INT64_FLAG,
     BufferObject,
 )
 
 _WINDOWS = os.name == "nt"
 
-from pyfury._serialization import ENABLE_FURY_CYTHON_SERIALIZATION
+from pyfory._serialization import ENABLE_FORY_CYTHON_SERIALIZATION
 
-if ENABLE_FURY_CYTHON_SERIALIZATION:
-    from pyfury._serialization import (  # noqa: F401, F811
+if ENABLE_FORY_CYTHON_SERIALIZATION:
+    from pyfory._serialization import (  # noqa: F401, F811
         Serializer,
         CrossLanguageCompatibleSerializer,
         BooleanSerializer,
@@ -72,7 +72,7 @@ if ENABLE_FURY_CYTHON_SERIALIZATION:
         SliceSerializer,
     )
 else:
-    from pyfury._serializer import (  # noqa: F401 # pylint: disable=unused-import
+    from pyfory._serializer import (  # noqa: F401 # pylint: disable=unused-import
         Serializer,
         CrossLanguageCompatibleSerializer,
         BooleanSerializer,
@@ -96,7 +96,7 @@ else:
         SliceSerializer,
     )
 
-from pyfury.type import (
+from pyfory.type import (
     Int16ArrayType,
     Int32ArrayType,
     Int64ArrayType,
@@ -184,7 +184,7 @@ class PickleCacheSerializer(Serializer):
         cache = self._cached.get(value)
         if cache is None:
             serialized = pickle.dumps(value)
-            value_hash = pyfury.lib.mmh3.hash_buffer(serialized)[0]
+            value_hash = pyfory.lib.mmh3.hash_buffer(serialized)[0]
             cache = value_hash, serialized
             self._cached[value] = cache
         buffer.write_int64(cache[0])
@@ -278,7 +278,7 @@ class PandasRangeIndexSerializer(Serializer):
 _jit_context = locals()
 
 
-_ENABLE_FURY_PYTHON_JIT = os.environ.get("ENABLE_FURY_PYTHON_JIT", "True").lower() in (
+_ENABLE_FORY_PYTHON_JIT = os.environ.get("ENABLE_FORY_PYTHON_JIT", "True").lower() in (
     "true",
     "1",
 )
@@ -295,7 +295,7 @@ class DataClassSerializer(Serializer):
         self._hash = len(self._field_names)
         self._generated_write_method = self._gen_write_method()
         self._generated_read_method = self._gen_read_method()
-        if _ENABLE_FURY_PYTHON_JIT:
+        if _ENABLE_FORY_PYTHON_JIT:
             # don't use `__slots__`, which will make instance method readonly
             self.write = self._gen_write_method()
             self.read = self._gen_read_method()

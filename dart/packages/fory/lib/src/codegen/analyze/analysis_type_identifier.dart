@@ -76,27 +76,27 @@ class AnalysisTypeIdentifier{
     return true;
   }
 
-  static bool isFuryClass(ClassElement element){
+  static bool isForyClass(ClassElement element){
     return _check(element, 0);
   }
 
-  static bool isFuryKey(ClassElement element){
+  static bool isForyKey(ClassElement element){
     return _check(element, 1);
   }
 
-  static bool isFuryCons(ClassElement element){
+  static bool isForyCons(ClassElement element){
     return _check(element, 2);
   }
 
-  static bool isFuryEnum(ClassElement element){
+  static bool isForyEnum(ClassElement element){
     return _check(element, 3);
   }
 
-  static void giveFuryEnumId(int id){
+  static void giveForyEnumId(int id){
     _ids[3] = id;
   }
 
-  static void giveFuryClassId(int id){
+  static void giveForyClassId(int id){
     _ids[0] = id;
   }
 

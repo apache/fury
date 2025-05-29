@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import { ForyTypeInfoSymbol, WithFuryClsInfo, Serializer, TypeId } from "./type";
+import { ForyTypeInfoSymbol, WithForyClsInfo, Serializer, TypeId } from "./type";
 import { Gen } from "./gen";
 import { Type, TypeInfo } from "./typeInfo";
 import Fory from "./fory";
@@ -204,7 +204,7 @@ export default class ClassResolver {
 
     // custome types
     if (typeof v === "object" && v !== null && ForyTypeInfoSymbol in v) {
-      const typeInfo = (v[ForyTypeInfoSymbol] as WithFuryClsInfo).structTypeInfo;
+      const typeInfo = (v[ForyTypeInfoSymbol] as WithForyClsInfo).structTypeInfo;
       return this.getSerializerByTypeInfo(typeInfo);
     }
 

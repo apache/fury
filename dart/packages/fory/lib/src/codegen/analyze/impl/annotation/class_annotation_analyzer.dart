@@ -42,7 +42,7 @@ class ClassAnnotationAnalyzer {
     for (ElementAnnotation annoElement in metadata){
       anno = annoElement.computeConstantValue()!;
       annoClsElement = anno.type!.element as ClassElement;
-      if (AnalysisTypeIdentifier.isFuryClass(annoClsElement)){
+      if (AnalysisTypeIdentifier.isForyClass(annoClsElement)){
         if (getForyClass){
           throw DuplicatedAnnotationException(ForyClass.name, locationMark.clsName, locationMark.libPath);
         }
@@ -57,12 +57,12 @@ class ClassAnnotationAnalyzer {
   }
 
   // This method does not check the validity of the annotation, nor does it perform caching operations
-  bool hasFuryClassAnnotation(List<ElementAnnotation> metadata) {
+  bool hasForyClassAnnotation(List<ElementAnnotation> metadata) {
     DartObject? anno;
     for (ElementAnnotation annoElement in metadata){
       anno = annoElement.computeConstantValue()!;
       ClassElement annoClsElement = anno.type!.element as ClassElement;
-      if (AnalysisTypeIdentifier.isFuryClass(annoClsElement)){
+      if (AnalysisTypeIdentifier.isForyClass(annoClsElement)){
         return true;
       }
     }

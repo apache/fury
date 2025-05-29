@@ -98,7 +98,7 @@ class ConstructorSpecGen extends GenExport{
     late FieldSpecImmutable field;
     for (int i =0; i< fields.length; ++i){
       field = fields[i];
-      if (field.includeFromFury && !setThroughConsFlags[i]){
+      if (field.includeFromFory && !setThroughConsFlags[i]){
         assert(field.canSet); // This should have been ensured in previous steps, if there's an error, it should have already stopped
         buf.write("..");
         buf.write(field.name);

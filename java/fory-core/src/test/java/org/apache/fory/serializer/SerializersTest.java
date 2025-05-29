@@ -76,7 +76,7 @@ public class SerializersTest extends ForyTestBase {
         fory1, new BigInteger("11111111110101010000283895380202208220050200000000111111111"));
   }
 
-  @Test(dataProvider = "javaFury")
+  @Test(dataProvider = "javaFory")
   public void testAtomic(Fory fory) {
     assertTrue(
         ((AtomicBoolean) serDeCheckSerializer(fory, new AtomicBoolean(true), "AtomicBoolean"))
@@ -97,7 +97,7 @@ public class SerializersTest extends ForyTestBase {
   @Test
   public void testCurrency() {
     Assert.assertEquals(
-        serDeCheckSerializer(getJavaFury(), Currency.getInstance("EUR"), "Currency"),
+        serDeCheckSerializer(getJavaFory(), Currency.getInstance("EUR"), "Currency"),
         Currency.getInstance("EUR"));
   }
 
@@ -110,21 +110,21 @@ public class SerializersTest extends ForyTestBase {
 
   @Test
   public void testURI() throws URISyntaxException {
-    Assert.assertEquals(serDeCheckSerializer(getJavaFury(), new URI(""), "URI"), new URI(""));
-    Assert.assertEquals(serDeCheckSerializer(getJavaFury(), new URI("abc"), "URI"), new URI("abc"));
+    Assert.assertEquals(serDeCheckSerializer(getJavaFory(), new URI(""), "URI"), new URI(""));
+    Assert.assertEquals(serDeCheckSerializer(getJavaFory(), new URI("abc"), "URI"), new URI("abc"));
   }
 
   @Test
   public void testRegex() {
     Assert.assertEquals(
-        serDeCheckSerializer(getJavaFury(), Pattern.compile("abc"), "Regex").toString(),
+        serDeCheckSerializer(getJavaFory(), Pattern.compile("abc"), "Regex").toString(),
         Pattern.compile("abc").toString());
   }
 
   @Test
   public void testUUID() {
     UUID uuid = UUID.randomUUID();
-    Assert.assertEquals(serDeCheckSerializer(getJavaFury(), uuid, "UUID"), uuid);
+    Assert.assertEquals(serDeCheckSerializer(getJavaFory(), uuid, "UUID"), uuid);
   }
 
   private static class TestClassSerialization {}

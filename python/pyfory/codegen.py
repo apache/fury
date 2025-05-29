@@ -21,8 +21,8 @@ import os
 import uuid
 from typing import List, Callable, Union
 
-from pyfury.resolver import NULL_FLAG, NOT_NULL_VALUE_FLAG
-from pyfury.error import CompileError
+from pyfory.resolver import NULL_FLAG, NOT_NULL_VALUE_FLAG
+from pyfory.error import CompileError
 
 
 _type_mapping = {
@@ -49,9 +49,9 @@ def gen_write_nullable_basic_stmts(
     type_: type,
 ) -> List[str]:
     methods = _type_mapping[type_]
-    from pyfury import ENABLE_FURY_CYTHON_SERIALIZATION
+    from pyfory import ENABLE_FORY_CYTHON_SERIALIZATION
 
-    if ENABLE_FURY_CYTHON_SERIALIZATION:
+    if ENABLE_FORY_CYTHON_SERIALIZATION:
         return [f"{methods[2]}({buffer}, {value})"]
     return [
         f"if {value} is None:",
@@ -68,9 +68,9 @@ def gen_read_nullable_basic_stmts(
     set_action: Callable[[str], str],
 ) -> List[str]:
     methods = _type_mapping[type_]
-    from pyfury import ENABLE_FURY_CYTHON_SERIALIZATION
+    from pyfory import ENABLE_FORY_CYTHON_SERIALIZATION
 
-    if ENABLE_FURY_CYTHON_SERIALIZATION:
+    if ENABLE_FORY_CYTHON_SERIALIZATION:
         return [set_action(f"{methods[3]}({buffer})")]
 
     read_value = f"{buffer}.{methods[1]}()"
@@ -88,10 +88,10 @@ def compile_function(
     stmts: List[str],
     context: dict,
 ):
-    from pyfury import ENABLE_FURY_CYTHON_SERIALIZATION
+    from pyfory import ENABLE_FORY_CYTHON_SERIALIZATION
 
-    if ENABLE_FURY_CYTHON_SERIALIZATION:
-        from pyfury import _serialization
+    if ENABLE_FORY_CYTHON_SERIALIZATION:
+        from pyfory import _serialization
 
         context["write_nullable_pybool"] = _serialization.write_nullable_pybool
         context["read_nullable_pybool"] = _serialization.read_nullable_pybool

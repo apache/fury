@@ -99,7 +99,7 @@ cd python
 # install dependencies fro styling
 pip install black==22.1.0 flake8==3.9.1 flake8-quotes flake8-bugbear click==8.0.2
 # format python code
-black pyfury
+black pyfory
 ```
 
 ### C++
@@ -136,7 +136,7 @@ npm run lint
 Fory supports dump jit generated code into local file for better debug by configuring environment variables:
 
 - `FORY_CODE_DIR`：The directory for fory to dump generated code. Set to empty by default to skip dump code.
-- `ENABLE_FURY_GENERATED_CLASS_UNIQUE_ID`: Append an unique id for dynamically generated files by default to avoid serializer collision for different classes with same name. Set this to `false` to keep serializer name same for multiple execution or `AOT` codegen.
+- `ENABLE_FORY_GENERATED_CLASS_UNIQUE_ID`: Append an unique id for dynamically generated files by default to avoid serializer collision for different classes with same name. Set this to `false` to keep serializer name same for multiple execution or `AOT` codegen.
 
 By using those environment variables, we can generate code to source directory and debug the generated code in next run.
 
@@ -147,7 +147,7 @@ cd python
 python setup.py develop
 ```
 
-- Use `cython --cplus -a  pyfury/_serialization.pyx` to produce an annotated HTML file of the source code. Then you can analyze interaction between Python objects and Python's C API.
+- Use `cython --cplus -a  pyfory/_serialization.pyx` to produce an annotated HTML file of the source code. Then you can analyze interaction between Python objects and Python's C API.
 - Read more: https://cython.readthedocs.io/en/latest/src/userguide/debugging.html
 
 ```bash

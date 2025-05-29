@@ -61,7 +61,7 @@ public class DeserializationBenchmark {
   public void deserializationBenchmark() throws Exception {
     @SuppressWarnings("unchecked")
     Object data = Foo.create();
-    testFury(data);
+    testFory(data);
     testFst(data);
     testKryo(data);
   }
@@ -100,7 +100,7 @@ public class DeserializationBenchmark {
             + "/ms\n");
   }
 
-  private void testFury(Object obj) {
+  private void testFory(Object obj) {
     Fory fory =
         Fory.builder()
             .withLanguage(Language.JAVA)

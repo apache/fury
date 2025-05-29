@@ -1,8 +1,8 @@
-# Apache Fury™ JavaScript
+# Apache Fory™ JavaScript
 
-Javascript implementation for the Fury protocol.
+Javascript implementation for the Fory protocol.
 
-Apache Fury(incubating) is an effort undergoing incubation at the Apache
+Apache Fory(incubating) is an effort undergoing incubation at the Apache
 Software Foundation (ASF), sponsored by the Apache Incubator PMC.
 
 Incubation is required of all newly accepted projects until a further review

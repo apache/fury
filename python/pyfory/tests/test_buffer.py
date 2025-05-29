@@ -15,9 +15,9 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from pyfury.buffer import Buffer
-from pyfury.tests.core import require_pyarrow
-from pyfury.util import lazy_import
+from pyfory.buffer import Buffer
+from pyfory.tests.core import require_pyarrow
+from pyfory.util import lazy_import
 
 pa = lazy_import("pyarrow")
 

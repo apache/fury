@@ -38,8 +38,8 @@ import org.testng.annotations.Test;
 public class ForyInitPerf {
   private static final Logger LOG = LoggerFactory.getLogger(ForyInitPerf.class);
 
-  public void testFuryInit() {
-    Fory.builder().buildThreadSafeFury();
+  public void testForyInit() {
+    Fory.builder().buildThreadSafeFory();
     int num = 1000;
     List<Fory> foryList = new ArrayList<>(num);
     List<Double> durations = new ArrayList<>(num);
@@ -70,8 +70,8 @@ public class ForyInitPerf {
     System.out.println(elementType);
   }
 
-  public void testNewFurySerialization() {
-    Fory.builder().buildThreadSafeFury();
+  public void testNewForySerialization() {
+    Fory.builder().buildThreadSafeFory();
     int num = 1000;
     Fory fory =
         Fory.builder()

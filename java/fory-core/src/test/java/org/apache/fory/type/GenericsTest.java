@@ -228,11 +228,11 @@ public class GenericsTest extends ForyTestBase {
       // push generics in outer serialization.
       generics.pushGenericType(genericType);
       // increase serialization depth.
-      increaseFuryDepth(fory, 1);
+      increaseForyDepth(fory, 1);
       // get generics in inner serialization.
       GenericType genericType1 = generics.nextGenericType();
       Assert.assertSame(genericType1, genericType);
-      increaseFuryDepth(fory, -1);
+      increaseForyDepth(fory, -1);
       generics.popGenericType();
     }
     {
@@ -240,7 +240,7 @@ public class GenericsTest extends ForyTestBase {
         GenericType genericType =
             GenericType.build(Test4.class, Test2.class.getField(fieldName).getGenericType());
         generics.pushGenericType(genericType);
-        increaseFuryDepth(fory, 1);
+        increaseForyDepth(fory, 1);
       }
       for (String fieldName :
           ImmutableList.of("fromField2", "arrayWithTypeVar", "fromFieldNested").reverse()) {
@@ -248,7 +248,7 @@ public class GenericsTest extends ForyTestBase {
             GenericType.build(Test4.class, Test2.class.getField(fieldName).getGenericType());
         GenericType genericType1 = generics.nextGenericType();
         Assert.assertEquals(genericType1.typeRef, genericType.typeRef);
-        increaseFuryDepth(fory, -1);
+        increaseForyDepth(fory, -1);
         generics.popGenericType();
       }
     }

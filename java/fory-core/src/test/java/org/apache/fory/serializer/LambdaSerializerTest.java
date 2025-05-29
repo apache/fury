@@ -36,7 +36,7 @@ import org.testng.annotations.Test;
 @SuppressWarnings("unchecked")
 public class LambdaSerializerTest extends ForyTestBase {
 
-  @Test(dataProvider = "javaFury")
+  @Test(dataProvider = "javaFory")
   public void testLambda(Fory fory) {
     {
       BiFunction<Fory, Object, byte[]> function =

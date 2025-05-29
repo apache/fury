@@ -16,7 +16,7 @@
 # under the License.
 
 import pytest
-from pyfury.meta.metastring import (
+from pyfory.meta.metastring import (
     MetaStringEncoder,
     MetaStringDecoder,
     Encoding,

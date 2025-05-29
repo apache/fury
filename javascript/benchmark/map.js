@@ -17,9 +17,9 @@
  * under the License.
  */
 
-const Fory = require("@furyjs/fory");
+const Fory = require("@foryjs/fory");
 const beautify = require("js-beautify");
-const hps = require('@furyjs/hps');
+const hps = require('@foryjs/hps');
 const fory = new Fory.default({
   hps, refTracking: false, useSliceString: true, hooks: {
     afterCodeGenerated: (code) => {

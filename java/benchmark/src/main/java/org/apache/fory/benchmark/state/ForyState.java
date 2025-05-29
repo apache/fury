@@ -196,10 +196,10 @@ public class ForyState {
               .withCompatibleMode(CompatibleMode.COMPATIBLE)
               .build();
       // share meta first time.
-      new UserTypeSerializeSuite().furymetashared_serialize_compatible(this);
-      new UserTypeDeserializeSuite().furymetashared_deserialize_compatible(this);
+      new UserTypeSerializeSuite().forymetashared_serialize_compatible(this);
+      new UserTypeDeserializeSuite().forymetashared_deserialize_compatible(this);
       // meta shared.
-      new UserTypeSerializeSuite().furymetashared_serialize_compatible(this);
+      new UserTypeSerializeSuite().forymetashared_serialize_compatible(this);
       serializedLength = buffer.writerIndex();
       LOG.info(
           "======> Fory metashared | {} | {} | {} | {} |",
@@ -208,7 +208,7 @@ public class ForyState {
           bufferType,
           serializedLength);
       buffer.writerIndex(0);
-      Object o = new UserTypeDeserializeSuite().furymetashared_deserialize_compatible(this);
+      Object o = new UserTypeDeserializeSuite().forymetashared_deserialize_compatible(this);
       Preconditions.checkArgument(object.equals(o));
       buffer.readerIndex(0);
     }

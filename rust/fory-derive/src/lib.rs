@@ -24,13 +24,13 @@ mod object;
 mod util;
 
 #[proc_macro_derive(Fory)]
-pub fn proc_macro_derive_fury_object(input: proc_macro::TokenStream) -> TokenStream {
+pub fn proc_macro_derive_fory_object(input: proc_macro::TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     object::derive_serializer(&input)
 }
 
 #[proc_macro_derive(ForyRow)]
-pub fn proc_macro_derive_fury_row(input: proc_macro::TokenStream) -> TokenStream {
+pub fn proc_macro_derive_fory_row(input: proc_macro::TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     derive_row(&input)
 }

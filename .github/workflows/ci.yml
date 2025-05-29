@@ -62,8 +62,8 @@ jobs:
         run: ./ci/run_ci.sh install_bazel
       - name: Install python
         run: ./ci/run_ci.sh install_python
-      - name: Install pyfury
-        run: ./ci/run_ci.sh install_pyfury
+      - name: Install pyfory
+        run: ./ci/run_ci.sh install_pyfory
       - name: Run CI with Maven
         run: ./ci/run_ci.sh java${{ matrix.java-version }}
       - name: Upload Test Report
@@ -97,8 +97,8 @@ jobs:
         run: ./ci/run_ci.sh install_bazel
       - name: Install python
         run: ./ci/run_ci.sh install_python
-      - name: Install pyfury
-        run: ./ci/run_ci.sh install_pyfury
+      - name: Install pyfory
+        run: ./ci/run_ci.sh install_pyfory
       - name: Run CI with Maven
         run: ./ci/run_ci.sh java${{ matrix.java-version }}
 
@@ -308,8 +308,8 @@ jobs:
         run: ./ci/run_ci.sh install_bazel
       - name: Install python
         run: ./ci/run_ci.sh install_python
-      - name: Install pyfury
-        run: ./ci/run_ci.sh install_pyfury
+      - name: Install pyfory
+        run: ./ci/run_ci.sh install_pyfory
       - name: Run Golang CI
         run: ./ci/run_ci.sh go
 

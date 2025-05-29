@@ -136,7 +136,7 @@ public class UnmodifiableSerializersTest extends ForyTestBase {
     return obj;
   }
 
-  @Test(dataProvider = "javaFury")
+  @Test(dataProvider = "javaFory")
   public void testCollectionFieldSerializers(Fory fory) {
     CollectionFields obj = createCollectionFields();
     Object newObj = serDe(fory, obj);
@@ -181,7 +181,7 @@ public class UnmodifiableSerializersTest extends ForyTestBase {
     return obj;
   }
 
-  @Test(dataProvider = "javaFury")
+  @Test(dataProvider = "javaFory")
   public void testMapFieldSerializers(Fory fory) {
     MapFields obj = createMapFields();
     Assert.assertEquals(serDe(fory, obj), obj);

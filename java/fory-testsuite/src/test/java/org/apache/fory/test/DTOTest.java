@@ -90,7 +90,7 @@ public class DTOTest {
   }
 
   @Test
-  public void testFury() {
+  public void testFory() {
     Fory fory = Fory.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
     UserDTO obj = BeanMock.mockBean(UserDTO.class);
     obj.setColorEnum(ColorEnum.RED);

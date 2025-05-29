@@ -91,7 +91,7 @@ And circular references are common in scala, `Reference tracking` should be enab
 
 Note that fory instance should be shared between multiple serialization, the creation of fory instance is not cheap.
 
-If you use shared fory instance across multiple threads, you should create `ThreadSafeFury` instead by `ForyBuilder#buildThreadSafeFury()` instead.
+If you use shared fory instance across multiple threads, you should create `ThreadSafeFory` instead by `ForyBuilder#buildThreadSafeFory()` instead.
 
 ## Serialize case object
 

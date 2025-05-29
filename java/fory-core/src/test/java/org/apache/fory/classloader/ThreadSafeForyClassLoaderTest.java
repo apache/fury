@@ -20,24 +20,24 @@
 package org.apache.fory.classloader;
 
 import org.apache.fory.Fory;
-import org.apache.fory.ThreadSafeFury;
+import org.apache.fory.ThreadSafeFory;
 import org.apache.fory.config.Language;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-public class ThreadSafeFuryClassLoaderTest {
+public class ThreadSafeForyClassLoaderTest {
 
   static class MyClassLoader extends ClassLoader {}
 
   @Test
-  void testFuryThreadLocalUseProvidedClassLoader() throws InterruptedException {
+  void testForyThreadLocalUseProvidedClassLoader() throws InterruptedException {
     final MyClassLoader myClassLoader = new MyClassLoader();
-    final ThreadSafeFury fory =
+    final ThreadSafeFory fory =
         Fory.builder()
             .withClassLoader(myClassLoader)
             .withLanguage(Language.JAVA)
             .requireClassRegistration(false)
-            .buildThreadLocalFury();
+            .buildThreadLocalFory();
     fory.setClassLoader(myClassLoader);
 
     Thread thread =
@@ -51,14 +51,14 @@ public class ThreadSafeFuryClassLoaderTest {
   }
 
   @Test
-  void testFuryPoolUseProvidedClassLoader() throws InterruptedException {
+  void testForyPoolUseProvidedClassLoader() throws InterruptedException {
     final MyClassLoader myClassLoader = new MyClassLoader();
-    final ThreadSafeFury fory =
+    final ThreadSafeFory fory =
         Fory.builder()
             .withClassLoader(myClassLoader)
             .withLanguage(Language.JAVA)
             .requireClassRegistration(false)
-            .buildThreadSafeFuryPool(1, 1);
+            .buildThreadSafeForyPool(1, 1);
     fory.setClassLoader(myClassLoader);
 
     Thread thread =

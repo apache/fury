@@ -422,6 +422,6 @@ func readBySerializer(f *Fory, buf *ByteBuffer, value reflect.Value, serializer 
 
 type Marshaller interface {
 	ExtId() int16
-	MarshalFury(f *Fory, buf *ByteBuffer) error
-	UnmarshalFury(f *Fory, buf *ByteBuffer) error
+	MarshalFory(f *Fory, buf *ByteBuffer) error
+	UnmarshalFory(f *Fory, buf *ByteBuffer) error
 }

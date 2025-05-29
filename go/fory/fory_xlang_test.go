@@ -30,7 +30,7 @@ import (
 	"unsafe"
 )
 
-const pythonModule = "pyfury.tests.test_cross_language"
+const pythonModule = "pyfory.tests.test_cross_language"
 
 func executeCommand(commandStr []string) bool {
 	fmt.Printf("Executing command %s\n", commandStr)
@@ -79,7 +79,7 @@ func TestBuffer(t *testing.T) {
 }
 
 func TestXLangSerializer(t *testing.T) {
-	fory_ := fory.NewFury(true)
+	fory_ := fory.NewFory(true)
 	buffer := fory.NewByteBuffer(nil)
 	require.Nil(t, fory_.Serialize(buffer, true, nil))
 	require.Nil(t, fory_.Serialize(buffer, false, nil))
@@ -160,7 +160,7 @@ func TestXLangSerializer(t *testing.T) {
 }
 
 func TestCrossLanguageReference(t *testing.T) {
-	fory_ := fory.NewFury(true)
+	fory_ := fory.NewFory(true)
 	list := make([]interface{}, 2, 2)
 	dict := map[interface{}]interface{}{}
 	list[0] = list
@@ -227,7 +227,7 @@ type ComplexObject2 struct {
 func TestSerializeSimpleStruct(t *testing.T) {
 	// Temporarily disabled
 	t.Skip()
-	fory_ := fory.NewFury(true)
+	fory_ := fory.NewFory(true)
 	require.Nil(t, fory_.RegisterTagType("test.ComplexObject2", ComplexObject2{}))
 	obj2 := &ComplexObject2{}
 	obj2.F1 = true
@@ -238,7 +238,7 @@ func TestSerializeSimpleStruct(t *testing.T) {
 func TestSerializeComplexStruct(t *testing.T) {
 	// Temporarily disabled
 	t.Skip()
-	fory_ := fory.NewFury(true)
+	fory_ := fory.NewFory(true)
 	require.Nil(t, fory_.RegisterTagType("test.ComplexObject1", ComplexObject1{}))
 	require.Nil(t, fory_.RegisterTagType("test.ComplexObject2", ComplexObject2{}))
 	obj2 := &ComplexObject2{}
@@ -289,7 +289,7 @@ func structRoundBack(t *testing.T, fory_ *fory.Fory, obj interface{}, testName s
 func TestOutOfBandBuffer(t *testing.T) {
 	// Temporarily disabled
 	t.Skip()
-	fory_ := fory.NewFury(true)
+	fory_ := fory.NewFory(true)
 	var data [][]byte
 	for i := 0; i < 10; i++ {
 		data = append(data, []byte{0, 1})

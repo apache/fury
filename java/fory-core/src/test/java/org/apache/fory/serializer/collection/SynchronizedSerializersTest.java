@@ -96,7 +96,7 @@ public class SynchronizedSerializersTest extends ForyTestBase {
     }
   }
 
-  @Test(dataProvider = "javaFury")
+  @Test(dataProvider = "javaFory")
   public void testCollectionFieldSerializers(Fory fory) {
     CollectionFields obj = createCollectionFields();
     Object newObj = serDe(fory, obj);

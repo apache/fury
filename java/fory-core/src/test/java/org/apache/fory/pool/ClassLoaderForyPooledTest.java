@@ -25,7 +25,7 @@ import org.apache.fory.config.Language;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-public class ClassLoaderFuryPooledTest {
+public class ClassLoaderForyPooledTest {
 
   private Function<ClassLoader, Fory> getForyFactory() {
     return classLoader ->
@@ -36,13 +36,13 @@ public class ClassLoaderFuryPooledTest {
             .build();
   }
 
-  private ClassLoaderFuryPooled getPooled(int minPoolSize, int maxPoolSize) {
+  private ClassLoaderForyPooled getPooled(int minPoolSize, int maxPoolSize) {
     return getPooled(minPoolSize, maxPoolSize, getForyFactory());
   }
 
-  private ClassLoaderFuryPooled getPooled(
+  private ClassLoaderForyPooled getPooled(
       int minPoolSize, int maxPoolSize, Function<ClassLoader, Fory> factory) {
-    return new ClassLoaderFuryPooled(
+    return new ClassLoaderForyPooled(
         getClass().getClassLoader(), factory, minPoolSize, maxPoolSize);
   }
 
@@ -56,16 +56,16 @@ public class ClassLoaderFuryPooledTest {
   }
 
   @Test
-  public void testGetFuryNormal() {
-    ClassLoaderFuryPooled pooled = getPooled(3, 5);
+  public void testGetForyNormal() {
+    ClassLoaderForyPooled pooled = getPooled(3, 5);
     Fory fory = pooled.getFory();
     Assert.assertNotNull(fory);
   }
 
   @Test
-  public void testGetFuryWithIncreaseCapacity() {
+  public void testGetForyWithIncreaseCapacity() {
     int minPoolSize = 4;
-    ClassLoaderFuryPooled pooled = getPooled(minPoolSize, 6);
+    ClassLoaderForyPooled pooled = getPooled(minPoolSize, 6);
     for (int i = 0; i < minPoolSize; i++) {
       Fory fory = pooled.getFory();
       Assert.assertNotNull(fory);
@@ -84,9 +84,9 @@ public class ClassLoaderFuryPooledTest {
   }
 
   @Test
-  public void testFuryAfterSetFactoryCallback() {
+  public void testForyAfterSetFactoryCallback() {
     int minPoolSize = 4;
-    ClassLoaderFuryPooled pooled = getPooled(minPoolSize, 6);
+    ClassLoaderForyPooled pooled = getPooled(minPoolSize, 6);
 
     try {
       pooled.setFactoryCallback(
@@ -101,9 +101,9 @@ public class ClassLoaderFuryPooledTest {
   }
 
   @Test
-  public void testGetFuryAwait() throws InterruptedException {
+  public void testGetForyAwait() throws InterruptedException {
     int minPoolSize = 3;
-    ClassLoaderFuryPooled pooled = getPooled(minPoolSize, 3);
+    ClassLoaderForyPooled pooled = getPooled(minPoolSize, 3);
     for (int i = 0; i < minPoolSize; i++) {
       Fory fory = pooled.getFory();
       Assert.assertNotNull(fory);
@@ -124,21 +124,21 @@ public class ClassLoaderFuryPooledTest {
 
     // loopCount != 0
     Fory fory = getForyFactory().apply(getClass().getClassLoader());
-    pooled.returnFury(fory);
+    pooled.returnFory(fory);
     thread.join();
   }
 
   @Test
-  public void testReturnFury() {
+  public void testReturnFory() {
     Function<ClassLoader, Fory> foryFactory = getForyFactory();
     Fory fory = foryFactory.apply(getClass().getClassLoader());
-    ClassLoaderFuryPooled pooled = getPooled(4, 8, foryFactory);
-    pooled.returnFury(fory);
+    ClassLoaderForyPooled pooled = getPooled(4, 8, foryFactory);
+    pooled.returnFory(fory);
   }
 
   @Test
-  public void testReturnFuryForbidden() {
-    ClassLoaderFuryPooled pooled = getPooled(4, 9);
-    Assert.assertThrows(NullPointerException.class, () -> pooled.returnFury(null));
+  public void testReturnForyForbidden() {
+    ClassLoaderForyPooled pooled = getPooled(4, 9);
+    Assert.assertThrows(NullPointerException.class, () -> pooled.returnFory(null));
   }
 }

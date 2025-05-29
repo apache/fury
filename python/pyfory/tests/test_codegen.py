@@ -19,7 +19,7 @@ import os
 import textwrap
 import uuid
 
-from pyfury import codegen
+from pyfory import codegen
 
 
 def test_debug_compiled():

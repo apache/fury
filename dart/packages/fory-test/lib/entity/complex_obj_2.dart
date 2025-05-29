@@ -23,7 +23,7 @@ import 'package:fory_test/extensions/map_ext.dart';
 part '../generated/complex_obj_2.g.dart';
 
 @ForyClass(promiseAcyclic: true)
-class ComplexObject2 with _$ComplexObject2Fury {
+class ComplexObject2 with _$ComplexObject2Fory {
   final Object f1;
   final Map<Int8, Int32> f2;
 

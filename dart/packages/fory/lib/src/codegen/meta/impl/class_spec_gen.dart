@@ -115,12 +115,12 @@ class ClassSpecGen extends CustomTypeSpecGen{
     // buf.write(tag);
     // buf.write("\'\'\',\n");
 
-    // // fromFuryHash
+    // // fromForyHash
     // GenCodeTool.writeIndent(buf, nextTotalIndent);
-    // buf.write(_fromFuryHash);
+    // buf.write(_fromForyHash);
     // buf.write(",\n");
     //
-    // // toFuryHash
+    // // toForyHash
     // GenCodeTool.writeIndent(buf, nextTotalIndent);
     // buf.write(_toForyHash);
     // buf.write(",\n");

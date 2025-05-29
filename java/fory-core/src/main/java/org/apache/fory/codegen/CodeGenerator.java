@@ -78,7 +78,7 @@ public class CodeGenerator {
 
   // use this package when bean class name starts with java.
   private static final String FALLBACK_PACKAGE = Generated.class.getPackage().getName();
-  public static final boolean ENABLE_FURY_GENERATED_CLASS_UNIQUE_ID;
+  public static final boolean ENABLE_FORY_GENERATED_CLASS_UNIQUE_ID;
   private static int maxPoolSize = Math.max(1, Runtime.getRuntime().availableProcessors() / 2);
   private static ExecutorService compilationExecutorService;
 
@@ -86,12 +86,12 @@ public class CodeGenerator {
     boolean useUniqueId = StringUtils.isBlank(CodeGenerator.getCodeDir());
     String flagValue =
         System.getProperty(
-            "fory.enable_fury_generated_class_unique_id",
-            System.getenv("ENABLE_FURY_GENERATED_CLASS_UNIQUE_ID"));
+            "fory.enable_fory_generated_class_unique_id",
+            System.getenv("ENABLE_FORY_GENERATED_CLASS_UNIQUE_ID"));
     if (flagValue != null) {
       useUniqueId = "true".equals(flagValue);
     }
-    ENABLE_FURY_GENERATED_CLASS_UNIQUE_ID = useUniqueId;
+    ENABLE_FORY_GENERATED_CLASS_UNIQUE_ID = useUniqueId;
   }
 
   private ClassLoader classLoader;
@@ -337,7 +337,7 @@ public class CodeGenerator {
   }
 
   public static String getClassUniqueId(Class<?> cls) {
-    if (!ENABLE_FURY_GENERATED_CLASS_UNIQUE_ID) {
+    if (!ENABLE_FORY_GENERATED_CLASS_UNIQUE_ID) {
       return "";
     }
     // classLoader will be null for jdk classes.

@@ -37,15 +37,15 @@ abstract class DeserializationException extends ForyException {
 
 class DeserializationConflictException extends DeserializationException{
   final String _readSetting;
-  final String _nowFurySetting;
+  final String _nowForySetting;
 
-  DeserializationConflictException(this._readSetting, this._nowFurySetting, [super._where]);
+  DeserializationConflictException(this._readSetting, this._nowForySetting, [super._where]);
 
   @override
   void giveExceptionMessage(StringBuffer buf) {
     super.giveExceptionMessage(buf);
     buf.write('the fory instance setting: ');
-    buf.writeln(_nowFurySetting);
+    buf.writeln(_nowForySetting);
     buf.write('while the read setting: ');
     buf.writeln(_readSetting);
   }

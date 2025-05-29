@@ -15,4 +15,4 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from pyfury.lib import mmh3  # noqa: F401 # pylint: disable=unused-import
+from pyfory.lib import mmh3  # noqa: F401 # pylint: disable=unused-import

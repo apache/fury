@@ -46,7 +46,7 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import org.apache.fory.Fory;
 import org.apache.fory.ForyTestBase;
-import org.apache.fory.ThreadSafeFury;
+import org.apache.fory.ThreadSafeFory;
 import org.apache.fory.builder.Generated;
 import org.apache.fory.config.Language;
 import org.apache.fory.logging.Logger;
@@ -402,20 +402,20 @@ public class ClassResolverTest extends ForyTestBase {
 
   @Test
   public void testFooCustomSerializer() {
-    ThreadSafeFury threadSafeFury =
-        Fory.builder().withLanguage(Language.JAVA).buildThreadSafeFury();
+    ThreadSafeFory threadSafeFory =
+        Fory.builder().withLanguage(Language.JAVA).buildThreadSafeFory();
     Assert.assertThrows(
-        () -> threadSafeFury.registerSerializer(Foo.class, FooCustomSerializer.class));
-    threadSafeFury.registerSerializer(Foo.class, f -> new FooCustomSerializer(f, Foo.class));
+        () -> threadSafeFory.registerSerializer(Foo.class, FooCustomSerializer.class));
+    threadSafeFory.registerSerializer(Foo.class, f -> new FooCustomSerializer(f, Foo.class));
     final Foo foo = new Foo();
     foo.setF1(100);
 
-    threadSafeFury.execute(
+    threadSafeFory.execute(
         fory -> {
           Assert.assertEquals(foo, serDe(fory, foo));
           return null;
         });
-    threadSafeFury.execute(
+    threadSafeFory.execute(
         fory -> {
           Assert.assertEquals(
               fory.getClassResolver().getSerializer(foo.getClass()).getClass(),

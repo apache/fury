@@ -9,7 +9,7 @@
       "program": "${workspaceFolder}/bazel-bin/${relativeFileDirname}/${fileBasenameNoExtension}",
       "args": [],
       "stopAtEntry": false,
-      "cwd": "${workspaceFolder}/bazel-bin/${relativeFileDirname}/${fileBasenameNoExtension}.runfiles/fury/${relativeFileDirname}",
+      "cwd": "${workspaceFolder}/bazel-bin/${relativeFileDirname}/${fileBasenameNoExtension}.runfiles/fory/${relativeFileDirname}",
       "environment": [],
       "externalConsole": false,
       "MIMode": "lldb"
@@ -22,7 +22,7 @@
       "program": "${workspaceFolder}/bazel-bin/${relativeFileDirname}/${fileBasenameNoExtension}",
       "args": [],
       "stopAtEntry": false,
-      "cwd": "${workspaceFolder}/bazel-bin/${relativeFileDirname}/${fileBasenameNoExtension}.runfiles/fury/${relativeFileDirname}",
+      "cwd": "${workspaceFolder}/bazel-bin/${relativeFileDirname}/${fileBasenameNoExtension}.runfiles/fory/${relativeFileDirname}",
       "environment": [],
       "externalConsole": false,
       "MIMode": "lldb"
@@ -35,7 +35,7 @@
       "program": "${workspaceFolder}/bazel-bin/${relativeFileDirname}/${fileBasenameNoExtension}",
       "args": [],
       "stopAtEntry": false,
-      "cwd": "${workspaceFolder}/bazel-bin/${relativeFileDirname}/${fileBasenameNoExtension}.runfiles/fury/${relativeFileDirname}",
+      "cwd": "${workspaceFolder}/bazel-bin/${relativeFileDirname}/${fileBasenameNoExtension}.runfiles/fory/${relativeFileDirname}",
       "environment": [],
       "externalConsole": false,
       "MIMode": "lldb"

@@ -42,10 +42,10 @@ class SerializeCoordinator {
   static SerializeCoordinator get I => _instance;
   SerializeCoordinator._internal();
 
-  static final ForyHeaderSerializer _furyHeaderSer = ForyHeaderSerializer.I;
+  static final ForyHeaderSerializer _foryHeaderSer = ForyHeaderSerializer.I;
 
   void _write(Object? obj, ForyConfig conf, XtypeResolver xtypeResolver, ByteWriter writer) {
-    _furyHeaderSer.write(writer, obj == null, conf);
+    _foryHeaderSer.write(writer, obj == null, conf);
     SerializerPack pack = SerializerPack(
       StructHashResolver.inst,
       xtypeResolver.getTagByCustomDartType,

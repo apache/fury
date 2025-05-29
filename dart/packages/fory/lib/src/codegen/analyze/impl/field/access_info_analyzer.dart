@@ -52,7 +52,7 @@ class AccessInfoAnalyzer {
       index = fieldNameToIndex[consParam.name];
       // Based on the constraints for the Constructor mentioned earlier, it is impossible not to find the index here.
       assert(index != null, "Field ${consParam.name} not found in fields");
-      if (!(fields[index!].includeFromFury)){
+      if (!(fields[index!].includeFromFory)){
         // Indicates that this field is not in the fields list or does not need to be analyzed
         // However, if consParam is optional, it's okay
         if (consParam.optional) {
@@ -93,13 +93,13 @@ class AccessInfoAnalyzer {
     }
     /*------------set consParams----------------------------------------------------------*/
     FieldsSpecGen fieldsSpecGen =  _analyzeConsAndFields(consParams, fieldImmutables, fieldsSorted, locationMark);
-    // Check if there are fields with includeFromFury and no assignment method
+    // Check if there are fields with includeFromFory and no assignment method
     List<String> noWayFields = [];
     var immutables = fieldsSpecGen.fields;
     var flags = fieldsSpecGen.setThroughConsFlags;
 
     for (int i =0;i<immutables.length;++i){
-      if (immutables[i].includeFromFury && !(immutables[i].canSet) && !flags[i]){
+      if (immutables[i].includeFromFory && !(immutables[i].canSet) && !flags[i]){
         noWayFields.add(immutables[i].name);
       }
     }
@@ -112,10 +112,10 @@ class AccessInfoAnalyzer {
         FieldAccessErrorType.noWayToAssign,
       );
     }
-    // Check if there are fields with includeToFury and no getter method
+    // Check if there are fields with includeToFory and no getter method
     noWayFields.clear();
     for (int i =0;i<immutables.length;++i){
-      if (immutables[i].includeToFury && !(immutables[i].canGet)){
+      if (immutables[i].includeToFory && !(immutables[i].canGet)){
         noWayFields.add(immutables[i].name);
       }
     }

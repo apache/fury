@@ -117,7 +117,7 @@ func commonArray() []interface{} {
 
 func TestSerializePrimitives(t *testing.T) {
 	for _, referenceTracking := range []bool{false, true} {
-		fory := NewFury(referenceTracking)
+		fory := NewFory(referenceTracking)
 		for _, value := range primitiveData() {
 			serde(t, fory, value)
 		}
@@ -126,7 +126,7 @@ func TestSerializePrimitives(t *testing.T) {
 
 func TestSerializeInterface(t *testing.T) {
 	for _, referenceTracking := range []bool{false, true} {
-		fory := NewFury(referenceTracking)
+		fory := NewFory(referenceTracking)
 		var a interface{}
 		a = -1
 		serde(t, fory, a)
@@ -143,7 +143,7 @@ func TestSerializeInterface(t *testing.T) {
 
 func TestSerializePtr(t *testing.T) {
 	for _, referenceTracking := range []bool{false, true} {
-		fory := NewFury(referenceTracking)
+		fory := NewFory(referenceTracking)
 		a := -100
 		b := &a
 		serde(t, fory, b)
@@ -159,7 +159,7 @@ func TestSerializePtr(t *testing.T) {
 
 func TestSerializeSlice(t *testing.T) {
 	for _, referenceTracking := range []bool{false, true} {
-		fory := NewFury(referenceTracking)
+		fory := NewFory(referenceTracking)
 		serde(t, fory, []byte{0, 1, MaxUint8})
 		serde(t, fory, []int8{MinInt8, -1, 0, 1, MaxInt8})
 		serde(t, fory, []int16{MinInt16, -1, 0, 1, MaxInt16})
@@ -179,7 +179,7 @@ func TestSerializeSlice(t *testing.T) {
 
 func TestSerializeMap(t *testing.T) {
 	for _, referenceTracking := range []bool{false, true} {
-		fory := NewFury(referenceTracking)
+		fory := NewFory(referenceTracking)
 		// "str1" is deserialized by interface type, which will be set to map key whose type is string.
 		// so we need to save interface dynamic value type instead of interface value in reference resolver.
 		{
@@ -207,7 +207,7 @@ func TestSerializeMap(t *testing.T) {
 
 func TestSerializeArray(t *testing.T) {
 	for _, referenceTracking := range []bool{false, true} {
-		fory := NewFury(referenceTracking)
+		fory := NewFory(referenceTracking)
 		for _, data := range commonArray() {
 			serde(t, fory, data)
 		}
@@ -217,7 +217,7 @@ func TestSerializeArray(t *testing.T) {
 
 func TestSerializeStructSimple(t *testing.T) {
 	for _, referenceTracking := range []bool{false, true} {
-		fory := NewFury(referenceTracking)
+		fory := NewFory(referenceTracking)
 		type A struct {
 			F1 []string
 		}
@@ -245,7 +245,7 @@ func TestSerializeStructSimple(t *testing.T) {
 
 func TestSerializeBeginWithMagicNumber(t *testing.T) {
 	strSlice := []string{"str1", "str1", "", "", "str2"}
-	fory := NewFury(true)
+	fory := NewFory(true)
 	bytes, err := fory.Marshal(strSlice)
 	require.Nil(t, err, fmt.Sprintf("serialize value %s with type %s failed: %s",
 		reflect.ValueOf(strSlice), reflect.TypeOf(strSlice), err))
@@ -290,7 +290,7 @@ func newFoo() Foo {
 
 func TestSerializeStruct(t *testing.T) {
 	for _, referenceTracking := range []bool{false, true} {
-		fory := NewFury(referenceTracking)
+		fory := NewFory(referenceTracking)
 		require.Nil(t, fory.RegisterTagType("example.Bar", Bar{}))
 		serde(t, fory, &Bar{})
 		bar := Bar{F1: 1, F2: "str"}
@@ -315,7 +315,7 @@ func TestSerializeStruct(t *testing.T) {
 }
 
 func TestSerializeStringReference(t *testing.T) {
-	fory := NewFury(true)
+	fory := NewFory(true)
 	strSlice := []string{"str1", "str1", "", "", "str2"}
 	strSlice = append(strSlice, strSlice[0])
 	serde(t, fory, strSlice)
@@ -343,7 +343,7 @@ func TestSerializeStringReference(t *testing.T) {
 }
 
 func TestSerializeCircularReference(t *testing.T) {
-	fory := NewFury(true)
+	fory := NewFory(true)
 	{
 		type A struct {
 			A1 *A
@@ -384,7 +384,7 @@ func TestSerializeCircularReference(t *testing.T) {
 }
 
 func TestSerializeComplexReference(t *testing.T) {
-	fory := NewFury(true)
+	fory := NewFory(true)
 	type A struct {
 		F1 string
 		F2 *A
@@ -424,7 +424,7 @@ func TestSerializeComplexReference(t *testing.T) {
 }
 
 func TestSerializeCommonReference(t *testing.T) {
-	fory := NewFury(true)
+	fory := NewFory(true)
 	var values []interface{}
 	values = append(values, commonSlice()...)
 	values = append(values, commonMap()...)
@@ -441,7 +441,7 @@ func TestSerializeCommonReference(t *testing.T) {
 }
 
 func TestSerializeZeroCopy(t *testing.T) {
-	fory := NewFury(true)
+	fory := NewFory(true)
 	list := []interface{}{"str", make([]byte, 1000)}
 	buf := NewByteBuffer(nil)
 	var bufferObjects []BufferObject
@@ -497,7 +497,7 @@ func serde(t *testing.T, fory *Fory, value interface{}) {
 //  go tool pprof -text -nodecount=10 ./fory.test mem.out
 
 func BenchmarkMarshal(b *testing.B) {
-	fory := NewFury(true)
+	fory := NewFory(true)
 	require.Nil(b, fory.RegisterTagType("example.Foo", Foo{}))
 	require.Nil(b, fory.RegisterTagType("example.Bar", Bar{}))
 	value := benchData()
@@ -510,7 +510,7 @@ func BenchmarkMarshal(b *testing.B) {
 }
 
 func BenchmarkUnmarshal(b *testing.B) {
-	fory := NewFury(true)
+	fory := NewFory(true)
 	require.Nil(b, fory.RegisterTagType("example.Foo", Foo{}))
 	require.Nil(b, fory.RegisterTagType("example.Bar", Bar{}))
 	value := benchData()

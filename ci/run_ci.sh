@@ -32,13 +32,13 @@ install_python() {
   echo "Python version $(python -V), path $(which python)"
 }
 
-install_pyfury() {
+install_pyfory() {
   echo "Python version $(python -V), path $(which python)"
   "$ROOT"/ci/deploy.sh install_pyarrow
   pip install Cython wheel pytest
   pushd "$ROOT/python"
   pip list
-  echo "Install pyfury"
+  echo "Install pyfory"
   # Fix strange installed deps not found
   pip install setuptools -U
   pip install -v -e .
@@ -283,17 +283,17 @@ case $1 in
       echo "Executing fory c++ tests succeeds"
     ;;
     python)
-      install_pyfury
+      install_pyfory
       pip install pandas
       cd "$ROOT/python"
       echo "Executing fory python tests"
-      pytest -v -s --durations=60 pyfury/tests
+      pytest -v -s --durations=60 pyfory/tests
       testcode=$?
       if [[ $testcode -ne 0 ]]; then
         exit $testcode
       fi
       echo "Executing fory python tests succeeds"
-      ENABLE_FURY_CYTHON_SERIALIZATION=0 pytest -v -s --durations=60 pyfury/tests
+      ENABLE_FORY_CYTHON_SERIALIZATION=0 pytest -v -s --durations=60 pyfory/tests
       testcode=$?
       if [[ $testcode -ne 0 ]]; then
         exit $testcode

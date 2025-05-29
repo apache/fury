@@ -32,7 +32,7 @@ import org.testng.annotations.Test;
 public class MemoryBufferObjectInputTest extends ForyTestBase {
 
   @Test(dataProvider = "compressNumber")
-  public void testFuryObjectInput(boolean compressNumber) throws IOException {
+  public void testForyObjectInput(boolean compressNumber) throws IOException {
     Fory fory = Fory.builder().withNumberCompressed(compressNumber).build();
     MemoryBuffer buffer = MemoryUtils.buffer(32);
     buffer.writeByte(1);

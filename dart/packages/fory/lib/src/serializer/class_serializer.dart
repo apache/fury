@@ -59,7 +59,7 @@ final class ClassSerializer extends CustomSerializer<Object>{
   final NoArgsCons? _noArgConstruct;
   final List<TypeSpecWrap> _fieldTypeWraps;
 
-  late final int _fromFuryHash;
+  late final int _fromForyHash;
   late final int _toForyHash;
 
   bool _hashComputed = false;
@@ -86,15 +86,15 @@ final class ClassSerializer extends CustomSerializer<Object>{
     }
     if (!_hashComputed){
       var pair = pack.structHashResolver.computeHash(_fields, pack.getTagByDartType);
-      _fromFuryHash = pair.fromFuryHash;
-      _toForyHash = pair.toFuryHash;
+      _fromForyHash = pair.fromForyHash;
+      _toForyHash = pair.toForyHash;
       _hashComputed = true;
     }
     int readFHash = br.readInt32();
-    if (readFHash != _fromFuryHash){
+    if (readFHash != _fromForyHash){
       throw ForyMismatchException(
         readFHash,
-        _fromFuryHash,
+        _fromForyHash,
         'The field hash read from bytes does not match the expected hash.',
       );
     }
@@ -105,7 +105,7 @@ final class ClassSerializer extends CustomSerializer<Object>{
     pack.refResolver.setRefTheLatestId(obj); // Need to ref immediately to prevent subsequent circular references and for normal reference tracking
     for (int i = 0; i < _fields.length; ++i) {
       FieldSpec fieldSpec = _fields[i];
-      if (!fieldSpec.includeFromFury) continue;
+      if (!fieldSpec.includeFromFory) continue;
       TypeSpecWrap typeWrap = _fieldTypeWraps[i];
       bool hasGenericsParam = typeWrap.hasGenericsParam;
       if (hasGenericsParam){
@@ -135,14 +135,14 @@ final class ClassSerializer extends CustomSerializer<Object>{
     }
     if (!_hashComputed){
       var pair = pack.structHashResolver.computeHash(_fields, pack.getTagByDartType);
-      _fromFuryHash = pair.fromFuryHash;
-      _toForyHash = pair.toFuryHash;
+      _fromForyHash = pair.fromForyHash;
+      _toForyHash = pair.toForyHash;
       _hashComputed = true;
     }
     bw.writeInt32(_toForyHash);
     for (int i = 0; i < _fields.length; ++i) {
       FieldSpec fieldSpec = _fields[i];
-      if (!fieldSpec.includeToFury) continue;
+      if (!fieldSpec.includeToFory) continue;
       TypeSpecWrap typeWrap = _fieldTypeWraps[i];
       bool hasGenericsParam = typeWrap.hasGenericsParam;
       if (hasGenericsParam){
@@ -165,7 +165,7 @@ final class ClassSerializer extends CustomSerializer<Object>{
     List<Object?> args = List.filled(_fields.length, null);
     for (int i = 0; i < _fields.length; ++i){
       FieldSpec fieldSpec = _fields[i];
-      if (!fieldSpec.includeFromFury) continue;
+      if (!fieldSpec.includeFromFory) continue;
       TypeSpecWrap typeWrap = _fieldTypeWraps[i];
       bool hasGenericsParam = typeWrap.hasGenericsParam;
       if (hasGenericsParam){

@@ -136,8 +136,8 @@ public class ForyAnnotationTest extends ForyTestBase {
     @ForyField private BeanN beanN = new BeanN();
   }
 
-  @Test(dataProvider = "basicMultiConfigFury")
-  public void testFuryFieldAnnotation(
+  @Test(dataProvider = "basicMultiConfigFory")
+  public void testForyFieldAnnotation(
       boolean trackingRef,
       boolean codeGen,
       boolean scopedMetaShare,
@@ -158,7 +158,7 @@ public class ForyAnnotationTest extends ForyTestBase {
   }
 
   @Test(dataProvider = "referenceTrackingConfig")
-  public void testFuryFieldAnnotationException(boolean referenceTracking) {
+  public void testForyFieldAnnotationException(boolean referenceTracking) {
     Fory fory =
         Fory.builder()
             .withLanguage(Language.JAVA)

@@ -287,7 +287,7 @@ The text of each license is also included in licenses/LICENSE-[project].txt
 
 * cython-abseil-sample (https://github.com/messense/cython-abseil-sample)
     Files:
-      python/pyfury/includes/libabsl.pxd
+      python/pyfory/includes/libabsl.pxd
 
 
 ================================================================

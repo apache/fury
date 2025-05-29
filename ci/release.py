@@ -141,7 +141,7 @@ def bump_version(**kwargs):
             _bump_version("rust", "Cargo.toml", new_version, _update_rust_version)
         elif lang == "python":
             _bump_version(
-                "python/pyfury", "__init__.py", new_version, _update_python_version
+                "python/pyfory", "__init__.py", new_version, _update_python_version
             )
         elif lang == "javascript":
             _bump_version(

@@ -20,15 +20,15 @@ import enum
 import logging
 import typing
 
-from pyfury.buffer import Buffer
-from pyfury.error import ClassNotCompatibleError
-from pyfury.serializer import (
+from pyfory.buffer import Buffer
+from pyfory.error import ClassNotCompatibleError
+from pyfory.serializer import (
     ListSerializer,
     MapSerializer,
     PickleSerializer,
     Serializer,
 )
-from pyfury.type import (
+from pyfory.type import (
     TypeVisitor,
     infer_field,
     TypeId,
@@ -43,14 +43,14 @@ from pyfury.type import (
     is_primitive_type,
 )
 
-from pyfury.type import (
+from pyfory.type import (
     is_list_type,
     is_map_type,
     get_primitive_type_size,
     is_primitive_array_type,
 )
 
-from pyfury.type import is_subclass
+from pyfory.type import is_subclass
 
 logger = logging.getLogger(__name__)
 
@@ -188,7 +188,7 @@ class ComplexObjectSerializer(Serializer):
             fory.class_resolver, self._field_names, self._serializers
         )
 
-        from pyfury import Language
+        from pyfory import Language
 
         if self.fory.language == Language.PYTHON:
             logger.warning(

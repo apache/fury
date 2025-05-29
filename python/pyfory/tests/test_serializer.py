@@ -32,18 +32,18 @@ from dataclasses import dataclass
 
 import pytest
 
-import pyfury
-from pyfury.buffer import Buffer
-from pyfury import Fory, Language, _serialization, EnumSerializer
-from pyfury.serializer import (
+import pyfory
+from pyfory.buffer import Buffer
+from pyfory import Fory, Language, _serialization, EnumSerializer
+from pyfory.serializer import (
     TimestampSerializer,
     DateSerializer,
     PyArraySerializer,
     Numpy1DArraySerializer,
 )
-from pyfury.tests.core import require_pyarrow
-from pyfury.type import TypeId
-from pyfury.util import lazy_import
+from pyfory.tests.core import require_pyarrow
+from pyfory.type import TypeId
+from pyfory.util import lazy_import
 
 pa = lazy_import("pyarrow")
 
@@ -53,7 +53,7 @@ def test_float():
     assert ser_de(fory, -1.0) == -1.0
     assert ser_de(fory, 1 / 3) == 1 / 3
     serializer = fory.class_resolver.get_serializer(float)
-    assert type(serializer) is pyfury.Float64Serializer
+    assert type(serializer) is pyfory.Float64Serializer
 
 
 def test_tuple():
@@ -394,7 +394,7 @@ class Bar(Foo):
     f2: int
 
 
-class BarSerializer(pyfury.Serializer):
+class BarSerializer(pyfory.Serializer):
     def xwrite(self, buffer, value: Bar):
         buffer.write_int32(value.f1)
         buffer.write_int32(value.f2)
@@ -413,7 +413,7 @@ def test_register_py_serializer():
         language=Language.PYTHON, ref_tracking=True, require_class_registration=False
     )
 
-    class Serializer(pyfury.Serializer):
+    class Serializer(pyfory.Serializer):
         def write(self, buffer, value):
             buffer.write_int32(value.f1)
 
@@ -441,7 +441,7 @@ class A:
 def test_register_type():
     fory = Fory(language=Language.PYTHON, ref_tracking=True)
 
-    class Serializer(pyfury.Serializer):
+    class Serializer(pyfory.Serializer):
         def write(self, buffer, value):
             pass
 
@@ -554,9 +554,9 @@ class CacheClass1:
 
 def test_cache_serializer():
     fory = Fory(language=Language.PYTHON, ref_tracking=True)
-    fory.register_type(CacheClass1, serializer=pyfury.PickleStrongCacheSerializer(fory))
+    fory.register_type(CacheClass1, serializer=pyfory.PickleStrongCacheSerializer(fory))
     assert ser_de(fory, CacheClass1(1)) == CacheClass1(1)
-    fory.register_type(CacheClass1, serializer=pyfury.PickleCacheSerializer(fory))
+    fory.register_type(CacheClass1, serializer=pyfory.PickleCacheSerializer(fory))
     assert ser_de(fory, CacheClass1(1)) == CacheClass1(1)
 
 
@@ -565,7 +565,7 @@ def test_pandas_range_index():
         language=Language.PYTHON, ref_tracking=True, require_class_registration=False
     )
     fory.register_type(
-        pd.RangeIndex, serializer=pyfury.PandasRangeIndexSerializer(fory)
+        pd.RangeIndex, serializer=pyfory.PandasRangeIndexSerializer(fory)
     )
     index = pd.RangeIndex(1, 100, 2, name="a")
     new_index = ser_de(fory, index)

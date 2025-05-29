@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from pyfury.lib.collection import WeakIdentityKeyDictionary
+from pyfory.lib.collection import WeakIdentityKeyDictionary
 
 
 def test_weak_identity_key_dict():

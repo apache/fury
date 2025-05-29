@@ -42,19 +42,19 @@ import org.apache.fory.util.LoaderBinding.StagingType;
  * will be created and destroyed frequently, which is slow.
  */
 @ThreadSafe
-public class ThreadLocalFury extends AbstractThreadSafeFury {
+public class ThreadLocalFory extends AbstractThreadSafeFory {
   private final ThreadLocal<MemoryBuffer> bufferLocal =
       ThreadLocal.withInitial(() -> MemoryUtils.buffer(32));
 
   private final ThreadLocal<LoaderBinding> bindingThreadLocal;
   private Consumer<Fory> factoryCallback;
-  private final Map<LoaderBinding, Object> allFury;
+  private final Map<LoaderBinding, Object> allFory;
 
   private ClassLoader classLoader;
 
-  public ThreadLocalFury(Function<ClassLoader, Fory> foryFactory) {
+  public ThreadLocalFory(Function<ClassLoader, Fory> foryFactory) {
     factoryCallback = f -> {};
-    allFury = Collections.synchronizedMap(new WeakHashMap<>());
+    allFory = Collections.synchronizedMap(new WeakHashMap<>());
     bindingThreadLocal =
         ThreadLocal.withInitial(
             () -> {
@@ -65,7 +65,7 @@ public class ThreadLocalFury extends AbstractThreadSafeFury {
                       ? Thread.currentThread().getContextClassLoader()
                       : classLoader;
               binding.setClassLoader(cl);
-              allFury.put(binding, null);
+              allFory.put(binding, null);
               return binding;
             });
     // 1. init and warm for current thread.
@@ -79,8 +79,8 @@ public class ThreadLocalFury extends AbstractThreadSafeFury {
   @Override
   public void registerCallback(Consumer<Fory> callback) {
     factoryCallback = factoryCallback.andThen(callback);
-    for (LoaderBinding binding : allFury.keySet()) {
-      binding.visitAllFury(callback);
+    for (LoaderBinding binding : allFory.keySet()) {
+      binding.visitAllFory(callback);
       binding.setBindingCallback(factoryCallback);
     }
   }

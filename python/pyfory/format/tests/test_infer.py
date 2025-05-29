@@ -16,13 +16,13 @@
 # under the License.
 
 import datetime
-import pyfury
+import pyfory
 import pytest
 
 from dataclasses import dataclass
-from pyfury.format.infer import infer_schema, infer_field, ArrowTypeVisitor
-from pyfury.tests.record import foo_schema
-from pyfury.util import lazy_import
+from pyfory.format.infer import infer_schema, infer_field, ArrowTypeVisitor
+from pyfory.tests.record import foo_schema
+from pyfory.util import lazy_import
 from typing import List, Dict
 
 
@@ -83,9 +83,9 @@ def test_infer_class_schema():
 
 
 def test_type_id():
-    assert pyfury.format.infer.get_type_id(str) == pa.string().id
-    assert pyfury.format.infer.get_type_id(datetime.date) == pa.date32().id
-    assert pyfury.format.infer.get_type_id(datetime.datetime) == pa.timestamp("us").id
+    assert pyfory.format.infer.get_type_id(str) == pa.string().id
+    assert pyfory.format.infer.get_type_id(datetime.date) == pa.date32().id
+    assert pyfory.format.infer.get_type_id(datetime.datetime) == pa.timestamp("us").id
 
 
 if __name__ == "__main__":

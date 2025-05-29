@@ -43,7 +43,7 @@ public class ForwardSerializerTest {
     switch (serializerType) {
       case "Fory":
         return new ForwardSerializer(
-            new ForwardSerializer.DefaultFuryProxy() {
+            new ForwardSerializer.DefaultForyProxy() {
               @Override
               protected Fory newForySerializer(ClassLoader loader) {
                 Fory fory = super.newForySerializer(loader);

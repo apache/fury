@@ -27,7 +27,7 @@ import 'package:fory_test/util/test_process_util.dart';
 
 final class CrossLangUtil{
   static final String pythonExecutable = TestConfig.I.pythonExecutable;
-  static const String pythonModule= "pyfury.tests.test_cross_language";
+  static const String pythonModule= "pyfory.tests.test_cross_language";
   static const Map<String,String> env = {'ENABLE_CROSS_LANGUAGE_TESTS': 'true'};
 
   static bool executeWithPython(String testName, String filePath, [int waitingSec = 30]){

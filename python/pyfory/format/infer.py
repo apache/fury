@@ -22,7 +22,7 @@ import pyarrow as pa
 
 from functools import partial
 from typing import Optional
-from pyfury.type import get_qualified_classname, TypeVisitor, infer_field
+from pyfory.type import get_qualified_classname, TypeVisitor, infer_field
 
 __class_map__ = {}
 __schemas__ = {}  # ensure `id(schema)` doesn't get duplicate.
@@ -40,7 +40,7 @@ def get_cls_by_schema(schema):
             mod = importlib.import_module(module_name)
             cls_ = getattr(mod, class_name)
         else:
-            from pyfury.type import record_class_factory
+            from pyfory.type import record_class_factory
 
             cls_ = record_class_factory(
                 "Record" + str(id(schema)), [f.name for f in schema]

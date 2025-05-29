@@ -1,12 +1,12 @@
 
 ## Testing Approach
 
-The test suite is inspired by Fury Java's testing approach and includes:
+The test suite is inspired by Fory Java's testing approach and includes:
 
 - **Datatype Tests**: Validates custom data types implemented for Dart
 - **Code Generation Tests**: Ensures correctness of the generated static code
 - **Buffer Tests**: Validates correct memory handling for primitive types
-- **Cross-Language Tests**: Tests functionality against other Fury implementations
+- **Cross-Language Tests**: Tests functionality against other Fory implementations
 - **Performance Tests**: Simple benchmarks for serialization/deserialization performance
 
 ### Running Tests
@@ -17,7 +17,7 @@ To run tests:
 
 ```bash
 # First, generate necessary code
-cd fury-test
+cd fory-test
 dart run build_runner build
 
 # Run all tests

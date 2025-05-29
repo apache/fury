@@ -22,10 +22,10 @@ add `# cython: profile=True` to cython file to compile first
 import cProfile
 import pstats
 
-import pyfury as fory
+import pyfory as fory
 import pytest
 import pyximport
-from pyfury.tests.record import create_foo, foo_schema
+from pyfory.tests.record import create_foo, foo_schema
 
 
 @pytest.mark.skip(reason="take too long")

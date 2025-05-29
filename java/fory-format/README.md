@@ -1,6 +1,6 @@
-# Fury Row Format
+# Fory Row Format
 
-Fury row format is heavily inspired by spark tungsten row format, but with changes:
+Fory row format is heavily inspired by spark tungsten row format, but with changes:
 
 - Use arrow schema to describe meta.
 - The implementation support java/C++/python/etc..
@@ -10,13 +10,13 @@ Fury row format is heavily inspired by spark tungsten row format, but with chang
 - Allow skip padding by generate Row using aot to put offsets in generated code.
 - Support adding fields without breaking compatibility.
 
-The initial fury java row data structure implementation is modified from spark unsafe row/writer.
+The initial fory java row data structure implementation is modified from spark unsafe row/writer.
 
 See `Encoders.bean` Javadoc for a list built-in supported types.
 
 It is possible to register custom type handling and collection factories for the row format -
 see Encoders.registerCustomCodec and Encoders.registerCustomCollectionFactory. For an interface,
-Fury can synthesize a simple value implementation, such as the UuidType below.
+Fory can synthesize a simple value implementation, such as the UuidType below.
 
 A short example:
 

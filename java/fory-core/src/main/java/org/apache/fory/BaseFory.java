@@ -30,7 +30,7 @@ import org.apache.fory.serializer.SerializerFactory;
 import org.apache.fory.serializer.Serializers;
 
 /** All Fory’s basic interface, including Fory’s basic methods. */
-public interface BaseFury {
+public interface BaseFory {
 
   /**
    * Register class and allocate an auto-grown ID for this class. Note that the registration order

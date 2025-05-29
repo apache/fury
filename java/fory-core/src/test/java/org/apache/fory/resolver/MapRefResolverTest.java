@@ -45,7 +45,7 @@ public class MapRefResolverTest {
   @Test
   public void testRefStatistics() {
     // MapRefResolver may be loaded and run already, set flag won't take effect.
-    // If java jit run and optimized `writeRefOrNull`, set `ENABLE_FURY_REF_PROFILING`
+    // If java jit run and optimized `writeRefOrNull`, set `ENABLE_FORY_REF_PROFILING`
     // by reflection may not take effect too.
     // System.setProperty("fory.enable_ref_profiling", "true");
     MapRefResolver referenceResolver = new MapRefResolver();

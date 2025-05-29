@@ -97,7 +97,7 @@ public class DisallowedListTest extends ForyTestBase {
 
   @Test
   public void testSerializeDisallowedClass() {
-    Fory[] allFury = new Fory[3];
+    Fory[] allFory = new Fory[3];
     for (int i = 0; i < 3; i++) {
       boolean requireClassRegistration = i % 2 == 0;
       Fory fory =
@@ -109,10 +109,10 @@ public class DisallowedListTest extends ForyTestBase {
         // Registered or unregistered Classes should be subject to disallowed list restrictions.
         fory.register(UnicastRemoteObject.class);
       }
-      allFury[i] = fory;
+      allFory[i] = fory;
     }
 
-    for (Fory fory : allFury) {
+    for (Fory fory : allFory) {
       Assert.assertThrows(
           InsecureException.class,
           () -> fory.serialize(Platform.newInstance(UnicastRemoteObject.class)));

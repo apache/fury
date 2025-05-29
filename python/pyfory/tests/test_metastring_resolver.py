@@ -15,9 +15,9 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from pyfury import Buffer
-from pyfury._serialization import MetaStringResolver, MetaStringBytes
-from pyfury.meta.metastring import MetaStringEncoder
+from pyfory import Buffer
+from pyfory._serialization import MetaStringResolver, MetaStringBytes
+from pyfory.meta.metastring import MetaStringEncoder
 
 
 def test_metastring_resolver():

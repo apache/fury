@@ -1,23 +1,23 @@
-# Apache Fury™ Go
+# Apache Fory™ Go
 
-Fury is a blazingly fast multi-language serialization framework powered by just-in-time compilation and zero-copy.
+Fory is a blazingly fast multi-language serialization framework powered by just-in-time compilation and zero-copy.
 
-Currently, Fury Go is implemented using reflection. In the future, we plan to implement a static code generator
+Currently, Fory Go is implemented using reflection. In the future, we plan to implement a static code generator
 to generate serializer code ahead to speed up serialization, or implement a JIT framework which generate ASM
 instructions to speed up serialization.
 
 ## How to test
 
 ```bash
-cd go/fury
+cd go/fory
 go test -v
-go test -v fury_xlang_test.go
+go test -v fory_xlang_test.go
 ```
 
 ## Code Style
 
 ```bash
-cd go/fury
+cd go/fory
 gofmt -s -w .
 ```
 

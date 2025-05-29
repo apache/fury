@@ -74,12 +74,12 @@ public class JITContext {
     try {
       lock();
       if (fory.getConfig().isCodeGenEnabled()) {
-        // add `isAsyncVisitingFury()` check so nested object field serializers will
+        // add `isAsyncVisitingFory()` check so nested object field serializers will
         // be jit-serializers too. Otherwise, we need to switch these field serializers
         // in jit-serializers, which is tricking.
         // TODO(chaokunyang) Submit nested object field serializers jit task to executor,
         //  and update serializer field when jit finished.
-        if (fory.getConfig().isAsyncCompilationEnabled() && !isAsyncVisitingFury()) {
+        if (fory.getConfig().isAsyncCompilationEnabled() && !isAsyncVisitingFory()) {
           // TODO(chaokunyang) stash callbacks and submit jit task if the serialization speed
           // is really needed.
           ExecutorService compilationService = CodeGenerator.getCompilationService();
@@ -152,7 +152,7 @@ public class JITContext {
    * those methods by this wrapper to get thread safety and memory visibility.
    */
   @Internal
-  public <T> T asyncVisitFury(Function<Fory, T> function) {
+  public <T> T asyncVisitFory(Function<Fory, T> function) {
     try {
       lock();
       foryVisitState++;
@@ -163,7 +163,7 @@ public class JITContext {
     }
   }
 
-  private boolean isAsyncVisitingFury() {
+  private boolean isAsyncVisitingFory() {
     if (asyncCompilationEnabled) {
       try {
         lock();

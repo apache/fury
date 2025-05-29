@@ -36,7 +36,7 @@ import org.testng.annotations.Test;
 
 public class GuavaCollectionSerializersTest extends ForyTestBase {
 
-  @Test(dataProvider = "trackingRefFury")
+  @Test(dataProvider = "trackingRefFory")
   public void testImmutableListSerializer(Fory fory) {
     serDe(fory, ImmutableList.of(1));
     Assert.assertEquals(
@@ -54,7 +54,7 @@ public class GuavaCollectionSerializersTest extends ForyTestBase {
     copyCheck(fory, ImmutableList.of(1, 2));
   }
 
-  @Test(dataProvider = "trackingRefFury")
+  @Test(dataProvider = "trackingRefFory")
   public void testImmutableSetSerializer(Fory fory) {
     serDe(fory, ImmutableSet.of(1));
     Assert.assertEquals(
@@ -78,7 +78,7 @@ public class GuavaCollectionSerializersTest extends ForyTestBase {
         GuavaCollectionSerializers.ImmutableSetSerializer.class);
   }
 
-  @Test(dataProvider = "trackingRefFury")
+  @Test(dataProvider = "trackingRefFory")
   public void testImmutableSortedSetSerializer(Fory fory) {
     serDe(fory, ImmutableSortedSet.of(1, 2));
     Assert.assertEquals(
@@ -94,7 +94,7 @@ public class GuavaCollectionSerializersTest extends ForyTestBase {
         GuavaCollectionSerializers.ImmutableSortedSetSerializer.class);
   }
 
-  @Test(dataProvider = "trackingRefFury")
+  @Test(dataProvider = "trackingRefFory")
   public void testImmutableMapSerializer(Fory fory) {
     serDe(fory, ImmutableMap.of("k1", 1, "k2", 2));
     Assert.assertEquals(
@@ -110,7 +110,7 @@ public class GuavaCollectionSerializersTest extends ForyTestBase {
         GuavaCollectionSerializers.ImmutableMapSerializer.class);
   }
 
-  @Test(dataProvider = "trackingRefFury")
+  @Test(dataProvider = "trackingRefFory")
   public void testImmutableBiMapSerializer(Fory fory) {
     serDe(fory, ImmutableBiMap.of("k1", 1));
     Assert.assertEquals(
@@ -134,7 +134,7 @@ public class GuavaCollectionSerializersTest extends ForyTestBase {
         GuavaCollectionSerializers.ImmutableBiMapSerializer.class);
   }
 
-  @Test(dataProvider = "trackingRefFury")
+  @Test(dataProvider = "trackingRefFory")
   public void testImmutableSortedMapSerializer(Fory fory) {
     serDe(fory, ImmutableSortedMap.of("k1", 1, "k2", 2));
     Assert.assertEquals(
@@ -174,7 +174,7 @@ public class GuavaCollectionSerializersTest extends ForyTestBase {
     List<List<Object>> data;
   }
 
-  @Test(dataProvider = "javaFury")
+  @Test(dataProvider = "javaFory")
   void testNestedRefTracking(Fory fory) {
     Pojo pojo = new Pojo(ImmutableList.of(ImmutableList.of(1, 2), ImmutableList.of(2, 2)));
     byte[] bytes = fory.serialize(pojo);

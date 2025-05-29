@@ -70,7 +70,7 @@ public class Example {
     SomeClass object = new SomeClass();
     // Note that Fory instances should be reused between
     // multiple serializations of different objects.
-    ThreadSafeFury fory = new ThreadLocalFury(classLoader -> {
+    ThreadSafeFory fory = new ThreadLocalFory(classLoader -> {
       Fory f = Fory.builder().withLanguage(Language.JAVA)
         .withClassLoader(classLoader).build();
       f.register(SomeClass.class);
@@ -93,7 +93,7 @@ import org.apache.fory.config.*;
 
 public class Example {
   // reuse fory.
-  private static final ThreadSafeFury fory = new ThreadLocalFury(classLoader -> {
+  private static final ThreadSafeFory fory = new ThreadLocalFory(classLoader -> {
     Fory f = Fory.builder().withLanguage(Language.JAVA)
       .withClassLoader(classLoader).build();
     f.register(SomeClass.class);
@@ -116,7 +116,7 @@ public class Example {
 | `compressInt`                       | Enables or disables int compression for smaller size.                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | `true`                                                         |
 | `compressLong`                      | Enables or disables long compression for smaller size.                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | `true`                                                         |
 | `compressString`                    | Enables or disables string compression for smaller size.                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | `false`                                                        |
-| `classLoader`                       | The classloader should not be updated; Fory caches class metadata. Use `LoaderBinding` or `ThreadSafeFury` for classloader updates.                                                                                                                                                                                                                                                                                                                                                                                               | `Thread.currentThread().getContextClassLoader()`               |
+| `classLoader`                       | The classloader should not be updated; Fory caches class metadata. Use `LoaderBinding` or `ThreadSafeFory` for classloader updates.                                                                                                                                                                                                                                                                                                                                                                                               | `Thread.currentThread().getContextClassLoader()`               |
 | `compatibleMode`                    | Type forward/backward compatibility config. Also Related to `checkClassVersion` config. `SCHEMA_CONSISTENT`: Class schema must be consistent between serialization peer and deserialization peer. `COMPATIBLE`: Class schema can be different between serialization peer and deserialization peer. They can add/delete fields independently. [See more](#class-inconsistency-and-class-version-check).                                                                                                                            | `CompatibleMode.SCHEMA_CONSISTENT`                             |
 | `checkClassVersion`                 | Determines whether to check the consistency of the class schema. If enabled, Fory checks, writes, and checks consistency using the `classVersionHash`. It will be automatically disabled when `CompatibleMode#COMPATIBLE` is enabled. Disabling is not recommended unless you can ensure the class won't evolve.                                                                                                                                                                                                                  | `false`                                                        |
 | `checkJdkClassSerializable`         | Enables or disables checking of `Serializable` interface for classes under `java.*`. If a class under `java.*` is not `Serializable`, Fory will throw an `UnsupportedOperationException`.                                                                                                                                                                                                                                                                                                                                         | `true`                                                         |
@@ -159,7 +159,7 @@ System.out.println(fory.deserialize(bytes));
 Thread-safe fory:
 
 ```java
-ThreadSafeFury fory = Fory.builder()
+ThreadSafeFory fory = Fory.builder()
   .withLanguage(Language.JAVA)
   // enable reference tracking for shared/circular reference.
   // Disable it will have better performance if no duplicate reference.
@@ -174,7 +174,7 @@ ThreadSafeFury fory = Fory.builder()
   // .withCompatibleMode(CompatibleMode.COMPATIBLE)
   // enable async multi-threaded compilation.
   .withAsyncCompilation(true)
-  .buildThreadSafeFury();
+  .buildThreadSafeFory();
 byte[] bytes = fory.serialize(object);
 System.out.println(fory.deserialize(bytes));
 ```
@@ -343,7 +343,7 @@ fory.getClassResolver().setClassChecker(
 
 ```java
 AllowListChecker checker = new AllowListChecker(AllowListChecker.CheckLevel.STRICT);
-ThreadSafeFury fory = new ThreadLocalFury(classLoader -> {
+ThreadSafeFory fory = new ThreadLocalFory(classLoader -> {
   Fory f = Fory.builder().requireClassRegistration(true).withClassLoader(classLoader).build();
   f.getClassResolver().setClassChecker(checker);
   checker.addListener(f.getClassResolver());
@@ -489,10 +489,10 @@ public class StructMappingExample {
     double f3;
   }
 
-  static ThreadSafeFury fory1 = Fory.builder()
-    .withCompatibleMode(CompatibleMode.COMPATIBLE).buildThreadSafeFury();
-  static ThreadSafeFury fory2 = Fory.builder()
-    .withCompatibleMode(CompatibleMode.COMPATIBLE).buildThreadSafeFury();
+  static ThreadSafeFory fory1 = Fory.builder()
+    .withCompatibleMode(CompatibleMode.COMPATIBLE).buildThreadSafeFory();
+  static ThreadSafeFory fory2 = Fory.builder()
+    .withCompatibleMode(CompatibleMode.COMPATIBLE).buildThreadSafeFory();
 
   static {
     fory1.register(Struct1.class);
@@ -603,8 +603,8 @@ public class DeserializeIntoType {
     double f3;
   }
 
-  static ThreadSafeFury fory = Fory.builder()
-    .withCompatibleMode(CompatibleMode.COMPATIBLE).buildThreadSafeFury();
+  static ThreadSafeFory fory = Fory.builder()
+    .withCompatibleMode(CompatibleMode.COMPATIBLE).buildThreadSafeFory();
 
   public static void main(String[] args) {
     Struct1 struct1 = new Struct1(10, "abc");

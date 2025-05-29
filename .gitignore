@@ -5,10 +5,10 @@
 bazel-*
 .whl
 python/.cache
-python/pyfury/__pycache__/
+python/pyfory/__pycache__/
 python/dist
 python/build
-python/pyfury.egg-info
+python/pyfory.egg-info
 cython_debug
 **/*.prof
 **/*.pyc

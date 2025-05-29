@@ -22,15 +22,15 @@ import warnings
 from abc import ABC, abstractmethod
 from typing import Union, Iterable, TypeVar
 
-from pyfury.buffer import Buffer
-from pyfury.resolver import (
+from pyfory.buffer import Buffer
+from pyfory.resolver import (
     MapRefResolver,
     NoRefResolver,
     NULL_FLAG,
     NOT_NULL_VALUE_FLAG,
 )
-from pyfury.util import is_little_endian, set_bit, get_bit, clear_bit
-from pyfury.type import TypeId
+from pyfory.util import is_little_endian, set_bit, get_bit, clear_bit
+from pyfory.type import TypeId
 
 try:
     import numpy as np
@@ -141,8 +141,8 @@ class Fory:
             self.ref_resolver = MapRefResolver()
         else:
             self.ref_resolver = NoRefResolver()
-        from pyfury._serialization import MetaStringResolver
-        from pyfury._registry import ClassResolver
+        from pyfory._serialization import MetaStringResolver
+        from pyfory._registry import ClassResolver
 
         self.metastring_resolver = MetaStringResolver()
         self.class_resolver = ClassResolver(self)

@@ -140,16 +140,16 @@ public class ForyCopyTest extends ForyTestBase {
     BeanA beanA = BeanA.createBeanA(2);
     ExecutorService executor = Executors.newSingleThreadExecutor();
     AtomicReference<Throwable> ex = new AtomicReference<>();
-    ThreadLocalFury threadLocalFury =
-        builder().withCodegen(false).withRefCopy(true).buildThreadLocalFury();
-    threadLocalFury.setClassChecker((classResolver, className1) -> true);
-    threadLocalFury.setSerializerFactory((fory1, cls) -> null);
-    threadLocalFury.register(BeanA.class);
-    assetEqualsButNotSame(threadLocalFury.copy(beanA));
+    ThreadLocalFory threadLocalFory =
+        builder().withCodegen(false).withRefCopy(true).buildThreadLocalFory();
+    threadLocalFory.setClassChecker((classResolver, className1) -> true);
+    threadLocalFory.setSerializerFactory((fory1, cls) -> null);
+    threadLocalFory.register(BeanA.class);
+    assetEqualsButNotSame(threadLocalFory.copy(beanA));
     executor.execute(
         () -> {
           try {
-            assetEqualsButNotSame(threadLocalFury.copy(beanA));
+            assetEqualsButNotSame(threadLocalFory.copy(beanA));
           } catch (Throwable t) {
             ex.set(t);
           }
@@ -161,19 +161,19 @@ public class ForyCopyTest extends ForyTestBase {
   public void threadpoolCopyTest() throws InterruptedException {
     BeanA beanA = BeanA.createBeanA(2);
     AtomicBoolean flag = new AtomicBoolean(false);
-    ThreadSafeFury threadSafeFury =
+    ThreadSafeFory threadSafeFory =
         builder()
             .withRefCopy(true)
             .withCodegen(false)
             .withAsyncCompilation(true)
-            .buildThreadSafeFuryPool(5, 10);
+            .buildThreadSafeForyPool(5, 10);
     for (int i = 0; i < 2000; i++) {
       new Thread(
               () -> {
                 for (int j = 0; j < 10; j++) {
                   try {
-                    threadSafeFury.setClassLoader(beanA.getClass().getClassLoader());
-                    Assert.assertEquals(beanA, threadSafeFury.copy(beanA));
+                    threadSafeFory.setClassLoader(beanA.getClass().getClassLoader());
+                    Assert.assertEquals(beanA, threadSafeFory.copy(beanA));
                   } catch (Exception e) {
                     e.printStackTrace();
                     flag.set(true);

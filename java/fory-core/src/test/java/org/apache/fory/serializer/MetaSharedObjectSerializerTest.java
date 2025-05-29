@@ -20,7 +20,7 @@
 package org.apache.fory.serializer;
 
 import org.apache.fory.ForyTestBase;
-import org.apache.fory.ThreadSafeFury;
+import org.apache.fory.ThreadSafeFory;
 import org.apache.fory.codegen.JaninoUtils;
 import org.apache.fory.config.CompatibleMode;
 import org.testng.annotations.Test;
@@ -48,7 +48,7 @@ public class MetaSharedObjectSerializerTest extends ForyTestBase {
 
     Class<?> cls1 = JaninoUtils.compileClass(getClass().getClassLoader(), "", "TestA", codeA);
     Class<?> cls2 = JaninoUtils.compileClass(getClass().getClassLoader(), "", "TestA", codeB);
-    ThreadSafeFury fory1 =
+    ThreadSafeFory fory1 =
         builder()
             .withRefTracking(true)
             .requireClassRegistration(false)
@@ -58,8 +58,8 @@ public class MetaSharedObjectSerializerTest extends ForyTestBase {
             .withScopedMetaShare(true)
             .withCodegen(false)
             .withClassLoader(cls1.getClassLoader())
-            .buildThreadSafeFury();
-    ThreadSafeFury fory2 =
+            .buildThreadSafeFory();
+    ThreadSafeFory fory2 =
         builder()
             .withRefTracking(true)
             .requireClassRegistration(false)
@@ -69,7 +69,7 @@ public class MetaSharedObjectSerializerTest extends ForyTestBase {
             .withScopedMetaShare(true)
             .withCodegen(false)
             .withClassLoader(cls2.getClassLoader())
-            .buildThreadSafeFury();
+            .buildThreadSafeFory();
     Object data = cls1.newInstance();
     System.out.println(fory2.deserialize(fory1.serialize(data)));
   }

@@ -100,22 +100,22 @@ public class StructBenchmark {
   }
 
   @Benchmark
-  public Object furystrict_serialize() {
+  public Object forystrict_serialize() {
     return foryStrict.serialize(structList);
   }
 
   @Benchmark
-  public Object furystrict_deserialize() {
+  public Object forystrict_deserialize() {
     return foryStrict.deserialize(foryStrictBytes);
   }
 
   @Benchmark
-  public Object furykv_serialize() {
+  public Object forykv_serialize() {
     return foryKVCompatible.serialize(structList);
   }
 
   @Benchmark
-  public Object furykv_deserialize() {
+  public Object forykv_deserialize() {
     return foryKVCompatible.deserialize(foryKVCompatibleBytes);
   }
 

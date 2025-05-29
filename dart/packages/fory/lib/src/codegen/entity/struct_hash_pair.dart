@@ -21,8 +21,8 @@ import 'package:meta/meta.dart';
 
 @immutable
 class StructHashPair{
-  final int fromFuryHash;
-  final int toFuryHash;
+  final int fromForyHash;
+  final int toForyHash;
 
-  const StructHashPair(this.fromFuryHash, this.toFuryHash);
+  const StructHashPair(this.fromForyHash, this.toForyHash);
 }

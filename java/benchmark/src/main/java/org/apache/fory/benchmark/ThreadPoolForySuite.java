@@ -21,7 +21,7 @@ package org.apache.fory.benchmark;
 
 import java.io.IOException;
 import org.apache.fory.Fory;
-import org.apache.fory.ThreadSafeFury;
+import org.apache.fory.ThreadSafeFory;
 import org.apache.fory.config.CompatibleMode;
 import org.apache.fory.config.Language;
 import org.apache.fory.logging.Logger;
@@ -42,11 +42,11 @@ import org.openjdk.jmh.infra.Blackhole;
 @CompilerControl(value = CompilerControl.Mode.INLINE)
 @State(Scope.Benchmark)
 @OutputTimeUnit(java.util.concurrent.TimeUnit.MILLISECONDS)
-public class ThreadPoolFurySuite {
+public class ThreadPoolForySuite {
 
-  private static final Logger LOG = LoggerFactory.getLogger(ThreadPoolFurySuite.class);
+  private static final Logger LOG = LoggerFactory.getLogger(ThreadPoolForySuite.class);
 
-  private ThreadSafeFury fory =
+  private ThreadSafeFory fory =
       Fory.builder()
           .withLanguage(Language.JAVA)
           .requireClassRegistration(false)
@@ -55,7 +55,7 @@ public class ThreadPoolFurySuite {
           .withCompatibleMode(CompatibleMode.COMPATIBLE)
           .withAsyncCompilation(true)
           .withRefTracking(true)
-          .buildThreadSafeFuryPool(10, 60);
+          .buildThreadSafeForyPool(10, 60);
 
   private static StructBenchmark.NumericStruct struct;
 

@@ -1,7 +1,7 @@
 {
-  "name": "@furyjs/fury",
+  "name": "@foryjs/fory",
   "version": "0.11.0.dev",
-  "description": "Apache Fury™(incubating) is a blazingly fast multi-language serialization framework powered by jit and zero-copy",
+  "description": "Apache Fory™(incubating) is a blazingly fast multi-language serialization framework powered by jit and zero-copy",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
@@ -23,7 +23,7 @@
     "node-gyp": "^9.4.0",
     "tslib": "^2.4.0"
   },
-  "repository": "git@github.com:apache/fury.git",
+  "repository": "git@github.com:apache/fory.git",
   "workspaces": [
     "packages/hps"
   ]

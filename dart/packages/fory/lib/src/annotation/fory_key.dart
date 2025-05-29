@@ -26,15 +26,15 @@ import 'package:meta/meta_meta.dart';
 /// ```
 /// @foryClass
 /// class MyClass {
-///   @foryKey(includeFromFury: false)
+///   @foryKey(includeFromFory: false)
 ///   final String name;
 /// }
 /// ```
 ///
 /// The `ForyKey` class has two optional parameters:
-/// - `includeFromFury`: A boolean value indicating whether to include this field during deserialization.
+/// - `includeFromFory`: A boolean value indicating whether to include this field during deserialization.
 ///   Defaults to `true`.
-/// - `includeToFury`: A boolean value indicating whether to include this field during serialization.
+/// - `includeToFory`: A boolean value indicating whether to include this field during serialization.
 ///   Defaults to `true`.
 @Target({TargetKind.field})
 class ForyKey {
@@ -42,14 +42,14 @@ class ForyKey {
   static const List<TargetKind> targets = [TargetKind.field];
 
   /// A boolean value indicating whether to include this field during deserialization.
-  final bool includeFromFury;
+  final bool includeFromFory;
 
   /// A boolean value indicating whether to include this field during serialization.
-  final bool includeToFury;
+  final bool includeToFory;
 
-  /// Both [includeFromFury] and [includeToFury] default to `true`.
+  /// Both [includeFromFory] and [includeToFory] default to `true`.
   const ForyKey({
-    this.includeFromFury = true,
-    this.includeToFury = true,
+    this.includeFromFory = true,
+    this.includeToFory = true,
   });
 }

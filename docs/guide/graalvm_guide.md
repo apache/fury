@@ -93,8 +93,8 @@ Args = --initialize-at-build-time=org.apache.fory.graalvm.Example
 
 ```java
 import org.apache.fory.Fory;
-import org.apache.fory.ThreadLocalFury;
-import org.apache.fory.ThreadSafeFury;
+import org.apache.fory.ThreadLocalFory;
+import org.apache.fory.ThreadSafeFory;
 import org.apache.fory.util.Preconditions;
 
 import java.util.List;
@@ -108,10 +108,10 @@ public class ThreadSafeExample {
     Map<String, Long> f4) {
   }
 
-  static ThreadSafeFury fory;
+  static ThreadSafeFory fory;
 
   static {
-    fory = new ThreadLocalFury(classLoader -> {
+    fory = new ThreadLocalFory(classLoader -> {
       Fory f = Fory.builder().build();
       // register and generate serializer code.
       f.register(Foo.class, true);

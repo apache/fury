@@ -30,14 +30,14 @@ class FieldSpec{
   final Getter? getter;
   final Setter? setter;
 
-  final bool includeFromFury;
-  final bool includeToFury;
+  final bool includeFromFory;
+  final bool includeToFory;
   
   const FieldSpec(
     this.name,
     this.typeSpec,
-    this.includeFromFury,
-    this.includeToFury,
+    this.includeFromFory,
+    this.includeToFory,
     this.getter,
     this.setter,
   );
@@ -52,8 +52,8 @@ class FieldSpec{
         runtimeType == other.runtimeType &&
         name == other.name &&
         typeSpec == other.typeSpec &&
-        includeFromFury == other.includeFromFury &&
-        includeToFury == other.includeToFury &&
+        includeFromFory == other.includeFromFory &&
+        includeToFory == other.includeToFory &&
         (identical(getter, other.getter) || (getter == null) == (other.getter == null)) &&
         (identical(setter, other.setter) || (setter == null) == (other.setter == null))
       );

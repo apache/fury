@@ -24,7 +24,7 @@
 from libc.stdint cimport *
 from libcpp.memory cimport shared_ptr
 from libcpp cimport bool as c_bool
-from pyfury.includes.libutil cimport CBuffer
+from pyfory.includes.libutil cimport CBuffer
 
 
 cdef class Buffer:

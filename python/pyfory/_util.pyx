@@ -26,7 +26,7 @@ from cpython.unicode cimport *
 from libcpp.memory cimport shared_ptr, make_shared
 from libc.stdint cimport *
 from libcpp cimport bool as c_bool
-from pyfury.includes.libutil cimport(
+from pyfory.includes.libutil cimport(
     CBuffer, AllocateBuffer, GetBit, SetBit, ClearBit, SetBitTo, CStatus, StatusCode, utf16HasSurrogatePairs
 )
 import os

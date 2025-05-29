@@ -23,7 +23,7 @@ import os
 import random
 import sys
 from typing import Any, Dict, List
-import pyfury
+import pyfory
 import pyperf
 
 
@@ -118,21 +118,21 @@ class ComplexObject1:
     f1: Any = None
     f2: str = None
     f3: List[str] = None
-    f4: Dict[pyfury.Int8Type, pyfury.Int32Type] = None
-    f5: pyfury.Int8Type = None
-    f6: pyfury.Int16Type = None
-    f7: pyfury.Int32Type = None
-    f8: pyfury.Int64Type = None
-    f9: pyfury.Float32Type = None
-    f10: pyfury.Float64Type = None
-    f11: pyfury.Int16ArrayType = None
-    f12: List[pyfury.Int16Type] = None
+    f4: Dict[pyfory.Int8Type, pyfory.Int32Type] = None
+    f5: pyfory.Int8Type = None
+    f6: pyfory.Int16Type = None
+    f7: pyfory.Int32Type = None
+    f8: pyfory.Int64Type = None
+    f9: pyfory.Float32Type = None
+    f10: pyfory.Float64Type = None
+    f11: pyfory.Int16ArrayType = None
+    f12: List[pyfory.Int16Type] = None
 
 
 @dataclass
 class ComplexObject2:
     f1: Any
-    f2: Dict[pyfury.Int8Type, pyfury.Int32Type]
+    f2: Dict[pyfory.Int8Type, pyfory.Int32Type]
 
 
 COMPLEX_OBJECT = ComplexObject1(
@@ -152,7 +152,7 @@ COMPLEX_OBJECT = ComplexObject1(
 
 
 def fory_object(language, ref_tracking, obj):
-    fory = pyfury.Fory(language=language, ref_tracking=ref_tracking)
+    fory = pyfory.Fory(language=language, ref_tracking=ref_tracking)
     binary = fory.serialize(obj)
     fory.deserialize(binary)
 
@@ -175,10 +175,10 @@ def micro_benchmark():
     args = benchmark_args()
     runner = pyperf.Runner()
     if args and args.disable_cython:
-        os.environ["ENABLE_FURY_CYTHON_SERIALIZATION"] = "0"
-        sys.argv += ["--inherit-environ", "ENABLE_FURY_CYTHON_SERIALIZATION"]
+        os.environ["ENABLE_FORY_CYTHON_SERIALIZATION"] = "0"
+        sys.argv += ["--inherit-environ", "ENABLE_FORY_CYTHON_SERIALIZATION"]
     runner.parse_args()
-    language = pyfury.Language.XLANG if args.xlang else pyfury.Language.PYTHON
+    language = pyfory.Language.XLANG if args.xlang else pyfory.Language.PYTHON
     runner.bench_func("fory_dict", fory_object, language, not args.no_ref, DICT)
     runner.bench_func(
         "fory_large_dict", fory_object, language, not args.no_ref, LARGE_DICT

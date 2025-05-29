@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.annotation.concurrent.ThreadSafe;
-import org.apache.fory.AbstractThreadSafeFury;
+import org.apache.fory.AbstractThreadSafeFory;
 import org.apache.fory.Fory;
 import org.apache.fory.annotation.Internal;
 import org.apache.fory.io.ForyInputStream;
@@ -39,14 +39,14 @@ import org.apache.fory.serializer.BufferCallback;
 import org.apache.fory.util.LoaderBinding;
 
 @ThreadSafe
-public class ThreadPoolFury extends AbstractThreadSafeFury {
+public class ThreadPoolFory extends AbstractThreadSafeFory {
 
-  private static final Logger LOG = LoggerFactory.getLogger(ThreadPoolFury.class);
+  private static final Logger LOG = LoggerFactory.getLogger(ThreadPoolFory.class);
 
   private final ForyPooledObjectFactory foryPooledObjectFactory;
   private Consumer<Fory> factoryCallback = f -> {};
 
-  public ThreadPoolFury(
+  public ThreadPoolFory(
       Function<ClassLoader, Fory> foryFactory,
       int minPoolSize,
       int maxPoolSize,
@@ -66,15 +66,15 @@ public class ThreadPoolFury extends AbstractThreadSafeFury {
   @Override
   public void registerCallback(Consumer<Fory> callback) {
     factoryCallback = factoryCallback.andThen(callback);
-    for (ClassLoaderFuryPooled foryPooled :
-        foryPooledObjectFactory.classLoaderFuryPooledCache.asMap().values()) {
-      foryPooled.allFury.keySet().forEach(callback);
+    for (ClassLoaderForyPooled foryPooled :
+        foryPooledObjectFactory.classLoaderForyPooledCache.asMap().values()) {
+      foryPooled.allFory.keySet().forEach(callback);
     }
   }
 
   @Override
   public <R> R execute(Function<Fory, R> action) {
-    ClassLoaderFuryPooled pooledCache = null;
+    ClassLoaderForyPooled pooledCache = null;
     Fory fory = null;
     try {
       pooledCache = foryPooledObjectFactory.getPooledCache();
@@ -85,7 +85,7 @@ public class ThreadPoolFury extends AbstractThreadSafeFury {
       throw new RuntimeException(e);
     } finally {
       if (pooledCache != null) {
-        pooledCache.returnFury(fory);
+        pooledCache.returnFory(fory);
       }
     }
   }

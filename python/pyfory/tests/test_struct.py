@@ -21,9 +21,9 @@ from typing import Dict, Any, List
 import pytest
 import typing
 
-import pyfury
-from pyfury import Fory, Language
-from pyfury.error import TypeUnregisteredError
+import pyfory
+from pyfory import Fory, Language
+from pyfory.error import TypeUnregisteredError
 
 
 def ser_de(fory, obj):
@@ -33,21 +33,21 @@ def ser_de(fory, obj):
 
 @dataclass
 class SimpleObject:
-    f1: Dict[pyfury.Int32Type, pyfury.Float64Type] = None
+    f1: Dict[pyfory.Int32Type, pyfory.Float64Type] = None
 
 
 @dataclass
 class ComplexObject:
     f1: Any = None
     f2: Any = None
-    f3: pyfury.Int8Type = 0
-    f4: pyfury.Int16Type = 0
-    f5: pyfury.Int32Type = 0
-    f6: pyfury.Int64Type = 0
-    f7: pyfury.Float32Type = 0
-    f8: pyfury.Float64Type = 0
-    f9: List[pyfury.Int16Type] = None
-    f10: Dict[pyfury.Int32Type, pyfury.Float64Type] = None
+    f3: pyfory.Int8Type = 0
+    f4: pyfory.Int16Type = 0
+    f5: pyfory.Int32Type = 0
+    f6: pyfory.Int64Type = 0
+    f7: pyfory.Float32Type = 0
+    f8: pyfory.Float64Type = 0
+    f9: List[pyfory.Int16Type] = None
+    f10: Dict[pyfory.Int32Type, pyfory.Float64Type] = None
 
 
 def test_struct():
@@ -85,12 +85,12 @@ def test_struct():
 @dataclass
 class SuperClass1:
     f1: Any = None
-    f2: pyfury.Int8Type = 0
+    f2: pyfory.Int8Type = 0
 
 
 @dataclass
 class ChildClass1(SuperClass1):
-    f3: Dict[str, pyfury.Float64Type] = None
+    f3: Dict[str, pyfory.Float64Type] = None
 
 
 def test_require_class_registration():
@@ -111,5 +111,5 @@ def test_inheritance():
     assert ser_de(fory, obj) == obj
     assert (
         type(fory.class_resolver.get_serializer(ChildClass1))
-        == pyfury.DataClassSerializer
+        == pyfory.DataClassSerializer
     )

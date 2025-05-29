@@ -24,11 +24,11 @@ import logging
 from typing import TypeVar, Union
 from enum import Enum
 
-from pyfury._serialization import ENABLE_FURY_CYTHON_SERIALIZATION
-from pyfury import Language
-from pyfury.error import TypeUnregisteredError
+from pyfory._serialization import ENABLE_FORY_CYTHON_SERIALIZATION
+from pyfory import Language
+from pyfory.error import TypeUnregisteredError
 
-from pyfury.serializer import (
+from pyfory.serializer import (
     Serializer,
     Numpy1DArraySerializer,
     NDArraySerializer,
@@ -60,9 +60,9 @@ from pyfury.serializer import (
     PickleSerializer,
     DataClassSerializer,
 )
-from pyfury._struct import ComplexObjectSerializer
-from pyfury.meta.metastring import MetaStringEncoder, MetaStringDecoder
-from pyfury.type import (
+from pyfory._struct import ComplexObjectSerializer
+from pyfory.meta.metastring import MetaStringEncoder, MetaStringDecoder
+from pyfory.type import (
     TypeId,
     Int8Type,
     Int16Type,
@@ -72,7 +72,7 @@ from pyfury.type import (
     Float64Type,
     load_class,
 )
-from pyfury._fory import (
+from pyfory._fory import (
     DYNAMIC_TYPE_ID,
     # preserve 0 as flag for class id not set in ClassInfo`
     NO_CLASS_ID,
@@ -86,8 +86,8 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-if ENABLE_FURY_CYTHON_SERIALIZATION:
-    from pyfury._serialization import ClassInfo
+if ENABLE_FORY_CYTHON_SERIALIZATION:
+    from pyfory._serialization import ClassInfo
 else:
 
     class ClassInfo:
@@ -254,7 +254,7 @@ class ClassResolver:
         register(dict, type_id=TypeId.MAP, serializer=MapSerializer)
         try:
             import pyarrow as pa
-            from pyfury.format.serializer import (
+            from pyfory.format.serializer import (
                 ArrowRecordBatchSerializer,
                 ArrowTableSerializer,
             )
@@ -507,7 +507,7 @@ class ClassResolver:
                 break
         else:
             if dataclasses.is_dataclass(cls):
-                from pyfury import DataClassSerializer
+                from pyfory import DataClassSerializer
 
                 serializer = DataClassSerializer(self.fory, cls)
             elif issubclass(cls, enum.Enum):

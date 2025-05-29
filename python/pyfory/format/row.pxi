@@ -19,8 +19,8 @@ from libcpp.memory cimport make_shared
 from libc.stdint cimport *
 from cython.operator cimport dereference as deref
 from datetime import timedelta
-from pyfury.includes.libformat cimport CGetter, CArrayData, CMapData, CRow
-from pyfury._util cimport Buffer
+from pyfory.includes.libformat cimport CGetter, CArrayData, CMapData, CRow
+from pyfory._util cimport Buffer
 from libcpp.memory cimport shared_ptr
 from datetime import datetime, date
 from libc.stdint cimport *

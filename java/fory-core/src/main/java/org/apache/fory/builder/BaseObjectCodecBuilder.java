@@ -222,7 +222,7 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
   protected abstract String codecSuffix();
 
   protected <T> T fory(Function<Fory, T> function) {
-    return fory.getJITContext().asyncVisitFury(function);
+    return fory.getJITContext().asyncVisitFory(function);
   }
 
   private boolean needWriteRef(TypeRef<?> type) {

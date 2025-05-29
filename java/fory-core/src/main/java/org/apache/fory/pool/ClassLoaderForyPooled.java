@@ -33,19 +33,19 @@ import org.apache.fory.logging.Logger;
 import org.apache.fory.logging.LoggerFactory;
 
 /** A thread-safe object pool of {@link Fory}. */
-public class ClassLoaderFuryPooled {
+public class ClassLoaderForyPooled {
 
-  private static final Logger LOG = LoggerFactory.getLogger(ClassLoaderFuryPooled.class);
+  private static final Logger LOG = LoggerFactory.getLogger(ClassLoaderForyPooled.class);
 
   private final Function<ClassLoader, Fory> foryFactory;
   private Consumer<Fory> factoryCallback = f -> {};
 
   private final ClassLoader classLoader;
 
-  /** idle Fory cache change. by : 1. init() 2. getFory() 3.returnFury() */
+  /** idle Fory cache change. by : 1. init() 2. getFory() 3.returnFory() */
   private final BlockingQueue<Fory> idleCacheQueue;
 
-  final WeakHashMap<Fory, Object> allFury = new WeakHashMap<>();
+  final WeakHashMap<Fory, Object> allFory = new WeakHashMap<>();
 
   /**
    * The number of active Fory objects in the cache.Make sure it does not exceed the maximum number
@@ -61,7 +61,7 @@ public class ClassLoaderFuryPooled {
 
   private final Lock lock = new ReentrantLock();
 
-  public ClassLoaderFuryPooled(
+  public ClassLoaderForyPooled(
       ClassLoader classLoader,
       Function<ClassLoader, Fory> foryFactory,
       int minPoolSize,
@@ -72,7 +72,7 @@ public class ClassLoaderFuryPooled {
     this.classLoader = classLoader;
     idleCacheQueue = new LinkedBlockingQueue<>(maxPoolSize);
     while (idleCacheQueue.size() < minPoolSize) {
-      addFury(true);
+      addFory(true);
     }
   }
 
@@ -82,8 +82,8 @@ public class ClassLoaderFuryPooled {
       if (fory != null) {
         return fory;
       } else {
-        // new Fory return directly, no need to add to queue, it will be added by returnFury()
-        fory = addFury(false);
+        // new Fory return directly, no need to add to queue, it will be added by returnFory()
+        fory = addFory(false);
         if (fory != null) {
           return fory;
         }
@@ -96,12 +96,12 @@ public class ClassLoaderFuryPooled {
     }
   }
 
-  public void returnFury(Fory fory) {
+  public void returnFory(Fory fory) {
     Objects.requireNonNull(fory);
     idleCacheQueue.offer(fory);
   }
 
-  private Fory addFury(boolean addQueue) {
+  private Fory addFory(boolean addQueue) {
     // only activeCacheNumber increment success, can lock and create new Fory, otherwise return
     // null, and block in getFory(), wait for other thread to release idleCacheQueue.
     int after = activeCacheNumber.incrementAndGet();
@@ -113,7 +113,7 @@ public class ClassLoaderFuryPooled {
       lock.lock();
       Fory fory = foryFactory.apply(classLoader);
       factoryCallback.accept(fory);
-      allFury.put(fory, null);
+      allFory.put(fory, null);
       if (addQueue) {
         idleCacheQueue.add(fory);
       }
@@ -127,7 +127,7 @@ public class ClassLoaderFuryPooled {
     try {
       lock.lock();
       this.factoryCallback = this.factoryCallback.andThen(factoryCallback);
-      allFury.keySet().forEach(factoryCallback);
+      allFory.keySet().forEach(factoryCallback);
     } finally {
       lock.unlock();
     }

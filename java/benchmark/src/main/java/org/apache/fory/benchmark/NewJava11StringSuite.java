@@ -76,7 +76,7 @@ public class NewJava11StringSuite {
   }
 
   // @Benchmark
-  public Object createJDK8StringByFury() {
+  public Object createJDK8StringByFory() {
     buffer.readerIndex(0);
     return stringSerializer.readJavaString(buffer);
   }

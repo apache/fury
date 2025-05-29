@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from pyfury.lib import mmh3
+from pyfory.lib import mmh3
 
 
 def test_mmh3():

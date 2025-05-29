@@ -38,24 +38,24 @@ class StructHashResolver{
     }
     int hashF = 17;
     int hashT = 17;
-    // Here, checking whether align means to see if includeFromFury and includeToFury are the same,
+    // Here, checking whether align means to see if includeFromFory and includeToFory are the same,
     // and both cannot be false at the same time, otherwise static analysis will not retain this field,
     // so actually both are true.
-    bool stillAlign = fields[0].includeFromFury == fields[0].includeToFury;
+    bool stillAlign = fields[0].includeFromFory == fields[0].includeToFory;
 
     for (int i = 0; i < fields.length; ++i){
       if (stillAlign){
         // Here, stillAlign means fields[i] is aligned
         if (i < fields.length - 1){
-          stillAlign = fields[i+1].includeFromFury == fields[i+1].includeToFury;
+          stillAlign = fields[i+1].includeFromFory == fields[i+1].includeToFory;
         }
         hashF = _computeFieldHash(hashF, fields[i], getTagByType);
         hashT = hashF;
         continue;
       }
       // Here, stillAlign means fields[i] is unaligned
-      if (fields[i].includeFromFury) hashF = _computeFieldHash(hashF, fields[i], getTagByType);
-      if (fields[i].includeToFury) hashT = _computeFieldHash(hashT, fields[i], getTagByType);
+      if (fields[i].includeFromFory) hashF = _computeFieldHash(hashF, fields[i], getTagByType);
+      if (fields[i].includeToFory) hashT = _computeFieldHash(hashT, fields[i], getTagByType);
     }
     return StructHashPair(hashF, hashT);
   }

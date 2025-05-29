@@ -27,7 +27,7 @@ import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.apache.fory.Fory;
-import org.apache.fory.ThreadSafeFury;
+import org.apache.fory.ThreadSafeFory;
 import org.apache.fory.config.Language;
 import org.apache.fory.test.bean.CollectionFields;
 import org.apache.fory.test.bean.MapFields;
@@ -108,13 +108,13 @@ public class ImmutableCollectionSerializersTest {
   @Test(dataProvider = "refTrackingAndCodegen")
   void testNestedRefTracking(boolean trackingRef, boolean codegen) {
     Pojo pojo = new Pojo(List.of(List.of(1, 2), List.of(2, 2)));
-    ThreadSafeFury fory =
+    ThreadSafeFory fory =
         Fory.builder()
             .withLanguage(Language.JAVA)
             .requireClassRegistration(false)
             .withCodegen(codegen)
             .withRefTracking(trackingRef)
-            .buildThreadSafeFury();
+            .buildThreadSafeFory();
 
     byte[] bytes = fory.serialize(pojo);
     Pojo deserializedPojo = (Pojo) fory.deserialize(bytes);

@@ -29,7 +29,7 @@ import org.apache.fory.util.LoaderBinding;
  * Thread safe serializer interface. {@link Fory} is not thread-safe, the implementation of this
  * interface will be thread-safe. And support switch classloader dynamically.
  */
-public interface ThreadSafeFury extends BaseFury {
+public interface ThreadSafeFory extends BaseFory {
 
   /**
    * Provide a context to execution operations on {@link Fory} directly and return the executed

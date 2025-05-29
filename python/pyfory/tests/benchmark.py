@@ -18,8 +18,8 @@
 import timeit
 import pickle
 import pytest
-import pyfury as fory
-from pyfury.tests.record import create_foo, foo_schema
+import pyfory as fory
+from pyfory.tests.record import create_foo, foo_schema
 
 iter_nums = 100000
 

@@ -51,11 +51,11 @@ class ObjSpecGenerator extends GeneratorForAnnotation<ForyObject> {
         if (anno.name == 'ForyClass'){
           enumOrClass = false;
           classElementId = anno.id;
-          AnalysisTypeIdentifier.giveFuryClassId(anno.id);
+          AnalysisTypeIdentifier.giveForyClassId(anno.id);
         }else{
           enumOrClass = true;
           enumElementId = anno.id;
-          AnalysisTypeIdentifier.giveFuryEnumId(anno.id);
+          AnalysisTypeIdentifier.giveForyEnumId(anno.id);
         }
       }
     }

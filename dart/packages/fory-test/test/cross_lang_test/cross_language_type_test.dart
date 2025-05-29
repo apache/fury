@@ -127,57 +127,57 @@ void main() {
           refTracking: true,
         );
         ByteWriter bw = ByteWriter();
-        fory.toFuryWithWriter(true,bw);
-        fory.toFuryWithWriter(false, bw);
-        fory.toFuryWithWriter(Int32(-1),bw);
-        fory.toFuryWithWriter(Int8.maxValue, bw);
-        fory.toFuryWithWriter(Int8.minValue, bw);
-        fory.toFuryWithWriter(Int16.maxValue, bw);
-        fory.toFuryWithWriter(Int16.minValue, bw);
-        fory.toFuryWithWriter(Int32.maxValue, bw);
-        fory.toFuryWithWriter(Int32.minValue, bw);
-        fory.toFuryWithWriter(0x7fffffffffffffff, bw);
-        fory.toFuryWithWriter(0x8000000000000000, bw);
-        fory.toFuryWithWriter(Float32(-1.0), bw);
-        fory.toFuryWithWriter(-1.0, bw);
-        fory.toFuryWithWriter('str', bw);
+        fory.toForyWithWriter(true,bw);
+        fory.toForyWithWriter(false, bw);
+        fory.toForyWithWriter(Int32(-1),bw);
+        fory.toForyWithWriter(Int8.maxValue, bw);
+        fory.toForyWithWriter(Int8.minValue, bw);
+        fory.toForyWithWriter(Int16.maxValue, bw);
+        fory.toForyWithWriter(Int16.minValue, bw);
+        fory.toForyWithWriter(Int32.maxValue, bw);
+        fory.toForyWithWriter(Int32.minValue, bw);
+        fory.toForyWithWriter(0x7fffffffffffffff, bw);
+        fory.toForyWithWriter(0x8000000000000000, bw);
+        fory.toForyWithWriter(Float32(-1.0), bw);
+        fory.toForyWithWriter(-1.0, bw);
+        fory.toForyWithWriter('str', bw);
 
         LocalDate day = LocalDate(2021, 11, 23);
-        fory.toFuryWithWriter(day, bw);
+        fory.toForyWithWriter(day, bw);
 
         TimeStamp ts = TimeStamp.fromSecondsSinceEpoch(100);
-        fory.toFuryWithWriter(ts, bw);
+        fory.toForyWithWriter(ts, bw);
 
         List<Object> list = ['a', Int32(1), -1.0, ts,day];
-        fory.toFuryWithWriter(list, bw);
+        fory.toForyWithWriter(list, bw);
 
         Map<Object, Object> map = HashMap();
         for (int i = 0; i < list.length; ++i) {
           map['k$i'] = list[i];
           map[list[i]] = list[i];
         }
-        fory.toFuryWithWriter(map, bw);
+        fory.toForyWithWriter(map, bw);
 
         Set<Object> set = HashSet.of(list);
-        fory.toFuryWithWriter(set, bw);
+        fory.toForyWithWriter(set, bw);
 
         BoolList blist = BoolList.of([true, false]);
-        fory.toFuryWithWriter(blist, bw);
+        fory.toForyWithWriter(blist, bw);
 
         Int16List i16list = Int16List.fromList([1,32767]);
-        fory.toFuryWithWriter(i16list, bw);
+        fory.toForyWithWriter(i16list, bw);
 
         Int32List i32list = Int32List.fromList([1, 0x7fffffff]);
-        fory.toFuryWithWriter(i32list, bw);
+        fory.toForyWithWriter(i32list, bw);
 
         Int64List i64list = Int64List.fromList([1, 0x7fffffffffffffff]);
-        fory.toFuryWithWriter(i64list, bw);
+        fory.toForyWithWriter(i64list, bw);
 
         Float32List f32list = Float32List.fromList([1.0, 2.0]);
-        fory.toFuryWithWriter(f32list, bw);
+        fory.toForyWithWriter(f32list, bw);
 
         Float64List f64list = Float64List.fromList([1.0, 2.0]);
-        fory.toFuryWithWriter(f64list, bw);
+        fory.toForyWithWriter(f64list, bw);
 
         Uint8List bytes1 = bw.takeBytes();
 

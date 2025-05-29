@@ -25,17 +25,17 @@ try:
     # Ensure fory can link to arrow shared library
     sys.path.extend(pa.get_library_dirs() + [os.path.dirname(__file__)])
 
-    from pyfury.format._format import (  # noqa: F401 # pylint: disable=unused-import
+    from pyfory.format._format import (  # noqa: F401 # pylint: disable=unused-import
         create_row_encoder,
         RowData,
         ArrowWriter,
     )  # noqa: E402
-    from pyfury.format.infer import (  # noqa: F401 # pylint: disable=unused-import
+    from pyfory.format.infer import (  # noqa: F401 # pylint: disable=unused-import
         get_cls_by_schema,
         remove_schema,
         reset,
     )
-    from pyfury.format.encoder import (  # noqa: F401 # pylint: disable=unused-import
+    from pyfory.format.encoder import (  # noqa: F401 # pylint: disable=unused-import
         encoder,
         Encoder,
     )

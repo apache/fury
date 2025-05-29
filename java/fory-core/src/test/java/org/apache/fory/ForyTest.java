@@ -363,7 +363,7 @@ public class ForyTest extends ForyTestBase {
     int f1;
   }
 
-  @Test(dataProvider = "javaFury")
+  @Test(dataProvider = "javaFory")
   public void testDuplicateFields(Fory fory) {
     C c = new C();
     ((B) c).f1 = 100;
@@ -659,10 +659,10 @@ public class ForyTest extends ForyTestBase {
 
   @Test
   public void testStructMapping() {
-    ThreadSafeFury fory1 =
-        Fory.builder().withCompatibleMode(CompatibleMode.COMPATIBLE).buildThreadSafeFury();
-    ThreadSafeFury fory2 =
-        Fory.builder().withCompatibleMode(CompatibleMode.COMPATIBLE).buildThreadSafeFury();
+    ThreadSafeFory fory1 =
+        Fory.builder().withCompatibleMode(CompatibleMode.COMPATIBLE).buildThreadSafeFory();
+    ThreadSafeFory fory2 =
+        Fory.builder().withCompatibleMode(CompatibleMode.COMPATIBLE).buildThreadSafeFory();
     fory1.register(Struct1.class);
     fory2.register(Struct2.class);
     Struct1 struct1 = new Struct1(10, "abc");

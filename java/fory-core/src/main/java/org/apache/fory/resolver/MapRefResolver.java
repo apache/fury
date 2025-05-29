@@ -36,7 +36,7 @@ import org.apache.fory.util.Preconditions;
 // FIXME Will binding a separate reference resolver to every type have better performance?
 //  If so, we can have sophisticated reference control for every type.
 public final class MapRefResolver implements RefResolver {
-  private static final boolean ENABLE_FURY_REF_PROFILING =
+  private static final boolean ENABLE_FORY_REF_PROFILING =
       "true".equalsIgnoreCase(System.getProperty("fory.enable_ref_profiling"));
 
   // Map clean will zero all key array elements, which is unnecessary for
@@ -72,7 +72,7 @@ public final class MapRefResolver implements RefResolver {
       // The id should be consistent with `#nextReadRefId`
       int newWriteRefId = writtenObjects.size;
       int writtenRefId;
-      if (ENABLE_FURY_REF_PROFILING) {
+      if (ENABLE_FORY_REF_PROFILING) {
         // replaceRef is rare, just ignore it for profiling.
         writtenRefId = writtenObjects.profilingPutOrGet(obj, newWriteRefId);
       } else {
@@ -98,7 +98,7 @@ public final class MapRefResolver implements RefResolver {
     // The id should be consistent with `#nextReadRefId`
     int newWriteRefId = writtenObjects.size;
     int writtenRefId;
-    if (ENABLE_FURY_REF_PROFILING) {
+    if (ENABLE_FORY_REF_PROFILING) {
       // replaceRef is rare, just ignore it for profiling.
       writtenRefId = writtenObjects.profilingPutOrGet(obj, newWriteRefId);
     } else {

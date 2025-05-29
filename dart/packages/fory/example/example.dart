@@ -24,7 +24,7 @@ import 'package:fory/fory.dart';
 part 'example.g.dart';
 
 @foryClass
-class Person with _$PersonFury{
+class Person with _$PersonFory{
   final String firstName, lastName;
   final int age;
   final LocalDate dateOfBirth;

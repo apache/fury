@@ -130,7 +130,7 @@ class ConstructorAnalyzer {
       for (var annoEle in consEle.metadata){
         anno = annoEle.computeConstantValue()!;
         annoClsElement = anno.type!.element as ClassElement;
-        if (AnalysisTypeIdentifier.isFuryCons(annoClsElement)){
+        if (AnalysisTypeIdentifier.isForyCons(annoClsElement)){
           return consEle;
         }
       }

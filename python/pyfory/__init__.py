@@ -15,27 +15,27 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from pyfury import lib  # noqa: F401 # pylint: disable=unused-import
-from pyfury._fory import (  # noqa: F401 # pylint: disable=unused-import
+from pyfory import lib  # noqa: F401 # pylint: disable=unused-import
+from pyfory._fory import (  # noqa: F401 # pylint: disable=unused-import
     Fory,
     Language,
 )
 
 try:
-    from pyfury._serialization import ENABLE_FURY_CYTHON_SERIALIZATION
+    from pyfory._serialization import ENABLE_FORY_CYTHON_SERIALIZATION
 except ImportError:
-    ENABLE_FURY_CYTHON_SERIALIZATION = False
+    ENABLE_FORY_CYTHON_SERIALIZATION = False
 
-from pyfury._registry import ClassInfo
+from pyfory._registry import ClassInfo
 
-if ENABLE_FURY_CYTHON_SERIALIZATION:
-    from pyfury._serialization import Fory, ClassInfo  # noqa: F401,F811
+if ENABLE_FORY_CYTHON_SERIALIZATION:
+    from pyfory._serialization import Fory, ClassInfo  # noqa: F401,F811
 
-from pyfury._struct import (  # noqa: F401,F403,F811 # pylint: disable=unused-import
+from pyfory._struct import (  # noqa: F401,F403,F811 # pylint: disable=unused-import
     ComplexObjectSerializer,
 )
-from pyfury.serializer import *  # noqa: F401,F403 # pylint: disable=unused-import
-from pyfury.type import (  # noqa: F401 # pylint: disable=unused-import
+from pyfory.serializer import *  # noqa: F401,F403 # pylint: disable=unused-import
+from pyfory.type import (  # noqa: F401 # pylint: disable=unused-import
     record_class_factory,
     get_qualified_classname,
     TypeId,
@@ -53,10 +53,10 @@ from pyfury.type import (  # noqa: F401 # pylint: disable=unused-import
     Float64ArrayType,
     dataslots,
 )
-from pyfury._util import Buffer  # noqa: F401 # pylint: disable=unused-import
+from pyfory._util import Buffer  # noqa: F401 # pylint: disable=unused-import
 
 try:
-    from pyfury.format import *  # noqa: F401,F403 # pylint: disable=unused-import
+    from pyfory.format import *  # noqa: F401,F403 # pylint: disable=unused-import
 except (AttributeError, ImportError):
     pass
 

@@ -31,7 +31,7 @@ import 'package:fory/src/config/fory_config.dart';
 import 'package:fory/src/meta/specs/custom_type_spec.dart';
 import 'package:fory/src/serializer/serializer.dart';
 
-final class Fory implements BaseFury{
+final class Fory implements BaseFory{
 
   static final DeserializeCoordinator _deserDirector = DeserializeCoordinator.I;
   static final SerializeCoordinator _serDirector = SerializeCoordinator.I;
@@ -81,7 +81,7 @@ final class Fory implements BaseFury{
 
   @override
   @inline
-  void toFuryWithWriter(Object? obj, ByteWriter writer) {
+  void toForyWithWriter(Object? obj, ByteWriter writer) {
     _serDirector.writeWithWriter(obj, _conf, _xtypeResolver, writer);
   }
 

@@ -40,13 +40,13 @@ public class ForyPooledObjectFactory {
   private final Function<ClassLoader, Fory> foryFactory;
 
   /**
-   * ClassLoaderFuryPooled cache, have all. ClassLoaderFuryPooled caches key:
-   * WeakReference:ClassLoader value: SoftReference:ClassLoaderFuryPooled
+   * ClassLoaderForyPooled cache, have all. ClassLoaderForyPooled caches key:
+   * WeakReference:ClassLoader value: SoftReference:ClassLoaderForyPooled
    *
    * @see Cache
    * @see com.google.common.cache.CacheBuilder
    */
-  final Cache<ClassLoader, ClassLoaderFuryPooled> classLoaderFuryPooledCache;
+  final Cache<ClassLoader, ClassLoaderForyPooled> classLoaderForyPooledCache;
 
   private volatile ClassLoader classLoader = null;
 
@@ -75,7 +75,7 @@ public class ForyPooledObjectFactory {
    */
   private final int maxPoolSize;
 
-  /** factoryCallback will be set in every new classLoaderFuryPooled so that can deal every fory. */
+  /** factoryCallback will be set in every new classLoaderForyPooled so that can deal every fory. */
   private final Consumer<Fory> factoryCallback;
 
   public ForyPooledObjectFactory(
@@ -89,21 +89,21 @@ public class ForyPooledObjectFactory {
     this.maxPoolSize = maxPoolSize;
     this.foryFactory = foryFactory;
     this.factoryCallback = factoryCallback;
-    classLoaderFuryPooledCache =
+    classLoaderForyPooledCache =
         CacheBuilder.newBuilder().expireAfterAccess(expireTime, timeUnit).build();
   }
 
-  public ClassLoaderFuryPooled getPooledCache() {
+  public ClassLoaderForyPooled getPooledCache() {
     try {
       ClassLoader classLoader = classLoaderLocal.get();
       assert classLoader != null;
-      ClassLoaderFuryPooled classLoaderFuryPooled =
-          classLoaderFuryPooledCache.getIfPresent(classLoader);
-      if (classLoaderFuryPooled == null) {
+      ClassLoaderForyPooled classLoaderForyPooled =
+          classLoaderForyPooledCache.getIfPresent(classLoader);
+      if (classLoaderForyPooled == null) {
         // double check cache
         return getOrAddCache(classLoader);
       }
-      return classLoaderFuryPooled;
+      return classLoaderForyPooled;
     } catch (Exception e) {
       LOG.error(e.getMessage(), e);
       throw new RuntimeException(e);
@@ -126,20 +126,20 @@ public class ForyPooledObjectFactory {
   }
 
   public void clearClassLoader(ClassLoader loader) {
-    classLoaderFuryPooledCache.invalidate(loader);
+    classLoaderForyPooledCache.invalidate(loader);
     classLoaderLocal.remove();
   }
 
-  /** Get cache or put new added pooledFury. */
-  private synchronized ClassLoaderFuryPooled getOrAddCache(ClassLoader classLoader) {
-    ClassLoaderFuryPooled classLoaderFuryPooled =
-        classLoaderFuryPooledCache.getIfPresent(classLoader);
-    if (classLoaderFuryPooled == null) {
-      classLoaderFuryPooled =
-          new ClassLoaderFuryPooled(classLoader, foryFactory, minPoolSize, maxPoolSize);
-      classLoaderFuryPooled.setFactoryCallback(factoryCallback);
-      classLoaderFuryPooledCache.put(classLoader, classLoaderFuryPooled);
+  /** Get cache or put new added pooledFory. */
+  private synchronized ClassLoaderForyPooled getOrAddCache(ClassLoader classLoader) {
+    ClassLoaderForyPooled classLoaderForyPooled =
+        classLoaderForyPooledCache.getIfPresent(classLoader);
+    if (classLoaderForyPooled == null) {
+      classLoaderForyPooled =
+          new ClassLoaderForyPooled(classLoader, foryFactory, minPoolSize, maxPoolSize);
+      classLoaderForyPooled.setFactoryCallback(factoryCallback);
+      classLoaderForyPooledCache.put(classLoader, classLoaderForyPooled);
     }
-    return classLoaderFuryPooled;
+    return classLoaderForyPooled;
   }
 }

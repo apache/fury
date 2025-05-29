@@ -23,10 +23,10 @@ import math
 import os
 import typing
 
-import pyfury
+import pyfory
 import pytest
 from dataclasses import dataclass
-from pyfury.util import lazy_import
+from pyfory.util import lazy_import
 from typing import List, Dict, Any
 
 
@@ -47,8 +47,8 @@ def cross_language_test(test_func):
     return test_func
 
 
-Foo = pyfury.record_class_factory("Foo", ["f" + str(i) for i in range(1, 6)])
-Bar = pyfury.record_class_factory("Bar", ["f" + str(i) for i in range(1, 3)])
+Foo = pyfory.record_class_factory("Foo", ["f" + str(i) for i in range(1, 6)])
+Bar = pyfory.record_class_factory("Bar", ["f" + str(i) for i in range(1, 3)])
 
 
 def create_bar_schema():
@@ -71,10 +71,10 @@ def create_foo_schema():
             pa.field(
                 "f5",
                 pa.struct(create_bar_schema()),
-                metadata={"cls": pyfury.get_qualified_classname(Bar)},
+                metadata={"cls": pyfory.get_qualified_classname(Bar)},
             ),
         ],
-        metadata={"cls": pyfury.get_qualified_classname(Foo)},
+        metadata={"cls": pyfory.get_qualified_classname(Foo)},
     )
     return foo_schema
 
@@ -119,7 +119,7 @@ class A:
 
 @cross_language_test
 def test_map_encoder(data_file_path):
-    encoder = pyfury.encoder(A)
+    encoder = pyfory.encoder(A)
     a = A(f1=1, f2={"pid": "12345", "ip": "0.0.0.0", "k1": "v1"})
     with open(data_file_path, "rb+") as f:
         data_bytes = f.read()
@@ -134,7 +134,7 @@ def test_map_encoder(data_file_path):
 
 @cross_language_test
 def test_encoder_without_schema(data_file_path):
-    encoder = pyfury.encoder(FooPOJO)
+    encoder = pyfory.encoder(FooPOJO)
     debug_print(encoder)
     foo = create_foo(foo_cls=FooPOJO, bar_cls=BarPOJO)
     with open(data_file_path, "rb+") as f:
@@ -150,12 +150,12 @@ def test_encoder_without_schema(data_file_path):
 @cross_language_test
 def test_serialization_without_schema(data_file_path, schema=None):
     schema = schema or create_foo_schema()
-    encoder = pyfury.create_row_encoder(schema)
+    encoder = pyfory.create_row_encoder(schema)
     foo = create_foo()
     with open(data_file_path, "rb+") as f:
         data_bytes = f.read()
-        buf = pyfury.Buffer(data_bytes, 0, len(data_bytes))
-        row = pyfury.RowData(schema, buf)
+        buf = pyfory.Buffer(data_bytes, 0, len(data_bytes))
+        row = pyfory.RowData(schema, buf)
         debug_print("row", row)
         obj = encoder.from_row(row)
         debug_print("deserialized foo", obj)
@@ -212,8 +212,8 @@ def test_record_batch(data_file_path):
         batch = batches[0]
         # debug_print(f"batch[0] {batch[0]}")
 
-        encoder = pyfury.create_row_encoder(create_foo_schema())
-        writer = pyfury.ArrowWriter(create_foo_schema())
+        encoder = pyfory.create_row_encoder(create_foo_schema())
+        writer = pyfory.ArrowWriter(create_foo_schema())
         num_rows = 128
         for i in range(num_rows):
             foo = create_foo()
@@ -237,7 +237,7 @@ def test_write_multi_record_batch(schema_file_path, data_file_path):
 def test_buffer(data_file_path):
     with open(data_file_path, "rb") as f:
         data_bytes = f.read()
-        buffer = pyfury.Buffer(data_bytes)
+        buffer = pyfory.Buffer(data_bytes)
         assert buffer.read_bool() is True
         assert buffer.read_int8() == 2**7 - 1
         assert buffer.read_int16() == 2**15 - 1
@@ -266,8 +266,8 @@ def test_buffer(data_file_path):
 def test_murmurhash3(data_file_path):
     with open(data_file_path, "rb") as f:
         data_bytes = f.read()
-        buffer = pyfury.Buffer(data_bytes)
-        h1, h2 = pyfury.lib.mmh3.hash_buffer(bytearray([1, 2, 8]), seed=47)
+        buffer = pyfory.Buffer(data_bytes)
+        h1, h2 = pyfory.lib.mmh3.hash_buffer(bytearray([1, 2, 8]), seed=47)
         assert buffer.read_int64() == h1
         assert buffer.read_int64() == h2
 
@@ -276,8 +276,8 @@ def test_murmurhash3(data_file_path):
 def test_cross_language_serializer(data_file_path):
     with open(data_file_path, "rb") as f:
         data_bytes = f.read()
-        buffer = pyfury.Buffer(data_bytes)
-        fory = pyfury.Fory(language=pyfury.Language.XLANG, ref_tracking=True)
+        buffer = pyfory.Buffer(data_bytes)
+        fory = pyfory.Fory(language=pyfory.Language.XLANG, ref_tracking=True)
         objects = []
         assert _deserialize_and_append(fory, buffer, objects) is True
         assert _deserialize_and_append(fory, buffer, objects) is False
@@ -333,7 +333,7 @@ def test_cross_language_serializer(data_file_path):
             _deserialize_and_append(fory, buffer, objects),
             np.array([1, 2], dtype=np.float64),
         )
-        new_buf = pyfury.Buffer.allocate(32)
+        new_buf = pyfory.Buffer.allocate(32)
         for obj in objects:
             fory.serialize(obj, buffer=new_buf)
     with open(data_file_path, "wb+") as f:
@@ -351,8 +351,8 @@ def _deserialize_and_append(fory, buffer, objects: list):
 def test_cross_language_reference(data_file_path):
     with open(data_file_path, "rb") as f:
         data_bytes = f.read()
-        buffer = pyfury.Buffer(data_bytes)
-        fory = pyfury.Fory(language=pyfury.Language.XLANG, ref_tracking=True)
+        buffer = pyfory.Buffer(data_bytes)
+        fory = pyfory.Fory(language=pyfory.Language.XLANG, ref_tracking=True)
         new_list = fory.deserialize(buffer)
         assert new_list[0] is new_list
         new_map = new_list[1]
@@ -365,7 +365,7 @@ def test_cross_language_reference(data_file_path):
         assert new_map["k1"] is new_map
         assert new_map["k2"] is new_list2
 
-        new_buf = pyfury.Buffer.allocate(32)
+        new_buf = pyfory.Buffer.allocate(32)
         fory.serialize(new_list, buffer=new_buf)
     with open(data_file_path, "wb+") as f:
         f.write(new_buf.get_bytes(0, new_buf.writer_index))
@@ -377,8 +377,8 @@ def test_serialize_arrow_in_band(data_file_path):
         batch = create_record_batch(2000)
         table = pa.Table.from_batches([batch] * 2)
         data_bytes = f.read()
-        buffer = pyfury.Buffer(data_bytes)
-        fory = pyfury.Fory(language=pyfury.Language.XLANG, ref_tracking=True)
+        buffer = pyfory.Buffer(data_bytes)
+        fory = pyfory.Fory(language=pyfory.Language.XLANG, ref_tracking=True)
         new_batch = fory.deserialize(buffer)
         assert new_batch == batch
         new_table = fory.deserialize(buffer)
@@ -393,14 +393,14 @@ def test_serialize_arrow_out_of_band(int_band_file, out_of_band_file):
         out_of_band_data_bytes = f.read()
     batch = create_record_batch(2000)
     table = pa.Table.from_batches([batch] * 2)
-    in_band_buffer = pyfury.Buffer(in_band_data_bytes)
-    out_of_band_buffer = pyfury.Buffer(out_of_band_data_bytes)
+    in_band_buffer = pyfory.Buffer(in_band_data_bytes)
+    out_of_band_buffer = pyfory.Buffer(out_of_band_data_bytes)
     len1, len2 = out_of_band_buffer.read_int32(), out_of_band_buffer.read_int32()
     buffers = [
         out_of_band_buffer.slice(8, len1),
         out_of_band_buffer.slice(8 + len1, len2),
     ]
-    fory = pyfury.Fory(language=pyfury.Language.XLANG, ref_tracking=True)
+    fory = pyfory.Fory(language=pyfory.Language.XLANG, ref_tracking=True)
     objects = fory.deserialize(in_band_buffer, buffers=buffers)
     assert objects == [batch, table]
     buffer_objects = []
@@ -411,7 +411,7 @@ def test_serialize_arrow_out_of_band(int_band_file, out_of_band_file):
     with open(int_band_file, "wb+") as f:
         f.write(in_band_buffer)
     with open(out_of_band_file, "wb+") as f:
-        size_buf = pyfury.Buffer.allocate(8)
+        size_buf = pyfory.Buffer.allocate(8)
         size_buf.write_int32(len(buffers[0]))
         size_buf.write_int32(len(buffers[1]))
         f.write(size_buf)
@@ -433,25 +433,25 @@ class ComplexObject1:
     f1: Any = None
     f2: str = None
     f3: List[str] = None
-    f4: Dict[pyfury.Int8Type, pyfury.Int32Type] = None
-    f5: pyfury.Int8Type = None
-    f6: pyfury.Int16Type = None
-    f7: pyfury.Int32Type = None
-    f8: pyfury.Int64Type = None
-    f9: pyfury.Float32Type = None
-    f10: pyfury.Float64Type = None
-    f11: pyfury.Int16ArrayType = None
-    f12: List[pyfury.Int16Type] = None
+    f4: Dict[pyfory.Int8Type, pyfory.Int32Type] = None
+    f5: pyfory.Int8Type = None
+    f6: pyfory.Int16Type = None
+    f7: pyfory.Int32Type = None
+    f8: pyfory.Int64Type = None
+    f9: pyfory.Float32Type = None
+    f10: pyfory.Float64Type = None
+    f11: pyfory.Int16ArrayType = None
+    f12: List[pyfory.Int16Type] = None
 
 
 @dataclass
 class ComplexObject2:
     f1: Any
-    f2: Dict[pyfury.Int8Type, pyfury.Int32Type]
+    f2: Dict[pyfory.Int8Type, pyfory.Int32Type]
 
 
 def test_serialize_simple_struct_local():
-    fory = pyfury.Fory(language=pyfury.Language.XLANG, ref_tracking=True)
+    fory = pyfory.Fory(language=pyfory.Language.XLANG, ref_tracking=True)
     fory.register_type(ComplexObject2, namespace="test", typename="ComplexObject2")
     obj = ComplexObject2(f1=True, f2={-1: 2})
     new_buf = fory.serialize(obj)
@@ -460,7 +460,7 @@ def test_serialize_simple_struct_local():
 
 @cross_language_test
 def test_serialize_simple_struct(data_file_path):
-    fory = pyfury.Fory(language=pyfury.Language.XLANG, ref_tracking=True)
+    fory = pyfory.Fory(language=pyfory.Language.XLANG, ref_tracking=True)
     fory.register_type(ComplexObject2, namespace="test", typename="ComplexObject2")
     obj = ComplexObject2(f1=True, f2={-1: 2})
     struct_round_back(data_file_path, fory, obj)
@@ -480,7 +480,7 @@ class EnumFieldStruct:
 
 @cross_language_test
 def test_enum_field(data_file_path):
-    fory = pyfury.Fory(language=pyfury.Language.XLANG, ref_tracking=False)
+    fory = pyfory.Fory(language=pyfory.Language.XLANG, ref_tracking=False)
     fory.register_type(EnumTestClass, namespace="test", typename="EnumTestClass")
     fory.register_type(EnumFieldStruct, namespace="test", typename="EnumFieldStruct")
     obj = EnumFieldStruct(f1=EnumTestClass.FOO, f2=EnumTestClass.BAR, f3="abc")
@@ -492,11 +492,11 @@ def test_struct_hash(data_file_path):
     with open(data_file_path, "rb") as f:
         data_bytes = f.read()
     debug_print(f"len {len(data_bytes)}")
-    read_hash = pyfury.Buffer(data_bytes).read_int32()
-    fory = pyfury.Fory(language=pyfury.Language.XLANG, ref_tracking=True)
+    read_hash = pyfory.Buffer(data_bytes).read_int32()
+    fory = pyfory.Fory(language=pyfory.Language.XLANG, ref_tracking=True)
     fory.register_type(ComplexObject1, typename="ComplexObject1")
     serializer = fory.class_resolver.get_serializer(ComplexObject1)
-    from pyfury._struct import _get_hash
+    from pyfory._struct import _get_hash
 
     v = _get_hash(fory, serializer._field_names, serializer._type_hints)
     assert read_hash == v, (read_hash, v)
@@ -504,7 +504,7 @@ def test_struct_hash(data_file_path):
 
 @cross_language_test
 def test_serialize_complex_struct(data_file_path):
-    fory = pyfury.Fory(language=pyfury.Language.XLANG, ref_tracking=True)
+    fory = pyfory.Fory(language=pyfory.Language.XLANG, ref_tracking=True)
     fory.register_type(ComplexObject1, namespace="test", typename="ComplexObject1")
     fory.register_type(ComplexObject2, namespace="test", typename="ComplexObject2")
 
@@ -542,7 +542,7 @@ def struct_round_back(data_file_path, fory, obj1):
         f.write(new_buf)
 
 
-class ComplexObject1Serializer(pyfury.serializer.Serializer):
+class ComplexObject1Serializer(pyfory.serializer.Serializer):
     def write(self, buffer, value):
         self.xwrite(buffer, value)
 
@@ -569,9 +569,9 @@ class ComplexObject1Serializer(pyfury.serializer.Serializer):
 def test_register_serializer(data_file_path):
     with open(data_file_path, "rb") as f:
         data_bytes = f.read()
-    buffer = pyfury.Buffer(data_bytes)
+    buffer = pyfory.Buffer(data_bytes)
 
-    fory = pyfury.Fory(language=pyfury.Language.XLANG, ref_tracking=True)
+    fory = pyfory.Fory(language=pyfory.Language.XLANG, ref_tracking=True)
     fory.register_type(
         ComplexObject1,
         typename="test.ComplexObject1",
@@ -585,7 +585,7 @@ def test_register_serializer(data_file_path):
 
     debug_print(new_obj)
     assert new_obj == expected
-    new_buf = pyfury.Buffer.allocate(32)
+    new_buf = pyfory.Buffer.allocate(32)
     fory.serialize(new_obj, buffer=new_buf)
     bytes1 = fory.serialize(new_obj)
     assert len(bytes1) == len(data_bytes)
@@ -602,8 +602,8 @@ def test_oob_buffer(in_band_file_path, out_of_band_file_path):
     with open(in_band_file_path, "rb") as f:
         in_band_bytes = f.read()
     with open(out_of_band_file_path, "rb") as f:
-        out_of_band_buffer = pyfury.Buffer(f.read())
-    fory = pyfury.Fory(language=pyfury.Language.XLANG, ref_tracking=True)
+        out_of_band_buffer = pyfory.Buffer(f.read())
+    fory = pyfory.Fory(language=pyfory.Language.XLANG, ref_tracking=True)
     n_buffers = out_of_band_buffer.read_int32()
     buffers = []
     for i in range(n_buffers):

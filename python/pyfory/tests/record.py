@@ -17,10 +17,10 @@
 
 from dataclasses import dataclass
 
-import pyfury as fory
+import pyfory as fory
 from typing import List, Dict
 
-from pyfury.util import lazy_import
+from pyfory.util import lazy_import
 
 pa = lazy_import("pyarrow")
 

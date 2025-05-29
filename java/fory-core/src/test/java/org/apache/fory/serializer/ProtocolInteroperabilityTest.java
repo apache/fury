@@ -226,8 +226,8 @@ public class ProtocolInteroperabilityTest extends ForyTestBase {
     roundCheck(fory, foryJIT, o);
   }
 
-  @DataProvider(name = "metaShareFury")
-  public static Object[][] metaShareFury() {
+  @DataProvider(name = "metaShareFory")
+  public static Object[][] metaShareFory() {
     return Sets.cartesianProduct(
             ImmutableSet.of(CompatibleMode.COMPATIBLE) // structFieldsRepeat
             )
@@ -256,13 +256,13 @@ public class ProtocolInteroperabilityTest extends ForyTestBase {
         .toArray(Object[][]::new);
   }
 
-  @Test(dataProvider = "metaShareFury")
+  @Test(dataProvider = "metaShareFory")
   public void testSimpleCollectionTestMetaShare(Fory fory, Fory foryJIT) {
     metaShareRoundCheck(
         fory, foryJIT, new SimpleCollectionTest(of(1, 2), new HashSet<>(of("a", "b"))));
   }
 
-  @Test(dataProvider = "metaShareFury")
+  @Test(dataProvider = "metaShareFory")
   public void testSimplePojoMetaShare(Fory fory, Fory foryJIT) {
     metaShareRoundCheck(fory, foryJIT, BeanB.createBeanB(2));
   }
@@ -287,7 +287,7 @@ public class ProtocolInteroperabilityTest extends ForyTestBase {
     public List<BeanB> list;
   }
 
-  @Test(dataProvider = "metaShareFury")
+  @Test(dataProvider = "metaShareFory")
   public void testSimpleNestedPojoMetaShare(Fory fory, Fory foryJIT) {
     metaShareRoundCheck(
         fory,
@@ -299,7 +299,7 @@ public class ProtocolInteroperabilityTest extends ForyTestBase {
         new OuterPojo2(new ArrayList<>(of(1, 2)), new ArrayList<>(of(BeanB.createBeanB(2)))));
   }
 
-  @Test(dataProvider = "metaShareFury")
+  @Test(dataProvider = "metaShareFory")
   public void testNestedPojoMetaShare(Fory fory, Fory foryJIT) {
     metaShareRoundCheck(fory, foryJIT, BeanA.createBeanA(2));
   }
@@ -311,7 +311,7 @@ public class ProtocolInteroperabilityTest extends ForyTestBase {
     public AtomicBoolean[] booleans;
   }
 
-  @Test(dataProvider = "metaShareFury")
+  @Test(dataProvider = "metaShareFory")
   public void testInnerTypeSerializerNotCreated(Fory fory, Fory foryJIT) {
     metaShareRoundCheck(
         fory,

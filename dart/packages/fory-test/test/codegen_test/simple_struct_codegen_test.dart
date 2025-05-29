@@ -74,7 +74,7 @@ void main(){
         }
       }
       check(variables.equals(['\$TimeObj',])).isTrue();
-      check(mixins).contains('_\$TimeObjFury');
+      check(mixins).contains('_\$TimeObjFory');
     });
 
   });

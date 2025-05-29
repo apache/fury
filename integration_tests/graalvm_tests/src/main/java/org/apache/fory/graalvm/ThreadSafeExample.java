@@ -25,17 +25,17 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import org.apache.fory.Fory;
-import org.apache.fory.ThreadLocalFury;
-import org.apache.fory.ThreadSafeFury;
+import org.apache.fory.ThreadLocalFory;
+import org.apache.fory.ThreadSafeFory;
 import org.apache.fory.collection.Collections;
 import org.apache.fory.util.Preconditions;
 
 public class ThreadSafeExample {
-  static ThreadSafeFury fory;
+  static ThreadSafeFory fory;
 
   static {
     fory =
-        new ThreadLocalFury(
+        new ThreadLocalFory(
             classLoader -> {
               Fory f =
                   Fory.builder()
@@ -54,7 +54,7 @@ public class ThreadSafeExample {
     System.out.println("ThreadSafeExample succeed");
   }
 
-  static void test(ThreadSafeFury fory) throws Throwable {
+  static void test(ThreadSafeFory fory) throws Throwable {
     ThreadSafeExample threadSafeExample = new ThreadSafeExample();
     threadSafeExample.test();
     System.out.println("single thread works");

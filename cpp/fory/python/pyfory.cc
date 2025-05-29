@@ -17,7 +17,7 @@
  * under the License.
  */
 
-#include "fory/python/pyfury.h"
+#include "fory/python/pyfory.h"
 
 static PyObject **PySequenceGetItems(PyObject *collection) {
   if (PyList_CheckExact(collection)) {

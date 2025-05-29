@@ -613,7 +613,7 @@ public class ReplaceResolveSerializerTest extends ForyTestBase {
   public void testWriteReplaceExternalizable() {
     WriteReplaceExternalizable o =
         serDeCheckSerializer(
-            getJavaFury(),
+            getJavaFory(),
             new WriteReplaceExternalizable(10),
             ReplaceResolveSerializer.class.getName());
     assertEquals(o.f1, 10);
@@ -647,13 +647,13 @@ public class ReplaceResolveSerializerTest extends ForyTestBase {
   public void testWriteReplaceSelfExternalizable() {
     ReplaceSelfExternalizable o =
         serDeCheckSerializer(
-            getJavaFury(),
+            getJavaFory(),
             new ReplaceSelfExternalizable(10, false),
             ReplaceResolveSerializer.class.getName());
     assertEquals(o.f1, 10);
     ReplaceSelfExternalizable o1 =
         serDeCheckSerializer(
-            getJavaFury(),
+            getJavaFory(),
             new ReplaceSelfExternalizable(10, true),
             ReplaceResolveSerializer.class.getName());
     assertEquals(o1.f1, 10);

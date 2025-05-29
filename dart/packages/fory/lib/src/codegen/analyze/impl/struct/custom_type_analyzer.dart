@@ -53,13 +53,13 @@ class CustomTypeAnalyzer {
     }
     // Not found in built-in types, considered as a custom type
     if (element is EnumElement){
-      if (!Analyzer.enumAnnotationAnalyzer.hasFuryEnumAnnotation(element.metadata)){
+      if (!Analyzer.enumAnnotationAnalyzer.hasForyEnumAnnotation(element.metadata)){
         throw CodegenUnregisteredTypeException(path, name, 'ForyEnum');
       }
       return Either.left(ObjTypeWrapper.namedEnum);
     }
     assert(element is ClassElement);
-    if (Analyzer.classAnnotationAnalyzer.hasFuryClassAnnotation(element.metadata)){
+    if (Analyzer.classAnnotationAnalyzer.hasForyClassAnnotation(element.metadata)){
       return Either.left(ObjTypeWrapper.namedStruct);
     }
     return Either.left(ObjTypeWrapper.unknownStruct);

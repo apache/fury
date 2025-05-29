@@ -42,7 +42,7 @@ class EnumAnnotationAnalyzer {
     for (ElementAnnotation annoElement in metadata){
       anno = annoElement.computeConstantValue()!;
       annoClsElement = anno.type!.element as ClassElement;
-      if (AnalysisTypeIdentifier.isFuryEnum(annoClsElement)){
+      if (AnalysisTypeIdentifier.isForyEnum(annoClsElement)){
         if (getForyEnum){
           throw DuplicatedAnnotationException(ForyClass.name, locationMark.clsName, locationMark.libPath);
         }
@@ -55,12 +55,12 @@ class EnumAnnotationAnalyzer {
   }
 
   // This method does not perform annotation validity checks, nor does it perform caching operations.
-  bool hasFuryEnumAnnotation(List<ElementAnnotation> metadata) {
+  bool hasForyEnumAnnotation(List<ElementAnnotation> metadata) {
     DartObject? anno;
     for (ElementAnnotation annoElement in metadata){
       anno = annoElement.computeConstantValue()!;
       ClassElement annoClsElement = anno.type!.element as ClassElement;
-      if (AnalysisTypeIdentifier.isFuryEnum(annoClsElement)){
+      if (AnalysisTypeIdentifier.isForyEnum(annoClsElement)){
         return true;
       }
     }

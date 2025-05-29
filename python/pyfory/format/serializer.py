@@ -16,8 +16,8 @@
 # under the License.
 
 import pyarrow as pa
-from pyfury.serializer import CrossLanguageCompatibleSerializer, BufferObject
-from pyfury.buffer import Buffer
+from pyfory.serializer import CrossLanguageCompatibleSerializer, BufferObject
+from pyfory.buffer import Buffer
 
 
 class ArrowRecordBatchSerializer(CrossLanguageCompatibleSerializer):

@@ -22,14 +22,14 @@ package org.apache.fory.config;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import org.apache.fory.Fory;
-import org.apache.fory.ThreadLocalFury;
-import org.apache.fory.ThreadSafeFury;
+import org.apache.fory.ThreadLocalFory;
+import org.apache.fory.ThreadSafeFory;
 import org.apache.fory.logging.Logger;
 import org.apache.fory.logging.LoggerFactory;
 import org.apache.fory.memory.Platform;
 import org.apache.fory.meta.DeflaterMetaCompressor;
 import org.apache.fory.meta.MetaCompressor;
-import org.apache.fory.pool.ThreadPoolFury;
+import org.apache.fory.pool.ThreadPoolFory;
 import org.apache.fory.reflect.ReflectionUtils;
 import org.apache.fory.resolver.ClassResolver;
 import org.apache.fory.serializer.JavaSerializer;
@@ -52,7 +52,7 @@ public final class ForyBuilder {
   static {
     String flagValue =
         System.getProperty(
-            "fory.enable_fury_security_mode_forcibly",
+            "fory.enable_fory_security_mode_forcibly",
             System.getenv("ENABLE_CLASS_REGISTRATION_FORCIBLY"));
     ENABLE_CLASS_REGISTRATION_FORCIBLY = "true".equals(flagValue) || "1".equals(flagValue);
   }
@@ -214,7 +214,7 @@ public final class ForyBuilder {
    * different classloaders have classes with same name.
    *
    * <p>If you want to change classloader, please use {@link org.apache.fory.util.LoaderBinding} or
-   * {@link ThreadSafeFury} to setup mapping between classloaders and fory instances.
+   * {@link ThreadSafeFory} to setup mapping between classloaders and fory instances.
    */
   public ForyBuilder withClassLoader(ClassLoader classLoader) {
     this.classLoader = classLoader;
@@ -467,43 +467,43 @@ public final class ForyBuilder {
   }
 
   /** Build thread safe fory. */
-  public ThreadSafeFury buildThreadSafeFury() {
-    return buildThreadLocalFury();
+  public ThreadSafeFory buildThreadSafeFory() {
+    return buildThreadLocalFory();
   }
 
-  /** Build thread safe fory backed by {@link ThreadLocalFury}. */
-  public ThreadLocalFury buildThreadLocalFury() {
+  /** Build thread safe fory backed by {@link ThreadLocalFory}. */
+  public ThreadLocalFory buildThreadLocalFory() {
     finish();
     ClassLoader loader = this.classLoader;
     // clear classLoader to avoid `LoaderBinding#foryFactory` lambda capture classLoader by
     // capturing `ForyBuilder`,  which make `classLoader` not able to be gc.
     this.classLoader = null;
-    ThreadLocalFury threadSafeFury = new ThreadLocalFury(classLoader -> newFory(this, classLoader));
-    threadSafeFury.setClassLoader(loader);
-    return threadSafeFury;
+    ThreadLocalFory threadSafeFory = new ThreadLocalFory(classLoader -> newFory(this, classLoader));
+    threadSafeFory.setClassLoader(loader);
+    return threadSafeFory;
   }
 
   /**
-   * Build pooled ThreadSafeFury.
+   * Build pooled ThreadSafeFory.
    *
    * @param minPoolSize min pool size
    * @param maxPoolSize max pool size
-   * @return ThreadSafeFuryPool
+   * @return ThreadSafeForyPool
    */
-  public ThreadSafeFury buildThreadSafeFuryPool(int minPoolSize, int maxPoolSize) {
-    return buildThreadSafeFuryPool(minPoolSize, maxPoolSize, 30L, TimeUnit.SECONDS);
+  public ThreadSafeFory buildThreadSafeForyPool(int minPoolSize, int maxPoolSize) {
+    return buildThreadSafeForyPool(minPoolSize, maxPoolSize, 30L, TimeUnit.SECONDS);
   }
 
   /**
-   * Build pooled ThreadSafeFury.
+   * Build pooled ThreadSafeFory.
    *
    * @param minPoolSize min pool size
    * @param maxPoolSize max pool size
    * @param expireTime cache expire time, default 5's
    * @param timeUnit TimeUnit, default SECONDS
-   * @return ThreadSafeFuryPool
+   * @return ThreadSafeForyPool
    */
-  public ThreadSafeFury buildThreadSafeFuryPool(
+  public ThreadSafeFory buildThreadSafeForyPool(
       int minPoolSize, int maxPoolSize, long expireTime, TimeUnit timeUnit) {
     if (minPoolSize < 0 || maxPoolSize < 0 || minPoolSize > maxPoolSize) {
       throw new IllegalArgumentException(
@@ -514,14 +514,14 @@ public final class ForyBuilder {
     finish();
     ClassLoader loader = this.classLoader;
     this.classLoader = null;
-    ThreadSafeFury threadSafeFury =
-        new ThreadPoolFury(
+    ThreadSafeFory threadSafeFory =
+        new ThreadPoolFory(
             classLoader -> newFory(this, classLoader),
             minPoolSize,
             maxPoolSize,
             expireTime,
             timeUnit);
-    threadSafeFury.setClassLoader(loader);
-    return threadSafeFury;
+    threadSafeFory.setClassLoader(loader);
+    return threadSafeFory;
   }
 }

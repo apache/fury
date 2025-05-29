@@ -21,7 +21,7 @@ import ClassResolver from "./classResolver";
 import { BinaryWriter } from "./writer";
 import { BinaryReader } from "./reader";
 import { ReferenceResolver } from "./referenceResolver";
-import { ConfigFlags, Serializer, Config, Language, MAGIC_NUMBER, Mode, ForyTypeInfoSymbol, WithFuryClsInfo } from "./type";
+import { ConfigFlags, Serializer, Config, Language, MAGIC_NUMBER, Mode, ForyTypeInfoSymbol, WithForyClsInfo } from "./type";
 import { OwnershipError } from "./error";
 import { InputType, ResultType, TypeInfo } from "./typeInfo";
 import { Gen, AnySerializer } from "./gen";
@@ -84,7 +84,7 @@ export default class {
   registerSerializer(constructor: any, replace = false) {
     let serializer: Serializer;
     if (constructor.prototype?.[ForyTypeInfoSymbol]) {
-      const typeInfo: TypeInfo = (<WithFuryClsInfo>(constructor.prototype[ForyTypeInfoSymbol])).structTypeInfo;
+      const typeInfo: TypeInfo = (<WithForyClsInfo>(constructor.prototype[ForyTypeInfoSymbol])).structTypeInfo;
       serializer = new Gen(this, replace, { constructor }).generateSerializer(typeInfo);
       this.classResolver.registerSerializer(typeInfo, serializer);
     } else {

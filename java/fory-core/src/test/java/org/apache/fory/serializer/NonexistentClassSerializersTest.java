@@ -261,7 +261,7 @@ public class NonexistentClassSerializersTest extends ForyTestBase {
   }
 
   @Test(dataProvider = "metaShareConfig")
-  public void testDeserializeNonexistentNewFury(
+  public void testDeserializeNonexistentNewFory(
       boolean referenceTracking,
       boolean enableCodegen1,
       boolean enableCodegen2,

@@ -75,7 +75,7 @@ public class ObjectStreamSerializerTest extends ForyTestBase {
     }
   }
 
-  @Test(dataProvider = "javaFury")
+  @Test(dataProvider = "javaFory")
   public void testJDKCompatibleCommon(Fory fory) {
     WriteObjectTestClass o = new WriteObjectTestClass(new char[] {'a', 'b'});
     fory.registerSerializer(
@@ -98,7 +98,7 @@ public class ObjectStreamSerializerTest extends ForyTestBase {
     assertEquals(sb.toString(), "abc");
   }
 
-  @Test(dataProvider = "javaFury")
+  @Test(dataProvider = "javaFory")
   public void testDispatch(Fory fory) {
     WriteObjectTestClass o = new WriteObjectTestClass(new char[] {'a', 'b'});
     serDeCheckSerializer(fory, o, "ObjectStreamSerializer");
@@ -153,7 +153,7 @@ public class ObjectStreamSerializerTest extends ForyTestBase {
     }
   }
 
-  @Test(dataProvider = "javaFury")
+  @Test(dataProvider = "javaFory")
   public void testJDKCompatiblePutFields(Fory fory) {
     fory.registerSerializer(
         StringBuffer.class, new ObjectStreamSerializer(fory, StringBuffer.class));
@@ -207,7 +207,7 @@ public class ObjectStreamSerializerTest extends ForyTestBase {
     copyCheck(fory, testClassObj3);
   }
 
-  @Test(dataProvider = "javaFury")
+  @Test(dataProvider = "javaFory")
   public void testJDKCompatibleMap(Fory fory) {
     ImmutableMap<String, Integer> mapData = ImmutableMap.of("k1", 1, "k2", 2);
     {
@@ -261,7 +261,7 @@ public class ObjectStreamSerializerTest extends ForyTestBase {
     }
   }
 
-  @Test(dataProvider = "javaFury")
+  @Test(dataProvider = "javaFory")
   public void testJDKCompatibleList(Fory fory) {
     fory.registerSerializer(ArrayList.class, new ObjectStreamSerializer(fory, ArrayList.class));
     List<String> list = new ArrayList<>(ImmutableList.of("a", "b", "c", "d"));
@@ -365,7 +365,7 @@ public class ObjectStreamSerializerTest extends ForyTestBase {
     }
   }
 
-  @Test(dataProvider = "javaFury")
+  @Test(dataProvider = "javaFory")
   public void testObjectInputValidation(Fory fory) {
     // ObjectStreamSerializer serializer = new ObjectStreamSerializer(fory, HTMLDocument.class);
     // MemoryBuffer buffer = MemoryBuffer.newHeapBuffer(32);
@@ -414,7 +414,7 @@ public class ObjectStreamSerializerTest extends ForyTestBase {
     }
   }
 
-  @Test(dataProvider = "javaFury")
+  @Test(dataProvider = "javaFory")
   public void testWriteObjectReplace(Fory fory) throws MalformedURLException {
     Assert.assertEquals(
         serDeCheckSerializer(fory, new URL("http://test"), "ReplaceResolve"),

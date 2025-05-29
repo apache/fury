@@ -17,7 +17,7 @@
 
 from libcpp.memory cimport shared_ptr
 from libc.stdint cimport *
-from pyfury.includes.libformat cimport CArrowWriter
+from pyfory.includes.libformat cimport CArrowWriter
 from pyarrow.lib cimport  CMemoryPool, CRecordBatch
 from pyarrow.lib cimport Schema, MemoryPool, check_status
 import pyarrow as pa

@@ -20,7 +20,7 @@ import inspect
 import sys
 from typing import Dict, Callable
 
-from pyfury._util import get_bit, set_bit, clear_bit, set_bit_to
+from pyfory._util import get_bit, set_bit, clear_bit, set_bit_to
 
 
 # This method is derived from https://github.com/mars-project/mars/blob/c36c53fa22e10ef9477d9c454401a2f281375f31/mars/utils.py.

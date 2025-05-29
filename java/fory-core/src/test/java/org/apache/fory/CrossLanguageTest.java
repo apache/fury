@@ -77,7 +77,7 @@ import org.testng.annotations.Test;
 @Test
 public class CrossLanguageTest extends ForyTestBase {
   private static final Logger LOG = LoggerFactory.getLogger(CrossLanguageTest.class);
-  private static final String PYTHON_MODULE = "pyfury.tests.test_cross_language";
+  private static final String PYTHON_MODULE = "pyfory.tests.test_cross_language";
   private static final String PYTHON_EXECUTABLE = "python";
 
   /**

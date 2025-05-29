@@ -43,19 +43,19 @@ import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-public class ThreadSafeFuryTest extends ForyTestBase {
+public class ThreadSafeForyTest extends ForyTestBase {
   private volatile boolean hasException;
 
   @Test
   public void testPoolSerialize() {
     BeanA beanA = BeanA.createBeanA(2);
-    ThreadSafeFury fory =
+    ThreadSafeFory fory =
         Fory.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(true)
             .requireClassRegistration(false)
             .withAsyncCompilation(true)
-            .buildThreadSafeFuryPool(5, 10);
+            .buildThreadSafeForyPool(5, 10);
     for (int i = 0; i < 2000; i++) {
       new Thread(
               () -> {
@@ -80,8 +80,8 @@ public class ThreadSafeFuryTest extends ForyTestBase {
     ExecutorService executor = Executors.newSingleThreadExecutor();
     AtomicReference<Throwable> ex = new AtomicReference<>();
     {
-      ThreadSafeFury fory =
-          Fory.builder().requireClassRegistration(true).buildThreadSafeFuryPool(2, 4);
+      ThreadSafeFory fory =
+          Fory.builder().requireClassRegistration(true).buildThreadSafeForyPool(2, 4);
       fory.register(BeanB.class);
       Assert.assertEquals(fory.deserialize(fory.serialize(bean)), bean);
       executor.execute(
@@ -95,7 +95,7 @@ public class ThreadSafeFuryTest extends ForyTestBase {
       Assert.assertNull(ex.get());
     }
     {
-      ThreadSafeFury fory = Fory.builder().requireClassRegistration(true).buildThreadLocalFury();
+      ThreadSafeFory fory = Fory.builder().requireClassRegistration(true).buildThreadLocalFory();
       fory.register(BeanB.class);
       Assert.assertEquals(fory.deserialize(fory.serialize(bean)), bean);
       executor.execute(
@@ -113,13 +113,13 @@ public class ThreadSafeFuryTest extends ForyTestBase {
   @Test
   public void testSerialize() throws Exception {
     BeanA beanA = BeanA.createBeanA(2);
-    ThreadSafeFury fory =
+    ThreadSafeFory fory =
         Fory.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(true)
             .requireClassRegistration(false)
             .withAsyncCompilation(true)
-            .buildThreadSafeFury();
+            .buildThreadSafeFory();
     ExecutorService executorService = Executors.newFixedThreadPool(12);
     for (int i = 0; i < 2000; i++) {
       executorService.execute(
@@ -142,17 +142,17 @@ public class ThreadSafeFuryTest extends ForyTestBase {
 
   @Test
   public void testSerializeWithMetaShare() throws InterruptedException {
-    ThreadSafeFury fory1 =
+    ThreadSafeFory fory1 =
         Fory.builder()
             .withLanguage(Language.JAVA)
             .requireClassRegistration(false)
-            .buildThreadSafeFury();
-    ThreadSafeFury fory2 =
+            .buildThreadSafeFory();
+    ThreadSafeFory fory2 =
         Fory.builder()
             .withLanguage(Language.JAVA)
             .withMetaShare(true)
             .requireClassRegistration(false)
-            .buildThreadSafeFury();
+            .buildThreadSafeFory();
     BeanA beanA = BeanA.createBeanA(2);
     ExecutorService executorService = Executors.newFixedThreadPool(12);
     ConcurrentHashMap<Thread, MetaContext> metaMap = new ConcurrentHashMap<>();
@@ -221,7 +221,7 @@ public class ThreadSafeFuryTest extends ForyTestBase {
 
   @Test(dataProvider = "stagingConfig")
   public void testClassDuplicateName(StagingType staging) {
-    ThreadSafeFury fory = Fory.builder().requireClassRegistration(false).buildThreadSafeFury();
+    ThreadSafeFory fory = Fory.builder().requireClassRegistration(false).buildThreadSafeFory();
     String className = "DuplicateStruct";
     Class<?> structClass1 = Struct.createStructClass(className, 1);
     Object struct1 = Struct.createPOJO(structClass1);
@@ -279,15 +279,15 @@ public class ThreadSafeFuryTest extends ForyTestBase {
   }
 
   private WeakHashMap<Class<?>, Boolean> generateClassForGC() {
-    ThreadSafeFury fory1 = Fory.builder().requireClassRegistration(false).buildThreadSafeFury();
-    ThreadSafeFury fory2 =
-        Fory.builder().requireClassRegistration(false).buildThreadSafeFuryPool(1, 2);
+    ThreadSafeFory fory1 = Fory.builder().requireClassRegistration(false).buildThreadSafeFory();
+    ThreadSafeFory fory2 =
+        Fory.builder().requireClassRegistration(false).buildThreadSafeForyPool(1, 2);
     String className = "DuplicateStruct";
     WeakHashMap<Class<?>, Boolean> map = new WeakHashMap<>();
     {
       Class<?> structClass1 = Struct.createStructClass(className, 1, false);
       Object struct1 = Struct.createPOJO(structClass1);
-      for (ThreadSafeFury fory : new ThreadSafeFury[] {fory1, fory2}) {
+      for (ThreadSafeFory fory : new ThreadSafeFory[] {fory1, fory2}) {
         fory.setClassLoader(structClass1.getClassLoader());
         byte[] bytes = fory.serialize(struct1);
         Assert.assertEquals(fory.deserialize(bytes), struct1);
@@ -304,7 +304,7 @@ public class ThreadSafeFuryTest extends ForyTestBase {
       System.out.printf(
           "structClass2 %s %s\n ",
           structClass2.hashCode(), structClass2.getClassLoader().hashCode());
-      for (ThreadSafeFury fory : new ThreadSafeFury[] {fory1, fory2}) {
+      for (ThreadSafeFory fory : new ThreadSafeFory[] {fory1, fory2}) {
         fory.setClassLoader(structClass2.getClassLoader());
         Object struct2 = Struct.createPOJO(structClass2);
         byte[] bytes2 = fory.serialize(struct2);
@@ -317,10 +317,10 @@ public class ThreadSafeFuryTest extends ForyTestBase {
 
   @Test
   public void testSerializeJavaObject() {
-    for (ThreadSafeFury fory :
-        new ThreadSafeFury[] {
-          Fory.builder().requireClassRegistration(false).buildThreadSafeFury(),
-          Fory.builder().requireClassRegistration(false).buildThreadSafeFuryPool(2, 2)
+    for (ThreadSafeFory fory :
+        new ThreadSafeFory[] {
+          Fory.builder().requireClassRegistration(false).buildThreadSafeFory(),
+          Fory.builder().requireClassRegistration(false).buildThreadSafeForyPool(2, 2)
         }) {
       byte[] bytes = fory.serializeJavaObject("abc");
       Assert.assertEquals(fory.deserializeJavaObject(bytes, String.class), "abc");
@@ -361,12 +361,12 @@ public class ThreadSafeFuryTest extends ForyTestBase {
 
   @Test
   public void testSerializerRegister() {
-    final ThreadSafeFury threadSafeFury =
-        Fory.builder().requireClassRegistration(false).buildThreadSafeFuryPool(0, 2);
-    threadSafeFury.registerSerializer(Foo.class, FooSerializer.class);
+    final ThreadSafeFory threadSafeFory =
+        Fory.builder().requireClassRegistration(false).buildThreadSafeForyPool(0, 2);
+    threadSafeFory.registerSerializer(Foo.class, FooSerializer.class);
     // create a new classLoader
-    threadSafeFury.setClassLoader(new CustomClassLoader(ClassLoader.getSystemClassLoader()));
-    threadSafeFury.execute(
+    threadSafeFory.setClassLoader(new CustomClassLoader(ClassLoader.getSystemClassLoader()));
+    threadSafeFory.execute(
         fory -> {
           Assert.assertEquals(
               fory.getClassResolver().getSerializer(Foo.class).getClass(), FooSerializer.class);

@@ -28,7 +28,7 @@ import org.testng.annotations.Test;
 
 public class URLSerializerTest extends ForyTestBase {
 
-  @Test(dataProvider = "javaFury")
+  @Test(dataProvider = "javaFory")
   public void testDefaultWrite(Fory fory) throws MalformedURLException {
     Assert.assertEquals(
         serDeCheckSerializer(fory, new URL("http://test"), "ReplaceResolve"),

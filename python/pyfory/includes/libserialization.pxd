@@ -17,7 +17,7 @@
 
 from libc.stdint cimport int32_t
 from libcpp cimport bool as c_bool
-from pyfury.includes.libutil cimport CBuffer
+from pyfory.includes.libutil cimport CBuffer
 
 cdef extern from "fory/type/type.h" namespace "fory" nogil:
 
@@ -66,6 +66,6 @@ cdef extern from "fory/type/type.h" namespace "fory" nogil:
 
     cdef c_bool IsNamespacedType(int32_t type_id)
 
-cdef extern from "fory/python/pyfury.h" namespace "fory":
+cdef extern from "fory/python/pyfory.h" namespace "fory":
     int Fory_PyBooleanSequenceWriteToBuffer(object collection, CBuffer *buffer, Py_ssize_t start_index)
     int Fory_PyFloatSequenceWriteToBuffer(object collection, CBuffer *buffer, Py_ssize_t start_index)

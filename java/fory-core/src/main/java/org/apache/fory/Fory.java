@@ -79,7 +79,7 @@ import org.apache.fory.util.StringUtils;
  * serialization.
  */
 @NotThreadSafe
-public final class Fory implements BaseFury {
+public final class Fory implements BaseFory {
   private static final Logger LOG = LoggerFactory.getLogger(Fory.class);
 
   public static final byte NULL_FLAG = -3;
@@ -130,7 +130,7 @@ public final class Fory implements BaseFury {
 
   public Fory(ForyBuilder builder, ClassLoader classLoader) {
     // Avoid set classLoader in `ForyBuilder`, which won't be clear when
-    // `org.apache.fory.ThreadSafeFury.clearClassLoader` is called.
+    // `org.apache.fory.ThreadSafeFory.clearClassLoader` is called.
     config = new Config(builder);
     this.language = config.getLanguage();
     crossLanguage = language != Language.JAVA;

@@ -33,8 +33,8 @@ class FieldSpecImmutable extends GenExport{
 
   final String className;
 
-  final bool includeFromFury;
-  final bool includeToFury;
+  final bool includeFromFory;
+  final bool includeToFory;
 
   final bool isPublic;
 
@@ -61,8 +61,8 @@ class FieldSpecImmutable extends GenExport{
       required this.isFinal,
       required this.isLate,
       required this.hasInitializer,
-      required this.includeFromFury,
-      required this.includeToFury,
+      required this.includeFromFory,
+      required this.includeToFory,
     }): typeAdapter = TypeAdapter(typeSpec){
     if (isPublic){
       assert(name.isNotEmpty && name[0] != "_");
@@ -124,16 +124,16 @@ class FieldSpecImmutable extends GenExport{
     // ForyFieldSpec::type part
     typeSpec.genCodeReqImportsInfo(buf, imports, dartCorePrefixWithPoint, indentLevel + 1);
 
-    // ForyFieldSpec::includeFromFury part
+    // ForyFieldSpec::includeFromFory part
     CodegenTool.writeIndent(buf, nextTotalIndent);
-    buf.write(includeFromFury ? "true,\n" : "false,\n");
-    // ForyFieldSpec::includeToFury part
+    buf.write(includeFromFory ? "true,\n" : "false,\n");
+    // ForyFieldSpec::includeToFory part
     CodegenTool.writeIndent(buf, nextTotalIndent);
-    buf.write(includeToFury ? "true,\n" : "false,\n");
+    buf.write(includeToFory ? "true,\n" : "false,\n");
 
     // ForyFieldSpec::getter part
     CodegenTool.writeIndent(buf, nextTotalIndent);
-    if (includeToFury){
+    if (includeToFory){
       assert(canGet);
       buf.write("(${dartCorePrefixWithPoint ?? ''}Object inst) => (inst as ");
       buf.write(className);
@@ -146,8 +146,8 @@ class FieldSpecImmutable extends GenExport{
 
     // ForyFieldSpec::setter part
     CodegenTool.writeIndent(buf, nextTotalIndent);
-    if (includeFromFury && canSet){
-      // Why can canSet still be false after includeFromFury?
+    if (includeFromFory && canSet){
+      // Why can canSet still be false after includeFromFory?
       // Because there is still the possibility of initialization using a constructor, in which case canSet=false is also valid.
       buf.write("(${dartCorePrefixWithPoint ?? ''}Object inst, var v) => (inst as ");
       buf.write(className);

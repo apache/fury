@@ -17,9 +17,9 @@
  * under the License.
  */
 
-const Fory = require("@furyjs/fory");
-const utils = require("@furyjs/fory/dist/lib/util");
-const hps = require('@furyjs/hps').default;
+const Fory = require("@foryjs/fory");
+const utils = require("@foryjs/fory/dist/lib/util");
+const hps = require('@foryjs/hps').default;
 const fory = new Fory.default({ hps, refTracking: false, useSliceString: true });
 const Benchmark = require("benchmark");
 const protobuf = require("protobufjs");

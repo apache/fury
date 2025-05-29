@@ -20,16 +20,16 @@
 package org.apache.fory.graalvm;
 
 import org.apache.fory.Fory;
-import org.apache.fory.ThreadLocalFury;
-import org.apache.fory.ThreadSafeFury;
+import org.apache.fory.ThreadLocalFory;
+import org.apache.fory.ThreadSafeFory;
 import org.apache.fory.config.CompatibleMode;
 
 public class CompatibleThreadSafeExample {
-  static ThreadSafeFury fory;
+  static ThreadSafeFory fory;
 
   static {
     fory =
-        new ThreadLocalFury(
+        new ThreadLocalFory(
             classLoader -> {
               Fory f =
                   Fory.builder()

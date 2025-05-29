@@ -26,7 +26,7 @@ import org.apache.fory.resolver.ClassChecker;
 import org.apache.fory.serializer.Serializer;
 import org.apache.fory.serializer.SerializerFactory;
 
-public abstract class AbstractThreadSafeFury implements ThreadSafeFury {
+public abstract class AbstractThreadSafeFory implements ThreadSafeFory {
   @Override
   public void register(Class<?> clz) {
     registerCallback(fory -> fory.register(clz));

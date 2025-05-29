@@ -43,7 +43,7 @@ class BinaryDistribution(Distribution):
     def __init__(self, attrs=None):
         super().__init__(attrs=attrs)
         if BAZEL_BUILD_EXT:
-            subprocess.check_call(["bazel", "build", "-s", "//:cp_fury_so"])
+            subprocess.check_call(["bazel", "build", "-s", "//:cp_fory_so"])
 
     def has_ext_modules(self):
         return True

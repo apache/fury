@@ -29,9 +29,9 @@ import kotlin.time.Duration;
 import kotlin.time.DurationUnit;
 import kotlin.time.TimedValue;
 import kotlin.uuid.Uuid;
-import org.apache.fory.AbstractThreadSafeFury;
+import org.apache.fory.AbstractThreadSafeFory;
 import org.apache.fory.Fory;
-import org.apache.fory.ThreadSafeFury;
+import org.apache.fory.ThreadSafeFory;
 import org.apache.fory.resolver.ClassResolver;
 import org.apache.fory.serializer.collection.CollectionSerializers;
 import org.apache.fory.serializer.collection.MapSerializers;
@@ -40,9 +40,9 @@ import org.apache.fory.serializer.collection.MapSerializers;
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class KotlinSerializers {
 
-  public static void registerSerializers(ThreadSafeFury fory) {
-    AbstractThreadSafeFury threadSafeFury = (AbstractThreadSafeFury) fory;
-    threadSafeFury.registerCallback(KotlinSerializers::registerSerializers);
+  public static void registerSerializers(ThreadSafeFory fory) {
+    AbstractThreadSafeFory threadSafeFory = (AbstractThreadSafeFory) fory;
+    threadSafeFory.registerCallback(KotlinSerializers::registerSerializers);
   }
 
   public static void registerSerializers(Fory fory) {

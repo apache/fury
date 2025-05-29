@@ -242,9 +242,9 @@ public class CollectionSerializersTest extends ForyTestBase {
 
   @Test
   public void testEmptyCollection() {
-    serDeCheckSerializer(getJavaFury(), Collections.EMPTY_LIST, "EmptyListSerializer");
-    serDeCheckSerializer(getJavaFury(), Collections.emptySortedSet(), "EmptySortedSetSerializer");
-    serDeCheckSerializer(getJavaFury(), Collections.EMPTY_SET, "EmptySetSerializer");
+    serDeCheckSerializer(getJavaFory(), Collections.EMPTY_LIST, "EmptyListSerializer");
+    serDeCheckSerializer(getJavaFory(), Collections.emptySortedSet(), "EmptySortedSetSerializer");
+    serDeCheckSerializer(getJavaFory(), Collections.EMPTY_SET, "EmptySetSerializer");
   }
 
   @Test(dataProvider = "foryCopyConfig")
@@ -256,8 +256,8 @@ public class CollectionSerializersTest extends ForyTestBase {
 
   @Test
   public void testSingleCollection() {
-    serDeCheckSerializer(getJavaFury(), Collections.singletonList(1), "SingletonList");
-    serDeCheckSerializer(getJavaFury(), Collections.singleton(1), "SingletonSet");
+    serDeCheckSerializer(getJavaFory(), Collections.singletonList(1), "SingletonList");
+    serDeCheckSerializer(getJavaFory(), Collections.singleton(1), "SingletonSet");
   }
 
   @Test(dataProvider = "foryCopyConfig")
@@ -269,7 +269,7 @@ public class CollectionSerializersTest extends ForyTestBase {
   @Test
   public void tesSkipList() {
     serDeCheckSerializer(
-        getJavaFury(),
+        getJavaFory(),
         new ConcurrentSkipListSet<>(Arrays.asList("a", "b", "c")),
         "ConcurrentSkipListSet");
   }
@@ -282,7 +282,7 @@ public class CollectionSerializersTest extends ForyTestBase {
   @Test
   public void tesVectorSerializer() {
     serDeCheckSerializer(
-        getJavaFury(), new Vector<>(Arrays.asList("a", "b", "c")), "VectorSerializer");
+        getJavaFory(), new Vector<>(Arrays.asList("a", "b", "c")), "VectorSerializer");
   }
 
   @Test(dataProvider = "foryCopyConfig")
@@ -293,7 +293,7 @@ public class CollectionSerializersTest extends ForyTestBase {
   @Test
   public void tesArrayDequeSerializer() {
     serDeCheckSerializer(
-        getJavaFury(), new ArrayDeque<>(Arrays.asList("a", "b", "c")), "ArrayDeque");
+        getJavaFory(), new ArrayDeque<>(Arrays.asList("a", "b", "c")), "ArrayDeque");
   }
 
   @Test(dataProvider = "foryCopyConfig")
@@ -314,19 +314,19 @@ public class CollectionSerializersTest extends ForyTestBase {
 
   @Test
   public void tesEnumSetSerializer() {
-    serDe(getJavaFury(), EnumSet.allOf(TestEnum.class));
+    serDe(getJavaFory(), EnumSet.allOf(TestEnum.class));
     Assert.assertEquals(
-        getJavaFury()
+        getJavaFory()
             .getClassResolver()
             .getSerializerClass(EnumSet.allOf(TestEnum.class).getClass()),
         CollectionSerializers.EnumSetSerializer.class);
-    serDe(getJavaFury(), EnumSet.of(TestEnum.A));
+    serDe(getJavaFory(), EnumSet.of(TestEnum.A));
     Assert.assertEquals(
-        getJavaFury().getClassResolver().getSerializerClass(EnumSet.of(TestEnum.A).getClass()),
+        getJavaFory().getClassResolver().getSerializerClass(EnumSet.of(TestEnum.A).getClass()),
         CollectionSerializers.EnumSetSerializer.class);
-    serDe(getJavaFury(), EnumSet.of(TestEnum.A, TestEnum.B));
+    serDe(getJavaFory(), EnumSet.of(TestEnum.A, TestEnum.B));
     Assert.assertEquals(
-        getJavaFury()
+        getJavaFory()
             .getClassResolver()
             .getSerializerClass(EnumSet.of(TestEnum.A, TestEnum.B).getClass()),
         CollectionSerializers.EnumSetSerializer.class);
@@ -342,15 +342,15 @@ public class CollectionSerializersTest extends ForyTestBase {
 
   @Test
   public void tesBitSetSerializer() {
-    serDe(getJavaFury(), BitSet.valueOf(LongStream.range(0, 2).toArray()));
+    serDe(getJavaFory(), BitSet.valueOf(LongStream.range(0, 2).toArray()));
     Assert.assertEquals(
-        getJavaFury()
+        getJavaFory()
             .getClassResolver()
             .getSerializerClass(BitSet.valueOf(LongStream.range(0, 2).toArray()).getClass()),
         CollectionSerializers.BitSetSerializer.class);
-    serDe(getJavaFury(), BitSet.valueOf(LongStream.range(0, 128).toArray()));
+    serDe(getJavaFory(), BitSet.valueOf(LongStream.range(0, 128).toArray()));
     Assert.assertEquals(
-        getJavaFury()
+        getJavaFory()
             .getClassResolver()
             .getSerializerClass(BitSet.valueOf(LongStream.range(0, 128).toArray()).getClass()),
         CollectionSerializers.BitSetSerializer.class);
@@ -364,9 +364,9 @@ public class CollectionSerializersTest extends ForyTestBase {
 
   @Test
   public void tesPriorityQueueSerializer() {
-    serDe(getJavaFury(), new PriorityQueue<>(Arrays.asList("a", "b", "c")));
+    serDe(getJavaFory(), new PriorityQueue<>(Arrays.asList("a", "b", "c")));
     Assert.assertEquals(
-        getJavaFury().getClassResolver().getSerializerClass(PriorityQueue.class),
+        getJavaFory().getClassResolver().getSerializerClass(PriorityQueue.class),
         CollectionSerializers.PriorityQueueSerializer.class);
   }
 
@@ -381,9 +381,9 @@ public class CollectionSerializersTest extends ForyTestBase {
   public void testCopyOnWriteArrayList() {
     final CopyOnWriteArrayList<String> list =
         new CopyOnWriteArrayList<>(new String[] {"a", "b", "c"});
-    Assert.assertEquals(list, serDe(getJavaFury(), list));
+    Assert.assertEquals(list, serDe(getJavaFory(), list));
     Assert.assertEquals(
-        getJavaFury().getClassResolver().getSerializerClass(CopyOnWriteArrayList.class),
+        getJavaFory().getClassResolver().getSerializerClass(CopyOnWriteArrayList.class),
         CollectionSerializers.CopyOnWriteArrayListSerializer.class);
   }
 
@@ -401,7 +401,7 @@ public class CollectionSerializersTest extends ForyTestBase {
     Set<String> set;
   }
 
-  @Test(dataProvider = "javaFury")
+  @Test(dataProvider = "javaFory")
   public void testSetFromMap(Fory fory) {
     Set<String> set = Collections.newSetFromMap(Maps.newConcurrentMap());
     set.add("a");
@@ -434,7 +434,7 @@ public class CollectionSerializersTest extends ForyTestBase {
     copyCheck(fory, set);
   }
 
-  @Test(dataProvider = "javaFury")
+  @Test(dataProvider = "javaFory")
   public void testConcurrentMapKeySetViewMap(Fory fory) {
     final ConcurrentHashMap.KeySetView<String, Boolean> set = ConcurrentHashMap.newKeySet();
     set.add("a");
@@ -529,7 +529,7 @@ public class CollectionSerializersTest extends ForyTestBase {
     public List<String> list;
   }
 
-  @Test(dataProvider = "javaFury")
+  @Test(dataProvider = "javaFory")
   public void testSimpleBeanCollectionFields(Fory fory) {
     SimpleBeanCollectionFields obj = new SimpleBeanCollectionFields();
     obj.list = new ArrayList<>();
@@ -566,7 +566,7 @@ public class CollectionSerializersTest extends ForyTestBase {
     public Map<String, NotFinal> map1;
   }
 
-  @Test(dataProvider = "javaFury")
+  @Test(dataProvider = "javaFory")
   public void testContainer(Fory fory) {
     Container container = new Container();
     container.list1 = ofArrayList(new NotFinal(1));
@@ -662,7 +662,7 @@ public class CollectionSerializersTest extends ForyTestBase {
     return obj;
   }
 
-  @Test(dataProvider = "javaFury")
+  @Test(dataProvider = "javaFory")
   public void testCollectionFieldSerializers(Fory fory) {
     CollectionFieldsClass obj = createCollectionFieldsObject();
     Assert.assertEquals(serDe(fory, obj).toString(), obj.toString());
@@ -687,7 +687,7 @@ public class CollectionSerializersTest extends ForyTestBase {
     public List<Collection<Integer>> list1;
   }
 
-  @Test(dataProvider = "javaFury")
+  @Test(dataProvider = "javaFory")
   public void testNestedCollection1(Fory fory) {
     ArrayList<Integer> list = ofArrayList(1, 2);
     NestedCollection1 o = new NestedCollection1(ofArrayList(list));
@@ -707,7 +707,7 @@ public class CollectionSerializersTest extends ForyTestBase {
     public List<Collection<Collection<Integer>>> list1;
   }
 
-  @Test(dataProvider = "javaFury")
+  @Test(dataProvider = "javaFory")
   public void testNestedCollection2(Fory fory) {
     ArrayList<Integer> list = ofArrayList(1, 2);
     NestedCollection2 o = new NestedCollection2(ofArrayList(ofArrayList(list)));

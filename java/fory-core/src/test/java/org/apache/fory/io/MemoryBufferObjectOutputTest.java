@@ -31,7 +31,7 @@ import org.testng.annotations.Test;
 public class MemoryBufferObjectOutputTest {
 
   @Test
-  public void testFuryObjectOutput() throws IOException {
+  public void testForyObjectOutput() throws IOException {
     Fory fory = Fory.builder().build();
     MemoryBuffer buffer = MemoryUtils.buffer(32);
     try (MemoryBufferObjectOutput output = new MemoryBufferObjectOutput(fory, buffer)) {

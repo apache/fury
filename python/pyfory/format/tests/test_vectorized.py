@@ -15,10 +15,10 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import pyfury as fory
+import pyfory as fory
 
-from pyfury.tests.core import require_pyarrow
-from pyfury.util import lazy_import
+from pyfory.tests.core import require_pyarrow
+from pyfory.util import lazy_import
 
 pa = lazy_import("pyarrow")
 

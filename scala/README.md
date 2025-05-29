@@ -1,6 +1,6 @@
-# Apache Fury™ Scala
+# Apache Fory™ Scala
 
-Fury supports all scala object serialization:
+Fory supports all scala object serialization:
 
 - `case` class serialization supported
 - `pojo/bean` class serialization supported

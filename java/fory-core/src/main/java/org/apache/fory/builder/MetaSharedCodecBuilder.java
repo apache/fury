@@ -144,7 +144,7 @@ public class MetaSharedCodecBuilder extends ObjectCodecBuilder {
       Fory fory, Class<?> cls, GeneratedMetaSharedSerializer s) {
     if (GraalvmSupport.isGraalRuntime()) {
       return fory.getJITContext()
-          .asyncVisitFury(f -> f.getClassResolver().getSerializer(s.getType()));
+          .asyncVisitFory(f -> f.getClassResolver().getSerializer(s.getType()));
     }
     // This method hold jit lock, so create jit serializer async to avoid block serialization.
     Class serializerClass =

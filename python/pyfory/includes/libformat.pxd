@@ -27,7 +27,7 @@ from libcpp.string cimport string as c_string
 from cpython cimport PyObject
 from pyarrow.lib cimport CSchema, CField, CListType, CMapType
 from pyarrow.lib cimport CStatus, CMemoryPool, CRecordBatch
-from pyfury.includes.libutil cimport CBuffer
+from pyfory.includes.libutil cimport CBuffer
 
 cimport cpython
 

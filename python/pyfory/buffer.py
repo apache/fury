@@ -15,4 +15,4 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from pyfury._util import Buffer  # noqa: F401 # pylint: disable=unused-import
+from pyfory._util import Buffer  # noqa: F401 # pylint: disable=unused-import

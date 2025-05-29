@@ -100,7 +100,7 @@ final $Person = ClassSpec(
   null,
 );
 
-mixin _$PersonFury implements Furiable {
+mixin _$PersonFory implements Furiable {
   @override
   Type get $foryType => Person;
 }

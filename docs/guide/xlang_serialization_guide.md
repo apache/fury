@@ -54,10 +54,10 @@ public class Example1 {
 **Python**
 
 ```python
-import pyfury
+import pyfory
 import numpy as np
 
-fory = pyfury.Fory()
+fory = pyfory.Fory()
 object_list = [True, False, "str", -1.1, 1,
                np.full(100, 0, dtype=np.int32), np.full(20, 0.0, dtype=np.double)]
 data = fory.serialize(object_list)
@@ -75,12 +75,12 @@ print(new_map)
 ```go
 package main
 
-import furygo "github.com/apache/fory/fory/go/fory"
+import forygo "github.com/apache/fory/fory/go/fory"
 import "fmt"
 
 func main() {
  list := []interface{}{true, false, "str", -1.1, 1, make([]int32, 10), make([]float64, 20)}
- fory := furygo.NewFury()
+ fory := forygo.NewFory()
  bytes, err := fory.Marshal(list)
  if err != nil {
   panic(err)
@@ -111,14 +111,14 @@ func main() {
 **JavaScript**
 
 ```javascript
-import Fory from '@furyjs/fory';
+import Fory from '@foryjs/fory';
 
 /**
- * @furyjs/hps use v8's fast-calls-api that can be called directly by jit, ensure that the version of Node is 20 or above.
+ * @foryjs/hps use v8's fast-calls-api that can be called directly by jit, ensure that the version of Node is 20 or above.
  * Experimental feature, installation success cannot be guaranteed at this moment
  * If you are unable to install the module, replace it with `const hps = null;`
  **/
-import hps from '@furyjs/hps';
+import hps from '@foryjs/hps';
 
 const fory = new Fory({ hps });
 const input = fory.serialize('hello fory');
@@ -209,13 +209,13 @@ public class Example2 {
 ```python
 from dataclasses import dataclass
 from typing import List, Dict, Any
-import pyfury, array
+import pyfory, array
 
 
 @dataclass
 class SomeClass1:
     f1: Any
-    f2: Dict[pyfury.Int8Type, pyfury.Int32Type]
+    f2: Dict[pyfory.Int8Type, pyfory.Int32Type]
 
 
 @dataclass
@@ -223,23 +223,23 @@ class SomeClass2:
     f1: Any = None
     f2: str = None
     f3: List[str] = None
-    f4: Dict[pyfury.Int8Type, pyfury.Int32Type] = None
-    f5: pyfury.Int8Type = None
-    f6: pyfury.Int16Type = None
-    f7: pyfury.Int32Type = None
-    # int type will be taken as `pyfury.Int64Type`.
-    # use `pyfury.Int32Type` for type hint if peer
+    f4: Dict[pyfory.Int8Type, pyfory.Int32Type] = None
+    f5: pyfory.Int8Type = None
+    f6: pyfory.Int16Type = None
+    f7: pyfory.Int32Type = None
+    # int type will be taken as `pyfory.Int64Type`.
+    # use `pyfory.Int32Type` for type hint if peer
     # are more narrow type.
     f8: int = None
-    f9: pyfury.Float32Type = None
-    # float type will be taken as `pyfury.Float64Type`
+    f9: pyfory.Float32Type = None
+    # float type will be taken as `pyfory.Float64Type`
     f10: float = None
-    f11: pyfury.Int16ArrayType = None
-    f12: List[pyfury.Int16Type] = None
+    f11: pyfory.Int16ArrayType = None
+    f12: List[pyfory.Int16Type] = None
 
 
 if __name__ == "__main__":
-    f = pyfury.Fory()
+    f = pyfory.Fory()
     f.register_type(SomeClass1, typename="example.SomeClass1")
     f.register_type(SomeClass2, typename="example.SomeClass2")
     obj1 = SomeClass1(f1=True, f2={-1: 2})
@@ -267,7 +267,7 @@ if __name__ == "__main__":
 ```go
 package main
 
-import furygo "github.com/apache/fory/fory/go/fory"
+import forygo "github.com/apache/fory/fory/go/fory"
 import "fmt"
 
 func main() {
@@ -290,7 +290,7 @@ func main() {
   F1 interface{}
   F2 map[int8]int32
  }
- fory := furygo.NewFury()
+ fory := forygo.NewFory()
  if err := fory.RegisterTagType("example.SomeClass1", SomeClass1{}); err != nil {
   panic(err)
  }
@@ -330,14 +330,14 @@ func main() {
 **JavaScript**
 
 ```javascript
-import Fory, { Type, InternalSerializerType } from '@furyjs/fory';
+import Fory, { Type, InternalSerializerType } from '@foryjs/fory';
 
 /**
- * @furyjs/hps use v8's fast-calls-api that can be called directly by jit, ensure that the version of Node is 20 or above.
+ * @foryjs/hps use v8's fast-calls-api that can be called directly by jit, ensure that the version of Node is 20 or above.
  * Experimental feature, installation success cannot be guaranteed at this moment
  * If you are unable to install the module, replace it with `const hps = null;`
  **/
-import hps from '@furyjs/hps';
+import hps from '@foryjs/hps';
 
 // Now we describe data structures using JSON, but in the future, we will use more ways.
 const description = Type.object('example.foo', {
@@ -451,14 +451,14 @@ public class ReferenceExample {
 
 ```python
 from typing import Dict
-import pyfury
+import pyfory
 
 class SomeClass:
     f1: "SomeClass"
     f2: Dict[str, str]
     f3: Dict[str, str]
 
-fory = pyfury.Fory(ref_tracking=True)
+fory = pyfory.Fory(ref_tracking=True)
 fory.register_type(SomeClass, typename="example.SomeClass")
 obj = SomeClass()
 obj.f2 = {"k1": "v1", "k2": "v2"}
@@ -473,7 +473,7 @@ print(fory.deserialize(data))
 ```go
 package main
 
-import furygo "github.com/apache/fory/fory/go/fory"
+import forygo "github.com/apache/fory/fory/go/fory"
 import "fmt"
 
 func main() {
@@ -482,7 +482,7 @@ func main() {
   F2 map[string]string
   F3 map[string]string
  }
- fory := furygo.NewFury(true)
+ fory := forygo.NewFory(true)
  if err := fory.RegisterTagType("example.SomeClass", SomeClass{}); err != nil {
   panic(err)
  }
@@ -504,13 +504,13 @@ func main() {
 **JavaScript**
 
 ```javascript
-import Fory, { Type } from '@furyjs/fory';
+import Fory, { Type } from '@foryjs/fory';
 /**
- * @furyjs/hps use v8's fast-calls-api that can be called directly by jit, ensure that the version of Node is 20 or above.
+ * @foryjs/hps use v8's fast-calls-api that can be called directly by jit, ensure that the version of Node is 20 or above.
  * Experimental feature, installation success cannot be guaranteed at this moment
  * If you are unable to install the module, replace it with `const hps = null;`
  **/
-import hps from '@furyjs/hps';
+import hps from '@foryjs/hps';
 
 const description = Type.object('example.foo', {
   foo: Type.string(),
@@ -563,10 +563,10 @@ public class ZeroCopyExample {
 
 ```python
 import array
-import pyfury
+import pyfory
 import numpy as np
 
-fory = pyfury.Fory()
+fory = pyfory.Fory()
 list_ = ["str", bytes(bytearray(1000)),
          array.array("i", range(100)), np.full(100, 0.0, dtype=np.double)]
 serialized_objects = []
@@ -581,11 +581,11 @@ print(fory.deserialize(data, buffers=buffers))
 ```go
 package main
 
-import furygo "github.com/apache/fory/fory/go/fory"
+import forygo "github.com/apache/fory/fory/go/fory"
 import "fmt"
 
 func main() {
- fory := furygo.NewFury()
+ fory := forygo.NewFory()
  list := []interface{}{"str", make([]byte, 1000)}
  buf := fory.NewByteBuffer(nil)
  var bufferObjects []fory.BufferObject

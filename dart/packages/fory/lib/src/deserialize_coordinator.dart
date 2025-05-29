@@ -42,11 +42,11 @@ class DeserializeCoordinator {
   static DeserializeCoordinator get I => _instance;
   DeserializeCoordinator._internal();
 
-  static final ForyHeaderSerializer _furyHeaderSer = ForyHeaderSerializer.I;
+  static final ForyHeaderSerializer _foryHeaderSer = ForyHeaderSerializer.I;
 
   Object? read(Uint8List bytes, ForyConfig conf, XtypeResolver xtypeResolver, [ByteReader? reader]) {
     var br = reader ?? ByteReader.forBytes(bytes,);
-    HeaderBrief? header = _furyHeaderSer.read(br, conf);
+    HeaderBrief? header = _foryHeaderSer.read(br, conf);
     if (header == null) return null;
 
     DeserializerPack deserPack = DeserializerPack(

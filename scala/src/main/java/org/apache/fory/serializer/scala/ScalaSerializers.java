@@ -19,9 +19,9 @@
 
 package org.apache.fory.serializer.scala;
 
-import org.apache.fory.AbstractThreadSafeFury;
+import org.apache.fory.AbstractThreadSafeFory;
 import org.apache.fory.Fory;
-import org.apache.fory.ThreadSafeFury;
+import org.apache.fory.ThreadSafeFory;
 import org.apache.fory.resolver.ClassResolver;
 import org.apache.fory.serializer.Serializer;
 import org.apache.fory.serializer.SerializerFactory;
@@ -33,9 +33,9 @@ import static org.apache.fory.serializer.scala.ToFactorySerializers.MapToFactory
 
 public class ScalaSerializers {
 
-  public static void registerSerializers(ThreadSafeFury fory) {
-    AbstractThreadSafeFury threadSafeFury = (AbstractThreadSafeFury) fory;
-    threadSafeFury.registerCallback(ScalaSerializers::registerSerializers);
+  public static void registerSerializers(ThreadSafeFory fory) {
+    AbstractThreadSafeFory threadSafeFory = (AbstractThreadSafeFory) fory;
+    threadSafeFory.registerCallback(ScalaSerializers::registerSerializers);
   }
 
   public static void registerSerializers(Fory fory) {

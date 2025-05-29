@@ -19,9 +19,9 @@ load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
 load("@com_github_grpc_grpc//bazel:cython_library.bzl", "pyx_library")
 
 cc_library(
-    name = "_pyfury",
-    srcs = ["pyfury.cc"],
-    hdrs = ["pyfury.h"],
+    name = "_pyfory",
+    srcs = ["pyfory.cc"],
+    hdrs = ["pyfory.h"],
     alwayslink=True,
     linkstatic=True,
     strip_include_prefix = "/cpp",
