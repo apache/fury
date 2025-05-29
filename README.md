@@ -9,15 +9,15 @@
 
 **Apache Fory (incubating)** is a blazingly-fast multi-language serialization framework powered by **JIT** (just-in-time compilation) and **zero-copy**, providing up to 170x performance and ultimate ease of use.
 
-<https://fory.apache.org>
-
-> Apache Fory was previously named as Apache Fury. For versions less than 0.11, please use "fury" instead of "fory" in package names, imports, and dependencies.
+<https://fury.apache.org>
 
 > [!IMPORTANT]
 > Apache Fory (incubating) is an effort undergoing incubation at the Apache
 > Software Foundation (ASF), sponsored by the Apache Incubator PMC.
 >
 > Please read the [DISCLAIMER](DISCLAIMER) and a full explanation of ["incubating"](https://incubator.apache.org/policy/incubation.html).
+>
+> Apache Fory was previously named as Apache Fury. For versions less than 0.11, please use "fury" instead of "fory" in package names, imports, and dependencies.
 
 ## Features
 
