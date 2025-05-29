@@ -84,14 +84,14 @@ public class DuplicateFieldsTest extends ForyTestBase {
     }
     {
       // FallbackSerializer/CodegenSerializer will set itself to ClassResolver.
-      Fory fury1 =
+      Fory fory1 =
           Fory.builder()
               .withLanguage(Language.JAVA)
               .withRefTracking(false)
               .withCodegen(true)
               .requireClassRegistration(false)
               .build();
-      C newC = (C) serDeCheckSerializer(fury1, c, "Codec");
+      C newC = (C) serDeCheckSerializer(fory1, c, "Codec");
       assertEquals(newC.f1, c.f1);
       assertEquals(((B) newC).f1, ((B) c).f1);
       assertEquals(newC, c);
@@ -136,8 +136,8 @@ public class DuplicateFieldsTest extends ForyTestBase {
     }
     {
       // FallbackSerializer/CodegenSerializer will set itself to ClassResolver.
-      Fory fury1 = builder.build();
-      C newC = serDeCheckSerializer(fury1, c, scopedMetaShare ? ".*Codec" : "(Compatible)?.*Codec");
+      Fory fory1 = builder.build();
+      C newC = serDeCheckSerializer(fory1, c, scopedMetaShare ? ".*Codec" : "(Compatible)?.*Codec");
       assertEquals(newC.f1, c.f1);
       assertEquals(((B) newC).f1, ((B) c).f1);
       assertEquals(newC, c);

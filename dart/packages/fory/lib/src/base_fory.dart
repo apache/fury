@@ -26,7 +26,7 @@ import 'package:fory/src/serializer/serializer.dart' show Serializer;
 abstract class BaseFury{
   void register(CustomTypeSpec spec, [String? tag]);
   void registerSerializer(Type type, Serializer ser);
-  Object? fromFury(Uint8List bytes, [ByteReader? br]);
-  Uint8List toFury(Object? obj,);
+  Object? fromFory(Uint8List bytes, [ByteReader? br]);
+  Uint8List toFory(Object? obj,);
   void toFuryWithWriter(Object? obj, ByteWriter writer);
 }

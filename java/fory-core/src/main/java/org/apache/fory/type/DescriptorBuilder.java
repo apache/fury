@@ -49,7 +49,7 @@ public class DescriptorBuilder {
     this.field = descriptor.getField();
     this.readMethod = descriptor.getReadMethod();
     this.writeMethod = descriptor.getWriteMethod();
-    this.foryField = descriptor.getFuryField();
+    this.foryField = descriptor.getForyField();
     this.nullable = descriptor.isNullable();
     this.trackingRef = descriptor.isTrackingRef();
   }

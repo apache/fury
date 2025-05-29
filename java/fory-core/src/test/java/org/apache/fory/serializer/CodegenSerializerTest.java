@@ -231,7 +231,7 @@ public class CodegenSerializerTest extends ForyTestBase {
     serDeCheck(fory, pojo);
     byte[] bytes = fory.serialize(pojo);
     {
-      Fory fury1 =
+      Fory fory1 =
           builder()
               .withLanguage(Language.JAVA)
               .withIntCompressed(true)
@@ -239,15 +239,15 @@ public class CodegenSerializerTest extends ForyTestBase {
               .withCompatibleMode(CompatibleMode.SCHEMA_CONSISTENT)
               .requireClassRegistration(false)
               .build();
-      serDeCheck(fury1, pojo);
+      serDeCheck(fory1, pojo);
       Assert.assertNotSame(
-          fury1.getClassResolver().getSerializerClass(CompressTestClass.class),
+          fory1.getClassResolver().getSerializerClass(CompressTestClass.class),
           fory.getClassResolver().getSerializerClass(CompressTestClass.class));
-      Assert.assertTrue(fury1.serialize(pojo).length > bytes.length);
-      Assert.assertTrue(fury1.serialize(pojo).length < length);
+      Assert.assertTrue(fory1.serialize(pojo).length > bytes.length);
+      Assert.assertTrue(fory1.serialize(pojo).length < length);
     }
     {
-      Fory fury1 =
+      Fory fory1 =
           builder()
               .withLanguage(Language.JAVA)
               .withIntCompressed(false)
@@ -255,9 +255,9 @@ public class CodegenSerializerTest extends ForyTestBase {
               .withCompatibleMode(CompatibleMode.SCHEMA_CONSISTENT)
               .requireClassRegistration(false)
               .build();
-      serDeCheck(fury1, pojo);
-      Assert.assertTrue(fury1.serialize(pojo).length > bytes.length);
-      Assert.assertTrue(fury1.serialize(pojo).length < length);
+      serDeCheck(fory1, pojo);
+      Assert.assertTrue(fory1.serialize(pojo).length > bytes.length);
+      Assert.assertTrue(fory1.serialize(pojo).length < length);
     }
   }
 

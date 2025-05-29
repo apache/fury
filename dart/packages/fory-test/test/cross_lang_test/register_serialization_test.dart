@@ -65,8 +65,8 @@ void main() {
       obj.f2 = "abc";
       obj.f3 = ['abc','abc'];
 
-      Uint8List bytes = fory.toFury(obj);
-      Object? obj2 = fory.fromFury(bytes);
+      Uint8List bytes = fory.toFory(obj);
+      Object? obj2 = fory.fromFory(bytes);
       check(obj2).isA<ComplexObject1>();
       ComplexObject1 obj3 = obj2 as ComplexObject1;
       check(obj3.f1 as bool).isTrue();
@@ -76,7 +76,7 @@ void main() {
       File file = TestFileUtil.getWriteFile("test_register_serializer", bytes);
       bool exeRes = CrossLangUtil.executeWithPython("test_register_serializer", file.path);
       check(exeRes).isTrue();
-      Object? deObj = fory.fromFury(file.readAsBytesSync());
+      Object? deObj = fory.fromFory(file.readAsBytesSync());
       check(deObj).isA<ComplexObject1>();
       ComplexObject1 obj4 = deObj as ComplexObject1;
       check(obj4.f1 as bool).isTrue();

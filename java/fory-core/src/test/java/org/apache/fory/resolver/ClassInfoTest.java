@@ -28,8 +28,8 @@ import org.testng.annotations.Test;
 public class ClassInfoTest {
   @Test
   public void testEncodePackageNameAndTypeName() {
-    Fory fury1 = Fory.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
-    ClassInfo info1 = fury1.getClassResolver().getClassInfo(org.apache.fory.test.bean.Foo.class);
+    Fory fory1 = Fory.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
+    ClassInfo info1 = fory1.getClassResolver().getClassInfo(org.apache.fory.test.bean.Foo.class);
     assertNotNull(info1.namespaceBytes);
     assertNotNull(info1.typeNameBytes);
   }

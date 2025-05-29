@@ -40,8 +40,8 @@ void main(){
   Person obj = Person('Leo', 'Leo', 21, LocalDate(2004, 1, 1));
 
   // Serialize
-  Uint8List bytes = fory.toFury(obj);
+  Uint8List bytes = fory.toFory(obj);
 
   // Deserialize
-  obj = fory.fromFury(bytes) as Person;
+  obj = fory.fromFory(bytes) as Person;
 }

@@ -78,7 +78,7 @@ public class ThreadPoolFury extends AbstractThreadSafeFury {
     Fory fory = null;
     try {
       pooledCache = foryPooledObjectFactory.getPooledCache();
-      fory = pooledCache.getFury();
+      fory = pooledCache.getFory();
       return action.apply(fory);
     } catch (Exception e) {
       LOG.error(e.getMessage(), e);

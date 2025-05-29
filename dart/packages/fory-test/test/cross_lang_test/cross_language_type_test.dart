@@ -36,86 +36,86 @@ import 'package:fory_test/extensions/obj_ext.dart';
 
 T Function<T>(Fory, Fory, T) serDe = CrossLangUtil.serDe;
 
-void _testTypedDataArray(Fory fury1, Fory fury2){
+void _testTypedDataArray(Fory fory1, Fory fory2){
   BoolList blist = BoolList.generate(10, (i) => i % 2 == 0);
-  check(blist.equals(serDe(fury1, fury2, blist))).isTrue();
+  check(blist.equals(serDe(fory1, fory2, blist))).isTrue();
 
   Int8List i8list = Int8List.fromList(List<int>.generate(100, (i) => i * 100));
-  check(i8list.memEquals(serDe(fury1, fury2, i8list))).isTrue();
+  check(i8list.memEquals(serDe(fory1, fory2, i8list))).isTrue();
 
   Int16List i16list = Int16List.fromList(List<int>.generate(100, (i) => i * 100));
-  check(i16list.memEquals(serDe(fury1, fury2, i16list))).isTrue();
+  check(i16list.memEquals(serDe(fory1, fory2, i16list))).isTrue();
 
   Int32List i32list = Int32List.fromList(List<int>.generate(100, (i) => i * -1000));
-  check(i32list.memEquals(serDe(fury1, fury2, i32list))).isTrue();
+  check(i32list.memEquals(serDe(fory1, fory2, i32list))).isTrue();
 
   Int64List i64list = Int64List.fromList(List<int>.generate(100, (i) => i * -10000));
-  check(i64list.memEquals(serDe(fury1, fury2, i64list))).isTrue();
+  check(i64list.memEquals(serDe(fory1, fory2, i64list))).isTrue();
 
   Float32List f32list = Float32List.fromList(List<double>.generate(100, (i) => i * -31415.0));
-  check(f32list.memEquals(serDe(fury1, fury2, f32list))).isTrue();
+  check(f32list.memEquals(serDe(fory1, fory2, f32list))).isTrue();
 
   Float64List f64list = Float64List.fromList(List<double>.generate(100, (i) => i * -314150.0));
-  check(f64list.memEquals(serDe(fury1, fury2, f64list))).isTrue();
+  check(f64list.memEquals(serDe(fory1, fory2, f64list))).isTrue();
 }
 
-void _testCollectionType(Fory fury1, Fory fury2) {
+void _testCollectionType(Fory fory1, Fory fory2) {
   List<int> list = List<int>.generate(10, (i) => i * 100);
-  List list1 = serDe(fury1, fury2, list);
+  List list1 = serDe(fory1, fory2, list);
   check(list1.equals(list)).isTrue();
 
   List<String> strList = List<String>.generate(10, (i) => 'str$i');
-  List strList1 = serDe(fury1, fury2, strList);
+  List strList1 = serDe(fory1, fory2, strList);
   check(strList1.equals(strList)).isTrue();
 
   SplayTreeSet<Float32> set = SplayTreeSet<Float32>();
   for (int i = 0; i < 10; ++i) {
     set.add(Float32(i * -10.137));
   }
-  Object? obj = serDe(fury1, fury2, set);
+  Object? obj = serDe(fory1, fory2, set);
   check(obj).isA<Set>();
   check((obj as Set).equals(set)).isTrue();
 }
 
 void _testArrayCollection(bool refTracking) {
-  Fory fury1 = Fory(
+  Fory fory1 = Fory(
     refTracking: refTracking,
   );
-  Fory fury2 = Fory(
+  Fory fory2 = Fory(
     refTracking: refTracking,
   );
-  _testTypedDataArray(fury1, fury2);
-  _testCollectionType(fury1, fury2);
+  _testTypedDataArray(fory1, fory2);
+  _testCollectionType(fory1, fory2);
 }
 
 void _basicTypeTest(bool refTracking) {
-  Fory fury1 = Fory(
+  Fory fory1 = Fory(
     refTracking: refTracking,
   );
-  Fory fury2 = Fory(
+  Fory fory2 = Fory(
     refTracking: refTracking,
   );
-  check('str').equals(serDe(fury1, fury2, 'str'));
+  check('str').equals(serDe(fory1, fory2, 'str'));
   // with non-latin char
-  check('2023年10月23日').equals(serDe(fury1, fury2, '2023年10月23日'));
-  check(true).equals(CrossLangUtil.serDe(fury1, fury2, true));
+  check('2023年10月23日').equals(serDe(fory1, fory2, '2023年10月23日'));
+  check(true).equals(CrossLangUtil.serDe(fory1, fory2, true));
 
-  fury1.register($EnumFoo);
-  fury2.register($EnumFoo);
-  fury1.register($EnumSubClass);
-  fury2.register($EnumSubClass);
+  fory1.register($EnumFoo);
+  fory2.register($EnumFoo);
+  fory1.register($EnumSubClass);
+  fory2.register($EnumSubClass);
 
-  check(EnumFoo.A).equals(serDe(fury1, fury2, EnumFoo.A));
-  check(EnumFoo.B).equals(serDe(fury1, fury2, EnumFoo.B));
+  check(EnumFoo.A).equals(serDe(fory1, fory2, EnumFoo.A));
+  check(EnumFoo.B).equals(serDe(fory1, fory2, EnumFoo.B));
 
-  check(EnumSubClass.A).equals(serDe(fury1, fury2, EnumSubClass.A));
-  check(EnumSubClass.B).equals(serDe(fury1, fury2, EnumSubClass.B));
+  check(EnumSubClass.A).equals(serDe(fory1, fory2, EnumSubClass.A));
+  check(EnumSubClass.B).equals(serDe(fory1, fory2, EnumSubClass.B));
 
   LocalDate day = LocalDate.now();
-  check(day).equals(serDe(fury1, fury2, day));
+  check(day).equals(serDe(fory1, fory2, day));
 
   TimeStamp ts = TimeStamp.now();
-  check(ts).equals(serDe(fury1, fury2, ts));
+  check(ts).equals(serDe(fory1, fory2, ts));
 }
 
 void main() {
@@ -183,32 +183,32 @@ void main() {
 
         testFunc(Uint8List bytes) {
           ByteReader br = ByteReader.forBytes(bytes);
-          check(fory.fromFury(bytes, br) as bool).isTrue();
-          check(fory.fromFury(bytes, br) as bool).isFalse();
-          check(Int32(-1) == fory.fromFury(bytes, br)).isTrue();
-          check(Int8.maxValue == fory.fromFury(bytes, br)).isTrue();
-          check(Int8.minValue == fory.fromFury(bytes, br)).isTrue();
-          check(Int16.maxValue == fory.fromFury(bytes, br)).isTrue();
-          check(Int16.minValue == fory.fromFury(bytes, br)).isTrue();
-          check(Int32.maxValue == fory.fromFury(bytes, br)).isTrue();
-          check(Int32.minValue == fory.fromFury(bytes, br)).isTrue();
-          check(fory.fromFury(bytes, br) as int).equals(0x7fffffffffffffff);
-          check(fory.fromFury(bytes, br) as int).equals(0x8000000000000000);
-          check(Float32(-1.0) == fory.fromFury(bytes, br)).isTrue();
-          check(fory.fromFury(bytes, br) as double).equals(-1.0);
-          check(fory.fromFury(bytes, br) as String).equals('str');
+          check(fory.fromFory(bytes, br) as bool).isTrue();
+          check(fory.fromFory(bytes, br) as bool).isFalse();
+          check(Int32(-1) == fory.fromFory(bytes, br)).isTrue();
+          check(Int8.maxValue == fory.fromFory(bytes, br)).isTrue();
+          check(Int8.minValue == fory.fromFory(bytes, br)).isTrue();
+          check(Int16.maxValue == fory.fromFory(bytes, br)).isTrue();
+          check(Int16.minValue == fory.fromFory(bytes, br)).isTrue();
+          check(Int32.maxValue == fory.fromFory(bytes, br)).isTrue();
+          check(Int32.minValue == fory.fromFory(bytes, br)).isTrue();
+          check(fory.fromFory(bytes, br) as int).equals(0x7fffffffffffffff);
+          check(fory.fromFory(bytes, br) as int).equals(0x8000000000000000);
+          check(Float32(-1.0) == fory.fromFory(bytes, br)).isTrue();
+          check(fory.fromFory(bytes, br) as double).equals(-1.0);
+          check(fory.fromFory(bytes, br) as String).equals('str');
 
-          check(fory.fromFury(bytes, br) as LocalDate).equals(day);
-          check(fory.fromFury(bytes, br) as TimeStamp).equals(ts);
-          check((fory.fromFury(bytes, br) as List).strEquals(list)).isTrue();
-          check((fory.fromFury(bytes, br) as Map).equals(map)).isTrue();
-          check((fory.fromFury(bytes, br) as Set).equals(set)).isTrue();
-          check((fory.fromFury(bytes, br) as BoolList).equals(blist)).isTrue();
-          check((fory.fromFury(bytes, br) as Int16List).equals(i16list)).isTrue();
-          check((fory.fromFury(bytes, br) as Int32List).equals(i32list)).isTrue();
-          check((fory.fromFury(bytes, br) as Int64List).equals(i64list)).isTrue();
-          check((fory.fromFury(bytes, br) as Float32List).equals(f32list)).isTrue();
-          check((fory.fromFury(bytes, br) as Float64List).equals(f64list)).isTrue();
+          check(fory.fromFory(bytes, br) as LocalDate).equals(day);
+          check(fory.fromFory(bytes, br) as TimeStamp).equals(ts);
+          check((fory.fromFory(bytes, br) as List).strEquals(list)).isTrue();
+          check((fory.fromFory(bytes, br) as Map).equals(map)).isTrue();
+          check((fory.fromFory(bytes, br) as Set).equals(set)).isTrue();
+          check((fory.fromFory(bytes, br) as BoolList).equals(blist)).isTrue();
+          check((fory.fromFory(bytes, br) as Int16List).equals(i16list)).isTrue();
+          check((fory.fromFory(bytes, br) as Int32List).equals(i32list)).isTrue();
+          check((fory.fromFory(bytes, br) as Int64List).equals(i64list)).isTrue();
+          check((fory.fromFory(bytes, br) as Float32List).equals(f32list)).isTrue();
+          check((fory.fromFory(bytes, br) as Float64List).equals(f64list)).isTrue();
         }
         testFunc(bytes1);
 

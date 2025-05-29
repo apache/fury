@@ -47,8 +47,8 @@ public class NonexistentClassSerializersTest extends ForyTestBase {
     return Sets.cartesianProduct(
             ImmutableSet.of(true, false), // referenceTracking
             ImmutableSet.of(true, false), // scoped meta share
-            ImmutableSet.of(true, false), // fury1 enable codegen
-            ImmutableSet.of(true, false) // fury2 enable codegen
+            ImmutableSet.of(true, false), // fory1 enable codegen
+            ImmutableSet.of(true, false) // fory2 enable codegen
             )
         .stream()
         .map(List::toArray)
@@ -59,9 +59,9 @@ public class NonexistentClassSerializersTest extends ForyTestBase {
   public static Object[][] metaShareConfig() {
     return Sets.cartesianProduct(
             ImmutableSet.of(true, false), // referenceTracking
-            ImmutableSet.of(true, false), // fury1 enable codegen
-            ImmutableSet.of(true, false), // fury2 enable codegen
-            ImmutableSet.of(true, false)) // fury3 enable codegen
+            ImmutableSet.of(true, false), // fory1 enable codegen
+            ImmutableSet.of(true, false), // fory2 enable codegen
+            ImmutableSet.of(true, false)) // fory3 enable codegen
         .stream()
         .map(List::toArray)
         .toArray(Object[][]::new);
@@ -97,13 +97,13 @@ public class NonexistentClassSerializersTest extends ForyTestBase {
         }) {
       Object pojo = Struct.createPOJO(structClass);
       byte[] bytes = fory.serialize(pojo);
-      Fory fury2 =
+      Fory fory2 =
           foryBuilder(scopedMetaShare)
               .withRefTracking(referenceTracking)
               .withCodegen(enableCodegen2)
               .withClassLoader(classLoader)
               .build();
-      Object o = fury2.deserialize(bytes);
+      Object o = fory2.deserialize(bytes);
       assertTrue(o instanceof NonexistentClass, "Unexpect type " + o.getClass());
     }
   }
@@ -117,8 +117,8 @@ public class NonexistentClassSerializersTest extends ForyTestBase {
     assertEquals(c.toString(), "B");
     byte[] bytes = fory.serialize(c);
     Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
-    Fory fury2 = foryBuilder(scopedMetaShare).withDeserializeNonexistentClass(true).build();
-    Object o = fury2.deserialize(bytes);
+    Fory fory2 = foryBuilder(scopedMetaShare).withDeserializeNonexistentClass(true).build();
+    Object o = fory2.deserialize(bytes);
     assertEquals(o, NonexistentClass.NonexistentEnum.V1);
   }
 
@@ -135,12 +135,12 @@ public class NonexistentClassSerializersTest extends ForyTestBase {
     assertEquals(c.toString(), "B");
     byte[] bytes = fory.serialize(c);
     Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
-    Fory fury2 =
+    Fory fory2 =
         foryBuilder(scopedMetaShare)
             .withDeserializeNonexistentClass(true)
             .serializeEnumByName(true)
             .build();
-    Object o = fury2.deserialize(bytes);
+    Object o = fory2.deserialize(bytes);
     assertEquals(o, NonexistentClass.NonexistentEnum.UNKNOWN);
   }
 
@@ -171,14 +171,14 @@ public class NonexistentClassSerializersTest extends ForyTestBase {
     enumArray2[0] = enumArray;
     enumArray2[1] = enumArray;
     ReflectionUtils.setObjectFieldValue(o, "f4", enumArray2);
-    Fory fury1 =
+    Fory fory1 =
         foryBuilder(scopedMetaShare)
             .withDeserializeNonexistentClass(true)
             .withClassLoader(cls1.getClassLoader())
             .build();
-    byte[] bytes = fury1.serialize(o);
+    byte[] bytes = fory1.serialize(o);
     {
-      Object o1 = fury1.deserialize(bytes);
+      Object o1 = fory1.deserialize(bytes);
       assertEquals(ReflectionUtils.getObjectFieldValue(o1, "f2"), enumClass.getEnumConstants()[1]);
       assertEquals(ReflectionUtils.getObjectFieldValue(o1, "f3"), enumArray);
     }
@@ -189,12 +189,12 @@ public class NonexistentClassSerializersTest extends ForyTestBase {
                 "",
                 "TestEnumStruct",
                 ("public class TestEnumStruct {" + " public String f1;" + "}")));
-    Fory fury2 =
+    Fory fory2 =
         foryBuilder(scopedMetaShare)
             .withDeserializeNonexistentClass(true)
             .withClassLoader(classLoader)
             .build();
-    Object o1 = fury2.deserialize(bytes);
+    Object o1 = fory2.deserialize(bytes);
     Assert.assertEquals(ReflectionUtils.getObjectFieldValue(o1, "f1"), "str");
   }
 
@@ -233,14 +233,14 @@ public class NonexistentClassSerializersTest extends ForyTestBase {
     arr2D[0] = arr;
     arr2D[1] = arr;
     ReflectionUtils.setObjectFieldValue(o, "f4", arr2D);
-    Fory fury1 =
+    Fory fory1 =
         foryBuilder(false)
             .withDeserializeNonexistentClass(true)
             .withClassLoader(cls1.getClassLoader())
             .build();
-    byte[] bytes = fury1.serialize(o);
+    byte[] bytes = fory1.serialize(o);
     {
-      Object o1 = fury1.deserialize(bytes);
+      Object o1 = fory1.deserialize(bytes);
       assertEquals(ReflectionUtils.getObjectFieldValue(o1, "f2").getClass(), testClass);
       assertEquals(ReflectionUtils.getObjectFieldValue(o1, "f3").getClass(), arr.getClass());
     }
@@ -251,12 +251,12 @@ public class NonexistentClassSerializersTest extends ForyTestBase {
                 "",
                 "TestArrayStruct",
                 ("public class TestArrayStruct {" + " public String f1;" + "}")));
-    Fory fury2 =
+    Fory fory2 =
         foryBuilder(false)
             .withDeserializeNonexistentClass(true)
             .withClassLoader(classLoader)
             .build();
-    Object o1 = fury2.deserialize(bytes);
+    Object o1 = fory2.deserialize(bytes);
     Assert.assertEquals(ReflectionUtils.getObjectFieldValue(o1, "f1"), "str");
   }
 
@@ -282,7 +282,7 @@ public class NonexistentClassSerializersTest extends ForyTestBase {
       MetaContext context1 = new MetaContext();
       fory.getSerializationContext().setMetaContext(context1);
       byte[] bytes = fory.serialize(pojo);
-      Fory fury2 =
+      Fory fory2 =
           foryBuilder(false)
               .withRefTracking(referenceTracking)
               .withCodegen(enableCodegen2)
@@ -290,12 +290,12 @@ public class NonexistentClassSerializersTest extends ForyTestBase {
               .withClassLoader(classLoader)
               .build();
       MetaContext context2 = new MetaContext();
-      fury2.getSerializationContext().setMetaContext(context2);
-      Object o2 = fury2.deserialize(bytes);
+      fory2.getSerializationContext().setMetaContext(context2);
+      Object o2 = fory2.deserialize(bytes);
       assertEquals(o2.getClass(), NonexistentClass.NonexistentMetaShared.class);
-      fury2.getSerializationContext().setMetaContext(context2);
-      byte[] bytes2 = fury2.serialize(o2);
-      Fory fury3 =
+      fory2.getSerializationContext().setMetaContext(context2);
+      byte[] bytes2 = fory2.serialize(o2);
+      Fory fory3 =
           foryBuilder(false)
               .withRefTracking(referenceTracking)
               .withCodegen(enableCodegen3)
@@ -303,8 +303,8 @@ public class NonexistentClassSerializersTest extends ForyTestBase {
               .withClassLoader(pojo.getClass().getClassLoader())
               .build();
       MetaContext context3 = new MetaContext();
-      fury3.getSerializationContext().setMetaContext(context3);
-      Object o3 = fury3.deserialize(bytes2);
+      fory3.getSerializationContext().setMetaContext(context3);
+      Object o3 = fory3.deserialize(bytes2);
       assertEquals(o3.getClass(), structClass);
       assertEquals(o3, pojo);
     }
@@ -331,14 +331,14 @@ public class NonexistentClassSerializersTest extends ForyTestBase {
           Struct.createNumberStructClass("TestSkipNonexistentClass3", 2),
           Struct.createStructClass("TestSkipNonexistentClass3", 2)
         }) {
-      Fory fury2 =
+      Fory fory2 =
           foryBuilder(false)
               .withRefTracking(referenceTracking)
               .withCodegen(enableCodegen2)
               .withMetaShare(true)
               .withClassLoader(classLoader)
               .build();
-      Fory fury3 =
+      Fory fory3 =
           foryBuilder(false)
               .withRefTracking(referenceTracking)
               .withCodegen(enableCodegen3)
@@ -350,14 +350,14 @@ public class NonexistentClassSerializersTest extends ForyTestBase {
         fory.getSerializationContext().setMetaContext(context1);
         byte[] bytes = fory.serialize(pojo);
 
-        fury2.getSerializationContext().setMetaContext(context2);
-        Object o2 = fury2.deserialize(bytes);
+        fory2.getSerializationContext().setMetaContext(context2);
+        Object o2 = fory2.deserialize(bytes);
         assertEquals(o2.getClass(), NonexistentClass.NonexistentMetaShared.class);
-        fury2.getSerializationContext().setMetaContext(context2);
-        byte[] bytes2 = fury2.serialize(o2);
+        fory2.getSerializationContext().setMetaContext(context2);
+        byte[] bytes2 = fory2.serialize(o2);
 
-        fury3.getSerializationContext().setMetaContext(context3);
-        Object o3 = fury3.deserialize(bytes2);
+        fory3.getSerializationContext().setMetaContext(context3);
+        Object o3 = fory3.deserialize(bytes2);
         assertEquals(o3.getClass(), structClass);
         assertEquals(o3, pojo);
       }
@@ -370,12 +370,12 @@ public class NonexistentClassSerializersTest extends ForyTestBase {
     ClassLoader classLoader = getClass().getClassLoader();
     Class<?> structClass = Struct.createNumberStructClass("TestSkipNonexistentClass1", 2);
     Object pojo = Struct.createPOJO(structClass);
-    Fory fury2 =
+    Fory fory2 =
         foryBuilder(scopedMetaShare)
             .withDeserializeNonexistentClass(false)
             .withClassLoader(classLoader)
             .build();
     byte[] bytes = fory.serialize(pojo);
-    Assert.assertThrows(RuntimeException.class, () -> fury2.deserialize(bytes));
+    Assert.assertThrows(RuntimeException.class, () -> fory2.deserialize(bytes));
   }
 }

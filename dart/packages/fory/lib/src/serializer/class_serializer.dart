@@ -60,7 +60,7 @@ final class ClassSerializer extends CustomSerializer<Object>{
   final List<TypeSpecWrap> _fieldTypeWraps;
 
   late final int _fromFuryHash;
-  late final int _toFuryHash;
+  late final int _toForyHash;
 
   bool _hashComputed = false;
   bool _fieldsSersComputed = false;
@@ -87,7 +87,7 @@ final class ClassSerializer extends CustomSerializer<Object>{
     if (!_hashComputed){
       var pair = pack.structHashResolver.computeHash(_fields, pack.getTagByDartType);
       _fromFuryHash = pair.fromFuryHash;
-      _toFuryHash = pair.toFuryHash;
+      _toForyHash = pair.toFuryHash;
       _hashComputed = true;
     }
     int readFHash = br.readInt32();
@@ -136,10 +136,10 @@ final class ClassSerializer extends CustomSerializer<Object>{
     if (!_hashComputed){
       var pair = pack.structHashResolver.computeHash(_fields, pack.getTagByDartType);
       _fromFuryHash = pair.fromFuryHash;
-      _toFuryHash = pair.toFuryHash;
+      _toForyHash = pair.toFuryHash;
       _hashComputed = true;
     }
-    bw.writeInt32(_toFuryHash);
+    bw.writeInt32(_toForyHash);
     for (int i = 0; i < _fields.length; ++i) {
       FieldSpec fieldSpec = _fields[i];
       if (!fieldSpec.includeToFury) continue;

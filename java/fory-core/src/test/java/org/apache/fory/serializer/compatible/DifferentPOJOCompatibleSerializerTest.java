@@ -34,7 +34,7 @@ import org.testng.annotations.Test;
  */
 public class DifferentPOJOCompatibleSerializerTest extends Assert {
 
-  Fory getFury(Class<?>... classes) {
+  Fory getFory(Class<?>... classes) {
     Fory instance =
         Fory.builder()
             .withLanguage(Language.JAVA)
@@ -61,9 +61,9 @@ public class DifferentPOJOCompatibleSerializerTest extends Assert {
     ClassCompleteField<String> subclass = new ClassCompleteField<>("subclass", "subclass2");
     ClassCompleteField<ClassCompleteField<String>> classCompleteField =
         new ClassCompleteField<>(subclass, subclass);
-    byte[] serialized = getFury().serializeJavaObject(classCompleteField);
+    byte[] serialized = getFory().serializeJavaObject(classCompleteField);
     ClassMissingField<ClassMissingField<String>> classMissingField =
-        getFury().deserializeJavaObject(serialized, ClassMissingField.class);
+        getFory().deserializeJavaObject(serialized, ClassMissingField.class);
 
     assertEq(classCompleteField, classMissingField);
   }
@@ -73,10 +73,10 @@ public class DifferentPOJOCompatibleSerializerTest extends Assert {
 
     ClassMissingField<String> subclass = new ClassMissingField<>("subclass");
     ClassMissingField classMissingField = new ClassMissingField(subclass);
-    byte[] serialized = getFury().serializeJavaObject(classMissingField);
+    byte[] serialized = getFory().serializeJavaObject(classMissingField);
 
     ClassCompleteField classCompleteField =
-        getFury().deserializeJavaObject(serialized, ClassCompleteField.class);
+        getFory().deserializeJavaObject(serialized, ClassCompleteField.class);
 
     assertEq(classCompleteField, classMissingField);
   }

@@ -54,26 +54,26 @@ public class SerializersTest extends ForyTestBase {
             .withLanguage(language)
             .withRefTracking(referenceTracking)
             .requireClassRegistration(false);
-    Fory fury1 = builder.build();
-    Fory fury2 = builder.build();
-    assertEquals("str", serDe(fury1, fury2, "str"));
-    assertEquals("str", serDeObject(fury1, fury2, new StringBuilder("str")).toString());
-    assertEquals("str", serDeObject(fury1, fury2, new StringBuffer("str")).toString());
+    Fory fory1 = builder.build();
+    Fory fory2 = builder.build();
+    assertEquals("str", serDe(fory1, fory2, "str"));
+    assertEquals("str", serDeObject(fory1, fory2, new StringBuilder("str")).toString());
+    assertEquals("str", serDeObject(fory1, fory2, new StringBuffer("str")).toString());
   }
 
   @Test(dataProvider = "referenceTrackingConfig")
   public void testBigInt(boolean referenceTracking) {
     ForyBuilder builder =
         Fory.builder().withRefTracking(referenceTracking).requireClassRegistration(false);
-    Fory fury1 = builder.build();
-    Fory fury2 = builder.build();
-    assertEquals(BigInteger.valueOf(100), serDe(fury1, fury2, BigInteger.valueOf(100)));
-    assertEquals(BigDecimal.valueOf(100, 2), serDe(fury1, fury2, BigDecimal.valueOf(100, 2)));
+    Fory fory1 = builder.build();
+    Fory fory2 = builder.build();
+    assertEquals(BigInteger.valueOf(100), serDe(fory1, fory2, BigInteger.valueOf(100)));
+    assertEquals(BigDecimal.valueOf(100, 2), serDe(fory1, fory2, BigDecimal.valueOf(100, 2)));
     BigInteger bigInteger = new BigInteger("999999999999999999999999999999999999999999999999");
     BigDecimal bigDecimal = new BigDecimal(bigInteger, 200, MathContext.DECIMAL128);
-    serDeCheck(fury1, bigDecimal);
+    serDeCheck(fory1, bigDecimal);
     serDeCheck(
-        fury1, new BigInteger("11111111110101010000283895380202208220050200000000111111111"));
+        fory1, new BigInteger("11111111110101010000283895380202208220050200000000111111111"));
   }
 
   @Test(dataProvider = "javaFury")

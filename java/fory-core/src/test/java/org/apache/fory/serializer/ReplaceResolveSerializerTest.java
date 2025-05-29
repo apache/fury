@@ -462,22 +462,22 @@ public class ReplaceResolveSerializerTest extends ForyTestBase {
 
   @Test
   public void testImmutableListResolve() {
-    Fory fury1 =
+    Fory fory1 =
         Fory.builder()
             .withLanguage(Language.JAVA)
             .requireClassRegistration(false)
             .withRefTracking(true)
             .build();
-    Fory fury2 =
+    Fory fory2 =
         Fory.builder()
             .withLanguage(Language.JAVA)
             .requireClassRegistration(false)
             .withRefTracking(true)
             .build();
-    roundCheck(fury1, fury2, ImmutableList.of(1, 2));
-    roundCheck(fury1, fury2, ImmutableList.of("a", "b"));
+    roundCheck(fory1, fory2, ImmutableList.of(1, 2));
+    roundCheck(fory1, fory2, ImmutableList.of("a", "b"));
     roundCheck(
-        fury1, fury2, new SimpleCollectionTest(ImmutableList.of(1, 2), ImmutableList.of("a", "b")));
+        fory1, fory2, new SimpleCollectionTest(ImmutableList.of(1, 2), ImmutableList.of("a", "b")));
   }
 
   @Test(dataProvider = "foryCopyConfig")
@@ -503,21 +503,21 @@ public class ReplaceResolveSerializerTest extends ForyTestBase {
 
   @Test
   public void testImmutableMapResolve() {
-    Fory fury1 =
+    Fory fory1 =
         Fory.builder()
             .withLanguage(Language.JAVA)
             .requireClassRegistration(false)
             .withRefTracking(true)
             .build();
-    Fory fury2 =
+    Fory fory2 =
         Fory.builder()
             .withLanguage(Language.JAVA)
             .requireClassRegistration(false)
             .withRefTracking(true)
             .build();
-    roundCheck(fury1, fury2, ImmutableMap.of("k", 2));
-    roundCheck(fury1, fury2, ImmutableMap.of(1, 2));
-    roundCheck(fury1, fury2, new SimpleMapTest(ImmutableMap.of("k", 2), ImmutableMap.of(1, 2)));
+    roundCheck(fory1, fory2, ImmutableMap.of("k", 2));
+    roundCheck(fory1, fory2, ImmutableMap.of(1, 2));
+    roundCheck(fory1, fory2, new SimpleMapTest(ImmutableMap.of("k", 2), ImmutableMap.of(1, 2)));
   }
 
   public static class InheritanceTestClass {

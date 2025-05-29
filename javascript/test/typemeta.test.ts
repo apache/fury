@@ -58,7 +58,7 @@ describe('typemeta', () => {
         bar: string;
     }
 
-    const fury2 = new Fory({
+    const fory2 = new Fory({
         mode: Mode.Compatible,
         hooks: {
             afterCodeGenerated: (code: string) => {
@@ -66,7 +66,7 @@ describe('typemeta', () => {
               }        
             }
     });    
-    const { deserialize  } = fury2.registerSerializer(Foo2);
+    const { deserialize  } = fory2.registerSerializer(Foo2);
     const r = deserialize(bin);
     expect(r).toEqual({
         bar: "hello",

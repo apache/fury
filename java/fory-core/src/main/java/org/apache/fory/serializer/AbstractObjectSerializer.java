@@ -994,7 +994,7 @@ public abstract class AbstractObjectSerializer<T> extends Serializer<T> {
       this.classId = classId;
       this.qualifiedFieldName = d.getDeclaringClass() + "." + d.getName();
       this.fieldAccessor = d.getField() != null ? FieldAccessor.createAccessor(d.getField()) : null;
-      ForyField foryField = d.getFuryField();
+      ForyField foryField = d.getForyField();
       nullable = d.isNullable();
       if (fory.trackingRef()) {
         trackingRef =

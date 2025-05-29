@@ -50,32 +50,32 @@ public class ArraySerializersTest extends ForyTestBase {
             .withLanguage(language)
             .withRefTracking(referenceTracking)
             .requireClassRegistration(false);
-    Fory fury1 = builder.build();
-    Fory fury2 = builder.build();
-    serDeCheckTyped(fury1, fury2, new Object[] {false, true});
-    serDeCheckTyped(fury1, fury2, new Object[] {(byte) 1, (byte) 1});
-    serDeCheckTyped(fury1, fury2, new Object[] {(short) 1, (short) 1});
+    Fory fory1 = builder.build();
+    Fory fory2 = builder.build();
+    serDeCheckTyped(fory1, fory2, new Object[] {false, true});
+    serDeCheckTyped(fory1, fory2, new Object[] {(byte) 1, (byte) 1});
+    serDeCheckTyped(fory1, fory2, new Object[] {(short) 1, (short) 1});
     if (language == Language.JAVA) {
-      serDeCheckTyped(fury1, fury2, new Object[] {(char) 1, (char) 1});
+      serDeCheckTyped(fory1, fory2, new Object[] {(char) 1, (char) 1});
     }
-    serDeCheckTyped(fury1, fury2, new Object[] {1, 1});
-    serDeCheckTyped(fury1, fury2, new Object[] {(float) 1.0, (float) 1.1});
-    serDeCheckTyped(fury1, fury2, new Object[] {1.0, 1.1});
-    serDeCheckTyped(fury1, fury2, new Object[] {1L, 2L});
-    serDeCheckTyped(fury1, fury2, new Boolean[] {false, true});
-    serDeCheckTyped(fury1, fury2, new Byte[] {(byte) 1, (byte) 1});
-    serDeCheckTyped(fury1, fury2, new Short[] {(short) 1, (short) 1});
+    serDeCheckTyped(fory1, fory2, new Object[] {1, 1});
+    serDeCheckTyped(fory1, fory2, new Object[] {(float) 1.0, (float) 1.1});
+    serDeCheckTyped(fory1, fory2, new Object[] {1.0, 1.1});
+    serDeCheckTyped(fory1, fory2, new Object[] {1L, 2L});
+    serDeCheckTyped(fory1, fory2, new Boolean[] {false, true});
+    serDeCheckTyped(fory1, fory2, new Byte[] {(byte) 1, (byte) 1});
+    serDeCheckTyped(fory1, fory2, new Short[] {(short) 1, (short) 1});
     if (language == Language.JAVA) {
-      serDeCheckTyped(fury1, fury2, new Character[] {(char) 1, (char) 1});
+      serDeCheckTyped(fory1, fory2, new Character[] {(char) 1, (char) 1});
     }
-    serDeCheckTyped(fury1, fury2, new Integer[] {1, 1});
-    serDeCheckTyped(fury1, fury2, new Float[] {(float) 1.0, (float) 1.1});
-    serDeCheckTyped(fury1, fury2, new Double[] {1.0, 1.1});
-    serDeCheckTyped(fury1, fury2, new Long[] {1L, 2L});
+    serDeCheckTyped(fory1, fory2, new Integer[] {1, 1});
+    serDeCheckTyped(fory1, fory2, new Float[] {(float) 1.0, (float) 1.1});
+    serDeCheckTyped(fory1, fory2, new Double[] {1.0, 1.1});
+    serDeCheckTyped(fory1, fory2, new Long[] {1L, 2L});
     serDeCheckTyped(
-        fury1, fury2, new Object[] {false, true, (byte) 1, (byte) 1, (float) 1.0, (float) 1.1});
-    serDeCheckTyped(fury1, fury2, new String[] {"str", "str"});
-    serDeCheckTyped(fury1, fury2, new Object[] {"str", 1});
+        fory1, fory2, new Object[] {false, true, (byte) 1, (byte) 1, (float) 1.0, (float) 1.1});
+    serDeCheckTyped(fory1, fory2, new String[] {"str", "str"});
+    serDeCheckTyped(fory1, fory2, new Object[] {"str", 1});
   }
 
   @Test(dataProvider = "foryCopyConfig")
@@ -108,17 +108,17 @@ public class ArraySerializersTest extends ForyTestBase {
             .withLanguage(language)
             .withRefTracking(referenceTracking)
             .requireClassRegistration(false);
-    Fory fury1 = builder.build();
-    Fory fury2 = builder.build();
-    serDeCheckTyped(fury1, fury2, new Object[][] {{false, true}, {false, true}});
+    Fory fory1 = builder.build();
+    Fory fory2 = builder.build();
+    serDeCheckTyped(fory1, fory2, new Object[][] {{false, true}, {false, true}});
     serDeCheckTyped(
-        fury1,
-        fury2,
+        fory1,
+        fory2,
         new Object[][] {
           {false, true, (byte) 1, (byte) 1, (float) 1.0, (float) 1.1},
           {false, true, (byte) 1, (byte) 1, (float) 1.0, (float) 1.1}
         });
-    serDeCheckTyped(fury1, fury2, new Integer[][] {{1, 2}, {1, 2}});
+    serDeCheckTyped(fory1, fory2, new Integer[][] {{1, 2}, {1, 2}});
   }
 
   @Test(dataProvider = "foryCopyConfig")
@@ -141,9 +141,9 @@ public class ArraySerializersTest extends ForyTestBase {
                 .withLanguage(language)
                 .withRefTracking(referenceTracking)
                 .requireClassRegistration(false);
-    Fory fury1 = builder.get().build();
-    Fory fury2 = builder.get().build();
-    testPrimitiveArray(fury1, fury2);
+    Fory fory1 = builder.get().build();
+    Fory fory2 = builder.get().build();
+    testPrimitiveArray(fory1, fory2);
   }
 
   @Test(dataProvider = "foryCopyConfig")
@@ -158,20 +158,20 @@ public class ArraySerializersTest extends ForyTestBase {
     copyCheck(fory, new char[] {'a', ' '});
   }
 
-  public static void testPrimitiveArray(Fory fury1, Fory fury2) {
+  public static void testPrimitiveArray(Fory fory1, Fory fory2) {
     assertTrue(
         Arrays.equals(
             new boolean[] {false, true},
-            (boolean[]) serDe(fury1, fury2, new boolean[] {false, true})));
-    assertEquals(new byte[] {1, 1}, (byte[]) serDe(fury1, fury2, new byte[] {1, 1}));
-    assertEquals(new short[] {1, 1}, (short[]) serDe(fury1, fury2, new short[] {1, 1}));
-    assertEquals(new int[] {1, 1}, (int[]) serDe(fury1, fury2, new int[] {1, 1}));
-    assertEquals(new long[] {1, 1}, (long[]) serDe(fury1, fury2, new long[] {1, 1}));
+            (boolean[]) serDe(fory1, fory2, new boolean[] {false, true})));
+    assertEquals(new byte[] {1, 1}, (byte[]) serDe(fory1, fory2, new byte[] {1, 1}));
+    assertEquals(new short[] {1, 1}, (short[]) serDe(fory1, fory2, new short[] {1, 1}));
+    assertEquals(new int[] {1, 1}, (int[]) serDe(fory1, fory2, new int[] {1, 1}));
+    assertEquals(new long[] {1, 1}, (long[]) serDe(fory1, fory2, new long[] {1, 1}));
     assertTrue(
-        Arrays.equals(new float[] {1.f, 1.f}, (float[]) serDe(fury1, fury2, new float[] {1f, 1f})));
+        Arrays.equals(new float[] {1.f, 1.f}, (float[]) serDe(fory1, fory2, new float[] {1f, 1f})));
     assertTrue(
         Arrays.equals(
-            new double[] {1.0, 1.0}, (double[]) serDe(fury1, fury2, new double[] {1.0, 1.0})));
+            new double[] {1.0, 1.0}, (double[]) serDe(fory1, fory2, new double[] {1.0, 1.0})));
   }
 
   @Test(dataProvider = "referenceTrackingConfig")
@@ -181,16 +181,16 @@ public class ArraySerializersTest extends ForyTestBase {
             .withLanguage(Language.JAVA)
             .withRefTracking(referenceTracking)
             .requireClassRegistration(false);
-    Fory fury1 = builder.build();
-    Fory fury2 = builder.build();
+    Fory fory1 = builder.build();
+    Fory fory2 = builder.build();
     AtomicInteger counter = new AtomicInteger(0);
     for (int i = 0; i < 4; i++) {
       ArraysData arraysData = new ArraysData(7 * i);
       Set<Field> fields = Descriptor.getFields(ArraysData.class);
       List<Object> fieldValues = ReflectionUtils.getFieldValues(fields, arraysData);
       Object[] array = fieldValues.toArray(new Object[0]);
-      assertEquals(array, serDeOutOfBand(counter, fury1, fury1, array));
-      assertEquals(array, serDeOutOfBand(counter, fury1, fury2, array));
+      assertEquals(array, serDeOutOfBand(counter, fory1, fory1, array));
+      assertEquals(array, serDeOutOfBand(counter, fory1, fory2, array));
     }
   }
 
@@ -201,13 +201,13 @@ public class ArraySerializersTest extends ForyTestBase {
             .withLanguage(Language.JAVA)
             .withRefTracking(referenceTracking)
             .requireClassRegistration(false);
-    Fory fury1 = builder.build();
-    Fory fury2 = builder.build();
+    Fory fory1 = builder.build();
+    Fory fory2 = builder.build();
     AtomicInteger counter = new AtomicInteger(0);
     for (int i = 0; i < 4; i++) {
       ArraysData arraysData = new ArraysData(7 * i);
-      assertEquals(arraysData, serDeOutOfBand(counter, fury1, fury1, arraysData));
-      assertEquals(arraysData, serDeOutOfBand(counter, fury1, fury2, arraysData));
+      assertEquals(arraysData, serDeOutOfBand(counter, fory1, fory1, arraysData));
+      assertEquals(arraysData, serDeOutOfBand(counter, fory1, fory2, arraysData));
     }
   }
 

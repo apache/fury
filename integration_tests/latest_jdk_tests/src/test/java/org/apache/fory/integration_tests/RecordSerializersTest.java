@@ -125,17 +125,17 @@ public class RecordSerializersTest {
             "TestRecord", code2, RecordSerializersTest.class + "testRecordCompatible_2");
     Object record2 =
         RecordUtils.getRecordConstructor(cls2).f1.invoke(1, "abc", 'a', ofHashMap("a", 1));
-    Fory fury2 =
+    Fory fory2 =
         Fory.builder()
             .requireClassRegistration(false)
             .withCodegen(codegen)
             .withClassLoader(cls2.getClassLoader())
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
             .build();
-    Object o2 = fury2.deserialize(fury2.serialize(record2));
+    Object o2 = fory2.deserialize(fory2.serialize(record2));
     Assert.assertEquals(o2, record2);
     // test compatible
-    Assert.assertEquals(fury2.deserialize(bytes1), record2);
+    Assert.assertEquals(fory2.deserialize(bytes1), record2);
   }
 
   @Test(dataProvider = "codegen")
@@ -150,7 +150,7 @@ public class RecordSerializersTest {
         RecordUtils.getRecordConstructor(cls1)
             .f1
             .invoke(1, "abc", ofArrayList("a", "b"), 'a', ofHashMap("a", 1));
-    Fory fury1 =
+    Fory fory1 =
         Fory.builder()
             .requireClassRegistration(false)
             .withCodegen(codegen)
@@ -166,7 +166,7 @@ public class RecordSerializersTest {
             "TestRecord", code2, RecordSerializersTest.class + "testRecordMetaShare_2");
     Object record2 =
         RecordUtils.getRecordConstructor(cls2).f1.invoke("abc", 'a', ofHashMap("a", 1));
-    Fory fury2 =
+    Fory fory2 =
         Fory.builder()
             .requireClassRegistration(false)
             .withCodegen(codegen)
@@ -176,14 +176,14 @@ public class RecordSerializersTest {
             .build();
     MetaContext metaContext1 = new MetaContext();
     MetaContext metaContext2 = new MetaContext();
-    fury1.getSerializationContext().setMetaContext(metaContext1);
-    byte[] bytes1 = fury1.serialize(record1);
-    fury2.getSerializationContext().setMetaContext(metaContext2);
-    Object o21 = fury2.deserialize(bytes1);
-    fury2.getSerializationContext().setMetaContext(metaContext2);
-    byte[] bytes2 = fury2.serialize(o21);
-    fury1.getSerializationContext().setMetaContext(metaContext1);
-    Object o12 = fury1.deserialize(bytes2);
+    fory1.getSerializationContext().setMetaContext(metaContext1);
+    byte[] bytes1 = fory1.serialize(record1);
+    fory2.getSerializationContext().setMetaContext(metaContext2);
+    Object o21 = fory2.deserialize(bytes1);
+    fory2.getSerializationContext().setMetaContext(metaContext2);
+    byte[] bytes2 = fory2.serialize(o21);
+    fory1.getSerializationContext().setMetaContext(metaContext1);
+    Object o12 = fory1.deserialize(bytes2);
     System.out.println(o12);
   }
 

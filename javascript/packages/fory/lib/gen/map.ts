@@ -340,7 +340,7 @@ export class MapSerializerGenerator extends BaseSerializerGenerator {
     if (!this.isAny()) {
       return this.writeStmtSpecificType(accessor);
     }
-    return `new (${anySerializer})(${this.builder.getFuryName()}, ${
+    return `new (${anySerializer})(${this.builder.getForyName()}, ${
       this.typeInfo.options.key.type !== InternalSerializerType.ANY ? this.typeInfo.options.key.typeId : null
     }, ${
       this.typeInfo.options.value.type !== InternalSerializerType.ANY ? this.typeInfo.options.value.typeId : null
@@ -423,7 +423,7 @@ export class MapSerializerGenerator extends BaseSerializerGenerator {
     if (!this.isAny()) {
       return this.readStmtSpecificType(accessor, refState);
     }
-    return accessor(`new (${anySerializer})(${this.builder.getFuryName()}, ${
+    return accessor(`new (${anySerializer})(${this.builder.getForyName()}, ${
       this.typeInfo.options.key.type !== InternalSerializerType.ANY ? (this.typeInfo.options.key.typeId) : null
     }, ${
       this.typeInfo.options.value.type !== InternalSerializerType.ANY ? (this.typeInfo.options.value.typeId) : null

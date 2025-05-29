@@ -202,7 +202,7 @@ final class XtypeResolverImpl extends XtypeResolver {
 
   @override
   TypeInfo writeGetTypeInfo(ByteWriter bw, Object obj, SerializerPack pack){
-    Type dartType = dartTypeResolver.getFuryType(obj);
+    Type dartType = dartTypeResolver.getForyType(obj);
     TypeInfo? typeInfo = _ctx.type2TypeInfo[dartType];
     if (typeInfo == null){
       throw UnregisteredTypeException(dartType);

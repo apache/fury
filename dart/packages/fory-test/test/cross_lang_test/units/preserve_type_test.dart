@@ -30,8 +30,8 @@ import 'package:fory_test/extensions/map_ext.dart';
 import 'package:test/test.dart';
 
 Object? _roundTrip(Fory fory, Object? obj) {
-  Uint8List bytes = fory.toFury(obj);
-  Object? obj2 = fory.fromFury(bytes);
+  Uint8List bytes = fory.toFory(obj);
+  Object? obj2 = fory.fromFory(bytes);
   return obj2;
 }
 

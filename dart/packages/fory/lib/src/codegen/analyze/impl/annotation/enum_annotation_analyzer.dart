@@ -38,18 +38,18 @@ class EnumAnnotationAnalyzer {
     assert(locationMark.ensureClassLevel);
     late DartObject anno;
     late ClassElement annoClsElement;
-    bool getFuryEnum = false;
+    bool getForyEnum = false;
     for (ElementAnnotation annoElement in metadata){
       anno = annoElement.computeConstantValue()!;
       annoClsElement = anno.type!.element as ClassElement;
       if (AnalysisTypeIdentifier.isFuryEnum(annoClsElement)){
-        if (getFuryEnum){
+        if (getForyEnum){
           throw DuplicatedAnnotationException(ForyClass.name, locationMark.clsName, locationMark.libPath);
         }
-        getFuryEnum = true;
+        getForyEnum = true;
       }
     }
-    assert (getFuryEnum); // There will definitely be a ForyMeta annotation, otherwise this class wouldn't be analyzed.
+    assert (getForyEnum); // There will definitely be a ForyMeta annotation, otherwise this class wouldn't be analyzed.
     // TODO: This is still under modification, no fields yet, but maintaining the code structure.
     return ForyEnum();
   }

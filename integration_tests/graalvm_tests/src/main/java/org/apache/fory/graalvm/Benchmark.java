@@ -69,16 +69,16 @@ public class Benchmark {
     }
   }
 
-  private static final Fory fury1;
-  private static final Fory fury2;
+  private static final Fory fory1;
+  private static final Fory fory2;
 
   static {
-    fury1 = Fory.builder().withNumberCompressed(false).build();
-    fury1.register(Foo.class, true);
-    fury1.register(Struct.class, true);
-    fury2 = Fory.builder().withNumberCompressed(true).build();
-    fury2.register(Foo.class, true);
-    fury2.register(Struct.class, true);
+    fory1 = Fory.builder().withNumberCompressed(false).build();
+    fory1.register(Foo.class, true);
+    fory1.register(Struct.class, true);
+    fory2 = Fory.builder().withNumberCompressed(true).build();
+    fory2.register(Foo.class, true);
+    fory2.register(Struct.class, true);
   }
 
   public static void main(String[] args) {
@@ -102,7 +102,7 @@ public class Benchmark {
       return;
     }
     int n = Integer.parseInt(foryRepeat);
-    Fory fory = compressNumber ? fury2 : fury1;
+    Fory fory = compressNumber ? fory2 : fory1;
     System.out.println("=========================");
     System.out.println("Benchmark repeat number: " + foryRepeat);
     System.out.println("Object type: " + obj.getClass());

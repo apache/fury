@@ -33,7 +33,7 @@ final class DartTypeResolver{
   const DartTypeResolver._internal();
 
   @inline
-  Type getFuryType(Object obj) {
+  Type getForyType(Object obj) {
     if (obj is Furiable){
       return obj.$foryType;
     }

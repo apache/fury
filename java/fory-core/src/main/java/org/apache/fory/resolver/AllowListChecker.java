@@ -209,22 +209,22 @@ public class AllowListChecker implements ClassChecker {
       disallowListPrefix.add(prefix);
       for (ClassResolver classResolver : listeners.keySet()) {
         try {
-          classResolver.getFury().getJITContext().lock();
+          classResolver.getFory().getJITContext().lock();
           // clear serializer may throw NullPointerException for field serialization.
           classResolver.setSerializers(prefix, DisallowSerializer.class);
         } finally {
-          classResolver.getFury().getJITContext().unlock();
+          classResolver.getFory().getJITContext().unlock();
         }
       }
     } else {
       disallowList.add(classNameOrPrefix);
       for (ClassResolver classResolver : listeners.keySet()) {
         try {
-          classResolver.getFury().getJITContext().lock();
+          classResolver.getFory().getJITContext().lock();
           // clear serializer may throw NullPointerException for field serialization.
           classResolver.setSerializer(classNameOrPrefix, DisallowSerializer.class);
         } finally {
-          classResolver.getFury().getJITContext().unlock();
+          classResolver.getFory().getJITContext().unlock();
         }
       }
     }

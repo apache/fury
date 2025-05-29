@@ -30,7 +30,7 @@ import scala.collection.mutable.ListBuffer
 class MutableCollectionSerializerTest extends AnyWordSpec with Matchers {
   val params: Seq[(Boolean, Boolean)] = List( (true, true))
   params.foreach{case (setOpt, setFactory) => {
-    val fury1: Fory = Fory.builder()
+    val fory1: Fory = Fory.builder()
       .withLanguage(Language.JAVA)
       .withRefTracking(true)
       .withScalaOptimizationEnabled(setOpt)
@@ -38,55 +38,55 @@ class MutableCollectionSerializerTest extends AnyWordSpec with Matchers {
       .suppressClassRegistrationWarnings(false)
       .build()
     if (setFactory) {
-      ScalaSerializers.registerSerializers(fury1)
+      ScalaSerializers.registerSerializers(fory1)
     }
     s"fory scala collection support: setOpt $setOpt, setFactory $setFactory" should {
       "serialize/deserialize Seq" in {
         val seq = mutable.Seq(100, 10000L)
-        fury1.deserialize(fury1.serialize(seq)) shouldEqual seq
+        fory1.deserialize(fory1.serialize(seq)) shouldEqual seq
       }
       "serialize/deserialize List" in {
         val list = mutable.ListBuffer(100, 10000L)
-        fury1.deserialize(fury1.serialize(list)) shouldEqual list
+        fory1.deserialize(fory1.serialize(list)) shouldEqual list
         val list2 = mutable.ListBuffer(100, 10000L, 10000L, 10000L)
-        fury1.deserialize(fury1.serialize(list2)) shouldEqual list2
+        fory1.deserialize(fory1.serialize(list2)) shouldEqual list2
       }
       "serialize/deserialize empty List" in {
-        fury1.deserialize(fury1.serialize(ListBuffer.empty)) shouldEqual ListBuffer.empty
+        fory1.deserialize(fory1.serialize(ListBuffer.empty)) shouldEqual ListBuffer.empty
       }
       "serialize/deserialize Set" in {
         val set = mutable.Set(100, 10000L)
-        fury1.deserialize(fury1.serialize(set)) shouldEqual set
+        fory1.deserialize(fory1.serialize(set)) shouldEqual set
       }
       "serialize/deserialize CollectionStruct2" in {
         val struct = CollectionStruct2(mutable.ListBuffer("a", "b"))
-        fury1.deserialize(fury1.serialize(struct)) shouldEqual struct
+        fory1.deserialize(fory1.serialize(struct)) shouldEqual struct
       }
       "serialize/deserialize CollectionStruct2 with empty List" in {
         val struct1 = CollectionStruct2(ListBuffer.empty)
-        fury1.deserialize(fury1.serialize(struct1)) shouldEqual struct1
+        fory1.deserialize(fory1.serialize(struct1)) shouldEqual struct1
       }
       "serialize/deserialize NestedCollectionStruct1" in {
         val struct = NestedCollectionStruct1(ListBuffer(ListBuffer("a", "b"), ListBuffer("a", "b")), mutable.Set(Set("c", "d")))
-        fury1.deserialize(fury1.serialize(struct)) shouldEqual struct
+        fory1.deserialize(fory1.serialize(struct)) shouldEqual struct
       }
     }
     s"fory scala map support: setOpt $setOpt, setFactory $setFactory" should {
       "serialize/deserialize Map" in {
         val map = mutable.Map("a" -> 100, "b" -> 10000L)
-        fury1.deserialize(fury1.serialize(map)) shouldEqual map
+        fory1.deserialize(fory1.serialize(map)) shouldEqual map
       }
       "serialize/deserialize MapStruct2" in {
         val struct = MapStruct2(mutable.Map("k1" -> "v1", "k2" -> "v2"))
-        fury1.deserialize(fury1.serialize(struct)) shouldEqual struct
+        fory1.deserialize(fory1.serialize(struct)) shouldEqual struct
       }
       "serialize/deserialize MapStruct2 with empty map" in {
         val struct = MapStruct2(mutable.Map.empty)
-        fury1.deserialize(fury1.serialize(struct)) shouldEqual struct
+        fory1.deserialize(fory1.serialize(struct)) shouldEqual struct
       }
       "serialize/deserialize NestedMapStruc1" in {
         val struct = NestedMapStruc1(mutable.Map("K1" -> mutable.Map("k1" -> "v1", "k2" -> "v2"), "K2" -> mutable.Map("k1" -> "v1")))
-        fury1.deserialize(fury1.serialize(struct)) shouldEqual struct
+        fory1.deserialize(fory1.serialize(struct)) shouldEqual struct
       }
     }
   }}

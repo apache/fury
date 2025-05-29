@@ -143,7 +143,7 @@ public class ForyCopyTest extends ForyTestBase {
     ThreadLocalFury threadLocalFury =
         builder().withCodegen(false).withRefCopy(true).buildThreadLocalFury();
     threadLocalFury.setClassChecker((classResolver, className1) -> true);
-    threadLocalFury.setSerializerFactory((fury1, cls) -> null);
+    threadLocalFury.setSerializerFactory((fory1, cls) -> null);
     threadLocalFury.register(BeanA.class);
     assetEqualsButNotSame(threadLocalFury.copy(beanA));
     executor.execute(

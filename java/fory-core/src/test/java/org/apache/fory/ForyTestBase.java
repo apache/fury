@@ -287,24 +287,24 @@ public abstract class ForyTestBase {
     return (T) fory.deserialize(bytes);
   }
 
-  public static Object serDeObject(Fory fury1, Fory fury2, Object obj) {
-    byte[] bytes = fury1.serialize(obj);
-    return fury2.deserialize(bytes);
+  public static Object serDeObject(Fory fory1, Fory fory2, Object obj) {
+    byte[] bytes = fory1.serialize(obj);
+    return fory2.deserialize(bytes);
   }
 
-  public static <T> T serDe(Fory fury1, Fory fury2, T obj) {
-    byte[] bytes = fury1.serialize(obj);
-    return (T) fury2.deserialize(bytes);
+  public static <T> T serDe(Fory fory1, Fory fory2, T obj) {
+    byte[] bytes = fory1.serialize(obj);
+    return (T) fory2.deserialize(bytes);
   }
 
-  public static <T> T serDeCheckTyped(Fory fury1, Fory fury2, T obj) {
-    T o = serDeTyped(fury1, fury2, obj);
+  public static <T> T serDeCheckTyped(Fory fory1, Fory fory2, T obj) {
+    T o = serDeTyped(fory1, fory2, obj);
     Assert.assertEquals(o, obj);
     return o;
   }
 
-  public static <T> T serDeCheck(Fory fury1, Fory fury2, T obj) {
-    T o = serDe(fury1, fury2, obj);
+  public static <T> T serDeCheck(Fory fory1, Fory fory2, T obj) {
+    T o = serDe(fory1, fory2, obj);
     Assert.assertEquals(o, obj);
     return o;
   }
@@ -325,14 +325,14 @@ public abstract class ForyTestBase {
     }
   }
 
-  public static Object serDe(Fory fury1, Fory fury2, MemoryBuffer buffer, Object obj) {
-    fury1.serialize(buffer, obj);
-    return fury2.deserialize(buffer);
+  public static Object serDe(Fory fory1, Fory fory2, MemoryBuffer buffer, Object obj) {
+    fory1.serialize(buffer, obj);
+    return fory2.deserialize(buffer);
   }
 
-  public static Object serDeCheckIndex(Fory fury1, Fory fury2, MemoryBuffer buffer, Object obj) {
-    fury1.serialize(buffer, obj);
-    Object newObj = fury2.deserialize(buffer);
+  public static Object serDeCheckIndex(Fory fory1, Fory fory2, MemoryBuffer buffer, Object obj) {
+    fory1.serialize(buffer, obj);
+    Object newObj = fory2.deserialize(buffer);
     Assert.assertEquals(buffer.writerIndex(), buffer.readerIndex());
     return newObj;
   }
@@ -344,9 +344,9 @@ public abstract class ForyTestBase {
   }
 
   @SuppressWarnings("unchecked")
-  public static <T> T serDeTyped(Fory fury1, Fory fury2, T obj) {
-    byte[] bytes = fury1.serialize(obj);
-    return (T) fury2.deserialize(bytes, obj.getClass());
+  public static <T> T serDeTyped(Fory fory1, Fory fory2, T obj) {
+    byte[] bytes = fory1.serialize(obj);
+    return (T) fory2.deserialize(bytes, obj.getClass());
   }
 
   public static void copyCheck(Fory fory, Object obj) {
@@ -360,17 +360,17 @@ public abstract class ForyTestBase {
     Assert.assertEquals(obj, copy);
   }
 
-  public static void roundCheck(Fory fury1, Fory fury2, Object o) {
-    roundCheck(fury1, fury2, o, Function.identity());
+  public static void roundCheck(Fory fory1, Fory fory2, Object o) {
+    roundCheck(fory1, fory2, o, Function.identity());
   }
 
   public static void roundCheck(
-      Fory fury1, Fory fury2, Object o, Function<Object, Object> compareHook) {
-    byte[] bytes1 = fury1.serialize(o);
-    Object o1 = fury2.deserialize(bytes1);
+      Fory fory1, Fory fory2, Object o, Function<Object, Object> compareHook) {
+    byte[] bytes1 = fory1.serialize(o);
+    Object o1 = fory2.deserialize(bytes1);
     Assert.assertEquals(compareHook.apply(o1), compareHook.apply(o));
-    byte[] bytes2 = fury2.serialize(o1);
-    Object o2 = fury1.deserialize(bytes2);
+    byte[] bytes2 = fory2.serialize(o1);
+    Object o2 = fory1.deserialize(bytes2);
     Assert.assertEquals(compareHook.apply(o2), compareHook.apply(o));
   }
 
@@ -403,10 +403,10 @@ public abstract class ForyTestBase {
     }
   }
 
-  public static Object serDeOutOfBand(AtomicInteger counter, Fory fury1, Fory fury2, Object obj) {
+  public static Object serDeOutOfBand(AtomicInteger counter, Fory fory1, Fory fory2, Object obj) {
     List<BufferObject> bufferObjects = new ArrayList<>();
     byte[] bytes =
-        fury1.serialize(
+        fory1.serialize(
             obj,
             o -> {
               if (counter.incrementAndGet() % 2 == 0) {
@@ -418,7 +418,7 @@ public abstract class ForyTestBase {
             });
     List<MemoryBuffer> buffers =
         bufferObjects.stream().map(BufferObject::toBuffer).collect(Collectors.toList());
-    return fury2.deserialize(bytes, buffers);
+    return fory2.deserialize(bytes, buffers);
   }
 
   /** Update serialization depth by <code>diff</code>. */

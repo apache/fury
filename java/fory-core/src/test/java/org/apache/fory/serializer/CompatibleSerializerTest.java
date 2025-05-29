@@ -87,28 +87,28 @@ public class CompatibleSerializerTest extends ForyTestBase {
         }) {
       Object newFoo = fooClass.newInstance();
       ReflectionUtils.unsafeCopy(foo, newFoo);
-      Fory newFury =
+      Fory newFory =
           Fory.builder()
               .withLanguage(Language.JAVA)
               .withRefTracking(referenceTrackingConfig)
               .requireClassRegistration(false)
               .withClassLoader(fooClass.getClassLoader())
               .build();
-      newFury.registerSerializer(fooClass, new CompatibleSerializer<>(newFury, fooClass));
+      newFory.registerSerializer(fooClass, new CompatibleSerializer<>(newFory, fooClass));
       {
-        byte[] foo1Bytes = newFury.serialize(newFoo);
+        byte[] foo1Bytes = newFory.serialize(newFoo);
         Object deserialized = fory.deserialize(foo1Bytes);
         Assert.assertEquals(deserialized.getClass(), Foo.class);
         Assert.assertTrue(ReflectionUtils.objectCommonFieldsEquals(deserialized, newFoo));
         byte[] fooBytes = fory.serialize(deserialized);
         Assert.assertTrue(
-            ReflectionUtils.objectFieldsEquals(newFury.deserialize(fooBytes), newFoo));
+            ReflectionUtils.objectFieldsEquals(newFory.deserialize(fooBytes), newFoo));
       }
       {
         byte[] bytes1 = fory.serialize(foo);
-        Object o1 = newFury.deserialize(bytes1);
+        Object o1 = newFory.deserialize(bytes1);
         Assert.assertTrue(ReflectionUtils.objectCommonFieldsEquals(o1, foo));
-        Object o2 = fory.deserialize(newFury.serialize(o1));
+        Object o2 = fory.deserialize(newFory.serialize(o1));
         List<String> fields =
             Arrays.stream(fooClass.getDeclaredFields())
                 .map(f -> f.getDeclaringClass().getSimpleName() + f.getName())
@@ -116,15 +116,15 @@ public class CompatibleSerializerTest extends ForyTestBase {
         Assert.assertTrue(ReflectionUtils.objectFieldsEquals(new HashSet<>(fields), o2, foo));
       }
       {
-        Fory fury2 =
+        Fory fory2 =
             Fory.builder()
                 .withLanguage(Language.JAVA)
                 .withRefTracking(referenceTrackingConfig)
                 .requireClassRegistration(false)
                 .withClassLoader(fooClass.getClassLoader())
                 .build();
-        fury2.registerSerializer(Foo.class, new CompatibleSerializer<>(newFury, Foo.class));
-        Object o3 = fory.deserialize(newFury.serialize(foo));
+        fory2.registerSerializer(Foo.class, new CompatibleSerializer<>(newFory, Foo.class));
+        Object o3 = fory.deserialize(newFory.serialize(foo));
         Assert.assertTrue(ReflectionUtils.objectFieldsEquals(o3, foo));
       }
     }
@@ -189,25 +189,25 @@ public class CompatibleSerializerTest extends ForyTestBase {
     Class<?> cls = createCompatibleClass1();
     Object newBeanA = cls.newInstance();
     ReflectionUtils.unsafeCopy(beanA, newBeanA);
-    Fory newFury =
+    Fory newFory =
         Fory.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(referenceTrackingConfig)
             .requireClassRegistration(false)
             .withClassLoader(cls.getClassLoader())
             .build();
-    newFury.registerSerializer(cls, new CompatibleSerializer<>(newFury, cls));
-    newFury.registerSerializer(BeanB.class, new ObjectSerializer<>(newFury, BeanB.class));
-    byte[] newBeanABytes = newFury.serialize(newBeanA);
+    newFory.registerSerializer(cls, new CompatibleSerializer<>(newFory, cls));
+    newFory.registerSerializer(BeanB.class, new ObjectSerializer<>(newFory, BeanB.class));
+    byte[] newBeanABytes = newFory.serialize(newBeanA);
     Object deserialized = fory.deserialize(newBeanABytes);
     Assert.assertTrue(ReflectionUtils.objectCommonFieldsEquals(deserialized, newBeanA));
     Assert.assertEquals(deserialized.getClass(), BeanA.class);
     byte[] beanABytes = fory.serialize(deserialized);
     Assert.assertTrue(
-        ReflectionUtils.objectFieldsEquals(newFury.deserialize(beanABytes), newBeanA));
+        ReflectionUtils.objectFieldsEquals(newFory.deserialize(beanABytes), newBeanA));
 
     byte[] objBytes = fory.serialize(beanA);
-    Object obj2 = newFury.deserialize(objBytes);
+    Object obj2 = newFory.deserialize(objBytes);
     Assert.assertTrue(ReflectionUtils.objectCommonFieldsEquals(obj2, newBeanA));
   }
 
@@ -267,14 +267,14 @@ public class CompatibleSerializerTest extends ForyTestBase {
     Class<?> cls = createCompatibleClass2();
     Object newObj = cls.newInstance();
     ReflectionUtils.unsafeCopy(collectionFields, newObj);
-    Fory newFury =
+    Fory newFory =
         Fory.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(referenceTrackingConfig)
             .requireClassRegistration(false)
             .build();
-    newFury.registerSerializer(cls, new CompatibleSerializer<>(newFury, cls));
-    byte[] bytes1 = newFury.serialize(newObj);
+    newFory.registerSerializer(cls, new CompatibleSerializer<>(newFory, cls));
+    byte[] bytes1 = newFory.serialize(newObj);
     Object deserialized = fory.deserialize(bytes1);
     Assert.assertTrue(
         ReflectionUtils.objectCommonFieldsEquals(
@@ -282,14 +282,14 @@ public class CompatibleSerializerTest extends ForyTestBase {
             CollectionFields.copyToCanEqual(newObj, newObj.getClass().newInstance())));
     Assert.assertEquals(deserialized.getClass(), CollectionFields.class);
     byte[] bytes2 = fory.serialize(deserialized);
-    Object obj2 = newFury.deserialize(bytes2);
+    Object obj2 = newFory.deserialize(bytes2);
     Assert.assertTrue(
         ReflectionUtils.objectFieldsEquals(
             CollectionFields.copyToCanEqual(obj2, obj2.getClass().newInstance()),
             CollectionFields.copyToCanEqual(newObj, newObj.getClass().newInstance())));
 
     byte[] objBytes = fory.serialize(collectionFields);
-    Object obj3 = newFury.deserialize(objBytes);
+    Object obj3 = newFory.deserialize(objBytes);
     Assert.assertTrue(
         ReflectionUtils.objectCommonFieldsEquals(
             CollectionFields.copyToCanEqual(obj3, obj3.getClass().newInstance()),
@@ -343,14 +343,14 @@ public class CompatibleSerializerTest extends ForyTestBase {
     Class<?> cls = createCompatibleClass3();
     Object newObj = cls.newInstance();
     ReflectionUtils.unsafeCopy(mapFields, newObj);
-    Fory newFury =
+    Fory newFory =
         Fory.builder()
             .withLanguage(Language.JAVA)
             .withRefTracking(referenceTrackingConfig)
             .requireClassRegistration(false)
             .build();
-    newFury.registerSerializer(cls, new CompatibleSerializer<>(newFury, cls));
-    byte[] bytes1 = newFury.serialize(newObj);
+    newFory.registerSerializer(cls, new CompatibleSerializer<>(newFory, cls));
+    byte[] bytes1 = newFory.serialize(newObj);
     Object deserialized = fory.deserialize(bytes1);
     Assert.assertTrue(
         ReflectionUtils.objectCommonFieldsEquals(
@@ -358,14 +358,14 @@ public class CompatibleSerializerTest extends ForyTestBase {
             MapFields.copyToCanEqual(newObj, newObj.getClass().newInstance())));
     Assert.assertEquals(deserialized.getClass(), MapFields.class);
     byte[] bytes2 = fory.serialize(deserialized);
-    Object obj2 = newFury.deserialize(bytes2);
+    Object obj2 = newFory.deserialize(bytes2);
     Assert.assertTrue(
         ReflectionUtils.objectFieldsEquals(
             MapFields.copyToCanEqual(obj2, obj2.getClass().newInstance()),
             MapFields.copyToCanEqual(newObj, newObj.getClass().newInstance())));
 
     byte[] objBytes = fory.serialize(mapFields);
-    Object obj3 = newFury.deserialize(objBytes);
+    Object obj3 = newFory.deserialize(objBytes);
     Assert.assertTrue(
         ReflectionUtils.objectCommonFieldsEquals(
             MapFields.copyToCanEqual(obj3, obj3.getClass().newInstance()),

@@ -42,24 +42,24 @@ final class CrossLangUtil{
   }
 
   static void structRoundBack(Fory fory, Object? obj, String testName) {
-    Uint8List bytes = fory.toFury(obj);
-    Object? obj2 = fory.fromFury(bytes);
+    Uint8List bytes = fory.toFory(obj);
+    Object? obj2 = fory.fromFory(bytes);
     check(obj2).equals(obj);
     // get current working directory
     File file = TestFileUtil.getWriteFile(testName, bytes);
     try{
       bool exeRes = CrossLangUtil.executeWithPython(testName, file.path);
       check(exeRes).isTrue();
-      Object? deObj = fory.fromFury(file.readAsBytesSync());
+      Object? deObj = fory.fromFory(file.readAsBytesSync());
       check(deObj).equals(obj);
     }finally{
       file.deleteSync();
     }
   }
 
-  static T serDe<T> (Fory fury1, Fory fury2, T obj) {
-    Uint8List bytes = fury1.toFury(obj);
-    Object? obj2 = fury2.fromFury(bytes);
+  static T serDe<T> (Fory fory1, Fory fory2, T obj) {
+    Uint8List bytes = fory1.toFory(obj);
+    Object? obj2 = fory2.fromFory(bytes);
     return obj2 as T;
   }
 }

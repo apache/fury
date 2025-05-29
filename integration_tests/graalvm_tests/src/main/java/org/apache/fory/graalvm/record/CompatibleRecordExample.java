@@ -26,10 +26,10 @@ public class CompatibleRecordExample {
   static Fory fory;
 
   static {
-    fory = createFury();
+    fory = createFory();
   }
 
-  private static Fory createFury() {
+  private static Fory createFory() {
     Fory fory =
         Fory.builder()
             .withName(CompatibleRecordExample.class.getName())
@@ -43,7 +43,7 @@ public class CompatibleRecordExample {
 
   public static void main(String[] args) {
     RecordExample.test(fory);
-    fory = createFury();
+    fory = createFory();
     RecordExample.test(fory);
     System.out.println("CompatibleRecordExample succeed");
   }

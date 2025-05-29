@@ -711,60 +711,60 @@ public class CrossLanguageTest extends ForyTestBase {
             .withLanguage(Language.XLANG)
             .withRefTracking(referenceTracking)
             .requireClassRegistration(false);
-    Fory fury1 = builder.build();
-    Fory fury2 = builder.build();
-    assertEquals("str", serDe(fury1, fury2, "str"));
-    assertEquals("str", serDeObject(fury1, fury2, new StringBuilder("str")).toString());
-    assertEquals("str", serDeObject(fury1, fury2, new StringBuffer("str")).toString());
-    fury1.register(EnumSerializerTest.EnumFoo.class);
-    fury2.register(EnumSerializerTest.EnumFoo.class);
-    fury1.register(EnumSerializerTest.EnumSubClass.class);
-    fury2.register(EnumSerializerTest.EnumSubClass.class);
-    assertEquals(EnumSerializerTest.EnumFoo.A, serDe(fury1, fury2, EnumSerializerTest.EnumFoo.A));
-    assertEquals(EnumSerializerTest.EnumFoo.B, serDe(fury1, fury2, EnumSerializerTest.EnumFoo.B));
+    Fory fory1 = builder.build();
+    Fory fory2 = builder.build();
+    assertEquals("str", serDe(fory1, fory2, "str"));
+    assertEquals("str", serDeObject(fory1, fory2, new StringBuilder("str")).toString());
+    assertEquals("str", serDeObject(fory1, fory2, new StringBuffer("str")).toString());
+    fory1.register(EnumSerializerTest.EnumFoo.class);
+    fory2.register(EnumSerializerTest.EnumFoo.class);
+    fory1.register(EnumSerializerTest.EnumSubClass.class);
+    fory2.register(EnumSerializerTest.EnumSubClass.class);
+    assertEquals(EnumSerializerTest.EnumFoo.A, serDe(fory1, fory2, EnumSerializerTest.EnumFoo.A));
+    assertEquals(EnumSerializerTest.EnumFoo.B, serDe(fory1, fory2, EnumSerializerTest.EnumFoo.B));
     assertEquals(
-        EnumSerializerTest.EnumSubClass.A, serDe(fury1, fury2, EnumSerializerTest.EnumSubClass.A));
+        EnumSerializerTest.EnumSubClass.A, serDe(fory1, fory2, EnumSerializerTest.EnumSubClass.A));
     assertEquals(
-        EnumSerializerTest.EnumSubClass.B, serDe(fury1, fury2, EnumSerializerTest.EnumSubClass.B));
+        EnumSerializerTest.EnumSubClass.B, serDe(fory1, fory2, EnumSerializerTest.EnumSubClass.B));
     java.sql.Date sqlDate = new java.sql.Date(System.currentTimeMillis());
-    assertEquals(sqlDate, serDeTyped(fury1, fury2, sqlDate));
+    assertEquals(sqlDate, serDeTyped(fory1, fory2, sqlDate));
     LocalDate localDate = LocalDate.now();
-    assertEquals(localDate, serDeTyped(fury1, fury2, localDate));
+    assertEquals(localDate, serDeTyped(fory1, fory2, localDate));
     Date utilDate = new Date();
-    assertEquals(utilDate, serDeTyped(fury1, fury2, utilDate));
+    assertEquals(utilDate, serDeTyped(fory1, fory2, utilDate));
     Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-    assertEquals(timestamp, serDeTyped(fury1, fury2, timestamp));
+    assertEquals(timestamp, serDeTyped(fory1, fory2, timestamp));
     Instant instant = DateTimeUtils.truncateInstantToMicros(Instant.now());
-    assertEquals(instant, serDeTyped(fury1, fury2, instant));
+    assertEquals(instant, serDeTyped(fory1, fory2, instant));
 
-    ArraySerializersTest.testPrimitiveArray(fury1, fury2);
+    ArraySerializersTest.testPrimitiveArray(fory1, fory2);
 
-    assertEquals(Arrays.asList(1, 2), serDe(fury1, fury2, Arrays.asList(1, 2)));
+    assertEquals(Arrays.asList(1, 2), serDe(fory1, fory2, Arrays.asList(1, 2)));
     List<String> arrayList = Arrays.asList("str", "str");
-    assertEquals(arrayList, serDe(fury1, fury2, arrayList));
-    assertEquals(new LinkedList<>(arrayList), serDe(fury1, fury2, new LinkedList<>(arrayList)));
-    assertEquals(new HashSet<>(arrayList), serDe(fury1, fury2, new HashSet<>(arrayList)));
+    assertEquals(arrayList, serDe(fory1, fory2, arrayList));
+    assertEquals(new LinkedList<>(arrayList), serDe(fory1, fory2, new LinkedList<>(arrayList)));
+    assertEquals(new HashSet<>(arrayList), serDe(fory1, fory2, new HashSet<>(arrayList)));
     TreeSet<String> treeSet = new TreeSet<>(Comparator.naturalOrder());
     treeSet.add("str1");
     treeSet.add("str2");
-    assertEquals(treeSet, serDe(fury1, fury2, treeSet));
+    assertEquals(treeSet, serDe(fory1, fory2, treeSet));
 
     HashMap<String, Integer> hashMap = new HashMap<>();
     hashMap.put("k1", 1);
     hashMap.put("k2", 2);
-    assertEquals(hashMap, serDe(fury1, fury2, hashMap));
-    assertEquals(new LinkedHashMap<>(hashMap), serDe(fury1, fury2, new LinkedHashMap<>(hashMap)));
+    assertEquals(hashMap, serDe(fory1, fory2, hashMap));
+    assertEquals(new LinkedHashMap<>(hashMap), serDe(fory1, fory2, new LinkedHashMap<>(hashMap)));
     TreeMap<String, Integer> treeMap = new TreeMap<>(Comparator.naturalOrder());
     treeMap.putAll(hashMap);
-    assertEquals(treeMap, serDe(fury1, fury2, treeMap));
-    assertEquals(Collections.EMPTY_LIST, serDe(fury1, fury2, Collections.EMPTY_LIST));
-    assertEquals(Collections.EMPTY_SET, serDe(fury1, fury2, Collections.EMPTY_SET));
-    assertEquals(Collections.EMPTY_MAP, serDe(fury1, fury2, Collections.EMPTY_MAP));
+    assertEquals(treeMap, serDe(fory1, fory2, treeMap));
+    assertEquals(Collections.EMPTY_LIST, serDe(fory1, fory2, Collections.EMPTY_LIST));
+    assertEquals(Collections.EMPTY_SET, serDe(fory1, fory2, Collections.EMPTY_SET));
+    assertEquals(Collections.EMPTY_MAP, serDe(fory1, fory2, Collections.EMPTY_MAP));
     assertEquals(
-        Collections.singletonList("str"), serDe(fury1, fury2, Collections.singletonList("str")));
-    assertEquals(Collections.singleton("str"), serDe(fury1, fury2, Collections.singleton("str")));
+        Collections.singletonList("str"), serDe(fory1, fory2, Collections.singletonList("str")));
+    assertEquals(Collections.singleton("str"), serDe(fory1, fory2, Collections.singleton("str")));
     assertEquals(
-        Collections.singletonMap("k", 1), serDe(fury1, fury2, Collections.singletonMap("k", 1)));
+        Collections.singletonMap("k", 1), serDe(fory1, fory2, Collections.singletonMap("k", 1)));
   }
 
   enum EnumTestClass {

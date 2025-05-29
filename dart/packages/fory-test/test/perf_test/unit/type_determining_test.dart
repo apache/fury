@@ -56,13 +56,13 @@ void testDeterminingDartType() {
 
   print('run each test $iterations times...\n');
 
-  // Test getFuryType method
+  // Test getForyType method
   stopwatch.start();
   for (int i = 0; i < iterations; i++) {
-    resolver.getFuryType(testObjects[i % testObjects.length]);
+    resolver.getForyType(testObjects[i % testObjects.length]);
   }
   stopwatch.stop();
-  print('DartTypeResolver.getFuryType: ${stopwatch.elapsedMilliseconds} ms');
+  print('DartTypeResolver.getForyType: ${stopwatch.elapsedMilliseconds} ms');
 
   // Reset the stopwatch
   stopwatch.reset();

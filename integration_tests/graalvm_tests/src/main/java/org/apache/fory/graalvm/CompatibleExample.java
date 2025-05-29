@@ -26,10 +26,10 @@ public class CompatibleExample {
   static Fory fory;
 
   static {
-    fory = createFury();
+    fory = createFory();
   }
 
-  private static Fory createFury() {
+  private static Fory createFory() {
     Fory fory =
         Fory.builder()
             .requireClassRegistration(true)
@@ -46,7 +46,7 @@ public class CompatibleExample {
     Example.test(fory);
     System.out.println("CompatibleExample succeed 1/2");
     // Test new created Fory at runtime
-    fory = createFury();
+    fory = createFory();
     Example.test(fory);
     System.out.println("CompatibleExample succeed");
   }

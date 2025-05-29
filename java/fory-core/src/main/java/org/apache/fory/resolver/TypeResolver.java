@@ -65,5 +65,5 @@ public interface TypeResolver {
 
   void initialize();
 
-  Fory getFury();
+  Fory getFory();
 }

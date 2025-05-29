@@ -281,7 +281,7 @@ export abstract class CollectionSerializerGenerator extends BaseSerializerGenera
   writeStmt(accessor: string): string {
     if (this.isAny()) {
       return `
-                new (${this.builder.getExternal(CollectionAnySerializer.name)})(${this.builder.getFuryName()}).write(${accessor}, ${accessor}.${this.sizeProp()})
+                new (${this.builder.getExternal(CollectionAnySerializer.name)})(${this.builder.getForyName()}).write(${accessor}, ${accessor}.${this.sizeProp()})
             `;
     }
     return this.writeStmtSpecificType(accessor);
@@ -289,7 +289,7 @@ export abstract class CollectionSerializerGenerator extends BaseSerializerGenera
 
   readStmt(accessor: (expr: string) => string, refState: RefState): string {
     if (this.isAny()) {
-      return accessor(`new (${this.builder.getExternal(CollectionAnySerializer.name)})(${this.builder.getFuryName()}).read((result, i, v) => {
+      return accessor(`new (${this.builder.getExternal(CollectionAnySerializer.name)})(${this.builder.getForyName()}).read((result, i, v) => {
               ${this.putAccessor("result", "v", "i")};
           }, (len) => ${this.newCollection("len")}, ${refState.toConditionExpr()});
       `);

@@ -83,7 +83,7 @@ class ClassDefEncoder {
   }
 
   static List<FieldInfo> buildFieldsInfo(ClassResolver resolver, Class<?> cls) {
-    return buildFieldsInfo(resolver, buildFields(resolver.getFury(), cls, true));
+    return buildFieldsInfo(resolver, buildFields(resolver.getFory(), cls, true));
   }
 
   static List<FieldInfo> buildFieldsInfo(TypeResolver resolver, List<Field> fields) {
@@ -169,7 +169,7 @@ class ClassDefEncoder {
     }
     byte[] compressed =
         classResolver
-            .getFury()
+            .getFory()
             .getConfig()
             .getMetaCompressor()
             .compress(classDefBuf.getHeapMemory(), 0, classDefBuf.writerIndex());

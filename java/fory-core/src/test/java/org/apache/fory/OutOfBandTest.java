@@ -43,17 +43,17 @@ public class OutOfBandTest extends ForyTestBase {
             .withLanguage(Language.JAVA)
             .withRefTracking(referenceTracking)
             .requireClassRegistration(false);
-    Fory fury1 = builder.build();
-    Fory fury2 = builder.build();
+    Fory fory1 = builder.build();
+    Fory fory2 = builder.build();
     ByteBuffer byteBuffer = ByteBuffer.allocate(10);
     byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
     byteBuffer.putInt(100);
     byteBuffer.rewind();
     AtomicInteger counter = new AtomicInteger(0);
-    assertEquals(serDeOutOfBand(counter, fury1, fury1, byteBuffer), byteBuffer);
-    assertEquals(serDeOutOfBand(counter, fury1, fury2, byteBuffer), byteBuffer);
+    assertEquals(serDeOutOfBand(counter, fory1, fory1, byteBuffer), byteBuffer);
+    assertEquals(serDeOutOfBand(counter, fory1, fory2, byteBuffer), byteBuffer);
     byteBuffer.order(ByteOrder.BIG_ENDIAN);
-    assertEquals(serDeOutOfBand(counter, fury1, fury1, byteBuffer), byteBuffer);
-    assertEquals(serDeOutOfBand(counter, fury1, fury2, byteBuffer), byteBuffer);
+    assertEquals(serDeOutOfBand(counter, fory1, fory1, byteBuffer), byteBuffer);
+    assertEquals(serDeOutOfBand(counter, fory1, fory2, byteBuffer), byteBuffer);
   }
 }

@@ -303,7 +303,7 @@ class FooSerializer extends Serializer<Foo> {
 Register serializer:
 
 ```java
-Fory fory = getFury();
+Fory fory = getFory();
 fory.registerSerializer(Foo.class, new FooSerializer(fory));
 ```
 
@@ -489,22 +489,22 @@ public class StructMappingExample {
     double f3;
   }
 
-  static ThreadSafeFury fury1 = Fory.builder()
+  static ThreadSafeFury fory1 = Fory.builder()
     .withCompatibleMode(CompatibleMode.COMPATIBLE).buildThreadSafeFury();
-  static ThreadSafeFury fury2 = Fory.builder()
+  static ThreadSafeFury fory2 = Fory.builder()
     .withCompatibleMode(CompatibleMode.COMPATIBLE).buildThreadSafeFury();
 
   static {
-    fury1.register(Struct1.class);
-    fury2.register(Struct2.class);
+    fory1.register(Struct1.class);
+    fory2.register(Struct2.class);
   }
 
   public static void main(String[] args) {
     Struct1 struct1 = new Struct1(10, "abc");
-    Struct2 struct2 = (Struct2) fury2.deserialize(fury1.serialize(struct1));
+    Struct2 struct2 = (Struct2) fory2.deserialize(fory1.serialize(struct1));
     Assert.assertEquals(struct2.f1, struct1.f1);
     Assert.assertEquals(struct2.f2, struct1.f2);
-    struct1 = (Struct1) fury1.deserialize(fury2.serialize(struct2));
+    struct1 = (Struct1) fory1.deserialize(fory2.serialize(struct2));
     Assert.assertEquals(struct1.f1, struct2.f1);
     Assert.assertEquals(struct1.f2, struct2.f2);
   }
@@ -554,11 +554,11 @@ Then for deserialization, you need:
 ```java
 MemoryBuffer buffer = xxx;
 int foryVersion = buffer.readVarInt32();
-Fory fory = getFury(foryVersion);
+Fory fory = getFory(foryVersion);
 fory.deserialize(buffer);
 ```
 
-`getFury` is a method to load corresponding fory, you can shade and relocate different version of fory to different
+`getFory` is a method to load corresponding fory, you can shade and relocate different version of fory to different
 package, and load fory by version.
 
 If you upgrade fory by minor version, or you won't have data serialized by older fory, you can upgrade fory directly,

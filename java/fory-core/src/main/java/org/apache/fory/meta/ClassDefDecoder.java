@@ -59,7 +59,7 @@ class ClassDefDecoder {
     encoded.writeBytes(encodedClassDef);
     if ((id & COMPRESS_META_FLAG) != 0) {
       encodedClassDef =
-          resolver.getFury().getConfig().getMetaCompressor().decompress(encodedClassDef, 0, size);
+          resolver.getFory().getConfig().getMetaCompressor().decompress(encodedClassDef, 0, size);
     }
     return Tuple2.of(encodedClassDef, encoded.getBytes(0, encoded.writerIndex()));
   }

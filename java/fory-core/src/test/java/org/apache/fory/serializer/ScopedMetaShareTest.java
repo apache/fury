@@ -51,21 +51,21 @@ public class ScopedMetaShareTest extends ForyTestBase {
     ReflectionUtils.unsafeCopy(foo, newFoo);
     Fory fory = builder.get().build();
     fory.register(Foo.class);
-    Fory newFury = builder.get().withClassLoader(fooClass.getClassLoader()).build();
-    newFury.register(fooClass);
+    Fory newFory = builder.get().withClassLoader(fooClass.getClassLoader()).build();
+    newFory.register(fooClass);
     {
-      byte[] foo1Bytes = newFury.serialize(newFoo);
+      byte[] foo1Bytes = newFory.serialize(newFoo);
       Object deserialized = fory.deserialize(foo1Bytes);
       Assert.assertEquals(deserialized.getClass(), Foo.class);
       Assert.assertTrue(ReflectionUtils.objectCommonFieldsEquals(deserialized, newFoo));
       byte[] fooBytes = fory.serialize(deserialized);
-      Assert.assertTrue(ReflectionUtils.objectFieldsEquals(newFury.deserialize(fooBytes), newFoo));
+      Assert.assertTrue(ReflectionUtils.objectFieldsEquals(newFory.deserialize(fooBytes), newFoo));
     }
     {
       byte[] bytes1 = fory.serialize(foo);
-      Object o1 = newFury.deserialize(bytes1);
+      Object o1 = newFory.deserialize(bytes1);
       Assert.assertTrue(ReflectionUtils.objectCommonFieldsEquals(o1, foo));
-      Object o2 = fory.deserialize(newFury.serialize(o1));
+      Object o2 = fory.deserialize(newFory.serialize(o1));
       List<String> fields =
           Arrays.stream(fooClass.getDeclaredFields())
               .map(f -> f.getDeclaringClass().getSimpleName() + f.getName())
@@ -73,7 +73,7 @@ public class ScopedMetaShareTest extends ForyTestBase {
       Assert.assertTrue(ReflectionUtils.objectFieldsEquals(new HashSet<>(fields), o2, foo));
     }
     {
-      Object o3 = fory.deserialize(newFury.serialize(foo));
+      Object o3 = fory.deserialize(newFory.serialize(foo));
       Assert.assertTrue(ReflectionUtils.objectFieldsEquals(o3, foo));
     }
   }

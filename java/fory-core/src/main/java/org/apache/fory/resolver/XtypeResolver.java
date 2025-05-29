@@ -737,7 +737,7 @@ public class XtypeResolver implements TypeResolver {
   }
 
   @Override
-  public Fory getFury() {
+  public Fory getFory() {
     return fory;
   }
 }

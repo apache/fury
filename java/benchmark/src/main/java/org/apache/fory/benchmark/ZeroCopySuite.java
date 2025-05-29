@@ -122,14 +122,14 @@ public class ZeroCopySuite {
           data = new ArraysData(array_size);
           break;
         case BUFFER:
-          boolean isFury = getClass().getName().contains("Fory");
+          boolean isFory = getClass().getName().contains("Fory");
           boolean isKryo = getClass().getName().contains("Kryo");
           boolean isJsonb = getClass().getName().contains("Jsonb");
           data =
               IntStream.range(0, 5)
                   .mapToObj(
                       i -> {
-                        if (isFury) {
+                        if (isFory) {
                           return ByteBuffer.allocate(array_size);
                         } else if (isKryo || isJsonb) {
                           // don't know why read/write kryo unsafe output not work, read data always

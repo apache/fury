@@ -256,7 +256,7 @@ public class Descriptor {
     return typeName;
   }
 
-  public ForyField getFuryField() {
+  public ForyField getForyField() {
     return foryField;
   }
 

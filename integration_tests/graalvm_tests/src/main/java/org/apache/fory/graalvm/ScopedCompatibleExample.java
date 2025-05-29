@@ -26,10 +26,10 @@ public class ScopedCompatibleExample {
   private static Fory fory;
 
   static {
-    fory = createFury();
+    fory = createFory();
   }
 
-  private static Fory createFury() {
+  private static Fory createFory() {
     Fory fory =
         Fory.builder()
             .withName(ScopedCompatibleExample.class.getName())
@@ -46,7 +46,7 @@ public class ScopedCompatibleExample {
     System.out.println("ScopedCompatibleExample started");
     Example.test(fory);
     System.out.println("ScopedCompatibleExample succeed 1/2");
-    fory = createFury();
+    fory = createFory();
     Example.test(fory);
     System.out.println("ScopedCompatibleExample succeed");
   }

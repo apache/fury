@@ -117,7 +117,7 @@ class TypeDefEncoder {
 
     byte[] compressed =
         resolver
-            .getFury()
+            .getFory()
             .getMetaCompressor()
             .compress(buffer.getHeapMemory(), 0, buffer.writerIndex());
     boolean isCompressed = false;

@@ -142,12 +142,12 @@ public class ThreadSafeFuryTest extends ForyTestBase {
 
   @Test
   public void testSerializeWithMetaShare() throws InterruptedException {
-    ThreadSafeFury fury1 =
+    ThreadSafeFury fory1 =
         Fory.builder()
             .withLanguage(Language.JAVA)
             .requireClassRegistration(false)
             .buildThreadSafeFury();
-    ThreadSafeFury fury2 =
+    ThreadSafeFury fory2 =
         Fory.builder()
             .withLanguage(Language.JAVA)
             .withMetaShare(true)
@@ -162,21 +162,21 @@ public class ThreadSafeFuryTest extends ForyTestBase {
             for (int j = 0; j < 10; j++) {
               try {
                 {
-                  fury1.setClassLoader(beanA.getClass().getClassLoader());
-                  byte[] serialized = fury1.execute(f -> f.serialize(beanA));
-                  Object newObj = fury1.execute(f -> f.deserialize(serialized));
+                  fory1.setClassLoader(beanA.getClass().getClassLoader());
+                  byte[] serialized = fory1.execute(f -> f.serialize(beanA));
+                  Object newObj = fory1.execute(f -> f.deserialize(serialized));
                   assertEquals(newObj, beanA);
                 }
                 {
-                  fury2.setClassLoader(beanA.getClass().getClassLoader());
+                  fory2.setClassLoader(beanA.getClass().getClassLoader());
                   byte[] serialized =
-                      fury2.execute(
+                      fory2.execute(
                           f -> {
                             f.getSerializationContext().setMetaContext(new MetaContext());
                             return f.serialize(beanA);
                           });
                   Object newObj =
-                      fury2.execute(
+                      fory2.execute(
                           f -> {
                             f.getSerializationContext().setMetaContext(new MetaContext());
                             return f.deserialize(serialized);
@@ -186,15 +186,15 @@ public class ThreadSafeFuryTest extends ForyTestBase {
                 {
                   MetaContext metaContext =
                       metaMap.computeIfAbsent(Thread.currentThread(), k -> new MetaContext());
-                  fury2.setClassLoader(beanA.getClass().getClassLoader());
+                  fory2.setClassLoader(beanA.getClass().getClassLoader());
                   byte[] serialized =
-                      fury2.execute(
+                      fory2.execute(
                           f -> {
                             f.getSerializationContext().setMetaContext(metaContext);
                             return f.serialize(beanA);
                           });
                   Object newObj =
-                      fury2.execute(
+                      fory2.execute(
                           f -> {
                             f.getSerializationContext().setMetaContext(metaContext);
                             return f.deserialize(serialized);
@@ -257,7 +257,7 @@ public class ThreadSafeFuryTest extends ForyTestBase {
             () -> {
               fory.setClassLoader(structClass1.getClassLoader(), staging);
               fory.setClassChecker((classResolver, className1) -> true);
-              fory.setSerializerFactory((fury1, cls) -> null);
+              fory.setSerializerFactory((fory1, cls) -> null);
               Assert.assertEquals(fory.deserialize(newBytes1), struct1);
             })
         .join();
@@ -279,15 +279,15 @@ public class ThreadSafeFuryTest extends ForyTestBase {
   }
 
   private WeakHashMap<Class<?>, Boolean> generateClassForGC() {
-    ThreadSafeFury fury1 = Fory.builder().requireClassRegistration(false).buildThreadSafeFury();
-    ThreadSafeFury fury2 =
+    ThreadSafeFury fory1 = Fory.builder().requireClassRegistration(false).buildThreadSafeFury();
+    ThreadSafeFury fory2 =
         Fory.builder().requireClassRegistration(false).buildThreadSafeFuryPool(1, 2);
     String className = "DuplicateStruct";
     WeakHashMap<Class<?>, Boolean> map = new WeakHashMap<>();
     {
       Class<?> structClass1 = Struct.createStructClass(className, 1, false);
       Object struct1 = Struct.createPOJO(structClass1);
-      for (ThreadSafeFury fory : new ThreadSafeFury[] {fury1, fury2}) {
+      for (ThreadSafeFury fory : new ThreadSafeFury[] {fory1, fory2}) {
         fory.setClassLoader(structClass1.getClassLoader());
         byte[] bytes = fory.serialize(struct1);
         Assert.assertEquals(fory.deserialize(bytes), struct1);
@@ -304,7 +304,7 @@ public class ThreadSafeFuryTest extends ForyTestBase {
       System.out.printf(
           "structClass2 %s %s\n ",
           structClass2.hashCode(), structClass2.getClassLoader().hashCode());
-      for (ThreadSafeFury fory : new ThreadSafeFury[] {fury1, fury2}) {
+      for (ThreadSafeFury fory : new ThreadSafeFury[] {fory1, fory2}) {
         fory.setClassLoader(structClass2.getClassLoader());
         Object struct2 = Struct.createPOJO(structClass2);
         byte[] bytes2 = fory.serialize(struct2);

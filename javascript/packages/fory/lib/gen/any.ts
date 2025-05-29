@@ -113,14 +113,14 @@ class AnySerializerGenerator extends BaseSerializerGenerator {
     if (excludeHead) {
       throw new Error("Anonymous can't excludeHead");
     }
-    return accessor(`${this.builder.getFuryName()}.anySerializer.read()`);
+    return accessor(`${this.builder.getForyName()}.anySerializer.read()`);
   }
 
   toWriteEmbed(accessor: string, excludeHead = false): string {
     if (excludeHead) {
       throw new Error("Anonymous can't excludeHead");
     }
-    return `${this.builder.getFuryName()}.anySerializer.write(${accessor})`;
+    return `${this.builder.getForyName()}.anySerializer.write(${accessor})`;
   }
 
   toSerializer() {

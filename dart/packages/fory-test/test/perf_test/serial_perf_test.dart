@@ -30,12 +30,12 @@ import 'package:fory_test/entity/complex_obj_2.dart';
 void _testPerfSer(Fory fory, Object? obj, int times, String testName){
   //warm up
   for (int i = 0; i < 10000; i++) {
-    fory.toFury(obj);
+    fory.toFory(obj);
   }
   // measure
   final stopwatch = Stopwatch()..start();
   for (int i = 0; i < times; ++i) {
-    fory.toFury(obj);
+    fory.toFory(obj);
   }
   stopwatch.stop();
   print('$testName\nserialize simple struct test $times times: ${stopwatch.elapsedMilliseconds} ms');
@@ -71,15 +71,15 @@ void _testPerfJsonDeser(Object? obj, int times) {
 }
 
 void _testPerfDeser(Fory fory, Object? obj,  int times, String testName){
-  Uint8List bytes = fory.toFury(obj);
+  Uint8List bytes = fory.toFory(obj);
   // warm up
   for (int i = 0; i < 10000; i++) {
-    fory.fromFury(bytes);
+    fory.fromFory(bytes);
   }
   // measure
   final stopwatch = Stopwatch()..start();
   for (int i = 0; i < times; i++) {
-    fory.fromFury(bytes);
+    fory.fromFory(bytes);
   }
   stopwatch.stop();
   print('$testName\ndeserialize simple struct test $times times: ${stopwatch.elapsedMilliseconds} ms');

@@ -418,7 +418,7 @@ export class CodecBuilder {
     return prop;
   }
 
-  getFuryName() {
+  getForyName() {
     return "fory";
   }
 

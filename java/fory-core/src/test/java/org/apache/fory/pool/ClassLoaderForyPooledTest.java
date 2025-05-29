@@ -27,7 +27,7 @@ import org.testng.annotations.Test;
 
 public class ClassLoaderFuryPooledTest {
 
-  private Function<ClassLoader, Fory> getFuryFactory() {
+  private Function<ClassLoader, Fory> getForyFactory() {
     return classLoader ->
         Fory.builder()
             .withLanguage(Language.JAVA)
@@ -37,7 +37,7 @@ public class ClassLoaderFuryPooledTest {
   }
 
   private ClassLoaderFuryPooled getPooled(int minPoolSize, int maxPoolSize) {
-    return getPooled(minPoolSize, maxPoolSize, getFuryFactory());
+    return getPooled(minPoolSize, maxPoolSize, getForyFactory());
   }
 
   private ClassLoaderFuryPooled getPooled(
@@ -58,7 +58,7 @@ public class ClassLoaderFuryPooledTest {
   @Test
   public void testGetFuryNormal() {
     ClassLoaderFuryPooled pooled = getPooled(3, 5);
-    Fory fory = pooled.getFury();
+    Fory fory = pooled.getFory();
     Assert.assertNotNull(fory);
   }
 
@@ -67,7 +67,7 @@ public class ClassLoaderFuryPooledTest {
     int minPoolSize = 4;
     ClassLoaderFuryPooled pooled = getPooled(minPoolSize, 6);
     for (int i = 0; i < minPoolSize; i++) {
-      Fory fory = pooled.getFury();
+      Fory fory = pooled.getFory();
       Assert.assertNotNull(fory);
     }
 
@@ -76,7 +76,7 @@ public class ClassLoaderFuryPooledTest {
           fory -> {
             throw new RuntimeException();
           });
-      pooled.getFury();
+      pooled.getFory();
       Assert.fail();
     } catch (RuntimeException e) {
       // Success
@@ -93,7 +93,7 @@ public class ClassLoaderFuryPooledTest {
           fory -> {
             throw new RuntimeException();
           });
-      pooled.getFury();
+      pooled.getFory();
       Assert.fail();
     } catch (RuntimeException e) {
       // Success
@@ -105,11 +105,11 @@ public class ClassLoaderFuryPooledTest {
     int minPoolSize = 3;
     ClassLoaderFuryPooled pooled = getPooled(minPoolSize, 3);
     for (int i = 0; i < minPoolSize; i++) {
-      Fory fory = pooled.getFury();
+      Fory fory = pooled.getFory();
       Assert.assertNotNull(fory);
     }
 
-    Thread thread = new Thread(pooled::getFury);
+    Thread thread = new Thread(pooled::getFory);
     thread.start();
 
     int timeoutMs = 3000;
@@ -123,14 +123,14 @@ public class ClassLoaderFuryPooledTest {
     Assert.assertNotEquals(loopCount, 0);
 
     // loopCount != 0
-    Fory fory = getFuryFactory().apply(getClass().getClassLoader());
+    Fory fory = getForyFactory().apply(getClass().getClassLoader());
     pooled.returnFury(fory);
     thread.join();
   }
 
   @Test
   public void testReturnFury() {
-    Function<ClassLoader, Fory> foryFactory = getFuryFactory();
+    Function<ClassLoader, Fory> foryFactory = getForyFactory();
     Fory fory = foryFactory.apply(getClass().getClassLoader());
     ClassLoaderFuryPooled pooled = getPooled(4, 8, foryFactory);
     pooled.returnFury(fory);

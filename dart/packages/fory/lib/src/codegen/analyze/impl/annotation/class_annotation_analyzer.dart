@@ -38,18 +38,18 @@ class ClassAnnotationAnalyzer {
     assert(locationMark.ensureClassLevel);
     late DartObject anno;
     late ClassElement annoClsElement;
-    bool getFuryClass = false;
+    bool getForyClass = false;
     for (ElementAnnotation annoElement in metadata){
       anno = annoElement.computeConstantValue()!;
       annoClsElement = anno.type!.element as ClassElement;
       if (AnalysisTypeIdentifier.isFuryClass(annoClsElement)){
-        if (getFuryClass){
+        if (getForyClass){
           throw DuplicatedAnnotationException(ForyClass.name, locationMark.clsName, locationMark.libPath);
         }
-        getFuryClass = true;
+        getForyClass = true;
       }
     }
-    assert (getFuryClass); // There must be a ForyMeta annotation, otherwise this class would not be analyzed
+    assert (getForyClass); // There must be a ForyMeta annotation, otherwise this class would not be analyzed
     bool promiseAcyclic = anno.getField("promiseAcyclic")!.toBoolValue()!;
     return ForyClass(
       promiseAcyclic: promiseAcyclic,

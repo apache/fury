@@ -30,10 +30,10 @@ public class RecordExample {
   static Fory fory;
 
   static {
-    fory = createFury();
+    fory = createFory();
   }
 
-  private static Fory createFury() {
+  private static Fory createFory() {
     Fory fory =
         Fory.builder()
             .withName(RecordExample.class.getName())
@@ -57,7 +57,7 @@ public class RecordExample {
     System.out.println("RecordExample started");
     test(fory);
     System.out.println("RecordExample succeed 1/2");
-    fory = createFury();
+    fory = createFory();
     test(fory);
     System.out.println("RecordExample succeed");
   }

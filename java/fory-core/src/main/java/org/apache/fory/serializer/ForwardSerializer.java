@@ -110,12 +110,12 @@ public class ForwardSerializer {
     /** Override this method to register custom serializers. */
     @Override
     protected LoaderBinding newSerializer() {
-      LoaderBinding loaderBinding = new LoaderBinding(this::newFurySerializer);
+      LoaderBinding loaderBinding = new LoaderBinding(this::newForySerializer);
       loaderBinding.setClassLoader(Thread.currentThread().getContextClassLoader());
       return loaderBinding;
     }
 
-    protected Fory newFurySerializer(ClassLoader loader) {
+    protected Fory newForySerializer(ClassLoader loader) {
       return Fory.builder()
           .withLanguage(Language.JAVA)
           .withRefTracking(true)

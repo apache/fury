@@ -62,18 +62,18 @@ public class EnumSerializerTest extends ForyTestBase {
             .withLanguage(language)
             .withRefTracking(referenceTracking)
             .requireClassRegistration(false);
-    Fory fury1 = builder.build();
-    Fory fury2 = builder.build();
-    if (fury1.getLanguage() != Language.JAVA) {
-      fury1.register(EnumSerializerTest.EnumFoo.class);
-      fury2.register(EnumSerializerTest.EnumFoo.class);
-      fury1.register(EnumSerializerTest.EnumSubClass.class);
-      fury2.register(EnumSerializerTest.EnumSubClass.class);
+    Fory fory1 = builder.build();
+    Fory fory2 = builder.build();
+    if (fory1.getLanguage() != Language.JAVA) {
+      fory1.register(EnumSerializerTest.EnumFoo.class);
+      fory2.register(EnumSerializerTest.EnumFoo.class);
+      fory1.register(EnumSerializerTest.EnumSubClass.class);
+      fory2.register(EnumSerializerTest.EnumSubClass.class);
     }
-    assertEquals(EnumFoo.A, serDe(fury1, fury2, EnumFoo.A));
-    assertEquals(EnumFoo.B, serDe(fury1, fury2, EnumFoo.B));
-    assertEquals(EnumSubClass.A, serDe(fury1, fury2, EnumSubClass.A));
-    assertEquals(EnumSubClass.B, serDe(fury1, fury2, EnumSubClass.B));
+    assertEquals(EnumFoo.A, serDe(fory1, fory2, EnumFoo.A));
+    assertEquals(EnumFoo.B, serDe(fory1, fory2, EnumFoo.B));
+    assertEquals(EnumSubClass.A, serDe(fory1, fory2, EnumSubClass.A));
+    assertEquals(EnumSubClass.B, serDe(fory1, fory2, EnumSubClass.B));
   }
 
   @Test(dataProvider = "foryCopyConfig")

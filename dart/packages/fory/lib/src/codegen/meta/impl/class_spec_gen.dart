@@ -122,7 +122,7 @@ class ClassSpecGen extends CustomTypeSpecGen{
     //
     // // toFuryHash
     // GenCodeTool.writeIndent(buf, nextTotalIndent);
-    // buf.write(_toFuryHash);
+    // buf.write(_toForyHash);
     // buf.write(",\n");
 
     // arg: fields

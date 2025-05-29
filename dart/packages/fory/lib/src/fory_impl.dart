@@ -69,13 +69,13 @@ final class Fory implements BaseFury{
 
   @override
   @inline
-  Object? fromFury(Uint8List bytes, [ByteReader? reader]) {
+  Object? fromFory(Uint8List bytes, [ByteReader? reader]) {
     return _deserDirector.read(bytes, _conf, _xtypeResolver, reader);
   }
 
   @override
   @inline
-  Uint8List toFury(Object? obj,) {
+  Uint8List toFory(Object? obj,) {
     return _serDirector.write(obj, _conf, _xtypeResolver);
   }
 

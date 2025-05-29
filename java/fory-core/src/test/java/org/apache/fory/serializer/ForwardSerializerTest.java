@@ -45,8 +45,8 @@ public class ForwardSerializerTest {
         return new ForwardSerializer(
             new ForwardSerializer.DefaultFuryProxy() {
               @Override
-              protected Fory newFurySerializer(ClassLoader loader) {
-                Fory fory = super.newFurySerializer(loader);
+              protected Fory newForySerializer(ClassLoader loader) {
+                Fory fory = super.newForySerializer(loader);
                 // We can register custom serializers here.
                 System.out.printf("Created serializer %s, start to do init staff.\n", fory);
                 return fory;

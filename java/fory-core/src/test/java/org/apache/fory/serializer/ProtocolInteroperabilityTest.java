@@ -321,24 +321,24 @@ public class ProtocolInteroperabilityTest extends ForyTestBase {
         Object::toString);
   }
 
-  private static void metaShareRoundCheck(Fory fury1, Fory fury2, Object o) {
-    metaShareRoundCheck(fury1, fury2, o, Function.identity());
+  private static void metaShareRoundCheck(Fory fory1, Fory fory2, Object o) {
+    metaShareRoundCheck(fory1, fory2, o, Function.identity());
   }
 
   private static void metaShareRoundCheck(
-      Fory fury1, Fory fury2, Object o, Function<Object, Object> compareHook) {
+      Fory fory1, Fory fory2, Object o, Function<Object, Object> compareHook) {
     MetaContext context1 = new MetaContext();
     MetaContext context2 = new MetaContext();
     for (int i = 0; i < 2; i++) {
-      fury1.getSerializationContext().setMetaContext(context1);
-      byte[] bytes1 = fury1.serialize(o);
-      fury2.getSerializationContext().setMetaContext(context2);
-      Object o1 = fury2.deserialize(bytes1);
+      fory1.getSerializationContext().setMetaContext(context1);
+      byte[] bytes1 = fory1.serialize(o);
+      fory2.getSerializationContext().setMetaContext(context2);
+      Object o1 = fory2.deserialize(bytes1);
       Assert.assertEquals(compareHook.apply(o1), compareHook.apply(o));
-      fury2.getSerializationContext().setMetaContext(context2);
-      byte[] bytes2 = fury2.serialize(o1);
-      fury1.getSerializationContext().setMetaContext(context1);
-      Object o2 = fury1.deserialize(bytes2);
+      fory2.getSerializationContext().setMetaContext(context2);
+      byte[] bytes2 = fory2.serialize(o1);
+      fory1.getSerializationContext().setMetaContext(context1);
+      Object o2 = fory1.deserialize(bytes2);
       Assert.assertEquals(compareHook.apply(o2), compareHook.apply(o));
     }
   }

@@ -921,7 +921,7 @@ public class ClassDef implements Serializable {
   private static FieldType buildFieldType(TypeResolver resolver, GenericType genericType) {
     Preconditions.checkNotNull(genericType);
     Class<?> rawType = genericType.getCls();
-    boolean isXlang = resolver.getFury().isCrossLanguage();
+    boolean isXlang = resolver.getFory().isCrossLanguage();
     int xtypeId = -1;
     if (isXlang) {
       ClassInfo info = resolver.getClassInfo(genericType.getCls(), false);

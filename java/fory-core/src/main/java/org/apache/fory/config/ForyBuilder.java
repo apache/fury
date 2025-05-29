@@ -446,7 +446,7 @@ public final class ForyBuilder {
    * variable, Fory creation exception will be swallowed by {@link NoClassDefFoundError}. We print
    * exception explicitly for better debugging.
    */
-  private static Fory newFury(ForyBuilder builder, ClassLoader classLoader) {
+  private static Fory newFory(ForyBuilder builder, ClassLoader classLoader) {
     try {
       return new Fory(builder, classLoader);
     } catch (Throwable t) {
@@ -463,7 +463,7 @@ public final class ForyBuilder {
     // clear classLoader to avoid `LoaderBinding#foryFactory` lambda capture classLoader by
     // capturing `ForyBuilder`, which make `classLoader` not able to be gc.
     this.classLoader = null;
-    return newFury(this, loader);
+    return newFory(this, loader);
   }
 
   /** Build thread safe fory. */
@@ -478,7 +478,7 @@ public final class ForyBuilder {
     // clear classLoader to avoid `LoaderBinding#foryFactory` lambda capture classLoader by
     // capturing `ForyBuilder`,  which make `classLoader` not able to be gc.
     this.classLoader = null;
-    ThreadLocalFury threadSafeFury = new ThreadLocalFury(classLoader -> newFury(this, classLoader));
+    ThreadLocalFury threadSafeFury = new ThreadLocalFury(classLoader -> newFory(this, classLoader));
     threadSafeFury.setClassLoader(loader);
     return threadSafeFury;
   }
@@ -516,7 +516,7 @@ public final class ForyBuilder {
     this.classLoader = null;
     ThreadSafeFury threadSafeFury =
         new ThreadPoolFury(
-            classLoader -> newFury(this, classLoader),
+            classLoader -> newFory(this, classLoader),
             minPoolSize,
             maxPoolSize,
             expireTime,

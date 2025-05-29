@@ -42,8 +42,8 @@ void main() {
       fory.register($SimpleStruct1, "SimpleStruct1");
       SimpleStruct1 obj = SimpleStruct1();
       obj.a = Int32.maxValue;
-      Uint8List lis = fory.toFury(obj);
-      Object? obj2 = fory.fromFury(lis);
+      Uint8List lis = fory.toFory(obj);
+      Object? obj2 = fory.fromFory(lis);
       check(obj2).equals(obj);
     });
 
@@ -90,7 +90,7 @@ void main() {
       map['k1'] = map;
       map['k2'] = list;
 
-      Uint8List bytes = fory.toFury(list);
+      Uint8List bytes = fory.toFory(list);
 
       File file = TestFileUtil.getWriteFile('test_cross_language_reference.data', bytes);
       bool exeRes = CrossLangUtil.executeWithPython('test_cross_language_reference', file.path);
@@ -98,7 +98,7 @@ void main() {
 
       // deserialize
       bytes = file.readAsBytesSync();
-      Object? obj = fory.fromFury(bytes);
+      Object? obj = fory.fromFory(bytes);
       check(obj).isNotNull();
       List list1 = obj as List<Object?>;
       check(list1).identicalTo(list1[0]);
@@ -136,8 +136,8 @@ void main() {
       map4['key2'] = set1;
       obj.f3 = map4;
 
-      Uint8List bytes = fory.toFury(obj);
-      Object? obj2 = fory.fromFury(bytes);
+      Uint8List bytes = fory.toFory(obj);
+      Object? obj2 = fory.fromFory(bytes);
       check(obj2).isNotNull();
       check(obj2).equals(obj);
     });

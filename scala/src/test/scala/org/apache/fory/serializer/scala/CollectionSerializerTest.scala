@@ -27,67 +27,67 @@ import org.scalatest.wordspec.AnyWordSpec
 class CollectionSerializerTest extends AnyWordSpec with Matchers {
   val params: Seq[(Boolean, Boolean)] = List((false, false), (false, true), (true, false), (true, true))
   params.foreach{case (setOpt, setFactory) => {
-    val fury1: Fory = Fory.builder()
+    val fory1: Fory = Fory.builder()
       .withLanguage(Language.JAVA)
       .withRefTracking(true)
       .withScalaOptimizationEnabled(setOpt)
       .requireClassRegistration(false)
       .suppressClassRegistrationWarnings(false)
       .build()
-    ScalaSerializers.registerSerializers(fury1)
+    ScalaSerializers.registerSerializers(fory1)
     if (setFactory) {
-      fury1.getClassResolver.setSerializerFactory(new ScalaDispatcher())
+      fory1.getClassResolver.setSerializerFactory(new ScalaDispatcher())
     }
     s"fory scala collection support: setOpt $setOpt, setFactory $setFactory" should {
       "serialize/deserialize Seq" in {
         val seq = Seq(100, 10000L)
-        fury1.deserialize(fury1.serialize(seq)) shouldEqual seq
+        fory1.deserialize(fory1.serialize(seq)) shouldEqual seq
       }
       "serialize/deserialize List" in {
         val list = List(100, 10000L)
-        fury1.deserialize(fury1.serialize(list)) shouldEqual list
+        fory1.deserialize(fory1.serialize(list)) shouldEqual list
         val list2 = List(100, 10000L, 10000L, 10000L)
-        fury1.deserialize(fury1.serialize(list2)) shouldEqual list2
+        fory1.deserialize(fory1.serialize(list2)) shouldEqual list2
       }
       "serialize/deserialize empty List" in {
-        fury1.deserialize(fury1.serialize(List.empty)) shouldEqual List.empty
-        fury1.deserialize(fury1.serialize(Nil)) shouldEqual Nil
+        fory1.deserialize(fory1.serialize(List.empty)) shouldEqual List.empty
+        fory1.deserialize(fory1.serialize(Nil)) shouldEqual Nil
       }
       "serialize/deserialize Set" in {
         val set = Set(100, 10000L)
-        fury1.deserialize(fury1.serialize(set)) shouldEqual set
+        fory1.deserialize(fory1.serialize(set)) shouldEqual set
       }
       "serialize/deserialize CollectionStruct1" in {
         val struct = CollectionStruct1(List("a", "b"))
-        fury1.deserialize(fury1.serialize(struct)) shouldEqual struct
+        fory1.deserialize(fory1.serialize(struct)) shouldEqual struct
       }
       "serialize/deserialize CollectionStruct1 with empty List" in {
         val struct1 = CollectionStruct1(List.empty)
-        fury1.deserialize(fury1.serialize(struct1)) shouldEqual struct1
+        fory1.deserialize(fory1.serialize(struct1)) shouldEqual struct1
         val struct2 = CollectionStruct1(Nil)
-        fury1.deserialize(fury1.serialize(struct2)) shouldEqual struct2
+        fory1.deserialize(fory1.serialize(struct2)) shouldEqual struct2
       }
       "serialize/deserialize NestedCollectionStruct" in {
         val struct = NestedCollectionStruct(List(List("a", "b"), List("a", "b")), Set(Set("c", "d")))
-        fury1.deserialize(fury1.serialize(struct)) shouldEqual struct
+        fory1.deserialize(fory1.serialize(struct)) shouldEqual struct
       }
     }
     s"fory scala map support: setOpt $setOpt, setFactory $setFactory" should {
       "serialize/deserialize Map" in {
         val map = Map("a" -> 100, "b" -> 10000L)
-        fury1.deserialize(fury1.serialize(map)) shouldEqual map
+        fory1.deserialize(fory1.serialize(map)) shouldEqual map
       }
       "serialize/deserialize MapStruct1" in {
         val struct = MapStruct1(Map("k1" -> "v1", "k2" -> "v2"))
-        fury1.deserialize(fury1.serialize(struct)) shouldEqual struct
+        fory1.deserialize(fory1.serialize(struct)) shouldEqual struct
       }
       "serialize/deserialize MapStruct1 with empty map" in {
         val struct = MapStruct1(Map.empty)
-        fury1.deserialize(fury1.serialize(struct)) shouldEqual struct
+        fory1.deserialize(fory1.serialize(struct)) shouldEqual struct
       }
       "serialize/deserialize NestedMapStruct" in {
         val struct = NestedMapStruct(Map("K1" -> Map("k1" -> "v1", "k2" -> "v2"), "K2" -> Map("k1" -> "v1")))
-        fury1.deserialize(fury1.serialize(struct)) shouldEqual struct
+        fory1.deserialize(fory1.serialize(struct)) shouldEqual struct
       }
     }
   }}

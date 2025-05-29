@@ -42,7 +42,7 @@ public class ClassLoaderFuryPooled {
 
   private final ClassLoader classLoader;
 
-  /** idle Fory cache change. by : 1. init() 2. getFury() 3.returnFury() */
+  /** idle Fory cache change. by : 1. init() 2. getFory() 3.returnFury() */
   private final BlockingQueue<Fory> idleCacheQueue;
 
   final WeakHashMap<Fory, Object> allFury = new WeakHashMap<>();
@@ -76,7 +76,7 @@ public class ClassLoaderFuryPooled {
     }
   }
 
-  public Fory getFury() {
+  public Fory getFory() {
     if (activeCacheNumber.get() < maxPoolSize) {
       Fory fory = idleCacheQueue.poll();
       if (fory != null) {
@@ -103,7 +103,7 @@ public class ClassLoaderFuryPooled {
 
   private Fory addFury(boolean addQueue) {
     // only activeCacheNumber increment success, can lock and create new Fory, otherwise return
-    // null, and block in getFury(), wait for other thread to release idleCacheQueue.
+    // null, and block in getFory(), wait for other thread to release idleCacheQueue.
     int after = activeCacheNumber.incrementAndGet();
     if (after > maxPoolSize) {
       activeCacheNumber.decrementAndGet();

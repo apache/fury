@@ -585,13 +585,13 @@ public class MapSerializersTest extends ForyTestBase {
 
   @Test
   public void testGenericMapBound() {
-    Fory fury1 =
+    Fory fory1 =
         builder()
             .withLanguage(Language.JAVA)
             .requireClassRegistration(false)
             .withCodegen(false)
             .build();
-    Fory fury2 =
+    Fory fory2 =
         builder()
             .withLanguage(Language.JAVA)
             .requireClassRegistration(false)
@@ -599,8 +599,8 @@ public class MapSerializersTest extends ForyTestBase {
             .build();
     ArrayList<Integer> list = new ArrayList<>(of(1, 2));
     roundCheck(
-        fury1,
-        fury2,
+        fory1,
+        fory2,
         new GenericMapBoundTest(
             new HashMap<>(mapOf(new HashMap<>(mapOf(1, list)), list)),
             new HashMap<>(mapOf(new HashMap<>(mapOf(1, list)), list))));
@@ -1018,14 +1018,14 @@ public class MapSerializersTest extends ForyTestBase {
 
   @Test
   public void testNullChunkGeneric() {
-    Fory fury1 = builder().withCodegen(true).build();
+    Fory fory1 = builder().withCodegen(true).build();
     Map<String, Integer> map = ofHashMap(null, 1, "k1", null, "k2", 2);
     Map<String, List<Integer>> map1 =
         ofHashMap(null, ofArrayList(1), "k1", null, "k2", ofArrayList(2));
     NullChunkGeneric o = new NullChunkGeneric(map, map1);
-    byte[] bytes = fury1.serialize(o);
-    Fory fury2 = builder().withCodegen(false).build();
-    Object object = fury2.deserialize(bytes);
+    byte[] bytes = fory1.serialize(o);
+    Fory fory2 = builder().withCodegen(false).build();
+    Object object = fory2.deserialize(bytes);
     assertEquals(object, o);
   }
 }

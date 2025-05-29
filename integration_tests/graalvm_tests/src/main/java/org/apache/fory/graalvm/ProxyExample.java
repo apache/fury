@@ -39,10 +39,10 @@ public class ProxyExample {
   static Fory fory;
 
   static {
-    fory = createFury();
+    fory = createFory();
   }
 
-  private static Fory createFury() {
+  private static Fory createFory() {
     Fory fory =
         Fory.builder()
             .withName(ProxyExample.class.getName())
@@ -60,7 +60,7 @@ public class ProxyExample {
                 fory.getClassLoader(), new Class[] {Function.class}, new TestInvocationHandler());
     Function deserializedFunction = (Function) fory.deserialize(fory.serialize(function));
     Preconditions.checkArgument(deserializedFunction.apply(null).equals(1));
-    fory = createFury();
+    fory = createFory();
     deserializedFunction = (Function) fory.deserialize(fory.serialize(function));
     Preconditions.checkArgument(deserializedFunction.apply(null).equals(1));
     System.out.println("Proxy tests pass");

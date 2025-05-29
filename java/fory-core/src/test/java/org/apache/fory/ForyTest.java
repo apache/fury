@@ -84,131 +84,131 @@ public class ForyTest extends ForyTestBase {
 
   @Test(dataProvider = "crossLanguageReferenceTrackingConfig")
   public void primitivesTest(boolean referenceTracking, Language language) {
-    Fory fury1 =
+    Fory fory1 =
         Fory.builder()
             .withLanguage(language)
             .withRefTracking(referenceTracking)
             .requireClassRegistration(false)
             .build();
-    Fory fury2 =
+    Fory fory2 =
         Fory.builder()
             .withLanguage(language)
             .withRefTracking(referenceTracking)
             .requireClassRegistration(false)
             .build();
-    assertEquals(true, serDe(fury1, fury2, true));
-    assertEquals(Byte.MAX_VALUE, serDe(fury1, fury2, Byte.MAX_VALUE));
-    assertEquals(Short.MAX_VALUE, serDe(fury1, fury2, Short.MAX_VALUE));
-    assertEquals(Integer.MAX_VALUE, serDe(fury1, fury2, Integer.MAX_VALUE));
-    assertEquals(Long.MAX_VALUE, serDe(fury1, fury2, Long.MAX_VALUE));
-    assertEquals(Float.MAX_VALUE, serDe(fury1, fury2, Float.MAX_VALUE));
-    assertEquals(Double.MAX_VALUE, serDe(fury1, fury2, Double.MAX_VALUE));
+    assertEquals(true, serDe(fory1, fory2, true));
+    assertEquals(Byte.MAX_VALUE, serDe(fory1, fory2, Byte.MAX_VALUE));
+    assertEquals(Short.MAX_VALUE, serDe(fory1, fory2, Short.MAX_VALUE));
+    assertEquals(Integer.MAX_VALUE, serDe(fory1, fory2, Integer.MAX_VALUE));
+    assertEquals(Long.MAX_VALUE, serDe(fory1, fory2, Long.MAX_VALUE));
+    assertEquals(Float.MAX_VALUE, serDe(fory1, fory2, Float.MAX_VALUE));
+    assertEquals(Double.MAX_VALUE, serDe(fory1, fory2, Double.MAX_VALUE));
   }
 
   @Test(dataProvider = "referenceTrackingConfig")
   public void basicTest(boolean referenceTracking) {
     ForyBuilder builder =
         Fory.builder().withRefTracking(referenceTracking).requireClassRegistration(false);
-    Fory fury1 = builder.build();
-    Fory fury2 = builder.build();
-    assertEquals("str", serDe(fury1, fury2, "str"));
-    assertEquals("str", serDe(fury1, fury2, new StringBuilder("str")).toString());
-    assertEquals("str", serDe(fury1, fury2, new StringBuffer("str")).toString());
-    assertEquals(EnumSerializerTest.EnumFoo.A, serDe(fury1, fury2, EnumSerializerTest.EnumFoo.A));
-    assertEquals(EnumSerializerTest.EnumFoo.B, serDe(fury1, fury2, EnumSerializerTest.EnumFoo.B));
+    Fory fory1 = builder.build();
+    Fory fory2 = builder.build();
+    assertEquals("str", serDe(fory1, fory2, "str"));
+    assertEquals("str", serDe(fory1, fory2, new StringBuilder("str")).toString());
+    assertEquals("str", serDe(fory1, fory2, new StringBuffer("str")).toString());
+    assertEquals(EnumSerializerTest.EnumFoo.A, serDe(fory1, fory2, EnumSerializerTest.EnumFoo.A));
+    assertEquals(EnumSerializerTest.EnumFoo.B, serDe(fory1, fory2, EnumSerializerTest.EnumFoo.B));
     assertEquals(
-        EnumSerializerTest.EnumSubClass.A, serDe(fury1, fury2, EnumSerializerTest.EnumSubClass.A));
+        EnumSerializerTest.EnumSubClass.A, serDe(fory1, fory2, EnumSerializerTest.EnumSubClass.A));
     assertEquals(
-        EnumSerializerTest.EnumSubClass.B, serDe(fury1, fury2, EnumSerializerTest.EnumSubClass.B));
-    assertEquals(BigInteger.valueOf(100), serDe(fury1, fury2, BigInteger.valueOf(100)));
-    assertEquals(BigDecimal.valueOf(100, 2), serDe(fury1, fury2, BigDecimal.valueOf(100, 2)));
+        EnumSerializerTest.EnumSubClass.B, serDe(fory1, fory2, EnumSerializerTest.EnumSubClass.B));
+    assertEquals(BigInteger.valueOf(100), serDe(fory1, fory2, BigInteger.valueOf(100)));
+    assertEquals(BigDecimal.valueOf(100, 2), serDe(fory1, fory2, BigDecimal.valueOf(100, 2)));
     java.sql.Date sqlDate = new java.sql.Date(System.currentTimeMillis());
-    assertEquals(sqlDate, serDe(fury1, fury2, sqlDate));
+    assertEquals(sqlDate, serDe(fory1, fory2, sqlDate));
     LocalDate localDate = LocalDate.now();
-    assertEquals(localDate, serDe(fury1, fury2, localDate));
+    assertEquals(localDate, serDe(fory1, fory2, localDate));
     Date utilDate = new Date();
-    assertEquals(utilDate, serDe(fury1, fury2, utilDate));
+    assertEquals(utilDate, serDe(fory1, fory2, utilDate));
     Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-    assertEquals(timestamp, serDe(fury1, fury2, timestamp));
+    assertEquals(timestamp, serDe(fory1, fory2, timestamp));
     Instant instant = DateTimeUtils.truncateInstantToMicros(Instant.now());
-    assertEquals(instant, serDe(fury1, fury2, instant));
+    assertEquals(instant, serDe(fory1, fory2, instant));
 
-    ArraySerializersTest.testPrimitiveArray(fury1, fury2);
+    ArraySerializersTest.testPrimitiveArray(fory1, fory2);
 
-    assertEquals(Arrays.asList(1, 2), serDe(fury1, fury2, Arrays.asList(1, 2)));
+    assertEquals(Arrays.asList(1, 2), serDe(fory1, fory2, Arrays.asList(1, 2)));
     List<String> arrayList = Arrays.asList("str", "str");
-    assertEquals(arrayList, serDe(fury1, fury2, arrayList));
-    assertEquals(new LinkedList<>(arrayList), serDe(fury1, fury2, new LinkedList<>(arrayList)));
-    assertEquals(new HashSet<>(arrayList), serDe(fury1, fury2, new HashSet<>(arrayList)));
+    assertEquals(arrayList, serDe(fory1, fory2, arrayList));
+    assertEquals(new LinkedList<>(arrayList), serDe(fory1, fory2, new LinkedList<>(arrayList)));
+    assertEquals(new HashSet<>(arrayList), serDe(fory1, fory2, new HashSet<>(arrayList)));
     TreeSet<String> treeSet = new TreeSet<>(Comparator.naturalOrder());
     treeSet.add("str1");
     treeSet.add("str2");
-    assertEquals(treeSet, serDe(fury1, fury2, treeSet));
+    assertEquals(treeSet, serDe(fory1, fory2, treeSet));
 
     HashMap<String, Integer> hashMap = new HashMap<>();
     hashMap.put("k1", 1);
     hashMap.put("k2", 2);
-    assertEquals(hashMap, serDe(fury1, fury2, hashMap));
-    assertEquals(new LinkedHashMap<>(hashMap), serDe(fury1, fury2, new LinkedHashMap<>(hashMap)));
+    assertEquals(hashMap, serDe(fory1, fory2, hashMap));
+    assertEquals(new LinkedHashMap<>(hashMap), serDe(fory1, fory2, new LinkedHashMap<>(hashMap)));
     TreeMap<String, Integer> treeMap = new TreeMap<>(Comparator.naturalOrder());
     treeMap.putAll(hashMap);
-    assertEquals(treeMap, serDe(fury1, fury2, treeMap));
-    assertEquals(Collections.EMPTY_LIST, serDe(fury1, fury2, Collections.EMPTY_LIST));
-    assertEquals(Collections.EMPTY_SET, serDe(fury1, fury2, Collections.EMPTY_SET));
-    assertEquals(Collections.EMPTY_MAP, serDe(fury1, fury2, Collections.EMPTY_MAP));
+    assertEquals(treeMap, serDe(fory1, fory2, treeMap));
+    assertEquals(Collections.EMPTY_LIST, serDe(fory1, fory2, Collections.EMPTY_LIST));
+    assertEquals(Collections.EMPTY_SET, serDe(fory1, fory2, Collections.EMPTY_SET));
+    assertEquals(Collections.EMPTY_MAP, serDe(fory1, fory2, Collections.EMPTY_MAP));
     assertEquals(
-        Collections.singletonList("str"), serDe(fury1, fury2, Collections.singletonList("str")));
-    assertEquals(Collections.singleton("str"), serDe(fury1, fury2, Collections.singleton("str")));
+        Collections.singletonList("str"), serDe(fory1, fory2, Collections.singletonList("str")));
+    assertEquals(Collections.singleton("str"), serDe(fory1, fory2, Collections.singleton("str")));
     assertEquals(
-        Collections.singletonMap("k", 1), serDe(fury1, fury2, Collections.singletonMap("k", 1)));
+        Collections.singletonMap("k", 1), serDe(fory1, fory2, Collections.singletonMap("k", 1)));
   }
 
   @Test(dataProvider = "languageConfig")
   public void testSerializationToBuffer(Language language) {
-    Fory fury1 = Fory.builder().withLanguage(language).requireClassRegistration(false).build();
-    Fory fury2 = Fory.builder().withLanguage(language).requireClassRegistration(false).build();
+    Fory fory1 = Fory.builder().withLanguage(language).requireClassRegistration(false).build();
+    Fory fory2 = Fory.builder().withLanguage(language).requireClassRegistration(false).build();
     MemoryBuffer buffer = MemoryUtils.buffer(64);
-    assertSerializationToBuffer(fury1, fury2, buffer);
+    assertSerializationToBuffer(fory1, fory2, buffer);
   }
 
   @Test(dataProvider = "languageConfig")
   public void testSerializationSlicedBuffer(Language language) {
-    Fory fury1 = Fory.builder().withLanguage(language).requireClassRegistration(false).build();
-    Fory fury2 = Fory.builder().withLanguage(language).requireClassRegistration(false).build();
+    Fory fory1 = Fory.builder().withLanguage(language).requireClassRegistration(false).build();
+    Fory fory2 = Fory.builder().withLanguage(language).requireClassRegistration(false).build();
     MemoryBuffer buffer0 = MemoryUtils.buffer(64);
     buffer0.writeInt64(-1);
     buffer0.writeInt64(-1);
     buffer0.readInt64();
     buffer0.readInt64();
     MemoryBuffer buffer = buffer0.slice(8);
-    assertSerializationToBuffer(fury1, fury2, buffer);
+    assertSerializationToBuffer(fory1, fory2, buffer);
   }
 
-  public void assertSerializationToBuffer(Fory fury1, Fory fury2, MemoryBuffer buffer) {
-    assertEquals(true, serDeCheckIndex(fury1, fury2, buffer, true));
-    assertEquals(Byte.MAX_VALUE, serDeCheckIndex(fury1, fury2, buffer, Byte.MAX_VALUE));
-    assertEquals(Short.MAX_VALUE, serDeCheckIndex(fury1, fury2, buffer, Short.MAX_VALUE));
-    assertEquals("str", serDeCheckIndex(fury1, fury2, buffer, "str"));
-    assertEquals("str", serDeCheckIndex(fury1, fury2, buffer, new StringBuilder("str")).toString());
-    if (fury1.getLanguage() != Language.JAVA) {
-      fury1.register(EnumSerializerTest.EnumFoo.class);
-      fury2.register(EnumSerializerTest.EnumFoo.class);
-      fury1.register(EnumSerializerTest.EnumSubClass.class);
-      fury2.register(EnumSerializerTest.EnumSubClass.class);
+  public void assertSerializationToBuffer(Fory fory1, Fory fory2, MemoryBuffer buffer) {
+    assertEquals(true, serDeCheckIndex(fory1, fory2, buffer, true));
+    assertEquals(Byte.MAX_VALUE, serDeCheckIndex(fory1, fory2, buffer, Byte.MAX_VALUE));
+    assertEquals(Short.MAX_VALUE, serDeCheckIndex(fory1, fory2, buffer, Short.MAX_VALUE));
+    assertEquals("str", serDeCheckIndex(fory1, fory2, buffer, "str"));
+    assertEquals("str", serDeCheckIndex(fory1, fory2, buffer, new StringBuilder("str")).toString());
+    if (fory1.getLanguage() != Language.JAVA) {
+      fory1.register(EnumSerializerTest.EnumFoo.class);
+      fory2.register(EnumSerializerTest.EnumFoo.class);
+      fory1.register(EnumSerializerTest.EnumSubClass.class);
+      fory2.register(EnumSerializerTest.EnumSubClass.class);
     }
     assertEquals(
         EnumSerializerTest.EnumFoo.A,
-        serDeCheckIndex(fury1, fury2, buffer, EnumSerializerTest.EnumFoo.A));
+        serDeCheckIndex(fory1, fory2, buffer, EnumSerializerTest.EnumFoo.A));
     assertEquals(
         EnumSerializerTest.EnumSubClass.A,
-        serDeCheckIndex(fury1, fury2, buffer, EnumSerializerTest.EnumSubClass.A));
+        serDeCheckIndex(fory1, fory2, buffer, EnumSerializerTest.EnumSubClass.A));
     assertTrue(
         Arrays.equals(
             new boolean[] {false, true},
-            (boolean[]) serDeCheckIndex(fury1, fury2, buffer, new boolean[] {false, true})));
+            (boolean[]) serDeCheckIndex(fory1, fory2, buffer, new boolean[] {false, true})));
     assertEquals(
-        new byte[] {1, 1}, (byte[]) serDeCheckIndex(fury1, fury2, buffer, new byte[] {1, 1}));
-    assertEquals(Arrays.asList(1, 2), serDe(fury1, fury2, buffer, Arrays.asList(1, 2)));
+        new byte[] {1, 1}, (byte[]) serDeCheckIndex(fory1, fory2, buffer, new byte[] {1, 1}));
+    assertEquals(Arrays.asList(1, 2), serDe(fory1, fory2, buffer, Arrays.asList(1, 2)));
   }
 
   @Test(dataProvider = "referenceTrackingConfig")
@@ -422,8 +422,8 @@ public class ForyTest extends ForyTestBase {
     Fory fory = Fory.builder().requireClassRegistration(true).build();
     class A {}
     assertThrows(InsecureException.class, () -> fory.serialize(new A()));
-    Fory fury1 = Fory.builder().requireClassRegistration(false).build();
-    serDe(fury1, new A());
+    Fory fory1 = Fory.builder().requireClassRegistration(false).build();
+    serDe(fory1, new A());
   }
 
   @Data
@@ -659,17 +659,17 @@ public class ForyTest extends ForyTestBase {
 
   @Test
   public void testStructMapping() {
-    ThreadSafeFury fury1 =
+    ThreadSafeFury fory1 =
         Fory.builder().withCompatibleMode(CompatibleMode.COMPATIBLE).buildThreadSafeFury();
-    ThreadSafeFury fury2 =
+    ThreadSafeFury fory2 =
         Fory.builder().withCompatibleMode(CompatibleMode.COMPATIBLE).buildThreadSafeFury();
-    fury1.register(Struct1.class);
-    fury2.register(Struct2.class);
+    fory1.register(Struct1.class);
+    fory2.register(Struct2.class);
     Struct1 struct1 = new Struct1(10, "abc");
-    Struct2 struct2 = (Struct2) fury2.deserialize(fury1.serialize(struct1));
+    Struct2 struct2 = (Struct2) fory2.deserialize(fory1.serialize(struct1));
     Assert.assertEquals(struct2.f1, struct1.f1);
     Assert.assertEquals(struct2.f2, struct1.f2);
-    struct1 = (Struct1) fury1.deserialize(fury2.serialize(struct2));
+    struct1 = (Struct1) fory1.deserialize(fory2.serialize(struct2));
     Assert.assertEquals(struct1.f1, struct2.f1);
     Assert.assertEquals(struct1.f2, struct2.f2);
   }
