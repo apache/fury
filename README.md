@@ -11,6 +11,8 @@
 
 <https://fory.apache.org>
 
+> Apache Fory was previously named as Apache Fury. For versions less than 0.11, please use "fury" instead of "fory" in package names, imports, and dependencies.
+
 > [!IMPORTANT]
 > Apache Fory (incubating) is an effort undergoing incubation at the Apache
 > Software Foundation (ASF), sponsored by the Apache Incubator PMC.
