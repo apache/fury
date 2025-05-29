@@ -19,7 +19,6 @@
 
 package org.apache.fury.type;
 
-import static org.apache.fury.type.TypeUtils.OBJECT_TYPE;
 import static org.apache.fury.type.TypeUtils.getRawType;
 
 import java.lang.reflect.GenericArrayType;
@@ -35,7 +34,11 @@ import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.resolver.TypeResolver;
 import org.apache.fury.serializer.Serializer;
 
-/** GenericType for building java generics as a tree and binding with fury serializers. */
+/**
+ * GenericType for building java generics as a tree and binding with fury serializers. Note
+ * GenericType for specific types such as Object.class can't be singleton, because GenericType has
+ * some mutable fields
+ */
 // TODO(chaokunyang) refine generics which can be inspired by spring ResolvableType.
 @SuppressWarnings("rawtypes")
 public class GenericType {
@@ -124,12 +127,7 @@ public class GenericType {
     return build(TypeRef.of(type), finalPredicate);
   }
 
-  private static final GenericType OBJECT_GENERIC_TYPE = new GenericType(OBJECT_TYPE, false);
-
   public static GenericType build(TypeRef<?> typeRef, Predicate<Type> finalPredicate) {
-    if (typeRef.getRawType() == Object.class) {
-      return OBJECT_GENERIC_TYPE;
-    }
     Type type = typeRef.getType();
     if (type instanceof ParameterizedType) {
       // List<String>, List<T>, Map<String, List<String>>, SomeClass<T>
