@@ -19,8 +19,6 @@
 
 package org.apache.fury.config;
 
-import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 import org.apache.fury.Fury;
 import org.apache.fury.ThreadLocalFury;
 import org.apache.fury.ThreadSafeFury;
@@ -38,6 +36,9 @@ import org.apache.fury.serializer.Serializer;
 import org.apache.fury.serializer.TimeSerializers;
 import org.apache.fury.serializer.collection.GuavaCollectionSerializers;
 import org.apache.fury.util.GraalvmSupport;
+
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 /** Builder class to config and create {@link Fury}. */
 // Method naming style for this builder:
@@ -86,6 +87,7 @@ public final class FuryBuilder {
   boolean serializeEnumByName = false;
   int bufferSizeLimitBytes = 128 * 1024;
   MetaCompressor metaCompressor = new DeflaterMetaCompressor();
+  ExceptionLogMode exceptionLogMode = ExceptionLogMode.ALL_PRINT;
 
   public FuryBuilder() {}
 
@@ -139,6 +141,14 @@ public final class FuryBuilder {
   /** deserialize and serialize enum by name. */
   public FuryBuilder serializeEnumByName(boolean serializeEnumByName) {
     this.serializeEnumByName = serializeEnumByName;
+    return this;
+  }
+
+  /** exception log level
+   * choose the log level, print the error message.
+   * */
+  public FuryBuilder exceptionLogMode(ExceptionLogMode exceptionLogMode) {
+    this.exceptionLogMode = exceptionLogMode;
     return this;
   }
 

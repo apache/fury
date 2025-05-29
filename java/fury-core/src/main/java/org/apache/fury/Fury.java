@@ -19,6 +19,27 @@
 
 package org.apache.fury;
 
+import org.apache.fury.builder.JITContext;
+import org.apache.fury.collection.IdentityMap;
+import org.apache.fury.config.*;
+import org.apache.fury.io.FuryInputStream;
+import org.apache.fury.io.FuryReadableChannel;
+import org.apache.fury.logging.Logger;
+import org.apache.fury.logging.LoggerFactory;
+import org.apache.fury.memory.MemoryBuffer;
+import org.apache.fury.memory.MemoryUtils;
+import org.apache.fury.resolver.*;
+import org.apache.fury.serializer.*;
+import org.apache.fury.serializer.PrimitiveSerializers.LongSerializer;
+import org.apache.fury.serializer.collection.CollectionSerializers.ArrayListSerializer;
+import org.apache.fury.serializer.collection.MapSerializers.HashMapSerializer;
+import org.apache.fury.type.Generics;
+import org.apache.fury.type.Types;
+import org.apache.fury.util.ExceptionUtils;
+import org.apache.fury.util.Preconditions;
+import org.apache.fury.util.StringUtils;
+
+import javax.annotation.concurrent.NotThreadSafe;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -29,44 +50,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import javax.annotation.concurrent.NotThreadSafe;
-import org.apache.fury.builder.JITContext;
-import org.apache.fury.collection.IdentityMap;
-import org.apache.fury.config.CompatibleMode;
-import org.apache.fury.config.Config;
-import org.apache.fury.config.FuryBuilder;
-import org.apache.fury.config.Language;
-import org.apache.fury.config.LongEncoding;
-import org.apache.fury.io.FuryInputStream;
-import org.apache.fury.io.FuryReadableChannel;
-import org.apache.fury.logging.Logger;
-import org.apache.fury.logging.LoggerFactory;
-import org.apache.fury.memory.MemoryBuffer;
-import org.apache.fury.memory.MemoryUtils;
-import org.apache.fury.resolver.ClassInfo;
-import org.apache.fury.resolver.ClassInfoHolder;
-import org.apache.fury.resolver.ClassResolver;
-import org.apache.fury.resolver.MapRefResolver;
-import org.apache.fury.resolver.MetaContext;
-import org.apache.fury.resolver.MetaStringResolver;
-import org.apache.fury.resolver.NoRefResolver;
-import org.apache.fury.resolver.RefResolver;
-import org.apache.fury.resolver.SerializationContext;
-import org.apache.fury.resolver.XtypeResolver;
-import org.apache.fury.serializer.ArraySerializers;
-import org.apache.fury.serializer.BufferCallback;
-import org.apache.fury.serializer.BufferObject;
-import org.apache.fury.serializer.PrimitiveSerializers.LongSerializer;
-import org.apache.fury.serializer.Serializer;
-import org.apache.fury.serializer.SerializerFactory;
-import org.apache.fury.serializer.StringSerializer;
-import org.apache.fury.serializer.collection.CollectionSerializers.ArrayListSerializer;
-import org.apache.fury.serializer.collection.MapSerializers.HashMapSerializer;
-import org.apache.fury.type.Generics;
-import org.apache.fury.type.Types;
-import org.apache.fury.util.ExceptionUtils;
-import org.apache.fury.util.Preconditions;
-import org.apache.fury.util.StringUtils;
 
 /**
  * Cross-Lang Data layout: 1byte mask: 1-bit null: 0->null, 1->not null 1-bit endianness: 0->le,
@@ -1677,6 +1660,10 @@ public final class Fury implements BaseFury {
 
   public boolean compressLong() {
     return config.compressLong();
+  }
+
+  public ExceptionLogMode getExceptionLogMode() {
+    return config.getExceptionLogMode();
   }
 
   public static FuryBuilder builder() {

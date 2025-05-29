@@ -19,15 +19,17 @@
 
 package org.apache.fury.util;
 
-import java.lang.reflect.Field;
-import java.util.Arrays;
-import java.util.List;
 import org.apache.fury.Fury;
 import org.apache.fury.collection.ObjectArray;
 import org.apache.fury.exception.DeserializationException;
 import org.apache.fury.memory.Platform;
 import org.apache.fury.reflect.ReflectionUtils;
 import org.apache.fury.resolver.MapRefResolver;
+
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /** Util for java exceptions. */
 public class ExceptionUtils {
@@ -57,15 +59,36 @@ public class ExceptionUtils {
 
   public static RuntimeException handleReadFailed(Fury fury, Throwable t) {
     if (fury.getRefResolver() instanceof MapRefResolver) {
-      ObjectArray readObjects = ((MapRefResolver) fury.getRefResolver()).getReadObjects();
-      // carry with read objects for better trouble shooting.
-      List<Object> objects = Arrays.asList(readObjects.objects).subList(0, readObjects.size);
-      throw new DeserializationException(objects, t);
+        List<Object> exceptionObjects = getExceptionObjects(fury);
+        throw new DeserializationException(exceptionObjects, t);
     } else {
       Platform.throwException(t);
       throw new IllegalStateException("unreachable");
     }
   }
+
+  public static List<Object> getExceptionObjects(Fury fury) {
+      ObjectArray readObjects = ((MapRefResolver) fury.getRefResolver()).getReadObjects();
+      // carry with read objects for better trouble shooting.
+      List<Object> objects = Arrays.asList(readObjects.objects).subList(0, readObjects.size);
+      switch (fury.getExceptionLogMode()) {
+        case NONE_PRINT:
+          return new ArrayList<>();
+        case SAMPLE_PRINT:
+            return systematicSample(objects, 5);
+//            return objects.subList(0, 10);
+        default:
+          return objects;
+      }
+  }
+
+    public static <T> List<T> systematicSample(List<T> list, int step) {
+        List<T> result = new ArrayList<>();
+        for (int i = 0; i < list.size(); i += step) {
+            result.add(list.get(i));
+        }
+        return result;
+    }
 
   public static void ignore(Object... args) {}
 }

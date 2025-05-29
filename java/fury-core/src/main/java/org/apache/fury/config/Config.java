@@ -19,16 +19,17 @@
 
 package org.apache.fury.config;
 
-import java.io.Serializable;
-import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.fury.Fury;
 import org.apache.fury.meta.MetaCompressor;
 import org.apache.fury.serializer.Serializer;
 import org.apache.fury.serializer.TimeSerializers;
 import org.apache.fury.util.Preconditions;
+
+import java.io.Serializable;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /** Config for fury, all {@link Fury} related config can be found here. */
 @SuppressWarnings({"rawtypes"})
@@ -63,6 +64,7 @@ public class Config implements Serializable {
   private final boolean deserializeNonexistentEnumValueAsNull;
   private final boolean serializeEnumByName;
   private final int bufferSizeLimitBytes;
+  private final ExceptionLogMode exceptionLogMode;
 
   public Config(FuryBuilder builder) {
     name = builder.name;
@@ -99,6 +101,7 @@ public class Config implements Serializable {
     deserializeNonexistentEnumValueAsNull = builder.deserializeNonexistentEnumValueAsNull;
     serializeEnumByName = builder.serializeEnumByName;
     bufferSizeLimitBytes = builder.bufferSizeLimitBytes;
+    exceptionLogMode = builder.exceptionLogMode;
   }
 
   /** Returns the name for Fury serialization. */
@@ -142,6 +145,10 @@ public class Config implements Serializable {
   /** deserialize and serialize enum by name. */
   public boolean serializeEnumByName() {
     return serializeEnumByName;
+  }
+
+  public ExceptionLogMode getExceptionLogMode() {
+    return exceptionLogMode;
   }
 
   /**
