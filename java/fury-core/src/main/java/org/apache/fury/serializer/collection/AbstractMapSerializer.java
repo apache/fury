@@ -138,18 +138,30 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     Iterator<Entry<Object, Object>> iterator = map.entrySet().iterator();
     Entry<Object, Object> entry = iterator.next();
     while (entry != null) {
-      entry = writeJavaNullChunk(buffer, entry, iterator, keySerializer, valueSerializer);
-      if (entry != null) {
-        if (keySerializer != null || valueSerializer != null) {
+      if (keySerializer != null || valueSerializer != null) {
+        entry = writeJavaNullChunk(buffer, entry, iterator, keySerializer, valueSerializer);
+        if (entry != null) {
           entry =
               writeJavaChunk(
                   classResolver, buffer, entry, iterator, keySerializer, valueSerializer);
-        } else {
-          Generics generics = fury.getGenerics();
-          GenericType genericType = generics.nextGenericType();
-          if (genericType == null) {
+        }
+      } else {
+        Generics generics = fury.getGenerics();
+        GenericType genericType = generics.nextGenericType();
+        if (genericType == null) {
+          entry = writeJavaNullChunk(buffer, entry, iterator, null, null);
+          if (entry != null) {
             entry = writeJavaChunk(classResolver, buffer, entry, iterator, null, null);
-          } else {
+          }
+        } else {
+          if (genericType.getTypeParametersCount() < 2) {
+            genericType = getKVGenericType(genericType);
+          }
+          GenericType keyGenericType = genericType.getTypeParameter0();
+          GenericType valueGenericType = genericType.getTypeParameter1();
+          entry =
+              writeJavaNullChunkGeneric(buffer, entry, iterator, keyGenericType, valueGenericType);
+          if (entry != null) {
             entry =
                 writeJavaChunkGeneric(
                     classResolver, generics, genericType, buffer, entry, iterator);
@@ -257,6 +269,81 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     }
   }
 
+  public final Entry writeJavaNullChunkGeneric(
+      MemoryBuffer buffer,
+      Entry entry,
+      Iterator<Entry<Object, Object>> iterator,
+      GenericType keyType,
+      GenericType valueType) {
+    while (true) {
+      Object key = entry.getKey();
+      Object value = entry.getValue();
+      if (key != null) {
+        if (value != null) {
+          return entry;
+        }
+        writeKeyForNullValueChunkGeneric(buffer, key, keyType);
+      } else {
+        writeValueForNullKeyChunkGeneric(buffer, value, valueType);
+      }
+      if (iterator.hasNext()) {
+        entry = iterator.next();
+      } else {
+        return null;
+      }
+    }
+  }
+
+  private void writeKeyForNullValueChunkGeneric(
+      MemoryBuffer buffer, Object key, GenericType keyType) {
+    if (!keyType.isMonomorphic()) {
+      buffer.writeByte(VALUE_HAS_NULL | TRACKING_KEY_REF);
+      binding.writeRef(buffer, key, keyClassInfoWriteCache);
+      return;
+    }
+    Serializer serializer = keyType.getSerializer(typeResolver);
+    if (keyType.hasGenericParameters()) {
+      fury.getGenerics().pushGenericType(keyType);
+      fury.incDepth(1);
+    }
+    if (serializer.needToWriteRef()) {
+      buffer.writeByte(NULL_VALUE_KEY_DECL_TYPE_TRACKING_REF);
+      binding.writeRef(buffer, key, serializer);
+    } else {
+      buffer.writeByte(NULL_VALUE_KEY_DECL_TYPE);
+      binding.write(buffer, serializer, key);
+    }
+    if (keyType.hasGenericParameters()) {
+      fury.incDepth(-1);
+      fury.getGenerics().popGenericType();
+    }
+  }
+
+  private void writeValueForNullKeyChunkGeneric(
+      MemoryBuffer buffer, Object value, GenericType valueType) {
+    if (!valueType.isMonomorphic()) {
+      buffer.writeByte(KEY_HAS_NULL | TRACKING_VALUE_REF);
+      binding.writeRef(buffer, value, valueClassInfoWriteCache);
+      return;
+    }
+    Serializer serializer = valueType.getSerializer(typeResolver);
+    if (valueType.hasGenericParameters()) {
+      fury.getGenerics().pushGenericType(valueType);
+      fury.incDepth(1);
+    }
+    if (serializer.needToWriteRef()) {
+      buffer.writeByte(NULL_KEY_VALUE_DECL_TYPE_TRACKING_REF);
+      binding.writeRef(buffer, value, serializer);
+    } else {
+      buffer.writeByte(NULL_KEY_VALUE_DECL_TYPE);
+      binding.write(buffer, serializer, value);
+    }
+    if (valueType.hasGenericParameters()) {
+      fury.incDepth(-1);
+      fury.getGenerics().popGenericType();
+    }
+  }
+
   // Make byte code of this method smaller than 325 for better jit inline
   private Entry writeJavaChunk(
       TypeResolver classResolver,
@@ -341,7 +428,8 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     return classInfo.getSerializer();
   }
 
-  private Entry writeJavaChunkGeneric(
+  @CodegenInvoke
+  public Entry writeJavaChunkGeneric(
       TypeResolver classResolver,
       Generics generics,
       GenericType genericType,
@@ -599,10 +687,14 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
           boolean trackKeyRef = (chunkHeader & TRACKING_KEY_REF) != 0;
           Object key;
           if ((chunkHeader & KEY_DECL_TYPE) != 0) {
-            if (trackKeyRef) {
-              key = binding.readRef(buffer, keySerializer);
+            if (keySerializer == null) {
+              key = readNonEmptyValueFromNullChunk(buffer, trackKeyRef, true);
             } else {
-              key = binding.read(buffer, keySerializer);
+              if (trackKeyRef) {
+                key = binding.readRef(buffer, keySerializer);
+              } else {
+                key = binding.read(buffer, keySerializer);
+              }
             }
           } else {
             key = binding.readRef(buffer, keyClassInfoReadCache);
@@ -635,10 +727,14 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
       Object value;
       boolean trackValueRef = (chunkHeader & TRACKING_VALUE_REF) != 0;
       if ((chunkHeader & VALUE_DECL_TYPE) != 0) {
-        if (trackValueRef) {
-          value = binding.readRef(buffer, valueSerializer);
+        if (valueSerializer == null) {
+          value = readNonEmptyValueFromNullChunk(buffer, trackValueRef, false);
         } else {
-          value = binding.read(buffer, valueSerializer);
+          if (trackValueRef) {
+            value = binding.readRef(buffer, valueSerializer);
+          } else {
+            value = binding.read(buffer, valueSerializer);
+          }
         }
       } else {
         value = binding.readRef(buffer, valueClassInfoReadCache);
@@ -647,6 +743,28 @@ public abstract class AbstractMapSerializer<T> extends Serializer<T> {
     } else {
       map.put(null, null);
     }
+  }
+
+  private Object readNonEmptyValueFromNullChunk(
+      MemoryBuffer buffer, boolean trackRef, boolean isKey) {
+    Generics generics = fury.getGenerics();
+    GenericType genericType = generics.nextGenericType();
+    if (genericType.getTypeParametersCount() < 2) {
+      genericType = getKVGenericType(genericType);
+    }
+    GenericType type = isKey ? genericType.getTypeParameter0() : genericType.getTypeParameter1();
+    generics.pushGenericType(type);
+    fury.incDepth(1);
+    Serializer<?> serializer = type.getSerializer(typeResolver);
+    Object v;
+    if (trackRef) {
+      v = binding.readRef(buffer, serializer);
+    } else {
+      v = binding.read(buffer, serializer);
+    }
+    fury.incDepth(-1);
+    generics.popGenericType();
+    return v;
   }
 
   @CodegenInvoke

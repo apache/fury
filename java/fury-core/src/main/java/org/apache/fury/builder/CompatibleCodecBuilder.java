@@ -878,9 +878,9 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
 
   protected Expression writeFinalClassInfo(Expression buffer, Class<?> cls) {
     Preconditions.checkArgument(ReflectionUtils.isMonomorphic(cls));
-    ClassInfo classInfo = visitFury(f -> f.getClassResolver().getClassInfo(cls, false));
+    ClassInfo classInfo = fury(f -> f.getClassResolver().getClassInfo(cls, false));
     if (classInfo != null && classInfo.getClassId() != ClassResolver.NO_CLASS_ID) {
-      return classResolver.writeClassExpr(buffer, classInfo.getClassId());
+      return fury(f -> f.getClassResolver().writeClassExpr(buffer, classInfo.getClassId()));
     }
     Expression classInfoExpr = getFinalClassInfo(cls);
     return new Invoke(classResolverRef, "writeClassInfo", buffer, classInfoExpr);
@@ -888,9 +888,9 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
 
   protected Expression skipFinalClassInfo(Class<?> cls, Expression buffer) {
     Preconditions.checkArgument(ReflectionUtils.isMonomorphic(cls));
-    ClassInfo classInfo = visitFury(f -> f.getClassResolver().getClassInfo(cls, false));
+    ClassInfo classInfo = fury(f -> f.getClassResolver().getClassInfo(cls, false));
     if (classInfo != null && classInfo.getClassId() != ClassResolver.NO_CLASS_ID) {
-      return classResolver.skipRegisteredClassExpr(buffer);
+      return fury(f -> f.getClassResolver().skipRegisteredClassExpr(buffer));
     }
     // read `ClassInfo` is not used, set `inlineReadClassInfo` false,
     // to avoid read doesn't happen in generated code.

@@ -449,7 +449,7 @@ public abstract class CodecBuilder {
         });
   }
 
-  private Reference getOrCreateField(
+  protected Reference getOrCreateField(
       boolean isStatic, Class<?> type, String fieldName, Supplier<Expression> value) {
     Reference fieldRef = fieldMap.get(fieldName);
     if (fieldRef == null) {

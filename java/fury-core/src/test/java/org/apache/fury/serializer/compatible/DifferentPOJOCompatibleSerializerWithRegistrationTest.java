@@ -19,6 +19,7 @@
 
 package org.apache.fury.serializer.compatible;
 
+import java.util.Arrays;
 import org.apache.fury.Fury;
 import org.apache.fury.config.CompatibleMode;
 import org.apache.fury.config.Language;
@@ -44,13 +45,13 @@ public class DifferentPOJOCompatibleSerializerWithRegistrationTest extends Asser
             .requireClassRegistration(false)
             .withAsyncCompilation(true)
             .serializeEnumByName(true)
+            .withName(getClass() + Arrays.toString(classes))
             .build();
     if (classes != null) {
       for (Class<?> clazz : classes) {
         instance.register(clazz);
       }
     }
-    ;
     return instance;
   }
 

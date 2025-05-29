@@ -34,7 +34,11 @@ import org.apache.fury.reflect.TypeRef;
 import org.apache.fury.resolver.TypeResolver;
 import org.apache.fury.serializer.Serializer;
 
-/** GenericType for building java generics as a tree and binding with fury serializers. */
+/**
+ * GenericType for building java generics as a tree and binding with fury serializers. Note
+ * GenericType for specific types such as Object.class can't be singleton, because GenericType has
+ * some mutable fields
+ */
 // TODO(chaokunyang) refine generics which can be inspired by spring ResolvableType.
 @SuppressWarnings("rawtypes")
 public class GenericType {
