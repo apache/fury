@@ -2,10 +2,10 @@
   <img width="65%" alt="" src="docs/images/logo/fory_github_banner.png"><br>
 </div>
 
-[![Build Status](https://img.shields.io/github/actions/workflow/status/apache/fory/ci.yml?branch=main&style=for-the-badge&label=GITHUB%20ACTIONS&logo=github)](https://github.com/apache/fory/actions/workflows/ci.yml)
-[![Slack Channel](https://img.shields.io/badge/slack-join-3f0e40?logo=slack&style=for-the-badge)](https://join.slack.com/t/fory-project/shared_invite/zt-1u8soj4qc-ieYEu7ciHOqA2mo47llS8A)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/apache/fury/ci.yml?branch=main&style=for-the-badge&label=GITHUB%20ACTIONS&logo=github)](https://github.com/apache/fury/actions/workflows/ci.yml)
+[![Slack Channel](https://img.shields.io/badge/slack-join-3f0e40?logo=slack&style=for-the-badge)](https://join.slack.com/t/fury-project/shared_invite/zt-1u8soj4qc-ieYEu7ciHOqA2mo47llS8A)
 [![X](https://img.shields.io/badge/@ApacheFory-follow-blue?logo=x&style=for-the-badge)](https://x.com/ApacheFory)
-[![Maven Version](https://img.shields.io/maven-central/v/org.apache.fory/fory-core?style=for-the-badge)](https://search.maven.org/#search|gav|1|g:"org.apache.fory"%20AND%20a:"fory-core")
+[![Maven Version](https://img.shields.io/maven-central/v/org.apache.fury/fury-core?style=for-the-badge)](https://search.maven.org/#search|gav|1|g:"org.apache.fury"%20AND%20a:"fury-core")
 
 **Apache Fory (incubating)** is a blazingly-fast multi-language serialization framework powered by **JIT** (just-in-time compilation) and **zero-copy**, providing up to 170x performance and ultimate ease of use.
 
@@ -107,14 +107,14 @@ Nightly snapshot:
   </repository>
 </repositories>
 <dependency>
-  <groupId>org.apache.fory</groupId>
-  <artifactId>fory-core</artifactId>
+  <groupId>org.apache.fury</groupId>
+  <artifactId>fury-core</artifactId>
   <version>0.11.0-SNAPSHOT</version>
 </dependency>
 <!-- row/arrow format support -->
 <!-- <dependency>
-  <groupId>org.apache.fory</groupId>
-  <artifactId>fory-format</artifactId>
+  <groupId>org.apache.fury</groupId>x
+  <artifactId>fury-format</artifactId>
   <version>0.11.0-SNAPSHOT</version>
 </dependency> -->
 ```
@@ -123,14 +123,14 @@ Release version:
 
 ```xml
 <dependency>
-  <groupId>org.apache.fory</groupId>
-  <artifactId>fory-core</artifactId>
+  <groupId>org.apache.fury</groupId>
+  <artifactId>fury-core</artifactId>
   <version>0.10.3</version>
 </dependency>
 <!-- row/arrow format support -->
 <!-- <dependency>
-  <groupId>org.apache.fory</groupId>
-  <artifactId>fory-format</artifactId>
+  <groupId>org.apache.fury</groupId>
+  <artifactId>fury-format</artifactId>
   <version>0.10.3</version>
 </dependency> -->
 ```
@@ -140,21 +140,21 @@ Release version:
 Scala2:
 
 ```sbt
-libraryDependencies += "org.apache.fory" % "fory-scala_2.13" % "0.10.3"
+libraryDependencies += "org.apache.fury" % "fury-scala_2.13" % "0.10.3"
 ```
 
 Scala3:
 
 ```sbt
-libraryDependencies += "org.apache.fory" % "fory-scala_3" % "0.10.3"
+libraryDependencies += "org.apache.fury" % "fury-scala_3" % "0.10.3"
 ```
 
 ### Kotlin
 
 ```xml
 <dependency>
-  <groupId>org.apache.fory</groupId>
-  <artifactId>fory-kotlin</artifactId>
+  <groupId>org.apache.fury</groupId>
+  <artifactId>fury-kotlin</artifactId>
   <version>0.10.3</version>
 </dependency>
 ```
@@ -187,8 +187,8 @@ If you don't have cross-language requirements, using this mode will
 result in better performance.
 
 ```java
-import org.apache.fory.*;
-import org.apache.fory.config.*;
+import org.apache.fury.*;
+import org.apache.fury.config.*;
 import java.util.*;
 
 public class Example {
@@ -235,8 +235,8 @@ public class Example {
 **Java**
 
 ```java
-import org.apache.fory.*;
-import org.apache.fory.config.*;
+import org.apache.fury.*;
+import org.apache.fury.config.*;
 import java.util.*;
 
 public class ReferenceExample {
@@ -254,7 +254,7 @@ public class ReferenceExample {
     return obj;
   }
 
-  // mvn exec:java -Dexec.mainClass="org.apache.fory.examples.ReferenceExample"
+  // mvn exec:java -Dexec.mainClass="org.apache.fury.examples.ReferenceExample"
   public static void main(String[] args) {
     Fory fory = Fory.builder().withLanguage(Language.XLANG)
       .withRefTracking(true).build();
@@ -417,7 +417,7 @@ For example, the deserialization may invoke `init` constructor or `equals`/`hash
 Fory provides a class registration option that is enabled by default for such protocols, allowing only deserialization of trusted registered types or built-in types.
  **Do not disable class registration unless you can ensure your environment is secure**.
 
-If this option is disabled, you are responsible for serialization security. You can configure `org.apache.fory.resolver.ClassChecker` by
+If this option is disabled, you are responsible for serialization security. You can configure `org.apache.fury.resolver.ClassChecker` by
 `ClassResolver#setClassChecker` to control which classes are allowed for serialization.
 
 To report security vulnerabilities found in Fory, please follow the [ASF vulnerability reporting process](https://apache.org/security/#reporting-a-vulnerability).
