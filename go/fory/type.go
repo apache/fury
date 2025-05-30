@@ -375,10 +375,6 @@ func (r *typeResolver) initialize() {
 		{genericSetType, setSerializer{}},
 	}
 	for _, elem := range serializers {
-		if err := r.RegisterSerializer(elem.Type, elem.Serializer); err != nil {
-			panic(fmt.Errorf("impossible error: %s", err))
-		}
-
 		_, err := r.registerType(elem.Type, int32(elem.Serializer.TypeId()), "", "", elem.Serializer, true)
 		if err != nil {
 			fmt.Errorf("init type error: %v", err)
@@ -528,7 +524,11 @@ func (r *typeResolver) registerType(
 	if typeName == "" && namespace != "" {
 		panic("namespace provided without typeName")
 	}
-
+	if internal && serializer != nil {
+		if err := r.RegisterSerializer(typ, serializer); err != nil {
+			panic(fmt.Errorf("impossible error: %s", err))
+		}
+	}
 	// Serializer initialization
 	if !internal && serializer == nil {
 		var err error
