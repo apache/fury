@@ -69,6 +69,7 @@ import org.apache.fory.memory.MemoryUtils;
 import org.apache.fory.serializer.BufferObject;
 import org.apache.fory.test.TestUtils;
 import org.testng.Assert;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 /** Tests in this class need fory python installed. */
@@ -77,6 +78,11 @@ public class CrossLanguageTest {
   private static final Logger LOG = LoggerFactory.getLogger(CrossLanguageTest.class);
   private static final String PYTHON_MODULE = "pyfory.tests.test_cross_language";
   private static final String PYTHON_EXECUTABLE = "python";
+
+  @BeforeClass
+  public void isPythonInstalled() {
+    TestUtils.verifyPyforyInstalled();
+  }
 
   @Data
   public static class A {

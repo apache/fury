@@ -71,6 +71,7 @@ import org.apache.fory.type.Descriptor;
 import org.apache.fory.util.DateTimeUtils;
 import org.apache.fory.util.MurmurHash3;
 import org.testng.Assert;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 /** Tests in this class need fory python installed. */
@@ -79,6 +80,11 @@ public class CrossLanguageTest extends ForyTestBase {
   private static final Logger LOG = LoggerFactory.getLogger(CrossLanguageTest.class);
   private static final String PYTHON_MODULE = "pyfory.tests.test_cross_language";
   private static final String PYTHON_EXECUTABLE = "python";
+
+  @BeforeClass
+  public void isPyforyInstalled() {
+    TestUtils.verifyPyforyInstalled();
+  }
 
   /**
    * Execute an external command.
