@@ -40,6 +40,11 @@ public class SingletonObjectSerializer extends Serializer {
   public SingletonObjectSerializer(Fory fory, Class type) {
     super(fory, type);
     try {
+      Class.forName(type.getName(), true, type.getClassLoader());
+    } catch (final ClassNotFoundException e) {
+      throw new RuntimeException(e);
+    }
+    try {
       field = type.getDeclaredField("MODULE$");
     } catch (NoSuchFieldException e) {
       throw new RuntimeException(type + " doesn't have `MODULE$` field", e);
