@@ -27,7 +27,7 @@ import (
 
 // Constants for string handling
 const (
-	SmallStringThreshold         = 8  // Maximum length for "small" strings
+	SmallStringThreshold         = 16 // Maximum length for "small" strings
 	DefaultDynamicWriteMetaStrID = -1 // Default ID for dynamic strings
 )
 
@@ -223,14 +223,12 @@ func (r *MetaStringResolver) GetMetaStrBytes(metastr *meta.MetaString) *MetaStri
 			binary.Read(bytes.NewReader(data[:8]), binary.LittleEndian, &v1)
 			v2 = bytesToInt64(data[8:])
 		}
-		hashcode = ((v1*31 + v2) >> 8 << 8) | int64(metastr.GetEncodedBytes()[0])
+		hashcode = ((v1*31 + v2) >> 8 << 8) | int64(metastr.GetEncoding())
 	} else {
 		// Large string: use MurmurHash3
-		hash := murmur3.New128()
-		hash.Write(data)
-		h1, h2 := hash.Sum128()
-		hashcode = (int64(h1)<<32 | int64(h2)) >> 8 << 8
-		hashcode |= int64(metastr.GetEncodedBytes()[0])
+		h64 := murmur3.Sum64WithSeed(data, 47)
+		hashcode = int64((h64 >> 8) << 8)
+		hashcode |= int64(metastr.GetEncoding())
 	}
 
 	// Create and cache new instance
