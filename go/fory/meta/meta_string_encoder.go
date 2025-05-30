@@ -157,6 +157,10 @@ func (e *Encoder) EncodeGeneric(chars []byte, bitsPerChar int) (result []byte, e
 }
 
 func (e *Encoder) ComputeEncoding(input string) Encoding {
+	// Special case for empty string: default to UTF_8 encoding
+	if len(input) == 0 {
+		return UTF_8
+	}
 	statistics := e.computeStringStatistics(input)
 	if statistics.canLowerSpecialEncoded {
 		return LOWER_SPECIAL
