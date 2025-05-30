@@ -27,9 +27,8 @@ def test_metastring_resolver():
     # Test 1: Regular English string
     metastr1 = encoder.encode("hello, world")
     metabytes1 = resolver.get_metastr_bytes(metastr1)
-    buffer = Buffer.allocate(512)
+    buffer = Buffer.allocate(32)
     resolver.write_meta_string_bytes(buffer, metabytes1)
-
     assert resolver.read_meta_string_bytes(buffer) == metabytes1
 
     # Test 2: Manually constructed MetaStringBytes
