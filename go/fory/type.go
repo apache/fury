@@ -554,7 +554,7 @@ func (r *typeResolver) registerType(
 			}
 		}
 
-		nsMeta, _ := r.namespaceEncoder.Encode(typeName)
+		nsMeta, _ := r.namespaceEncoder.Encode(namespace)
 		if nsBytes = r.metaStringResolver.GetMetaStrBytes(&nsMeta); nsBytes == nil {
 			panic("failed to encode namespace")
 		}
