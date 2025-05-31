@@ -25,6 +25,7 @@ java/**/test-output
 **/*.html
 **/target
 .idea/
+.vscode/
 java/dependency-reduced-pom.xml
 java/foo
 scala/.bsp

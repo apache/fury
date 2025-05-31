@@ -25,8 +25,10 @@ import java.io.OutputStream;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.annotation.concurrent.NotThreadSafe;
@@ -61,6 +63,8 @@ import org.apache.fory.serializer.PrimitiveSerializers.LongSerializer;
 import org.apache.fory.serializer.Serializer;
 import org.apache.fory.serializer.SerializerFactory;
 import org.apache.fory.serializer.StringSerializer;
+import org.apache.fory.serializer.collection.AbstractCollectionSerializer;
+import org.apache.fory.serializer.collection.AbstractMapSerializer;
 import org.apache.fory.serializer.collection.CollectionSerializers.ArrayListSerializer;
 import org.apache.fory.serializer.collection.MapSerializers.HashMapSerializer;
 import org.apache.fory.type.Generics;
@@ -222,8 +226,40 @@ public final class Fory implements BaseFory {
     }
   }
 
+  private void validateSerializer(
+      Class<?> type,
+      Object serializerOrClass,
+      Class<?> parentType,
+      Class<?> requiredSerializerBase) {
+    if (!parentType.isAssignableFrom(type)) {
+      return;
+    }
+    boolean valid = false;
+    if (serializerOrClass instanceof Class) {
+      valid = requiredSerializerBase.isAssignableFrom((Class<?>) serializerOrClass);
+    } else if (serializerOrClass instanceof Serializer) {
+      valid = requiredSerializerBase.isInstance(serializerOrClass);
+    }
+    if (!valid) {
+      throw new IllegalArgumentException(
+          "Serializer for type "
+              + type.getName()
+              + " must extend "
+              + requiredSerializerBase.getSimpleName()
+              + ", but got "
+              + serializerOrClass.getClass().getName());
+    }
+  }
+
+  private void validateCollectionSerializer(Class<?> type, Object serializerOrClass) {
+    validateSerializer(
+        type, serializerOrClass, Collection.class, AbstractCollectionSerializer.class);
+    validateSerializer(type, serializerOrClass, Map.class, AbstractMapSerializer.class);
+  }
+
   @Override
   public <T> void registerSerializer(Class<T> type, Class<? extends Serializer> serializerClass) {
+    validateCollectionSerializer(type, serializerClass);
     if (language == Language.JAVA) {
       classResolver.registerSerializer(type, serializerClass);
     } else {
@@ -233,6 +269,7 @@ public final class Fory implements BaseFory {
 
   @Override
   public void registerSerializer(Class<?> type, Serializer<?> serializer) {
+    validateCollectionSerializer(type, serializer);
     if (language == Language.JAVA) {
       classResolver.registerSerializer(type, serializer);
     } else {
@@ -242,6 +279,8 @@ public final class Fory implements BaseFory {
 
   @Override
   public void registerSerializer(Class<?> type, Function<Fory, Serializer<?>> serializerCreator) {
+    Serializer<?> serializer = serializerCreator.apply(this);
+    validateCollectionSerializer(type, serializer);
     if (language == Language.JAVA) {
       classResolver.registerSerializer(type, serializerCreator.apply(this));
     } else {
