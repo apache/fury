@@ -449,8 +449,7 @@ func (r *typeResolver) getSerializerByTypeTag(typeTag string) (Serializer, error
 
 func (r *typeResolver) getTypeInfo(value reflect.Value, create bool) (TypeInfo, error) {
 	// First check if type info exists in cache
-	typeString := value.Type()
-	if info, ok := r.typesInfo[typeString]; ok {
+	if info, ok := r.typesInfo[value.Type()]; ok {
 		if info.Serializer == nil {
 			// Lazy initialize serializer if not created yet
 			serializer, err := r.createSerializer(value.Type())
@@ -588,7 +587,7 @@ func (r *typeResolver) registerType(
 	}
 
 	// Cache by type ID (for cross-language support)
-	if r.language == XLANG || !IsNamespacedType(TypeId(typeID)) {
+	if r.language == XLANG && !IsNamespacedType(TypeId(typeID)) {
 		r.typeIDToTypeInfo[typeID] = typeInfo
 	}
 
