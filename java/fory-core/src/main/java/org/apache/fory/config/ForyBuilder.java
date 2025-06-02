@@ -36,6 +36,8 @@ import org.apache.fory.serializer.JavaSerializer;
 import org.apache.fory.serializer.ObjectStreamSerializer;
 import org.apache.fory.serializer.Serializer;
 import org.apache.fory.serializer.TimeSerializers;
+import org.apache.fory.serializer.collection.AbstractCollectionSerializer;
+import org.apache.fory.serializer.collection.AbstractMapSerializer;
 import org.apache.fory.serializer.collection.GuavaCollectionSerializers;
 import org.apache.fory.util.GraalvmSupport;
 
@@ -259,6 +261,10 @@ public final class ForyBuilder {
     return this;
   }
 
+  /**
+   * Whether check serializer extends {@link AbstractMapSerializer}/{@link AbstractCollectionSerializer}
+   * when registering serializer for Map/List.
+   */
   public ForyBuilder validateSerializer(boolean validateSerializer) {
     this.validateSerializer = validateSerializer;
     return this;

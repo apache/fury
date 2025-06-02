@@ -68,8 +68,6 @@ import org.apache.fory.serializer.ArraySerializersTest;
 import org.apache.fory.serializer.EnumSerializerTest;
 import org.apache.fory.serializer.ObjectSerializer;
 import org.apache.fory.serializer.Serializer;
-import org.apache.fory.serializer.collection.AbstractCollectionSerializer;
-import org.apache.fory.serializer.collection.AbstractMapSerializer;
 import org.apache.fory.test.bean.BeanA;
 import org.apache.fory.test.bean.Struct;
 import org.apache.fory.type.Descriptor;
