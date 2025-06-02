@@ -24,6 +24,7 @@ java/**/test-output
 **/*.iml
 **/*.html
 **/target
+.idea/
 java/dependency-reduced-pom.xml
 java/foo
 scala/.bsp
