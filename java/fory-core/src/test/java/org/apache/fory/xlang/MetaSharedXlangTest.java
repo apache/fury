@@ -17,20 +17,29 @@
  * under the License.
  */
 
-package org.apache.fory.serializer;
+package org.apache.fory.xlang;
 
+import org.apache.fory.CrossLanguageTest.Bar;
+import org.apache.fory.CrossLanguageTest.Foo;
 import org.apache.fory.Fory;
-import org.apache.fory.annotation.Internal;
-import org.apache.fory.resolver.ClassInfo;
-import org.apache.fory.resolver.TypeResolver;
+import org.apache.fory.ForyTestBase;
+import org.apache.fory.config.CompatibleMode;
+import org.apache.fory.config.Language;
+import org.testng.annotations.Test;
 
-@Internal
-class SerializationUtils {
-  public static TypeResolver getTypeResolver(Fory fory) {
-    return fory.isCrossLanguage() ? fory.getXtypeResolver() : fory.getClassResolver();
-  }
+public class MetaSharedXlangTest extends ForyTestBase {
 
-  public static ClassInfo getClassInfo(Fory fory, Class<?> cls) {
-    return getTypeResolver(fory).getClassInfo(cls);
+  @Test
+  public void testMetaShared() {
+    Fory fory =
+        Fory.builder()
+            .withLanguage(Language.XLANG)
+            .withCodegen(false)
+            .withCompatibleMode(CompatibleMode.COMPATIBLE)
+            .build();
+    fory.register(Foo.class, "example.foo");
+    fory.register(Bar.class, "example.bar");
+    serDeCheck(fory, Bar.create());
+    serDeCheck(fory, Foo.create());
   }
 }

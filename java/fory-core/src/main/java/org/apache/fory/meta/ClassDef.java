@@ -239,9 +239,10 @@ public class ClassDef implements Serializable {
    *
    * @param cls class load in current process.
    */
-  public List<Descriptor> getDescriptors(ClassResolver resolver, Class<?> cls) {
+  public List<Descriptor> getDescriptors(TypeResolver resolver, Class<?> cls) {
     if (descriptors == null) {
-      SortedMap<Member, Descriptor> allDescriptorsMap = resolver.getAllDescriptorsMap(cls, true);
+      SortedMap<Member, Descriptor> allDescriptorsMap =
+          resolver.getFory().getClassResolver().getAllDescriptorsMap(cls, true);
       Map<String, Descriptor> descriptorsMap = new HashMap<>();
       for (Map.Entry<Member, Descriptor> e : allDescriptorsMap.entrySet()) {
         if (descriptorsMap.put(
@@ -333,9 +334,9 @@ public class ClassDef implements Serializable {
      * null. Don't invoke this method if class does have <code>fieldName</code> field. In such case,
      * reflection should be used to get the descriptor.
      */
-    Descriptor toDescriptor(ClassResolver classResolver, Descriptor descriptor) {
+    Descriptor toDescriptor(TypeResolver resolver, Descriptor descriptor) {
       TypeRef<?> declared = descriptor != null ? descriptor.getTypeRef() : null;
-      TypeRef<?> typeRef = fieldType.toTypeToken(classResolver, declared);
+      TypeRef<?> typeRef = fieldType.toTypeToken(resolver, declared);
       // This field doesn't exist in peer class, so any legal modifier will be OK.
       int stubModifiers = ReflectionUtils.getField(getClass(), "fieldName").getModifiers();
       return new Descriptor(typeRef, fieldName, stubModifiers, definedClass);
@@ -407,7 +408,7 @@ public class ClassDef implements Serializable {
      *
      * @see FinalObjectTypeStub
      */
-    public abstract TypeRef<?> toTypeToken(ClassResolver classResolver, TypeRef<?> declared);
+    public abstract TypeRef<?> toTypeToken(TypeResolver classResolver, TypeRef<?> declared);
 
     @Override
     public boolean equals(Object o) {
@@ -584,8 +585,13 @@ public class ClassDef implements Serializable {
     }
 
     @Override
-    public TypeRef<?> toTypeToken(ClassResolver classResolver, TypeRef<?> declared) {
-      Class<?> cls = classResolver.getRegisteredClass(classId);
+    public TypeRef<?> toTypeToken(TypeResolver resolver, TypeRef<?> declared) {
+      Class<?> cls;
+      if (resolver instanceof XtypeResolver) {
+        cls = ((XtypeResolver) resolver).getXtypeInfo(classId).getCls();
+      } else {
+        cls = ((ClassResolver) resolver).getRegisteredClass(classId);
+      }
       if (cls == null) {
         LOG.warn("Class {} not registered, take it as Struct type for deserialization.", classId);
         cls = NonexistentClass.NonexistentMetaShared.class;
@@ -652,7 +658,7 @@ public class ClassDef implements Serializable {
     }
 
     @Override
-    public TypeRef<?> toTypeToken(ClassResolver classResolver, TypeRef<?> declared) {
+    public TypeRef<?> toTypeToken(TypeResolver classResolver, TypeRef<?> declared) {
       // TODO support preserve element TypeExtMeta
       TypeRef<? extends Collection<?>> collectionTypeRef =
           collectionOf(
@@ -749,7 +755,7 @@ public class ClassDef implements Serializable {
     }
 
     @Override
-    public TypeRef<?> toTypeToken(ClassResolver classResolver, TypeRef<?> declared) {
+    public TypeRef<?> toTypeToken(TypeResolver classResolver, TypeRef<?> declared) {
       // TODO support preserve element TypeExtMeta, it will be lost when building other TypeRef
       return mapOf(
           keyType.toTypeToken(classResolver, declared),
@@ -798,7 +804,7 @@ public class ClassDef implements Serializable {
     }
 
     @Override
-    public TypeRef<?> toTypeToken(ClassResolver classResolver, TypeRef<?> declared) {
+    public TypeRef<?> toTypeToken(TypeResolver classResolver, TypeRef<?> declared) {
       return TypeRef.of(NonexistentClass.NonexistentEnum.class);
     }
   }
@@ -825,7 +831,7 @@ public class ClassDef implements Serializable {
     }
 
     @Override
-    public TypeRef<?> toTypeToken(ClassResolver classResolver, TypeRef<?> declared) {
+    public TypeRef<?> toTypeToken(TypeResolver classResolver, TypeRef<?> declared) {
       TypeRef<?> componentTypeRef = componentType.toTypeToken(classResolver, declared);
       Class<?> componentRawType = componentTypeRef.getRawType();
       if (NonexistentClass.class.isAssignableFrom(componentRawType)) {
@@ -893,7 +899,7 @@ public class ClassDef implements Serializable {
     }
 
     @Override
-    public TypeRef<?> toTypeToken(ClassResolver classResolver, TypeRef<?> declared) {
+    public TypeRef<?> toTypeToken(TypeResolver classResolver, TypeRef<?> declared) {
       return isMonomorphic()
           ? TypeRef.of(FinalObjectTypeStub.class, new TypeExtMeta(nullable, trackingRef))
           : TypeRef.of(Object.class, new TypeExtMeta(nullable, trackingRef));

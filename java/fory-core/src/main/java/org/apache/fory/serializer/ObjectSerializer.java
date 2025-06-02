@@ -96,7 +96,7 @@ public final class ObjectSerializer<T> extends AbstractObjectSerializer<T> {
     boolean shareMeta = fory.getConfig().isMetaShareEnabled();
     if (shareMeta) {
       ClassDef classDef = classResolver.getClassDef(cls, resolveParent);
-      descriptors = classDef.getDescriptors(classResolver, cls);
+      descriptors = classDef.getDescriptors(typeResolver, cls);
     } else {
       descriptors = fory.getClassResolver().getFieldDescriptors(cls, resolveParent);
     }

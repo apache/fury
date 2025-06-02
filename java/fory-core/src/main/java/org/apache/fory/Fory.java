@@ -326,8 +326,7 @@ public final class Fory implements BaseFory {
       if (language == Language.JAVA) {
         write(buffer, obj);
       } else {
-        buffer.writeByte((byte) Language.JAVA.ordinal());
-        xwriteRef(buffer, obj);
+        xwrite(buffer, obj);
       }
       return buffer;
     } catch (StackOverflowError t) {
@@ -405,6 +404,21 @@ public final class Fory implements BaseFory {
       classResolver.writeClassInfo(buffer, classInfo);
       writeData(buffer, classInfo, obj);
     }
+    MetaContext metaContext = serializationContext.getMetaContext();
+    if (shareMeta && metaContext != null && !metaContext.writingClassDefs.isEmpty()) {
+      buffer.putInt32(startOffset, buffer.writerIndex() - startOffset - 4);
+      classResolver.writeClassDefs(buffer);
+    }
+  }
+
+  private void xwrite(MemoryBuffer buffer, Object obj) {
+    buffer.writeByte((byte) Language.JAVA.ordinal());
+    int startOffset = buffer.writerIndex();
+    boolean shareMeta = config.isMetaShareEnabled();
+    if (shareMeta) {
+      buffer.writeInt32(-1); // preserve 4-byte for meta start offsets.
+    }
+    xwriteRef(buffer, obj);
     MetaContext metaContext = serializationContext.getMetaContext();
     if (shareMeta && metaContext != null && !metaContext.writingClassDefs.isEmpty()) {
       buffer.putInt32(startOffset, buffer.writerIndex() - startOffset - 4);
@@ -861,13 +875,13 @@ public final class Fory implements BaseFory {
             "outOfBandBuffers should be null when the serialized stream is "
                 + "produced with bufferCallback null.");
       }
+      if (shareMeta) {
+        readClassDefs(buffer);
+      }
       Object obj;
       if (isTargetXLang) {
         obj = xreadRef(buffer);
       } else {
-        if (shareMeta) {
-          readClassDefs(buffer);
-        }
         obj = readRef(buffer);
       }
       return obj;

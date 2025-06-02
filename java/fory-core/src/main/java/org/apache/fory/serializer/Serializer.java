@@ -67,7 +67,8 @@ public abstract class Serializer<T> {
   }
 
   public T xread(MemoryBuffer buffer) {
-    throw new UnsupportedOperationException();
+    throw new UnsupportedOperationException(
+        getClass() + " doesn't support xlang serialization for " + type);
   }
 
   public Serializer(Fory fory, Class<T> type) {
