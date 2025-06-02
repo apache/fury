@@ -26,7 +26,7 @@ import org.apache.fory.resolver.TypeResolver;
 
 @Internal
 class SerializationUtils {
-  static TypeResolver getTypeResolver(Fory fory) {
+  public static TypeResolver getTypeResolver(Fory fory) {
     return fory.isCrossLanguage() ? fory.getXtypeResolver() : fory.getClassResolver();
   }
 

@@ -88,13 +88,15 @@ public class ObjectCodecBuilder extends BaseObjectCodecBuilder {
     super(TypeRef.of(beanClass), fory, Generated.GeneratedObjectSerializer.class);
     Collection<Descriptor> descriptors;
     boolean shareMeta = fory.getConfig().isMetaShareEnabled();
+    boolean xlang = fory.isCrossLanguage();
     if (shareMeta) {
       descriptors =
           fory(
               f ->
                   f.getClassResolver()
                       .getClassDef(beanClass, true)
-                      .getDescriptors(f.getClassResolver(), beanClass));
+                      .getDescriptors(
+                          xlang ? f.getXtypeResolver() : f.getClassResolver(), beanClass));
     } else {
       descriptors = fory.getClassResolver().getFieldDescriptors(beanClass, true);
     }

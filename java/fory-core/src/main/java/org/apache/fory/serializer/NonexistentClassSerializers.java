@@ -19,6 +19,8 @@
 
 package org.apache.fory.serializer;
 
+import static org.apache.fory.serializer.SerializationUtils.getTypeResolver;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -36,6 +38,7 @@ import org.apache.fory.resolver.ClassResolver;
 import org.apache.fory.resolver.MetaContext;
 import org.apache.fory.resolver.MetaStringResolver;
 import org.apache.fory.resolver.RefResolver;
+import org.apache.fory.resolver.TypeResolver;
 import org.apache.fory.serializer.NonexistentClass.NonexistentEnum;
 import org.apache.fory.type.Descriptor;
 import org.apache.fory.type.DescriptorGrouper;
@@ -155,11 +158,12 @@ public final class NonexistentClassSerializers {
 
     private ClassFieldsInfo getClassFieldsInfo(ClassDef classDef) {
       ClassFieldsInfo fieldsInfo = fieldsInfoMap.get(classDef.getId());
+      TypeResolver resolver = getTypeResolver(fory);
       if (fieldsInfo == null) {
         // Use `NonexistentSkipClass` since it doesn't have any field.
         Collection<Descriptor> descriptors =
             MetaSharedSerializer.consolidateFields(
-                fory.getClassResolver(), NonexistentClass.NonexistentSkip.class, classDef);
+                resolver, NonexistentClass.NonexistentSkip.class, classDef);
         DescriptorGrouper descriptorGrouper =
             fory.getClassResolver().createDescriptorGrouper(descriptors, false);
         Tuple3<
