@@ -200,3 +200,9 @@ def test_non_ascii_encoding_and_non_utf8():
         ValueError, match="Unsupported character for LOWER_SPECIAL encoding: こ"
     ):
         encoder.encode_with_encoding(non_ascii_string, Encoding.LOWER_SPECIAL)
+
+
+def test_encode_metastring_with_options():
+    encoder = MetaStringEncoder(special_char1="$", special_char2="_")
+    res = encoder.encode("_a", [Encoding.UTF_8, Encoding.LOWER_UPPER_DIGIT_SPECIAL, Encoding.ALL_TO_LOWER_SPECIAL])
+    assert res.encoding == Encoding.ALL_TO_LOWER_SPECIAL

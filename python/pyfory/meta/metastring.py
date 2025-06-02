@@ -31,7 +31,6 @@ class Encoding(Enum):
     FIRST_TO_LOWER_SPECIAL = 0x03
     ALL_TO_LOWER_SPECIAL = 0x04
 
-
 Statistics = namedtuple(
     "Statistics",
     [
@@ -280,7 +279,7 @@ class MetaStringEncoder:
         self.special_char1 = special_char1
         self.special_char2 = special_char2
 
-    def encode(self, input_string: str) -> MetaString:
+    def encode(self, input_string: str, encoding_options:list|None=None) -> MetaString:
         """
         Encodes the input string into a MetaString object.
 
@@ -305,7 +304,7 @@ class MetaStringEncoder:
                 self.special_char2,
             )
 
-        encoding = self.compute_encoding(input_string)
+        encoding = self.compute_encoding(input_string, encoding_options)
         return self.encode_with_encoding(input_string, encoding)
 
     def encode_with_encoding(self, input_string: str, encoding: Encoding) -> MetaString:
@@ -388,7 +387,7 @@ class MetaStringEncoder:
                 self.special_char2,
             )
 
-    def compute_encoding(self, input_string: str) -> Encoding:
+    def compute_encoding(self, input_string: str, encoding_options:list|None) -> Encoding:
         """
         Determines the encoding type of the input string.
 
@@ -404,18 +403,23 @@ class MetaStringEncoder:
         chars = list(input_string)
         statistics = self._compute_statistics(chars)
         if statistics.can_lower_special_encoded:
-            return Encoding.LOWER_SPECIAL
-        elif statistics.can_lower_upper_digit_special_encoded:
+            if encoding_options and Encoding.LOWER_SPECIAL in encoding_options:
+                return Encoding.LOWER_SPECIAL
+        if statistics.can_lower_upper_digit_special_encoded:
             if statistics.digit_count != 0:
-                return Encoding.LOWER_UPPER_DIGIT_SPECIAL
+                if encoding_options and Encoding.LOWER_UPPER_DIGIT_SPECIAL in encoding_options:
+                    return Encoding.LOWER_UPPER_DIGIT_SPECIAL
             else:
                 upper_count = statistics.upper_count
                 if upper_count == 1 and chars[0].isupper():
-                    return Encoding.FIRST_TO_LOWER_SPECIAL
+                    if encoding_options and Encoding.FIRST_TO_LOWER_SPECIAL in encoding_options:
+                        return Encoding.FIRST_TO_LOWER_SPECIAL
                 if (len(chars) + upper_count) * 5 < len(chars) * 6:
-                    return Encoding.ALL_TO_LOWER_SPECIAL
+                    if encoding_options and Encoding.ALL_TO_LOWER_SPECIAL in encoding_options:
+                        return Encoding.ALL_TO_LOWER_SPECIAL
                 else:
-                    return Encoding.LOWER_UPPER_DIGIT_SPECIAL
+                    if encoding_options and Encoding.LOWER_UPPER_DIGIT_SPECIAL in encoding_options:
+                        return Encoding.LOWER_UPPER_DIGIT_SPECIAL
         return Encoding.UTF_8
 
     def _compute_statistics(self, chars: List[str]) -> Statistics:

@@ -27,6 +27,7 @@ from enum import Enum
 from pyfory._serialization import ENABLE_FORY_CYTHON_SERIALIZATION
 from pyfory import Language
 from pyfory.error import TypeUnregisteredError
+from pyfory.meta.type_info import TypeInfo
 
 from pyfory.serializer import (
     Serializer,
@@ -78,6 +79,9 @@ from pyfory._fory import (
     NO_CLASS_ID,
 )
 
+from pyfory.buffer import Buffer
+from pyfory.meta.meta_share import MetaContext
+
 try:
     import numpy as np
 except ImportError:
@@ -98,6 +102,8 @@ else:
             "namespace_bytes",
             "typename_bytes",
             "dynamic_type",
+            "need_to_write_class_def",
+            "type_def"
         )
 
         def __init__(
@@ -108,6 +114,7 @@ else:
             namespace_bytes=None,
             typename_bytes=None,
             dynamic_type: bool = False,
+            class_resolver = None,
         ):
             self.cls = cls
             self.type_id = type_id
@@ -115,6 +122,13 @@ else:
             self.namespace_bytes = namespace_bytes
             self.typename_bytes = typename_bytes
             self.dynamic_type = dynamic_type
+            self.need_to_write_class_def = True
+            # if class_resolver:
+            #     # self.need_to_write_class_def = serializer != None and class_resolver.need_to_write_class_def(serializer)
+            #     self.need_to_write_class_def = True
+            # else:
+            #     self.need_to_write_class_def = True
+            self.type_def = None
 
         def __repr__(self):
             return (
@@ -146,6 +160,7 @@ class ClassResolver:
         "metastring_resolver",
         "language",
         "_type_id_to_classinfo",
+        "type_def_map"
     )
 
     def __init__(self, fory):
@@ -170,6 +185,8 @@ class ClassResolver:
         self.namespace_decoder = MetaStringDecoder(".", "_")
         self.typename_encoder = MetaStringEncoder("$", "_")
         self.typename_decoder = MetaStringDecoder("$", "_")
+
+        self.type_def_map = dict()
 
     def initialize(self):
         self._initialize_xlang()
@@ -532,19 +549,42 @@ class ClassResolver:
         self._ns_type_to_classinfo[(ns_metabytes, type_metabytes)] = classinfo
         return classinfo
 
-    def write_typeinfo(self, buffer, classinfo):
+    def write_typeinfo(self, buffer, classinfo, meta_share_enabled=False):
         if classinfo.dynamic_type:
             return
-        type_id = classinfo.type_id
-        internal_type_id = type_id & 0xFF
-        buffer.write_varuint32(type_id)
-        if TypeId.is_namespaced_type(internal_type_id):
-            self.metastring_resolver.write_meta_string_bytes(
-                buffer, classinfo.namespace_bytes
-            )
-            self.metastring_resolver.write_meta_string_bytes(
-                buffer, classinfo.typename_bytes
-            )
+        if meta_share_enabled:
+            self.__write_typeinfo_with_meta_share(buffer, classinfo)
+        else:
+            type_id = classinfo.type_id
+            internal_type_id = type_id & 0xFF
+            buffer.write_varuint32(type_id)
+            if TypeId.is_namespaced_type(internal_type_id):
+                self.metastring_resolver.write_meta_string_bytes(
+                    buffer, classinfo.namespace_bytes
+                )
+                self.metastring_resolver.write_meta_string_bytes(
+                    buffer, classinfo.typename_bytes
+                )
+
+    def __write_typeinfo_with_meta_share(self, buffer:Buffer, typeinfo: ClassInfo):
+        if typeinfo.type_id != NO_CLASS_ID and not typeinfo.need_to_write_class_def:
+            buffer.write_varuint32(typeinfo.type_id << 1)
+            return
+
+        meta_context = self.fory.serialization_context.meta_context
+        type_map:dict = meta_context.class_map
+
+        if typeinfo.cls in type_map:
+            id = type_map[typeinfo.cls]
+            buffer.write_varuint32(id << 1 | 0b1)
+        else:
+            new_id = len(type_map)
+            type_map[typeinfo.cls] = new_id
+            buffer.write_varuint32(new_id << 1 | 0b1)
+            type_def = typeinfo.type_def
+            if type_def is None:
+                type_def = self.build_type_def(typeinfo)
+            meta_context.writing_type_defs.append(type_def)
 
     def read_typeinfo(self, buffer):
         type_id = buffer.read_varuint32()
@@ -570,6 +610,28 @@ class ClassResolver:
         else:
             return self._type_id_to_classinfo[type_id]
 
+    # TODO
+    def write_type_defs(self, buffer:Buffer, meta_context:MetaContext):
+        writing_type_defs = meta_context.writing_type_defs
+        # TODO writeVarUint32Small7
+        # buffer.write_varuint32(len(writing_type_defs))
+        for type_def in writing_type_defs:
+            pass
+            # TODO class TypeDef
+           # type_def.writeClassDef(buffer)
+        meta_context.writing_type_defs.clear()
+
+    # TODO
+    def read_type_defs(self, buffer:Buffer, meta_context:MetaContext):
+        # TODO readVarUint32Small7
+        # num_class_defs = buffer.read_varuint32()
+        num_class_defs = 0
+        for i in range(num_class_defs):
+            pass
+            # id = buffer.read_int64()
+            # meta_context.read_type_defs.add()
+            # meta_context.read_type_infos.add()
+
     def reset(self):
         pass
 
@@ -578,3 +640,19 @@ class ClassResolver:
 
     def reset_write(self):
         pass
+
+    def need_to_write_type_def(self, serializer:Serializer):
+        raise NotImplementedError()
+
+    def build_type_def(self, type_info:ClassInfo):
+        raise NotImplementedError()
+        # serializer = type_info.serializer
+        # def_map = self.type_def_map
+        # type_def = def_map.get(type_info.cls)
+        # if not type_def:
+        #     if self.need_to_write_type_def(serializer):
+        #         type_def = TypeInfo.xread(cls=type_info.cls,is_xlang=True)
+        #     else:
+        #         pass
+        #
+        # type_info.type_def = type_def
