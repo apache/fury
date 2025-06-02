@@ -262,8 +262,8 @@ public final class ForyBuilder {
   }
 
   /**
-   * Whether check serializer extends {@link AbstractMapSerializer}/{@link AbstractCollectionSerializer}
-   * when registering serializer for Map/List.
+   * Whether check serializer extends {@link AbstractMapSerializer}/{@link
+   * AbstractCollectionSerializer} when registering serializer for Map/List.
    */
   public ForyBuilder validateSerializer(boolean validateSerializer) {
     this.validateSerializer = validateSerializer;

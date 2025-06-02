@@ -19,31 +19,30 @@
 
 package org.apache.fory.util;
 
+import java.util.Collection;
+import java.util.Map;
 import org.apache.fory.serializer.Serializer;
 import org.apache.fory.serializer.collection.AbstractCollectionSerializer;
 import org.apache.fory.serializer.collection.AbstractMapSerializer;
 
-import java.util.Collection;
-import java.util.Map;
-
 public class ValidateSerializer {
   public static void validateSerializer(
-          Class<?> type,
-          Class<? extends Serializer> serializerClass,
-          Class<?> parentType,
-          Class<?> requiredSerializerBase) {
+      Class<?> type,
+      Class<? extends Serializer> serializerClass,
+      Class<?> parentType,
+      Class<?> requiredSerializerBase) {
     if (!parentType.isAssignableFrom(type)) {
       return;
     }
     boolean valid = requiredSerializerBase.isAssignableFrom(serializerClass);
     if (!valid) {
       throw new IllegalArgumentException(
-              "Serializer for type "
-                      + type.getName()
-                      + " must extend "
-                      + requiredSerializerBase.getSimpleName()
-                      + ", but got "
-                      + serializerClass.getName());
+          "Serializer for type "
+              + type.getName()
+              + " must extend "
+              + requiredSerializerBase.getSimpleName()
+              + ", but got "
+              + serializerClass.getName());
     }
   }
 

@@ -552,21 +552,26 @@ public class ClassResolverTest extends ForyTestBase {
 
   @Test
   public void testListAndMapSerializerRegistration() {
-    Fory fory = Fory.builder().withRefTracking(true).requireClassRegistration(false).validateSerializer(true).build();
+    Fory fory =
+        Fory.builder()
+            .withRefTracking(true)
+            .requireClassRegistration(false)
+            .validateSerializer(true)
+            .build();
     // List invalid
     assertThrows(
-            IllegalArgumentException.class,
-            () -> fory.registerSerializer(InvalidList.class, InvalidList.InvalidListSerializer.class));
+        IllegalArgumentException.class,
+        () -> fory.registerSerializer(InvalidList.class, InvalidList.InvalidListSerializer.class));
     assertThrows(
-            IllegalArgumentException.class,
-            () ->
-                    fory.registerSerializer(
-                            InvalidList.class, new InvalidList.InvalidListSerializer(fory)));
+        IllegalArgumentException.class,
+        () ->
+            fory.registerSerializer(
+                InvalidList.class, new InvalidList.InvalidListSerializer(fory)));
     assertThrows(
-            IllegalArgumentException.class,
-            () ->
-                    fory.registerSerializer(
-                            InvalidList.class, f -> new InvalidList.InvalidListSerializer(f)));
+        IllegalArgumentException.class,
+        () ->
+            fory.registerSerializer(
+                InvalidList.class, f -> new InvalidList.InvalidListSerializer(f)));
     // List valid
     fory.register(ValidList.class);
     fory.registerSerializer(ValidList.class, new ValidList.ValidListSerializer(fory));
@@ -574,15 +579,15 @@ public class ClassResolverTest extends ForyTestBase {
     assertTrue(listResult instanceof ValidList);
     // Map invalid
     assertThrows(
-            IllegalArgumentException.class,
-            () -> fory.registerSerializer(InvalidMap.class, InvalidMap.InvalidMapSerializer.class));
+        IllegalArgumentException.class,
+        () -> fory.registerSerializer(InvalidMap.class, InvalidMap.InvalidMapSerializer.class));
     assertThrows(
-            IllegalArgumentException.class,
-            () -> fory.registerSerializer(InvalidMap.class, new InvalidMap.InvalidMapSerializer(fory)));
+        IllegalArgumentException.class,
+        () -> fory.registerSerializer(InvalidMap.class, new InvalidMap.InvalidMapSerializer(fory)));
     assertThrows(
-            IllegalArgumentException.class,
-            () ->
-                    fory.registerSerializer(InvalidMap.class, f -> new InvalidMap.InvalidMapSerializer(f)));
+        IllegalArgumentException.class,
+        () ->
+            fory.registerSerializer(InvalidMap.class, f -> new InvalidMap.InvalidMapSerializer(f)));
     // Map valid
     fory.register(ValidMap.class);
     fory.registerSerializer(ValidMap.class, new ValidMap.ValidMapSerializer(fory));
