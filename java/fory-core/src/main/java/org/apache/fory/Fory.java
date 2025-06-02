@@ -226,40 +226,8 @@ public final class Fory implements BaseFory {
     }
   }
 
-  private void validateSerializer(
-      Class<?> type,
-      Object serializerOrClass,
-      Class<?> parentType,
-      Class<?> requiredSerializerBase) {
-    if (!parentType.isAssignableFrom(type)) {
-      return;
-    }
-    boolean valid = false;
-    if (serializerOrClass instanceof Class) {
-      valid = requiredSerializerBase.isAssignableFrom((Class<?>) serializerOrClass);
-    } else if (serializerOrClass instanceof Serializer) {
-      valid = requiredSerializerBase.isInstance(serializerOrClass);
-    }
-    if (!valid) {
-      throw new IllegalArgumentException(
-          "Serializer for type "
-              + type.getName()
-              + " must extend "
-              + requiredSerializerBase.getSimpleName()
-              + ", but got "
-              + serializerOrClass.getClass().getName());
-    }
-  }
-
-  private void validateCollectionSerializer(Class<?> type, Object serializerOrClass) {
-    validateSerializer(
-        type, serializerOrClass, Collection.class, AbstractCollectionSerializer.class);
-    validateSerializer(type, serializerOrClass, Map.class, AbstractMapSerializer.class);
-  }
-
   @Override
   public <T> void registerSerializer(Class<T> type, Class<? extends Serializer> serializerClass) {
-    validateCollectionSerializer(type, serializerClass);
     if (language == Language.JAVA) {
       classResolver.registerSerializer(type, serializerClass);
     } else {
@@ -269,7 +237,6 @@ public final class Fory implements BaseFory {
 
   @Override
   public void registerSerializer(Class<?> type, Serializer<?> serializer) {
-    validateCollectionSerializer(type, serializer);
     if (language == Language.JAVA) {
       classResolver.registerSerializer(type, serializer);
     } else {
@@ -279,8 +246,6 @@ public final class Fory implements BaseFory {
 
   @Override
   public void registerSerializer(Class<?> type, Function<Fory, Serializer<?>> serializerCreator) {
-    Serializer<?> serializer = serializerCreator.apply(this);
-    validateCollectionSerializer(type, serializer);
     if (language == Language.JAVA) {
       classResolver.registerSerializer(type, serializerCreator.apply(this));
     } else {

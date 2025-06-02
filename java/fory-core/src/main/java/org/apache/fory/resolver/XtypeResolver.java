@@ -84,6 +84,7 @@ import org.apache.fory.type.Generics;
 import org.apache.fory.type.TypeUtils;
 import org.apache.fory.type.Types;
 import org.apache.fory.util.Preconditions;
+import org.apache.fory.util.ValidateSerializer;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 // TODO(chaokunyang) Abstract type resolver for java/xlang type resolution.
@@ -272,11 +273,17 @@ public class XtypeResolver implements TypeResolver {
 
   public <T> void registerSerializer(Class<T> type, Class<? extends Serializer> serializerClass) {
     ClassInfo classInfo = checkClassRegistration(type);
+    if (fory.getConfig().validateSerializer()) {
+      ValidateSerializer.validate(type, serializerClass);
+    }
     classInfo.serializer = Serializers.newSerializer(fory, type, serializerClass);
   }
 
   public void registerSerializer(Class<?> type, Serializer<?> serializer) {
     ClassInfo classInfo = checkClassRegistration(type);
+    if (fory.getConfig().validateSerializer()) {
+      ValidateSerializer.validate(type, serializer.getClass());
+    }
     classInfo.serializer = serializer;
   }
 

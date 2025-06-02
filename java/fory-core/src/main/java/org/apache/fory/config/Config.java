@@ -63,6 +63,7 @@ public class Config implements Serializable {
   private final boolean deserializeNonexistentEnumValueAsNull;
   private final boolean serializeEnumByName;
   private final int bufferSizeLimitBytes;
+  private final boolean validateSerializer;
 
   public Config(ForyBuilder builder) {
     name = builder.name;
@@ -99,6 +100,7 @@ public class Config implements Serializable {
     deserializeNonexistentEnumValueAsNull = builder.deserializeNonexistentEnumValueAsNull;
     serializeEnumByName = builder.serializeEnumByName;
     bufferSizeLimitBytes = builder.bufferSizeLimitBytes;
+    validateSerializer = builder.validateSerializer;
   }
 
   /** Returns the name for Fory serialization. */
@@ -215,6 +217,10 @@ public class Config implements Serializable {
     return registerGuavaTypes;
   }
 
+  public boolean validateSerializer() {
+    return validateSerializer;
+  }
+
   /**
    * Returns default serializer type for class which implements jdk serialization method such as
    * `writeObject/readObject`.
@@ -309,7 +315,8 @@ public class Config implements Serializable {
         && language == config.language
         && compatibleMode == config.compatibleMode
         && Objects.equals(defaultJDKStreamSerializerType, config.defaultJDKStreamSerializerType)
-        && longEncoding == config.longEncoding;
+        && longEncoding == config.longEncoding
+        && validateSerializer == config.validateSerializer;
   }
 
   @Override
@@ -336,6 +343,7 @@ public class Config implements Serializable {
         requireClassRegistration,
         suppressClassRegistrationWarnings,
         registerGuavaTypes,
+        validateSerializer,
         metaShareEnabled,
         scopedMetaShareEnabled,
         metaCompressor,

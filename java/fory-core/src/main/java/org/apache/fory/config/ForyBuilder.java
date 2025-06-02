@@ -85,6 +85,7 @@ public final class ForyBuilder {
   boolean deserializeNonexistentEnumValueAsNull = false;
   boolean serializeEnumByName = false;
   int bufferSizeLimitBytes = 128 * 1024;
+  boolean validateSerializer = false;
   MetaCompressor metaCompressor = new DeflaterMetaCompressor();
 
   public ForyBuilder() {}
@@ -255,6 +256,11 @@ public final class ForyBuilder {
    */
   public ForyBuilder registerGuavaTypes(boolean register) {
     this.registerGuavaTypes = register;
+    return this;
+  }
+
+  public ForyBuilder validateSerializer(boolean validateSerializer) {
+    this.validateSerializer = validateSerializer;
     return this;
   }
 
