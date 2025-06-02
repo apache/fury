@@ -52,7 +52,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import org.apache.fory.Fory;
-import org.apache.fory.ForyTest;
 import org.apache.fory.ForyTestBase;
 import org.apache.fory.ThreadSafeFory;
 import org.apache.fory.builder.Generated;
