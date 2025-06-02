@@ -31,7 +31,6 @@ import org.apache.arrow.vector.ipc.message.ArrowRecordBatch;
 import org.apache.arrow.vector.ipc.message.IpcOption;
 import org.apache.arrow.vector.ipc.message.MessageSerializer;
 import org.apache.fory.Fory;
-import org.apache.fory.config.Language;
 import org.apache.fory.io.MemoryBufferReadableChannel;
 import org.apache.fory.io.MemoryBufferWritableChannel;
 import org.apache.fory.io.MockWritableChannel;

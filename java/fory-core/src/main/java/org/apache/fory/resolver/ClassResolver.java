@@ -737,8 +737,7 @@ public class ClassResolver implements TypeResolver {
    * @param serializer serializer for object of {@code type}
    */
   public void registerSerializer(Class<?> type, Serializer<?> serializer) {
-    if (!extRegistry.registeredClassIdMap.containsKey(type)
-        && !fory.isCrossLanguage()) {
+    if (!extRegistry.registeredClassIdMap.containsKey(type) && !fory.isCrossLanguage()) {
       register(type);
     }
     addSerializer(type, serializer);

@@ -21,7 +21,6 @@ package org.apache.fory.serializer;
 
 import javax.annotation.concurrent.NotThreadSafe;
 import org.apache.fory.Fory;
-import org.apache.fory.config.Language;
 import org.apache.fory.memory.MemoryBuffer;
 import org.apache.fory.type.TypeUtils;
 
