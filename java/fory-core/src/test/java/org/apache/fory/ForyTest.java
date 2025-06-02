@@ -190,7 +190,7 @@ public class ForyTest extends ForyTestBase {
     assertEquals(Short.MAX_VALUE, serDeCheckIndex(fory1, fory2, buffer, Short.MAX_VALUE));
     assertEquals("str", serDeCheckIndex(fory1, fory2, buffer, "str"));
     assertEquals("str", serDeCheckIndex(fory1, fory2, buffer, new StringBuilder("str")).toString());
-    if (fory1.getLanguage() != Language.JAVA) {
+    if (fory1.isCrossLanguage()) {
       fory1.register(EnumSerializerTest.EnumFoo.class);
       fory2.register(EnumSerializerTest.EnumFoo.class);
       fory1.register(EnumSerializerTest.EnumSubClass.class);

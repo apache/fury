@@ -21,7 +21,6 @@ package org.apache.fory.serializer;
 
 import javax.annotation.concurrent.NotThreadSafe;
 import org.apache.fory.Fory;
-import org.apache.fory.config.Language;
 import org.apache.fory.memory.MemoryBuffer;
 import org.apache.fory.type.TypeUtils;
 
@@ -74,7 +73,7 @@ public abstract class Serializer<T> {
   public Serializer(Fory fory, Class<T> type) {
     this.fory = fory;
     this.type = type;
-    this.isJava = fory.getLanguage() == Language.JAVA;
+    this.isJava = !fory.isCrossLanguage();
     if (fory.trackingRef()) {
       needToWriteRef = !TypeUtils.isBoxed(TypeUtils.wrap(type)) || !fory.isBasicTypesRefIgnored();
     } else {
@@ -87,7 +86,7 @@ public abstract class Serializer<T> {
   public Serializer(Fory fory, Class<T> type, boolean immutable) {
     this.fory = fory;
     this.type = type;
-    this.isJava = fory.getLanguage() == Language.JAVA;
+    this.isJava = !fory.isCrossLanguage();
     if (fory.trackingRef()) {
       needToWriteRef = !TypeUtils.isBoxed(TypeUtils.wrap(type)) || !fory.isBasicTypesRefIgnored();
     } else {
@@ -100,7 +99,7 @@ public abstract class Serializer<T> {
   public Serializer(Fory fory, Class<T> type, boolean needToWriteRef, boolean immutable) {
     this.fory = fory;
     this.type = type;
-    this.isJava = fory.getLanguage() == Language.JAVA;
+    this.isJava = !fory.isCrossLanguage();
     this.needToWriteRef = needToWriteRef;
     this.needToCopyRef = fory.copyTrackingRef() && !immutable;
     this.immutable = immutable;

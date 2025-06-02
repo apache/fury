@@ -46,7 +46,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.apache.fory.Fory;
-import org.apache.fory.config.Language;
 import org.apache.fory.exception.ForyException;
 import org.apache.fory.memory.MemoryBuffer;
 import org.apache.fory.memory.Platform;
@@ -694,8 +693,9 @@ public class CollectionSerializers {
     public DefaultJavaCollectionSerializer(Fory fory, Class<T> cls) {
       super(fory, cls, false);
       Preconditions.checkArgument(
-          fory.getLanguage() == Language.JAVA,
-          "Python default collection serializer should use " + CollectionSerializer.class);
+          !fory.isCrossLanguage(),
+          "Fory cross-language default collection serializer should use "
+              + CollectionSerializer.class);
       fory.getClassResolver().setSerializer(cls, this);
       Class<? extends Serializer> serializerClass =
           fory.getClassResolver()
