@@ -738,7 +738,7 @@ public class ClassResolver implements TypeResolver {
    */
   public void registerSerializer(Class<?> type, Serializer<?> serializer) {
     if (!extRegistry.registeredClassIdMap.containsKey(type)
-        && fory.getLanguage() == Language.JAVA) {
+        && !fory.isCrossLanguage()) {
       register(type);
     }
     addSerializer(type, serializer);
@@ -997,7 +997,7 @@ public class ClassResolver implements TypeResolver {
         if (requireJavaSerialization(cls) || useReplaceResolveSerializer(cls)) {
           return CollectionSerializers.JDKCompatibleCollectionSerializer.class;
         }
-        if (fory.getLanguage() == Language.JAVA) {
+        if (!fory.isCrossLanguage()) {
           return CollectionSerializers.DefaultJavaCollectionSerializer.class;
         } else {
           return CollectionSerializer.class;
@@ -1011,13 +1011,13 @@ public class ClassResolver implements TypeResolver {
         if (requireJavaSerialization(cls) || useReplaceResolveSerializer(cls)) {
           return MapSerializers.JDKCompatibleMapSerializer.class;
         }
-        if (fory.getLanguage() == Language.JAVA) {
+        if (!fory.isCrossLanguage()) {
           return MapSerializers.DefaultJavaMapSerializer.class;
         } else {
           return MapSerializer.class;
         }
       }
-      if (fory.getLanguage() != Language.JAVA) {
+      if (fory.isCrossLanguage()) {
         LOG.warn("Class {} isn't supported for cross-language serialization.", cls);
       }
       if (useReplaceResolveSerializer(cls)) {

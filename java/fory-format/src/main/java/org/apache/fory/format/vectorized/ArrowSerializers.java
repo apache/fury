@@ -167,7 +167,7 @@ public class ArrowSerializers {
   }
 
   public static void registerSerializers(Fory fory) {
-    if (fory.getLanguage() != Language.JAVA) {
+    if (fory.isCrossLanguage()) {
       fory.register(ArrowTable.class, Types.ARROW_TABLE);
       fory.register(VectorSchemaRoot.class, Types.ARROW_RECORD_BATCH);
     }

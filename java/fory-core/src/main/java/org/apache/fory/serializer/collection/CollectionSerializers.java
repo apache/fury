@@ -694,8 +694,8 @@ public class CollectionSerializers {
     public DefaultJavaCollectionSerializer(Fory fory, Class<T> cls) {
       super(fory, cls, false);
       Preconditions.checkArgument(
-          fory.getLanguage() == Language.JAVA,
-          "Python default collection serializer should use " + CollectionSerializer.class);
+          !fory.isCrossLanguage(),
+          "Fory cross-language default collection serializer should use " + CollectionSerializer.class);
       fory.getClassResolver().setSerializer(cls, this);
       Class<? extends Serializer> serializerClass =
           fory.getClassResolver()

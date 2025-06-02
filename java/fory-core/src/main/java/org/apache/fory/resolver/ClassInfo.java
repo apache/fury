@@ -83,7 +83,7 @@ public class ClassInfo {
     this.serializer = serializer;
     needToWriteClassDef = serializer != null && classResolver.needToWriteClassDef(serializer);
     MetaStringResolver metaStringResolver = classResolver.getMetaStringResolver();
-    if (cls != null && classResolver.getFory().getLanguage() != Language.JAVA) {
+    if (cls != null && classResolver.getFory().isCrossLanguage()) {
       this.fullNameBytes =
           metaStringResolver.getOrCreateMetaStringBytes(
               GENERIC_ENCODER.encode(cls.getName(), Encoding.UTF_8));

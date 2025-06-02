@@ -70,7 +70,7 @@ public class SubListSerializers {
     // ImmutableCollectionSerializers
     for (Class<?> cls :
         new Class[] {SubListClass, RandomAccessSubListClass, ArrayListSubListClass}) {
-      if (fory.trackingRef() && preserveView && fory.getConfig().getLanguage() == Language.JAVA) {
+      if (fory.trackingRef() && preserveView && !fory.isCrossLanguage()) {
         classResolver.registerSerializer(cls, new SubListViewSerializer(fory, cls));
       } else {
         classResolver.registerSerializer(cls, new SubListSerializer(fory, (Class<List>) cls));
@@ -84,7 +84,7 @@ public class SubListSerializers {
 
     public SubListViewSerializer(Fory fory, Class cls) {
       super(fory, Stub.class.isAssignableFrom(cls) ? (Class<List>) ArrayListSubListClass : cls);
-      assert fory.getLanguage() == Language.JAVA;
+      assert !fory.isCrossLanguage();
     }
 
     @Override

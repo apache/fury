@@ -384,8 +384,8 @@ public class MapSerializers {
     public DefaultJavaMapSerializer(Fory fory, Class<T> cls) {
       super(fory, cls, false);
       Preconditions.checkArgument(
-          fory.getLanguage() == Language.JAVA,
-          "Python default map serializer should use " + MapSerializer.class);
+          !fory.isCrossLanguage(),
+          "Fory cross-language default map serializer should use " + MapSerializer.class);
       fory.getClassResolver().setSerializer(cls, this);
       Class<? extends Serializer> serializerClass =
           fory.getClassResolver()
