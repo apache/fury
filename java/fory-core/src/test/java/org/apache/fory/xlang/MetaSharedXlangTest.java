@@ -19,18 +19,20 @@
 
 package org.apache.fory.xlang;
 
+import lombok.Data;
 import org.apache.fory.CrossLanguageTest.Bar;
 import org.apache.fory.CrossLanguageTest.Foo;
 import org.apache.fory.Fory;
 import org.apache.fory.ForyTestBase;
 import org.apache.fory.config.CompatibleMode;
 import org.apache.fory.config.Language;
+import org.apache.fory.test.bean.BeanB;
 import org.testng.annotations.Test;
 
 public class MetaSharedXlangTest extends ForyTestBase {
 
   @Test
-  public void testMetaShared() {
+  public void testMetaSharedBasic() {
     Fory fory =
         Fory.builder()
             .withLanguage(Language.XLANG)
@@ -41,5 +43,37 @@ public class MetaSharedXlangTest extends ForyTestBase {
     fory.register(Bar.class, "example.bar");
     serDeCheck(fory, Bar.create());
     serDeCheck(fory, Foo.create());
+  }
+
+  @Test
+  public void testMetaSharedComplex1() {
+    Fory fory =
+        Fory.builder()
+            .withLanguage(Language.XLANG)
+            .withCodegen(false)
+            .withCompatibleMode(CompatibleMode.COMPATIBLE)
+            .build();
+    fory.register(BeanB.class, "example.b");
+    serDeCheck(fory, BeanB.createBeanB(2));
+  }
+
+  @Data
+  static class MDArrayFieldStruct {
+    int[][] arr;
+  }
+
+  // @Test
+  public void testMDArrayField() {
+    Fory fory =
+        Fory.builder()
+            .withLanguage(Language.XLANG)
+            .withCodegen(false)
+            .withCompatibleMode(CompatibleMode.COMPATIBLE)
+            .build();
+    // TODO support multi-dimensional array serialization
+    fory.register(MDArrayFieldStruct.class, "example.a");
+    MDArrayFieldStruct s = new MDArrayFieldStruct();
+    s.arr = new int[][] {{1, 2}, {3, 4}};
+    serDeCheck(fory, s);
   }
 }

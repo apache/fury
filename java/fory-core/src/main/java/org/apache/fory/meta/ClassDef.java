@@ -337,6 +337,13 @@ public class ClassDef implements Serializable {
     Descriptor toDescriptor(TypeResolver resolver, Descriptor descriptor) {
       TypeRef<?> declared = descriptor != null ? descriptor.getTypeRef() : null;
       TypeRef<?> typeRef = fieldType.toTypeToken(resolver, declared);
+      if (descriptor != null) {
+        if (typeRef.equals(declared)) {
+          return descriptor;
+        } else {
+          descriptor.copyWithTypeName(typeRef.getType().getTypeName());
+        }
+      }
       // This field doesn't exist in peer class, so any legal modifier will be OK.
       int stubModifiers = ReflectionUtils.getField(getClass(), "fieldName").getModifiers();
       return new Descriptor(typeRef, fieldName, stubModifiers, definedClass);
@@ -556,10 +563,6 @@ public class ClassDef implements Serializable {
               ClassInfo classInfo = resolver.getXtypeInfo(xtypeId);
               Preconditions.checkNotNull(classInfo);
               Class<?> cls = classInfo.getCls();
-              if (Types.isPrimitiveArray(xtypeId)) {
-                FieldType type = buildFieldType(resolver, resolver.buildGenericType(cls));
-                return new ArrayFieldType(xtypeId, true, nullable, trackingRef, type, 1);
-              }
               return new RegisteredFieldType(
                   resolver.isMonomorphic(cls), nullable, trackingRef, xtypeId);
             } else {
@@ -589,6 +592,14 @@ public class ClassDef implements Serializable {
       Class<?> cls;
       if (resolver instanceof XtypeResolver) {
         cls = ((XtypeResolver) resolver).getXtypeInfo(classId).getCls();
+        if (Types.isPrimitiveType(classId)) {
+          if (declared.isPrimitive() && !nullable) {
+            cls = TypeUtils.unwrap(cls);
+          }
+          if (nullable && !declared.isPrimitive()) {
+            cls = TypeUtils.wrap(cls);
+          }
+        }
       } else {
         cls = ((ClassResolver) resolver).getRegisteredClass(classId);
       }
