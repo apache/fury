@@ -462,7 +462,9 @@ public class Descriptor {
     }
     if (clazz.isInterface()) {
       for (Method method : clazz.getMethods()) {
-        if (method.getParameterCount() == 0 && method.getReturnType() != void.class) {
+        if (method.getParameterCount() == 0
+            && method.getReturnType() != void.class
+            && !Modifier.isStatic(method.getModifiers())) {
           descriptorMap.put(method, new Descriptor(method));
         }
       }
