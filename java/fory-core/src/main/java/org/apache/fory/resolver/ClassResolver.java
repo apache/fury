@@ -164,6 +164,7 @@ import org.apache.fory.type.Types;
 import org.apache.fory.util.GraalvmSupport;
 import org.apache.fory.util.Preconditions;
 import org.apache.fory.util.StringUtils;
+import org.apache.fory.util.ValidateSerializer;
 import org.apache.fory.util.function.Functions;
 
 /**
@@ -737,6 +738,7 @@ public class ClassResolver implements TypeResolver {
    * @param serializer serializer for object of {@code type}
    */
   public void registerSerializer(Class<?> type, Serializer<?> serializer) {
+    ValidateSerializer.validate(type, serializer.getClass());
     if (!extRegistry.registeredClassIdMap.containsKey(type) && !fory.isCrossLanguage()) {
       register(type);
     }
@@ -996,7 +998,7 @@ public class ClassResolver implements TypeResolver {
         if (requireJavaSerialization(cls) || useReplaceResolveSerializer(cls)) {
           return CollectionSerializers.JDKCompatibleCollectionSerializer.class;
         }
-        if (!fory.isCrossLanguage()) {
+        if (fory.getLanguage() == Language.JAVA) {
           return CollectionSerializers.DefaultJavaCollectionSerializer.class;
         } else {
           return CollectionSerializer.class;
@@ -1010,13 +1012,13 @@ public class ClassResolver implements TypeResolver {
         if (requireJavaSerialization(cls) || useReplaceResolveSerializer(cls)) {
           return MapSerializers.JDKCompatibleMapSerializer.class;
         }
-        if (!fory.isCrossLanguage()) {
+        if (fory.getLanguage() == Language.JAVA) {
           return MapSerializers.DefaultJavaMapSerializer.class;
         } else {
           return MapSerializer.class;
         }
       }
-      if (fory.isCrossLanguage()) {
+      if (fory.getLanguage() != Language.JAVA) {
         LOG.warn("Class {} isn't supported for cross-language serialization.", cls);
       }
       if (useReplaceResolveSerializer(cls)) {

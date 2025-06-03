@@ -36,7 +36,6 @@ import org.apache.fory.reflect.FieldAccessor;
 import org.apache.fory.resolver.ClassInfoHolder;
 import org.apache.fory.resolver.ClassResolver;
 import org.apache.fory.resolver.RefResolver;
-import org.apache.fory.resolver.TypeResolver;
 import org.apache.fory.type.Descriptor;
 import org.apache.fory.type.DescriptorGrouper;
 import org.apache.fory.type.Generics;
@@ -85,10 +84,7 @@ public class MetaSharedSerializer<T> extends AbstractObjectSerializer<T> {
         "Class version check should be disabled when compatible mode is enabled.");
     Preconditions.checkArgument(
         fory.getConfig().isMetaShareEnabled(), "Meta share must be enabled.");
-    boolean xlang = fory.isCrossLanguage();
-    Collection<Descriptor> descriptors =
-        consolidateFields(
-            xlang ? fory.getXtypeResolver() : fory.getClassResolver(), type, classDef);
+    Collection<Descriptor> descriptors = consolidateFields(this.classResolver, type, classDef);
     DescriptorGrouper descriptorGrouper = classResolver.createDescriptorGrouper(descriptors, false);
     // d.getField() may be null if not exists in this class when meta share enabled.
     Tuple3<
@@ -120,11 +116,6 @@ public class MetaSharedSerializer<T> extends AbstractObjectSerializer<T> {
           this.classResolver.createSerializerSafe(type, () -> new ObjectSerializer<>(fory, type));
     }
     serializer.write(buffer, value);
-  }
-
-  @Override
-  public void xwrite(MemoryBuffer buffer, T value) {
-    write(buffer, value);
   }
 
   @Override
@@ -199,11 +190,6 @@ public class MetaSharedSerializer<T> extends AbstractObjectSerializer<T> {
       }
     }
     return obj;
-  }
-
-  @Override
-  public T xread(MemoryBuffer buffer) {
-    return read(buffer);
   }
 
   private void readFields(MemoryBuffer buffer, Object[] fields) {
@@ -294,7 +280,7 @@ public class MetaSharedSerializer<T> extends AbstractObjectSerializer<T> {
   }
 
   public static Collection<Descriptor> consolidateFields(
-      TypeResolver resolver, Class<?> cls, ClassDef classDef) {
-    return classDef.getDescriptors(resolver, cls);
+      ClassResolver classResolver, Class<?> cls, ClassDef classDef) {
+    return classDef.getDescriptors(classResolver, cls);
   }
 }

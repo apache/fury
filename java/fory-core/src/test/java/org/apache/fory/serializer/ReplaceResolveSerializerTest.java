@@ -34,6 +34,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import lombok.AllArgsConstructor;
@@ -41,6 +43,9 @@ import lombok.Data;
 import org.apache.fory.Fory;
 import org.apache.fory.ForyTestBase;
 import org.apache.fory.config.Language;
+import org.apache.fory.memory.MemoryBuffer;
+import org.apache.fory.serializer.collection.AbstractCollectionSerializer;
+import org.apache.fory.serializer.collection.AbstractMapSerializer;
 import org.apache.fory.util.Preconditions;
 import org.testng.annotations.Test;
 
@@ -71,6 +76,71 @@ public class ReplaceResolveSerializerTest extends ForyTestBase {
     }
   }
 
+  static class ReplaceResolveCollectionSerializer<T> extends AbstractCollectionSerializer<T> {
+    private ReplaceResolveSerializer replaceResolveSerializer;
+
+    public ReplaceResolveCollectionSerializer(Fory fory, Class<T> type) {
+      super(fory, type);
+      replaceResolveSerializer = new ReplaceResolveSerializer(fory, type);
+    }
+
+    @Override
+    public Collection onCollectionWrite(MemoryBuffer buffer, Object value) {
+      replaceResolveSerializer.write(buffer, value);
+      return Collections.emptyList();
+    }
+
+    @Override
+    public T read(MemoryBuffer buffer) {
+      return (T) replaceResolveSerializer.read(buffer);
+    }
+
+    @Override
+    public T onCollectionRead(Collection collection) {
+      return null;
+    }
+
+    @Override
+    public T copy(T originObj) {
+      return (T) replaceResolveSerializer.copy(originObj);
+    }
+  }
+
+  static class ReplaceResolveMapSerializer<T> extends AbstractMapSerializer<T> {
+    private ReplaceResolveSerializer replaceResolveSerializer;
+
+    public ReplaceResolveMapSerializer(Fory fory, Class<T> type) {
+      super(fory, type);
+      replaceResolveSerializer = new ReplaceResolveSerializer(fory, type);
+    }
+
+    @Override
+    public T read(MemoryBuffer buffer) {
+      return (T) replaceResolveSerializer.read(buffer);
+    }
+
+    @Override
+    public Map onMapWrite(MemoryBuffer buffer, Object value) {
+      replaceResolveSerializer.write(buffer, value);
+      return Collections.emptyMap();
+    }
+
+    @Override
+    public T onMapCopy(Map map) {
+      return null;
+    }
+
+    @Override
+    public T onMapRead(Map map) {
+      return null;
+    }
+
+    @Override
+    public T copy(T originObj) {
+      return (T) replaceResolveSerializer.copy(originObj);
+    }
+  }
+
   @Test(dataProvider = "referenceTrackingConfig")
   public void testCommonReplace(boolean referenceTracking) {
     Fory fory =
@@ -87,17 +157,20 @@ public class ReplaceResolveSerializerTest extends ForyTestBase {
         fory.getClassResolver().getSerializer(o1.getClass()) instanceof ReplaceResolveSerializer);
 
     ImmutableList<Integer> list1 = ImmutableList.of(1, 2, 3, 4);
-    fory.registerSerializer(list1.getClass(), new ReplaceResolveSerializer(fory, list1.getClass()));
+    fory.registerSerializer(
+        list1.getClass(), new ReplaceResolveCollectionSerializer(fory, list1.getClass()));
     serDeCheck(fory, list1);
 
     ImmutableMap<String, Integer> map1 = ImmutableMap.of("k1", 1, "k2", 2);
-    fory.registerSerializer(map1.getClass(), new ReplaceResolveSerializer(fory, map1.getClass()));
+    fory.registerSerializer(
+        map1.getClass(), new ReplaceResolveMapSerializer(fory, map1.getClass()));
     serDeCheck(fory, map1);
     assertTrue(
         fory.getClassResolver().getSerializer(list1.getClass())
-            instanceof ReplaceResolveSerializer);
+            instanceof ReplaceResolveCollectionSerializer);
     assertTrue(
-        fory.getClassResolver().getSerializer(map1.getClass()) instanceof ReplaceResolveSerializer);
+        fory.getClassResolver().getSerializer(map1.getClass())
+            instanceof ReplaceResolveMapSerializer);
   }
 
   @Test(dataProvider = "foryCopyConfig")
@@ -108,11 +181,13 @@ public class ReplaceResolveSerializerTest extends ForyTestBase {
     copyCheck(fory, o1);
 
     ImmutableList<Integer> list1 = ImmutableList.of(1, 2, 3, 4);
-    fory.registerSerializer(list1.getClass(), new ReplaceResolveSerializer(fory, list1.getClass()));
+    fory.registerSerializer(
+        list1.getClass(), new ReplaceResolveCollectionSerializer(fory, list1.getClass()));
     copyCheck(fory, list1);
 
     ImmutableMap<String, Integer> map1 = ImmutableMap.of("k1", 1, "k2", 2);
-    fory.registerSerializer(map1.getClass(), new ReplaceResolveSerializer(fory, map1.getClass()));
+    fory.registerSerializer(
+        map1.getClass(), new ReplaceResolveMapSerializer(fory, map1.getClass()));
     copyCheck(fory, map1);
   }
 
@@ -482,9 +557,10 @@ public class ReplaceResolveSerializerTest extends ForyTestBase {
 
   @Test(dataProvider = "foryCopyConfig")
   public void testImmutable(Fory fory) {
-    fory.registerSerializer(ImmutableList.of(1, 2).getClass(), ReplaceResolveSerializer.class);
+    fory.registerSerializer(
+        ImmutableList.of(1, 2).getClass(), ReplaceResolveCollectionSerializer.class);
     fory.registerSerializer(SimpleCollectionTest.class, ReplaceResolveSerializer.class);
-    fory.registerSerializer(ImmutableMap.of("1", 2).getClass(), ReplaceResolveSerializer.class);
+    fory.registerSerializer(ImmutableMap.of("1", 2).getClass(), ReplaceResolveMapSerializer.class);
     fory.registerSerializer(SimpleMapTest.class, ReplaceResolveSerializer.class);
     copyCheck(fory, ImmutableList.of(1, 2));
     copyCheck(fory, ImmutableList.of("a", "b"));

@@ -24,6 +24,7 @@ import static org.apache.fory.meta.Encoders.PACKAGE_DECODER;
 import static org.apache.fory.meta.Encoders.TYPE_NAME_DECODER;
 
 import org.apache.fory.collection.Tuple2;
+import org.apache.fory.config.Language;
 import org.apache.fory.meta.ClassDef;
 import org.apache.fory.meta.Encoders;
 import org.apache.fory.meta.MetaString.Encoding;
@@ -82,7 +83,7 @@ public class ClassInfo {
     this.serializer = serializer;
     needToWriteClassDef = serializer != null && classResolver.needToWriteClassDef(serializer);
     MetaStringResolver metaStringResolver = classResolver.getMetaStringResolver();
-    if (cls != null && classResolver.getFory().isCrossLanguage()) {
+    if (cls != null && classResolver.getFory().getLanguage() != Language.JAVA) {
       this.fullNameBytes =
           metaStringResolver.getOrCreateMetaStringBytes(
               GENERIC_ENCODER.encode(cls.getName(), Encoding.UTF_8));

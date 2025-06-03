@@ -24,7 +24,6 @@ ROOT="$(git rev-parse --show-toplevel)"
 echo "Root path: $ROOT, home path: $HOME"
 cd "$ROOT"
 
-export FORY_CI=true
 
 install_python() {
   wget -q https://repo.anaconda.com/miniconda/Miniconda3-py38_23.5.2-0-Linux-x86_64.sh -O Miniconda3.sh

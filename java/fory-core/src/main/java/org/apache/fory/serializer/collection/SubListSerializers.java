@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import org.apache.fory.Fory;
+import org.apache.fory.config.Language;
 import org.apache.fory.logging.Logger;
 import org.apache.fory.logging.LoggerFactory;
 import org.apache.fory.memory.MemoryBuffer;
@@ -69,7 +70,7 @@ public class SubListSerializers {
     // ImmutableCollectionSerializers
     for (Class<?> cls :
         new Class[] {SubListClass, RandomAccessSubListClass, ArrayListSubListClass}) {
-      if (fory.trackingRef() && preserveView && !fory.isCrossLanguage()) {
+      if (fory.trackingRef() && preserveView && fory.getConfig().getLanguage() == Language.JAVA) {
         classResolver.registerSerializer(cls, new SubListViewSerializer(fory, cls));
       } else {
         classResolver.registerSerializer(cls, new SubListSerializer(fory, (Class<List>) cls));
@@ -83,7 +84,7 @@ public class SubListSerializers {
 
     public SubListViewSerializer(Fory fory, Class cls) {
       super(fory, Stub.class.isAssignableFrom(cls) ? (Class<List>) ArrayListSubListClass : cls);
-      assert !fory.isCrossLanguage();
+      assert fory.getLanguage() == Language.JAVA;
     }
 
     @Override

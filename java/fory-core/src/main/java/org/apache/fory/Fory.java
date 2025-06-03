@@ -113,6 +113,7 @@ public final class Fory implements BaseFory {
   private final StringSerializer stringSerializer;
   private final ArrayListSerializer arrayListSerializer;
   private final HashMapSerializer hashMapSerializer;
+  private final Language language;
   private final boolean crossLanguage;
   private final boolean compressInt;
   private final LongEncoding longEncoding;
@@ -131,7 +132,8 @@ public final class Fory implements BaseFory {
     // Avoid set classLoader in `ForyBuilder`, which won't be clear when
     // `org.apache.fory.ThreadSafeFory.clearClassLoader` is called.
     config = new Config(builder);
-    crossLanguage = config.getLanguage() != Language.JAVA;
+    this.language = config.getLanguage();
+    crossLanguage = language != Language.JAVA;
     this.refTracking = config.trackingRef();
     this.copyRefTracking = config.copyRef();
     this.shareMeta = config.isMetaShareEnabled();
@@ -146,7 +148,7 @@ public final class Fory implements BaseFory {
     generics = new Generics(this);
     metaStringResolver = new MetaStringResolver();
     classResolver = new ClassResolver(this);
-    if (crossLanguage) {
+    if (language != Language.JAVA) {
       xtypeResolver = new XtypeResolver(this);
     } else {
       xtypeResolver = null;
@@ -167,7 +169,7 @@ public final class Fory implements BaseFory {
 
   @Override
   public void register(Class<?> cls) {
-    if (!crossLanguage) {
+    if (language == Language.JAVA) {
       classResolver.register(cls);
     } else {
       xtypeResolver.register(cls);
@@ -176,7 +178,7 @@ public final class Fory implements BaseFory {
 
   @Override
   public void register(Class<?> cls, int id) {
-    if (!crossLanguage) {
+    if (language == Language.JAVA) {
       classResolver.register(cls, id);
     } else {
       xtypeResolver.register(cls, id);
@@ -185,7 +187,7 @@ public final class Fory implements BaseFory {
 
   @Override
   public void register(Class<?> cls, boolean createSerializer) {
-    if (!crossLanguage) {
+    if (language == Language.JAVA) {
       classResolver.register(cls, createSerializer);
     } else {
       xtypeResolver.register(cls);
@@ -194,7 +196,7 @@ public final class Fory implements BaseFory {
 
   @Override
   public void register(Class<?> cls, int id, boolean createSerializer) {
-    if (!crossLanguage) {
+    if (language == Language.JAVA) {
       classResolver.register(cls, id, createSerializer);
     } else {
       xtypeResolver.register(cls, id);
@@ -213,7 +215,7 @@ public final class Fory implements BaseFory {
   }
 
   public void register(Class<?> cls, String namespace, String typeName) {
-    if (!crossLanguage) {
+    if (language == Language.JAVA) {
       classResolver.register(cls, namespace, typeName);
     } else {
       xtypeResolver.register(cls, namespace, typeName);
@@ -222,7 +224,7 @@ public final class Fory implements BaseFory {
 
   @Override
   public <T> void registerSerializer(Class<T> type, Class<? extends Serializer> serializerClass) {
-    if (!crossLanguage) {
+    if (language == Language.JAVA) {
       classResolver.registerSerializer(type, serializerClass);
     } else {
       xtypeResolver.registerSerializer(type, serializerClass);
@@ -231,7 +233,7 @@ public final class Fory implements BaseFory {
 
   @Override
   public void registerSerializer(Class<?> type, Serializer<?> serializer) {
-    if (!crossLanguage) {
+    if (language == Language.JAVA) {
       classResolver.registerSerializer(type, serializer);
     } else {
       xtypeResolver.registerSerializer(type, serializer);
@@ -240,7 +242,7 @@ public final class Fory implements BaseFory {
 
   @Override
   public void registerSerializer(Class<?> type, Function<Fory, Serializer<?>> serializerCreator) {
-    if (!crossLanguage) {
+    if (language == Language.JAVA) {
       classResolver.registerSerializer(type, serializerCreator.apply(this));
     } else {
       xtypeResolver.registerSerializer(type, serializerCreator.apply(this));
@@ -258,7 +260,7 @@ public final class Fory implements BaseFory {
 
   public <T> Serializer<T> getSerializer(Class<T> cls) {
     Preconditions.checkNotNull(cls);
-    if (!crossLanguage) {
+    if (language == Language.JAVA) {
       return classResolver.getSerializer(cls);
     } else {
       return xtypeResolver.getClassInfo(cls).getSerializer();
@@ -299,11 +301,11 @@ public final class Fory implements BaseFory {
 
   @Override
   public MemoryBuffer serialize(MemoryBuffer buffer, Object obj, BufferCallback callback) {
-    if (crossLanguage) {
+    if (language == Language.XLANG) {
       buffer.writeInt16(MAGIC_NUMBER);
     }
     byte bitmap = BITMAP;
-    if (crossLanguage) {
+    if (language != Language.JAVA) {
       bitmap |= isCrossLanguageFlag;
     }
     if (obj == null) {
@@ -321,10 +323,11 @@ public final class Fory implements BaseFory {
       if (depth != 0) {
         throwDepthSerializationException();
       }
-      if (!crossLanguage) {
+      if (language == Language.JAVA) {
         write(buffer, obj);
       } else {
-        xwrite(buffer, obj);
+        buffer.writeByte((byte) Language.JAVA.ordinal());
+        xwriteRef(buffer, obj);
       }
       return buffer;
     } catch (StackOverflowError t) {
@@ -402,21 +405,6 @@ public final class Fory implements BaseFory {
       classResolver.writeClassInfo(buffer, classInfo);
       writeData(buffer, classInfo, obj);
     }
-    MetaContext metaContext = serializationContext.getMetaContext();
-    if (shareMeta && metaContext != null && !metaContext.writingClassDefs.isEmpty()) {
-      buffer.putInt32(startOffset, buffer.writerIndex() - startOffset - 4);
-      classResolver.writeClassDefs(buffer);
-    }
-  }
-
-  private void xwrite(MemoryBuffer buffer, Object obj) {
-    buffer.writeByte((byte) Language.JAVA.ordinal());
-    int startOffset = buffer.writerIndex();
-    boolean shareMeta = config.isMetaShareEnabled();
-    if (shareMeta) {
-      buffer.writeInt32(-1); // preserve 4-byte for meta start offsets.
-    }
-    xwriteRef(buffer, obj);
     MetaContext metaContext = serializationContext.getMetaContext();
     if (shareMeta && metaContext != null && !metaContext.writingClassDefs.isEmpty()) {
       buffer.putInt32(startOffset, buffer.writerIndex() - startOffset - 4);
@@ -673,7 +661,7 @@ public final class Fory implements BaseFory {
       // write aligned length so that later buffer copy happen on aligned offset, which will be more
       // efficient
       // TODO(chaokunyang) Remove branch when other languages support aligned varint.
-      if (!crossLanguage) {
+      if (language == Language.JAVA) {
         buffer.writeVarUint32Aligned(totalBytes);
       } else {
         buffer.writeVarUint32(totalBytes);
@@ -697,7 +685,7 @@ public final class Fory implements BaseFory {
       // write aligned length so that later buffer copy happen on aligned offset, which will be very
       // efficient
       // TODO(chaokunyang) Remove branch when other languages support aligned varint.
-      if (!crossLanguage) {
+      if (language == Language.JAVA) {
         buffer.writeVarUint32Aligned(totalBytes);
       } else {
         buffer.writeVarUint32(totalBytes);
@@ -713,7 +701,7 @@ public final class Fory implements BaseFory {
     if (inBand) {
       int size;
       // TODO(chaokunyang) Remove branch when other languages support aligned varint.
-      if (!crossLanguage) {
+      if (language == Language.JAVA) {
         size = buffer.readAlignedVarUint();
       } else {
         size = buffer.readVarUint32();
@@ -839,7 +827,7 @@ public final class Fory implements BaseFory {
       if (depth != 0) {
         throwDepthDeserializationException();
       }
-      if (crossLanguage) {
+      if (language == Language.XLANG) {
         short magicNumber = buffer.readInt16();
         assert magicNumber == MAGIC_NUMBER
             : String.format(
@@ -873,13 +861,13 @@ public final class Fory implements BaseFory {
             "outOfBandBuffers should be null when the serialized stream is "
                 + "produced with bufferCallback null.");
       }
-      if (shareMeta) {
-        readClassDefs(buffer);
-      }
       Object obj;
       if (isTargetXLang) {
         obj = xreadRef(buffer);
       } else {
+        if (shareMeta) {
+          readClassDefs(buffer);
+        }
         obj = readRef(buffer);
       }
       return obj;
@@ -1595,7 +1583,7 @@ public final class Fory implements BaseFory {
   }
 
   private void throwDepthSerializationException() {
-    String method = "Fory#" + (crossLanguage ? "x" : "") + "writeXXX";
+    String method = "Fory#" + (language != Language.JAVA ? "x" : "") + "writeXXX";
     throw new IllegalStateException(
         String.format(
             "Nested call Fory.serializeXXX is not allowed when serializing, Please use %s instead",
@@ -1603,7 +1591,7 @@ public final class Fory implements BaseFory {
   }
 
   private void throwDepthDeserializationException() {
-    String method = "Fory#" + (crossLanguage ? "x" : "") + "readXXX";
+    String method = "Fory#" + (language != Language.JAVA ? "x" : "") + "readXXX";
     throw new IllegalStateException(
         String.format(
             "Nested call Fory.deserializeXXX is not allowed when deserializing, Please use %s instead",
@@ -1672,6 +1660,10 @@ public final class Fory implements BaseFory {
 
   public ClassLoader getClassLoader() {
     return classLoader;
+  }
+
+  public Language getLanguage() {
+    return language;
   }
 
   public boolean isCrossLanguage() {

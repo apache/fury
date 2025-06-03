@@ -18,7 +18,7 @@ benchmark/target
 **/target/**/**
 java/**/.code/
 java/**/dependency-reduced-pom.xml
-**/test-output
+java/**/test-output
 **/pom.xml.versionsBackup
 **/.code/
 **/*.iml

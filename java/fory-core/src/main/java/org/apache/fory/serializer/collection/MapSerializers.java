@@ -33,6 +33,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import org.apache.fory.Fory;
 import org.apache.fory.collection.LazyMap;
+import org.apache.fory.config.Language;
 import org.apache.fory.memory.MemoryBuffer;
 import org.apache.fory.memory.Platform;
 import org.apache.fory.reflect.ReflectionUtils;
@@ -383,8 +384,8 @@ public class MapSerializers {
     public DefaultJavaMapSerializer(Fory fory, Class<T> cls) {
       super(fory, cls, false);
       Preconditions.checkArgument(
-          !fory.isCrossLanguage(),
-          "Fory cross-language default map serializer should use " + MapSerializer.class);
+          fory.getLanguage() == Language.JAVA,
+          "Python default map serializer should use " + MapSerializer.class);
       fory.getClassResolver().setSerializer(cls, this);
       Class<? extends Serializer> serializerClass =
           fory.getClassResolver()

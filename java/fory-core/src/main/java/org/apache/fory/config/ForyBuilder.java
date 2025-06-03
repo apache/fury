@@ -95,9 +95,6 @@ public final class ForyBuilder {
    */
   public ForyBuilder withLanguage(Language language) {
     this.language = language;
-    if (language != Language.JAVA) {
-      codeGenEnabled = false;
-    }
     return this;
   }
 

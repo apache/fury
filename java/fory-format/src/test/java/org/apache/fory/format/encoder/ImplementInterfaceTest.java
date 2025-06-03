@@ -37,10 +37,6 @@ public class ImplementInterfaceTest {
     NestedType getNested();
 
     PoisonPill getPoison();
-
-    static PoisonPill builder() {
-      return new PoisonPill();
-    }
   }
 
   public interface NestedType {

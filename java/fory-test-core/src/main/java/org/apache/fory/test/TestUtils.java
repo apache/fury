@@ -20,15 +20,11 @@
 package org.apache.fory.test;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
-import org.testng.SkipException;
 
 public class TestUtils {
   public static String random(int size, int rand) {
@@ -75,32 +71,7 @@ public class TestUtils {
         return false;
       }
     } catch (Exception e) {
-      throw new RuntimeException(
-          "Error executing command " + String.join(" ", command) + ": " + e.getMessage(), e);
-    }
-  }
-
-  public static void verifyPyforyInstalled() {
-    // Don't skip in CI, fail if something goes wrong instead
-    if (System.getenv("FORY_CI") != null) {
-      return;
-    }
-    try {
-      if (executeCommand(
-          Arrays.asList(
-              "python",
-              "-c",
-              "import importlib, sys; sys.exit(0 if importlib.util.find_spec(\"pyfory\") is None else 1)"),
-          10,
-          Collections.emptyMap())) {
-        throw new SkipException("pyfory not installed");
-      }
-    } catch (RuntimeException e) {
-      if (e.getCause() instanceof IOException
-          && e.getMessage().contains("No such file or directory")) {
-        throw new SkipException("Python not installed or not found in PATH");
-      }
-      throw e;
+      throw new RuntimeException("Error executing command " + String.join(" ", command), e);
     }
   }
 }
