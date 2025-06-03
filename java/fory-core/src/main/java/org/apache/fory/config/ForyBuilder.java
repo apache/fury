@@ -88,6 +88,7 @@ public final class ForyBuilder {
   MetaCompressor metaCompressor = new DeflaterMetaCompressor();
   ExceptionLogMode exceptionLogMode = ExceptionLogMode.ALL_PRINT;
   int logSampleStep;
+
   public ForyBuilder() {}
 
   /**
@@ -145,19 +146,19 @@ public final class ForyBuilder {
     this.serializeEnumByName = serializeEnumByName;
     return this;
   }
-    /** exception log level
-     * choose the log level, print the error message.
-     * */
-    public ForyBuilder withExceptionLogMode(ExceptionLogMode exceptionLogMode) {
-        this.exceptionLogMode = exceptionLogMode;
-        return this;
-    }
 
-    public ForyBuilder withExceptionLogMode(ExceptionLogMode exceptionLogMode, int logSampleStep) {
-        this.exceptionLogMode = exceptionLogMode;
-        this.logSampleStep = logSampleStep;
-        return this;
-    }
+  /** exception log level choose the log level, print the error message. */
+  public ForyBuilder withExceptionLogMode(ExceptionLogMode exceptionLogMode) {
+    this.exceptionLogMode = exceptionLogMode;
+    return this;
+  }
+
+  public ForyBuilder withExceptionLogMode(ExceptionLogMode exceptionLogMode, int logSampleStep) {
+    this.exceptionLogMode = exceptionLogMode;
+    this.logSampleStep = logSampleStep;
+    return this;
+  }
+
   /**
    * Whether ignore reference tracking of all time types registered in {@link TimeSerializers} when
    * ref tracking is enabled.

@@ -63,8 +63,8 @@ public class Config implements Serializable {
   private final boolean deserializeNonexistentEnumValueAsNull;
   private final boolean serializeEnumByName;
   private final int bufferSizeLimitBytes;
-    private final ExceptionLogMode exceptionLogMode;
-    private final int logSampleStep;
+  private final ExceptionLogMode exceptionLogMode;
+  private final int logSampleStep;
 
   public Config(ForyBuilder builder) {
     name = builder.name;
@@ -104,12 +104,15 @@ public class Config implements Serializable {
     exceptionLogMode = builder.exceptionLogMode;
     logSampleStep = builder.logSampleStep;
   }
-    public ExceptionLogMode getExceptionLogMode() {
-        return exceptionLogMode;
-    }
-    public int getLogSampleStep() {
-        return logSampleStep;
-    }
+
+  public ExceptionLogMode getExceptionLogMode() {
+    return exceptionLogMode;
+  }
+
+  public int getLogSampleStep() {
+    return logSampleStep;
+  }
+
   /** Returns the name for Fory serialization. */
   public String getName() {
     return name;

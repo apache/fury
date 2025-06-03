@@ -1,4 +1,5 @@
 package org.apache.fory.config;
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -19,7 +20,7 @@ package org.apache.fory.config;
  */
 
 public enum ExceptionLogMode {
-    ALL_PRINT,
-    SAMPLE_PRINT,
-    NONE_PRINT
+  ALL_PRINT,
+  SAMPLE_PRINT,
+  NONE_PRINT
 }
