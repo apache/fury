@@ -88,6 +88,7 @@ public final class FuryBuilder {
   int bufferSizeLimitBytes = 128 * 1024;
   MetaCompressor metaCompressor = new DeflaterMetaCompressor();
   ExceptionLogMode exceptionLogMode = ExceptionLogMode.ALL_PRINT;
+  int logSampleStep = 5;
 
   public FuryBuilder() {}
 
@@ -150,6 +151,12 @@ public final class FuryBuilder {
   public FuryBuilder exceptionLogMode(ExceptionLogMode exceptionLogMode) {
     this.exceptionLogMode = exceptionLogMode;
     return this;
+  }
+
+  public FuryBuilder exceptionLogMode(ExceptionLogMode exceptionLogMode, int logSampleStep) {
+      this.exceptionLogMode = exceptionLogMode;
+      this.logSampleStep = logSampleStep;
+      return this;
   }
 
   /**

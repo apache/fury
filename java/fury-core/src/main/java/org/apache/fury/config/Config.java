@@ -65,6 +65,7 @@ public class Config implements Serializable {
   private final boolean serializeEnumByName;
   private final int bufferSizeLimitBytes;
   private final ExceptionLogMode exceptionLogMode;
+  private final int logSampleStep;
 
   public Config(FuryBuilder builder) {
     name = builder.name;
@@ -102,6 +103,7 @@ public class Config implements Serializable {
     serializeEnumByName = builder.serializeEnumByName;
     bufferSizeLimitBytes = builder.bufferSizeLimitBytes;
     exceptionLogMode = builder.exceptionLogMode;
+    logSampleStep = builder.logSampleStep;
   }
 
   /** Returns the name for Fury serialization. */
@@ -149,6 +151,9 @@ public class Config implements Serializable {
 
   public ExceptionLogMode getExceptionLogMode() {
     return exceptionLogMode;
+  }
+  public int getLogSampleStep() {
+    return logSampleStep;
   }
 
   /**

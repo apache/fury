@@ -1665,6 +1665,9 @@ public final class Fury implements BaseFury {
   public ExceptionLogMode getExceptionLogMode() {
     return config.getExceptionLogMode();
   }
+  public int getLogSampleStep() {
+    return config.getLogSampleStep();
+  }
 
   public static FuryBuilder builder() {
     return new FuryBuilder();

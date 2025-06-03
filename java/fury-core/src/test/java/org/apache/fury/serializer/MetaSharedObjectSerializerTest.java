@@ -32,7 +32,7 @@ public class MetaSharedObjectSerializerTest extends FuryTestBase {
   public void testIgnoreTypeInconsistentSerializer()
       throws InstantiationException, IllegalAccessException {
     String codeA =
-        "public class TestA {"
+        "public class org.apache.fury.TestA {"
             + "    private int a = 1;"
             + "    private Long b = 2L;"
             + "    private String c = \"test\";"
@@ -40,15 +40,15 @@ public class MetaSharedObjectSerializerTest extends FuryTestBase {
             + "}";
 
     String codeB =
-        "public class TestA {"
+        "public class org.apache.fury.TestA {"
             + "    private Integer a ;"
             + "    private int b = 30;"
             + "    private String c = \"test\";"
             + "    private String d;"
             + "}";
 
-    Class<?> cls1 = JaninoUtils.compileClass(getClass().getClassLoader(), "", "TestA", codeA);
-    Class<?> cls2 = JaninoUtils.compileClass(getClass().getClassLoader(), "", "TestA", codeB);
+    Class<?> cls1 = JaninoUtils.compileClass(getClass().getClassLoader(), "", "org.apache.fury.TestA", codeA);
+    Class<?> cls2 = JaninoUtils.compileClass(getClass().getClassLoader(), "", "org.apache.fury.TestA", codeB);
     ThreadSafeFury fury1 =
         Fury.builder()
             .withRefTracking(true)
