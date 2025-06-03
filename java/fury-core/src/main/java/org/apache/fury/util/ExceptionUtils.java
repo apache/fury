@@ -75,8 +75,7 @@ public class ExceptionUtils {
         case NONE_PRINT:
           return new ArrayList<>();
         case SAMPLE_PRINT:
-            return systematicSample(objects, fury.getLogSampleStep());
-//            return objects.subList(0, 10);
+            return systematicSample(objects, Math.max(1, fury.getLogSampleStep()));
         default:
           return objects;
       }
