@@ -74,7 +74,7 @@ from pyfory.type import (
 )
 from pyfory._fory import (
     DYNAMIC_TYPE_ID,
-    # preserve 0 as flag for class id not set in TypeInfo`
+    # preserve 0 as flag for type id not set in TypeInfo`
     NO_TYPE_ID,
 )
 
@@ -130,7 +130,7 @@ class TypeResolver:
         "_type_id_counter",
         "_types_info",
         "_hash_to_metastring",
-        "_metastr_to_class",
+        "_metastr_to_type",
         "_hash_to_typeinfo",
         "_dynamic_id_to_typeinfo_list",
         "_dynamic_id_to_metastr_list",
@@ -154,7 +154,7 @@ class TypeResolver:
         self.language = fory.language
         self.require_registration = fory.require_type_registration
         self._metastr_to_str = dict()
-        self._metastr_to_class = dict()
+        self._metastr_to_type = dict()
         self._hash_to_metastring = dict()
         self._hash_to_typeinfo = dict()
         self._dynamic_written_metastr = []
@@ -297,7 +297,7 @@ class TypeResolver:
         serializer=None,
         internal=False,
     ):
-        """Register class with given type id or typename. If typename is not None, it will be used for
+        """Register type with given type id or typename. If typename is not None, it will be used for
         cross-language serialization."""
         if serializer is not None and not isinstance(serializer, Serializer):
             try:
@@ -315,7 +315,7 @@ class TypeResolver:
                 f"type name {typename} and id {type_id} should not be set at the same time"
             )
         if type_id not in {0, None}:
-            # multiple class can have same tpe id
+            # multiple type can have same tpe id
             if type_id in self._type_id_to_typeinfo and cls in self._types_info:
                 raise TypeError(f"{cls} registered already")
         elif cls in self._types_info:
@@ -456,7 +456,7 @@ class TypeResolver:
         """
         Returns
         -------
-            Returns or create serializer for the provided class
+            Returns or create serializer for the provided type
         """
         return self.get_typeinfo(cls).serializer
 
@@ -558,11 +558,9 @@ class TypeResolver:
                 typename = type_metabytes.decode(self.typename_decoder)
                 typeinfo = self._named_type_to_typeinfo.get((ns, typename))
                 if typeinfo is not None:
-                    self._ns_type_to_typeinfo[
-                        (ns_metabytes, type_metabytes)
-                    ] = typeinfo
+                    self._ns_type_to_typeinfo[(ns_metabytes, type_metabytes)] = typeinfo
                     return typeinfo
-                # TODO(chaokunyang) generate a dynamic class and serializer
+                # TODO(chaokunyang) generate a dynamic type and serializer
                 #  when meta share is enabled.
                 name = ns + "." + typename if ns else typename
                 raise TypeUnregisteredError(f"{name} not registered")

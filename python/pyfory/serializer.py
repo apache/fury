@@ -401,7 +401,7 @@ class DataClassSerializer(Serializer):
         if hash_ != self._hash:
             raise TypeNotCompatibleError(
                 f"Hash {hash_} is not consistent with {self._hash} "
-                f"for class {self.type_}",
+                f"for type {self.type_}",
             )
         obj = self.type_.__new__(self.type_)
         self.fory.ref_resolver.reference(obj)

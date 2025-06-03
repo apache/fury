@@ -221,7 +221,7 @@ cdef class MapRefResolver:
 
 cdef int8_t USE_TYPE_NAME = 0
 cdef int8_t USE_TYPE_ID = 1
-# preserve 0 as flag for class id not set in TypeInfo`
+# preserve 0 as flag for type id not set in TypeInfo`
 cdef int8_t NO_TYPE_ID = 0
 cdef int8_t DEFAULT_DYNAMIC_WRITE_META_STR_ID = fmod.DEFAULT_DYNAMIC_WRITE_META_STR_ID
 cdef int8_t INT64_TYPE_ID = fmod.INT64_TYPE_ID
@@ -480,7 +480,7 @@ cdef class TypeResolver:
         """
         Returns
         -------
-            Returns or create serializer for the provided class
+            Returns or create serializer for the provided type
         """
         return self.get_typeinfo(cls).serializer
 
@@ -579,11 +579,11 @@ cdef class Fory:
     ):
         """
        :param require_type_registration:
-        Whether to require registering classes for serialization, enabled by default.
-         If disabled, unknown insecure classes can be deserialized, which can be
-         insecure and cause remote code execution attack if the classes
+        Whether to require registering types for serialization, enabled by default.
+         If disabled, unknown insecure types can be deserialized, which can be
+         insecure and cause remote code execution attack if the types
          `__new__`/`__init__`/`__eq__`/`__hash__` method contain malicious code.
-         Do not disable class registration if you can't ensure your environment are
+         Do not disable type registration if you can't ensure your environment are
          *indeed secure*. We are not responsible for security risks if
          you disable this option.
        """
@@ -602,7 +602,7 @@ cdef class Fory:
         self.buffer = Buffer.allocate(32)
         if not require_type_registration:
             warnings.warn(
-                "Type registration is disabled, unknown classes can be deserialized "
+                "Type registration is disabled, unknown types can be deserialized "
                 "which may be insecure.",
                 RuntimeWarning,
                 stacklevel=2,

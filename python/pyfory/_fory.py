@@ -123,9 +123,9 @@ class Fory:
     ):
         """
         :param require_type_registration:
-         Whether to require registering classes for serialization, enabled by default.
-          If disabled, unknown insecure classes can be deserialized, which can be
-          insecure and cause remote code execution attack if the classes
+         Whether to require registering types for serialization, enabled by default.
+          If disabled, unknown insecure types can be deserialized, which can be
+          insecure and cause remote code execution attack if the types
           `__new__`/`__init__`/`__eq__`/`__hash__` method contain malicious code.
           Do not disable type registration if you can't ensure your environment are
           *indeed secure*. We are not responsible for security risks if
@@ -151,7 +151,7 @@ class Fory:
         self.buffer = Buffer.allocate(32)
         if not require_type_registration:
             warnings.warn(
-                "Type registration is disabled, unknown classes can be deserialized "
+                "Type registration is disabled, unknown types can be deserialized "
                 "which may be insecure.",
                 RuntimeWarning,
                 stacklevel=2,
@@ -533,8 +533,8 @@ class _PicklerStub:
     def dump(self, o):
         raise ValueError(
             f"Type {type(o)} is not registered, "
-            f"pickle is not allowed when class registration enabled, Please register"
-            f"the class or pass unsupported_callback"
+            f"pickle is not allowed when type registration enabled, Please register"
+            f"the type or pass unsupported_callback"
         )
 
     def clear_memo(self):
@@ -544,6 +544,6 @@ class _PicklerStub:
 class _UnpicklerStub:
     def load(self):
         raise ValueError(
-            "pickle is not allowed when class registration enabled, Please register"
-            "the class or pass unsupported_callback"
+            "pickle is not allowed when type registration enabled, Please register"
+            "the type or pass unsupported_callback"
         )

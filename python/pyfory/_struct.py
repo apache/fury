@@ -220,7 +220,7 @@ class ComplexObjectSerializer(Serializer):
         if hash_ != self._hash:
             raise TypeNotCompatibleError(
                 f"Hash {hash_} is not consistent with {self._hash} "
-                f"for class {self.type_}",
+                f"for type {self.type_}",
             )
         obj = self.type_.__new__(self.type_)
         self.fory.ref_resolver.reference(obj)
@@ -259,9 +259,7 @@ class StructHashVisitor(TypeVisitor):
         if typeinfo is not None:
             hash_value = typeinfo.type_id
             if TypeId.is_namespaced_type(typeinfo.type_id):
-                hash_value = compute_string_hash(
-                    typeinfo.namespace + typeinfo.typename
-                )
+                hash_value = compute_string_hash(typeinfo.namespace + typeinfo.typename)
         self._hash = self._compute_field_hash(self._hash, hash_value)
 
     def visit_other(self, field_name, type_, types_path=None):
