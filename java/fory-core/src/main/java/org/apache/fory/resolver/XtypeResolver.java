@@ -276,7 +276,6 @@ public class XtypeResolver implements TypeResolver {
     if (!serializerClass.getPackage().getName().startsWith("org.apache.fory")) {
       ValidateSerializer.validate(type, serializerClass);
     }
-    ValidateSerializer.validate(type, serializerClass);
     classInfo.serializer = Serializers.newSerializer(fory, type, serializerClass);
   }
 
