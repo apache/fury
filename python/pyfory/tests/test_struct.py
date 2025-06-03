@@ -93,7 +93,7 @@ class ChildClass1(SuperClass1):
     f3: Dict[str, pyfory.Float64Type] = None
 
 
-def test_require_class_registration():
+def test_require_type_registration():
     fory = Fory(language=Language.PYTHON, ref_tracking=True)
     obj = ChildClass1(f1="a", f2=-10, f3={"a": -10.0, "b": 1 / 3})
     with pytest.raises(TypeUnregisteredError):
@@ -105,11 +105,11 @@ def test_inheritance():
     print(type_hints)
     assert type_hints.keys() == {"f1", "f2", "f3"}
     fory = Fory(
-        language=Language.PYTHON, ref_tracking=True, require_class_registration=False
+        language=Language.PYTHON, ref_tracking=True, require_type_registration=False
     )
     obj = ChildClass1(f1="a", f2=-10, f3={"a": -10.0, "b": 1 / 3})
     assert ser_de(fory, obj) == obj
     assert (
-        type(fory.class_resolver.get_serializer(ChildClass1))
+        type(fory.type_resolver.get_serializer(ChildClass1))
         == pyfory.DataClassSerializer
     )

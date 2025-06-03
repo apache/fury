@@ -229,7 +229,7 @@ COLLECTION_NOT_SAME_TYPE = 0b1000
 
 class CollectionSerializer(Serializer):
     __slots__ = (
-        "class_resolver",
+        "type_resolver",
         "ref_resolver",
         "elem_serializer",
         "is_py",
@@ -240,16 +240,16 @@ class CollectionSerializer(Serializer):
 
     def __init__(self, fory, type_, elem_serializer=None):
         super().__init__(fory, type_)
-        self.class_resolver = fory.class_resolver
+        self.type_resolver = fory.type_resolver
         self.ref_resolver = fory.ref_resolver
         self.elem_serializer = elem_serializer
         if elem_serializer is None:
             self.elem_type = None
-            self.elem_typeinfo = self.class_resolver.get_classinfo(None)
+            self.elem_typeinfo = self.type_resolver.get_typeinfo(None)
             self.elem_tracking_ref = -1
         else:
             self.elem_type = elem_serializer.type_
-            self.elem_typeinfo = fory.class_resolver.get_classinfo(self.elem_type)
+            self.elem_typeinfo = fory.type_resolver.get_typeinfo(self.elem_type)
             self.elem_tracking_ref = int(elem_serializer.need_to_write_ref)
         self.is_py = fory.is_py
 
@@ -271,7 +271,7 @@ class CollectionSerializer(Serializer):
                     collect_flag |= COLLECTION_NOT_SAME_TYPE
                     has_different_type = True
             if not has_different_type and elem_type is not None:
-                elem_typeinfo = self.class_resolver.get_classinfo(elem_type)
+                elem_typeinfo = self.type_resolver.get_typeinfo(elem_type)
         else:
             for s in value:
                 if s is None:
@@ -291,49 +291,49 @@ class CollectionSerializer(Serializer):
             not has_different_type
             and (collect_flag & COLLECTION_NOT_DECL_ELEMENT_TYPE) != 0
         ):
-            self.class_resolver.write_typeinfo(buffer, elem_typeinfo)
+            self.type_resolver.write_typeinfo(buffer, elem_typeinfo)
         return collect_flag, elem_typeinfo
 
     def write(self, buffer, value):
         if len(value) == 0:
             buffer.write_varuint32(0)
             return
-        collect_flag, classinfo = self.write_header(buffer, value)
+        collect_flag, typeinfo = self.write_header(buffer, value)
         if (collect_flag & COLLECTION_NOT_SAME_TYPE) == 0:
             if (collect_flag & COLLECTION_TRACKING_REF) == 0:
-                self._write_same_type_no_ref(buffer, value, classinfo)
+                self._write_same_type_no_ref(buffer, value, typeinfo)
             else:
-                self._write_same_type_ref(buffer, value, classinfo)
+                self._write_same_type_ref(buffer, value, typeinfo)
         else:
             self._write_different_types(buffer, value)
 
-    def _write_same_type_no_ref(self, buffer, value, classinfo):
+    def _write_same_type_no_ref(self, buffer, value, typeinfo):
         if self.is_py:
             for s in value:
-                classinfo.serializer.write(buffer, s)
+                typeinfo.serializer.write(buffer, s)
         else:
             for s in value:
-                classinfo.serializer.xwrite(buffer, s)
+                typeinfo.serializer.xwrite(buffer, s)
 
-    def _write_same_type_ref(self, buffer, value, classinfo):
+    def _write_same_type_ref(self, buffer, value, typeinfo):
         if self.is_py:
             for s in value:
                 if not self.ref_resolver.write_ref_or_null(buffer, s):
-                    classinfo.serializer.write(buffer, s)
+                    typeinfo.serializer.write(buffer, s)
         else:
             for s in value:
                 if not self.ref_resolver.write_ref_or_null(buffer, s):
-                    classinfo.serializer.xwrite(buffer, s)
+                    typeinfo.serializer.xwrite(buffer, s)
 
     def _write_different_types(self, buffer, value):
         for s in value:
             if not self.ref_resolver.write_ref_or_null(buffer, s):
-                classinfo = self.class_resolver.get_classinfo(type(s))
-                self.class_resolver.write_typeinfo(buffer, classinfo)
+                typeinfo = self.type_resolver.get_typeinfo(type(s))
+                self.type_resolver.write_typeinfo(buffer, typeinfo)
                 if self.is_py:
-                    classinfo.serializer.write(buffer, s)
+                    typeinfo.serializer.write(buffer, s)
                 else:
-                    classinfo.serializer.xwrite(buffer, s)
+                    typeinfo.serializer.xwrite(buffer, s)
 
     def read(self, buffer):
         len_ = buffer.read_varuint32()
@@ -343,13 +343,13 @@ class CollectionSerializer(Serializer):
         collect_flag = buffer.read_int8()
         if (collect_flag & COLLECTION_NOT_SAME_TYPE) == 0:
             if collect_flag & COLLECTION_NOT_DECL_ELEMENT_TYPE != 0:
-                classinfo = self.class_resolver.read_typeinfo(buffer)
+                typeinfo = self.type_resolver.read_typeinfo(buffer)
             else:
-                classinfo = self.elem_typeinfo
+                typeinfo = self.elem_typeinfo
             if (collect_flag & COLLECTION_TRACKING_REF) == 0:
-                self._read_same_type_no_ref(buffer, len_, collection_, classinfo)
+                self._read_same_type_no_ref(buffer, len_, collection_, typeinfo)
             else:
-                self._read_same_type_ref(buffer, len_, collection_, classinfo)
+                self._read_same_type_ref(buffer, len_, collection_, typeinfo)
         else:
             self._read_different_types(buffer, len_, collection_)
         return collection_
@@ -360,24 +360,24 @@ class CollectionSerializer(Serializer):
     def _add_element(self, collection_, element):
         raise NotImplementedError
 
-    def _read_same_type_no_ref(self, buffer, len_, collection_, classinfo):
+    def _read_same_type_no_ref(self, buffer, len_, collection_, typeinfo):
         if self.is_py:
             for _ in range(len_):
-                self._add_element(collection_, classinfo.serializer.read(buffer))
+                self._add_element(collection_, typeinfo.serializer.read(buffer))
         else:
             for _ in range(len_):
-                self._add_element(collection_, classinfo.serializer.xread(buffer))
+                self._add_element(collection_, typeinfo.serializer.xread(buffer))
 
-    def _read_same_type_ref(self, buffer, len_, collection_, classinfo):
+    def _read_same_type_ref(self, buffer, len_, collection_, typeinfo):
         for _ in range(len_):
             ref_id = self.ref_resolver.try_preserve_ref_id(buffer)
             if ref_id < NOT_NULL_VALUE_FLAG:
                 obj = self.ref_resolver.get_read_object()
             else:
                 if self.is_py:
-                    obj = classinfo.serializer.read(buffer)
+                    obj = typeinfo.serializer.read(buffer)
                 else:
-                    obj = classinfo.serializer.xread(buffer)
+                    obj = typeinfo.serializer.xread(buffer)
                 self.ref_resolver.set_read_object(ref_id, obj)
             self._add_element(collection_, obj)
 
@@ -386,7 +386,7 @@ class CollectionSerializer(Serializer):
             self._add_element(
                 collection_,
                 get_next_element(
-                    buffer, self.ref_resolver, self.class_resolver, self.is_py
+                    buffer, self.ref_resolver, self.type_resolver, self.is_py
                 ),
             )
 
@@ -433,15 +433,15 @@ class SetSerializer(CollectionSerializer):
         collection_.add(element)
 
 
-def get_next_element(buffer, ref_resolver, class_resolver, is_py):
+def get_next_element(buffer, ref_resolver, type_resolver, is_py):
     ref_id = ref_resolver.try_preserve_ref_id(buffer)
     if ref_id < NOT_NULL_VALUE_FLAG:
         return ref_resolver.get_read_object()
-    classinfo = class_resolver.read_typeinfo(buffer)
+    typeinfo = type_resolver.read_typeinfo(buffer)
     if is_py:
-        obj = classinfo.serializer.read(buffer)
+        obj = typeinfo.serializer.read(buffer)
     else:
-        obj = classinfo.serializer.xread(buffer)
+        obj = typeinfo.serializer.xread(buffer)
     ref_resolver.set_read_object(ref_id, obj)
     return obj
 
@@ -449,7 +449,7 @@ def get_next_element(buffer, ref_resolver, class_resolver, is_py):
 class MapSerializer(Serializer):
     def __init__(self, fory, type_, key_serializer=None, value_serializer=None):
         super().__init__(fory, type_)
-        self.class_resolver = fory.class_resolver
+        self.type_resolver = fory.type_resolver
         self.ref_resolver = fory.ref_resolver
         self.key_serializer = key_serializer
         self.value_serializer = value_serializer
@@ -461,7 +461,7 @@ class MapSerializer(Serializer):
         if length == 0:
             return
         fory = self.fory
-        class_resolver = fory.class_resolver
+        type_resolver = fory.type_resolver
         ref_resolver = fory.ref_resolver
         key_serializer = self.key_serializer
         value_serializer = self.value_serializer
@@ -521,16 +521,16 @@ class MapSerializer(Serializer):
             if key_serializer is not None:
                 chunk_header |= KEY_DECL_TYPE
             else:
-                key_classinfo = self.class_resolver.get_classinfo(key_cls)
-                class_resolver.write_typeinfo(buffer, key_classinfo)
-                key_serializer = key_classinfo.serializer
+                key_typeinfo = self.type_resolver.get_typeinfo(key_cls)
+                type_resolver.write_typeinfo(buffer, key_typeinfo)
+                key_serializer = key_typeinfo.serializer
 
             if value_serializer is not None:
                 chunk_header |= VALUE_DECL_TYPE
             else:
-                value_classinfo = self.class_resolver.get_classinfo(value_cls)
-                class_resolver.write_typeinfo(buffer, value_classinfo)
-                value_serializer = value_classinfo.serializer
+                value_typeinfo = self.type_resolver.get_typeinfo(value_cls)
+                type_resolver.write_typeinfo(buffer, value_typeinfo)
+                value_serializer = value_typeinfo.serializer
 
             key_write_ref = (
                 key_serializer.need_to_write_ref if key_serializer else False
@@ -575,7 +575,7 @@ class MapSerializer(Serializer):
     def read(self, buffer):
         fory = self.fory
         ref_resolver = self.ref_resolver
-        class_resolver = self.class_resolver
+        type_resolver = self.type_resolver
         size = buffer.read_varuint32()
         map_ = {}
         ref_resolver.reference(map_)
@@ -636,9 +636,9 @@ class MapSerializer(Serializer):
             value_is_declared_type = (chunk_header & VALUE_DECL_TYPE) != 0
             chunk_size = buffer.read_uint8()
             if not key_is_declared_type:
-                key_serializer = class_resolver.read_typeinfo(buffer).serializer
+                key_serializer = type_resolver.read_typeinfo(buffer).serializer
             if not value_is_declared_type:
-                value_serializer = class_resolver.read_typeinfo(buffer).serializer
+                value_serializer = type_resolver.read_typeinfo(buffer).serializer
             for i in range(chunk_size):
                 if track_key_ref:
                     ref_id = ref_resolver.try_preserve_ref_id(buffer)

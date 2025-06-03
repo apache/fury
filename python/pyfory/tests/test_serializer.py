@@ -52,7 +52,7 @@ def test_float():
     fory = Fory(language=Language.PYTHON, ref_tracking=True)
     assert ser_de(fory, -1.0) == -1.0
     assert ser_de(fory, 1 / 3) == 1 / 3
-    serializer = fory.class_resolver.get_serializer(float)
+    serializer = fory.type_resolver.get_serializer(float)
     assert type(serializer) is pyfory.Float64Serializer
 
 
@@ -130,18 +130,18 @@ def test_big_chunk_dict(track_ref):
 @pytest.mark.parametrize("language", [Language.XLANG, Language.PYTHON])
 def test_basic_serializer(language):
     fory = Fory(language=language, ref_tracking=True)
-    classinfo = fory.class_resolver.get_classinfo(datetime.datetime)
+    typeinfo = fory.type_resolver.get_typeinfo(datetime.datetime)
     assert isinstance(
-        classinfo.serializer, (TimestampSerializer, _serialization.TimestampSerializer)
+        typeinfo.serializer, (TimestampSerializer, _serialization.TimestampSerializer)
     )
     if language == Language.XLANG:
-        assert classinfo.type_id == TypeId.TIMESTAMP
-    classinfo = fory.class_resolver.get_classinfo(datetime.date)
+        assert typeinfo.type_id == TypeId.TIMESTAMP
+    typeinfo = fory.type_resolver.get_typeinfo(datetime.date)
     assert isinstance(
-        classinfo.serializer, (DateSerializer, _serialization.DateSerializer)
+        typeinfo.serializer, (DateSerializer, _serialization.DateSerializer)
     )
     if language == Language.XLANG:
-        assert classinfo.type_id == TypeId.LOCAL_DATE
+        assert typeinfo.type_id == TypeId.LOCAL_DATE
     assert ser_de(fory, True) is True
     assert ser_de(fory, False) is False
     assert ser_de(fory, -1) == -1
@@ -256,7 +256,7 @@ class RefTestClass2:
 def test_ref_cleanup(language):
     # FIXME this can't simulate the case where new objects are allocated on memory
     #  address of released tmp object.
-    fory = Fory(language=language, ref_tracking=True, require_class_registration=False)
+    fory = Fory(language=language, ref_tracking=True, require_type_registration=False)
     # TODO support Language.XLANG, current unpickler will error for xlang,
     o1 = RefTestClass1()
     o2 = RefTestClass2(f1=o1)
@@ -273,7 +273,7 @@ def test_ref_cleanup(language):
 
 @pytest.mark.parametrize("language", [Language.XLANG, Language.PYTHON])
 def test_array_serializer(language):
-    fory = Fory(language=language, ref_tracking=True, require_class_registration=False)
+    fory = Fory(language=language, ref_tracking=True, require_type_registration=False)
     for typecode in PyArraySerializer.typecode_dict.keys():
         arr = array.array(typecode, list(range(10)))
         new_arr = ser_de(fory, arr)
@@ -410,7 +410,7 @@ class RegisterClass:
 
 def test_register_py_serializer():
     fory = Fory(
-        language=Language.PYTHON, ref_tracking=True, require_class_registration=False
+        language=Language.PYTHON, ref_tracking=True, require_type_registration=False
     )
 
     class Serializer(pyfory.Serializer):
@@ -464,7 +464,7 @@ def test_register_type():
 
 def test_pickle_fallback():
     fory = Fory(
-        language=Language.PYTHON, ref_tracking=True, require_class_registration=False
+        language=Language.PYTHON, ref_tracking=True, require_type_registration=False
     )
     o1 = [1, True, np.dtype(np.int32)]
     data1 = fory.serialize(o1)
@@ -478,7 +478,7 @@ def test_pickle_fallback():
 
 def test_unsupported_callback():
     fory = Fory(
-        language=Language.PYTHON, ref_tracking=True, require_class_registration=False
+        language=Language.PYTHON, ref_tracking=True, require_type_registration=False
     )
 
     def f1(x):
@@ -534,7 +534,7 @@ def test_enum():
     assert ser_de(fory, EnumClass.E2) == EnumClass.E2
     assert ser_de(fory, EnumClass.E3) == EnumClass.E3
     assert ser_de(fory, EnumClass.E4) == EnumClass.E4
-    assert isinstance(fory.class_resolver.get_serializer(EnumClass), EnumSerializer)
+    assert isinstance(fory.type_resolver.get_serializer(EnumClass), EnumSerializer)
 
 
 def test_duplicate_serialize():
@@ -562,7 +562,7 @@ def test_cache_serializer():
 
 def test_pandas_range_index():
     fory = Fory(
-        language=Language.PYTHON, ref_tracking=True, require_class_registration=False
+        language=Language.PYTHON, ref_tracking=True, require_type_registration=False
     )
     fory.register_type(
         pd.RangeIndex, serializer=pyfory.PandasRangeIndexSerializer(fory)
@@ -585,7 +585,7 @@ class PyDataClass1:
 
 def test_py_serialize_dataclass():
     fory = Fory(
-        language=Language.PYTHON, ref_tracking=True, require_class_registration=False
+        language=Language.PYTHON, ref_tracking=True, require_type_registration=False
     )
     obj1 = PyDataClass1(
         f1=1, f2=-2.0, f3="abc", f4=True, f5="xyz", f6=[1, 2], f7={"k1": "v1"}
@@ -597,7 +597,7 @@ def test_py_serialize_dataclass():
 
 def test_function():
     fory = Fory(
-        language=Language.PYTHON, ref_tracking=True, require_class_registration=False
+        language=Language.PYTHON, ref_tracking=True, require_type_registration=False
     )
     c = fory.deserialize(fory.serialize(lambda x: x * 2))
     assert c(2) == 4
@@ -622,7 +622,7 @@ class MapFields:
 
 def test_map_fields_chunk_serializer():
     fory = Fory(
-        language=Language.PYTHON, ref_tracking=True, require_class_registration=False
+        language=Language.PYTHON, ref_tracking=True, require_type_registration=False
     )
 
     simple_dict = {"a": 1, "b": 2, "c": 3}

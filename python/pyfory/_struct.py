@@ -21,7 +21,7 @@ import logging
 import typing
 
 from pyfory.buffer import Buffer
-from pyfory.error import ClassNotCompatibleError
+from pyfory.error import TypeNotCompatibleError
 from pyfory.serializer import (
     ListSerializer,
     MapSerializer,
@@ -96,10 +96,10 @@ class ComplexTypeVisitor(TypeVisitor):
 
     def visit_other(self, field_name, type_, types_path=None):
         if is_subclass(type_, enum.Enum):
-            return self.fory.class_resolver.get_serializer(type_)
+            return self.fory.type_resolver.get_serializer(type_)
         if type_ not in basic_types and not is_py_array_type(type_):
             return None
-        serializer = self.fory.class_resolver.get_serializer(type_)
+        serializer = self.fory.type_resolver.get_serializer(type_)
         assert not isinstance(serializer, (PickleSerializer,))
         return serializer
 
@@ -117,7 +117,7 @@ _UNKNOWN_TYPE_ID = -1
 _time_types = {datetime.date, datetime.datetime, datetime.timedelta}
 
 
-def _sort_fields(class_resolver, field_names, serializers):
+def _sort_fields(type_resolver, field_names, serializers):
     boxed_types = []
     collection_types = []
     map_types = []
@@ -130,7 +130,7 @@ def _sort_fields(class_resolver, field_names, serializers):
         else:
             type_ids.append(
                 (
-                    class_resolver.get_classinfo(serializer.type_).type_id,
+                    type_resolver.get_typeinfo(serializer.type_).type_id,
                     serializer,
                     field_name,
                 )
@@ -185,7 +185,7 @@ class ComplexObjectSerializer(Serializer):
             serializer = infer_field(key, self._type_hints[key], visitor, types_path=[])
             self._serializers[index] = serializer
         self._serializers, self._field_names = _sort_fields(
-            fory.class_resolver, self._field_names, self._serializers
+            fory.type_resolver, self._field_names, self._serializers
         )
 
         from pyfory import Language
@@ -218,7 +218,7 @@ class ComplexObjectSerializer(Serializer):
             self._hash = _get_hash(self.fory, self._field_names, self._type_hints)
         hash_ = buffer.read_int32()
         if hash_ != self._hash:
-            raise ClassNotCompatibleError(
+            raise TypeNotCompatibleError(
                 f"Hash {hash_} is not consistent with {self._hash} "
                 f"for class {self.type_}",
             )
@@ -245,33 +245,33 @@ class StructHashVisitor(TypeVisitor):
 
     def visit_list(self, field_name, elem_type, types_path=None):
         # TODO add list element type to hash.
-        xtype_id = self.fory.class_resolver.get_classinfo(list).type_id
+        xtype_id = self.fory.type_resolver.get_typeinfo(list).type_id
         self._hash = self._compute_field_hash(self._hash, abs(xtype_id))
 
     def visit_dict(self, field_name, key_type, value_type, types_path=None):
         # TODO add map key/value type to hash.
-        xtype_id = self.fory.class_resolver.get_classinfo(dict).type_id
+        xtype_id = self.fory.type_resolver.get_typeinfo(dict).type_id
         self._hash = self._compute_field_hash(self._hash, abs(xtype_id))
 
     def visit_customized(self, field_name, type_, types_path=None):
-        classinfo = self.fory.class_resolver.get_classinfo(type_, create=False)
+        typeinfo = self.fory.type_resolver.get_typeinfo(type_, create=False)
         hash_value = 0
-        if classinfo is not None:
-            hash_value = classinfo.type_id
-            if TypeId.is_namespaced_type(classinfo.type_id):
+        if typeinfo is not None:
+            hash_value = typeinfo.type_id
+            if TypeId.is_namespaced_type(typeinfo.type_id):
                 hash_value = compute_string_hash(
-                    classinfo.namespace + classinfo.typename
+                    typeinfo.namespace + typeinfo.typename
                 )
         self._hash = self._compute_field_hash(self._hash, hash_value)
 
     def visit_other(self, field_name, type_, types_path=None):
-        classinfo = self.fory.class_resolver.get_classinfo(type_, create=False)
-        if classinfo is None:
+        typeinfo = self.fory.type_resolver.get_typeinfo(type_, create=False)
+        if typeinfo is None:
             id_ = 0
         else:
-            serializer = classinfo.serializer
+            serializer = typeinfo.serializer
             assert not isinstance(serializer, (PickleSerializer,))
-            id_ = classinfo.type_id
+            id_ = typeinfo.type_id
             assert id_ is not None, serializer
         id_ = abs(id_)
         self._hash = self._compute_field_hash(self._hash, id_)
