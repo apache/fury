@@ -36,8 +36,6 @@ import org.apache.fory.serializer.JavaSerializer;
 import org.apache.fory.serializer.ObjectStreamSerializer;
 import org.apache.fory.serializer.Serializer;
 import org.apache.fory.serializer.TimeSerializers;
-import org.apache.fory.serializer.collection.AbstractCollectionSerializer;
-import org.apache.fory.serializer.collection.AbstractMapSerializer;
 import org.apache.fory.serializer.collection.GuavaCollectionSerializers;
 import org.apache.fory.util.GraalvmSupport;
 
@@ -87,7 +85,6 @@ public final class ForyBuilder {
   boolean deserializeNonexistentEnumValueAsNull = false;
   boolean serializeEnumByName = false;
   int bufferSizeLimitBytes = 128 * 1024;
-  boolean validateSerializer = false;
   MetaCompressor metaCompressor = new DeflaterMetaCompressor();
 
   public ForyBuilder() {}
@@ -258,15 +255,6 @@ public final class ForyBuilder {
    */
   public ForyBuilder registerGuavaTypes(boolean register) {
     this.registerGuavaTypes = register;
-    return this;
-  }
-
-  /**
-   * Whether check serializer extends {@link AbstractMapSerializer}/{@link
-   * AbstractCollectionSerializer} when registering serializer for Map/List.
-   */
-  public ForyBuilder validateSerializer(boolean validateSerializer) {
-    this.validateSerializer = validateSerializer;
     return this;
   }
 

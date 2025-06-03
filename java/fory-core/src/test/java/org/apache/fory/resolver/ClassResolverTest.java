@@ -552,12 +552,7 @@ public class ClassResolverTest extends ForyTestBase {
 
   @Test
   public void testListAndMapSerializerRegistration() {
-    Fory fory =
-        Fory.builder()
-            .withRefTracking(true)
-            .requireClassRegistration(false)
-            .validateSerializer(true)
-            .build();
+    Fory fory = Fory.builder().withRefTracking(true).requireClassRegistration(false).build();
     // List invalid
     assertThrows(
         IllegalArgumentException.class,

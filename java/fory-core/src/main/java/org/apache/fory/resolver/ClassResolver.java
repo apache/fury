@@ -738,9 +738,7 @@ public class ClassResolver implements TypeResolver {
    * @param serializer serializer for object of {@code type}
    */
   public void registerSerializer(Class<?> type, Serializer<?> serializer) {
-    if (fory.getConfig().validateSerializer()) {
-      ValidateSerializer.validate(type, serializer.getClass());
-    }
+    ValidateSerializer.validate(type, serializer.getClass());
     if (!extRegistry.registeredClassIdMap.containsKey(type)
         && fory.getLanguage() == Language.JAVA) {
       register(type);

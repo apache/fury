@@ -35,6 +35,8 @@ import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -46,6 +48,8 @@ import org.apache.fory.Fory;
 import org.apache.fory.ForyTestBase;
 import org.apache.fory.config.Language;
 import org.apache.fory.memory.MemoryBuffer;
+import org.apache.fory.serializer.collection.AbstractCollectionSerializer;
+import org.apache.fory.serializer.collection.AbstractMapSerializer;
 import org.apache.fory.util.Preconditions;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -207,6 +211,41 @@ public class ObjectStreamSerializerTest extends ForyTestBase {
     copyCheck(fory, testClassObj3);
   }
 
+  static class ObjectStreamMapSerializer<T> extends AbstractMapSerializer<T> {
+    private ObjectStreamSerializer objectStreamSerializer;
+
+    public ObjectStreamMapSerializer(Fory fory, Class<T> type) {
+      super(fory, type);
+      objectStreamSerializer = new ObjectStreamSerializer(fory, type);
+    }
+
+    @Override
+    public T read(MemoryBuffer buffer) {
+      return (T) objectStreamSerializer.read(buffer);
+    }
+
+    @Override
+    public Map onMapWrite(MemoryBuffer buffer, Object value) {
+      objectStreamSerializer.write(buffer, value);
+      return Collections.emptyMap();
+    }
+
+    @Override
+    public T onMapCopy(Map map) {
+      return null;
+    }
+
+    @Override
+    public T onMapRead(Map map) {
+      return null;
+    }
+
+    @Override
+    public T copy(T originObj) {
+      return (T) objectStreamSerializer.copy(originObj);
+    }
+  }
+
   @Test(dataProvider = "javaFory")
   public void testJDKCompatibleMap(Fory fory) {
     ImmutableMap<String, Integer> mapData = ImmutableMap.of("k1", 1, "k2", 2);
@@ -226,16 +265,16 @@ public class ObjectStreamSerializerTest extends ForyTestBase {
     }
     {
       fory.registerSerializer(
-          ConcurrentHashMap.class, new ObjectStreamSerializer(fory, ConcurrentHashMap.class));
+          ConcurrentHashMap.class, new ObjectStreamMapSerializer(fory, ConcurrentHashMap.class));
       serDeCheck(fory, new ConcurrentHashMap<>(mapData));
       assertSame(
           fory.getClassResolver().getSerializer(ConcurrentHashMap.class).getClass(),
-          ObjectStreamSerializer.class);
+          ObjectStreamMapSerializer.class);
     }
     {
       // ImmutableMap use writeReplace, which needs special handling.
       Map<String, Integer> map = new HashMap<>(mapData);
-      fory.registerSerializer(map.getClass(), new ObjectStreamSerializer(fory, map.getClass()));
+      fory.registerSerializer(map.getClass(), new ObjectStreamMapSerializer(fory, map.getClass()));
       serDeCheck(fory, map);
     }
   }
@@ -251,35 +290,69 @@ public class ObjectStreamSerializerTest extends ForyTestBase {
     }
     {
       fory.registerSerializer(
-          ConcurrentHashMap.class, new ObjectStreamSerializer(fory, ConcurrentHashMap.class));
+          ConcurrentHashMap.class, new ObjectStreamMapSerializer(fory, ConcurrentHashMap.class));
       copyCheck(fory, new ConcurrentHashMap<>(mapData));
     }
     {
       Map<String, Integer> map = new HashMap<>(mapData);
-      fory.registerSerializer(map.getClass(), new ObjectStreamSerializer(fory, map.getClass()));
+      fory.registerSerializer(map.getClass(), new ObjectStreamMapSerializer(fory, map.getClass()));
       copyCheck(fory, map);
+    }
+  }
+
+  static class ObjectStreamCollectionSerializer<T> extends AbstractCollectionSerializer<T> {
+    private ObjectStreamSerializer objectStreamSerializer;
+
+    public ObjectStreamCollectionSerializer(Fory fory, Class<T> type) {
+      super(fory, type);
+      objectStreamSerializer = new ObjectStreamSerializer(fory, type);
+    }
+
+    @Override
+    public Collection onCollectionWrite(MemoryBuffer buffer, Object value) {
+      objectStreamSerializer.write(buffer, value);
+      return Collections.emptyList();
+    }
+
+    @Override
+    public T read(MemoryBuffer buffer) {
+      return (T) objectStreamSerializer.read(buffer);
+    }
+
+    @Override
+    public T onCollectionRead(Collection collection) {
+      return null;
+    }
+
+    @Override
+    public T copy(T originObj) {
+      return (T) objectStreamSerializer.copy(originObj);
     }
   }
 
   @Test(dataProvider = "javaFory")
   public void testJDKCompatibleList(Fory fory) {
-    fory.registerSerializer(ArrayList.class, new ObjectStreamSerializer(fory, ArrayList.class));
+    fory.registerSerializer(
+        ArrayList.class, new ObjectStreamCollectionSerializer(fory, ArrayList.class));
     List<String> list = new ArrayList<>(ImmutableList.of("a", "b", "c", "d"));
     serDeCheck(fory, list);
-    fory.registerSerializer(LinkedList.class, new ObjectStreamSerializer(fory, LinkedList.class));
+    fory.registerSerializer(
+        LinkedList.class, new ObjectStreamCollectionSerializer(fory, LinkedList.class));
     serDeCheck(fory, new LinkedList<>(list));
-    fory.registerSerializer(Vector.class, new ObjectStreamSerializer(fory, Vector.class));
+    fory.registerSerializer(Vector.class, new ObjectStreamCollectionSerializer(fory, Vector.class));
     serDeCheck(fory, new Vector<>(list));
   }
 
   @Test(dataProvider = "foryCopyConfig")
   public void testJDKCompatibleListCopy(Fory fory) {
-    fory.registerSerializer(ArrayList.class, new ObjectStreamSerializer(fory, ArrayList.class));
+    fory.registerSerializer(
+        ArrayList.class, new ObjectStreamCollectionSerializer(fory, ArrayList.class));
     List<String> list = new ArrayList<>(ImmutableList.of("a", "b", "c", "d"));
     copyCheck(fory, list);
-    fory.registerSerializer(LinkedList.class, new ObjectStreamSerializer(fory, LinkedList.class));
+    fory.registerSerializer(
+        LinkedList.class, new ObjectStreamCollectionSerializer(fory, LinkedList.class));
     copyCheck(fory, new LinkedList<>(list));
-    fory.registerSerializer(Vector.class, new ObjectStreamSerializer(fory, Vector.class));
+    fory.registerSerializer(Vector.class, new ObjectStreamCollectionSerializer(fory, Vector.class));
     copyCheck(fory, new Vector<>(list));
   }
 

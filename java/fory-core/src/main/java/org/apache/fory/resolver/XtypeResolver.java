@@ -273,17 +273,13 @@ public class XtypeResolver implements TypeResolver {
 
   public <T> void registerSerializer(Class<T> type, Class<? extends Serializer> serializerClass) {
     ClassInfo classInfo = checkClassRegistration(type);
-    if (fory.getConfig().validateSerializer()) {
-      ValidateSerializer.validate(type, serializerClass);
-    }
+    ValidateSerializer.validate(type, serializerClass);
     classInfo.serializer = Serializers.newSerializer(fory, type, serializerClass);
   }
 
   public void registerSerializer(Class<?> type, Serializer<?> serializer) {
     ClassInfo classInfo = checkClassRegistration(type);
-    if (fory.getConfig().validateSerializer()) {
-      ValidateSerializer.validate(type, serializer.getClass());
-    }
+    ValidateSerializer.validate(type, serializer.getClass());
     classInfo.serializer = serializer;
   }
 
