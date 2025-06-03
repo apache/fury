@@ -164,6 +164,7 @@ import org.apache.fory.type.Types;
 import org.apache.fory.util.GraalvmSupport;
 import org.apache.fory.util.Preconditions;
 import org.apache.fory.util.StringUtils;
+import org.apache.fory.util.ValidateSerializer;
 import org.apache.fory.util.function.Functions;
 
 /**
@@ -737,6 +738,9 @@ public class ClassResolver implements TypeResolver {
    * @param serializer serializer for object of {@code type}
    */
   public void registerSerializer(Class<?> type, Serializer<?> serializer) {
+    if (!serializer.getClass().getPackage().getName().startsWith("org.apache.fory")) {
+      ValidateSerializer.validate(type, serializer.getClass());
+    }
     if (!extRegistry.registeredClassIdMap.containsKey(type) && !fory.isCrossLanguage()) {
       register(type);
     }
