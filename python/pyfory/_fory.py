@@ -32,6 +32,8 @@ from pyfory.resolver import (
 from pyfory.util import is_little_endian, set_bit, get_bit, clear_bit
 from pyfory.type import TypeId
 
+from pyfory.meta.meta_share import CompatibleMode,MetaContext
+
 try:
     import numpy as np
 except ImportError:
@@ -112,6 +114,8 @@ class Fory:
         "_unsupported_callback",
         "_unsupported_objects",
         "_peer_language",
+        "meta_share_enabled",
+        "compatible_mode",
     )
     serialization_context: "SerializationContext"
 
@@ -120,6 +124,9 @@ class Fory:
         language=Language.XLANG,
         ref_tracking: bool = False,
         require_class_registration: bool = True,
+        meta_share_enabled = False,
+        compatible_mode: CompatibleMode = CompatibleMode.SCHEMA_CONSISTENT,
+        scoped_meta_share_enabled: bool = False,
     ):
         """
         :param require_class_registration:
@@ -137,6 +144,10 @@ class Fory:
             _ENABLE_CLASS_REGISTRATION_FORCIBLY or require_class_registration
         )
         self.ref_tracking = ref_tracking
+        self.compatible_mode = compatible_mode
+        self.meta_share_enabled = meta_share_enabled or compatible_mode == CompatibleMode.COMPATIBLE
+        scoped_meta_share_enabled = scoped_meta_share_enabled or compatible_mode == CompatibleMode.COMPATIBLE
+
         if self.ref_tracking:
             self.ref_resolver = MapRefResolver()
         else:
@@ -147,7 +158,7 @@ class Fory:
         self.metastring_resolver = MetaStringResolver()
         self.class_resolver = ClassResolver(self)
         self.class_resolver.initialize()
-        self.serialization_context = SerializationContext()
+        self.serialization_context = SerializationContext(scoped_meta_share_enabled)
         self.buffer = Buffer.allocate(32)
         if not require_class_registration:
             warnings.warn(
@@ -247,10 +258,23 @@ class Fory:
             set_bit(buffer, mask_index, 3)
         else:
             clear_bit(buffer, mask_index, 3)
+
+        start_offset = buffer.writer_index
+        if self.meta_share_enabled:
+            # preserve 4-byte for meta start offsets.
+            buffer.write_int32(-1)
+
         if self.language == Language.PYTHON:
             self.serialize_ref(buffer, obj)
         else:
             self.xserialize_ref(buffer, obj)
+
+        # write meta_share
+        meta_context = self.serialization_context.meta_context
+        if self.meta_share_enabled and len(meta_context.writing_type_defs) > 0:
+            buffer.put_int32(start_offset, buffer.writer_index - start_offset - 4)
+            self.class_resolver.write_type_defs(buffer, meta_context)
+
         self.reset_write()
         if buffer is not self.buffer:
             return buffer
@@ -314,7 +338,7 @@ class Fory:
             return
         cls = type(obj)
         classinfo = self.class_resolver.get_classinfo(cls)
-        self.class_resolver.write_typeinfo(buffer, classinfo)
+        self.class_resolver.write_typeinfo(buffer, classinfo, self.meta_share_enabled)
         classinfo.serializer.xwrite(buffer, obj)
 
     def deserialize(
@@ -499,10 +523,15 @@ class SerializationContext:
     object tree.
     """
 
-    __slots__ = ("objects",)
+    __slots__ = ("objects", "scoped_meta_share_enabled", "_meta_context")
 
-    def __init__(self):
+    def __init__(self, scoped_meta_share_enabled):
         self.objects = dict()
+        self.scoped_meta_share_enabled = scoped_meta_share_enabled
+        if self.scoped_meta_share_enabled:
+            self._meta_context = MetaContext()
+        else:
+            self._meta_context = None
 
     def add(self, key, obj):
         self.objects[id(key)] = obj
@@ -515,10 +544,43 @@ class SerializationContext:
 
     def get(self, key):
         return self.objects.get(id(key))
+    def reset_write(self):
+        if len(self.objects) > 0:
+            self.objects.clear()
+        if self.scoped_meta_share_enabled:
+            self.meta_context.class_map.clear()
+            self.meta_context.writing_type_defs.clear()
+        else:
+            self.meta_context = None
+
+    def reset_read(self):
+        if len(self.objects) > 0:
+            self.objects.clear()
+        if self.scoped_meta_share_enabled:
+            self.meta_context.read_class_defs.clear()
+            self.meta_context.read_class_infos.clear()
+        else:
+            self.meta_context = None
 
     def reset(self):
         if len(self.objects) > 0:
             self.objects.clear()
+        if self.scoped_meta_share_enabled:
+            self.meta_context.class_map.clear()
+            self.meta_context.writing_class_defs.clear()
+            self.meta_context.read_class_defs.clear()
+            self.meta_context.read_class_infos.clear()
+        else:
+            self.meta_context = None
+
+    @property
+    def meta_context(self):
+        return self._meta_context
+
+    @meta_context.setter
+    def meta_context(self, new_value):
+        assert not self.scoped_meta_share_enabled
+        self._meta_context = new_value
 
 
 _ENABLE_CLASS_REGISTRATION_FORCIBLY = os.getenv(

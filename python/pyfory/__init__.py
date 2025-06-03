@@ -20,6 +20,7 @@ from pyfory._fory import (  # noqa: F401 # pylint: disable=unused-import
     Fory,
     Language,
 )
+from pyfory.meta.meta_share import CompatibleMode
 
 try:
     from pyfory._serialization import ENABLE_FORY_CYTHON_SERIALIZATION
