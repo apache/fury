@@ -148,12 +148,12 @@ public final class FuryBuilder {
   /** exception log level
    * choose the log level, print the error message.
    * */
-  public FuryBuilder exceptionLogMode(ExceptionLogMode exceptionLogMode) {
+  public FuryBuilder withExceptionLogMode(ExceptionLogMode exceptionLogMode) {
     this.exceptionLogMode = exceptionLogMode;
     return this;
   }
 
-  public FuryBuilder exceptionLogMode(ExceptionLogMode exceptionLogMode, int logSampleStep) {
+  public FuryBuilder withExceptionLogMode(ExceptionLogMode exceptionLogMode, int logSampleStep) {
       this.exceptionLogMode = exceptionLogMode;
       this.logSampleStep = logSampleStep;
       return this;
