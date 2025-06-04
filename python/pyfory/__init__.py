@@ -26,10 +26,10 @@ try:
 except ImportError:
     ENABLE_FORY_CYTHON_SERIALIZATION = False
 
-from pyfory._registry import ClassInfo
+from pyfory._registry import TypeInfo
 
 if ENABLE_FORY_CYTHON_SERIALIZATION:
-    from pyfory._serialization import Fory, ClassInfo  # noqa: F401,F811
+    from pyfory._serialization import Fory, TypeInfo  # noqa: F401,F811
 
 from pyfory._struct import (  # noqa: F401,F403,F811 # pylint: disable=unused-import
     ComplexObjectSerializer,

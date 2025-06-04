@@ -74,8 +74,8 @@ from pyfory.type import (
 )
 from pyfory._fory import (
     DYNAMIC_TYPE_ID,
-    # preserve 0 as flag for class id not set in ClassInfo`
-    NO_CLASS_ID,
+    # preserve 0 as flag for type id not set in TypeInfo`
+    NO_TYPE_ID,
 )
 
 try:
@@ -87,10 +87,10 @@ logger = logging.getLogger(__name__)
 
 
 if ENABLE_FORY_CYTHON_SERIALIZATION:
-    from pyfory._serialization import ClassInfo
+    from pyfory._serialization import TypeInfo
 else:
 
-    class ClassInfo:
+    class TypeInfo:
         __slots__ = (
             "cls",
             "type_id",
@@ -103,7 +103,7 @@ else:
         def __init__(
             self,
             cls: type = None,
-            type_id: int = NO_CLASS_ID,
+            type_id: int = NO_TYPE_ID,
             serializer: Serializer = None,
             namespace_bytes=None,
             typename_bytes=None,
@@ -118,26 +118,26 @@ else:
 
         def __repr__(self):
             return (
-                f"ClassInfo(cls={self.cls}, type_id={self.type_id}, "
+                f"TypeInfo(cls={self.cls}, type_id={self.type_id}, "
                 f"serializer={self.serializer})"
             )
 
 
-class ClassResolver:
+class TypeResolver:
     __slots__ = (
         "fory",
         "_metastr_to_str",
         "_type_id_counter",
-        "_classes_info",
+        "_types_info",
         "_hash_to_metastring",
-        "_metastr_to_class",
-        "_hash_to_classinfo",
-        "_dynamic_id_to_classinfo_list",
+        "_metastr_to_type",
+        "_hash_to_typeinfo",
+        "_dynamic_id_to_typeinfo_list",
         "_dynamic_id_to_metastr_list",
         "_dynamic_write_string_id",
         "_dynamic_written_metastr",
-        "_ns_type_to_classinfo",
-        "_named_type_to_classinfo",
+        "_ns_type_to_typeinfo",
+        "_named_type_to_typeinfo",
         "namespace_encoder",
         "namespace_decoder",
         "typename_encoder",
@@ -145,27 +145,27 @@ class ClassResolver:
         "require_registration",
         "metastring_resolver",
         "language",
-        "_type_id_to_classinfo",
+        "_type_id_to_typeinfo",
     )
 
     def __init__(self, fory):
         self.fory = fory
         self.metastring_resolver = fory.metastring_resolver
         self.language = fory.language
-        self.require_registration = fory.require_class_registration
+        self.require_registration = fory.require_type_registration
         self._metastr_to_str = dict()
-        self._metastr_to_class = dict()
+        self._metastr_to_type = dict()
         self._hash_to_metastring = dict()
-        self._hash_to_classinfo = dict()
+        self._hash_to_typeinfo = dict()
         self._dynamic_written_metastr = []
-        self._type_id_to_classinfo = dict()
+        self._type_id_to_typeinfo = dict()
         self._type_id_counter = 64
         self._dynamic_write_string_id = 0
         # hold objects to avoid gc, since `flat_hash_map/vector` doesn't
         # hold python reference.
-        self._classes_info = dict()
-        self._ns_type_to_classinfo = dict()
-        self._named_type_to_classinfo = dict()
+        self._types_info = dict()
+        self._ns_type_to_typeinfo = dict()
+        self._named_type_to_typeinfo = dict()
         self.namespace_encoder = MetaStringEncoder(".", "_")
         self.namespace_decoder = MetaStringDecoder(".", "_")
         self.typename_encoder = MetaStringEncoder("$", "_")
@@ -180,7 +180,7 @@ class ClassResolver:
         register = functools.partial(self._register_type, internal=True)
         register(
             _PickleStub,
-            type_id=PickleSerializer.PICKLE_CLASS_ID,
+            type_id=PickleSerializer.PICKLE_TYPE_ID,
             serializer=PickleSerializer,
         )
         register(
@@ -297,7 +297,7 @@ class ClassResolver:
         serializer=None,
         internal=False,
     ):
-        """Register class with given type id or typename. If typename is not None, it will be used for
+        """Register type with given type id or typename. If typename is not None, it will be used for
         cross-language serialization."""
         if serializer is not None and not isinstance(serializer, Serializer):
             try:
@@ -315,10 +315,10 @@ class ClassResolver:
                 f"type name {typename} and id {type_id} should not be set at the same time"
             )
         if type_id not in {0, None}:
-            # multiple class can have same tpe id
-            if type_id in self._type_id_to_classinfo and cls in self._classes_info:
+            # multiple type can have same tpe id
+            if type_id in self._type_id_to_typeinfo and cls in self._types_info:
                 raise TypeError(f"{cls} registered already")
-        elif cls in self._classes_info:
+        elif cls in self._types_info:
             raise TypeError(f"{cls} registered already")
         register_type = (
             self._register_xtype
@@ -405,7 +405,7 @@ class ClassResolver:
         if not internal and serializer is None:
             serializer = self._create_serializer(cls)
         if typename is None:
-            classinfo = ClassInfo(cls, type_id, serializer, None, None, dynamic_type)
+            typeinfo = TypeInfo(cls, type_id, serializer, None, None, dynamic_type)
         else:
             if namespace is None:
                 splits = typename.rsplit(".", 1)
@@ -415,71 +415,71 @@ class ClassResolver:
             ns_meta_bytes = self.metastring_resolver.get_metastr_bytes(ns_metastr)
             type_metastr = self.typename_encoder.encode(typename)
             type_meta_bytes = self.metastring_resolver.get_metastr_bytes(type_metastr)
-            classinfo = ClassInfo(
+            typeinfo = TypeInfo(
                 cls, type_id, serializer, ns_meta_bytes, type_meta_bytes, dynamic_type
             )
-            self._named_type_to_classinfo[(namespace, typename)] = classinfo
-            self._ns_type_to_classinfo[(ns_meta_bytes, type_meta_bytes)] = classinfo
-        self._classes_info[cls] = classinfo
+            self._named_type_to_typeinfo[(namespace, typename)] = typeinfo
+            self._ns_type_to_typeinfo[(ns_meta_bytes, type_meta_bytes)] = typeinfo
+        self._types_info[cls] = typeinfo
         if type_id > 0 and (
             self.language == Language.PYTHON or not TypeId.is_namespaced_type(type_id)
         ):
-            if type_id not in self._type_id_to_classinfo or not internal:
-                self._type_id_to_classinfo[type_id] = classinfo
-        self._classes_info[cls] = classinfo
-        return classinfo
+            if type_id not in self._type_id_to_typeinfo or not internal:
+                self._type_id_to_typeinfo[type_id] = typeinfo
+        self._types_info[cls] = typeinfo
+        return typeinfo
 
     def _next_type_id(self):
         type_id = self._type_id_counter = self._type_id_counter + 1
-        while type_id in self._type_id_to_classinfo:
+        while type_id in self._type_id_to_typeinfo:
             type_id = self._type_id_counter = self._type_id_counter + 1
         return type_id
 
     def register_serializer(self, cls: Union[type, TypeVar], serializer):
         assert isinstance(cls, (type, TypeVar)), cls
-        if cls not in self._classes_info:
+        if cls not in self._types_info:
             raise TypeUnregisteredError(f"{cls} not registered")
-        classinfo = self._classes_info[cls]
+        typeinfo = self._types_info[cls]
         if self.fory.language == Language.PYTHON:
-            classinfo.serializer = serializer
+            typeinfo.serializer = serializer
             return
-        type_id = prev_type_id = classinfo.type_id
-        self._type_id_to_classinfo.pop(prev_type_id)
-        if classinfo.serializer is not serializer:
-            if classinfo.typename_bytes is not None:
-                type_id = classinfo.type_id & 0xFFFFFF00 | TypeId.NAMED_EXT
+        type_id = prev_type_id = typeinfo.type_id
+        self._type_id_to_typeinfo.pop(prev_type_id)
+        if typeinfo.serializer is not serializer:
+            if typeinfo.typename_bytes is not None:
+                type_id = typeinfo.type_id & 0xFFFFFF00 | TypeId.NAMED_EXT
             else:
-                type_id = classinfo.type_id & 0xFFFFFF00 | TypeId.EXT
-        self._type_id_to_classinfo[type_id] = classinfo
+                type_id = typeinfo.type_id & 0xFFFFFF00 | TypeId.EXT
+        self._type_id_to_typeinfo[type_id] = typeinfo
 
     def get_serializer(self, cls: type):
         """
         Returns
         -------
-            Returns or create serializer for the provided class
+            Returns or create serializer for the provided type
         """
-        return self.get_classinfo(cls).serializer
+        return self.get_typeinfo(cls).serializer
 
-    def get_classinfo(self, cls, create=True):
-        class_info = self._classes_info.get(cls)
-        if class_info is not None:
-            if class_info.serializer is None:
-                class_info.serializer = self._create_serializer(cls)
-            return class_info
+    def get_typeinfo(self, cls, create=True):
+        type_info = self._types_info.get(cls)
+        if type_info is not None:
+            if type_info.serializer is None:
+                type_info.serializer = self._create_serializer(cls)
+            return type_info
         elif not create:
             return None
         if self.language != Language.PYTHON or (
             self.require_registration and not issubclass(cls, Enum)
         ):
             raise TypeUnregisteredError(f"{cls} not registered")
-        logger.info("Class %s not registered", cls)
+        logger.info("Type %s not registered", cls)
         serializer = self._create_serializer(cls)
         type_id = None
         if self.language == Language.PYTHON:
             if isinstance(serializer, EnumSerializer):
                 type_id = TypeId.NAMED_ENUM
             elif type(serializer) is PickleSerializer:
-                type_id = PickleSerializer.PICKLE_CLASS_ID
+                type_id = PickleSerializer.PICKLE_TYPE_ID
             if not self.require_registration:
                 if isinstance(serializer, DataClassSerializer):
                     type_id = TypeId.NAMED_STRUCT
@@ -497,13 +497,13 @@ class ClassResolver:
 
     def _create_serializer(self, cls):
         for clz in cls.__mro__:
-            class_info = self._classes_info.get(clz)
+            type_info = self._types_info.get(clz)
             if (
-                class_info
-                and class_info.serializer
-                and class_info.serializer.support_subclass()
+                type_info
+                and type_info.serializer
+                and type_info.serializer.support_subclass()
             ):
-                serializer = type(class_info.serializer)(self.fory, cls)
+                serializer = type(type_info.serializer)(self.fory, cls)
                 break
         else:
             if dataclasses.is_dataclass(cls):
@@ -516,34 +516,34 @@ class ClassResolver:
                 serializer = PickleSerializer(self.fory, cls)
         return serializer
 
-    def _load_metabytes_to_classinfo(self, ns_metabytes, type_metabytes):
-        typeinfo = self._ns_type_to_classinfo.get((ns_metabytes, type_metabytes))
+    def _load_metabytes_to_typeinfo(self, ns_metabytes, type_metabytes):
+        typeinfo = self._ns_type_to_typeinfo.get((ns_metabytes, type_metabytes))
         if typeinfo is not None:
             return typeinfo
         ns = ns_metabytes.decode(self.namespace_decoder)
         typename = type_metabytes.decode(self.typename_decoder)
         # the hash computed between languages may be different.
-        typeinfo = self._named_type_to_classinfo.get((ns, typename))
+        typeinfo = self._named_type_to_typeinfo.get((ns, typename))
         if typeinfo is not None:
-            self._ns_type_to_classinfo[(ns_metabytes, type_metabytes)] = typeinfo
+            self._ns_type_to_typeinfo[(ns_metabytes, type_metabytes)] = typeinfo
             return typeinfo
         cls = load_class(ns + "#" + typename)
-        classinfo = self.get_classinfo(cls)
-        self._ns_type_to_classinfo[(ns_metabytes, type_metabytes)] = classinfo
-        return classinfo
+        typeinfo = self.get_typeinfo(cls)
+        self._ns_type_to_typeinfo[(ns_metabytes, type_metabytes)] = typeinfo
+        return typeinfo
 
-    def write_typeinfo(self, buffer, classinfo):
-        if classinfo.dynamic_type:
+    def write_typeinfo(self, buffer, typeinfo):
+        if typeinfo.dynamic_type:
             return
-        type_id = classinfo.type_id
+        type_id = typeinfo.type_id
         internal_type_id = type_id & 0xFF
         buffer.write_varuint32(type_id)
         if TypeId.is_namespaced_type(internal_type_id):
             self.metastring_resolver.write_meta_string_bytes(
-                buffer, classinfo.namespace_bytes
+                buffer, typeinfo.namespace_bytes
             )
             self.metastring_resolver.write_meta_string_bytes(
-                buffer, classinfo.typename_bytes
+                buffer, typeinfo.typename_bytes
             )
 
     def read_typeinfo(self, buffer):
@@ -552,23 +552,21 @@ class ClassResolver:
         if TypeId.is_namespaced_type(internal_type_id):
             ns_metabytes = self.metastring_resolver.read_meta_string_bytes(buffer)
             type_metabytes = self.metastring_resolver.read_meta_string_bytes(buffer)
-            typeinfo = self._ns_type_to_classinfo.get((ns_metabytes, type_metabytes))
+            typeinfo = self._ns_type_to_typeinfo.get((ns_metabytes, type_metabytes))
             if typeinfo is None:
                 ns = ns_metabytes.decode(self.namespace_decoder)
                 typename = type_metabytes.decode(self.typename_decoder)
-                typeinfo = self._named_type_to_classinfo.get((ns, typename))
+                typeinfo = self._named_type_to_typeinfo.get((ns, typename))
                 if typeinfo is not None:
-                    self._ns_type_to_classinfo[
-                        (ns_metabytes, type_metabytes)
-                    ] = typeinfo
+                    self._ns_type_to_typeinfo[(ns_metabytes, type_metabytes)] = typeinfo
                     return typeinfo
-                # TODO(chaokunyang) generate a dynamic class and serializer
+                # TODO(chaokunyang) generate a dynamic type and serializer
                 #  when meta share is enabled.
                 name = ns + "." + typename if ns else typename
                 raise TypeUnregisteredError(f"{name} not registered")
             return typeinfo
         else:
-            return self._type_id_to_classinfo[type_id]
+            return self._type_id_to_typeinfo[type_id]
 
     def reset(self):
         pass

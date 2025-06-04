@@ -24,13 +24,13 @@ from functools import partial
 from typing import Optional
 from pyfory.type import get_qualified_classname, TypeVisitor, infer_field
 
-__class_map__ = {}
+__type_map__ = {}
 __schemas__ = {}  # ensure `id(schema)` doesn't get duplicate.
 
 
 def get_cls_by_schema(schema):
     id_ = id(schema)
-    if id_ not in __class_map__:
+    if id_ not in __type_map__:
         meta = {} if schema.metadata is None else schema.metadata
         cls_name = meta.get(b"cls", b"").decode()
         if cls_name:
@@ -45,9 +45,9 @@ def get_cls_by_schema(schema):
             cls_ = record_class_factory(
                 "Record" + str(id(schema)), [f.name for f in schema]
             )
-        __class_map__[id_] = cls_
+        __type_map__[id_] = cls_
         __schemas__[id_] = schema
-    return __class_map__[id_]
+    return __type_map__[id_]
 
 
 def remove_schema(schema):
@@ -55,7 +55,7 @@ def remove_schema(schema):
 
 
 def reset():
-    __class_map__.clear()
+    __type_map__.clear()
     __schemas__.clear()
 
 
