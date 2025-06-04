@@ -237,7 +237,7 @@ public class Encoders {
    * @param codec the codec to use
    */
   public static <T> void registerCustomCodec(
-      Class<?> beanType, Class<T> type, CustomCodec<T, ?> codec) {
+      Class<?> beanType, Class<? super T> type, CustomCodec<T, ?> codec) {
     TypeInference.registerCustomCodec(new CustomTypeRegistration(beanType, type), codec);
   }
 
@@ -247,7 +247,7 @@ public class Encoders {
    * @param type the type of field to handle
    * @param codec the codec to use
    */
-  public static <T> void registerCustomCodec(Class<T> type, CustomCodec<T, ?> codec) {
+  public static <T> void registerCustomCodec(Class<? super T> type, CustomCodec<T, ?> codec) {
     registerCustomCodec(Object.class, type, codec);
   }
 
