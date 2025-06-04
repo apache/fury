@@ -2,14 +2,14 @@
   <img width="65%" alt="" src="docs/images/logo/fory_github_banner.png"><br>
 </div>
 
-[![Build Status](https://img.shields.io/github/actions/workflow/status/apache/fury/ci.yml?branch=main&style=for-the-badge&label=GITHUB%20ACTIONS&logo=github)](https://github.com/apache/fury/actions/workflows/ci.yml)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/apache/fory/ci.yml?branch=main&style=for-the-badge&label=GITHUB%20ACTIONS&logo=github)](https://github.com/apache/fory/actions/workflows/ci.yml)
 [![Slack Channel](https://img.shields.io/badge/slack-join-3f0e40?logo=slack&style=for-the-badge)](https://join.slack.com/t/fury-project/shared_invite/zt-1u8soj4qc-ieYEu7ciHOqA2mo47llS8A)
 [![X](https://img.shields.io/badge/@ApacheFory-follow-blue?logo=x&style=for-the-badge)](https://x.com/ApacheFory)
 [![Maven Version](https://img.shields.io/maven-central/v/org.apache.fury/fury-core?style=for-the-badge)](https://search.maven.org/#search|gav|1|g:"org.apache.fury"%20AND%20a:"fury-core")
 
 **Apache Fory (incubating)** is a blazingly-fast multi-language serialization framework powered by **JIT** (just-in-time compilation) and **zero-copy**, providing up to 170x performance and ultimate ease of use.
 
-<https://fury.apache.org>
+<https://fory.apache.org>
 
 > [!IMPORTANT]
 > Apache Fory (incubating) is an effort undergoing incubation at the Apache
@@ -109,14 +109,14 @@ Nightly snapshot:
   </repository>
 </repositories>
 <dependency>
-  <groupId>org.apache.fury</groupId>
-  <artifactId>fury-core</artifactId>
+  <groupId>org.apache.fory</groupId>
+  <artifactId>fory-core</artifactId>
   <version>0.11.0-SNAPSHOT</version>
 </dependency>
 <!-- row/arrow format support -->
 <!-- <dependency>
-  <groupId>org.apache.fury</groupId>x
-  <artifactId>fury-format</artifactId>
+  <groupId>org.apache.fory</groupId>x
+  <artifactId>fory-format</artifactId>
   <version>0.11.0-SNAPSHOT</version>
 </dependency> -->
 ```
