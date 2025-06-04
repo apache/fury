@@ -17,7 +17,7 @@
 >
 > Please read the [DISCLAIMER](DISCLAIMER) and a full explanation of ["incubating"](https://incubator.apache.org/policy/incubation.html).
 >
-> Apache Fory was previously named as Apache Fury. For versions less than 0.11, please use "fury" instead of "fory" in package names, imports, and dependencies.
+> Apache Fory was previously named as **Apache Fury**. **For versions less than 0.11**, please **use "fury" instead of "fory"** in package names, imports, and dependencies.
 
 ## Features
 
