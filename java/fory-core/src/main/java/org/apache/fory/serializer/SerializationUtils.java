@@ -19,18 +19,47 @@
 
 package org.apache.fory.serializer;
 
+import java.util.Collection;
+import java.util.Map;
 import org.apache.fory.Fory;
 import org.apache.fory.annotation.Internal;
 import org.apache.fory.resolver.ClassInfo;
 import org.apache.fory.resolver.TypeResolver;
+import org.apache.fory.serializer.collection.AbstractCollectionSerializer;
+import org.apache.fory.serializer.collection.AbstractMapSerializer;
 
 @Internal
-class SerializationUtils {
+public class SerializationUtils {
   public static TypeResolver getTypeResolver(Fory fory) {
     return fory.isCrossLanguage() ? fory.getXtypeResolver() : fory.getClassResolver();
   }
 
   public static ClassInfo getClassInfo(Fory fory, Class<?> cls) {
     return getTypeResolver(fory).getClassInfo(cls);
+  }
+
+  public static void validateSerializer(
+      Class<?> type,
+      Class<? extends Serializer> serializerClass,
+      Class<?> parentType,
+      Class<?> requiredSerializerBase) {
+    if (!parentType.isAssignableFrom(type)) {
+      return;
+    }
+    boolean valid = requiredSerializerBase.isAssignableFrom(serializerClass);
+    if (!valid) {
+      throw new IllegalArgumentException(
+          "Serializer for type "
+              + type.getName()
+              + " must extend "
+              + requiredSerializerBase.getSimpleName()
+              + ", but got "
+              + serializerClass.getName());
+    }
+  }
+
+  public static void validate(Class<?> type, Class<? extends Serializer> serializerClass) {
+    validateSerializer(type, serializerClass, Collection.class, AbstractCollectionSerializer.class);
+    validateSerializer(type, serializerClass, Map.class, AbstractMapSerializer.class);
   }
 }

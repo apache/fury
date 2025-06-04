@@ -71,6 +71,7 @@ import org.apache.fory.serializer.LazySerializer;
 import org.apache.fory.serializer.NonexistentClass;
 import org.apache.fory.serializer.NonexistentClassSerializers;
 import org.apache.fory.serializer.ObjectSerializer;
+import org.apache.fory.serializer.SerializationUtils;
 import org.apache.fory.serializer.Serializer;
 import org.apache.fory.serializer.Serializers;
 import org.apache.fory.serializer.collection.AbstractCollectionSerializer;
@@ -84,7 +85,6 @@ import org.apache.fory.type.Generics;
 import org.apache.fory.type.TypeUtils;
 import org.apache.fory.type.Types;
 import org.apache.fory.util.Preconditions;
-import org.apache.fory.util.ValidateSerializer;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 // TODO(chaokunyang) Abstract type resolver for java/xlang type resolution.
@@ -274,7 +274,7 @@ public class XtypeResolver implements TypeResolver {
   public <T> void registerSerializer(Class<T> type, Class<? extends Serializer> serializerClass) {
     ClassInfo classInfo = checkClassRegistration(type);
     if (!serializerClass.getPackage().getName().startsWith("org.apache.fory")) {
-      ValidateSerializer.validate(type, serializerClass);
+      SerializationUtils.validate(type, serializerClass);
     }
     classInfo.serializer = Serializers.newSerializer(fory, type, serializerClass);
   }
@@ -282,7 +282,7 @@ public class XtypeResolver implements TypeResolver {
   public void registerSerializer(Class<?> type, Serializer<?> serializer) {
     ClassInfo classInfo = checkClassRegistration(type);
     if (!serializer.getClass().getPackage().getName().startsWith("org.apache.fory")) {
-      ValidateSerializer.validate(type, serializer.getClass());
+      SerializationUtils.validate(type, serializer.getClass());
     }
     classInfo.serializer = serializer;
   }
