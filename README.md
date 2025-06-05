@@ -1,5 +1,5 @@
 <div align="center">
-  <img width="65%" alt="" src="docs/images/logo/fory_github_banner.png"><br>
+  <img width="65%" alt="" src="docs/images/logo/fory-horizontal.png"><br>
 </div>
 
 [![Build Status](https://img.shields.io/github/actions/workflow/status/apache/fory/ci.yml?branch=main&style=for-the-badge&label=GITHUB%20ACTIONS&logo=github)](https://github.com/apache/fory/actions/workflows/ci.yml)
