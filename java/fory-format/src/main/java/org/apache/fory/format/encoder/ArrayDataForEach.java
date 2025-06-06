@@ -85,7 +85,7 @@ public class ArrayDataForEach extends AbstractExpression {
     if (customEncoder == null) {
       accessType = elemType;
     } else {
-      accessType = TypeRef.of(customEncoder.encodedType());
+      accessType = customEncoder.encodedType();
     }
     CustomTypeHandler customTypeHandler = CustomTypeEncoderRegistry.customTypeHandler();
     TypeResolutionContext ctx = new TypeResolutionContext(customTypeHandler, true);

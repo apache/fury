@@ -24,20 +24,29 @@ import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.fory.format.row.binary.BinaryArray;
 import org.apache.fory.format.type.DataTypes;
 import org.apache.fory.memory.MemoryBuffer;
+import org.apache.fory.reflect.TypeRef;
 
+/**
+ * Extension point to customize Fory row codec behavior. Supports intercepting types to be written
+ * ({@code encode}) and read ({@code decode}).
+ *
+ * @param <T> the type the codec decodes to (used in Java)
+ * @param <E> the type the codec encodes to (byte representation)
+ */
 public interface CustomCodec<T, E> {
   Field getField(String fieldName);
 
-  Class<E> encodedType();
+  TypeRef<E> encodedType();
 
   E encode(T value);
 
   T decode(E value);
 
+  /** Specialized codec base for encoding and decoding to/from {@link MemoryBuffer}. */
   interface MemoryBufferCodec<T> extends CustomCodec<T, MemoryBuffer> {
     @Override
-    default Class<MemoryBuffer> encodedType() {
-      return MemoryBuffer.class;
+    default TypeRef<MemoryBuffer> encodedType() {
+      return TypeRef.of(MemoryBuffer.class);
     }
 
     @Override
@@ -46,10 +55,11 @@ public interface CustomCodec<T, E> {
     }
   }
 
+  /** Specialized codec base for encoding and decoding to/from {@code byte[]}. */
   interface ByteArrayCodec<T> extends CustomCodec<T, byte[]> {
     @Override
-    default Class<byte[]> encodedType() {
-      return byte[].class;
+    default TypeRef<byte[]> encodedType() {
+      return TypeRef.of(byte[].class);
     }
 
     @Override
@@ -58,15 +68,38 @@ public interface CustomCodec<T, E> {
     }
   }
 
+  /** Specialized codec base for encoding and decoding to/from {@link BinaryArray}. */
   interface BinaryArrayCodec<T> extends CustomCodec<T, BinaryArray> {
     @Override
-    default Class<BinaryArray> encodedType() {
-      return BinaryArray.class;
+    default TypeRef<BinaryArray> encodedType() {
+      return TypeRef.of(BinaryArray.class);
     }
 
     @Override
     default Field getField(final String fieldName) {
       return DataTypes.primitiveArrayField(fieldName, DataTypes.int8());
+    }
+  }
+
+  /**
+   * Specialized codec base for read and write replace of a value, without changing its type.
+   * Example use: converting Fory generated implementation into a standard user-provided
+   * implementation.
+   */
+  interface InterceptingCodec<T> extends CustomCodec<T, T> {
+    @Override
+    default Field getField(final String fieldName) {
+      return null;
+    }
+
+    @Override
+    default T decode(final T value) {
+      return value;
+    }
+
+    @Override
+    default T encode(final T value) {
+      return value;
     }
   }
 }
