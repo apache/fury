@@ -90,9 +90,11 @@ public class Config implements Serializable {
     metaCompressor = builder.metaCompressor;
     deserializeNonexistentClass = builder.deserializeNonexistentClass;
     if (deserializeNonexistentClass) {
-      // Only in meta share mode or compatibleMode, fory knows how to deserialize
-      // unexisted class by type info in data.
-      Preconditions.checkArgument(metaShareEnabled || compatibleMode == CompatibleMode.COMPATIBLE);
+      Preconditions.checkArgument(
+          metaShareEnabled || compatibleMode == CompatibleMode.COMPATIBLE,
+          "Configuration error: deserializeNonexistentClass=true requires either "
+              + "metaShareEnabled=true to access type information OR compatibleMode=COMPATIBLE "
+              + "to automatically resolve class schemas.");
     }
     asyncCompilationEnabled = builder.asyncCompilationEnabled;
     scalaOptimizationEnabled = builder.scalaOptimizationEnabled;
