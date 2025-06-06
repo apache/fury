@@ -88,10 +88,7 @@ public class ArrayDataForEach extends AbstractExpression {
       accessType = TypeRef.of(customEncoder.encodedType());
     }
     CustomTypeHandler customTypeHandler = CustomTypeEncoderRegistry.customTypeHandler();
-    TypeResolutionContext ctx = new TypeResolutionContext(customTypeHandler);
-    if (inputArrayData.type().getRawType().isInterface() && elemType.getRawType().isInterface()) {
-      ctx = ctx.withSynthesizedBeanType(elemType.getRawType());
-    }
+    TypeResolutionContext ctx = new TypeResolutionContext(customTypeHandler, true);
     this.accessMethod = BinaryUtils.getElemAccessMethodName(accessType, ctx);
     this.elemType = BinaryUtils.getElemReturnType(accessType, ctx);
     this.notNullAction = notNullAction;
