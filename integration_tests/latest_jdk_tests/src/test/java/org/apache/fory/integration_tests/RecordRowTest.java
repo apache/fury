@@ -60,4 +60,30 @@ public class RecordRowTest {
     final OuterTestRecord deserializedBean = encoder.fromRow(row);
     Assert.assertEquals(deserializedBean, bean);
   }
+
+  public record TestRecordNestedInterface(NestedInterface f1) {}
+
+  public interface NestedInterface {
+    int f1();
+
+    class Impl implements NestedInterface {
+      @Override
+      public int f1() {
+        return 42;
+      }
+    }
+  }
+
+  @Test
+  public void testRecordNestedInterface() {
+    final TestRecordNestedInterface bean =
+        new TestRecordNestedInterface(new NestedInterface.Impl());
+    final RowEncoder<TestRecordNestedInterface> encoder =
+        Encoders.bean(TestRecordNestedInterface.class);
+    final BinaryRow row = encoder.toRow(bean);
+    final MemoryBuffer buffer = MemoryUtils.wrap(row.toBytes());
+    row.pointTo(buffer, 0, buffer.size());
+    final TestRecordNestedInterface deserializedBean = encoder.fromRow(row);
+    Assert.assertEquals(deserializedBean.f1().f1(), bean.f1().f1());
+  }
 }

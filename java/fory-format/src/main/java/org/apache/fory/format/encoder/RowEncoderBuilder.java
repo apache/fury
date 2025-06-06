@@ -51,7 +51,6 @@ import org.apache.fory.logging.Logger;
 import org.apache.fory.logging.LoggerFactory;
 import org.apache.fory.reflect.TypeRef;
 import org.apache.fory.type.Descriptor;
-import org.apache.fory.type.TypeResolutionContext;
 import org.apache.fory.type.TypeUtils;
 import org.apache.fory.util.GraalvmSupport;
 import org.apache.fory.util.Preconditions;
@@ -80,8 +79,7 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
 
   public RowEncoderBuilder(TypeRef<?> beanType) {
     super(new CodegenContext(), beanType);
-    Preconditions.checkArgument(
-        beanClass.isInterface() || TypeUtils.isBean(beanType.getType(), customTypeHandler));
+    Preconditions.checkArgument(beanClass.isInterface() || TypeUtils.isBean(beanType, typeCtx));
     className = codecClassName(beanClass);
     this.schema = TypeInference.inferSchema(getRawType(beanType));
     this.descriptorsMap = Descriptor.getDescriptorsMap(beanClass);
@@ -278,12 +276,6 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
       Descriptor d = getDescriptorByFieldName(schema.getFields().get(i).getName());
       TypeRef<?> fieldType = d.getTypeRef();
       Class<?> rawFieldType = fieldType.getRawType();
-      TypeResolutionContext fieldCtx;
-      if (beanClass.isInterface() && rawFieldType.isInterface()) {
-        fieldCtx = typeCtx.withSynthesizedBeanType(rawFieldType);
-      } else {
-        fieldCtx = typeCtx;
-      }
       TypeRef<?> columnAccessType;
       if (rawFieldType == Optional.class) {
         columnAccessType = TypeUtils.getTypeArguments(fieldType).get(0);
@@ -296,8 +288,8 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
         }
       }
       String columnAccessMethodName =
-          BinaryUtils.getElemAccessMethodName(columnAccessType, fieldCtx);
-      TypeRef<?> colType = BinaryUtils.getElemReturnType(columnAccessType, fieldCtx);
+          BinaryUtils.getElemAccessMethodName(columnAccessType, typeCtx);
+      TypeRef<?> colType = BinaryUtils.getElemReturnType(columnAccessType, typeCtx);
       Expression.Invoke columnValue =
           new Expression.Invoke(
               row,
@@ -306,7 +298,7 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
               colType,
               false,
               ordinal);
-      Expression value = new Expression.Return(deserializeFor(columnValue, fieldType, fieldCtx));
+      Expression value = new Expression.Return(deserializeFor(columnValue, fieldType, typeCtx));
       ctx.addMethod(
           decodeMethodName(i),
           value.doGenCode(ctx).code(),

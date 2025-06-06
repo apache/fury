@@ -20,10 +20,7 @@
 package org.apache.fory.type;
 
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
-import java.util.Set;
 import org.apache.fory.annotation.Internal;
 import org.apache.fory.reflect.TypeRef;
 
@@ -31,21 +28,26 @@ import org.apache.fory.reflect.TypeRef;
 public class TypeResolutionContext {
   private final CustomTypeRegistry customTypeRegistry;
   private final LinkedHashSet<TypeRef<?>> walkedTypePath;
-  private final Set<Class<?>> synthesizedBeanTypes;
+  private final boolean synthesizeInterfaces;
 
   public TypeResolutionContext(CustomTypeRegistry customTypeRegistry) {
+    this(customTypeRegistry, false);
+  }
+
+  public TypeResolutionContext(
+      CustomTypeRegistry customTypeRegistry, boolean synthesizeInterfaces) {
     this.customTypeRegistry = customTypeRegistry;
+    this.synthesizeInterfaces = synthesizeInterfaces;
     walkedTypePath = new LinkedHashSet<>();
-    synthesizedBeanTypes = Collections.emptySet();
   }
 
   public TypeResolutionContext(
       CustomTypeRegistry customTypeRegistry,
       LinkedHashSet<TypeRef<?>> walkedTypePath,
-      Set<Class<?>> synthesizedBeanTypes) {
+      boolean synthesizeInterfaces) {
     this.customTypeRegistry = customTypeRegistry;
     this.walkedTypePath = walkedTypePath;
-    this.synthesizedBeanTypes = synthesizedBeanTypes;
+    this.synthesizeInterfaces = synthesizeInterfaces;
   }
 
   public CustomTypeRegistry getCustomTypeRegistry() {
@@ -56,8 +58,8 @@ public class TypeResolutionContext {
     return walkedTypePath;
   }
 
-  public Set<Class<?>> getSynthesizedBeanTypes() {
-    return synthesizedBeanTypes;
+  public boolean isSynthesizeInterfaces() {
+    return synthesizeInterfaces;
   }
 
   public TypeRef<?> getEnclosingType() {
@@ -71,21 +73,11 @@ public class TypeResolutionContext {
   public TypeResolutionContext appendTypePath(TypeRef<?>... typeRef) {
     LinkedHashSet<TypeRef<?>> newWalkedTypePath = new LinkedHashSet<>(walkedTypePath);
     newWalkedTypePath.addAll(Arrays.asList(typeRef));
-    return new TypeResolutionContext(customTypeRegistry, newWalkedTypePath, synthesizedBeanTypes);
+    return new TypeResolutionContext(customTypeRegistry, newWalkedTypePath, synthesizeInterfaces);
   }
 
   public TypeResolutionContext appendTypePath(Class<?> clz) {
     return appendTypePath(TypeRef.of(clz));
-  }
-
-  public TypeResolutionContext withSynthesizedBeanType(Class<?> clz) {
-    Set<Class<?>> newSynthesizedBeanTypes = new HashSet<>(synthesizedBeanTypes);
-    newSynthesizedBeanTypes.add(clz);
-    return new TypeResolutionContext(customTypeRegistry, walkedTypePath, newSynthesizedBeanTypes);
-  }
-
-  public boolean isSynthesizedBeanType(Class<?> cls) {
-    return synthesizedBeanTypes.contains(cls);
   }
 
   public void checkNoCycle(Class<?> clz) {

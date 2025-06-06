@@ -110,11 +110,8 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
     ctx.addImport(BinaryRow.class.getPackage().getName() + ".*");
     ctx.addImport(BinaryWriter.class.getPackage().getName() + ".*");
     ctx.addImport(Schema.class.getPackage().getName() + ".*");
-    TypeResolutionContext typeCtx = new TypeResolutionContext(customTypeHandler);
+    TypeResolutionContext typeCtx = new TypeResolutionContext(customTypeHandler, true);
     typeCtx.appendTypePath(beanClass);
-    if (beanClass.isInterface()) {
-      typeCtx = typeCtx.withSynthesizedBeanType(beanClass);
-    }
     this.typeCtx = typeCtx;
   }
 
@@ -254,7 +251,7 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
           expression);
     } else if (TypeUtils.MAP_TYPE.isSupertypeOf(typeRef)) {
       return serializeForMap(ordinal, writer, inputObject, typeRef, arrowField);
-    } else if (TypeUtils.isBean(rawType, createElementTypeContext(typeRef))) {
+    } else if (TypeUtils.isBean(rawType, typeCtx)) {
       return serializeForBean(ordinal, writer, inputObject, typeRef, arrowField);
     } else if (rawType == BinaryArray.class) {
       Invoke writeExp =
@@ -647,11 +644,7 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
           new ArrayDataForEach(
               arrayData,
               elemType,
-              (i, value) ->
-                  new Invoke(
-                      collection,
-                      "add",
-                      deserializeFor(value, elemType, createElementTypeContext(elemType))),
+              (i, value) -> new Invoke(collection, "add", deserializeFor(value, elemType, typeCtx)),
               i -> new Invoke(collection, "add", ExpressionUtils.nullValue(elemType)));
       return new ListExpression(collection, addElemsOp, collection);
     } catch (Exception e) {
@@ -807,8 +800,7 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
                 arrayData,
                 elemType,
                 (i, value) -> {
-                  Expression elemValue =
-                      deserializeFor(value, elemType, createElementTypeContext(elemType));
+                  Expression elemValue = deserializeFor(value, elemType, typeCtx);
                   return new AssignArrayElem(javaArray, elemValue, i);
                 });
         // add javaArray at last as expression value
@@ -823,15 +815,5 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
    */
   protected Expression deserializeForObject(Expression value, TypeRef<?> typeRef) {
     return new Invoke(foryRef, "deserialize", typeRef, value);
-  }
-
-  protected TypeResolutionContext createElementTypeContext(TypeRef<?> elemType) {
-    TypeResolutionContext newTypeCtx;
-    if (elemType.isInterface() && beanClass.isInterface()) {
-      newTypeCtx = typeCtx.withSynthesizedBeanType(elemType.getRawType());
-    } else {
-      newTypeCtx = typeCtx;
-    }
-    return newTypeCtx;
   }
 }
