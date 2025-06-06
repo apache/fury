@@ -121,11 +121,7 @@ public class TypeInference {
 
   private static Field inferField(TypeRef<?> arrayTypeRef, TypeRef<?> typeRef) {
     TypeResolutionContext ctx =
-        new TypeResolutionContext(CustomTypeEncoderRegistry.customTypeHandler());
-    Class<?> clz = getRawType(typeRef);
-    if (clz.isInterface()) {
-      ctx = ctx.withSynthesizedBeanType(clz);
-    }
+        new TypeResolutionContext(CustomTypeEncoderRegistry.customTypeHandler(), true);
     String name = "";
     if (arrayTypeRef != null) {
       Field f = inferField(DataTypes.ARRAY_ITEM_NAME, typeRef, ctx);
@@ -239,13 +235,8 @@ public class TypeInference {
               .map(
                   descriptor -> {
                     String n = StringUtils.lowerCamelToLowerUnderscore(descriptor.getName());
-                    TypeResolutionContext newCtx = ctx.appendTypePath(rawType);
                     TypeRef<?> fieldType = descriptor.getTypeRef();
-                    Class<?> rawFieldType = getRawType(fieldType);
-                    if (rawFieldType.isInterface()) {
-                      newCtx = newCtx.withSynthesizedBeanType(rawFieldType);
-                    }
-                    return inferField(n, fieldType, newCtx);
+                    return inferField(n, fieldType, ctx.appendTypePath(rawType));
                   })
               .collect(Collectors.toList());
       return DataTypes.structField(name, true, fields);

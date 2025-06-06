@@ -599,7 +599,7 @@ public class TypeUtils {
 
   public static boolean isBean(TypeRef<?> typeRef, TypeResolutionContext ctx) {
     Class<?> cls = getRawType(typeRef);
-    if (ctx.isSynthesizedBeanType(cls) || RecordUtils.isRecord(cls)) {
+    if (ctx.isSynthesizeInterfaces() && (RecordUtils.isRecord(cls) || (cls.isInterface()))) {
       return true;
     }
     if (Modifier.isAbstract(cls.getModifiers()) || Modifier.isInterface(cls.getModifiers())) {
@@ -702,10 +702,12 @@ public class TypeUtils {
   public static LinkedHashSet<Class<?>> listBeansRecursiveInclusive(
       Class<?> beanClass, CustomTypeRegistry customTypes) {
     TypeResolutionContext ctx = new TypeResolutionContext(customTypes);
-    if (beanClass.isInterface()) {
-      ctx = ctx.withSynthesizedBeanType(beanClass);
-    }
     return listBeansRecursiveInclusive(TypeRef.of(beanClass), ctx);
+  }
+
+  public static LinkedHashSet<Class<?>> listBeansRecursiveInclusive(
+      Class<?> beanClass, TypeResolutionContext typeCtx) {
+    return listBeansRecursiveInclusive(TypeRef.of(beanClass), typeCtx);
   }
 
   private static LinkedHashSet<Class<?>> listBeansRecursiveInclusive(
@@ -735,12 +737,8 @@ public class TypeUtils {
       beans.add(type);
       for (Descriptor descriptor : descriptors) {
         ctx.checkNoCycle(typeRef);
-        TypeRef<?> propertyTypeRef = descriptor.getTypeRef();
-        Class<?> propertyType = propertyTypeRef.getRawType();
-        if (propertyType.isInterface()) {
-          newCtx = newCtx.withSynthesizedBeanType(propertyType);
-        }
-        beans.addAll(listBeansRecursiveInclusive(propertyTypeRef, newCtx.appendTypePath(typeRef)));
+        beans.addAll(
+            listBeansRecursiveInclusive(descriptor.getTypeRef(), newCtx.appendTypePath(typeRef)));
       }
     }
     return beans;

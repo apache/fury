@@ -49,6 +49,7 @@ import org.apache.fory.logging.LoggerFactory;
 import org.apache.fory.memory.MemoryBuffer;
 import org.apache.fory.memory.MemoryUtils;
 import org.apache.fory.reflect.TypeRef;
+import org.apache.fory.type.TypeResolutionContext;
 import org.apache.fory.type.TypeUtils;
 
 /**
@@ -679,7 +680,8 @@ public class Encoders {
   public static Class<?> loadOrGenRowCodecClass(Class<?> beanClass) {
     Set<Class<?>> classes =
         TypeUtils.listBeansRecursiveInclusive(
-            beanClass, CustomTypeEncoderRegistry.customTypeHandler());
+            beanClass,
+            new TypeResolutionContext(CustomTypeEncoderRegistry.customTypeHandler(), true));
     LOG.info("Create RowCodec for classes {}", classes);
     CompileUnit[] compileUnits =
         classes.stream()
