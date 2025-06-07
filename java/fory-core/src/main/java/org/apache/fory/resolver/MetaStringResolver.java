@@ -20,7 +20,7 @@
 package org.apache.fory.resolver;
 
 import java.util.Arrays;
-import org.apache.fory.collection.LongLongMap;
+import org.apache.fory.collection.LongLongByteMap;
 import org.apache.fory.collection.LongMap;
 import org.apache.fory.collection.ObjectMap;
 import org.apache.fory.memory.LittleEndian;
@@ -46,8 +46,8 @@ public final class MetaStringResolver {
       new ObjectMap<>(initialCapacity, foryMapLoadFactor);
   private final LongMap<MetaStringBytes> hash2MetaStringBytesMap =
       new LongMap<>(initialCapacity, foryMapLoadFactor);
-  private final LongLongMap<MetaStringBytes> longLongMap =
-      new LongLongMap<>(initialCapacity, foryMapLoadFactor);
+  private final LongLongByteMap<MetaStringBytes> longLongMap =
+      new LongLongByteMap<>(initialCapacity, foryMapLoadFactor);
   // Every enum bytes should be singleton at every fory, since we keep state in it.
   private final ObjectMap<MetaString, MetaStringBytes> metaString2BytesMap =
       new ObjectMap<>(initialCapacity, foryMapLoadFactor);
@@ -234,7 +234,7 @@ public final class MetaStringResolver {
       v1 = buffer.readInt64();
       v2 = buffer.readBytesAsInt64(len - 8);
     }
-    MetaStringBytes byteString = longLongMap.get(v1, v2);
+    MetaStringBytes byteString = longLongMap.get(v1, v2, encoding);
     if (byteString == null) {
       byteString = createSmallMetaStringBytes(len, encoding, v1, v2);
     }
@@ -258,7 +258,7 @@ public final class MetaStringResolver {
     if (cache.first8Bytes == v1 && cache.second8Bytes == v2) {
       return cache;
     }
-    MetaStringBytes byteString = longLongMap.get(v1, v2);
+    MetaStringBytes byteString = longLongMap.get(v1, v2, encoding);
     if (byteString == null) {
       byteString = createSmallMetaStringBytes(len, encoding, v1, v2);
     }
@@ -273,7 +273,7 @@ public final class MetaStringResolver {
     hashCode = Math.abs(hashCode);
     hashCode = (hashCode & 0xffffffffffffff00L) | encoding;
     MetaStringBytes metaStringBytes = new MetaStringBytes(Arrays.copyOf(data, len), hashCode);
-    longLongMap.put(v1, v2, metaStringBytes);
+    longLongMap.put(v1, v2, encoding, metaStringBytes);
     return metaStringBytes;
   }
 
