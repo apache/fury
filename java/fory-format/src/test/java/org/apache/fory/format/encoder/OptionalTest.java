@@ -54,6 +54,18 @@ public class OptionalTest {
   }
 
   @Test
+  public void testOptionalNull() {
+    final OptionalType bean = new OptionalType();
+    final RowEncoder<OptionalType> encoder = Encoders.bean(OptionalType.class);
+    final BinaryRow row = encoder.toRow(bean);
+    final MemoryBuffer buffer = MemoryUtils.wrap(row.toBytes());
+    row.pointTo(buffer, 0, buffer.size());
+    final OptionalType deserializedBean = encoder.fromRow(row);
+    Assert.assertEquals(deserializedBean.f1, Optional.empty());
+    Assert.assertEquals(deserializedBean.f2, Optional.empty());
+  }
+
+  @Test
   public void testOptionalPresent() {
     final OptionalType bean = new OptionalType();
     bean.f1 = Optional.of(42);
