@@ -23,8 +23,8 @@ import org.apache.fory.annotation.Internal;
 import org.apache.fory.util.Preconditions;
 
 /**
- * A fast linear hash probe based map whose key is two long and a byte values `(long k1, long k2, byte k3)`. This map
- * can avoid creating a java object for key to save memory/cpu cost.
+ * A fast linear hash probe based map whose key is two long and a byte values `(long k1, long k2,
+ * byte k3)`. This map can avoid creating a java object for key to save memory/cpu cost.
  */
 // The linear probed hash is derived from
 // https://github.com/EsotericSoftware/kryo/blob/135df69526615bb3f6b34846e58ba3fec3b631c3/src/com/esotericsoftware/kryo/util/IntMap.java.
@@ -66,7 +66,7 @@ public final class LongLongByteMap<V> {
    */
   public LongLongByteMap(int initialCapacity, float loadFactor) {
     Preconditions.checkArgument(
-      0 <= loadFactor && loadFactor <= 1, "loadFactor %s must be > 0 and < 1", loadFactor);
+        0 <= loadFactor && loadFactor <= 1, "loadFactor %s must be > 0 and < 1", loadFactor);
     this.loadFactor = loadFactor;
     int tableSize = ForyObjectMap.tableSize(initialCapacity, loadFactor);
     threshold = (int) (tableSize * loadFactor);
