@@ -16,14 +16,14 @@
 # under the License.
 
 [package]
-name = "fury-tests"
+name = "fory-tests"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 publish = false
 
 [dependencies]
-fury-core = { path = "../fury-core" }
-fury-derive = { path = "../fury-derive" }
+fory-core = { path = "../fory-core" }
+fory-derive = { path = "../fory-derive" }
 
 chrono = "0.4"

@@ -17,62 +17,62 @@
  * under the License.
  */
 
-import Fury, { TypeInfo, InternalSerializerType, Type } from '../packages/fury/index';
+import Fory, { TypeInfo, InternalSerializerType, Type } from '../packages/fory/index';
 import { describe, expect, test } from '@jest/globals';
 
 describe('number', () => {
   test('should i8 work', () => {
     
-    const fury = new Fury({ refTracking: true });    
-    const serialize = fury.registerSerializer(Type.struct({
+    const fory = new Fory({ refTracking: true });    
+    const serialize = fory.registerSerializer(Type.struct({
       typeName: "example.foo"
     }, {
       a: Type.int8()
     })).serializer;
-    const input = fury.serialize({ a: 1 }, serialize);
-    const result = fury.deserialize(
+    const input = fory.serialize({ a: 1 }, serialize);
+    const result = fory.deserialize(
       input
     );
     expect(result).toEqual({ a: 1 })
   });
   test('should i16 work', () => {
     
-    const fury = new Fury({ refTracking: true });    
-    const serialize = fury.registerSerializer(Type.struct({
+    const fory = new Fory({ refTracking: true });    
+    const serialize = fory.registerSerializer(Type.struct({
       typeName: "example.foo"
     }, {
       a: Type.int16()
     })).serializer;
-    const input = fury.serialize({ a: 1 }, serialize);
-    const result = fury.deserialize(
+    const input = fory.serialize({ a: 1 }, serialize);
+    const result = fory.deserialize(
       input
     );
     expect(result).toEqual({ a: 1 })
   });
   test('should i32 work', () => {
     
-    const fury = new Fury({ refTracking: true });    
-    const serializer = fury.registerSerializer(Type.struct({
+    const fory = new Fory({ refTracking: true });    
+    const serializer = fory.registerSerializer(Type.struct({
       typeName: "example.foo"
     }, {
       a: Type.int32()
     })).serializer;
-    const input = fury.serialize({ a: 1 }, serializer);
-    const result = fury.deserialize(
+    const input = fory.serialize({ a: 1 }, serializer);
+    const result = fory.deserialize(
       input
     );
     expect(result).toEqual({ a: 1 })
   });
   test('should i64 work', () => {
     
-    const fury = new Fury({ refTracking: true });    
-    const serializer = fury.registerSerializer(Type.struct({
+    const fory = new Fory({ refTracking: true });    
+    const serializer = fory.registerSerializer(Type.struct({
       typeName: "example.foo"
     }, {
       a: Type.int64()
     })).serializer;
-    const input = fury.serialize({ a: 1 }, serializer);
-    const result = fury.deserialize(
+    const input = fory.serialize({ a: 1 }, serializer);
+    const result = fory.deserialize(
       input
     );
     result.a = Number(result.a)
@@ -81,28 +81,28 @@ describe('number', () => {
 
   test('should float work', () => {
     
-    const fury = new Fury({ refTracking: true });    
-    const serializer = fury.registerSerializer(Type.struct({
+    const fory = new Fory({ refTracking: true });    
+    const serializer = fory.registerSerializer(Type.struct({
       typeName: "example.foo"
     }, {
       a: Type.float32()
     })).serializer;
-    const input = fury.serialize({ a: 1.2 }, serializer);
-    const result = fury.deserialize(
+    const input = fory.serialize({ a: 1.2 }, serializer);
+    const result = fory.deserialize(
       input
     );
     expect(result.a).toBeCloseTo(1.2)
   });
   test('should float64 work', () => {
     
-    const fury = new Fury({ refTracking: true });    
-    const serializer = fury.registerSerializer(Type.struct({
+    const fory = new Fory({ refTracking: true });    
+    const serializer = fory.registerSerializer(Type.struct({
       typeName: "example.foo"
     }, {
       a: Type.float64()
     })).serializer;
-    const input = fury.serialize({ a: 1.2 }, serializer);
-    const result = fury.deserialize(
+    const input = fory.serialize({ a: 1.2 }, serializer);
+    const result = fory.deserialize(
       input
     );
     expect(result.a).toBeCloseTo(1.2)

@@ -17,13 +17,13 @@
  * under the License.
  */
 
-module org.apache.fury.integration_tests {
+module org.apache.fory.integration_tests {
 
-    requires org.apache.fury.benchmark;
-    requires org.apache.fury.core;
-    requires org.apache.fury.format;
-    requires org.apache.fury.test.core;
+    requires org.apache.fory.benchmark;
+    requires org.apache.fory.core;
+    requires org.apache.fory.format;
+    requires org.apache.fory.test.core;
 
     // we can't really test any classes from this module because it only contains test-classes
-    requires org.apache.fury.test.suite;
+    requires org.apache.fory.test.suite;
 }

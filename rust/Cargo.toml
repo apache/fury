@@ -17,9 +17,9 @@
 
 [workspace]
 members = [
-    "fury-core",
-    "fury",
-    "fury-derive",
+    "fory-core",
+    "fory",
+    "fory-derive",
     "tests"
 ]
 
@@ -34,7 +34,7 @@ version = "0.11.0"
 rust-version = "1.70"
 license = "Apache-2.0"
 readme = "README.md"
-repository = "https://github.com/apache/fury"
+repository = "https://github.com/apache/fory"
 edition = "2021"
-keywords = ["fury", "data", "serialization"]
+keywords = ["fory", "data", "serialization"]
 categories = ["encoding"]

@@ -27,9 +27,9 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "pyfury"
+name = "pyfory"
 dynamic = ["version"]
-description = "Apache Fury™(incubating) is a blazingly fast multi-language serialization framework powered by jit and zero-copy"
+description = "Apache Fory™(incubating) is a blazingly fast multi-language serialization framework powered by jit and zero-copy"
 authors = [
     {name = "chaokunyang", email = "shawn.ck.yang@gmail.com"},
 ]
@@ -48,7 +48,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: Implementation :: CPython",
 ]
-keywords = ["fury", "serialization", "multi-language", "fast", "row-format", "jit", "codegen", "polymorphic", "zero-copy"]
+keywords = ["fory", "serialization", "multi-language", "fast", "row-format", "jit", "codegen", "polymorphic", "zero-copy"]
 dependencies = [
     "cloudpickle",
 ]
@@ -58,14 +58,14 @@ format = ["pyarrow"]
 all = ["pyarrow"]
 
 [tool.setuptools]
-packages = ["pyfury", "pyfury.format", "pyfury.lib.mmh3"]
+packages = ["pyfory", "pyfory.format", "pyfory.lib.mmh3"]
 include-package-data = true
 zip-safe = false
 
 [tool.setuptools.package-data]
-"pyfury" = ["**/*.pxd", "**/*.pyx", "**/*.pxd", "*.so", "*.dylib", "*.dll", "*.pyd"]
-"pyfury.format" = ["**/*.pxd", "**/*.pyx", "**/*.pxd", "*.so", "*.dylib", "*.dll", "*.pyd"]
-"pyfury.lib.mmh3" = ["**/*.pxd", "**/*.pyx", "**/*.pxd", "*.so", "*.dylib", "*.dll", "*.pyd"]
+"pyfory" = ["**/*.pxd", "**/*.pyx", "**/*.pxd", "*.so", "*.dylib", "*.dll", "*.pyd"]
+"pyfory.format" = ["**/*.pxd", "**/*.pyx", "**/*.pxd", "*.so", "*.dylib", "*.dll", "*.pyd"]
+"pyfory.lib.mmh3" = ["**/*.pxd", "**/*.pyx", "**/*.pxd", "*.so", "*.dylib", "*.dll", "*.pyd"]
 
 [tool.setuptools.dynamic]
-version = {attr = "pyfury.__version__"}
+version = {attr = "pyfory.__version__"}

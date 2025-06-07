@@ -1,21 +1,23 @@
 <div align="center">
-  <img width="65%" alt="" src="docs/images/logo/fury_github_banner.png"><br>
+  <img width="65%" alt="" src="docs/images/logo/fory-horizontal.png"><br>
 </div>
 
-[![Build Status](https://img.shields.io/github/actions/workflow/status/apache/fury/ci.yml?branch=main&style=for-the-badge&label=GITHUB%20ACTIONS&logo=github)](https://github.com/apache/fury/actions/workflows/ci.yml)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/apache/fory/ci.yml?branch=main&style=for-the-badge&label=GITHUB%20ACTIONS&logo=github)](https://github.com/apache/fory/actions/workflows/ci.yml)
 [![Slack Channel](https://img.shields.io/badge/slack-join-3f0e40?logo=slack&style=for-the-badge)](https://join.slack.com/t/fury-project/shared_invite/zt-1u8soj4qc-ieYEu7ciHOqA2mo47llS8A)
-[![X](https://img.shields.io/badge/@ApacheFury-follow-blue?logo=x&style=for-the-badge)](https://x.com/ApacheFury)
+[![X](https://img.shields.io/badge/@ApacheFory-follow-blue?logo=x&style=for-the-badge)](https://x.com/ApacheFory)
 [![Maven Version](https://img.shields.io/maven-central/v/org.apache.fury/fury-core?style=for-the-badge)](https://search.maven.org/#search|gav|1|g:"org.apache.fury"%20AND%20a:"fury-core")
 
-**Apache Fury (incubating)** is a blazingly-fast multi-language serialization framework powered by **JIT** (just-in-time compilation) and **zero-copy**, providing up to 170x performance and ultimate ease of use.
+**Apache Fory (incubating)** is a blazingly-fast multi-language serialization framework powered by **JIT** (just-in-time compilation) and **zero-copy**, providing up to 170x performance and ultimate ease of use.
 
-<https://fury.apache.org>
+<https://fory.apache.org>
 
 > [!IMPORTANT]
-> Apache Fury (incubating) is an effort undergoing incubation at the Apache
+> Apache Fory (incubating) is an effort undergoing incubation at the Apache
 > Software Foundation (ASF), sponsored by the Apache Incubator PMC.
 >
 > Please read the [DISCLAIMER](DISCLAIMER) and a full explanation of ["incubating"](https://incubator.apache.org/policy/incubation.html).
+>
+> Apache Fory was previously named as **Apache Fury**. **For versions less than 0.11**, please **use "fury" instead of "fory"** in package names, imports, and dependencies.
 
 ## Features
 
@@ -29,7 +31,7 @@
   - reduce hash lookup.
 - **Multiple binary protocols**: Object graph, row format, and so on.
 
-In addition to cross-language serialization, Fury also features at:
+In addition to cross-language serialization, Fory also features at:
 
 - Drop-in replace Java serialization frameworks such as JDK/Kryo/Hessian, but 100x faster at most, which can greatly improve
  the efficiency of high-performance RPC calls, data transfer, and object persistence.
@@ -43,7 +45,7 @@ In addition to cross-language serialization, Fury also features at:
 
 ## Protocols
 
-Fury designed and implemented multiple binary protocols for different scenarios:
+Fory designed and implemented multiple binary protocols for different scenarios:
 
 - **[xlang serialization format](docs/specification/xlang_serialization_spec.md)**:
   - Cross-language serialize any object automatically, no need for IDL definition, schema compilation and object to/from
@@ -54,7 +56,7 @@ Fury designed and implemented multiple binary protocols for different scenarios:
 - **[Row format format](docs/specification/row_format_spec.md)**: A cache-friendly binary random access format, supports skipping serialization and
   partial serialization, and can convert to column-format automatically.
 
-New protocols can be easily added based on Fury existing buffer, encoding, meta, codegen and other capabilities. All of those share the same codebase, and the optimization for one protocol can be reused by another protocol.
+New protocols can be easily added based on Fory existing buffer, encoding, meta, codegen and other capabilities. All of those share the same codebase, and the optimization for one protocol can be reused by another protocol.
 
 ## Benchmarks
 
@@ -62,14 +64,14 @@ Different serialization frameworks are suitable for different scenarios, and ben
 
 If you need to benchmark for your specific scenario, make sure all serialization frameworks are appropriately configured for that scenario.
 
-Dynamic serialization frameworks support polymorphism and references, but they often come with a higher cost compared to static serialization frameworks, unless they utilize JIT techniques like Fury does.
-To ensure accurate benchmark statistics, it is advisable to **warm up** the system before collecting data due to Fury's runtime code generation.
+Dynamic serialization frameworks support polymorphism and references, but they often come with a higher cost compared to static serialization frameworks, unless they utilize JIT techniques like Fory does.
+To ensure accurate benchmark statistics, it is advisable to **warm up** the system before collecting data due to Fory's runtime code generation.
 
 ### Java Serialization
 
 In these charts below, titles containing "compatible" represent schema compatible mode: type forward/backward compatibility is enabled; while titles without "compatible" represent schema consistent mode: class schema must be the same between serialization and deserialization.
 
-Where `Struct` is a class with [100 primitive fields](https://github.com/apache/fury/tree/main/docs/benchmarks#Struct), `MediaContent` is a class from [jvm-serializers](https://github.com/eishay/jvm-serializers/blob/master/tpc/src/data/media/MediaContent.java), and `Sample` is a class from [kryo benchmark](https://github.com/EsotericSoftware/kryo/blob/master/benchmarks/src/main/java/com/esotericsoftware/kryo/benchmarks/data/Sample.java).
+Where `Struct` is a class with [100 primitive fields](https://github.com/apache/fory/tree/main/docs/benchmarks#Struct), `MediaContent` is a class from [jvm-serializers](https://github.com/eishay/jvm-serializers/blob/master/tpc/src/data/media/MediaContent.java), and `Sample` is a class from [kryo benchmark](https://github.com/EsotericSoftware/kryo/blob/master/benchmarks/src/main/java/com/esotericsoftware/kryo/benchmarks/data/Sample.java).
 
 <p align="center">
 <img width="24%" alt="" src="docs/benchmarks/compatible/bench_serialize_compatible_STRUCT_to_directBuffer_tps.png">
@@ -85,7 +87,7 @@ Where `Struct` is a class with [100 primitive fields](https://github.com/apache/
 <img width="24%" alt="" src="docs/benchmarks/deserialization/bench_deserialize_SAMPLE_from_array_tps.png">
 </p>
 
-See [benchmarks](https://github.com/apache/fury/tree/main/docs/benchmarks) for more benchmarks about type forward/backward compatibility, off-heap support, zero-copy serialization.
+See [benchmarks](https://github.com/apache/fory/tree/main/docs/benchmarks) for more benchmarks about type forward/backward compatibility, off-heap support, zero-copy serialization.
 
 ## Installation
 
@@ -107,14 +109,14 @@ Nightly snapshot:
   </repository>
 </repositories>
 <dependency>
-  <groupId>org.apache.fury</groupId>
-  <artifactId>fury-core</artifactId>
+  <groupId>org.apache.fory</groupId>
+  <artifactId>fory-core</artifactId>
   <version>0.11.0-SNAPSHOT</version>
 </dependency>
 <!-- row/arrow format support -->
 <!-- <dependency>
-  <groupId>org.apache.fury</groupId>
-  <artifactId>fury-format</artifactId>
+  <groupId>org.apache.fory</groupId>x
+  <artifactId>fory-format</artifactId>
   <version>0.11.0-SNAPSHOT</version>
 </dependency> -->
 ```
@@ -125,13 +127,13 @@ Release version:
 <dependency>
   <groupId>org.apache.fury</groupId>
   <artifactId>fury-core</artifactId>
-  <version>0.10.2</version>
+  <version>0.10.3</version>
 </dependency>
 <!-- row/arrow format support -->
 <!-- <dependency>
   <groupId>org.apache.fury</groupId>
   <artifactId>fury-format</artifactId>
-  <version>0.10.2</version>
+  <version>0.10.3</version>
 </dependency> -->
 ```
 
@@ -140,13 +142,13 @@ Release version:
 Scala2:
 
 ```sbt
-libraryDependencies += "org.apache.fury" % "fury-scala_2.13" % "0.10.2"
+libraryDependencies += "org.apache.fury" % "fury-scala_2.13" % "0.10.3"
 ```
 
 Scala3:
 
 ```sbt
-libraryDependencies += "org.apache.fury" % "fury-scala_3" % "0.10.2"
+libraryDependencies += "org.apache.fury" % "fury-scala_3" % "0.10.3"
 ```
 
 ### Kotlin
@@ -155,33 +157,33 @@ libraryDependencies += "org.apache.fury" % "fury-scala_3" % "0.10.2"
 <dependency>
   <groupId>org.apache.fury</groupId>
   <artifactId>fury-kotlin</artifactId>
-  <version>0.10.2</version>
+  <version>0.10.3</version>
 </dependency>
 ```
 
 ### Python
 
 ```bash
-pip install pyfury
+pip install pyfory
 ```
 
 ### JavaScript
 
 ```bash
-npm install @furyjs/fury
+npm install @foryjs/fory
 ```
 
 ### Golang
 
 ```bash
-go get github.com/apache/fury/go/fury
+go get github.com/apache/fory/go/fory
 ```
 
 ## Quickstart
 
-Here we give a quick start about how to use Fury, see [user guide](docs/README.md) for more details about [java](docs/guide/java_serialization_guide.md), [cross language](docs/guide/xlang_serialization_guide.md), and [row format](docs/guide/row_format_guide.md).
+Here we give a quick start about how to use Fory, see [user guide](docs/README.md) for more details about [java](docs/guide/java_serialization_guide.md), [cross language](docs/guide/xlang_serialization_guide.md), and [row format](docs/guide/row_format_guide.md).
 
-### Fury java object graph serialization
+### Fory java object graph serialization
 
 If you don't have cross-language requirements, using this mode will
 result in better performance.
@@ -194,37 +196,37 @@ import java.util.*;
 public class Example {
   public static void main(String[] args) {
     SomeClass object = new SomeClass();
-    // Note that Fury instances should be reused between
+    // Note that Fory instances should be reused between
     // multiple serializations of different objects.
     {
-      Fury fury = Fury.builder().withLanguage(Language.JAVA)
+      Fory fory = Fory.builder().withLanguage(Language.JAVA)
         .requireClassRegistration(true)
         .build();
       // Registering types can reduce class name serialization overhead, but not mandatory.
       // If class registration enabled, all custom types must be registered.
-      fury.register(SomeClass.class);
-      byte[] bytes = fury.serialize(object);
-      System.out.println(fury.deserialize(bytes));
+      fory.register(SomeClass.class);
+      byte[] bytes = fory.serialize(object);
+      System.out.println(fory.deserialize(bytes));
     }
     {
-      ThreadSafeFury fury = Fury.builder().withLanguage(Language.JAVA)
+      ThreadSafeFory fory = Fory.builder().withLanguage(Language.JAVA)
         .requireClassRegistration(true)
-        .buildThreadSafeFury();
+        .buildThreadSafeFory();
       // Registering types can reduce class name serialization overhead, but not mandatory.
       // If class registration enabled, all custom types must be registered.
-      fury.register(SomeClass.class);
-      byte[] bytes = fury.serialize(object);
-      System.out.println(fury.deserialize(bytes));
+      fory.register(SomeClass.class);
+      byte[] bytes = fory.serialize(object);
+      System.out.println(fory.deserialize(bytes));
     }
     {
-      ThreadSafeFury fury = new ThreadLocalFury(classLoader -> {
-        Fury f = Fury.builder().withLanguage(Language.JAVA)
+      ThreadSafeFory fory = new ThreadLocalFory(classLoader -> {
+        Fory f = Fory.builder().withLanguage(Language.JAVA)
           .withClassLoader(classLoader).build();
         f.register(SomeClass.class);
         return f;
       });
-      byte[] bytes = fury.serialize(object);
-      System.out.println(fury.deserialize(bytes));
+      byte[] bytes = fory.serialize(object);
+      System.out.println(fory.deserialize(bytes));
     }
   }
 }
@@ -256,12 +258,12 @@ public class ReferenceExample {
 
   // mvn exec:java -Dexec.mainClass="org.apache.fury.examples.ReferenceExample"
   public static void main(String[] args) {
-    Fury fury = Fury.builder().withLanguage(Language.XLANG)
+    Fory fory = Fory.builder().withLanguage(Language.XLANG)
       .withRefTracking(true).build();
-    fury.register(SomeClass.class, "example.SomeClass");
-    byte[] bytes = fury.serialize(createObject());
+    fory.register(SomeClass.class, "example.SomeClass");
+    byte[] bytes = fory.serialize(createObject());
     // bytes can be data serialized by other languages.
-    System.out.println(fury.deserialize(bytes));
+    System.out.println(fory.deserialize(bytes));
   }
 }
 ```
@@ -270,21 +272,21 @@ public class ReferenceExample {
 
 ```python
 from typing import Dict
-import pyfury
+import pyfory
 
 class SomeClass:
     f1: "SomeClass"
     f2: Dict[str, str]
     f3: Dict[str, str]
 
-fury = pyfury.Fury(ref_tracking=True)
-fury.register_type(SomeClass, typename="example.SomeClass")
+fory = pyfory.Fory(ref_tracking=True)
+fory.register_type(SomeClass, typename="example.SomeClass")
 obj = SomeClass()
 obj.f2 = {"k1": "v1", "k2": "v2"}
 obj.f1, obj.f3 = obj, obj.f2
-data = fury.serialize(obj)
+data = fory.serialize(obj)
 # bytes can be data serialized by other languages.
-print(fury.deserialize(data))
+print(fory.deserialize(data))
 ```
 
 **Golang**
@@ -292,7 +294,7 @@ print(fury.deserialize(data))
 ```go
 package main
 
-import furygo "github.com/apache/fury/go/fury"
+import forygo "github.com/apache/fory/go/fory"
 import "fmt"
 
 func main() {
@@ -301,19 +303,19 @@ func main() {
   F2 map[string]string
   F3 map[string]string
  }
- fury := furygo.NewFury(true)
- if err := fury.RegisterTagType("example.SomeClass", SomeClass{}); err != nil {
+ fory := forygo.NewFory(true)
+ if err := fory.RegisterTagType("example.SomeClass", SomeClass{}); err != nil {
   panic(err)
  }
  value := &SomeClass{F2: map[string]string{"k1": "v1", "k2": "v2"}}
  value.F3 = value.F2
  value.F1 = value
- bytes, err := fury.Marshal(value)
+ bytes, err := fory.Marshal(value)
  if err != nil {
  }
  var newValue interface{}
  // bytes can be data serialized by other languages.
- if err := fury.Unmarshal(bytes, &newValue); err != nil {
+ if err := fory.Unmarshal(bytes, &newValue); err != nil {
   panic(err)
  }
  fmt.Println(newValue)
@@ -383,12 +385,12 @@ class Foo:
     f3: Dict[str, pa.int32]
     f4: List[Bar]
 
-encoder = pyfury.encoder(Foo)
+encoder = pyfory.encoder(Foo)
 foo = Foo(f1=10, f2=list(range(1000_000)),
          f3={f"k{i}": i for i in range(1000_000)},
          f4=[Bar(f1=f"s{i}", f2=list(range(10))) for i in range(1000_000)])
 binary: bytes = encoder.to_row(foo).to_bytes()
-foo_row = pyfury.RowData(encoder.schema, binary)
+foo_row = pyfory.RowData(encoder.schema, binary)
 print(foo_row.f2[100000], foo_row.f4[100000].f1, foo_row.f4[200000].f2[5])
 ```
 
@@ -396,31 +398,31 @@ print(foo_row.f2[100000], foo_row.f4[100000].f1, foo_row.f4[200000].f2[5])
 
 ### Schema Compatibility
 
-Fury java object graph serialization supports class schema forward/backward compatibility. The serialization peer and deserialization peer can add/delete fields independently.
+Fory java object graph serialization supports class schema forward/backward compatibility. The serialization peer and deserialization peer can add/delete fields independently.
 
-We plan to add the schema compatibility support of cross-language serialization after [meta compression](https://github.com/apache/fury/issues/203) is finished.
+We plan to add the schema compatibility support of cross-language serialization after [meta compression](https://github.com/apache/fory/issues/203) is finished.
 
 ### Binary Compatibility
 
-We are still improving our protocols, thus binary compatibility is not guaranteed between Fury major releases for now.
+We are still improving our protocols, thus binary compatibility is not guaranteed between Fory major releases for now.
 However, it is guaranteed between minor versions. Please
-`versioning` your data by Fury major version if you will upgrade Fury in the future, see [how to upgrade fury](https://github.com/apache/fury/blob/main/docs/guide/java_serialization_guide.md#upgrade-fury) for further details.
+`versioning` your data by Fory major version if you will upgrade Fory in the future, see [how to upgrade fory](https://github.com/apache/fory/blob/main/docs/guide/java_serialization_guide.md#upgrade-fory) for further details.
 
-Binary compatibility will be guaranteed when Fury 1.0 is released.
+Binary compatibility will be guaranteed when Fory 1.0 is released.
 
 ## Security
 
-Static serialization is relatively secure. But dynamic serialization such as Fury java/python native serialization supports deserializing unregistered types, which provides more dynamics and flexibility, but also introduce security risks.
+Static serialization is relatively secure. But dynamic serialization such as Fory java/python native serialization supports deserializing unregistered types, which provides more dynamics and flexibility, but also introduce security risks.
 
 For example, the deserialization may invoke `init` constructor or `equals`/`hashCode` method, if the method body contains malicious code, the system will be at risk.
 
-Fury provides a class registration option that is enabled by default for such protocols, allowing only deserialization of trusted registered types or built-in types.
+Fory provides a class registration option that is enabled by default for such protocols, allowing only deserialization of trusted registered types or built-in types.
  **Do not disable class registration unless you can ensure your environment is secure**.
 
 If this option is disabled, you are responsible for serialization security. You can configure `org.apache.fury.resolver.ClassChecker` by
 `ClassResolver#setClassChecker` to control which classes are allowed for serialization.
 
-To report security vulnerabilities found in Fury, please follow the [ASF vulnerability reporting process](https://apache.org/security/#reporting-a-vulnerability).
+To report security vulnerabilities found in Fory, please follow the [ASF vulnerability reporting process](https://apache.org/security/#reporting-a-vulnerability).
 
 ## How to Build
 

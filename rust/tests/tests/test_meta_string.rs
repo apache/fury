@@ -17,7 +17,7 @@
 
 use std::iter;
 
-use fury_core::meta::{Encoding, MetaStringDecoder, MetaStringEncoder};
+use fory_core::meta::{Encoding, MetaStringDecoder, MetaStringEncoder};
 
 #[test]
 fn test_encode_meta_string_lower_special() {
@@ -25,7 +25,7 @@ fn test_encode_meta_string_lower_special() {
     let bytes1 = encoder.encode_lower_special("abc_def").unwrap();
     assert_eq!(bytes1.len(), 5);
     let bytes2 = encoder
-        .encode("org.apache.fury.benchmark.data")
+        .encode("org.apache.fory.benchmark.data")
         .unwrap()
         .bytes;
     assert_eq!(bytes2.len(), 19);

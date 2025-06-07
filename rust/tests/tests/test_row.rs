@@ -17,12 +17,12 @@
 
 use std::collections::BTreeMap;
 
-use fury_core::row::{from_row, to_row};
-use fury_derive::FuryRow;
+use fory_core::row::{from_row, to_row};
+use fory_derive::ForyRow;
 
 #[test]
 fn row() {
-    #[derive(FuryRow)]
+    #[derive(ForyRow)]
     struct Foo {
         f1: String,
         f2: i8,
@@ -31,7 +31,7 @@ fn row() {
         f5: BTreeMap<String, String>,
     }
 
-    #[derive(FuryRow)]
+    #[derive(ForyRow)]
     struct Bar {
         f3: Foo,
     }

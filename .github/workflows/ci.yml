@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-name: Fury CI
+name: Fory CI
 
 on:
   push:
@@ -46,7 +46,7 @@ jobs:
       MY_VAR: "PATH"
     strategy:
       matrix:
-        java-version: ["8", "11", "17", "21"]
+        java-version: ["8", "11", "17", "21", "24"]
     steps:
       - uses: actions/checkout@v4
       - name: Set up JDK ${{ matrix.java-version }}
@@ -62,10 +62,17 @@ jobs:
         run: ./ci/run_ci.sh install_bazel
       - name: Install python
         run: ./ci/run_ci.sh install_python
-      - name: Install pyfury
-        run: ./ci/run_ci.sh install_pyfury
+      - name: Install pyfory
+        run: ./ci/run_ci.sh install_pyfory
       - name: Run CI with Maven
         run: ./ci/run_ci.sh java${{ matrix.java-version }}
+      - name: Upload Test Report
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: surefire-reports-${{ matrix.java-version }}
+          path: "**/target/surefire-reports/**"
+
   openj9:
     name: Openj9 Java CI
     runs-on: ubuntu-latest
@@ -73,7 +80,7 @@ jobs:
       MY_VAR: "PATH"
     strategy:
       matrix:
-        # String in openj9 1.8 share byte array by offset, fury doesn't allow it.
+        # String in openj9 1.8 share byte array by offset, fory doesn't allow it.
         java-version: ["21"]
     steps:
       - uses: actions/checkout@v4
@@ -90,8 +97,8 @@ jobs:
         run: ./ci/run_ci.sh install_bazel
       - name: Install python
         run: ./ci/run_ci.sh install_python
-      - name: Install pyfury
-        run: ./ci/run_ci.sh install_pyfury
+      - name: Install pyfory
+        run: ./ci/run_ci.sh install_pyfory
       - name: Run CI with Maven
         run: ./ci/run_ci.sh java${{ matrix.java-version }}
 
@@ -151,7 +158,7 @@ jobs:
         with:
           java-version: ${{ matrix.java-version }}
           distribution: "temurin"
-      - name: Install fury java
+      - name: Install fory java
         run: cd java && mvn -T10 --no-transfer-progress clean install -DskipTests && cd -
       - name: Run Kotlin CI
         run: ./ci/run_ci.sh kotlin
@@ -166,7 +173,7 @@ jobs:
         with:
           java-version: 11
           distribution: "temurin"
-      - name: Install fury java
+      - name: Install fory java
         run: cd java && mvn -T10 --no-transfer-progress clean install -DskipTests && cd -
       - name: Test
         run: |
@@ -199,7 +206,7 @@ jobs:
     name: JavaScript CI
     strategy:
       matrix:
-        node-version: [14.x, 16.x, 18.x, 20.x]
+        node-version: [16.x, 18.x, 20.x]
         os: [ubuntu-latest, macos-13, windows-2022]
     runs-on: ${{ matrix.os }}
     steps:
@@ -226,7 +233,7 @@ jobs:
     name: Rust CI
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-13, macos-14] # macos-13: x86, macos-14: arm64
+        os: [ubuntu-latest, macos-13, macos-14]  # macos-13: x86, macos-14: arm64
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     steps:
@@ -242,7 +249,7 @@ jobs:
     name: C++ CI
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-13, macos-14, windows-2022] # macos-13: x86, macos-14: arm64
+        os: [ubuntu-latest, macos-13, macos-14, windows-2022]  # macos-13: x86, macos-14: arm64
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -301,8 +308,8 @@ jobs:
         run: ./ci/run_ci.sh install_bazel
       - name: Install python
         run: ./ci/run_ci.sh install_python
-      - name: Install pyfury
-        run: ./ci/run_ci.sh install_pyfury
+      - name: Install pyfory
+        run: ./ci/run_ci.sh install_pyfory
       - name: Run Golang CI
         run: ./ci/run_ci.sh go
 

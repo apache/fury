@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import Fury, { TypeInfo, InternalSerializerType, Type, Mode } from '../packages/fury/index';
+import Fory, { TypeInfo, InternalSerializerType, Type, Mode } from '../packages/fory/index';
 import {describe, expect, test} from '@jest/globals';
 import * as beautify from 'js-beautify';
 
@@ -25,7 +25,7 @@ import * as beautify from 'js-beautify';
 describe('typemeta', () => {
   test('should evoluation scheme work', () => {
     
-    const fury = new Fury({
+    const fory = new Fory({
         mode: Mode.Compatible
     });    
 
@@ -48,7 +48,7 @@ describe('typemeta', () => {
         }
     }
 
-    const { serialize } = fury.registerSerializer(Foo);
+    const { serialize } = fory.registerSerializer(Foo);
     const bin = serialize(new Foo().setBar("hello").setBar2(123));
 
 
@@ -58,7 +58,7 @@ describe('typemeta', () => {
         bar: string;
     }
 
-    const fury2 = new Fury({
+    const fory2 = new Fory({
         mode: Mode.Compatible,
         hooks: {
             afterCodeGenerated: (code: string) => {
@@ -66,7 +66,7 @@ describe('typemeta', () => {
               }        
             }
     });    
-    const { deserialize  } = fury2.registerSerializer(Foo2);
+    const { deserialize  } = fory2.registerSerializer(Foo2);
     const r = deserialize(bin);
     expect(r).toEqual({
         bar: "hello",

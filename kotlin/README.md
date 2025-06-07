@@ -1,20 +1,20 @@
-# Apache Fury™ Kotlin
+# Apache Fory™ Kotlin
 
-This provides additional Fury support for Kotlin Serialization on JVM:
+This provides additional Fory support for Kotlin Serialization on JVM:
 
-Most standard kotlin types are already supported out of the box with the default Fury java implementation.
+Most standard kotlin types are already supported out of the box with the default Fory java implementation.
 
-Fury Kotlin provides additional tests and implementation support for Kotlin types.
+Fory Kotlin provides additional tests and implementation support for Kotlin types.
 
-Fury Kotlin is tested and works with the following types:
+Fory Kotlin is tested and works with the following types:
 
 - primitives: `Byte`, `Boolean`, `Int`, `Short`, `Long`, `Char`, `Float`, `Double`, `UByte`, `UShort`, `UInt`, `ULong`.
-- `Byte`, `Boolean`, `Int`, `Short`, `Long`, `Char`, `Float`, `Double` works out of the box with the default fury java implementation.
+- `Byte`, `Boolean`, `Int`, `Short`, `Long`, `Char`, `Float`, `Double` works out of the box with the default fory java implementation.
 - stdlib `collection`: `ArrayDeque`, `ArrayList`, `HashMap`,`HashSet`, `LinkedHashSet`, `LinkedHashMap`.
-- `ArrayList`, `HashMap`,`HashSet`, `LinkedHashSet`, `LinkedHashMap` works out of the box with the default fury java implementation.
-- `String` works out of the box with the default fury java implementation.
+- `ArrayList`, `HashMap`,`HashSet`, `LinkedHashSet`, `LinkedHashMap` works out of the box with the default fory java implementation.
+- `String` works out of the box with the default fory java implementation.
 - arrays: `Array`, `BooleanArray`, `ByteArray`, `CharArray`, `DoubleArray`, `FloatArray`, `IntArray`, `LongArray`, `ShortArray`
-- all standard array types work out of the box with the default fury java implementation.
+- all standard array types work out of the box with the default fory java implementation.
 - unsigned arrays: `UByteArray`, `UShortArray`, `UIntArray`, `ULongArray`
 - from stdlib: `Pair`, `Triple`, `Result`
 - kotlin.random: `Random`
@@ -39,28 +39,28 @@ Additional Notes:
 ## Quick Start
 
 ```kotlin
-import org.apache.fury.Fury
-import org.apache.fury.ThreadSafeFury
-import org.apache.fury.serializer.kotlin.KotlinSerializers
+import org.apache.fory.Fory
+import org.apache.fory.ThreadSafeFory
+import org.apache.fory.serializer.kotlin.KotlinSerializers
 
 data class Person(val name: String, val id: Long, val github: String)
 data class Point(val x : Int, val y : Int, val z : Int)
 
 fun main(args: Array<String>) {
-    // Note: following fury init code should be executed only once in a global scope instead
+    // Note: following fory init code should be executed only once in a global scope instead
     // of initializing it everytime when serialization.
-    val fury: ThreadSafeFury = Fury.builder().requireClassRegistration(true).buildThreadSafeFury()
-    KotlinSerializers.registerSerializers(fury)
-    fury.register(Person::class.java)
-    fury.register(Point::class.java)
+    val fory: ThreadSafeFory = Fory.builder().requireClassRegistration(true).buildThreadSafeFory()
+    KotlinSerializers.registerSerializers(fory)
+    fory.register(Person::class.java)
+    fory.register(Point::class.java)
 
     val p = Person("Shawn Yang", 1, "https://github.com/chaokunyang")
-    println(fury.deserialize(fury.serialize(p)))
-    println(fury.deserialize(fury.serialize(Point(1, 2, 3))))
+    println(fory.deserialize(fory.serialize(p)))
+    println(fory.deserialize(fory.serialize(Point(1, 2, 3))))
 }
 ```
 
-## Building Fury Kotlin
+## Building Fory Kotlin
 
 ```bash
 mvn clean

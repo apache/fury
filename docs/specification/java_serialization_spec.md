@@ -1,7 +1,7 @@
 ---
-title: Fury Java Serialization Format
+title: Fory Java Serialization Format
 sidebar_position: 1
-id: fury_java_serialization_spec
+id: fory_java_serialization_spec
 license: |
   Licensed to the Apache Software Foundation (ASF) under one or more
   contributor license agreements.  See the NOTICE file distributed with
@@ -21,29 +21,29 @@ license: |
 
 ## Spec overview
 
-Fury Java Serialization is an automatic object serialization framework that supports reference and polymorphism. Fury
+Fory Java Serialization is an automatic object serialization framework that supports reference and polymorphism. Fory
 will
-convert an object from/to fury java serialization binary format. Fury has two core concepts for java serialization:
+convert an object from/to fory java serialization binary format. Fory has two core concepts for java serialization:
 
-- **Fury Java Binary format**
-- **Framework to convert object to/from Fury Java Binary format**
+- **Fory Java Binary format**
+- **Framework to convert object to/from Fory Java Binary format**
 
-The serialization format is a dynamic binary format. The dynamics and reference/polymorphism support make Fury flexible,
+The serialization format is a dynamic binary format. The dynamics and reference/polymorphism support make Fory flexible,
 much more easy to use, but
 also introduce more complexities compared to static serialization frameworks. So the format will be more complex.
 
 Here is the overall format:
 
 ```
-| fury header | object ref meta | object class meta | object value data |
+| fory header | object ref meta | object class meta | object value data |
 ```
 
 The data are serialized using little endian byte order overall. If bytes swap is costly for some object,
-Fury will write the byte order for that object into the data instead of converting it to little endian.
+Fory will write the byte order for that object into the data instead of converting it to little endian.
 
-## Fury header
+## Fory header
 
-Fury header consists starts one byte:
+Fory header consists starts one byte:
 
 ```
 |     4 bits    | 1 bit | 1 bit | 1 bit  | 1 bit |          optional 4 bytes          |
@@ -53,7 +53,7 @@ Fury header consists starts one byte:
 
 - null flag: 1 when object is null, 0 otherwise. If an object is null, other bits won't be set.
 - endian flag: 1 when data is encoded by little endian, 0 for big endian.
-- xlang flag: 1 when serialization uses xlang format, 0 when serialization uses Fury java format.
+- xlang flag: 1 when serialization uses xlang format, 0 when serialization uses Fory java format.
 - oob flag: 1 when passed `BufferCallback` is not null, 0 otherwise.
 
 If meta share mode is enabled, an uncompressed unsigned int is appended to indicate the start offset of metadata.
@@ -68,8 +68,8 @@ Reference flags:
 | Flag                | Byte Value | Description                                                                                                                                             |
 |---------------------|------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
 | NULL FLAG           | `-3`       | This flag indicates the object is a null value. We don't use another byte to indicate REF, so that we can save one byte.                                |
-| REF FLAG            | `-2`       | This flag indicates the object is already serialized previously, and fury will write a ref id with unsigned varint format instead of serialize it again |
-| NOT_NULL VALUE FLAG | `-1`       | This flag indicates the object is a non-null value and fury doesn't track ref for this type of object.                                                  |
+| REF FLAG            | `-2`       | This flag indicates the object is already serialized previously, and fory will write a ref id with unsigned varint format instead of serialize it again |
+| NOT_NULL VALUE FLAG | `-1`       | This flag indicates the object is a non-null value and fory doesn't track ref for this type of object.                                                  |
 | REF VALUE FLAG      | `0`        | This flag indicates the object is referencable and the first time to serialize.                                                                         |
 
 When reference tracking is disabled globally or for specific types, or for certain types within a particular
@@ -77,27 +77,27 @@ context(e.g., a field of a class), only the `NULL` and `NOT_NULL VALUE` flags wi
 
 ## Class Meta
 
-Fury supports to register class by an optional id, the registration can be used for security check and class
+Fory supports to register class by an optional id, the registration can be used for security check and class
 identification.
 If a class is registered, it will have a user-provided or an auto-growing unsigned int i.e. `class_id`.
 
-Depending on whether meta share mode and registration is enabled for current class, Fury will write class meta
+Depending on whether meta share mode and registration is enabled for current class, Fory will write class meta
 differently.
 
 ### Schema consistent
 
 If schema consistent mode is enabled globally or enabled for current class, class meta will be written as follows:
 
-- If class is registered, it will be written as a fury unsigned varint: `class_id << 1`.
+- If class is registered, it will be written as a fory unsigned varint: `class_id << 1`.
 - If class is not registered:
-  - If class is not an array, fury will write one byte `0bxxxxxxx1` first, then write class name.
+  - If class is not an array, fory will write one byte `0bxxxxxxx1` first, then write class name.
     - The first little bit is `1`, which is different from first bit `0` of
-          encoded class id. Fury can use this information to determine whether to read class by class id for
+          encoded class id. Fory can use this information to determine whether to read class by class id for
           deserialization.
-  - If class is not registered and class is an array, fury will write one byte `dimensions << 1 | 1` first, then write
+  - If class is not registered and class is an array, fory will write one byte `dimensions << 1 | 1` first, then write
       component
       class subsequently. This can reduce array class name cost if component class is or will be serialized.
-  - Class will be written as two enumerated fury unsigned by default: `package name` and `class name`. If meta share
+  - Class will be written as two enumerated fory unsigned by default: `package name` and `class name`. If meta share
       mode is
       enabled,
       class will be written as an unsigned varint which points to index in `MetaContext`.
@@ -125,29 +125,32 @@ For Schema consistent mode, class will be encoded as an enumerated string by ful
 the meta layout for schema evolution mode:
 
 ```
-|      8 bytes meta header      | meta size |   variable bytes   |  variable bytes   | variable bytes |
-+-------------------------------+-----------|--------------------+-------------------+----------------+
-| 7 bytes hash + 1 bytes header | 1~2 bytes | current class meta | parent class meta |      ...       |
+|  8 bytes global meta header   |  1~2 bytes  |   variable bytes   |  variable bytes   | variable bytes |
++-------------------------------+-------------|--------------------+-------------------+----------------+
+| 50 bits hash + 14 bits header | type header | current class meta | parent class meta |      ...       |
 ```
 
 Class meta are encoded from parent class to leaf class, only class with serializable fields will be encoded.
 
-### Meta header
+### Global meta header
 
 Meta header is a 64 bits number value encoded in little endian order.
 
-- Lowest 4 digits `0b0000~0b1110` are used to record num classes. `0b1111` is preserved to indicate that Fury need to
-  read more bytes for length using Fury unsigned int encoding. If current class doesn't has parent class, or parent
+- lower 12 bits are used to encode meta size. If meta size `>= 0b111_1111_1111`, then write
+  `meta_ size - 0b111_1111_1111` next.
+- 13rd bit is used to indicate whether to write fields meta. When this class is schema-consistent or use registered
+  serializer, fields meta will be skipped. Class Meta will be used for share namespace + type name only.
+- 14rd bit is used to indicate whether meta is compressed.
+- Other 50 bits is used to store the unique hash of `flags + all layers class meta`.
+
+### Type header
+
+- Lowest 4 digits `0b0000~0b1110` are used to record num classes. `0b1111` is preserved to indicate that Fory need to
+  read more bytes for length using Fory unsigned int encoding. If current class doesn't has parent class, or parent
   class doesn't have fields to serialize, or we're in a context which serialize fields of current class
-  only( `ObjectStreamSerializer#SlotInfo` is an example), num classes will be 1.
-- 5rd bit is used to indicate whether this class needs schema evolution.
-- 6rd bit is used to indicate whether the size sum of all layers meta is less than 256.
-- Other 56 bits is used to store the unique hash of `flags + all layers class meta`.
-
-### Meta size
-
-- If the size sum of all layers meta is less than 256, then one byte is written next to indicate the length of meta.
-- Otherwise, write size as two bytes in little endian.
+  only(`ObjectStreamSerializer#SlotInfo` is an example), num classes will be 1.
+- Other 4 bits are preserved to future extensions.
+- If num classes are greater than or equal to `0b1111`, write `num_classes - 0b1111` as varuint next.
 
 ### Single layer class meta
 
@@ -165,7 +168,7 @@ Meta header is a 64 bits number value encoded in little endian order.
       users
       can use tag id to mark some field as compatible field in schema consistent context. In such cases, schema
       consistent
-      fields will be serialized first, then compatible fields will be serialized next. At deserialization, Fury will use
+      fields will be serialized first, then compatible fields will be serialized next. At deserialization, Fory will use
       fields info of those fields which aren't annotated by tag id for deserializing schema consistent fields, then use
       fields info in meta for deserializing compatible fields.
 - Package name encoding(omitted when class is registered):
@@ -200,7 +203,7 @@ Meta header is a 64 bits number value encoded in little endian order.
       be written instead.
 
 Field order are left as implementation details, which is not exposed to specification, the deserialization need to
-resort fields based on Fury field comparator. In this way, fury can compute statistics for field names or types and
+resort fields based on Fory field comparator. In this way, fory can compute statistics for field names or types and
 using a more compact encoding.
 
 ### Other layers class meta
@@ -254,7 +257,7 @@ The shared meta string format consists of header and encoded string binary. Head
 inlined
 in shared meta header.
 
-Header is written using little endian order, Fury can read this flag first to determine how to deserialize the data.
+Header is written using little endian order, Fory can read this flag first to determine how to deserialize the data.
 
 #### Write by data
 
@@ -319,17 +322,17 @@ If string has been written before, the data will be written as follows:
 #### Unsigned long
 
 - size: 1~9 byte
-- Fury PVL(Progressive Variable-length Long) Encoding:
+- Fory PVL(Progressive Variable-length Long) Encoding:
   - positive long format: first bit in every byte indicates whether to have the next byte. If first bit is set
       i.e. `b & 0x80 == 0x80`, then the next byte should be read until the first bit is unset.
 
 #### Signed long
 
 - size: 1~9 byte
-- Fury SLI(Small long as int) Encoding:
+- Fory SLI(Small long as int) Encoding:
   - If long is in [-1073741824, 1073741823], encode as 4 bytes int: `| little-endian: ((int) value) << 1 |`
   - Otherwise write as 9 bytes: `| 0b1 | little-endian 8 bytes long |`
-- Fury PVL(Progressive Variable-length Long) Encoding:
+- Fory PVL(Progressive Variable-length Long) Encoding:
   - First convert the number into positive unsigned long by `(v << 1) ^ (v >> 63)` ZigZag algorithm to reduce cost of
       small negative numbers, then encoding it as an unsigned long.
 
@@ -358,11 +361,11 @@ Format:
 
 Which encoding to choose:
 
-- For JDK8: fury detect `latin` at runtime, if string is `latin` string, then use `latin` encoding, otherwise
+- For JDK8: fory detect `latin` at runtime, if string is `latin` string, then use `latin` encoding, otherwise
   use `utf-16`.
-- For JDK9+: fury use `coder` in `String` object for encoding, `latin`/`utf-16` will be used for encoding.
-- If the string is encoded by `utf-8`, then fury will use `utf-8` to decode the data. But currently fury doesn't enable
-  utf-8 encoding by default for java. Cross-language string serialization of fury uses `utf-8` by default.
+- For JDK9+: fory use `coder` in `String` object for encoding, `latin`/`utf-16` will be used for encoding.
+- If the string is encoded by `utf-8`, then fory will use `utf-8` to decode the data. But currently fory doesn't enable
+  utf-8 encoding by default for java. Cross-language string serialization of fory uses `utf-8` by default.
 
 ### Collection
 
@@ -438,12 +441,12 @@ Format:
 
 #### Map Key-Value data
 
-Map iteration is too expensive, Fury won't compute the header like for collection before since it introduce
-[considerable overhead](https://github.com/apache/fury/issues/925).
-Users can use `MapFieldInfo` annotation to provide header in advance. Otherwise Fury will use first key-value pair to
+Map iteration is too expensive, Fory won't compute the header like for collection before since it introduce
+[considerable overhead](https://github.com/apache/fory/issues/925).
+Users can use `MapFieldInfo` annotation to provide header in advance. Otherwise Fory will use first key-value pair to
 predict header optimistically, and update the chunk header if the prediction failed at some pair.
 
-Fury will serialize map chunk by chunk, every chunk has 127 pairs at most.
+Fory will serialize map chunk by chunk, every chunk has 127 pairs at most.
 
 ```
 |    1 byte      |     1 byte     | variable bytes  |
@@ -464,7 +467,7 @@ KV header:
 - If key or value is null, that key and value will be written as a separate chunk, and chunk size writing will be
   skipped too.
 
-If streaming write is enabled, which means Fury can't update written `chunk size`. In such cases, map key-value data
+If streaming write is enabled, which means Fory can't update written `chunk size`. In such cases, map key-value data
 format will be:
 
 ```
@@ -485,7 +488,7 @@ string with unique hash disabled.
 ### Object
 
 Object means object of `pojo/struct/bean/record` type.
-Object will be serialized by writing its fields data in fury order.
+Object will be serialized by writing its fields data in fory order.
 
 Depending on schema compatibility, objects will have different formats.
 

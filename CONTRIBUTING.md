@@ -1,12 +1,12 @@
-# How to contribute to Fury
+# How to contribute to Fory
 
 ## Finding good first issues
 
-See [Good First Issues](https://github.com/apache/fury/contribute).
+See [Good First Issues](https://github.com/apache/fory/contribute).
 
 ## How to create an issue
 
-Create an issue with [this form](https://github.com/apache/fury/issues/new/choose).
+Create an issue with [this form](https://github.com/apache/fory/issues/new/choose).
 
 ## How to title your PR
 
@@ -19,9 +19,9 @@ For example, here are good PR titles:
 - fix(c++): blablabla
 - chore(python): remove useless yyy file
 
-If the submitted PR affects the performance of Fury, we strongly recommend using the perf type,
+If the submitted PR affects the performance of Fory, we strongly recommend using the perf type,
 and need to provide benchmark data in the PR description. For how to run the benchmark,
-please check [Fury Java Benchmark](https://github.com/apache/fury/blob/main/java/benchmark/README.md).
+please check [Fory Java Benchmark](https://github.com/apache/fory/blob/main/java/benchmark/README.md).
 
 For more details, please check [pr-lint.yml](./.github/workflows/pr-lint.yml).
 
@@ -52,9 +52,9 @@ bazel test $(bazel query //...)
 ### GoLang
 
 ```bash
-cd go/fury
+cd go/fory
 go test -v
-go test -v fury_xlang_test.go
+go test -v fory_xlang_test.go
 ```
 
 ### Rust
@@ -99,7 +99,7 @@ cd python
 # install dependencies fro styling
 pip install black==22.1.0 flake8==3.9.1 flake8-quotes flake8-bugbear click==8.0.2
 # format python code
-black pyfury
+black pyfory
 ```
 
 ### C++
@@ -111,7 +111,7 @@ git ls-files -- '*.cc' '*.h' | xargs -P 5 clang-format -i
 ### GoLang
 
 ```bash
-cd go/fury
+cd go/fory
 gofmt -s -w .
 ```
 
@@ -133,10 +133,10 @@ npm run lint
 
 ### Java
 
-Fury supports dump jit generated code into local file for better debug by configuring environment variables:
+Fory supports dump jit generated code into local file for better debug by configuring environment variables:
 
-- `FURY_CODE_DIR`：The directory for fury to dump generated code. Set to empty by default to skip dump code.
-- `ENABLE_FURY_GENERATED_CLASS_UNIQUE_ID`: Append an unique id for dynamically generated files by default to avoid serializer collision for different classes with same name. Set this to `false` to keep serializer name same for multiple execution or `AOT` codegen.
+- `FORY_CODE_DIR`：The directory for fory to dump generated code. Set to empty by default to skip dump code.
+- `ENABLE_FORY_GENERATED_CLASS_UNIQUE_ID`: Append an unique id for dynamically generated files by default to avoid serializer collision for different classes with same name. Set this to `false` to keep serializer name same for multiple execution or `AOT` codegen.
 
 By using those environment variables, we can generate code to source directory and debug the generated code in next run.
 
@@ -147,11 +147,11 @@ cd python
 python setup.py develop
 ```
 
-- Use `cython --cplus -a  pyfury/_serialization.pyx` to produce an annotated HTML file of the source code. Then you can analyze interaction between Python objects and Python's C API.
+- Use `cython --cplus -a  pyfory/_serialization.pyx` to produce an annotated HTML file of the source code. Then you can analyze interaction between Python objects and Python's C API.
 - Read more: https://cython.readthedocs.io/en/latest/src/userguide/debugging.html
 
 ```bash
-FURY_DEBUG=true python setup.py build_ext --inplace
+FORY_DEBUG=true python setup.py build_ext --inplace
 # For linux
 cygdb build
 ```
@@ -173,7 +173,7 @@ ulimit -c unlimited
 then run the code:
 
 ```bash
-python fury_serializer.py
+python fory_serializer.py
 ls -al /cores
 ```
 
@@ -196,7 +196,7 @@ bazel run :refresh_compile_commands
 
 ## Website
 
-Fury's website consists of static pages hosted at https://github.com/apache/fury-site.
+Fory's website consists of static pages hosted at https://github.com/apache/fory-site.
 
 All updates about docs under [guide](docs/guide) and [benchmarks](docs/benchmarks) will be synced to the site repo automatically.
 

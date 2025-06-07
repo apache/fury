@@ -23,8 +23,8 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <parent>
-    <groupId>org.apache.fury</groupId>
-    <artifactId>fury-parent</artifactId>
+    <groupId>org.apache.fory</groupId>
+    <artifactId>fory-parent</artifactId>
     <version>0.11.0-SNAPSHOT</version>
     <relativePath>../../java</relativePath>
   </parent>
@@ -39,7 +39,7 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.apache.fury</groupId>
+      <groupId>org.apache.fory</groupId>
       <artifactId>benchmark</artifactId>
       <version>${project.version}</version>
     </dependency>

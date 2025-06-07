@@ -5,7 +5,7 @@
       <list>
         <IssueNavigationLink>
           <option name="issueRegexp" value="#(\d+)" />
-          <option name="linkRegexp" value="https://github.com/apache/fury/pull/$1" />
+          <option name="linkRegexp" value="https://github.com/apache/fory/pull/$1" />
         </IssueNavigationLink>
       </list>
     </option>

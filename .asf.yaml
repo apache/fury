@@ -20,7 +20,7 @@
 github:
   description: >-
     A blazingly fast multi-language serialization framework powered by JIT and zero-copy.
-  homepage: https://fury.apache.org/
+  homepage: https://fory.apache.org/
   labels:
     - javascript
     - python
@@ -45,7 +45,7 @@ github:
   enabled_merge_buttons:
     squash: true
     merge: false
-    rebase: false
+    rebase: true
   protected_branches:
     main:
       required_status_checks:
@@ -62,8 +62,8 @@ github:
     releases-0.1.2: {}
 
 notifications:
-  commits: commits@fury.apache.org
-  issues: commits@fury.apache.org
-  pullrequests: commits@fury.apache.org
-  jobs: commits@fury.apache.org
-  discussions: commits@fury.apache.org
+  commits: commits@fory.apache.org
+  issues: commits@fory.apache.org
+  pullrequests: commits@fory.apache.org
+  jobs: commits@fory.apache.org
+  discussions: commits@fory.apache.org

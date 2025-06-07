@@ -17,7 +17,7 @@
 
 name: 🚀 Feature Request
 description: I have a suggestion (and may want to implement it 🙂)!
-title: "[<Fury component: Protocol|Java|Python|C++|JavaScript|etc...>] "
+title: "[<Fory component: Protocol|Java|Python|C++|JavaScript|etc...>] "
 labels: ["new feature"]
 
 body:
@@ -25,7 +25,7 @@ body:
     attributes:
       label: Feature Request
       description: >
-        Tip: Have you checked the docs https://fury.apache.org/docs/, GitHub issues whether someone else has already reported your issue? Maybe the feature already exists?
+        Tip: Have you checked the docs https://fory.apache.org/docs/, GitHub issues whether someone else has already reported your issue? Maybe the feature already exists?
       placeholder: >
         A concise description of what you're experiencing.
     validations:
@@ -55,4 +55,4 @@ body:
       required: false
   - type: markdown
     attributes:
-      value: "Please read the [Contribution Guideline](https://fury.apache.org/docs/community/how_to_join_community) before submitting the PR"
+      value: "Please read the [Contribution Guideline](https://fory.apache.org/docs/community/how_to_join_community) before submitting the PR"

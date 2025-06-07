@@ -22,7 +22,7 @@
 part of 'enum_example.dart';
 
 // **************************************************************************
-// FuryObjSpecGenerator
+// ForyObjSpecGenerator
 // **************************************************************************
 
 const $Color = EnumSpec(
