@@ -19,6 +19,7 @@
 
 package org.apache.fory.format.encoder;
 
+import java.util.Optional;
 import lombok.Data;
 import org.apache.fory.annotation.ForyField;
 import org.apache.fory.format.row.binary.BinaryRow;
@@ -127,5 +128,27 @@ public class ImplementInterfaceTest {
     public PoisonPill decode(final byte[] value) {
       throw new AssertionError();
     }
+  }
+
+  public interface OptionalType {
+    Optional<String> f1();
+  }
+
+  static class OptionalTypeImpl implements OptionalType {
+    @Override
+    public Optional<String> f1() {
+      return null;
+    }
+  }
+
+  @Test
+  public void testNullOptional() {
+    final OptionalType bean1 = new OptionalTypeImpl();
+    final RowEncoder<OptionalType> encoder = Encoders.bean(OptionalType.class);
+    final BinaryRow row = encoder.toRow(bean1);
+    final MemoryBuffer buffer = MemoryUtils.wrap(row.toBytes());
+    row.pointTo(buffer, 0, buffer.size());
+    final OptionalType deserializedBean = encoder.fromRow(row);
+    Assert.assertEquals(deserializedBean.f1(), Optional.empty());
   }
 }

@@ -315,7 +315,6 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
     implClass.setClassName(generatedBeanImplName);
     implClass.implementsInterfaces(implClass.type(beanClass));
     implClass.addField(true, implClass.type(BinaryRow.class), "row", null);
-    implClass.addConstructor("this.row = row;", BinaryRow.class, "row");
 
     int numFields = schema.getFields().size();
     for (int i = 0; i < numFields; i++) {
@@ -330,7 +329,8 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
         getterImpl = new Expression.Return(decodeValue);
       } else {
         String fieldName = "f" + i + "_" + d.getName();
-        implClass.addField(fieldType.getRawType(), fieldName);
+        implClass.addField(
+            false, ctx.type(fieldType.getRawType()), fieldName, nullValue(fieldType));
 
         Expression fieldRef = new Expression.Reference(fieldName, fieldType, true);
         Expression storeValue =
@@ -353,6 +353,8 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
       implClass.addMethod(
           d.getName(), getterImpl.genCode(implClass).code(), fieldType.getRawType());
     }
+    // Note: adding constructor captures init code, so must happen after all fields are collected
+    implClass.addConstructor("this.row = row;", BinaryRow.class, "row");
 
     return implClass;
   }
