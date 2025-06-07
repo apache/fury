@@ -19,13 +19,11 @@
 
 package org.apache.fory.collection;
 
-import static org.apache.fory.collection.ForyObjectMap.MASK_NUMBER;
-
 import org.apache.fory.annotation.Internal;
 import org.apache.fory.util.Preconditions;
 
 /**
- * A fast linear hash probe based map whose key is two long values `(long k1, long k2)`. This map
+ * A fast linear hash probe based map whose key is two long and a byte values `(long k1, long k2, byte k3)`. This map
  * can avoid creating a java object for key to save memory/cpu cost.
  */
 // The linear probed hash is derived from
