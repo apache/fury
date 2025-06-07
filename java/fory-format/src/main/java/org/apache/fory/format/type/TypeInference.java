@@ -22,12 +22,12 @@ package org.apache.fory.format.type;
 import static org.apache.fory.format.type.DataTypes.field;
 import static org.apache.fory.type.TypeUtils.getRawType;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.apache.arrow.vector.complex.MapVector;
 import org.apache.arrow.vector.types.DateUnit;
 import org.apache.arrow.vector.types.FloatingPointPrecision;
@@ -39,6 +39,7 @@ import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.fory.collection.Tuple2;
 import org.apache.fory.format.encoder.CustomCodec;
 import org.apache.fory.format.encoder.CustomCollectionFactory;
+import org.apache.fory.format.row.binary.BinaryArray;
 import org.apache.fory.reflect.TypeRef;
 import org.apache.fory.type.Descriptor;
 import org.apache.fory.type.TypeResolutionContext;
@@ -155,8 +156,12 @@ public class TypeInference {
               true, fieldType.getType(), fieldType.getDictionary(), fieldType.getMetadata()),
           result.getChildren());
     } else if (customEncoder != null) {
-      return customEncoder.getField(name);
-    } else if (rawType == boolean.class) {
+      Field replacementField = customEncoder.getField(name);
+      if (replacementField != null) {
+        return replacementField;
+      }
+    }
+    if (rawType == boolean.class) {
       return field(name, DataTypes.notNullFieldType(ArrowType.Bool.INSTANCE));
     } else if (rawType == byte.class) {
       return field(name, DataTypes.notNullFieldType(new ArrowType.Int(8, true)));
@@ -209,6 +214,8 @@ public class TypeInference {
       return field(name, FieldType.nullable(ArrowType.Utf8.INSTANCE));
     } else if (rawType.isEnum()) {
       return field(name, FieldType.nullable(ArrowType.Utf8.INSTANCE));
+    } else if (rawType == BinaryArray.class) {
+      return field(name, FieldType.nullable(ArrowType.Binary.INSTANCE));
     } else if (rawType.isArray()) { // array
       Field f =
           inferField(
@@ -230,15 +237,13 @@ public class TypeInference {
       return DataTypes.mapField(name, keyField, valueField);
     } else if (TypeUtils.isBean(rawType, ctx)) { // bean field
       ctx.checkNoCycle(rawType);
-      List<Field> fields =
-          Descriptor.getDescriptors(rawType).stream()
-              .map(
-                  descriptor -> {
-                    String n = StringUtils.lowerCamelToLowerUnderscore(descriptor.getName());
-                    TypeRef<?> fieldType = descriptor.getTypeRef();
-                    return inferField(n, fieldType, ctx.appendTypePath(rawType));
-                  })
-              .collect(Collectors.toList());
+      List<Descriptor> descriptors = Descriptor.getDescriptors(rawType);
+      List<Field> fields = new ArrayList<>(descriptors.size());
+      for (Descriptor descriptor : descriptors) {
+        String n = StringUtils.lowerCamelToLowerUnderscore(descriptor.getName());
+        TypeRef<?> fieldType = descriptor.getTypeRef();
+        fields.add(inferField(n, fieldType, ctx.appendTypePath(rawType)));
+      }
       return DataTypes.structField(name, true, fields);
     } else {
       throw new UnsupportedOperationException(

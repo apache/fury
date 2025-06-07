@@ -20,14 +20,15 @@
 package org.apache.fory.type;
 
 import org.apache.fory.annotation.Internal;
+import org.apache.fory.reflect.TypeRef;
 
 @Internal
 public interface CustomTypeRegistry {
   CustomTypeRegistry EMPTY =
       new CustomTypeRegistry() {
         @Override
-        public boolean hasCodec(final Class<?> beanType, final Class<?> fieldType) {
-          return false;
+        public TypeRef<?> replacementTypeFor(final Class<?> beanType, final Class<?> fieldType) {
+          return null;
         }
 
         @Override
@@ -35,9 +36,16 @@ public interface CustomTypeRegistry {
             final Class<?> collectionType, final Class<?> elementType) {
           return false;
         }
+
+        @Override
+        public boolean isExtraSupportedType(final TypeRef<?> type) {
+          return false;
+        }
       };
 
-  boolean hasCodec(Class<?> beanType, Class<?> fieldType);
+  TypeRef<?> replacementTypeFor(Class<?> beanType, Class<?> fieldType);
 
   boolean canConstructCollection(Class<?> collectionType, Class<?> elementType);
+
+  boolean isExtraSupportedType(TypeRef<?> type);
 }
