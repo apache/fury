@@ -22,6 +22,9 @@ package org.apache.fory.format.type;
 import org.apache.fory.annotation.Internal;
 import org.apache.fory.format.encoder.CustomCodec;
 import org.apache.fory.format.encoder.CustomCollectionFactory;
+import org.apache.fory.format.row.binary.BinaryArray;
+import org.apache.fory.memory.MemoryBuffer;
+import org.apache.fory.reflect.TypeRef;
 import org.apache.fory.type.CustomTypeRegistry;
 
 @Internal
@@ -46,13 +49,20 @@ public interface CustomTypeHandler extends CustomTypeRegistry {
       Class<?> collectionType, Class<?> elementType);
 
   @Override
-  default boolean hasCodec(final Class<?> beanType, final Class<?> fieldType) {
-    return findCodec(beanType, fieldType) != null;
+  default TypeRef<?> replacementTypeFor(final Class<?> beanType, final Class<?> fieldType) {
+    final CustomCodec<?, ?> codec = findCodec(beanType, fieldType);
+    return codec == null ? null : codec.encodedType();
   }
 
   @Override
   default boolean canConstructCollection(
       final Class<?> collectionType, final Class<?> elementType) {
     return findCollectionFactory(collectionType, elementType) != null;
+  }
+
+  @Override
+  default boolean isExtraSupportedType(final TypeRef<?> type) {
+    final Class<?> cls = type.getRawType();
+    return cls == BinaryArray.class || cls == MemoryBuffer.class;
   }
 }
