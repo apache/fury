@@ -27,6 +27,7 @@ import org.apache.fory.ForyTestBase;
 import org.apache.fory.config.CompatibleMode;
 import org.apache.fory.config.Language;
 import org.apache.fory.test.bean.BeanB;
+import org.apache.fory.type.TypeUtils;
 import org.testng.annotations.Test;
 
 public class MetaSharedXlangTest extends ForyTestBase {
@@ -62,7 +63,7 @@ public class MetaSharedXlangTest extends ForyTestBase {
     int[][] arr;
   }
 
-  // @Test
+  @Test
   public void testMDArrayField() {
     Fory fory =
         Fory.builder()

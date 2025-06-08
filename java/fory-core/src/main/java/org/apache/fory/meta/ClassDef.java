@@ -843,6 +843,9 @@ public class ClassDef implements Serializable {
 
     @Override
     public TypeRef<?> toTypeToken(TypeResolver classResolver, TypeRef<?> declared) {
+      while (declared.isArray()) {
+        declared = declared.getComponentType();
+      }
       TypeRef<?> componentTypeRef = componentType.toTypeToken(classResolver, declared);
       Class<?> componentRawType = componentTypeRef.getRawType();
       if (NonexistentClass.class.isAssignableFrom(componentRawType)) {
@@ -993,6 +996,9 @@ public class ClassDef implements Serializable {
         }
         if (rawType.isArray()) {
           Class<?> elemType = rawType.getComponentType();
+          while (elemType.isArray()) {
+            elemType = elemType.getComponentType();
+          }
           if (isXlang && !elemType.isPrimitive()) {
             return new CollectionFieldType(
                 xtypeId,

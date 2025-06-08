@@ -431,7 +431,7 @@ public class XtypeResolver implements TypeResolver {
         serializer = getCollectionSerializer(cls);
       }
       xtypeId = Types.LIST;
-    } else if (cls.isArray() && !TypeUtils.getArrayComponent(cls).isPrimitive()) {
+    } else if (cls.isArray() && handleArray(cls)) {
       serializer = new ArraySerializers.ObjectArraySerializer(fory, cls);
       xtypeId = Types.LIST;
     } else if (classResolver.isMap(cls)) {
@@ -464,6 +464,14 @@ public class XtypeResolver implements TypeResolver {
     ClassInfo info = newClassInfo(cls, serializer, (short) xtypeId);
     classInfoMap.put(cls, info);
     return info;
+  }
+
+  private boolean handleArray(Class<?> cls) {
+    Class<?> eleType = TypeUtils.getArrayComponent(cls);
+    while (eleType.isArray()) {
+      eleType = TypeUtils.getArrayComponent(eleType);
+    }
+    return eleType.isPrimitive();
   }
 
   private Serializer<?> getCollectionSerializer(Class<?> cls) {
