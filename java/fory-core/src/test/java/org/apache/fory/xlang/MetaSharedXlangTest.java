@@ -27,7 +27,6 @@ import org.apache.fory.ForyTestBase;
 import org.apache.fory.config.CompatibleMode;
 import org.apache.fory.config.Language;
 import org.apache.fory.test.bean.BeanB;
-import org.apache.fory.type.TypeUtils;
 import org.testng.annotations.Test;
 
 public class MetaSharedXlangTest extends ForyTestBase {
@@ -71,7 +70,6 @@ public class MetaSharedXlangTest extends ForyTestBase {
             .withCodegen(false)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
             .build();
-    // TODO support multi-dimensional array serialization
     fory.register(MDArrayFieldStruct.class, "example.a");
     MDArrayFieldStruct s = new MDArrayFieldStruct();
     s.arr = new int[][] {{1, 2}, {3, 4}};

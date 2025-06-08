@@ -843,7 +843,7 @@ public class ClassDef implements Serializable {
 
     @Override
     public TypeRef<?> toTypeToken(TypeResolver classResolver, TypeRef<?> declared) {
-      while (declared.isArray()) {
+      while (declared != null && declared.isArray()) {
         declared = declared.getComponentType();
       }
       TypeRef<?> componentTypeRef = componentType.toTypeToken(classResolver, declared);
