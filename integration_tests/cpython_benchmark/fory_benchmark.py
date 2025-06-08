@@ -16,7 +16,6 @@
 # under the License.
 
 import argparse
-import array
 from dataclasses import dataclass
 import datetime
 import os
@@ -222,8 +221,14 @@ def micro_benchmark():
         else:
             fory.register_type(ComplexObject1)
             fory.register_type(ComplexObject2)
+
     runner.bench_func(
-       "fory_complex", fory_data_class, language, not args.no_ref, COMPLEX_OBJECT, register_complex
+        "fory_complex",
+        fory_data_class,
+        language,
+        not args.no_ref,
+        COMPLEX_OBJECT,
+        register_complex,
     )
 
 
