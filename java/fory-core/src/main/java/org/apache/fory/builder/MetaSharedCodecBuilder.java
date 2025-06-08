@@ -130,7 +130,12 @@ public class MetaSharedCodecBuilder extends ObjectCodecBuilder {
     Expression decodeExpr = buildDecodeExpression();
     String decodeCode = decodeExpr.genCode(ctx).code();
     decodeCode = ctx.optimizeMethodCode(decodeCode);
+
+    Expression xlangDecodeExpression = buildXlangDecodeExpression();
+    String xlangDecodeCode = xlangDecodeExpression.genCode(ctx).code();
+    xlangDecodeCode = ctx.optimizeMethodCode(xlangDecodeCode);
     ctx.overrideMethod("read", decodeCode, Object.class, MemoryBuffer.class, BUFFER_NAME);
+    ctx.overrideMethod("xread", decodeCode, Object.class, MemoryBuffer.class, BUFFER_NAME);
     registerJITNotifyCallback();
     ctx.addConstructor(constructorCode, Fory.class, "fory", Class.class, POJO_CLASS_TYPE_NAME);
     return ctx.genCode();

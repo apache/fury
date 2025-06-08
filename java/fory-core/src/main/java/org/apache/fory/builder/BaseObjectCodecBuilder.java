@@ -260,30 +260,33 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
     ctx.clearExprState();
     String decodeCode = decodeExpr.genCode(ctx).code();
     decodeCode = ctx.optimizeMethodCode(decodeCode);
-    ctx.clearExprState();
-    String xlangEncodeCode = xlangEncodeExpr.genCode(ctx).code();
-    xlangEncodeCode = ctx.optimizeMethodCode(xlangEncodeCode);
-    ctx.clearExprState();
-    String xlangDecodeCode = xlangDecodeExpr.genCode(ctx).code();
-    xlangDecodeCode = ctx.optimizeMethodCode(xlangDecodeCode);
-    ctx.overrideMethod(
-        "write",
-        encodeCode,
-        void.class,
-        MemoryBuffer.class,
-        BUFFER_NAME,
-        Object.class,
-        ROOT_OBJECT_NAME);
-    ctx.overrideMethod("read", decodeCode, Object.class, MemoryBuffer.class, BUFFER_NAME);
-    ctx.overrideMethod(
-        "xwrite",
-        xlangEncodeCode,
-        void.class,
-        MemoryBuffer.class,
-        BUFFER_NAME,
-        Object.class,
-        ROOT_OBJECT_NAME);
-    ctx.overrideMethod("xread", xlangDecodeCode, Object.class, MemoryBuffer.class, BUFFER_NAME);
+    //
+    if (xlangEncodeExpr != null && xlangDecodeExpr != null) {
+      ctx.clearExprState();
+      String xlangEncodeCode = xlangEncodeExpr.genCode(ctx).code();
+      xlangEncodeCode = ctx.optimizeMethodCode(xlangEncodeCode);
+      ctx.clearExprState();
+      String xlangDecodeCode = xlangDecodeExpr.genCode(ctx).code();
+      xlangDecodeCode = ctx.optimizeMethodCode(xlangDecodeCode);
+      ctx.overrideMethod(
+          "write",
+          encodeCode,
+          void.class,
+          MemoryBuffer.class,
+          BUFFER_NAME,
+          Object.class,
+          ROOT_OBJECT_NAME);
+      ctx.overrideMethod("read", decodeCode, Object.class, MemoryBuffer.class, BUFFER_NAME);
+      ctx.overrideMethod(
+          "xwrite",
+          xlangEncodeCode,
+          void.class,
+          MemoryBuffer.class,
+          BUFFER_NAME,
+          Object.class,
+          ROOT_OBJECT_NAME);
+      ctx.overrideMethod("xread", xlangDecodeCode, Object.class, MemoryBuffer.class, BUFFER_NAME);
+    }
     registerJITNotifyCallback();
     ctx.addConstructor(constructorCode, Fory.class, "fory", Class.class, POJO_CLASS_TYPE_NAME);
     return ctx.genCode();
