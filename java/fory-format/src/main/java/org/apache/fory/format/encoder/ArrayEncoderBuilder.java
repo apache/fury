@@ -157,6 +157,11 @@ public class ArrayEncoderBuilder extends BaseBinaryEncoderBuilder {
     return expressions;
   }
 
+  @Override
+  public Expression buildXlangEncodeExpression() {
+    return null;
+  }
+
   /**
    * Returns an expression that deserialize <code>row</code> as a java bean of type {@link
    * ArrayEncoderBuilder#beanClass}.
@@ -173,6 +178,11 @@ public class ArrayEncoderBuilder extends BaseBinaryEncoderBuilder {
     expressions.add(value);
     expressions.add(new Expression.Return(collection));
     return expressions;
+  }
+
+  @Override
+  public Expression buildXlangDecodeExpression() {
+    return null;
   }
 
   private Expression arrayDeserializeForCollection(

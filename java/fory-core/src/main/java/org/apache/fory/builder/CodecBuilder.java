@@ -123,6 +123,8 @@ public abstract class CodecBuilder {
   /** Returns an expression that serialize java bean of type {@link CodecBuilder#beanClass}. */
   public abstract Expression buildEncodeExpression();
 
+  public abstract Expression buildXlangEncodeExpression();
+
   protected boolean sourcePublicAccessible(Class<?> cls) {
     return ctx.sourcePublicAccessible(cls);
   }
@@ -339,6 +341,8 @@ public abstract class CodecBuilder {
    * CodecBuilder#beanClass}.
    */
   public abstract Expression buildDecodeExpression();
+
+  public abstract Expression buildXlangDecodeExpression();
 
   /** Returns an expression that set field <code>value</code> to <code>bean</code>. */
   protected Expression setFieldValue(Expression bean, Descriptor d, Expression value) {

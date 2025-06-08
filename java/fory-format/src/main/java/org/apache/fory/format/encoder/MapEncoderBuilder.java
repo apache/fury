@@ -208,6 +208,11 @@ public class MapEncoderBuilder extends BaseBinaryEncoderBuilder {
     return expressions;
   }
 
+  @Override
+  public Expression buildXlangEncodeExpression() {
+    return null;
+  }
+
   /**
    * Returns an expression that deserialize <code>row</code> as a java bean of type {@link
    * MapEncoderBuilder#mapToken}.
@@ -226,6 +231,11 @@ public class MapEncoderBuilder extends BaseBinaryEncoderBuilder {
 
     expressions.add(new Expression.Return(map));
     return expressions;
+  }
+
+  @Override
+  public Expression buildXlangDecodeExpression() {
+    return null;
   }
 
   private Expression directlyDeserializeMap(

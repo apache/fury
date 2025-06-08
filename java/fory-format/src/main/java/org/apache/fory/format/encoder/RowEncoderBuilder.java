@@ -207,6 +207,11 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
     return expressions;
   }
 
+  @Override
+  public Expression buildXlangEncodeExpression() {
+    return null;
+  }
+
   /**
    * Returns an expression that deserialize <code>row</code> as a java bean of type {@link
    * CodecBuilder#beanClass}.
@@ -267,6 +272,11 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
     }
     expressions.add(new Expression.Return(bean));
     return expressions;
+  }
+
+  @Override
+  public Expression buildXlangDecodeExpression() {
+    return null;
   }
 
   private static Expression nullValue(TypeRef<?> fieldType) {
