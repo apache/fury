@@ -853,9 +853,26 @@ public class CrossLanguageTest extends ForyTestBase {
     MetaContext context1 = new MetaContext();
     fory.getSerializationContext().setMetaContext(context);
     fory1.getSerializationContext().setMetaContext(context1);
-    serDeCheck(fory, Bar.create());
-    serDeCheck(fory, Foo.create());
-    serDeCheck(fory1, Bar.create());
-    serDeCheck(fory1, Foo.create());
+    Bar bar = Bar.create();
+    Foo foo = Foo.create();
+    byte[] bytes = fory.serialize(bar);
+    fory.getSerializationContext().setMetaContext(context);
+    Object deserialize = fory.deserialize(bytes);
+    Assert.assertEquals(bar, deserialize);
+
+    byte[] bytes1 = fory1.serialize(bar);
+    fory1.getSerializationContext().setMetaContext(context1);
+    Object deserialize1 = fory1.deserialize(bytes1);
+    Assert.assertEquals(bar, deserialize1);
+
+    byte[] bytes2 = fory.serialize(foo);
+    fory.getSerializationContext().setMetaContext(context);
+    Object deserialize2 = fory.deserialize(bytes2);
+    Assert.assertEquals(foo, deserialize2);
+
+    byte[] bytes3 = fory1.serialize(foo);
+    fory1.getSerializationContext().setMetaContext(context);
+    Object deserialize3 = fory1.deserialize(bytes3);
+    Assert.assertEquals(foo, deserialize3);
   }
 }
