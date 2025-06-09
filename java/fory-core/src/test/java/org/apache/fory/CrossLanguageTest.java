@@ -62,6 +62,7 @@ import org.apache.fory.logging.Logger;
 import org.apache.fory.logging.LoggerFactory;
 import org.apache.fory.memory.MemoryBuffer;
 import org.apache.fory.memory.MemoryUtils;
+import org.apache.fory.resolver.MetaContext;
 import org.apache.fory.serializer.ArraySerializersTest;
 import org.apache.fory.serializer.BufferObject;
 import org.apache.fory.serializer.EnumSerializerTest;
@@ -848,6 +849,10 @@ public class CrossLanguageTest extends ForyTestBase {
     fory.register(Bar.class, "example.bar");
     fory1.register(Foo.class, "example.foo");
     fory1.register(Bar.class, "example.bar");
+    MetaContext context = new MetaContext();
+    MetaContext context1 = new MetaContext();
+    fory.getSerializationContext().setMetaContext(context);
+    fory1.getSerializationContext().setMetaContext(context1);
     serDeCheck(fory, Bar.create());
     serDeCheck(fory, Foo.create());
     serDeCheck(fory1, Bar.create());
