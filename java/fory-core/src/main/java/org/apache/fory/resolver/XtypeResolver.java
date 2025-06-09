@@ -431,7 +431,7 @@ public class XtypeResolver implements TypeResolver {
         serializer = getCollectionSerializer(cls);
       }
       xtypeId = Types.LIST;
-    } else if (cls.isArray() && !TypeUtils.getArrayComponent(cls).isPrimitive()) {
+    } else if (cls.isArray() && !cls.getComponentType().isPrimitive()) {
       serializer = new ArraySerializers.ObjectArraySerializer(fory, cls);
       xtypeId = Types.LIST;
     } else if (classResolver.isMap(cls)) {
