@@ -19,38 +19,37 @@
 
 package org.apache.fory.collection;
 
-import static org.apache.fory.collection.ForyObjectMap.MASK_NUMBER;
-
 import org.apache.fory.annotation.Internal;
 import org.apache.fory.util.Preconditions;
 
 /**
- * A fast linear hash probe based map whose key is two long values `(long k1, long k2)`. This map
- * can avoid creating a java object for key to save memory/cpu cost.
+ * A fast linear hash probe based map whose key is two long and a byte values `(long k1, long k2,
+ * byte k3)`. This map can avoid creating a java object for key to save memory/cpu cost.
  */
 // The linear probed hash is derived from
 // https://github.com/EsotericSoftware/kryo/blob/135df69526615bb3f6b34846e58ba3fec3b631c3/src/com/esotericsoftware/kryo/util/IntMap.java.
 @SuppressWarnings("unchecked")
 @Internal
-public final class LongLongMap<V> {
-  private static final class LongLongKey {
+public final class LongLongByteMap<V> {
+  private static final class LongLongByteKey {
     private final long k1;
+    private final long k2;
+    private final byte k3;
 
-    public LongLongKey(long k1, long k2) {
+    public LongLongByteKey(long k1, long k2, byte k3) {
       this.k1 = k1;
       this.k2 = k2;
+      this.k3 = k3;
     }
-
-    private final long k2;
 
     @Override
     public String toString() {
-      return "LongLongKey{" + "k1=" + k1 + ", k2=" + k2 + '}';
+      return "LongLongByteKey{" + "k1=" + k1 + ", k2=" + k2 + ", k3=" + k3 + '}';
     }
   }
 
   public int size;
-  LongLongKey[] keyTable;
+  LongLongByteKey[] keyTable;
   V[] valueTable;
   private final float loadFactor;
   private int threshold;
@@ -65,7 +64,7 @@ public final class LongLongMap<V> {
    *
    * @param initialCapacity If not a power of two, it is increased to the next nearest power of two.
    */
-  public LongLongMap(int initialCapacity, float loadFactor) {
+  public LongLongByteMap(int initialCapacity, float loadFactor) {
     Preconditions.checkArgument(
         0 <= loadFactor && loadFactor <= 1, "loadFactor %s must be > 0 and < 1", loadFactor);
     this.loadFactor = loadFactor;
@@ -73,12 +72,12 @@ public final class LongLongMap<V> {
     threshold = (int) (tableSize * loadFactor);
     mask = tableSize - 1;
     shift = Long.numberOfLeadingZeros(mask);
-    keyTable = new LongLongKey[tableSize];
+    keyTable = new LongLongByteKey[tableSize];
     valueTable = (V[]) new Object[tableSize];
   }
 
-  private int place(long k1, long k2) {
-    return (int) ((k1 * 31 + k2) * MASK_NUMBER >>> shift);
+  private int place(long k1, long k2, byte k3) {
+    return (int) ((k1 * 31 + k2 * 17 + k3) * ForyObjectMap.MASK_NUMBER >>> shift);
   }
 
   /**
@@ -86,22 +85,22 @@ public final class LongLongMap<V> {
    * This can be overridden in this pacakge to compare for equality differently than {@link
    * Object#equals(Object)}.
    */
-  private int locateKey(long k1, long k2) {
-    LongLongKey[] keyTable = this.keyTable;
+  private int locateKey(long k1, long k2, byte k3) {
+    LongLongByteKey[] keyTable = this.keyTable;
     int mask = this.mask;
-    for (int i = place(k1, k2); ; i = i + 1 & mask) {
-      LongLongKey other = keyTable[i];
+    for (int i = place(k1, k2, k3); ; i = i + 1 & mask) {
+      LongLongByteKey other = keyTable[i];
       if (other == null) {
         return -(i + 1); // Empty space is available.
       }
-      if (other.k1 == k1 && other.k2 == k2) {
+      if (other.k1 == k1 && other.k2 == k2 && other.k3 == k3) {
         return i; // Same key was found.
       }
     }
   }
 
-  public V put(long k1, long k2, V value) {
-    int i = locateKey(k1, k2);
+  public V put(long k1, long k2, byte k3, V value) {
+    int i = locateKey(k1, k2, k3);
     if (i >= 0) { // Existing key was found.
       V[] valueTable = this.valueTable;
       V oldValue = valueTable[i];
@@ -109,7 +108,7 @@ public final class LongLongMap<V> {
       return oldValue;
     }
     i = -(i + 1); // Empty space was found.
-    keyTable[i] = new LongLongKey(k1, k2);
+    keyTable[i] = new LongLongByteKey(k1, k2, k3);
     valueTable[i] = value;
     if (++size >= threshold) {
       resize(keyTable.length << 1);
@@ -117,14 +116,14 @@ public final class LongLongMap<V> {
     return null;
   }
 
-  public V get(long k1, long k2) {
-    LongLongKey[] keyTable = this.keyTable;
-    for (int i = place(k1, k2); ; i = i + 1 & mask) {
-      LongLongKey other = keyTable[i];
+  public V get(long k1, long k2, byte k3) {
+    LongLongByteKey[] keyTable = this.keyTable;
+    for (int i = place(k1, k2, k3); ; i = i + 1 & mask) {
+      LongLongByteKey other = keyTable[i];
       if (other == null) {
         return null;
       }
-      if (other.k1 == k1 && other.k2 == k2) {
+      if (other.k1 == k1 && other.k2 == k2 && other.k3 == k3) {
         return valueTable[i];
       }
     }
@@ -135,17 +134,17 @@ public final class LongLongMap<V> {
     threshold = (int) (newSize * loadFactor);
     mask = newSize - 1;
     shift = Long.numberOfLeadingZeros(mask);
-    LongLongKey[] oldKeyTable = keyTable;
+    LongLongByteKey[] oldKeyTable = keyTable;
     V[] oldValueTable = valueTable;
-    keyTable = new LongLongKey[newSize];
+    keyTable = new LongLongByteKey[newSize];
     valueTable = (V[]) new Object[newSize];
     if (size > 0) {
       for (int i = 0; i < oldCapacity; i++) {
-        LongLongKey key = oldKeyTable[i];
+        LongLongByteKey key = oldKeyTable[i];
         if (key != null) {
-          for (int j = place(key.k1, key.k2); ; j = (j + 1) & mask) {
+          for (int j = place(key.k1, key.k2, key.k3); ; j = (j + 1) & mask) {
             if (keyTable[j] == null) {
-              keyTable[j] = new LongLongKey(key.k1, key.k2);
+              keyTable[j] = new LongLongByteKey(key.k1, key.k2, key.k3);
               valueTable[j] = oldValueTable[i];
               break;
             }

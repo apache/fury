@@ -20,7 +20,7 @@ class ForyError(Exception):
     pass
 
 
-class ClassNotCompatibleError(ForyError):
+class TypeNotCompatibleError(ForyError):
     pass
 
 

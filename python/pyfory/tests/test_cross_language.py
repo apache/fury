@@ -495,7 +495,7 @@ def test_struct_hash(data_file_path):
     read_hash = pyfory.Buffer(data_bytes).read_int32()
     fory = pyfory.Fory(language=pyfory.Language.XLANG, ref_tracking=True)
     fory.register_type(ComplexObject1, typename="ComplexObject1")
-    serializer = fory.class_resolver.get_serializer(ComplexObject1)
+    serializer = fory.type_resolver.get_serializer(ComplexObject1)
     from pyfory._struct import _get_hash
 
     v = _get_hash(fory, serializer._field_names, serializer._type_hints)

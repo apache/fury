@@ -270,7 +270,7 @@ The text of each license is also included in licenses/LICENSE-[project].txt.
       java/fory-core/src/main/java/org/apache/fory/collection/IdentityMap.java
       java/fory-core/src/main/java/org/apache/fory/collection/IdentityObjectIntMap.java
       java/fory-core/src/main/java/org/apache/fory/collection/LongMap.java
-      java/fory-core/src/main/java/org/apache/fory/collection/LongLongMap.java
+      java/fory-core/src/main/java/org/apache/fory/collection/LongLongByteMap.java
       java/fory-core/src/main/java/org/apache/fory/collection/ObjectIntMap.java
       java/fory-core/src/main/java/org/apache/fory/type/Generics.java
       java/fory-core/src/test/java/org/apache/fory/type/GenericsTest.java

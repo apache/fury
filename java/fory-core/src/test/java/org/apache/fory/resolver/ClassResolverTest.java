@@ -423,4 +423,150 @@ public class ClassResolverTest extends ForyTestBase {
           return null;
         });
   }
+
+  interface ITest {
+    int getF1();
+
+    void setF1(int f1);
+  }
+
+  @ToString
+  @EqualsAndHashCode
+  static class ImplTest implements ITest {
+    int f1;
+
+    @Override
+    public int getF1() {
+      return f1;
+    }
+
+    @Override
+    public void setF1(int f1) {
+      this.f1 = f1;
+    }
+  }
+
+  static class InterfaceCustomSerializer extends Serializer<ITest> {
+
+    public InterfaceCustomSerializer(Fory fory, Class<ITest> type) {
+      super(fory, type);
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, ITest value) {
+      buffer.writeInt32(value.getF1());
+    }
+
+    @Override
+    public ITest read(MemoryBuffer buffer) {
+      final ITest iTest = new ImplTest();
+      iTest.setF1(buffer.readInt32());
+      return iTest;
+    }
+  }
+
+  @Test
+  public void testInterfaceCustomSerializer() {
+    ThreadSafeFory threadSafeFory =
+        Fory.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(false)
+            .buildThreadSafeFory();
+    threadSafeFory.registerSerializer(
+        ITest.class, f -> new InterfaceCustomSerializer(f, ITest.class));
+    final ITest iTest = new ImplTest();
+    iTest.setF1(100);
+
+    threadSafeFory.execute(
+        fory -> {
+          Assert.assertEquals(iTest, serDe(fory, iTest));
+          return null;
+        });
+    threadSafeFory.execute(
+        fory -> {
+          Assert.assertEquals(
+              fory.getClassResolver().getSerializer(iTest.getClass()).getClass(),
+              InterfaceCustomSerializer.class);
+          return null;
+        });
+  }
+
+  @Data
+  abstract static class AbsTest {
+    int f1;
+  }
+
+  @EqualsAndHashCode(callSuper = true)
+  @ToString
+  static class SubAbsTest extends AbsTest {
+    long f2;
+  }
+
+  @EqualsAndHashCode(callSuper = true)
+  @ToString
+  static class Sub2AbsTest extends SubAbsTest {
+    Object f3;
+  }
+
+  static class AbstractCustomSerializer extends Serializer<AbsTest> {
+
+    public AbstractCustomSerializer(Fory fory, Class<AbsTest> type) {
+      super(fory, type);
+    }
+
+    @Override
+    public void write(MemoryBuffer buffer, AbsTest value) {
+      buffer.writeInt32(value.getF1());
+    }
+
+    @Override
+    public AbsTest read(MemoryBuffer buffer) {
+      // TODO maybe new SubAbsTest or Sub2AbsTest
+      final AbsTest absTest = new SubAbsTest();
+      absTest.setF1(buffer.readInt32());
+      return absTest;
+    }
+  }
+
+  @Test
+  public void testAbstractCustomSerializer() {
+    ThreadSafeFory threadSafeFory =
+        Fory.builder()
+            .withLanguage(Language.JAVA)
+            .requireClassRegistration(false)
+            .buildThreadSafeFory();
+    threadSafeFory.registerSerializer(
+        AbsTest.class, f -> new AbstractCustomSerializer(f, AbsTest.class));
+    final AbsTest absTest = new SubAbsTest();
+    absTest.setF1(100);
+
+    threadSafeFory.execute(
+        fory -> {
+          Assert.assertEquals(absTest, serDe(fory, absTest));
+          return null;
+        });
+    threadSafeFory.execute(
+        fory -> {
+          Assert.assertEquals(
+              fory.getClassResolver().getSerializer(absTest.getClass()).getClass(),
+              AbstractCustomSerializer.class);
+          return null;
+        });
+
+    final AbsTest abs2Test = new Sub2AbsTest();
+    abs2Test.setF1(100);
+
+    threadSafeFory.execute(
+        fory -> {
+          Assert.assertEquals(abs2Test.getF1(), serDe(fory, abs2Test).getF1());
+          return null;
+        });
+    threadSafeFory.execute(
+        fory -> {
+          Assert.assertEquals(
+              fory.getClassResolver().getSerializer(abs2Test.getClass()).getClass(),
+              AbstractCustomSerializer.class);
+          return null;
+        });
+  }
 }

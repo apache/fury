@@ -29,7 +29,7 @@ from pyfory.codegen import (
     gen_read_nullable_basic_stmts,
     compile_function,
 )
-from pyfory.error import ClassNotCompatibleError
+from pyfory.error import TypeNotCompatibleError
 from pyfory.lib.collection import WeakIdentityKeyDictionary
 from pyfory.resolver import NULL_FLAG, NOT_NULL_VALUE_FLAG
 
@@ -357,7 +357,7 @@ class DataClassSerializer(Serializer):
             f"{ref_resolver}.reference({obj})",
             f"read_hash = {buffer}.read_int32()",
             f"if read_hash != {self._hash}:",
-            f"""   raise ClassNotCompatibleError(
+            f"""   raise TypeNotCompatibleError(
             "Hash read_hash is not consistent with {self._hash} for {self.type_}")""",
         ]
         if not self._has_slots:
@@ -399,9 +399,9 @@ class DataClassSerializer(Serializer):
     def read(self, buffer):
         hash_ = buffer.read_int32()
         if hash_ != self._hash:
-            raise ClassNotCompatibleError(
+            raise TypeNotCompatibleError(
                 f"Hash {hash_} is not consistent with {self._hash} "
-                f"for class {self.type_}",
+                f"for type {self.type_}",
             )
         obj = self.type_.__new__(self.type_)
         self.fory.ref_resolver.reference(obj)
@@ -536,7 +536,7 @@ class DynamicPyArraySerializer(Serializer):
         return arr
 
     def write(self, buffer, value):
-        buffer.write_varuint32(PickleSerializer.PICKLE_CLASS_ID)
+        buffer.write_varuint32(PickleSerializer.PICKLE_TYPE_ID)
         self.fory.handle_unsupported_write(buffer, value)
 
     def read(self, buffer):
@@ -598,7 +598,7 @@ class Numpy1DArraySerializer(Serializer):
         return np.frombuffer(data, dtype=self.dtype)
 
     def write(self, buffer, value):
-        buffer.write_int8(PickleSerializer.PICKLE_CLASS_ID)
+        buffer.write_int8(PickleSerializer.PICKLE_TYPE_ID)
         self.fory.handle_unsupported_write(buffer, value)
 
     def read(self, buffer):
@@ -621,7 +621,7 @@ class NDArraySerializer(Serializer):
         raise NotImplementedError("Multi-dimensional array not supported currently")
 
     def write(self, buffer, value):
-        buffer.write_int8(PickleSerializer.PICKLE_CLASS_ID)
+        buffer.write_int8(PickleSerializer.PICKLE_TYPE_ID)
         self.fory.handle_unsupported_write(buffer, value)
 
     def read(self, buffer):
@@ -654,7 +654,7 @@ class BytesBufferObject(BufferObject):
 
 
 class PickleSerializer(Serializer):
-    PICKLE_CLASS_ID = 96
+    PICKLE_TYPE_ID = 96
 
     def xwrite(self, buffer, value):
         raise NotImplementedError

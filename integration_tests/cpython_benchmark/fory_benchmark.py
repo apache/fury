@@ -16,7 +16,6 @@
 # under the License.
 
 import argparse
-import array
 from dataclasses import dataclass
 import datetime
 import os
@@ -146,13 +145,19 @@ COMPLEX_OBJECT = ComplexObject1(
     f8=2**63 - 1,
     f9=1.0 / 2,
     f10=1 / 3.0,
-    f11=array.array("h", [1, 2]),
-    f12=[-1, 4],
+    f11=[-1, 4],
 )
 
 
 def fory_object(language, ref_tracking, obj):
     fory = pyfory.Fory(language=language, ref_tracking=ref_tracking)
+    binary = fory.serialize(obj)
+    fory.deserialize(binary)
+
+
+def fory_data_class(language, ref_tracking, obj, register_callable):
+    fory = pyfory.Fory(language=language, ref_tracking=ref_tracking)
+    register_callable(fory)
     binary = fory.serialize(obj)
     fory.deserialize(binary)
 
@@ -190,7 +195,6 @@ def micro_benchmark():
     runner.bench_func(
         "fory_large_tuple", fory_object, language, not args.no_ref, LARGE_TUPLE
     )
-    runner.bench_func("fory_list", fory_object, language, not args.no_ref, LIST)
     runner.bench_func(
         "fory_large_float_tuple",
         fory_object,
@@ -209,8 +213,22 @@ def micro_benchmark():
     runner.bench_func(
         "fory_large_list", fory_object, language, not args.no_ref, LARGE_LIST
     )
+
+    def register_complex(fory):
+        if args.xlang:
+            fory.register_type(ComplexObject1, typename="example.ComplexObject1")
+            fory.register_type(ComplexObject2, typename="example.ComplexObject2")
+        else:
+            fory.register_type(ComplexObject1)
+            fory.register_type(ComplexObject2)
+
     runner.bench_func(
-        "fory_complex", fory_object, language, not args.no_ref, COMPLEX_OBJECT
+        "fory_complex",
+        fory_data_class,
+        language,
+        not args.no_ref,
+        COMPLEX_OBJECT,
+        register_complex,
     )
 
 

@@ -40,7 +40,7 @@ excludes = [
     "java/fory-core/src/main/java/org/apache/fory/collection/IdentityMap.java",
     "java/fory-core/src/main/java/org/apache/fory/collection/IdentityObjectIntMap.java",
     "java/fory-core/src/main/java/org/apache/fory/collection/LongMap.java",
-    "java/fory-core/src/main/java/org/apache/fory/collection/LongLongMap.java",
+    "java/fory-core/src/main/java/org/apache/fory/collection/LongLongByteMap.java",
     "java/fory-core/src/main/java/org/apache/fory/collection/ObjectIntMap.java",
     "java/fory-core/src/main/java/org/apache/fory/io/ClassLoaderObjectInputStream.java",
     "java/fory-core/src/main/java/org/apache/fory/memory/MemoryBuffer.java",

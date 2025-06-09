@@ -139,7 +139,7 @@ public class CustomTypeEncoderRegistry {
                     + ")"
                     + codecFieldName
                     + ".encode(fieldValue);",
-                enc.encodedType(),
+                enc.encodedType().getRawType(),
                 reg.getBeanType(),
                 "bean",
                 reg.getFieldType(),
@@ -156,7 +156,7 @@ public class CustomTypeEncoderRegistry {
                 "bean",
                 reg.getFieldType(),
                 "fieldNull",
-                enc.encodedType(),
+                enc.encodedType().getRawType(),
                 "encodedValue");
             ctx.addField(
                 true,

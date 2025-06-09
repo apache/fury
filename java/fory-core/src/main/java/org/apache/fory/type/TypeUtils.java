@@ -599,10 +599,14 @@ public class TypeUtils {
 
   public static boolean isBean(TypeRef<?> typeRef, TypeResolutionContext ctx) {
     Class<?> cls = getRawType(typeRef);
-    if (ctx.isSynthesizedBeanType(cls) || RecordUtils.isRecord(cls)) {
+    if (ctx.isSynthesizeInterfaces() && (RecordUtils.isRecord(cls) || (cls.isInterface()))) {
       return true;
     }
     if (Modifier.isAbstract(cls.getModifiers()) || Modifier.isInterface(cls.getModifiers())) {
+      return false;
+    }
+    if (ctx.getWalkedTypePath().contains(typeRef)
+        || ctx.getCustomTypeRegistry().isExtraSupportedType(typeRef)) {
       return false;
     }
     // since we need to access class in generated code in our package, the class must be public
@@ -624,17 +628,21 @@ public class TypeUtils {
               && !ITERABLE_TYPE.isSupertypeOf(typeRef)
               && !MAP_TYPE.isSupertypeOf(typeRef);
       if (maybe) {
-        return Descriptor.getDescriptors(cls).stream()
-            .allMatch(
-                d -> {
-                  TypeRef<?> t = d.getTypeRef();
-                  // do field modifiers and getter/setter validation here, not in getDescriptors.
-                  // If Modifier.isFinal(d.getModifiers()), use reflection
-                  // private field that doesn't have getter/setter will be handled by reflection.
-                  return ctx.getCustomTypeRegistry().hasCodec(cls, t.getRawType())
-                      || isSupported(t, newTypePath)
-                      || isBean(t, newTypePath);
-                });
+        for (Descriptor d : Descriptor.getDescriptors(cls)) {
+          TypeRef<?> t = d.getTypeRef();
+          // do field modifiers and getter/setter validation here, not in getDescriptors.
+          // If Modifier.isFinal(d.getModifiers()), use reflection
+          // private field that doesn't have getter/setter will be handled by reflection.
+          TypeRef<?> replacementType =
+              ctx.getCustomTypeRegistry().replacementTypeFor(cls, t.getRawType());
+          if (replacementType != null) {
+            t = replacementType;
+          }
+          if (!isSupported(t, newTypePath)) {
+            return false;
+          }
+        }
+        return true;
       } else {
         return false;
       }
@@ -658,10 +666,16 @@ public class TypeUtils {
       // box.
       return true;
     }
-    if (SUPPORTED_TYPES.contains(typeRef)) {
+    TypeRef<?> replacementType =
+        ctx.getCustomTypeRegistry()
+            .replacementTypeFor(ctx.getEnclosingType().getRawType(), typeRef.getRawType());
+    if (replacementType != null) {
+      return isSupported(replacementType, ctx);
+    } else if (SUPPORTED_TYPES.contains(typeRef)
+        || ctx.getCustomTypeRegistry().isExtraSupportedType(typeRef)) {
       return true;
     } else if (typeRef.isArray()) {
-      return isSupported(Objects.requireNonNull(typeRef.getComponentType()));
+      return isSupported(Objects.requireNonNull(typeRef.getComponentType()), ctx);
     } else if (ITERABLE_TYPE.isSupertypeOf(typeRef)) {
       TypeRef<?> elementType = getElementType(typeRef);
       boolean isSuperOfArrayList = cls.isAssignableFrom(ArrayList.class);
@@ -672,7 +686,7 @@ public class TypeUtils {
               .canConstructCollection(typeRef.getRawType(), elementType.getRawType())) {
         return false;
       }
-      return isSupported(getElementType(typeRef));
+      return isSupported(elementType, ctx);
     } else if (MAP_TYPE.isSupertypeOf(typeRef)) {
       boolean isSuperOfHashMap = cls.isAssignableFrom(HashMap.class);
       if (!isSuperOfHashMap && (cls.isInterface() || Modifier.isAbstract(cls.getModifiers()))) {
@@ -684,7 +698,7 @@ public class TypeUtils {
       return true;
     } else {
       ctx.checkNoCycle(typeRef);
-      return isBean(typeRef, ctx.appendTypePath(typeRef));
+      return isBean(typeRef, ctx);
     }
   }
 
@@ -702,10 +716,12 @@ public class TypeUtils {
   public static LinkedHashSet<Class<?>> listBeansRecursiveInclusive(
       Class<?> beanClass, CustomTypeRegistry customTypes) {
     TypeResolutionContext ctx = new TypeResolutionContext(customTypes);
-    if (beanClass.isInterface()) {
-      ctx = ctx.withSynthesizedBeanType(beanClass);
-    }
     return listBeansRecursiveInclusive(TypeRef.of(beanClass), ctx);
+  }
+
+  public static LinkedHashSet<Class<?>> listBeansRecursiveInclusive(
+      Class<?> beanClass, TypeResolutionContext typeCtx) {
+    return listBeansRecursiveInclusive(TypeRef.of(beanClass), typeCtx);
   }
 
   private static LinkedHashSet<Class<?>> listBeansRecursiveInclusive(
@@ -713,34 +729,32 @@ public class TypeUtils {
     LinkedHashSet<Class<?>> beans = new LinkedHashSet<>();
     Class<?> enclosingType = ctx.getEnclosingType().getRawType();
     Class<?> type = typeRef.getRawType();
-    TypeResolutionContext newCtx = ctx;
-    if (ctx.getCustomTypeRegistry().hasCodec(enclosingType, type)) {
+    TypeRef<?> replacementType =
+        ctx.getCustomTypeRegistry().replacementTypeFor(enclosingType, type);
+    if (replacementType != null && !replacementType.equals(typeRef)) {
+      beans.addAll(listBeansRecursiveInclusive(replacementType, ctx));
       return beans;
     } else if (type == Optional.class) {
       TypeRef<?> elemType = getTypeArguments(typeRef).get(0);
-      beans.addAll(listBeansRecursiveInclusive(elemType, newCtx));
+      beans.addAll(listBeansRecursiveInclusive(elemType, ctx));
     } else if (isCollection(type) || Iterable.class == type) {
       TypeRef<?> elementType = getElementType(typeRef);
-      beans.addAll(listBeansRecursiveInclusive(elementType, newCtx));
+      beans.addAll(listBeansRecursiveInclusive(elementType, ctx));
     } else if (isMap(type)) {
       Tuple2<TypeRef<?>, TypeRef<?>> mapKeyValueType = getMapKeyValueType(typeRef);
-      TypeResolutionContext mapCtx = newCtx;
+      TypeResolutionContext mapCtx = ctx;
       beans.addAll(listBeansRecursiveInclusive(mapKeyValueType.f0, mapCtx));
       beans.addAll(listBeansRecursiveInclusive(mapKeyValueType.f1, mapCtx));
     } else if (type.isArray()) {
       Class<?> arrayComponent = getArrayComponent(type);
-      beans.addAll(listBeansRecursiveInclusive(TypeRef.of(arrayComponent), newCtx));
-    } else if (isBean(type, newCtx)) {
+      beans.addAll(listBeansRecursiveInclusive(TypeRef.of(arrayComponent), ctx));
+    } else if (isBean(type, ctx)) {
       List<Descriptor> descriptors = Descriptor.getDescriptors(type);
       beans.add(type);
       for (Descriptor descriptor : descriptors) {
         ctx.checkNoCycle(typeRef);
-        TypeRef<?> propertyTypeRef = descriptor.getTypeRef();
-        Class<?> propertyType = propertyTypeRef.getRawType();
-        if (propertyType.isInterface()) {
-          newCtx = newCtx.withSynthesizedBeanType(propertyType);
-        }
-        beans.addAll(listBeansRecursiveInclusive(propertyTypeRef, newCtx.appendTypePath(typeRef)));
+        beans.addAll(
+            listBeansRecursiveInclusive(descriptor.getTypeRef(), ctx.appendTypePath(typeRef)));
       }
     }
     return beans;

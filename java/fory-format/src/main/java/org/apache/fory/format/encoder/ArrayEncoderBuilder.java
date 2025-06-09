@@ -23,6 +23,7 @@ import static org.apache.fory.type.TypeUtils.CLASS_TYPE;
 import static org.apache.fory.type.TypeUtils.getRawType;
 
 import java.lang.reflect.Array;
+import java.util.HashSet;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.fory.Fory;
 import org.apache.fory.codegen.CodeGenerator;
@@ -181,7 +182,8 @@ public class ArrayEncoderBuilder extends BaseBinaryEncoderBuilder {
             arrayData,
             elemType,
             (i, value) ->
-                new Expression.Invoke(collection, "add", deserializeFor(value, elemType, typeCtx)),
+                new Expression.Invoke(
+                    collection, "add", deserializeFor(value, elemType, typeCtx, new HashSet<>())),
             i -> new Expression.Invoke(collection, "add", ExpressionUtils.nullValue(elemType)));
     return new Expression.ListExpression(collection, addElemsOp, collection);
   }

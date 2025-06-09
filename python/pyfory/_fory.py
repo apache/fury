@@ -47,19 +47,19 @@ logger = logging.getLogger(__name__)
 MAGIC_NUMBER = 0x62D4
 DEFAULT_DYNAMIC_WRITE_META_STR_ID = -1
 DYNAMIC_TYPE_ID = -1
-USE_CLASSNAME = 0
-USE_CLASS_ID = 1
-# preserve 0 as flag for class id not set in ClassInfo`
-NO_CLASS_ID = 0
-INT64_CLASS_ID = TypeId.INT64
-FLOAT64_CLASS_ID = TypeId.FLOAT64
-BOOL_CLASS_ID = TypeId.BOOL
-STRING_CLASS_ID = TypeId.STRING
-# `NOT_NULL_VALUE_FLAG` + `CLASS_ID << 1` in little-endian order
-NOT_NULL_INT64_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (INT64_CLASS_ID << 8)
-NOT_NULL_FLOAT64_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (FLOAT64_CLASS_ID << 8)
-NOT_NULL_BOOL_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (BOOL_CLASS_ID << 8)
-NOT_NULL_STRING_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (STRING_CLASS_ID << 8)
+USE_TYPE_NAME = 0
+USE_TYPE_ID = 1
+# preserve 0 as flag for type id not set in TypeInfo`
+NO_TYPE_ID = 0
+INT64_TYPE_ID = TypeId.INT64
+FLOAT64_TYPE_ID = TypeId.FLOAT64
+BOOL_TYPE_ID = TypeId.BOOL
+STRING_TYPE_ID = TypeId.STRING
+# `NOT_NULL_VALUE_FLAG` + `TYPE_ID << 1` in little-endian order
+NOT_NULL_INT64_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (INT64_TYPE_ID << 8)
+NOT_NULL_FLOAT64_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (FLOAT64_TYPE_ID << 8)
+NOT_NULL_BOOL_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (BOOL_TYPE_ID << 8)
+NOT_NULL_STRING_FLAG = NOT_NULL_VALUE_FLAG & 0b11111111 | (STRING_TYPE_ID << 8)
 SMALL_STRING_THRESHOLD = 16
 
 
@@ -100,9 +100,9 @@ class Fory:
         "is_py",
         "ref_tracking",
         "ref_resolver",
-        "class_resolver",
+        "type_resolver",
         "serialization_context",
-        "require_class_registration",
+        "require_type_registration",
         "buffer",
         "pickler",
         "unpickler",
@@ -119,22 +119,22 @@ class Fory:
         self,
         language=Language.XLANG,
         ref_tracking: bool = False,
-        require_class_registration: bool = True,
+        require_type_registration: bool = True,
     ):
         """
-        :param require_class_registration:
-         Whether to require registering classes for serialization, enabled by default.
-          If disabled, unknown insecure classes can be deserialized, which can be
-          insecure and cause remote code execution attack if the classes
+        :param require_type_registration:
+         Whether to require registering types for serialization, enabled by default.
+          If disabled, unknown insecure types can be deserialized, which can be
+          insecure and cause remote code execution attack if the types
           `__new__`/`__init__`/`__eq__`/`__hash__` method contain malicious code.
-          Do not disable class registration if you can't ensure your environment are
+          Do not disable type registration if you can't ensure your environment are
           *indeed secure*. We are not responsible for security risks if
           you disable this option.
         """
         self.language = language
         self.is_py = language == Language.PYTHON
-        self.require_class_registration = (
-            _ENABLE_CLASS_REGISTRATION_FORCIBLY or require_class_registration
+        self.require_type_registration = (
+            _ENABLE_TYPE_REGISTRATION_FORCIBLY or require_type_registration
         )
         self.ref_tracking = ref_tracking
         if self.ref_tracking:
@@ -142,16 +142,16 @@ class Fory:
         else:
             self.ref_resolver = NoRefResolver()
         from pyfory._serialization import MetaStringResolver
-        from pyfory._registry import ClassResolver
+        from pyfory._registry import TypeResolver
 
         self.metastring_resolver = MetaStringResolver()
-        self.class_resolver = ClassResolver(self)
-        self.class_resolver.initialize()
+        self.type_resolver = TypeResolver(self)
+        self.type_resolver.initialize()
         self.serialization_context = SerializationContext()
         self.buffer = Buffer.allocate(32)
-        if not require_class_registration:
+        if not require_type_registration:
             warnings.warn(
-                "Class registration is disabled, unknown classes can be deserialized "
+                "Type registration is disabled, unknown types can be deserialized "
                 "which may be insecure.",
                 RuntimeWarning,
                 stacklevel=2,
@@ -168,7 +168,7 @@ class Fory:
         self._peer_language = None
 
     def register_serializer(self, cls: type, serializer):
-        self.class_resolver.register_serializer(cls, serializer)
+        self.type_resolver.register_serializer(cls, serializer)
 
     # `Union[type, TypeVar]` is not supported in py3.6
     def register_type(
@@ -180,7 +180,7 @@ class Fory:
         typename: str = None,
         serializer=None,
     ):
-        return self.class_resolver.register_type(
+        return self.type_resolver.register_type(
             cls,
             type_id=type_id,
             namespace=namespace,
@@ -257,7 +257,7 @@ class Fory:
         else:
             return buffer.to_bytes(0, buffer.writer_index)
 
-    def serialize_ref(self, buffer, obj, classinfo=None):
+    def serialize_ref(self, buffer, obj, typeinfo=None):
         cls = type(obj)
         if cls is str:
             buffer.write_int16(NOT_NULL_STRING_FLAG)
@@ -273,29 +273,29 @@ class Fory:
             return
         if self.ref_resolver.write_ref_or_null(buffer, obj):
             return
-        if classinfo is None:
-            classinfo = self.class_resolver.get_classinfo(cls)
-        self.class_resolver.write_typeinfo(buffer, classinfo)
-        classinfo.serializer.write(buffer, obj)
+        if typeinfo is None:
+            typeinfo = self.type_resolver.get_typeinfo(cls)
+        self.type_resolver.write_typeinfo(buffer, typeinfo)
+        typeinfo.serializer.write(buffer, obj)
 
     def serialize_nonref(self, buffer, obj):
         cls = type(obj)
         if cls is str:
-            buffer.write_varuint32(STRING_CLASS_ID)
+            buffer.write_varuint32(STRING_TYPE_ID)
             buffer.write_string(obj)
             return
         elif cls is int:
-            buffer.write_varuint32(INT64_CLASS_ID)
+            buffer.write_varuint32(INT64_TYPE_ID)
             buffer.write_varint64(obj)
             return
         elif cls is bool:
-            buffer.write_varuint32(BOOL_CLASS_ID)
+            buffer.write_varuint32(BOOL_TYPE_ID)
             buffer.write_bool(obj)
             return
         else:
-            classinfo = self.class_resolver.get_classinfo(cls)
-            self.class_resolver.write_typeinfo(buffer, classinfo)
-            classinfo.serializer.write(buffer, obj)
+            typeinfo = self.type_resolver.get_typeinfo(cls)
+            self.type_resolver.write_typeinfo(buffer, typeinfo)
+            typeinfo.serializer.write(buffer, obj)
 
     def xserialize_ref(self, buffer, obj, serializer=None):
         if serializer is None or serializer.need_to_write_ref:
@@ -313,9 +313,9 @@ class Fory:
             serializer.xwrite(buffer, obj)
             return
         cls = type(obj)
-        classinfo = self.class_resolver.get_classinfo(cls)
-        self.class_resolver.write_typeinfo(buffer, classinfo)
-        classinfo.serializer.xwrite(buffer, obj)
+        typeinfo = self.type_resolver.get_typeinfo(cls)
+        self.type_resolver.write_typeinfo(buffer, typeinfo)
+        typeinfo.serializer.xwrite(buffer, obj)
 
     def deserialize(
         self,
@@ -381,8 +381,8 @@ class Fory:
         ref_id = ref_resolver.try_preserve_ref_id(buffer)
         # indicates that the object is first read.
         if ref_id >= NOT_NULL_VALUE_FLAG:
-            classinfo = self.class_resolver.read_typeinfo(buffer)
-            o = classinfo.serializer.read(buffer)
+            typeinfo = self.type_resolver.read_typeinfo(buffer)
+            o = typeinfo.serializer.read(buffer)
             ref_resolver.set_read_object(ref_id, o)
             return o
         else:
@@ -390,8 +390,8 @@ class Fory:
 
     def deserialize_nonref(self, buffer):
         """Deserialize not-null and non-reference object from buffer."""
-        classinfo = self.class_resolver.read_typeinfo(buffer)
-        return classinfo.serializer.read(buffer)
+        typeinfo = self.type_resolver.read_typeinfo(buffer)
+        return typeinfo.serializer.read(buffer)
 
     def xdeserialize_ref(self, buffer, serializer=None):
         if serializer is None or serializer.need_to_write_ref:
@@ -411,7 +411,7 @@ class Fory:
 
     def xdeserialize_nonref(self, buffer, serializer=None):
         if serializer is None:
-            serializer = self.class_resolver.read_typeinfo(buffer).serializer
+            serializer = self.type_resolver.read_typeinfo(buffer).serializer
         return serializer.xread(buffer)
 
     def write_buffer_object(self, buffer, buffer_object: BufferObject):
@@ -457,20 +457,20 @@ class Fory:
             assert self._unsupported_objects is not None
             return next(self._unsupported_objects)
 
-    def write_ref_pyobject(self, buffer, value, classinfo=None):
+    def write_ref_pyobject(self, buffer, value, typeinfo=None):
         if self.ref_resolver.write_ref_or_null(buffer, value):
             return
-        if classinfo is None:
-            classinfo = self.class_resolver.get_classinfo(type(value))
-        self.class_resolver.write_typeinfo(buffer, classinfo)
-        classinfo.serializer.write(buffer, value)
+        if typeinfo is None:
+            typeinfo = self.type_resolver.get_typeinfo(type(value))
+        self.type_resolver.write_typeinfo(buffer, typeinfo)
+        typeinfo.serializer.write(buffer, value)
 
     def read_ref_pyobject(self, buffer):
         return self.deserialize_ref(buffer)
 
     def reset_write(self):
         self.ref_resolver.reset_write()
-        self.class_resolver.reset_write()
+        self.type_resolver.reset_write()
         self.serialization_context.reset()
         self.metastring_resolver.reset_write()
         self.pickler.clear_memo()
@@ -479,7 +479,7 @@ class Fory:
 
     def reset_read(self):
         self.ref_resolver.reset_read()
-        self.class_resolver.reset_read()
+        self.type_resolver.reset_read()
         self.serialization_context.reset()
         self.metastring_resolver.reset_write()
         self.unpickler = None
@@ -521,8 +521,8 @@ class SerializationContext:
             self.objects.clear()
 
 
-_ENABLE_CLASS_REGISTRATION_FORCIBLY = os.getenv(
-    "ENABLE_CLASS_REGISTRATION_FORCIBLY", "0"
+_ENABLE_TYPE_REGISTRATION_FORCIBLY = os.getenv(
+    "ENABLE_TYPE_REGISTRATION_FORCIBLY", "0"
 ) in {
     "1",
     "true",
@@ -532,9 +532,9 @@ _ENABLE_CLASS_REGISTRATION_FORCIBLY = os.getenv(
 class _PicklerStub:
     def dump(self, o):
         raise ValueError(
-            f"Class {type(o)} is not registered, "
-            f"pickle is not allowed when class registration enabled, Please register"
-            f"the class or pass unsupported_callback"
+            f"Type {type(o)} is not registered, "
+            f"pickle is not allowed when type registration enabled, Please register"
+            f"the type or pass unsupported_callback"
         )
 
     def clear_memo(self):
@@ -544,6 +544,6 @@ class _PicklerStub:
 class _UnpicklerStub:
     def load(self):
         raise ValueError(
-            "pickle is not allowed when class registration enabled, Please register"
-            "the class or pass unsupported_callback"
+            "pickle is not allowed when type registration enabled, Please register"
+            "the type or pass unsupported_callback"
         )
