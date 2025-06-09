@@ -62,7 +62,7 @@ public class MetaSharedXlangTest extends ForyTestBase {
     int[][] arr;
   }
 
-  // @Test
+  @Test
   public void testMDArrayField() {
     Fory fory =
         Fory.builder()
@@ -70,7 +70,6 @@ public class MetaSharedXlangTest extends ForyTestBase {
             .withCodegen(false)
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
             .build();
-    // TODO support multi-dimensional array serialization
     fory.register(MDArrayFieldStruct.class, "example.a");
     MDArrayFieldStruct s = new MDArrayFieldStruct();
     s.arr = new int[][] {{1, 2}, {3, 4}};
