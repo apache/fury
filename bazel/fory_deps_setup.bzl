@@ -145,8 +145,8 @@ def setup_deps():
     auto_http_archive(
         name = "cython",
         build_file = "@com_github_grpc_grpc//third_party:cython.BUILD",
-        url = "https://github.com/cython/cython/releases/download/3.1.0a1/cython-3.1.0a1.tar.gz",
-        sha256 = "35b53f6947c3133452b84f0f9703f222deb9b02874861427a45e63c891379440",
+        url = "https://github.com/cython/cython/releases/download/3.1.1/cython-3.1.1.tar.gz",
+        sha256 = "505ccd413669d5132a53834d792c707974248088c4f60c497deb1b416e366397",
     )
     auto_http_archive(
         name = "com_google_googletest",
