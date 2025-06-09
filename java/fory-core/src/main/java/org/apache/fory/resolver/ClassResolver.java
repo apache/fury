@@ -1371,18 +1371,20 @@ public class ClassResolver implements TypeResolver {
     }
 
     // support customized serializer for abstract or interface.
-    Class<?> tmpCls = cls;
-    while (tmpCls != null && tmpCls != Object.class) {
-      ClassInfo absClass = null;
-      if ((absClass = extRegistry.absClassInfo.get(tmpCls.getSuperclass())) != null) {
-        return absClass.serializer;
-      }
-      for (Class<?> tmpI : tmpCls.getInterfaces()) {
-        if ((absClass = extRegistry.absClassInfo.get(tmpI)) != null) {
+    if (!extRegistry.absClassInfo.isEmpty()) {
+      Class<?> tmpCls = cls;
+      while (tmpCls != null && tmpCls != Object.class) {
+        ClassInfo absClass = null;
+        if ((absClass = extRegistry.absClassInfo.get(tmpCls.getSuperclass())) != null) {
           return absClass.serializer;
         }
+        for (Class<?> tmpI : tmpCls.getInterfaces()) {
+          if ((absClass = extRegistry.absClassInfo.get(tmpI)) != null) {
+            return absClass.serializer;
+          }
+        }
+        tmpCls = tmpCls.getSuperclass();
       }
-      tmpCls = tmpCls.getSuperclass();
     }
 
     Class<? extends Serializer> serializerClass = getSerializerClass(cls);
