@@ -55,6 +55,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.Data;
+import org.apache.fory.config.CompatibleMode;
 import org.apache.fory.config.ForyBuilder;
 import org.apache.fory.config.Language;
 import org.apache.fory.logging.Logger;
@@ -797,5 +798,59 @@ public class CrossLanguageTest extends ForyTestBase {
     a.f3 = "abc";
     Assert.assertEquals(xserDe(fory, a), a);
     structRoundBack(fory, a, "test_enum_field");
+  }
+
+  @Test
+  public void testCodeGen() {
+    Fory fory =
+        Fory.builder()
+            .withCodegen(true)
+            .withLanguage(Language.XLANG)
+            .withCompatibleMode(CompatibleMode.SCHEMA_CONSISTENT)
+            .requireClassRegistration(true)
+            .build();
+    Fory fory1 =
+        Fory.builder()
+            .withCodegen(true)
+            .withLanguage(Language.XLANG)
+            .withCompatibleMode(CompatibleMode.COMPATIBLE)
+            .requireClassRegistration(true)
+            .build();
+    fory.register(Foo.class, "example.foo");
+    fory.register(Bar.class, "example.bar");
+    fory1.register(Foo.class, "example.foo");
+    fory1.register(Bar.class, "example.bar");
+    serDeCheck(fory, Bar.create());
+    serDeCheck(fory, Foo.create());
+    serDeCheck(fory1, Bar.create());
+    serDeCheck(fory1, Foo.create());
+  }
+
+  @Test
+  public void testCodeGenMetaShare() {
+    Fory fory =
+        Fory.builder()
+            .withCodegen(true)
+            .withLanguage(Language.XLANG)
+            .withCompatibleMode(CompatibleMode.SCHEMA_CONSISTENT)
+            .withMetaShare(true)
+            .requireClassRegistration(true)
+            .build();
+    Fory fory1 =
+        Fory.builder()
+            .withCodegen(true)
+            .withLanguage(Language.XLANG)
+            .withCompatibleMode(CompatibleMode.COMPATIBLE)
+            .withMetaShare(true)
+            .requireClassRegistration(true)
+            .build();
+    fory.register(Foo.class, "example.foo");
+    fory.register(Bar.class, "example.bar");
+    fory1.register(Foo.class, "example.foo");
+    fory1.register(Bar.class, "example.bar");
+    serDeCheck(fory, Bar.create());
+    serDeCheck(fory, Foo.create());
+    serDeCheck(fory1, Bar.create());
+    serDeCheck(fory1, Foo.create());
   }
 }

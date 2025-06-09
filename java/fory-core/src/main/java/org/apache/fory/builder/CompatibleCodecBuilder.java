@@ -339,7 +339,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
 
   @Override
   public Expression buildXlangEncodeExpression() {
-    return null;
+    throw new IllegalStateException("unreachable");
   }
 
   private Expression writeEmbedTypeFieldValue(

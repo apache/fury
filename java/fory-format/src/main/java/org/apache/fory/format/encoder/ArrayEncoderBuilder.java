@@ -159,7 +159,7 @@ public class ArrayEncoderBuilder extends BaseBinaryEncoderBuilder {
 
   @Override
   public Expression buildXlangEncodeExpression() {
-    return null;
+    throw new IllegalStateException("unreachable");
   }
 
   /**
