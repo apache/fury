@@ -467,11 +467,7 @@ public class XtypeResolver implements TypeResolver {
   }
 
   private boolean handleArray(Class<?> cls) {
-    Class<?> eleType = TypeUtils.getArrayComponent(cls);
-    while (eleType.isArray()) {
-      eleType = TypeUtils.getArrayComponent(eleType);
-    }
-    return eleType.isPrimitive();
+    return !TypeUtils.getArrayComponent(cls).isPrimitive() || !cls.getComponentType().isPrimitive();
   }
 
   private Serializer<?> getCollectionSerializer(Class<?> cls) {
