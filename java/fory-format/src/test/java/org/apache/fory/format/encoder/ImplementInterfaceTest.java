@@ -75,6 +75,7 @@ public class ImplementInterfaceTest {
 
   static {
     Encoders.registerCustomCodec(PoisonPill.class, new PoisonPillCodec());
+    Encoders.registerCustomCodec(Id.class, new IdCodec());
   }
 
   @Test
@@ -167,5 +168,47 @@ public class ImplementInterfaceTest {
     row.pointTo(buffer, 0, buffer.size());
     final OptionalType deserializedBean = encoder.fromRow(row);
     Assert.assertEquals(deserializedBean.f1(), Optional.of("42"));
+  }
+
+  public static class Id<T> {
+    byte id;
+
+    Id(final byte id) {
+      this.id = id;
+    }
+  }
+
+  public interface OptionalCustomType {
+    Optional<Id<OptionalCustomType>> f1();
+  }
+
+  static class OptionalCustomTypeImpl implements OptionalCustomType {
+    @Override
+    public Optional<Id<OptionalCustomType>> f1() {
+      return Optional.of(new Id<>((byte) 42));
+    }
+  }
+
+  static class IdCodec<T> implements CustomCodec.MemoryBufferCodec<Id<T>> {
+    @Override
+    public MemoryBuffer encode(final Id<T> value) {
+      return MemoryBuffer.fromByteArray(new byte[] {value.id});
+    }
+
+    @Override
+    public Id<T> decode(final MemoryBuffer value) {
+      return new Id<>(value.readByte());
+    }
+  }
+
+  @Test
+  public void testOptionalCustomType() {
+    final OptionalCustomType bean1 = new OptionalCustomTypeImpl();
+    final RowEncoder<OptionalCustomType> encoder = Encoders.bean(OptionalCustomType.class);
+    final BinaryRow row = encoder.toRow(bean1);
+    final MemoryBuffer buffer = MemoryUtils.wrap(row.toBytes());
+    row.pointTo(buffer, 0, buffer.size());
+    final OptionalCustomType deserializedBean = encoder.fromRow(row);
+    Assert.assertEquals(deserializedBean.f1().get().id, bean1.f1().get().id);
   }
 }

@@ -286,16 +286,14 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
       Descriptor d = getDescriptorByFieldName(schema.getFields().get(i).getName());
       TypeRef<?> fieldType = d.getTypeRef();
       Class<?> rawFieldType = fieldType.getRawType();
-      TypeRef<?> columnAccessType;
+      TypeRef<?> columnAccessType = fieldType;
       if (rawFieldType == Optional.class) {
         columnAccessType = TypeUtils.getTypeArguments(fieldType).get(0);
-      } else {
-        CustomCodec<?, ?> customEncoder = customTypeHandler.findCodec(beanClass, rawFieldType);
-        if (customEncoder == null) {
-          columnAccessType = fieldType;
-        } else {
-          columnAccessType = customEncoder.encodedType();
-        }
+      }
+      TypeRef<?> replacementType =
+          customTypeHandler.replacementTypeFor(beanClass, columnAccessType.getRawType());
+      if (replacementType != null) {
+        columnAccessType = replacementType;
       }
       String columnAccessMethodName =
           BinaryUtils.getElemAccessMethodName(columnAccessType, typeCtx);
