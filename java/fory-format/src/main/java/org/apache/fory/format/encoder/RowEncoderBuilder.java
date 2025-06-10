@@ -146,8 +146,8 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
     ctx.addField(ctx.type(Fory.class), FORY_NAME);
 
     Expression encodeExpr = buildEncodeExpression();
-    Expression decodeExpr = buildDecodeExpression();
     String encodeCode = encodeExpr.genCode(ctx).code();
+    Expression decodeExpr = buildDecodeExpression();
     String decodeCode = decodeExpr.genCode(ctx).code();
     ctx.overrideMethod("toRow", encodeCode, BinaryRow.class, Object.class, ROOT_OBJECT_NAME);
     // T fromRow(BinaryRow row);

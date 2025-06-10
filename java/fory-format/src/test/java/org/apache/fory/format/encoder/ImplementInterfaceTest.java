@@ -19,6 +19,8 @@
 
 package org.apache.fory.format.encoder;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import lombok.Data;
 import org.apache.fory.annotation.ForyField;
@@ -210,5 +212,50 @@ public class ImplementInterfaceTest {
     row.pointTo(buffer, 0, buffer.size());
     final OptionalCustomType deserializedBean = encoder.fromRow(row);
     Assert.assertEquals(deserializedBean.f1().get().id, bean1.f1().get().id);
+  }
+
+  public interface ListInner {
+    int f1();
+  }
+
+  static class ListInnerImpl implements ListInner {
+    private final int f1;
+
+    ListInnerImpl(final int f1) {
+      this.f1 = f1;
+    }
+
+    @Override
+    public int f1() {
+      return f1;
+    }
+  }
+
+  public interface ListOuter {
+    List<ListInner> f1();
+  }
+
+  static class ListOuterImpl implements ListOuter {
+    private final List<ListInner> f1;
+
+    ListOuterImpl(final List<ListInner> f1) {
+      this.f1 = f1;
+    }
+
+    @Override
+    public List<ListInner> f1() {
+      return f1;
+    }
+  }
+
+  @Test
+  public void testListTooLazy() {
+    final ListOuter bean1 = new ListOuterImpl(Arrays.asList(new ListInnerImpl(42)));
+    final RowEncoder<ListOuter> encoder = Encoders.bean(ListOuter.class);
+    final BinaryRow row = encoder.toRow(bean1);
+    final MemoryBuffer buffer = MemoryUtils.wrap(row.toBytes());
+    row.pointTo(buffer, 0, buffer.size());
+    final ListOuter deserializedBean = encoder.fromRow(row);
+    Assert.assertEquals(deserializedBean.f1().get(0).f1(), 42);
   }
 }
