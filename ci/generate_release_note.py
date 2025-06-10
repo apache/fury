@@ -19,6 +19,9 @@ from collections import defaultdict
 
 
 def generate_release_notes(content_text):
+    """
+    Generate release notes from the github auto generated release note.
+    """
     sections = defaultdict(list)
     new_contributors = []
 
