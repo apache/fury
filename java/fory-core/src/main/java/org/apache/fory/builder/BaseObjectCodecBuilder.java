@@ -221,6 +221,10 @@ public abstract class BaseObjectCodecBuilder extends CodecBuilder {
 
   protected abstract String codecSuffix();
 
+  protected abstract Expression buildXlangDecodeExpression();
+
+  protected abstract Expression buildXlangEncodeExpression();
+
   protected <T> T fory(Function<Fory, T> function) {
     return fory.getJITContext().asyncVisitFory(function);
   }
