@@ -135,20 +135,37 @@ public class ImplementInterfaceTest {
   }
 
   static class OptionalTypeImpl implements OptionalType {
+    private final Optional<String> f1;
+
+    OptionalTypeImpl(final Optional<String> f1) {
+      this.f1 = f1;
+    }
+
     @Override
     public Optional<String> f1() {
-      return null;
+      return f1;
     }
   }
 
   @Test
   public void testNullOptional() {
-    final OptionalType bean1 = new OptionalTypeImpl();
+    final OptionalType bean1 = new OptionalTypeImpl(null);
     final RowEncoder<OptionalType> encoder = Encoders.bean(OptionalType.class);
     final BinaryRow row = encoder.toRow(bean1);
     final MemoryBuffer buffer = MemoryUtils.wrap(row.toBytes());
     row.pointTo(buffer, 0, buffer.size());
     final OptionalType deserializedBean = encoder.fromRow(row);
     Assert.assertEquals(deserializedBean.f1(), Optional.empty());
+  }
+
+  @Test
+  public void testPresentOptional() {
+    final OptionalType bean1 = new OptionalTypeImpl(Optional.of("42"));
+    final RowEncoder<OptionalType> encoder = Encoders.bean(OptionalType.class);
+    final BinaryRow row = encoder.toRow(bean1);
+    final MemoryBuffer buffer = MemoryUtils.wrap(row.toBytes());
+    row.pointTo(buffer, 0, buffer.size());
+    final OptionalType deserializedBean = encoder.fromRow(row);
+    Assert.assertEquals(deserializedBean.f1(), Optional.of("42"));
   }
 }
