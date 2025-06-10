@@ -340,14 +340,21 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
         getterImpl = new Expression.Return(decodeValue);
       } else {
         String fieldName = "f" + i + "_" + d.getName();
-        implClass.addField(
-            false, ctx.type(fieldType.getRawType()), fieldName, nullValue(fieldType));
+        Class<?> rawFieldType = fieldType.getRawType();
+        implClass.addField(false, ctx.type(rawFieldType), fieldName, nullValue(fieldType));
 
         Expression fieldRef = new Expression.Reference(fieldName, fieldType, true);
         Expression storeValue =
             new Expression.SetField(new Expression.Reference("this"), fieldName, decodeValue);
-        Expression loadIfFieldIsNull =
-            new Expression.If(new Expression.IsNull(fieldRef), storeValue);
+        Expression shouldLoad;
+        if (rawFieldType == Optional.class) {
+          shouldLoad =
+              new Expression.Not(
+                  Expression.Invoke.inlineInvoke(fieldRef, "isPresent", TypeUtils.BOOLEAN_TYPE));
+        } else {
+          shouldLoad = new Expression.IsNull(fieldRef);
+        }
+        Expression loadIfFieldIsNull = new Expression.If(shouldLoad, storeValue);
         Expression assigner;
 
         if (d.isNullable()) {
