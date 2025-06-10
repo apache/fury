@@ -536,7 +536,6 @@ public abstract class BaseBinaryEncoderBuilder extends CodecBuilder {
       Set<TypeRef<?>> visitedCustomTypes) {
     Class<?> rawType = getRawType(typeRef);
     TypeRef<?> rewrittenType = customTypeHandler.replacementTypeFor(beanType.getRawType(), rawType);
-    ;
     if (rewrittenType != null
         && !visitedCustomTypes.contains(typeRef)
         && !typeRef.equals(rewrittenType)) {
