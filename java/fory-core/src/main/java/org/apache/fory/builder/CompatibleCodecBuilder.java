@@ -388,7 +388,7 @@ public class CompatibleCodecBuilder extends BaseObjectCodecBuilder {
 
   @Override
   public Expression buildXlangDecodeExpression() {
-    return null;
+    throw new IllegalStateException("unreachable");
   }
 
   public Expression buildRecordDecodeExpression() {
