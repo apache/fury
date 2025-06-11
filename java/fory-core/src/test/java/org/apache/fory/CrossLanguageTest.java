@@ -62,7 +62,6 @@ import org.apache.fory.logging.Logger;
 import org.apache.fory.logging.LoggerFactory;
 import org.apache.fory.memory.MemoryBuffer;
 import org.apache.fory.memory.MemoryUtils;
-import org.apache.fory.resolver.MetaContext;
 import org.apache.fory.serializer.ArraySerializersTest;
 import org.apache.fory.serializer.BufferObject;
 import org.apache.fory.serializer.EnumSerializerTest;
@@ -85,7 +84,7 @@ public class CrossLanguageTest extends ForyTestBase {
 
   @BeforeClass
   public void isPyforyInstalled() {
-    TestUtils.verifyPyforyInstalled();
+    //    TestUtils.verifyPyforyInstalled();
   }
 
   /**
@@ -817,14 +816,38 @@ public class CrossLanguageTest extends ForyTestBase {
             .withCompatibleMode(CompatibleMode.COMPATIBLE)
             .requireClassRegistration(true)
             .build();
+    Fory fory2 =
+        Fory.builder()
+            .withCodegen(false)
+            .withLanguage(Language.XLANG)
+            .withCompatibleMode(CompatibleMode.SCHEMA_CONSISTENT)
+            .requireClassRegistration(true)
+            .build();
+    Fory fory3 =
+        Fory.builder()
+            .withCodegen(false)
+            .withLanguage(Language.XLANG)
+            .withCompatibleMode(CompatibleMode.COMPATIBLE)
+            .requireClassRegistration(true)
+            .build();
     fory.register(Foo.class, "example.foo");
     fory.register(Bar.class, "example.bar");
     fory1.register(Foo.class, "example.foo");
     fory1.register(Bar.class, "example.bar");
+    fory2.register(Foo.class, "example.foo");
+    fory2.register(Bar.class, "example.bar");
+    fory3.register(Foo.class, "example.foo");
+    fory3.register(Bar.class, "example.bar");
     serDeCheck(fory, Bar.create());
     serDeCheck(fory, Foo.create());
     serDeCheck(fory1, Bar.create());
     serDeCheck(fory1, Foo.create());
+    Bar bar = Bar.create();
+    byte[] serialize = fory.serialize(bar);
+    Object deserialize = fory2.deserialize(serialize);
+    Assert.assertEquals(bar, deserialize);
+    byte[] serialize1 = fory1.serialize(bar);
+    Object deserialize1 = fory3.deserialize(serialize1);
+    Assert.assertEquals(bar, deserialize1);
   }
-
 }
