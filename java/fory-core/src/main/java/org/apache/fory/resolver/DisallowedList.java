@@ -34,7 +34,7 @@ import org.apache.fory.exception.InsecureException;
 
 /** A class to record which classes are not allowed for serialization. */
 class DisallowedList {
-  private static final String DISALLOWED_LIST_TXT_PATH = "fory/disallowed.txt";
+  private static final String DISALLOWED_LIST_TXT_PATH = "disallowed.txt";
   // When the disallowed.txt file is modified, update this hash using the following steps:
   // 1. Run the DisallowedListTest#testCalculateSHA256 test method
   // 2. Copy the output hash from the test result
