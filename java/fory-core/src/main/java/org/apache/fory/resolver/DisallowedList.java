@@ -45,8 +45,7 @@ class DisallowedList {
   private static final Set<String> DEFAULT_DISALLOWED_LIST_SET;
 
   static {
-    try (InputStream is =
-        DisallowedList.class.getClassLoader().getResourceAsStream(DISALLOWED_LIST_TXT_PATH)) {
+    try (InputStream is = DisallowedList.class.getResourceAsStream(DISALLOWED_LIST_TXT_PATH)) {
       if (is != null) {
         DEFAULT_DISALLOWED_LIST_SET =
             new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))

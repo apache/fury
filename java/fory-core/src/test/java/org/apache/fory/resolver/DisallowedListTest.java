@@ -46,7 +46,7 @@ public class DisallowedListTest extends ForyTestBase {
             ReflectionUtils.getDeclaredStaticFieldValue(
                 DisallowedList.class, "DISALLOWED_LIST_TXT_PATH");
     try (InputStream is =
-        DisallowedList.class.getClassLoader().getResourceAsStream(disallowedListTxtPath)) {
+        DisallowedList.class.getResourceAsStream(disallowedListTxtPath)) {
       assert is != null;
       Set<String> set =
           new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))
