@@ -22,11 +22,14 @@ package org.apache.fory.format.encoder;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.TreeSet;
 import lombok.Data;
 import org.apache.fory.annotation.ForyField;
+import org.apache.fory.format.row.binary.BinaryArray;
 import org.apache.fory.format.row.binary.BinaryRow;
 import org.apache.fory.memory.MemoryBuffer;
 import org.apache.fory.memory.MemoryUtils;
+import org.apache.fory.reflect.TypeRef;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -257,5 +260,42 @@ public class ImplementInterfaceTest {
     row.pointTo(buffer, 0, buffer.size());
     final ListOuter deserializedBean = encoder.fromRow(row);
     Assert.assertEquals(deserializedBean.f1().get(0).f1(), 42);
+  }
+
+  public interface Value extends Comparable<Value> {
+    int v();
+
+    @Override
+    default int compareTo(final Value o) {
+      return Integer.compare(v(), o.v());
+    }
+  }
+
+  public static class ValueImpl implements Value {
+    int v;
+
+    public ValueImpl(final int v) {
+      this.v = v;
+    }
+
+    @Override
+    public int v() {
+      return v;
+    }
+  }
+
+  @Test
+  public void testTreeSetOfInterface() {
+    final ArrayEncoder<TreeSet<Value>> encoder =
+        Encoders.arrayEncoder(new TypeRef<TreeSet<Value>>() {});
+    final TreeSet<Value> expected = new TreeSet<Value>();
+    expected.add(new ValueImpl(1));
+    expected.add(new ValueImpl(3));
+    expected.add(new ValueImpl(5));
+    final BinaryArray array = encoder.toArray(expected);
+    final MemoryBuffer buffer = array.getBuffer();
+    array.pointTo(buffer, 0, buffer.size());
+    final TreeSet<Value> deserializedBean = encoder.fromArray(array);
+    Assert.assertEquals(deserializedBean, expected);
   }
 }

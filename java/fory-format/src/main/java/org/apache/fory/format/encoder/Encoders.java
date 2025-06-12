@@ -343,7 +343,7 @@ public class Encoders {
       Class<? extends Collection> arrayCls, Class<B> elementType) {
     Preconditions.checkNotNull(elementType);
 
-    return (ArrayEncoder<T>) arrayEncoder(TypeUtils.listOf(elementType), null);
+    return (ArrayEncoder<T>) arrayEncoder(TypeUtils.collectionOf(elementType), null);
   }
 
   /**
@@ -581,7 +581,8 @@ public class Encoders {
 
   private static Set<TypeRef<?>> beanSet(TypeRef<?> token) {
     Set<TypeRef<?>> set = new HashSet<>();
-    if (TypeUtils.isBean(token)) {
+    if (TypeUtils.isBean(
+        token, new TypeResolutionContext(CustomTypeEncoderRegistry.customTypeHandler(), true))) {
       set.add(token);
       return set;
     }
@@ -645,6 +646,8 @@ public class Encoders {
   }
 
   private static void findBeanToken(TypeRef<?> typeRef, java.util.Set<TypeRef<?>> set) {
+    TypeResolutionContext typeCtx =
+        new TypeResolutionContext(CustomTypeEncoderRegistry.customTypeHandler(), true);
     Set<TypeRef<?>> visited = new LinkedHashSet<>();
     while (TypeUtils.ITERABLE_TYPE.isSupertypeOf(typeRef)
         || TypeUtils.MAP_TYPE.isSupertypeOf(typeRef)) {
@@ -654,20 +657,20 @@ public class Encoders {
       visited.add(typeRef);
       if (TypeUtils.ITERABLE_TYPE.isSupertypeOf(typeRef)) {
         typeRef = TypeUtils.getElementType(typeRef);
-        if (TypeUtils.isBean(typeRef)) {
+        if (TypeUtils.isBean(typeRef, typeCtx)) {
           set.add(typeRef);
         }
         findBeanToken(typeRef, set);
       } else {
         Tuple2<TypeRef<?>, TypeRef<?>> tuple2 = TypeUtils.getMapKeyValueType(typeRef);
-        if (TypeUtils.isBean(tuple2.f0)) {
+        if (TypeUtils.isBean(tuple2.f0, typeCtx)) {
           set.add(tuple2.f0);
         } else {
           typeRef = tuple2.f0;
           findBeanToken(tuple2.f0, set);
         }
 
-        if (TypeUtils.isBean(tuple2.f1)) {
+        if (TypeUtils.isBean(tuple2.f1, typeCtx)) {
           set.add(tuple2.f1);
         } else {
           typeRef = tuple2.f1;

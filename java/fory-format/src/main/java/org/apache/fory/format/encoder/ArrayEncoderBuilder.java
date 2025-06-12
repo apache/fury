@@ -142,7 +142,8 @@ public class ArrayEncoderBuilder extends BaseBinaryEncoderBuilder {
     Expression.Reference inputObject =
         new Expression.Reference(ROOT_OBJECT_NAME, TypeUtils.COLLECTION_TYPE, false);
     Expression.Cast array =
-        new Expression.Cast(inputObject, arrayToken, ctx.newName(getRawType(arrayToken)));
+        new Expression.Cast(
+            inputObject, arrayToken, ctx.newName(getRawType(arrayToken)), false, false);
     expressions.add(array);
 
     Expression.Reference fieldExpr = new Expression.Reference(FIELD_NAME, ARROW_FIELD_TYPE, false);
