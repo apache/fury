@@ -35,18 +35,20 @@ public class DisallowedListTest extends ForyTestBase {
   public void testDisallowedListNotEmpty() {
     Set<String> disallowedClasses = DisallowedList.getDisallowedClasses();
     Assert.assertFalse(disallowedClasses.isEmpty(), "Disallowed list should not be empty");
-    Assert.assertTrue(disallowedClasses.size() > 200, "Disallowed list should contain many classes");
+    Assert.assertTrue(
+        disallowedClasses.size() > 200, "Disallowed list should contain many classes");
   }
 
   @Test
   public void testKnownDangerousClasses() {
     Set<String> disallowedClasses = DisallowedList.getDisallowedClasses();
-    
+
     // Test some known dangerous classes are in the list
     Assert.assertTrue(disallowedClasses.contains("java.rmi.server.UnicastRemoteObject"));
     Assert.assertTrue(disallowedClasses.contains("com.sun.jndi.rmi.registry.BindingEnumeration"));
     Assert.assertTrue(disallowedClasses.contains("java.beans.Expression"));
-    Assert.assertTrue(disallowedClasses.contains("org.apache.commons.collections.functors.InvokerTransformer"));
+    Assert.assertTrue(
+        disallowedClasses.contains("org.apache.commons.collections.functors.InvokerTransformer"));
     Assert.assertTrue(disallowedClasses.contains("org.apache.xalan.xsltc.trax.TemplatesImpl"));
   }
 
