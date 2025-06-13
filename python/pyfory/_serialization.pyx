@@ -52,6 +52,7 @@ from libcpp.utility cimport pair
 from cython.operator cimport dereference as deref
 from pyfory._util cimport Buffer
 from pyfory.includes.libabsl cimport flat_hash_map
+from pyfory.meta.metastring import MetaStringDecoder
 
 try:
     import numpy as np
@@ -83,6 +84,10 @@ cdef int8_t REF_FLAG = -2
 cdef int8_t NOT_NULL_VALUE_FLAG = -1
 # this flag indicates that the object is a referencable and first read.
 cdef int8_t REF_VALUE_FLAG = 0
+# Global MetaString decoder for namespace bytes to str
+namespace_decoder = MetaStringDecoder(".", "_")
+# Global MetaString decoder for typename bytes to str
+typename_decoder = MetaStringDecoder("$", "_")
 
 
 @cython.final
@@ -414,6 +419,16 @@ cdef class TypeInfo:
     def __repr__(self):
         return f"TypeInfo(cls={self.cls}, type_id={self.type_id}, " \
                f"serializer={self.serializer})"
+
+    cpdef str decode_namespace(self):
+        if self.namespace_bytes is None:
+            return ""
+        return self.namespace_bytes.decode(namespace_decoder)
+
+    cpdef str decode_typename(self):
+        if self.typename_bytes is None:
+            return ""
+        return self.typename_bytes.decode(typename_decoder)
 
 
 @cython.final

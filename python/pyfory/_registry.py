@@ -84,7 +84,8 @@ except ImportError:
     np = None
 
 logger = logging.getLogger(__name__)
-
+namespace_decoder = MetaStringDecoder(".", "_")
+typename_decoder = MetaStringDecoder("$", "_")
 
 if ENABLE_FORY_CYTHON_SERIALIZATION:
     from pyfory._serialization import TypeInfo
@@ -121,6 +122,16 @@ else:
                 f"TypeInfo(cls={self.cls}, type_id={self.type_id}, "
                 f"serializer={self.serializer})"
             )
+
+        def decode_namespace(self) -> str:
+            if self.namespace_bytes is None:
+                return ""
+            return self.namespace_bytes.decode(namespace_decoder)
+
+        def decode_typename(self) -> str:
+            if self.typename_bytes is None:
+                return ""
+            return self.typename_bytes.decode(typename_decoder)
 
 
 class TypeResolver:
