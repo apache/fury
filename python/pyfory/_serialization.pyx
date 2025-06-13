@@ -85,9 +85,9 @@ cdef int8_t NOT_NULL_VALUE_FLAG = -1
 # this flag indicates that the object is a referencable and first read.
 cdef int8_t REF_VALUE_FLAG = 0
 # Global MetaString decoder for namespace bytes to str
-namespace_decoder = MetaStringDecoder(".", "_")
+namespace_decoder = MetaStringDecoder(".","_")
 # Global MetaString decoder for typename bytes to str
-typename_decoder  = MetaStringDecoder("$", "_")
+typename_decoder  = MetaStringDecoder("$","_")
 
 
 @cython.final
@@ -424,7 +424,7 @@ cdef class TypeInfo:
         if self.namespace_bytes is None:
             return ""
         return self.namespace_bytes.decode(namespace_decoder)
-    
+
     cpdef str decode_typename(self):
         if self.typename_bytes is None:
             return ""
