@@ -421,7 +421,7 @@ cdef class TypeResolver:
     cdef:
         readonly Fory fory
         readonly MetaStringResolver metastring_resolver
-        object _resolver
+        readonly object _resolver
         vector[PyObject *] _c_registered_id_to_type_info
         # cls -> TypeInfo
         flat_hash_map[uint64_t, PyObject *] _c_types_info
@@ -550,7 +550,6 @@ cdef class TypeResolver:
 
     cpdef inline reset_write(self):
         pass
-
 
 @cython.final
 cdef class Fory:
