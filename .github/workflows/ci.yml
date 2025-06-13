@@ -261,8 +261,6 @@ jobs:
         run: python ./ci/run_ci.py cpp
   python:
     name: Python CI
-    # Fix python 3.6 install issue, see
-    # https://github.com/rwth-i6/returnn/commit/38ecab17d781c4b74db6a174c8097187380b4ddc
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -274,6 +272,14 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+      - name: Install Python development libraries (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install wheel setuptools
+          # Ensure Python development libraries are installed
+          python -m pip install --upgrade --force-reinstall python-dev-tools
       - name: Install bazel
         shell: bash
         run: |
