@@ -85,9 +85,9 @@ cdef int8_t NOT_NULL_VALUE_FLAG = -1
 # this flag indicates that the object is a referencable and first read.
 cdef int8_t REF_VALUE_FLAG = 0
 # Global MetaString decoder for namespace bytes to str
-namespace_decoder = MetaStringDecoder(".","_")
+namespace_decoder = MetaStringDecoder(".", "_")
 # Global MetaString decoder for typename bytes to str
-typename_decoder  = MetaStringDecoder("$","_")
+typename_decoder = MetaStringDecoder("$", "_")
 
 
 @cython.final
@@ -436,7 +436,7 @@ cdef class TypeResolver:
     cdef:
         readonly Fory fory
         readonly MetaStringResolver metastring_resolver
-        readonly object _resolver
+        object _resolver
         vector[PyObject *] _c_registered_id_to_type_info
         # cls -> TypeInfo
         flat_hash_map[uint64_t, PyObject *] _c_types_info
