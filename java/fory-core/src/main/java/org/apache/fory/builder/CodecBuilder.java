@@ -162,9 +162,6 @@ public abstract class CodecBuilder {
     return expression;
   }
 
-  // left null check in sub class encode method to reduce data dependence.
-  private final boolean fieldNullable = false;
-
   protected Reference getRecordCtrHandle() {
     String fieldName = "_record_ctr_";
     Reference fieldRef = fieldMap.get(fieldName);
@@ -206,11 +203,16 @@ public abstract class CodecBuilder {
     }
     // public field or non-private non-java field access field directly.
     if (Modifier.isPublic(descriptor.getModifiers())) {
-      return new Expression.FieldValue(inputBeanExpr, fieldName, fieldType, fieldNullable, false);
+      return new Expression.FieldValue(
+          inputBeanExpr, fieldName, fieldType, descriptor.isNullable(), false);
     } else if (descriptor.getReadMethod() != null
         && Modifier.isPublic(descriptor.getReadMethod().getModifiers())) {
       return new Invoke(
-          inputBeanExpr, descriptor.getReadMethod().getName(), fieldName, fieldType, fieldNullable);
+          inputBeanExpr,
+          descriptor.getReadMethod().getName(),
+          fieldName,
+          fieldType,
+          descriptor.isNullable());
     } else {
       if (!Modifier.isPrivate(descriptor.getModifiers())) {
         if (AccessorHelper.defineAccessor(descriptor.getField())) {
@@ -218,7 +220,7 @@ public abstract class CodecBuilder {
               AccessorHelper.getAccessorClass(descriptor.getField()),
               fieldName,
               fieldType,
-              fieldNullable,
+              descriptor.isNullable(),
               inputBeanExpr);
         }
       }
@@ -229,7 +231,7 @@ public abstract class CodecBuilder {
               AccessorHelper.getAccessorClass(descriptor.getReadMethod()),
               descriptor.getReadMethod().getName(),
               fieldType,
-              fieldNullable,
+              descriptor.isNullable(),
               inputBeanExpr);
         }
       }
@@ -246,7 +248,11 @@ public abstract class CodecBuilder {
     if (Modifier.isPublic(beanClass.getModifiers())) {
       Preconditions.checkNotNull(descriptor.getReadMethod());
       return new Invoke(
-          inputBeanExpr, descriptor.getReadMethod().getName(), fieldName, fieldType, fieldNullable);
+          inputBeanExpr,
+          descriptor.getReadMethod().getName(),
+          fieldName,
+          fieldType,
+          descriptor.isNullable());
     } else {
       String key = "_" + fieldName + "_getter_";
       Reference ref = fieldMap.get(key);
@@ -267,10 +273,11 @@ public abstract class CodecBuilder {
         fieldMap.put(key, ref);
       }
       if (!fieldType.isPrimitive()) {
-        Expression v = inlineInvoke(ref, methodInfo.f1, OBJECT_TYPE, fieldNullable, inputBeanExpr);
+        Expression v =
+            inlineInvoke(ref, methodInfo.f1, OBJECT_TYPE, descriptor.isNullable(), inputBeanExpr);
         return tryCastIfPublic(v, descriptor.getTypeRef(), fieldName);
       } else {
-        return new Invoke(ref, methodInfo.f1, fieldType, fieldNullable, inputBeanExpr);
+        return new Invoke(ref, methodInfo.f1, fieldType, descriptor.isNullable(), inputBeanExpr);
       }
     }
   }
@@ -280,7 +287,7 @@ public abstract class CodecBuilder {
       Expression inputObject, Class<?> cls, Descriptor descriptor) {
     Reference fieldRef = getReflectField(cls, descriptor.getField());
     // boolean fieldNullable = !descriptor.getTypeToken().isPrimitive();
-    Invoke getObj = new Invoke(fieldRef, "get", OBJECT_TYPE, fieldNullable, inputObject);
+    Invoke getObj = new Invoke(fieldRef, "get", OBJECT_TYPE, descriptor.isNullable(), inputObject);
     return new Cast(getObj, descriptor.getTypeRef(), descriptor.getName());
   }
 
@@ -291,7 +298,7 @@ public abstract class CodecBuilder {
     Expression fieldOffsetExpr = getFieldOffset(cls, descriptor);
     if (descriptor.getTypeRef().isPrimitive()) {
       // ex: Platform.UNSAFE.getFloat(obj, fieldOffset)
-      Preconditions.checkArgument(!fieldNullable);
+      Preconditions.checkArgument(!descriptor.isNullable());
       TypeRef<?> returnType = descriptor.getTypeRef();
       String funcName = "get" + StringUtils.capitalize(descriptor.getRawType().toString());
       return new StaticInvoke(
@@ -303,7 +310,7 @@ public abstract class CodecBuilder {
               Platform.class,
               "getObject",
               OBJECT_TYPE,
-              fieldNullable,
+              descriptor.isNullable(),
               inputObject,
               fieldOffsetExpr);
       return tryCastIfPublic(getObj, descriptor.getTypeRef(), fieldName);
