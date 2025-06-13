@@ -259,12 +259,8 @@ class StructHashVisitor(TypeVisitor):
         if typeinfo is not None:
             hash_value = typeinfo.type_id
             if TypeId.is_namespaced_type(typeinfo.type_id):
-                namespace_str = typeinfo.namespace_bytes.decode(
-                    self.fory.type_resolver._resolver.namespace_decoder
-                )
-                typename_str = typeinfo.namespace_bytes.decode(
-                    self.fory.type_resolver._resolver.typename_decoder
-                )
+                namespace_str = typeinfo.decode_namespace()
+                typename_str = typeinfo.decode_typename()
                 hash_value = compute_string_hash(namespace_str + typename_str)
         self._hash = self._compute_field_hash(self._hash, hash_value)
 
