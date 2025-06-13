@@ -492,6 +492,18 @@ public class TimeSerializers {
   }
 
   public static class ZoneOffsetSerializer extends ImmutableTimeSerializer<ZoneOffset> {
+
+    // cached zone offsets for the single byte representation, using this overrides the JDK zone offset caching
+    // which uses a concurrent hash map for zone offsets that causes a noticeable overhead
+    // (see ZoneOffset.ofTotalSeconds impl), cached each 15 minutes (in line with the compression -72 to +72)
+    private static final ZoneOffset[] COMPRESSED_ZONE_OFFSETS = new ZoneOffset[145];
+
+    static {
+      for (int i = 0; i < COMPRESSED_ZONE_OFFSETS.length; i++) {
+        COMPRESSED_ZONE_OFFSETS[i] = ZoneOffset.ofTotalSeconds((i - 72) * 900);
+      }
+    }
+
     public ZoneOffsetSerializer(Fory fory) {
       super(fory, ZoneOffset.class);
     }
@@ -519,9 +531,10 @@ public class TimeSerializers {
 
     public static ZoneOffset readZoneOffset(MemoryBuffer buffer) {
       int offsetByte = buffer.readByte();
-      return (offsetByte == 127
-          ? ZoneOffset.ofTotalSeconds(buffer.readInt32())
-          : ZoneOffset.ofTotalSeconds(offsetByte * 900));
+      if (offsetByte == 127) {
+        return ZoneOffset.ofTotalSeconds(buffer.readInt32());
+      }
+      return COMPRESSED_ZONE_OFFSETS[offsetByte + 72];
     }
   }
 

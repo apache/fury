@@ -99,6 +99,16 @@ public class TimeSerializersTest extends ForyTestBase {
   }
 
   @Test
+  public void testZoneOffset() {
+    Fory fory = Fory.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
+    serDeCheckSerializerAndEqual(fory, ZoneOffset.UTC, "ZoneOffsetSerializer");
+    serDeCheckSerializerAndEqual(fory, ZoneOffset.ofHoursMinutes(1, 15), "ZoneOffsetSerializer");
+    serDeCheckSerializerAndEqual(fory, ZoneOffset.ofHoursMinutes(1, 13), "ZoneOffsetSerializer");
+    serDeCheckSerializerAndEqual(fory, ZoneOffset.ofHoursMinutes(-8, -15), "ZoneOffsetSerializer");
+    serDeCheckSerializerAndEqual(fory, ZoneOffset.ofHoursMinutes(-8, -13), "ZoneOffsetSerializer");
+  }
+
+  @Test
   public void testZone() {
     Fory fory = Fory.builder().withLanguage(Language.JAVA).requireClassRegistration(false).build();
     serDeCheckSerializerAndEqual(
