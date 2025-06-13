@@ -599,7 +599,8 @@ public class TypeUtils {
 
   public static boolean isBean(TypeRef<?> typeRef, TypeResolutionContext ctx) {
     Class<?> cls = getRawType(typeRef);
-    if (ctx.isSynthesizeInterfaces() && (RecordUtils.isRecord(cls) || (cls.isInterface()))) {
+    if (ctx.isSynthesizeInterfaces()
+        && (RecordUtils.isRecord(cls) || isSynthesizableInterface(cls))) {
       return true;
     }
     if (Modifier.isAbstract(cls.getModifiers()) || Modifier.isInterface(cls.getModifiers())) {
@@ -649,6 +650,12 @@ public class TypeUtils {
     } else {
       return false;
     }
+  }
+
+  private static boolean isSynthesizableInterface(Class<?> cls) {
+    return cls.isInterface()
+        && !Collection.class.isAssignableFrom(cls)
+        && !Map.class.isAssignableFrom(cls);
   }
 
   /** Check if <code>typeToken</code> is supported by row-format. */
