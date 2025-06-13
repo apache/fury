@@ -551,6 +551,7 @@ cdef class TypeResolver:
     cpdef inline reset_write(self):
         pass
 
+
 @cython.final
 cdef class Fory:
     cdef readonly object language
