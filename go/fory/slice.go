@@ -36,6 +36,10 @@ func (s sliceSerializer) TypeId() TypeId {
 	return LIST
 }
 
+func (s sliceSerializer) NeedWriteRef() bool {
+	return true
+}
+
 // Write serializes a slice value into the buffer
 func (s sliceSerializer) Write(f *Fory, buf *ByteBuffer, value reflect.Value) error {
 	// Get slice length and handle empty slice case
@@ -287,6 +291,10 @@ func (s *sliceConcreteValueSerializer) TypeId() TypeId {
 	return -LIST
 }
 
+func (s sliceConcreteValueSerializer) NeedWriteRef() bool {
+	return true
+}
+
 func (s *sliceConcreteValueSerializer) Write(f *Fory, buf *ByteBuffer, value reflect.Value) error {
 	length := value.Len()
 	if err := f.writeLength(buf, length); err != nil {
@@ -348,6 +356,10 @@ func (s byteSliceSerializer) TypeId() TypeId {
 	return BINARY
 }
 
+func (s byteSliceSerializer) NeedWriteRef() bool {
+	return true
+}
+
 func (s byteSliceSerializer) Write(f *Fory, buf *ByteBuffer, value reflect.Value) error {
 	if err := f.WriteBufferObject(buf, &ByteSliceBufferObject{value.Interface().([]byte)}); err != nil {
 		return err
@@ -387,6 +399,10 @@ func (s boolSliceSerializer) TypeId() TypeId {
 	return BOOL_ARRAY
 }
 
+func (s boolSliceSerializer) NeedWriteRef() bool {
+	return true
+}
+
 func (s boolSliceSerializer) Write(f *Fory, buf *ByteBuffer, value reflect.Value) error {
 	v := value.Interface().([]bool)
 	size := len(v)
@@ -415,6 +431,10 @@ type int16SliceSerializer struct {
 
 func (s int16SliceSerializer) TypeId() TypeId {
 	return INT16_ARRAY
+}
+
+func (s int16SliceSerializer) NeedWriteRef() bool {
+	return true
 }
 
 func (s int16SliceSerializer) Write(f *Fory, buf *ByteBuffer, value reflect.Value) error {
@@ -447,6 +467,10 @@ func (s int32SliceSerializer) TypeId() TypeId {
 	return INT32_ARRAY
 }
 
+func (s int32SliceSerializer) NeedWriteRef() bool {
+	return true
+}
+
 func (s int32SliceSerializer) Write(f *Fory, buf *ByteBuffer, value reflect.Value) error {
 	v := value.Interface().([]int32)
 	size := len(v) * 4
@@ -475,6 +499,10 @@ type int64SliceSerializer struct {
 
 func (s int64SliceSerializer) TypeId() TypeId {
 	return INT64_ARRAY
+}
+
+func (s int64SliceSerializer) NeedWriteRef() bool {
+	return true
 }
 
 func (s int64SliceSerializer) Write(f *Fory, buf *ByteBuffer, value reflect.Value) error {
@@ -507,6 +535,10 @@ func (s float32SliceSerializer) TypeId() TypeId {
 	return FLOAT32_ARRAY
 }
 
+func (s float32SliceSerializer) NeedWriteRef() bool {
+	return true
+}
+
 func (s float32SliceSerializer) Write(f *Fory, buf *ByteBuffer, value reflect.Value) error {
 	v := value.Interface().([]float32)
 	size := len(v) * 4
@@ -535,6 +567,10 @@ type float64SliceSerializer struct {
 
 func (s float64SliceSerializer) TypeId() TypeId {
 	return FLOAT64_ARRAY
+}
+
+func (s float64SliceSerializer) NeedWriteRef() bool {
+	return true
 }
 
 func (s float64SliceSerializer) Write(f *Fory, buf *ByteBuffer, value reflect.Value) error {
@@ -566,6 +602,10 @@ type stringSliceSerializer struct {
 
 func (s stringSliceSerializer) TypeId() TypeId {
 	return FORY_STRING_ARRAY
+}
+
+func (s stringSliceSerializer) NeedWriteRef() bool {
+	return true
 }
 
 func (s stringSliceSerializer) Write(f *Fory, buf *ByteBuffer, value reflect.Value) error {
