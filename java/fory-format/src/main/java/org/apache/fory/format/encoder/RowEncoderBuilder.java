@@ -27,6 +27,9 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
 import java.util.SortedMap;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.Schema;
@@ -271,9 +274,11 @@ public class RowEncoderBuilder extends BaseBinaryEncoderBuilder {
 
   private static Expression nullValue(TypeRef<?> fieldType) {
     Class<?> rawType = fieldType.getRawType();
-    if (rawType == Optional.class) {
-      return new Expression.StaticInvoke(
-          Optional.class, "empty", "", TypeUtils.OPTIONAL_TYPE, false, true);
+    if (rawType == Optional.class
+        || rawType == OptionalInt.class
+        || rawType == OptionalLong.class
+        || rawType == OptionalDouble.class) {
+      return new Expression.StaticInvoke(rawType, "empty", "", fieldType, false, true);
     }
     return new Expression.Reference(TypeUtils.defaultValue(rawType), fieldType);
   }
