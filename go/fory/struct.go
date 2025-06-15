@@ -36,6 +36,10 @@ func (s *structSerializer) TypeId() TypeId {
 	return NAMED_STRUCT
 }
 
+func (s *structSerializer) NeedWriteRef() bool {
+	return true
+}
+
 func (s *structSerializer) Write(f *Fory, buf *ByteBuffer, value reflect.Value) error {
 	// TODO support fields back and forward compatible. need to serialize fields name too.
 	if s.fieldsInfo == nil {
@@ -160,6 +164,10 @@ func (s *ptrToStructSerializer) TypeId() TypeId {
 	return FORY_TYPE_TAG
 }
 
+func (s *ptrToStructSerializer) NeedWriteRef() bool {
+	return true
+}
+
 func (s *ptrToStructSerializer) Write(f *Fory, buf *ByteBuffer, value reflect.Value) error {
 	return s.structSerializer.Write(f, buf, value.Elem())
 }
@@ -188,26 +196,31 @@ func computeStructHash(fieldsInfo structFieldsInfo, typeResolver *typeResolver) 
 }
 
 func computeFieldHash(hash int32, fieldInfo *fieldInfo, typeResolver *typeResolver) (int32, error) {
-	if serializer, err := typeResolver.getSerializerByType(fieldInfo.type_); err != nil {
-		// FIXME ignore unknown types for hash calculation
-		return hash, nil
-	} else {
-		var id int32 = 17
-		if s, ok := serializer.(*ptrToStructSerializer); ok {
-			// Avoid recursion for circular reference
-			id = computeStringHash(s.typeTag)
+	ser := fieldInfo.serializer
+	var id int32
+	switch s := ser.(type) {
+	case *structSerializer:
+		id = computeStringHash(s.typeTag + s.type_.Name())
+
+	case *ptrToStructSerializer:
+		id = computeStringHash(s.typeTag + s.type_.Elem().Name())
+
+	default:
+		if s == nil {
+			id = 0
 		} else {
-			// TODO add list element type and map key/value type to hash.
-			if serializer.TypeId() < 0 {
-				id = -int32(serializer.TypeId())
+			tid := s.TypeId()
+			if tid < 0 {
+				id = -int32(tid)
 			} else {
-				id = int32(serializer.TypeId())
+				id = int32(tid)
 			}
 		}
-		newHash := int64(hash)*31 + int64(id)
-		for newHash >= MaxInt32 {
-			newHash = newHash / 7
-		}
-		return int32(newHash), nil
 	}
+
+	newHash := int64(hash)*31 + int64(id)
+	for newHash >= MaxInt32 {
+		newHash /= 7
+	}
+	return int32(newHash), nil
 }

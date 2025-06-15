@@ -36,11 +36,12 @@ const (
 
 // RefResolver class is used to track objects that have already been read or written.
 type RefResolver struct {
-	refTracking    bool
-	writtenObjects map[refKey]int32
-	readObjects    []reflect.Value
-	readRefIds     []int32
-	readObject     reflect.Value // last read object which is not a reference
+	refTracking     bool
+	writtenObjects  map[refKey]int32
+	readObjects     []reflect.Value
+	readRefIds      []int32
+	readObject      reflect.Value // last read object which is not a reference
+	basicValueCache map[interface{}]reflect.Value
 }
 
 type refKey struct {
@@ -50,8 +51,9 @@ type refKey struct {
 
 func newRefResolver(refTracking bool) *RefResolver {
 	refResolver := &RefResolver{
-		refTracking:    refTracking,
-		writtenObjects: map[refKey]int32{},
+		refTracking:     refTracking,
+		writtenObjects:  map[refKey]int32{},
+		basicValueCache: map[interface{}]reflect.Value{},
 	}
 	return refResolver
 }
@@ -88,8 +90,36 @@ func (r *RefResolver) WriteRefOrNull(buffer *ByteBuffer, value reflect.Value) (r
 		isNil = value.IsNil()
 		length = value.Len()
 	case reflect.Interface:
-		value = value.Elem()
-		return r.WriteRefOrNull(buffer, value)
+		value := value.Elem()
+		switch value.Kind() {
+		case reflect.Bool, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+			reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
+			reflect.Float32, reflect.Float64, reflect.String:
+
+			val := value.Interface()
+			boxed, ok := r.basicValueCache[val]
+			if !ok {
+				boxed = reflect.New(value.Type())
+				boxed.Elem().Set(value)
+				r.basicValueCache[val] = boxed
+			}
+			ptr := unsafe.Pointer(boxed.Pointer())
+			refKey := refKey{pointer: ptr, length: 0}
+			if writtenId, ok := r.writtenObjects[refKey]; ok {
+				buffer.WriteInt8(RefFlag)
+				buffer.WriteVarInt32(writtenId)
+				return true, nil
+			}
+			newWriteRefId := len(r.writtenObjects)
+			if newWriteRefId >= MaxInt32 {
+				return false, fmt.Errorf("too many objects execced %d to serialize", MaxInt32)
+			}
+			r.writtenObjects[refKey] = int32(newWriteRefId)
+			buffer.WriteInt8(RefValueFlag)
+			return false, nil
+		default:
+			return r.WriteRefOrNull(buffer, value)
+		}
 	case reflect.String:
 		isNil = false
 		str := unsafeGetBytes(value.Interface().(string))
