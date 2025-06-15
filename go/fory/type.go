@@ -19,13 +19,14 @@ package fory
 
 import (
 	"fmt"
-	"github.com/apache/fory/go/fory/meta"
 	"hash/fnv"
 	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/apache/fory/go/fory/meta"
 )
 
 type TypeId = int16
@@ -375,10 +376,6 @@ func (r *typeResolver) initialize() {
 		{genericSetType, setSerializer{}},
 	}
 	for _, elem := range serializers {
-		if err := r.RegisterSerializer(elem.Type, elem.Serializer); err != nil {
-			panic(fmt.Errorf("impossible error: %s", err))
-		}
-
 		_, err := r.registerType(elem.Type, int32(elem.Serializer.TypeId()), "", "", elem.Serializer, true)
 		if err != nil {
 			fmt.Errorf("init type error: %v", err)
@@ -453,8 +450,7 @@ func (r *typeResolver) getSerializerByTypeTag(typeTag string) (Serializer, error
 
 func (r *typeResolver) getTypeInfo(value reflect.Value, create bool) (TypeInfo, error) {
 	// First check if type info exists in cache
-	typeString := value.Type()
-	if info, ok := r.typesInfo[typeString]; ok {
+	if info, ok := r.typesInfo[value.Type()]; ok {
 		if info.Serializer == nil {
 			// Lazy initialize serializer if not created yet
 			serializer, err := r.createSerializer(value.Type())
@@ -473,11 +469,26 @@ func (r *typeResolver) getTypeInfo(value reflect.Value, create bool) (TypeInfo, 
 	if !create {
 		fmt.Errorf("type %v not registered and create=false", value.Type())
 	}
+	if value.Kind() == reflect.Interface {
+		value = value.Elem()
+	}
 
 	typ := value.Type()
 	// Get package path and type name for registration
-	pkgPath := typ.PkgPath()
-	typeName := typ.Name()
+	var typeName string
+	var pkgPath string
+	rawInfo, ok := r.typeToTypeInfo[typ]
+	if !ok {
+		fmt.Errorf("type %v not registered with a tag", typ)
+	}
+	clean := strings.TrimPrefix(rawInfo, "*@")
+	clean = strings.TrimPrefix(clean, "@")
+	pkgPath = clean
+	if typ.Kind() == reflect.Ptr {
+		typeName = typ.Elem().Name()
+	} else {
+		typeName = typ.Name()
+	}
 
 	// Handle special types that require explicit registration
 	switch {
@@ -498,8 +509,8 @@ func (r *typeResolver) getTypeInfo(value reflect.Value, create bool) (TypeInfo, 
 	default:
 		fmt.Errorf("type %v must be registered explicitly", typ)
 	}
-	// TThere are still some problems in order to adapt the struct
-	if value.Kind() == reflect.Struct {
+	// There are still some problems in order to adapt the struct
+	if value.Kind() == reflect.Struct || (!isNil(value) && value.Kind() == reflect.Ptr && value.Elem().Kind() == reflect.Struct) {
 		typeID = NAMED_STRUCT
 	}
 
@@ -528,7 +539,11 @@ func (r *typeResolver) registerType(
 	if typeName == "" && namespace != "" {
 		panic("namespace provided without typeName")
 	}
-
+	if internal && serializer != nil {
+		if err := r.RegisterSerializer(typ, serializer); err != nil {
+			panic(fmt.Errorf("impossible error: %s", err))
+		}
+	}
 	// Serializer initialization
 	if !internal && serializer == nil {
 		var err error
@@ -555,7 +570,7 @@ func (r *typeResolver) registerType(
 			}
 		}
 
-		nsMeta, _ := r.namespaceEncoder.Encode(typeName)
+		nsMeta, _ := r.namespaceEncoder.Encode(namespace)
 		if nsBytes = r.metaStringResolver.GetMetaStrBytes(&nsMeta); nsBytes == nil {
 			panic("failed to encode namespace")
 		}
@@ -579,7 +594,7 @@ func (r *typeResolver) registerType(
 
 	// Update resolver caches:
 	r.typesInfo[typ] = typeInfo // Cache by type string
-
+	r.typeIDToTypeInfo[typeID] = typeInfo
 	if typeName != "" {
 		// Cache by namespace/name pair
 		r.namedTypeToTypeInfo[[2]string{namespace, typeName}] = typeInfo
@@ -588,11 +603,11 @@ func (r *typeResolver) registerType(
 	}
 
 	// Cache by type ID (for cross-language support)
-	if r.language == XLANG || !IsNamespacedType(TypeId(typeID)) {
+	if r.language == XLANG && !IsNamespacedType(TypeId(typeID)) {
 		r.typeIDToTypeInfo[typeID] = typeInfo
 	}
 
-	return typeInfo, fmt.Errorf("registerType error")
+	return typeInfo, nil
 }
 
 // allocateTypeID
@@ -614,7 +629,6 @@ func (r *typeResolver) writeTypeInfo(buffer *ByteBuffer, typeInfo TypeInfo) erro
 	// Extract the internal type ID (lower 8 bits)
 	typeID := typeInfo.TypeID
 	internalTypeID := typeID & 0xFF
-
 	// Write the type ID to buffer (variable-length encoding)
 	buffer.WriteVarUint32(uint32(typeID))
 
@@ -691,7 +705,7 @@ func (r *typeResolver) createSerializer(type_ reflect.Type) (s Serializer, err e
 					return nil, err
 				}
 			}
-			return &mapConcreteKeyValueSerializer{
+			return &mapSerializer{
 				type_:             type_,
 				keySerializer:     keySerializer,
 				valueSerializer:   valueSerializer,
@@ -856,9 +870,7 @@ func (r *typeResolver) readTypeByReadTag(buffer *ByteBuffer) (reflect.Type, erro
 func (r *typeResolver) readTypeInfo(buffer *ByteBuffer) (TypeInfo, error) {
 	// Read variable-length type ID
 	typeID := buffer.ReadVarInt32()
-
 	internalTypeID := typeID & 0xFF // Extract lower 8 bits for internal type ID
-
 	if IsNamespacedType(TypeId(internalTypeID)) {
 		// Read namespace and type name metadata bytes
 		nsBytes, err := r.metaStringResolver.ReadMetaStringBytes(buffer)
@@ -870,7 +882,6 @@ func (r *typeResolver) readTypeInfo(buffer *ByteBuffer) (TypeInfo, error) {
 		if err != nil {
 			fmt.Errorf("failed to read type bytes: %w", err)
 		}
-
 		compositeKey := nsTypeKey{nsBytes.Hashcode, typeBytes.Hashcode}
 		var typeInfo TypeInfo
 		if typeInfo, exists := r.nsTypeToTypeInfo[compositeKey]; exists {
